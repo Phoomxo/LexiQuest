@@ -36,8 +36,9 @@ abstract final class QuestDefinitionCodec {
         'origin',
         'definition',
       });
-      if (value['version'] != 1)
+      if (value['version'] != 1) {
         throw const FormatException('unknown quest snapshot version');
+      }
       final origin = QuestDefinitionSnapshotOrigin.values.byName(
         value['origin'] as String,
       );
@@ -114,8 +115,9 @@ abstract final class QuestDefinitionCodec {
       if (byId.containsKey(item.objectiveId) ||
           item.currentCount < 0 ||
           item.currentCount > item.targetCount ||
-          item.sourceEventIds.toSet().length != item.sourceEventIds.length)
+          item.sourceEventIds.toSet().length != item.sourceEventIds.length) {
         return false;
+      }
       byId[item.objectiveId] = item;
     }
     return definition.objectives.every(
@@ -182,11 +184,13 @@ abstract final class QuestDefinitionCodec {
     });
     final reward = _map(value['reward'], {'xpAmount', 'rewardItemId'});
     final objectives = value['objectives'] as List;
-    if (objectives.isEmpty || objectives.length > 64)
+    if (objectives.isEmpty || objectives.length > 64) {
       throw const FormatException('invalid quest objective count');
+    }
     final duration = value['expiresInMs'] as int?;
-    if (duration != null && (duration <= 0 || duration > 8640000000000000))
+    if (duration != null && (duration <= 0 || duration > 8640000000000000)) {
       throw const FormatException('invalid quest duration');
+    }
     final result = QuestDefinition(
       questId: value['questId'] as String,
       catalogVersion: value['catalogVersion'] as int,
@@ -203,8 +207,9 @@ abstract final class QuestDefinitionCodec {
             'filters',
           });
           final filters = item['filters'];
-          if (filters != null && filters is! Map<String, dynamic>)
+          if (filters != null && filters is! Map<String, dynamic>) {
             throw const FormatException('invalid quest filters');
+          }
           return QuestObjective(
             objectiveId: item['objectiveId'] as String,
             description: item['description'] as String,
@@ -240,17 +245,20 @@ abstract final class QuestDefinitionCodec {
   }
 
   static void _requireBudget(String value) {
-    if (utf8.encode(value).length > maximumBytes)
+    if (utf8.encode(value).length > maximumBytes) {
       throw const FormatException('quest snapshot exceeds 64 KiB');
+    }
   }
 
   static bool _identifier(String value) =>
       value.isNotEmpty && value.trim() == value && value.runes.length <= 256;
   static void _jsonValue(Object? value, int depth) {
-    if (depth > 16)
+    if (depth > 16) {
       throw const FormatException('quest filter nesting exceeds limit');
-    if (value == null || value is String || value is bool || value is int)
+    }
+    if (value == null || value is String || value is bool || value is int) {
       return;
+    }
     if (value is double && value.isFinite) return;
     if (value is List) {
       for (final item in value) {
@@ -275,12 +283,14 @@ abstract final class QuestDefinitionCodec {
       ? List<Object?>.unmodifiable(value.map(_freeze))
       : value;
   static bool _same(Object? a, Object? b) {
-    if (a is Map && b is Map)
+    if (a is Map && b is Map) {
       return a.length == b.length &&
           a.keys.every((key) => b.containsKey(key) && _same(a[key], b[key]));
-    if (a is List && b is List)
+    }
+    if (a is List && b is List) {
       return a.length == b.length &&
           List.generate(a.length, (i) => i).every((i) => _same(a[i], b[i]));
+    }
     return a == b;
   }
 }

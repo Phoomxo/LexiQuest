@@ -121,12 +121,11 @@ final class RecommendationUseCases {
     required this.timezoneId,
     required this.activeOwnerId,
     Map<LessonMode, RecallLadderModeAvailability> modeAvailability = const {},
-    RecommendationModeAvailability? modeAvailabilityFor,
+    this._modeAvailabilityFor,
   }) : _modeAvailability =
            Map<LessonMode, RecallLadderModeAvailability>.unmodifiable(
              modeAvailability,
-           ),
-       _modeAvailabilityFor = modeAvailabilityFor;
+           );
 
   static const List<LessonMode> supportedCanonicalModes = <LessonMode>[
     LessonMode.flashcard,

@@ -255,7 +255,7 @@ void main() {
             (_) {
               settled = true;
             },
-            onError: (Object _, StackTrace __) {
+            onError: (Object _, StackTrace _) {
               settled = true;
             },
           );

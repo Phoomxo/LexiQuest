@@ -27,8 +27,9 @@ abstract final class FirstAnswerAccuracy {
     final result = <T>[];
     for (final row in ordered) {
       final context = contextOf(row);
-      if (includes(context) && seen.add(identityOf(row, context)))
+      if (includes(context) && seen.add(identityOf(row, context))) {
         result.add(row);
+      }
     }
     return result;
   }

@@ -812,8 +812,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           sessionId: session.id,
           activityType: 'associativeReading',
         );
-        if (recovery?.checkpoint == null)
+        if (recovery?.checkpoint == null) {
           throw StateError('Reading upgrade checkpoint missing');
+        }
         final state = AssociativeReadingCheckpoint.fromJson(
           recovery!.checkpoint!.state,
         );
@@ -926,8 +927,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             break;
           }
         }
-        if (selectedName == null)
+        if (selectedName == null) {
           throw StateError('Reading category rename bound exceeded');
+        }
         final category = names.singleWhere((row) => row.id == guestId);
         await (_database.update(
           _database.vocabularyCategories,
@@ -4532,14 +4534,16 @@ final class _QuestMergeCandidate {
 
   String? conflictWith(_QuestMergeCandidate other, int resolvedAt) {
     if (logicalPeriod == other.logicalPeriod) return 'samePeriod';
-    if (isCompatibility && other.isCompatibility)
+    if (isCompatibility && other.isCompatibility) {
       return 'compatibilityRepresentative';
+    }
     if ((isCompatibility && other.occupiesAt(resolvedAt)) ||
         (other.isCompatibility && occupiesAt(resolvedAt))) {
       return 'establishedCompatibilityOccupancy';
     }
-    if (row.state == 'active' && other.row.state == 'active')
+    if (row.state == 'active' && other.row.state == 'active') {
       return 'activeUniqueness';
+    }
     // A null-duration legacy compatibility row is not evidence of an infinite
     // historical window. Its first-period interpretation remains assignment's
     // responsibility; merging never fabricates its past calendar.

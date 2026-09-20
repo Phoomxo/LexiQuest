@@ -520,12 +520,14 @@ void main() {
     ]) {
       test('$failure cannot report a confirmed scheduled reminder', () async {
         final reminder = await seed();
-        if (failure == 'permission')
+        if (failure == 'permission') {
           scheduler.beforePermissionReturn = () async =>
               throw StateError('synthetic permission failure');
-        if (failure == 'native')
+        }
+        if (failure == 'native') {
           scheduler.beforePendingReturn = () async =>
               throw StateError('synthetic native enumeration failure');
+        }
         if (failure == 'feature-off') {
           durableFeatureEnabled = false;
           durableFeatureEpoch++;
@@ -729,8 +731,9 @@ void main() {
           var operationCalls = 0;
           scheduler.beforeCancel = (_) async {
             cancelledCalls++;
-            if (failure == 'partial-precancel' && cancelledCalls == 2)
+            if (failure == 'partial-precancel' && cancelledCalls == 2) {
               throw StateError('synthetic second precancel failure');
+            }
           };
           scheduler.beforeSchedule = (_) async {
             expect(
@@ -964,10 +967,11 @@ void main() {
         scheduler.pending[actualId] = orphan;
         var committed = false;
         scheduler.beforeCancel = (_) async {
-          if (committed)
+          if (committed) {
             throw StateError(
               'synthetic persistent native cancellation failure',
             );
+          }
         };
         try {
           final target = await useCases.coordinateOwnerChange<String>(
@@ -1121,8 +1125,9 @@ void main() {
           expect(scheduler.requestCalls, 0);
         } finally {
           if (!release.isCompleted) release.complete();
-          if (drained != null)
+          if (drained != null) {
             await drained.timeout(const Duration(seconds: 3));
+          }
           await repository.endOwnerOperationFence(
             ownerId: original.ownerId,
             operationToken: token,
@@ -1350,8 +1355,9 @@ void main() {
         reminderId: 'deleted-reminder',
       );
       scheduler.beforeCancel = (id) async {
-        if (id == orphanId)
+        if (id == orphanId) {
           throw StateError('synthetic native cancellation failure');
+        }
       };
       final failed = await useCases.reconcile(featureEnabled: true);
       expect(failed.failed, greaterThan(0));

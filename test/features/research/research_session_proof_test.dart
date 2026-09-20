@@ -593,8 +593,9 @@ void _extendedProofTests() {
         'eventVersion' => _PairRows(phase: 2, eventVersion: 2),
         _ => _PairRows(phase: 2),
       };
-      if (field == 'lineage')
+      if (field == 'lineage') {
         other.owners.single['created_at_utc_ms'] = _start - 2000;
+      }
       _expectPurpose(other, [other.checkpoint]);
       final changed = ResearchSessionProof.decode(other.proof().toJson());
       expect(original.hasSameStartCore(changed), isFalse);

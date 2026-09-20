@@ -757,8 +757,9 @@ final class _ProofScanCursor {
               'afterPhase',
               'upperOpportunityId',
             }.contains,
-          ))
+          )) {
         return null;
+      }
       final id = value['afterOpportunityId'];
       final upper = value['upperOpportunityId'];
       final phase = value['afterPhase'];
@@ -768,8 +769,9 @@ final class _ProofScanCursor {
           (phase != 1 && phase != 2) ||
           !RegExp(r'^[A-Za-z0-9_.:\-]{1,128}$').hasMatch(id) ||
           !RegExp(r'^[A-Za-z0-9_.:\-]{1,128}$').hasMatch(upper) ||
-          id.compareTo(upper) > 0)
+          id.compareTo(upper) > 0) {
         return null;
+      }
       return _ProofScanCursor(id, phase, upper);
     } on FormatException {
       return null;
@@ -782,8 +784,9 @@ void _require(bool value) {
 }
 
 String _string(Object? value) {
-  if (value is! String)
+  if (value is! String) {
     throw const FormatException('Invalid proof source field');
+  }
   return value;
 }
 

@@ -1,0 +1,396 @@
+[
+  {
+    "DefectID": "E7-D01",
+    "TestCaseID": "LOCAL-002",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Lifecycle inventory stale at 50 tables",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Fitness test retained pre-extension cardinality; exact current named inventory has 58 tables.",
+    "files": [
+      "test/architecture/fitness_test.dart"
+    ],
+    "steps": "Execute LOCAL-002 architecture batch",
+    "expected": "Exact inventory and all participant pages use typed navigation",
+    "actual": "Failed assertion; original stdout retained",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D02",
+    "TestCaseID": "LOCAL-002",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Reading screens bypass typed navigation",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Three reading/catalog entry paths directly constructed MaterialPageRoute rather than AppPage, losing uniform route identity.",
+    "files": [
+      "lib/screens/cefr_vocabulary_catalog_screen.dart",
+      "lib/screens/choose_mode_screen.dart",
+      "lib/screens/local_reading_library_screen.dart"
+    ],
+    "steps": "Execute LOCAL-002 architecture batch",
+    "expected": "Exact inventory and all participant pages use typed navigation",
+    "actual": "Failed assertion; original stdout retained",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D03",
+    "TestCaseID": "BATCH-01",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Legacy v26 migration fixture retained later schema",
+    "severity": "medium",
+    "ownerPackage": "G7.4/G8.5",
+    "rootCause": "The old test created current schema, dropped only the v27 table and asserted 27; post-v27 structures remained installed.",
+    "files": [
+      "test/data/local/legacy_learning_import_test.dart"
+    ],
+    "steps": "Run legacy_learning_import_test.dart B15 schema26 fixture",
+    "expected": "Genuine v26 shape upgrades to exact current 58-table inventory and preserves populated owner",
+    "actual": "Expected 27, actual 34; fixture retained eight extensions and v28 column",
+    "evidence": "BATCH-01 original verifier logs",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-f2d02d1b7af92373c4b91c8d57739cb77ed834d60f3f1cfad1daaa5ac6cc4769.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D04",
+    "TestCaseID": "BATCH-01 / same host fallback",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Fallback test settles before durable terminal presentation",
+    "severity": "medium",
+    "ownerPackage": "G2.2/G8.5",
+    "rootCause": "After decoration is removed no animation keeps frames scheduled; pumpAndSettle returns while terminal receipt is acknowledged but presentation pending (busy=true, retry=0).",
+    "expected": "Result visible after async terminal presentation; four unique attempts and exact terminal events",
+    "actual": "Assertion ran at acknowledged=true/presented=false and busy=true",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6797ccf46cc1-c9cad23dc91d-9c7b9ef2/Explicit-Flutter-tests.stdout.log",
+    "files": [
+      "test/features/adventure/adventure_pair_renderer_parity_test.dart"
+    ],
+    "fix": "Bounded condition-based frame pumping before original visible and durable assertions; no assertion removed",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-85d01be73d854af0c8ef0c3326e41cd3374d7d08043e744a506dae4abfc4c405.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D05",
+    "TestCaseID": "BATCH-02",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Mixed-review goldens predate accepted M3 theme",
+    "severity": "low",
+    "ownerPackage": "G2.8/G8.5",
+    "rootCause": "Historical images center appbar titles; accepted lib/config/m3_theme.dart explicitly sets centerTitle:false (light/dark) and updated outlines.",
+    "expected": "Exact images of accepted design with current fixture, no new overflow",
+    "actual": "Four golden pixel diffs; behavior cases passed",
+    "evidence": "golden-review.json; BATCH-02 logs",
+    "files": [
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_active_typed_light.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\standard_recovered_active_typed_light.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_support_dark_high_contrast.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+    ],
+    "fix": "Reviewed all eight original/current images; updated only four obsolete snapshots, exact equality remains required.",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-3ba17442bfde50c2f23e2c9d2d783d656785b9fe9cce190cd4d83770213e5c65.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D06",
+    "TestCaseID": "BATCH-02",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Export fixture assumes 50 tables",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "Export assertions were not updated for eight accepted extension tables; verify exact canonical inventory and retain owner/export content assertions.",
+    "files": [
+      "test/features/export/research_lifecycle_export_test.dart"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D07",
+    "TestCaseID": "BATCH-04",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Replay fixture clock precedes replay start",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "PairHarness fixed 00:01 clock conflicts with replay start 00:02/00:03. Expose controlled fixture clock and explicitly advance it after replay preparation; preserve production negative-time rejection.",
+    "files": [
+      "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+      "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+      "test/features/learning/pair_matching/pair_practice_replay_test.dart"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D08",
+    "TestCaseID": "BATCH-04",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Pair host goldens predate accepted theme",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "Same accepted centerTitle:false theme delta as E7-D05; both before/after pairs reviewed.",
+    "files": [
+      "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png",
+      "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D09",
+    "TestCaseID": "BATCH-05",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester; synthetic local research",
+    "title": "Recommendation fixtures record under inactive or ambiguous owner",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Multi-owner synthetic setup predates unique-active-owner enforcement. Explicit transitions now record each owner history and restore owner-1 before read-only isolation assertions.",
+    "files": [
+      "test/features/recommendation/recommendation_policy_test.dart",
+      "test/features/recommendation/recommendation_use_cases_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": {
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
+      "result": "PASS",
+      "testsInCombinedCommand": 318,
+      "countInterpretation": "overlapping combined command, not unique per defect"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D10",
+    "TestCaseID": "BATCH-05",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester; synthetic local research",
+    "title": "Research and assessment transport reject current schema34",
+    "severity": "high",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Explicit client and Firestore schema allowlists stopped at28 despite schema29-34 migrations. Extended known versions only, retained exact issuer pins and rejection of future and noninteger versions. No rollout or deployment.",
+    "files": [
+      "lib/features/sync/domain/research_sync.dart",
+      "lib/features/sync/domain/sync_entity.dart",
+      "firestore.rules",
+      "test/features/research/research_sync_authorizer_test.dart",
+      "test/features/sync/assessment_run_sync_test.dart",
+      "test/security/firestore-rules.test.cjs"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": {
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
+      "result": "PASS",
+      "testsInCombinedCommand": 318,
+      "countInterpretation": "overlapping combined command, not unique per defect"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "rulesRetest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-economy-rules.json"
+  },
+  {
+    "DefectID": "E7-D11",
+    "TestCaseID": "BATCH-06",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Fake cloud-ID wrapper corrupts local retry snapshot identity",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Test wrapper forwarded a cloud-translated category claim to the local store. Bidirectional fixture translation now preserves local persisted identity; assertions verify both local snapshot and cloud retry identity.",
+    "files": [
+      "test/features/sync/sync_engine_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/0153c5563fcf-a1ef2f6baaf5-8e38654a/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-a53ff962810dd17ff9418500c89dc0f1e6e6345f45f18fcec4d0cdd65c7dc740.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D12",
+    "TestCaseID": "INTEGRATION-CONTROLS/INTEGRATION-MEDIA",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/PowerShell synthetic CLI fixtures",
+    "title": "Integration verifier references removed entrypoints and rejects current bounded tests",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Inherited runner retained production_learning_flow_test.dart and verify-android-e2e.ps1 after entrypoints moved. Current integration target selection now binds flutter-tester, hashes integration helpers and rejects traversal or broader-scope substitution. Defaults reference actual core-journey and selected-device smoke runner.",
+    "files": [
+      "tool/cli/verify-scope.ps1",
+      "tool/cli/tests/verify-scope-integration.tests.ps1"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/3095beabbdc7-c60646767053-5fae7ff6/verify-scope-integration.tests.ps1.stderr.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D13",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Restart fixture treats repeated answer as an independent accuracy sample",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "FirstAnswerAccuracy intentionally selects one first answer per owner/session/word identity. Scenario now creates a second pinned session, retaining exact two-attempt, correct/wrong, SRS, reward and outbox assertions.",
+    "files": [
+      "test/scenarios/production_learning_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": {
+      "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+      "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D14",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Complete inventory fixture finishes an inactive owner assessment",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Canonical assessment completion requires unique active owner. Seeding temporarily activates the intended synthetic owner and restores the original owner in finally; foreign inventory and merge isolation assertions remain.",
+    "files": [
+      "test/scenarios/guest_upgrade_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D15",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Mastery navigation fixture taps an unbuilt lazy-list action",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Weekly summary moves weakness action below the initial viewport. Test now scrolls the actual mastery list and asserts hit-testability before tapping, retaining route and live emergency-off checks.",
+    "files": [
+      "test/scenarios/production_feature_navigation_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": {
+      "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+      "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D16",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Complete upgrade scenario lacks newer owner table inventory",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Scenario inventory seed and identity columns predate eight extension tables and retained legacy rows. Added canonical plan/personal-set fixtures plus opaque ownership sentinels, explicit identities and owner-specific references, preserving positive-table and foreign-owner isolation checks.",
+    "files": [
+      "test/scenarios/guest_upgrade_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D17",
+    "TestCaseID": "BATCH-09",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Matching support fixture taps below the viewport after hint expansion",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Focused trace shows word-button center at y606 outside800x600 viewport after hint expansion. Fixture now settles hint layout, scrolls each actual control into view, asserts hit-testability and selected state, and retains exact feedback, guided class, hint level and empty SRS checks. Initial async-only hypothesis was insufficient; production diagnostics removed.",
+    "files": [
+      "test/screens/matching_mode_screen_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d68b3f8db0c4-71c43cceb4b2-0500554d/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-bf66f655b04095db53f910fa0427f72cb7a18173da54f888c6199e6dbe1929ff.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D18",
+    "TestCaseID": "static-analysis",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter analyze",
+    "title": "Static analysis gate reports source lints and disposable fixture syntax",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Inherited single-statement style, redundant casts/imports and equivalent constructor forms; analyzer cannot infer mounted through _isCurrent helper; matrix evidence uses print. Disposable fingerprint fixtures had invalid placeholder Dart under build.",
+    "files": [
+      "37 files in dart-fix-apply.log",
+      "lib/screens/study_reminder_settings_screen.dart",
+      "test/features/learning/session_configuration_mode_matrix_test.dart",
+      "tool/cli/tests/r15-scope.tests.ps1",
+      "tool/cli/tests/verify-scope-selection.tests.ps1"
+    ],
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze.log",
+    "status": "fixed-local-verified-G88-review-pending",
+    "fixSHA": null,
+    "retest": {
+      "static": "No issues found",
+      "regression": [
+        "BATCH-R01",
+        "BATCH-R02"
+      ],
+      "cli": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-e763c76181530b4ed06722eda7a6737ea2b15325ee6c3351f987cefdb85f3c6d.json"
+    },
+    "staticRetest": {
+      "status": "PASS",
+      "log": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze-retest.log",
+      "sha256": "a43ccdc6e7a44328f37379c3538caaf9facaf87a51091043c06cf3f0fc25d23c",
+      "result": "No issues found"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  }
+]

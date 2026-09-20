@@ -390,11 +390,19 @@ void main() {
               ),
             );
         await _seedOwnerAndWord(database, ownerId: 'owner-2', wordId: 'word-2');
+        await database.customStatement(
+          'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+          ['owner-2'],
+        );
         await _recordIncorrectPracticeAttempt(
           database,
           ownerId: 'owner-2',
           wordId: 'word-2',
           occurredAtUtc: now.subtract(const Duration(minutes: 2)),
+        );
+        await database.customStatement(
+          'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+          ['owner-1'],
         );
 
         final decisions = await progress.loadFlashcardFirstDecisions(

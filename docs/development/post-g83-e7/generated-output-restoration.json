@@ -1,0 +1,170 @@
+[
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_isolatedDiff.png",
+    "observedSha256": "aa5ef38eb43b6690558e6165ba4dddbe662bdcfd11d9e378de34a44d46654638",
+    "restoreSha256": "4e57ae9e0c27d281a782d48369a3d334a4589a3c2014c0b936fd5541e40a8648",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\aa5ef38eb43b6690.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_maskedDiff.png",
+    "observedSha256": "51401139cb0fe151d70d8380072e0bfc197f4761a5542d99394ffab64a30e08d",
+    "restoreSha256": "567acd1bb6d9833839ed1c5787ca4bcb1123221342952c0a6512b5ea36ac2002",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\51401139cb0fe151.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_masterImage.png",
+    "observedSha256": "78b401cc39e46796ef4ec9032c7b84b7b15555f8df5fdb48ee5366b2c1d78aee",
+    "restoreSha256": "3e0c2603c11008804c0d0013189f18e02e9db918c0567ab8b16d7dcc2db22c13",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\78b401cc39e46796.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_testImage.png",
+    "observedSha256": "c0ab09ab0632340149e1977adc14d14286a8946175ded5804287017b7ca96c8b",
+    "restoreSha256": "78b401cc39e46796ef4ec9032c7b84b7b15555f8df5fdb48ee5366b2c1d78aee",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\c0ab09ab06323401.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_isolatedDiff.png",
+    "observedSha256": "093f2b3c60b39efe8047d74ccc7a0c0f30510fcdac436c74d9a9f253cb1a286e",
+    "restoreSha256": "1cbf93e7f363ed4ca77636dfc07341139027b3a9933d23ee91a5d74e292839f1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\093f2b3c60b39efe.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_maskedDiff.png",
+    "observedSha256": "23b19a27275af39b718b8dbefa6c5f07bb31b4e9a7de57ea574c3f4a1b624600",
+    "restoreSha256": "dada006a4a2c9519c3a78de554fd03adee548a9d7e43fc4468f995a379ffbf73",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\23b19a27275af39b.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_masterImage.png",
+    "observedSha256": "7dd883416444d95c6f8f475d18a93d6e7e8b0b1f7313abb8312a5c07674361e1",
+    "restoreSha256": "dcb6fb8b378fb3a1c627425d28f802155fd78cf5d1967b3c9b1248a8afa699d2",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\7dd883416444d95c.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_testImage.png",
+    "observedSha256": "681a7ce42a9226432883c392b03dda570dc17e12b76ff47e1dadd99e4c8742e5",
+    "restoreSha256": "7dd883416444d95c6f8f475d18a93d6e7e8b0b1f7313abb8312a5c07674361e1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\681a7ce42a922643.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_isolatedDiff.png",
+    "observedSha256": "a2ed1d171fb10c75d40dcd0dc0d604405280262a44827d72325de256f32055f1",
+    "restoreSha256": "71b1eada99289e16f836591aff92785a784ebfeb64f94502d2beb510ffb9b6e8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\a2ed1d171fb10c75.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_maskedDiff.png",
+    "observedSha256": "5159a2c53bb1f9495afef5be03622ce44674a4d451990de1ac1dca91db604b4d",
+    "restoreSha256": "92cb67aea5b32ed1caaddefe83341fe1689b7afade19ca86cfc8b7c10dd6db2b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\5159a2c53bb1f949.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_masterImage.png",
+    "observedSha256": "34ff7be1998570eae77b3cf28a367f0e98b0d5227c1368c217dffcee8ce30e59",
+    "restoreSha256": "7b485314a2a1188976db1e46232852bd3ebbfb630704848533ca7a6cc3097720",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\34ff7be1998570ea.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_testImage.png",
+    "observedSha256": "12d0c2e791703f2868e667f2ef89cfd76681c6d02887e7dbd3f130efcde192d9",
+    "restoreSha256": "34ff7be1998570eae77b3cf28a367f0e98b0d5227c1368c217dffcee8ce30e59",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\12d0c2e791703f28.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_isolatedDiff.png",
+    "observedSha256": "1205571dd2e4afeed0e5197ec6a75c1b6d13c6377bae35d0e2b158b5e487f0aa",
+    "restoreSha256": "7908a7fc1169c68d73ed6a81d293272cc5b1fec2868e31e82c765a4186cea59d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\1205571dd2e4afee.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_maskedDiff.png",
+    "observedSha256": "c7b48052560237f5590ed276d22d38c24be4616aea42e76f78604a062ced0e67",
+    "restoreSha256": "53fc76ceebdda08b7edeb40e9bd137d2f207c06205435ff7623f2467ccdfd480",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\c7b48052560237f5.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_masterImage.png",
+    "observedSha256": "04716dd4ab6ae2dcf4a87bfbb13a58b234f0aabacee6f6cadcb55f742b7e974a",
+    "restoreSha256": "d1d338d5bbdf57160f73e5beb26a62012a0f1c40968c5c931f5220406e37cab5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\04716dd4ab6ae2dc.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_testImage.png",
+    "observedSha256": "5d18d164cf2227a96e83ac00ed956628703e8c14d2e75f84cf66d7c4dff88eed",
+    "restoreSha256": "04716dd4ab6ae2dcf4a87bfbb13a58b234f0aabacee6f6cadcb55f742b7e974a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\5d18d164cf2227a9.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_isolatedDiff.png",
+    "observedSha256": "1c0d74951e70df8bb84f1e46cd6d34d2255cdfff258d2bf35e4f5272119f9b4c",
+    "restoreSha256": "cb4e4edd5998e098cd3e0d8a22771fde225d1c20d7d3db7adf5d7964fc1db40a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\1c0d74951e70df8b.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_maskedDiff.png",
+    "observedSha256": "6426887eca8de0a2235d6bfe20a20ffa8cca4b92e144b73875120fa0be4d9d06",
+    "restoreSha256": "4d785013451861e369757286787ebd7c0c325ec03291a8af3e190a61e8927e93",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\6426887eca8de0a2.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_masterImage.png",
+    "observedSha256": "42185ca2fc057f0ae9c35310f16ad0c46f86556337211fed7654335f9175cce5",
+    "restoreSha256": "a176c83a5534b6b5df5af13f6520b40a3140fd4f6c31c96169ff0491e027175c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\42185ca2fc057f0a.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_testImage.png",
+    "observedSha256": "0f4672e06865ab396662abb0f6dd31e7f57df73583a99e6cbad354b5a6971bbe",
+    "restoreSha256": "42185ca2fc057f0ae9c35310f16ad0c46f86556337211fed7654335f9175cce5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\0f4672e06865ab39.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_isolatedDiff.png",
+    "observedSha256": "65c737383bcdd61d50b18a33ad0970165229c6efe96ff061582fb681681547bc",
+    "restoreSha256": "fb908ed703ce414912bf8b81d9af9a112a0fe6a781f40557fe19dbf7bb11f537",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\65c737383bcdd61d.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_maskedDiff.png",
+    "observedSha256": "6ec001071765cbec5314130d40435f01c3e65a83bf49c14998b8fb0a4508f346",
+    "restoreSha256": "c110c3a6e4e62ed0b475518df4ddb53e031433280339558bc99efbaf013cdf49",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\6ec001071765cbec.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_masterImage.png",
+    "observedSha256": "bfa47e05dca2288effce848c557444d24b2be6efe620e58f6c389b37dc490d01",
+    "restoreSha256": "fd549bbab8e8c904e404cd0fdc2596ef0fa809594cf1e847707ac17cd3b7e7aa",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\bfa47e05dca2288e.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_testImage.png",
+    "observedSha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d",
+    "restoreSha256": "bfa47e05dca2288effce848c557444d24b2be6efe620e58f6c389b37dc490d01",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\generated-output-archive\\c76c9f57aceb1215.png",
+    "reason": "test-generated failure pixels archived; restore historical accepted diagnostic asset"
+  }
+]

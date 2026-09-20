@@ -143,8 +143,9 @@ final class LegacyLearningSnapshot {
     try {
       source.execute('BEGIN');
       if (source.select('PRAGMA user_version').single.values.single != 1 ||
-          source.select('PRAGMA quick_check').single.values.single != 'ok')
+          source.select('PRAGMA quick_check').single.values.single != 'ok') {
         _reject();
+      }
       final tables = source
           .select(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
@@ -152,8 +153,9 @@ final class LegacyLearningSnapshot {
           .map((r) => r['name'])
           .toSet();
       if (tables.length != _columns.length ||
-          !tables.containsAll(_columns.keys))
+          !tables.containsAll(_columns.keys)) {
         _reject();
+      }
       // Admit the entire read-only transaction before transferring payloads
       // into Dart. Include WAL rows; file length alone is not a snapshot bound.
       // Six bytes per input byte bounds JSON escaping. Column names, scalar
@@ -197,8 +199,9 @@ final class LegacyLearningSnapshot {
             .map((r) => r['name'])
             .toSet();
         if (columns.length != entry.value.length ||
-            !columns.containsAll(entry.value))
+            !columns.containsAll(entry.value)) {
           _reject();
+        }
         final rows = source.select('SELECT * FROM ${entry.key} LIMIT 100001');
         count += rows.length;
         if (count > 100000) _reject();
@@ -211,9 +214,10 @@ final class LegacyLearningSnapshot {
               owner.isEmpty ||
               owner.trim() != owner ||
               owner.length > 200 ||
-              values['schema_version'] != 1)
+              values['schema_version'] != 1) {
             _reject();
-          owners.add(owner as String);
+          }
+          owners.add(owner);
           for (final value in values.values) {
             if (value != null && value is! String && value is! num) _reject();
             if (value is double && !value.isFinite) _reject();
@@ -281,8 +285,9 @@ Future<void> importLegacyLearningFiles(
     if (destination.existsSync()) return;
     final snapshots = sources.map(LegacyLearningSnapshot.read).toList();
     if (snapshots.isEmpty) return;
-    if (snapshots.any((s) => s.fingerprint != snapshots.first.fingerprint))
+    if (snapshots.any((s) => s.fingerprint != snapshots.first.fingerprint)) {
       _reject();
+    }
     final temporaryDirectory = await destination.parent.createTemp(
       '.legacy-import-',
     );

@@ -257,6 +257,7 @@ void main() {
           appVersion: 'synthetic',
           buildId: 'synthetic',
         );
+        h.now = h.operation.plan.createdAtUtc.add(const Duration(minutes: 1));
         await replay.start.start(h.operation);
         await schedule(await h.restore());
         final repeated = (await reader.read(
@@ -322,6 +323,7 @@ void main() {
           appVersion: 'synthetic',
           buildId: 'synthetic',
         );
+        h.now = h.operation.plan.createdAtUtc.add(const Duration(minutes: 1));
         await replay.start.start(h.operation);
         time = ActiveLearningTimeController(
           repository: DriftLearningTimeRepository(
@@ -804,6 +806,7 @@ void main() {
         appVersion: 'synthetic',
         buildId: 'synthetic',
       );
+      h.now = h.operation.plan.createdAtUtc.add(const Duration(minutes: 1));
       await replay.start.start(h.operation);
       var perfect = await h.restore();
       for (var i = 0; i < 4; i++) {

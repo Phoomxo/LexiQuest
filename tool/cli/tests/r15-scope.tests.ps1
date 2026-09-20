@@ -44,11 +44,11 @@ try {
         )) {
             $target = Join-Path $fixtureRoot $dependency
             New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
-            [IO.File]::WriteAllText($target, 'synthetic-before')
+            [IO.File]::WriteAllText($target, '// synthetic-before')
             $before = Get-SourceFingerprint -SelectedArea $area -ResolvedBaseSha 'same-base' -CurrentHeadSha 'same-head'
             $unchanged = Get-SourceFingerprint -SelectedArea $area -ResolvedBaseSha 'same-base' -CurrentHeadSha 'same-head'
             if ($before -ne $unchanged) { throw 'Identical source must retain its fingerprint' }
-            [IO.File]::WriteAllText($target, 'synthetic-after')
+            [IO.File]::WriteAllText($target, '// synthetic-after')
             $after = Get-SourceFingerprint -SelectedArea $area -ResolvedBaseSha 'same-base' -CurrentHeadSha 'same-head'
             if ($before -eq $after) { $failures.Add("$area ignores changed $dependency under unchanged HEAD") }
         }

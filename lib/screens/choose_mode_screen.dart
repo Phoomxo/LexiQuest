@@ -82,7 +82,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
       if (features?.isVisible(Feature.quiz) == true && handwriting != null)
         _LearningTile(
           key: const ValueKey<String>('home/learn/handwriting-scratchpad'),
-          glossary: NavigationGlossary.require('home/learn/handwriting-scratchpad'),
+          glossary: NavigationGlossary.require(
+            'home/learn/handwriting-scratchpad',
+          ),
           onTap: () => _openScratchpad(context),
         ),
       if (features?.isVisible(Feature.reading) == true)
@@ -490,17 +492,29 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     try {
       final dependencies = AppDependenciesScope.maybeOf(context);
       final database = dependencies?.database;
-      final registration = dependencies?.lessonModes?.resolve(LessonMode.handwritingScratchpad);
-      if (database == null || registration == null ||
-          dependencies?.features.isEnabled(Feature.quiz) != true) return;
-      final owners = await (database.select(database.localOwners)
-        ..where((row) => row.isActive.equals(true))).get();
-      if (!context.mounted || owners.length != 1 ||
-          dependencies?.features.isEnabled(Feature.quiz) != true) return;
-      await AppNavigator.pushPage<void>(context, AppPage<void>(
-        name: registration.routeName,
-        builder: (_) => HandwritingScratchpadRoute(ownerId: owners.single.id),
-      ));
+      final registration = dependencies?.lessonModes?.resolve(
+        LessonMode.handwritingScratchpad,
+      );
+      if (database == null ||
+          registration == null ||
+          dependencies?.features.isEnabled(Feature.quiz) != true) {
+        return;
+      }
+      final owners = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).get();
+      if (!context.mounted ||
+          owners.length != 1 ||
+          dependencies?.features.isEnabled(Feature.quiz) != true) {
+        return;
+      }
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: registration.routeName,
+          builder: (_) => HandwritingScratchpadRoute(ownerId: owners.single.id),
+        ),
+      );
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -519,8 +533,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     final registry =
         widget.featureRegistry ??
         AppDependenciesScope.maybeOf(context)?.features;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'home/learn/reading/library',
         builder: (_) => ProductionFeatureGate(
           feature: Feature.reading,
           registry: registry,

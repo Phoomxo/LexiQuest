@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrintSynchronously;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -42,7 +43,7 @@ void main() {
       ), throwsA(isA<SessionConfigurationResetRequired>()));
       expect(LessonModeRegistry(const []).resolve(mode), isNull);
       final capabilities = (registration.adapter as SessionConfigurableLessonModeAdapter).sessionConfigurationCapabilities;
-      print('B06_MODE_MATRIX:${jsonEncode({
+      debugPrintSynchronously('B06_MODE_MATRIX:${jsonEncode({
         'mode': mode.name, 'route': registration.routeName,
         'minItems': capabilities.minimumItemCount,
         'maxItems': capabilities.maximumItemCount,

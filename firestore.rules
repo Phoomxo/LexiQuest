@@ -875,7 +875,7 @@ service cloud.firestore {
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
         && payload.databaseSchemaVersion is int
-        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && fieldAssessmentRunFeatureContractOk(payload)
@@ -1020,7 +1020,7 @@ service cloud.firestore {
       // response/opportunity/event references in one atomic entity+receipt.
       return p.diff(a.runPins).affectedKeys().hasOnly(['id','permitId',
           'permitPayloadSha256','permitRevision','state','startedAtUtcMs','closedAtUtcMs'])
-        && p.databaseSchemaVersion is int && p.databaseSchemaVersion in [24, 25, 26, 27, 28]
+        && p.databaseSchemaVersion is int && p.databaseSchemaVersion in [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
         && p.startedAtUtcMs >= a.issuedAtUtcMs && p.startedAtUtcMs < a.expiresAtUtcMs;
     }
     function researchRunOk(uid, id) {

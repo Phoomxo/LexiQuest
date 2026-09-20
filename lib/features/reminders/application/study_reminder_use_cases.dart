@@ -529,14 +529,16 @@ final class StudyReminderUseCases {
     if (!await repository.isOwnerOperationTokenOwned(
       operationToken: token,
       nowUtc: _utcNow(),
-    ))
+    )) {
       throw StateError('reminder owner-operation lease was lost');
+    }
     if (await repository.activeOwnerId() != ownerId ||
         !await repository.isOwnerOperationTokenOwned(
           operationToken: token,
           nowUtc: _utcNow(),
-        ))
+        )) {
       throw StateError('reminder owner-operation authority changed');
+    }
   }
 
   Future<_PlatformDelta> _repairInactiveOwnerEntries(String activeOwner) async {
@@ -562,8 +564,9 @@ final class StudyReminderUseCases {
               candidate.platformId == entry.platformId &&
               candidate.ownerId == entry.ownerId &&
               candidate.reminderId == entry.reminderId,
-        ))
+        )) {
           continue;
+        }
         if (!await _orphanCleanupAllows(activeOwner, entry.ownerId)) break;
         try {
           await _cancelNative(entry.platformId);
@@ -591,10 +594,12 @@ final class StudyReminderUseCases {
     String? payloadOwner,
   ]) async {
     if (await repository.activeOwnerId() != activeOwner ||
-        !await _ownerOperationAllows(activeOwner))
+        !await _ownerOperationAllows(activeOwner)) {
       return false;
-    if (payloadOwner != null && !await _ownerOperationAllows(payloadOwner))
+    }
+    if (payloadOwner != null && !await _ownerOperationAllows(payloadOwner)) {
       return false;
+    }
     // Fence reads are asynchronous too. Never continue using the owner sample
     // from before those reads when another transition has already committed.
     return await repository.activeOwnerId() == activeOwner;
@@ -1313,8 +1318,9 @@ final class StudyReminderUseCases {
           if (entries.any(
             (entry) =>
                 entry.platformId == platformId && entry.ownerId != entryOwner,
-          ))
+          )) {
             continue;
+          }
         }
         await _cancelNative(platformId);
       } on Object catch (error) {

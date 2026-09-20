@@ -157,8 +157,9 @@ final class ReadingWordPin {
     for (final variant in this.acceptedVariants) {
       _text(variant, 512);
     }
-    if (_artifact == null)
+    if (_artifact == null) {
       throw const FormatException('Invalid reading answer set');
+    }
   }
   final String id, spelling, canonicalAnswer, checksum, normalizationRevision;
   final int revision;

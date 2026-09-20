@@ -238,6 +238,16 @@ Future<void> _runFallback(
     await tester.tap(find.byKey(const ValueKey('pair-retry')));
     await tester.pumpAndSettle();
   }
+  // Without the animated decoration, pumpAndSettle may stop while Drift is
+  // still acknowledging terminal presentation. Wait for the actual result,
+  // with a bounded deadline; retain every durable receipt assertion below.
+  for (
+    var i = 0;
+    i < 100 && find.byKey(const ValueKey('pair-result')).evaluate().isEmpty;
+    i++
+  ) {
+    await tester.pump(const Duration(milliseconds: 10));
+  }
   expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
   final finalState = await f.h.real.read(
     ownerId: f.h.owner,

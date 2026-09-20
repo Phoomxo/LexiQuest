@@ -589,8 +589,9 @@ final class DriftResearchSyncAuthorizer {
     ResearchSessionProof? selected;
     for (var index = 0; index < proofs.length; index++) {
       final proof = proofs[index];
-      if (rows[index]['is_deleted'] != 0 || proof.proofRevision < phase)
+      if (rows[index]['is_deleted'] != 0 || proof.proofRevision < phase) {
         continue;
+      }
       _require(await _knownProofAdmission(proof, reads));
       // Historical mirror pins rely on their own prior admission, not the
       // provenance marker of a different opportunity or event payload.

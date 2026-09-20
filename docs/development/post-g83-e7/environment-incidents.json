@@ -1,0 +1,19 @@
+[
+  {
+    "id": "E7-ENV01",
+    "cause": "Native LiteRT tests require model fixture absent on new worktree",
+    "recovery": "prepare-field-model.ps1 verified the fixture SHA; real local CPU classifier and benchmark retests passed. No device inference."
+  },
+  {
+    "id": "E7-ENV02",
+    "cause": "Submitting two integration files together completed controls but failed the second Flutter tester launch with unexpected log-reader exit",
+    "recovery": "Retained first target pass and original aggregate failure. Executed media as a separate bounded command per planned recipe; one case passed.",
+    "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-integration-5afbc324598ae6f19be78b2f82dd1390bce9e173aeea270cb14a48914467eada.json"
+  },
+  {
+    "id": "E7-ENV03",
+    "cause": "Initial AI backend run created .venv/pyvenv.cfg, changing the recorded environment fingerprint despite109 passing tests and unchanged tracked input hashes",
+    "recovery": "Preserved InputDrift receipt and logs; pre-synced locked dev dependencies for Voice and LM without GPU/train groups; rerun backend gates after environment preparation.",
+    "initialReceipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/subsystem-backendai.json"
+  }
+]

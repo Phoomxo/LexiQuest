@@ -149,7 +149,9 @@ final class _StudyReminderSettingsScreenState
         _reload();
       });
     } on StudyReminderMutationUnavailable {
-      if (_isCurrent(epoch)) Navigator.of(context).maybePop();
+      if (mounted && _isCurrent(epoch)) {
+        Navigator.of(context).maybePop();
+      }
     } on Object {
       if (!_isCurrent(epoch)) return;
       setState(() {
@@ -184,7 +186,9 @@ final class _StudyReminderSettingsScreenState
         _reload();
       });
     } on StudyReminderMutationUnavailable {
-      if (_isCurrent(epoch)) Navigator.of(context).maybePop();
+      if (mounted && _isCurrent(epoch)) {
+        Navigator.of(context).maybePop();
+      }
     } on Object {
       if (_isCurrent(epoch)) setState(() => _submitting = false);
     }

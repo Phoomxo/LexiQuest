@@ -27,8 +27,9 @@ final class QuestPeriod {
     required DateTime assignedAtUtc,
     required String timezoneId,
   }) {
-    if (!assignedAtUtc.isUtc)
+    if (!assignedAtUtc.isUtc) {
       throw ArgumentError('quest assignment must be UTC');
+    }
     final duration = definition.expiresIn;
     if (duration != null && duration.inMilliseconds <= 0) {
       throw ArgumentError('quest duration must be positive');

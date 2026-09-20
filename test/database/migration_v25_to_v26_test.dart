@@ -356,8 +356,9 @@ void main() {
           'assigned_at_utc_ms': 1,
         });
         final run = {..._run('a'), 'id': 'run:other'};
-        if (pin == 'assignment' || pin == 'treatment')
+        if (pin == 'assignment' || pin == 'treatment') {
           run['assignment_id'] = 'assignment:other';
+        }
         if (pin == 'protocol') run['protocol_id'] = 'other-protocol';
         if (pin == 'treatment') run['treatment'] = 'standard';
         await _insert(db, 'motivation_measurement_runs', run);
@@ -1056,7 +1057,7 @@ Iterable<(String, Map<String, Object?>)> _graph({
     );
   }
   if (canonical) yield ('learning_sessions', _session());
-  if (opportunity)
+  if (opportunity) {
     yield (
       'measurement_opportunities',
       {
@@ -1071,6 +1072,7 @@ Iterable<(String, Map<String, Object?>)> _graph({
         'server_updated_at_utc_ms': 24,
       },
     );
+  }
 }
 
 void _seedRaw(

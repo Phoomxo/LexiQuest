@@ -128,6 +128,7 @@ class PairHarness {
   late LearningUseCases learning;
   late PairMatchingStartOperation operation;
   var nextId = 0;
+  DateTime now = DateTime.utc(2026, 9, 5, 0, 1);
   String owner = 'synthetic-owner';
   Future<void> initialize({bool measured = false}) async {
     owner = pinnedPlan?.ownerId ?? owner;
@@ -184,7 +185,7 @@ class PairHarness {
       ),
       repository: repository,
       generateId: evidenceId ?? () => 'synthetic-evidence-${++nextId}',
-      nowUtc: () => DateTime.utc(2026, 9, 5, 0, 1),
+      nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: 'synthetic', buildId: 'synthetic'),
     );
     final plan =

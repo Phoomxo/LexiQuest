@@ -226,7 +226,7 @@ void main() {
           final pending = launch(kind, learning);
           final drained = pending.then<void>(
             (_) {},
-            onError: (Object _, StackTrace __) {},
+            onError: (Object _, StackTrace _) {},
           );
           try {
             await entered.future.timeout(const Duration(seconds: 3));

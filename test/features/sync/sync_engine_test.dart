@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -446,6 +447,10 @@ void main() {
       expect(operation.state, isNot('acknowledged'));
       expect(operation.acknowledgedAtUtcMs, isNull);
 
+      expect(
+        (jsonDecode(operation.attemptedMutationJson!) as Map)['operationId'],
+        translatingStore.localOperationId,
+      );
       nowUtc = nowUtc.add(const Duration(minutes: 6));
       gateway.onPush = (mutation) async => PushAcknowledged(
         operationId: mutation.operationId,
@@ -457,6 +462,10 @@ void main() {
       operation = await database.select(database.outboxOperations).getSingle();
       expect(retry.status, SyncRunStatus.completed);
       expect(retry.pushed, 1);
+      expect(gateway.pushedMutations.map((mutation) => mutation.operationId), [
+        translatingStore.cloudOperationId,
+        translatingStore.cloudOperationId,
+      ]);
       expect(translatingStore.acknowledgeCalls, 1);
       expect(
         translatingStore.lastAcknowledgementOperationId,
@@ -1190,7 +1199,7 @@ final class _CloudIdentitySyncStore implements SyncStore {
     required DateTime nowUtc,
   }) async {
     final begun = await delegate.beginAttempt(
-      claim: claim,
+      claim: _translate(claim, toLocal: true),
       ownerGateToken: ownerGateToken,
       nowUtc: nowUtc,
     );
@@ -1304,10 +1313,15 @@ final class _CloudIdentitySyncStore implements SyncStore {
     nowUtc: nowUtc,
   );
 
-  ClaimedSyncOperation _translate(ClaimedSyncOperation claim) {
+  ClaimedSyncOperation _translate(
+    ClaimedSyncOperation claim, {
+    bool toLocal = false,
+  }) {
     final mutation = claim.mutation;
-    if (mutation.operationId == cloudOperationId) return claim;
-    if (mutation.operationId != localOperationId ||
+    final targetId = toLocal ? localOperationId : cloudOperationId;
+    final sourceId = toLocal ? cloudOperationId : localOperationId;
+    if (mutation.operationId == targetId) return claim;
+    if (mutation.operationId != sourceId ||
         claim.localOperationId != localOperationId) {
       throw StateError('unexpected operation identity in test store');
     }
@@ -1319,7 +1333,7 @@ final class _CloudIdentitySyncStore implements SyncStore {
       releaseLastAttemptAtUtc: claim.releaseLastAttemptAtUtc,
       localOperationId: localOperationId,
       mutation: PushMutation(
-        operationId: cloudOperationId,
+        operationId: targetId,
         firebaseUid: mutation.firebaseUid,
         collection: mutation.collection,
         entityId: mutation.entityId,

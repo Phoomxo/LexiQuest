@@ -227,8 +227,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       } on Object {
         if (!_acceptsModeOperations ||
             epoch != _listenEpoch ||
-            _acceptedFinalEpoch == epoch)
+            _acceptedFinalEpoch == epoch) {
           return;
+        }
         _listenEpoch += 1;
         _speechSession?.cancel().ignore();
         setState(() {

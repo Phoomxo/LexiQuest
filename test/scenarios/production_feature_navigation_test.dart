@@ -828,7 +828,19 @@ Future<void> _openProductionEntry(
     case _EntrySurface.mastery:
       await tester.tap(find.byKey(const ValueKey('home/mastery')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(ValueKey(entryCase.id)));
+      final entry = find.byKey(ValueKey(entryCase.id));
+      await tester.scrollUntilVisible(
+        entry,
+        120,
+        scrollable: find
+            .descendant(
+              of: find.byType(MasteryDashboardScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(entry.hitTestable(), findsOneWidget);
+      await tester.tap(entry);
       await tester.pumpAndSettle();
     case _EntrySurface.bottom:
       final entry = find.byKey(ValueKey<String>(entryCase.id));

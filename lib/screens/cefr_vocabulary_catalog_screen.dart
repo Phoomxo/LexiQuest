@@ -5,6 +5,7 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/cefr_vocabulary_catalog.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'cefr_vocabulary_detail_screen.dart';
@@ -72,8 +73,10 @@ class _CatalogState extends State<CefrVocabularyCatalogScreen> {
     CefrVocabularyCatalog catalog,
     CefrCatalogWord word,
   ) async {
-    final index = await Navigator.of(context).push<int>(
-      MaterialPageRoute<int>(
+    final index = await AppNavigator.pushPage<int>(
+      context,
+      AppPage<int>(
+        name: 'home/learn/reading/cefr/vocabulary/detail',
         builder: (_) =>
             CefrVocabularyDetailScreen(word: word, canAdd: _vocabulary != null),
       ),

@@ -14,7 +14,7 @@ $root=Split-Path (Split-Path (Split-Path $runner -Parent) -Parent) -Parent
 $fixture=Join-Path $root ('build/mixed-scope-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path "$fixture/tool/cli/tests","$fixture/lib","$fixture/backend/ai_api","$fixture/build" -Force | Out-Null
 [IO.File]::WriteAllText("$fixture/.gitignore","build/`n")
-[IO.File]::WriteAllText("$fixture/lib/input.dart",'before')
+[IO.File]::WriteAllText("$fixture/lib/input.dart",'// before')
 [IO.File]::WriteAllText("$fixture/backend/ai_api/input.py",'before')
 [IO.File]::WriteAllText("$fixture/tool/cli/tests/first.ps1", "Add-Content (Join-Path `$PSScriptRoot '../../../backend/ai_api/input.py') 'mutated'")
 [IO.File]::WriteAllText("$fixture/tool/cli/tests/second.ps1", "Get-Content (Join-Path `$PSScriptRoot '../../../backend/ai_api/input.py') | Out-Null")

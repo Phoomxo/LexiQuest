@@ -1,0 +1,2035 @@
+[
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\subsystem-backendai-a41c5b8e2fef.json",
+    "sha256": "a41c5b8e2fef5dfbcfde6c31163519de2e0300058cdaba2ac72a7553dc65aa8f",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "dcd9ed0439644586e8bdee4f30494bef4ed46921256273b18a0301031dff778e",
+    "postFingerprint": "dcd9ed0439644586e8bdee4f30494bef4ed46921256273b18a0301031dff778e",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "AI API tests",
+        "FilePath": "uv",
+        "Arguments": [
+          "run",
+          "--project",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\ai_api",
+          "--frozen",
+          "--group",
+          "dev",
+          "--no-group",
+          "llm",
+          "pytest",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\ai_api\\tests",
+          "-q"
+        ],
+        "SourceArea": "BackendAI",
+        "commandKey": "ee83d1bbf68ae6fef0e29bf74f6553d2dd565c01a3faf5c8bbb4d3fc1fcd69fd"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\8a722f6db70641f7-AI-API-tests.stdout.log",
+        "sha256": "8a722f6db70641f72054decb3217c16638bef53307ce56671d89e77cde2b24f7"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-AI-API-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\subsystem-backendlm-fe0a45525254.json",
+    "sha256": "fe0a45525254a93ca67ddb431fdb1a16bb2a80d2463521f3dfa890fc5edcfafa",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "403674729a9985eb53045e786d6b7f1795219e433a6cc5b45d44cffbf5e60761",
+    "postFingerprint": "403674729a9985eb53045e786d6b7f1795219e433a6cc5b45d44cffbf5e60761",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "Local LM tests",
+        "FilePath": "uv",
+        "Arguments": [
+          "run",
+          "--project",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\lexiquest_lm",
+          "--frozen",
+          "--group",
+          "dev",
+          "--no-group",
+          "train",
+          "pytest",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\lexiquest_lm\\tests",
+          "-q"
+        ],
+        "SourceArea": "BackendLM",
+        "commandKey": "8dbd9ea4cb2fabcfb503fa16d8fdc51dfac224109a6070a01d930f9aa65a9397"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\494ca57d9b0df835-Local-LM-tests.stdout.log",
+        "sha256": "494ca57d9b0df83536fd9895ff8769c3f727e9a7a54dae57ad3008fd793172b7"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Local-LM-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\subsystem-backendvoice-50720df6638f.json",
+    "sha256": "50720df6638f4c5146c3220d42d171dfe20d15efedb03fbf8a769d094a3f55f4",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "aebc2267263bd92af82b114f410d6c8f282a5a3f5db482d1843300942a5df0a5",
+    "postFingerprint": "aebc2267263bd92af82b114f410d6c8f282a5a3f5db482d1843300942a5df0a5",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "Voice API tests",
+        "FilePath": "uv",
+        "Arguments": [
+          "run",
+          "--project",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\voice_api",
+          "--frozen",
+          "--group",
+          "dev",
+          "--no-group",
+          "gpu",
+          "pytest",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\backend\\voice_api\\tests",
+          "-q",
+          "--ignore",
+          "backend\\voice_api\\tests\\integration"
+        ],
+        "SourceArea": "BackendVoice",
+        "commandKey": "ed7d526a654c9d9f2d859079ec8573264b935a851b337c4017287202384d48b7"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0357d879b5576949-Voice-API-tests.stdout.log",
+        "sha256": "0357d879b557694962c83e8361334e3897407c0efadd6753d0cbf4faad7ddae9"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Voice-API-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-economy-rules-81fe5080c0f1.json",
+    "sha256": "81fe5080c0f1df192fa8be6e743dc1516301a9c48d23297858a9c77afb55444c",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "7da6487a851e584384ffd58322689e2162539c66c501edf0706508afb3e579ab",
+    "postFingerprint": "7da6487a851e584384ffd58322689e2162539c66c501edf0706508afb3e579ab",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "Firestore rules tests",
+        "FilePath": "npm",
+        "Arguments": [
+          "run",
+          "test:rules"
+        ],
+        "SourceArea": "Economy",
+        "commandKey": "45e1056f00f663aaab9e9c610e4db862383accccdc7063a3de00f5dee3becd83"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\218d58f1e56ff85c-Firestore-rules-tests.stdout.log",
+        "sha256": "218d58f1e56ff85c48508b3c186d429824972712ef65e894d4340350fde50a78"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a7a706563466b270-Firestore-rules-tests.stderr.log",
+        "sha256": "a7a706563466b270184d7eebb9ddcd87619cc074965f4ae0409cf32f88ec0356"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-integration-445ce7d66b3bf7079f811e8c99f631b84c58034835ddb9b014946acdfd02ac11-47a4a997653b.json",
+    "sha256": "47a4a997653bc1fc0c4c832b6c5985a1b28b11a4d3cbad1175ba6b326e5c0c6f",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "0724ad3f7ea45ec6e7c006ffa93649eeb00471e93e8a8f918cce86a4d0e558b8",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "-d",
+          "flutter-tester",
+          "integration_test/field_trial_feature_controls_test.dart",
+          "integration_test/field_trial_media_smoke_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Integration",
+        "commandKey": "20ba7a222a4df4f9112f07f0554c7b2e22762476dee67af854629df0d04a05d8"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\14d7ffea06f10bf6-Explicit-Flutter-tests.stdout.log",
+        "sha256": "14d7ffea06f10bf621720fa8aa63a66a7f5d7e956e887a801eca968a7ac82b23"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d0489c5a5067ecdd-Explicit-Flutter-tests.stderr.log",
+        "sha256": "d0489c5a5067ecddb766844539eed2f3edfc2ea36dd859febb9f30bc601ef04e"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-integration-5afbc324598ae6f19be78b2f82dd1390bce9e173aeea270cb14a48914467eada-0f2103c0e495.json",
+    "sha256": "0f2103c0e495591a76461afed5f1bb238b43cb7c8d0d27e568fbf0c522afc477",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "0724ad3f7ea45ec6e7c006ffa93649eeb00471e93e8a8f918cce86a4d0e558b8",
+    "postFingerprint": "0724ad3f7ea45ec6e7c006ffa93649eeb00471e93e8a8f918cce86a4d0e558b8",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "-d",
+          "flutter-tester",
+          "integration_test/field_trial_media_smoke_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Integration",
+        "commandKey": "6f95923680e11b775f5c32dde46f6087bb482d2510bdcd16034f54840ebd405a"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\43eb1f5c961ac945-Explicit-Flutter-tests.stdout.log",
+        "sha256": "43eb1f5c961ac945b7ff01ee8c38b7600ef2305c2410fa8e8932e5da022bf438"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-0654f09b368c6d06c96bf392bd150143295b8f298284cc4088f3c68884c31a08-8af0552433d6.json",
+    "sha256": "8af0552433d6f3487f5dc4c9533d3b23f041d289364325ebe9918945281a99c8",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "12b18c8cfe07d6fd69fd78c1e630c684313241cc4222b29f72efca2b1c315deb",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/scenarios/current_activity_evidence_bootstrap_test.dart",
+          "test/scenarios/device_certification_journey_test.dart",
+          "test/scenarios/file_backed_sync_recovery_test.dart",
+          "test/scenarios/guest_upgrade_restart_test.dart",
+          "test/scenarios/production_feature_navigation_test.dart",
+          "test/scenarios/production_learning_restart_test.dart",
+          "test/scenarios/production_vocabulary_restart_test.dart",
+          "test/scenarios/runtime_kill_switch_journey_test.dart",
+          "test/screens/accessibility_smoke_test.dart",
+          "test/screens/achievements_screen_test.dart",
+          "test/screens/ai_tutor_screen_test.dart",
+          "test/screens/ai_tutor_settings_screen_test.dart",
+          "test/screens/associative_reading_launcher_screen_test.dart",
+          "test/screens/associative_reading_session_screen_test.dart",
+          "test/screens/avatar_equipment_screen_test.dart",
+          "test/screens/boss_battle_screen_test.dart",
+          "test/screens/cefr_article_reader_screen_test.dart",
+          "test/screens/cefr_diagnostic_test_screen_test.dart",
+          "test/screens/cefr_editorial_screen_test.dart",
+          "test/screens/cefr_practice_example_test.dart",
+          "test/screens/cefr_selection_screen_test.dart",
+          "test/screens/cefr_vocabulary_catalog_screen_test.dart",
+          "test/screens/choose_mode_screen_test.dart",
+          "test/screens/definition_quiz_screen_test.dart",
+          "test/screens/dictation_quiz_screen_test.dart",
+          "test/screens/export_center_flow_test.dart",
+          "test/screens/export_center_screen_test.dart",
+          "test/screens/fill_in_the_blanks_screen_test.dart",
+          "test/screens/firebase_registration_recovery_test.dart",
+          "test/screens/game_launcher_screen_test.dart",
+          "test/screens/gemini_settings_screen_test.dart",
+          "test/screens/ghost_shadow_duel_screen_test.dart",
+          "test/screens/learning_calendar_screen_test.dart",
+          "test/screens/learning_goals_screen_test.dart",
+          "test/screens/learning_history_screen_test.dart",
+          "test/screens/learning_pack_detail_screen_test.dart",
+          "test/screens/learning_preference_quiz_screen_test.dart",
+          "test/screens/learning_world_map_screen_test.dart",
+          "test/screens/local_reading_library_screen_test.dart",
+          "test/screens/login_guest_mode_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "2a7afb31a1cf88d22f0e3de17d9f0c7febbf6f62b33a8341444267e4d924fd5b"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\69eb88983d8d48b2-Explicit-Flutter-tests.stdout.log",
+        "sha256": "69eb88983d8d48b2975ae6eed7f7871f5cd22b3ecc06f34c258acc42e13219d2"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-1a9f4b8f284610e6b389eccf68c921f48327f240bf1833f83aad327a2e3f2aee-9bcd60cde220.json",
+    "sha256": "9bcd60cde220fc5041d158cdfab8d53e9c616c77b05aa8751d5fcd1dfc3c1a23",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "2236f01097e4217ab2fe65568bb3baf8014faaeacaff6dffdd1fc89347afe079",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/research/research_sync_authorizer_test.dart",
+          "test/features/sync/assessment_run_sync_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "schema"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "dc12e5d1c96ee4cf581972b89cc85e01be731673794f734120599a9b7ff9f5aa"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\cf4eaf3b673c93c9-Explicit-Flutter-tests.stdout.log",
+        "sha256": "cf4eaf3b673c93c9ebe22293188132e1e27a0ccb9b3141e865c2650534eeb71c"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-29efff5ab86237cf29431e1f366fb9bf33737a2a14cc5cf244d95fa77f13eb19-f1af5a0b8cff.json",
+    "sha256": "f1af5a0b8cff271d5d828c701ac9ea2795e390dc36bfaa2c0bb1d4887b50c300",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "a1ef2f6baaf53273a73f0234c8faa3609199c945b8321d31e284429e2df585da",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/research/research_session_proof_test.dart",
+          "test/features/research/research_sync_authorizer_test.dart",
+          "test/features/review/content_quality_report_repository_test.dart",
+          "test/features/review/content_report_sheet_test.dart",
+          "test/features/review/content_report_use_cases_test.dart",
+          "test/features/review/learner_intent_repository_test.dart",
+          "test/features/rewards/avatar_progression_policy_test.dart",
+          "test/features/rewards/data/drift_economy_cutover_test.dart",
+          "test/features/rewards/data/drift_reward_projection_rebuilder_test.dart",
+          "test/features/rewards/economy_transaction_policy_test.dart",
+          "test/features/rewards/projection_rebuild_v2_test.dart",
+          "test/features/rewards/reward_eligibility_test.dart",
+          "test/features/rewards/reward_use_cases_test.dart",
+          "test/features/rewards/shadow_reward_orchestrator_test.dart",
+          "test/features/session/shared_preferences_app_entry_state_store_test.dart",
+          "test/features/sync/achievement_unlock_sync_test.dart",
+          "test/features/sync/assessment_run_sync_test.dart",
+          "test/features/sync/background_sync_scheduler_test.dart",
+          "test/features/sync/cloud_sync_policy_test.dart",
+          "test/features/sync/drift_sync_store_test.dart",
+          "test/features/sync/experiment_assignment_sync_test.dart",
+          "test/features/sync/firestore_sync_gateway_test.dart",
+          "test/features/sync/learner_preferences_sync_test.dart",
+          "test/features/sync/learning_event_sync_test.dart",
+          "test/features/sync/research_assessment_rollout_test.dart",
+          "test/features/sync/research_gateway_transaction_fence_test.dart",
+          "test/features/sync/research_measurement_sync_test.dart",
+          "test/features/sync/research_session_proof_transport_test.dart",
+          "test/features/sync/research_sync_contract_test.dart",
+          "test/features/sync/research_withdrawal_reopen_test.dart",
+          "test/features/sync/reward_transaction_sync_test.dart",
+          "test/features/sync/srs_state_sync_test.dart",
+          "test/features/sync/study_reminder_sync_test.dart",
+          "test/features/sync/sync_contract_test.dart",
+          "test/features/sync/sync_engine_test.dart",
+          "test/features/sync/sync_server_read_provenance_test.dart",
+          "test/features/sync/sync_trigger_test.dart",
+          "test/features/time_tracking/active_learning_time_controller_test.dart",
+          "test/features/time_tracking/focus_timer_controller_test.dart",
+          "test/features/time_tracking/focus_timer_widget_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "0153c5563fcfaaafe81f254a333a3e0185fdb0f617a1ad9877b9468e24af43b2"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e96dbd7b1843c1ee-Explicit-Flutter-tests.stdout.log",
+        "sha256": "e96dbd7b1843c1eede1e5148b9bd79f998df5bfd131583fb1e9ba69c3afa5a8d"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-30bc5224def0ee5fe8af65c0d4a73ccb53060904530916f12d89377a6d3199fe-ff8ef62e1dbb.json",
+    "sha256": "ff8ef62e1dbbb95c573b962713c56d2b24495243b5ad26becde70c4a6aebeeb4",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "InputDrift",
+    "fingerprint": "2ac7e860eeff4f7abb5afc99be142138e4fe66d33c19325591f52623a2aa99ec",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/adventure/presentation/adventure_map_list_parity_test.dart",
+          "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart",
+          "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+          "test/features/adventure/presentation/adventure_motivation_accessibility_test.dart",
+          "test/features/adventure/presentation/adventure_pair_experience_test.dart",
+          "test/features/adventure/presentation/adventure_pair_renderer_test.dart",
+          "test/features/adventure/presentation/adventure_result_lifecycle_screen_test.dart",
+          "test/features/adventure/presentation/adventure_result_screen_test.dart",
+          "test/features/adventure/presentation/adventure_today_entry_card_test.dart",
+          "test/features/adventure/presentation/today_experience_host_test.dart",
+          "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "test/features/ai_tutor/authored_quality_transport_test.dart",
+          "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
+          "test/features/ai_tutor/f04_tutor_fenced_regression_test.dart",
+          "test/features/ai_tutor/owner_operation_coordinator_test.dart",
+          "test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart",
+          "test/features/assessment/assessment_comparison_test.dart",
+          "test/features/assessment/assessment_isolation_test.dart",
+          "test/features/assessment/assessment_use_cases_test.dart",
+          "test/features/assessment/drift_assessment_repository_test.dart",
+          "test/features/companion/companion_reaction_catalog_test.dart",
+          "test/features/companion/contextual_companion_widget_test.dart",
+          "test/features/consent/research_consent_use_cases_test.dart",
+          "test/features/device_model/device_model_use_cases_test.dart",
+          "test/features/device_model/drift_model_download_repository_test.dart",
+          "test/features/device_model/float_classifier_test.dart",
+          "test/features/device_model/http_model_byte_source_test.dart",
+          "test/features/device_model/litert_benchmark_test.dart",
+          "test/features/device_model/litert_image_classifier_test.dart",
+          "test/features/device_model/model_benchmark_test.dart",
+          "test/features/device_model/model_download_manager_test.dart",
+          "test/features/device_model/model_manifest_test.dart",
+          "test/features/events/event_envelope_v2_test.dart",
+          "test/features/events/event_v1_to_v2_adapter_test.dart",
+          "test/features/export/export_use_cases_test.dart",
+          "test/features/export/file_selector_export_store_test.dart",
+          "test/features/export/research_lifecycle_export_test.dart",
+          "test/features/export/research_session_proof_lifecycle_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "3c78ba69f1f315a6a1c81ee1a02f2395be3b3193bb45b750a389fc0550d053c0"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9460ea4cae6b0aec-Explicit-Flutter-tests.stdout.log",
+        "sha256": "9460ea4cae6b0aec69e5ea1b99dcc2f015d3ed0cbc6be566e56612a8cf155f3e"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-3ba17442bfde50c2f23e2c9d2d783d656785b9fe9cce190cd4d83770213e5c65-8581ca448248.json",
+    "sha256": "8581ca4482484ce513fb5a21c175f898f5caf753289cac37dbb7c7e566236fda",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "3a7156c833eb01ea052abbcbb23dbb8d38efac3364a3624c275e084e42403fbc",
+    "postFingerprint": "3a7156c833eb01ea052abbcbb23dbb8d38efac3364a3624c275e084e42403fbc",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "af05da0d9d5fe4d675f0d81992720dd96279bad1d3ca2e969adfdb2a46c231a8"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\66c0c39db9914f09-Explicit-Flutter-tests.stdout.log",
+        "sha256": "66c0c39db9914f093c2194e46174c564497ffc1560afbc80699517767067e560"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-3cf19891fffc99df7dd2174d509a1756a424a729145d206d9cd1afe822d61550-6df730685f8e.json",
+    "sha256": "6df730685f8e6a1d8cd5ec0069edebab079e64bc0ca1d9bcd7b41be5ab5263a0",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "f82d80331cf61f42206f29dd3dcff9d515c55f5c535660ded971432346b64d04",
+    "postFingerprint": "f82d80331cf61f42206f29dd3dcff9d515c55f5c535660ded971432346b64d04",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/ai/ai_models_test.dart",
+          "test/ai/content_provider_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "fe79739386698f358f7c0be92023d15aaadbe03d423697f44006807e8149910e"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9083476fdd5d67d2-Explicit-Flutter-tests.stdout.log",
+        "sha256": "9083476fdd5d67d2b58545952d3ca286e5df0fc5aec54804b0a839b4e7b1a9fd"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-68017eba290e0349eceb1018c03a110f83b52d5512906fe977b5bd0aaf074768-9bb34ce8070c.json",
+    "sha256": "9bb34ce8070c0525b1162e5565dbd025a94b04120c376636184212ae2b403e45",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "8430c5cbfc0bf7659bc096815d1bd6b214a39097447555c3e7d2249aa3828a1d",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/matching_mode_screen_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "explicit support is guided practice and never mastery"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "f273b6f981577d48fd5e5b807ef003aa44ea569cd37d8bcc42ab54144ee95c6b"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\687bcad16cb93701-Explicit-Flutter-tests.stdout.log",
+        "sha256": "687bcad16cb937010e0deb9aff4d9a4c95e2a8066c0bda4dc2934a8ea7b6be0d"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-6ae31ad8daaf00f965d7c53c3406aa226714b94e3b0fed987546c0930682ede1-3fb7e044faea.json",
+    "sha256": "3fb7e044faea0b1529523fc8e697827e392abb2e52d5b59a361083275c405c7a",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "12b18c8cfe07d6fd69fd78c1e630c684313241cc4222b29f72efca2b1c315deb",
+    "postFingerprint": "12b18c8cfe07d6fd69fd78c1e630c684313241cc4222b29f72efca2b1c315deb",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/time_tracking/learning_time_repository_test.dart",
+          "test/features/today_hub/today_hub_reader_test.dart",
+          "test/features/vocabulary/cefr_catalog_import_test.dart",
+          "test/features/vocabulary/cefr_editorial_catalog_test.dart",
+          "test/features/vocabulary/cefr_editorial_import_test.dart",
+          "test/features/vocabulary/cefr_practice_examples_test.dart",
+          "test/features/vocabulary/cefr_sense_review_test.dart",
+          "test/features/vocabulary/cefr_vocabulary_catalog_test.dart",
+          "test/features/vocabulary/drift_vocabulary_repository_test.dart",
+          "test/features/vocabulary/expanded_cefr_catalog_test.dart",
+          "test/features/vocabulary/import_vocabulary_test.dart",
+          "test/features/vocabulary/packaged_starter_catalog_test.dart",
+          "test/features/vocabulary/vocabulary_meaning_boundary_test.dart",
+          "test/features/vocabulary/vocabulary_use_cases_test.dart",
+          "test/features/voice/route_voice_session_mixin_test.dart",
+          "test/learning/adaptive_associative_scheduler_test.dart",
+          "test/learning/associative_scheduler_validation_test.dart",
+          "test/learning/learning_domain_foundation_test.dart",
+          "test/learning/learning_event_test.dart",
+          "test/learning/vocabulary_mixer_test.dart",
+          "test/navigation/navigation_glossary_test.dart",
+          "test/phase_minus_1/week_1_2_verification_test.dart",
+          "test/progress/local_progress_repository_test.dart",
+          "test/runtime/app_build_info_test.dart",
+          "test/runtime/app_start_route_resolver_test.dart",
+          "test/runtime/central_cost_policy_test.dart",
+          "test/runtime/circuit_breaker_test.dart",
+          "test/runtime/download_counter_test.dart",
+          "test/runtime/field_feature_registry_test.dart",
+          "test/runtime/local_storage_readiness_app_test.dart",
+          "test/runtime/persisted_registries_test.dart",
+          "test/runtime/production_feature_gate_test.dart",
+          "test/runtime/registries_test.dart",
+          "test/runtime/resource_disposer_stack_test.dart",
+          "test/runtime/runtime_feature_controls_test.dart",
+          "test/runtime/supabase_publishable_key_test.dart",
+          "test/scenarios/adventure_learning_restart_test.dart",
+          "test/scenarios/adventure_offline_catalog_recovery_test.dart",
+          "test/scenarios/ai_voice_fallback_journey_test.dart",
+          "test/scenarios/associative_reading_restart_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "abd3abee056a17282b59f9287b22b575220a182d7af301a89664b0343e505f7d"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2b3cdb9e84d5a404-Explicit-Flutter-tests.stdout.log",
+        "sha256": "2b3cdb9e84d5a404e93258f07b514067f3c1327cae122d2c154460893fb0c109"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-76c7e9c5ff3ca3094112a0fe7e83d76116f777cfee1be7a1c5192b35ebdb75a9-8219e3a75f5b.json",
+    "sha256": "8219e3a75f5bdfb50abf1c3fc6ae45d51bc9a9eeac5b0386d3c8dcf9e0d92864",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "3a7156c833eb01ea052abbcbb23dbb8d38efac3364a3624c275e084e42403fbc",
+    "postFingerprint": "3a7156c833eb01ea052abbcbb23dbb8d38efac3364a3624c275e084e42403fbc",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/gemini/ai_tutor_gateway_factory_test.dart",
+          "test/features/gemini/gemini_rest_gateway_test.dart",
+          "test/features/gemini/gemini_tutor_use_cases_test.dart",
+          "test/features/gemini/retry_gemini_gateway_test.dart",
+          "test/features/gemini/secure_gemini_settings_store_test.dart",
+          "test/features/goals/learning_goal_use_cases_test.dart",
+          "test/features/history/learning_history_reader_test.dart",
+          "test/features/history/learning_history_replay_test.dart",
+          "test/features/identity/drift_local_owner_repository_test.dart",
+          "test/features/identity/identity_mapping_test.dart",
+          "test/features/identity/research_owner_upgrade_test.dart",
+          "test/features/identity/upgrade_guest_owner_test.dart",
+          "test/features/learning/answer_feedback_panel_test.dart",
+          "test/features/learning/assessment_evidence_isolation_test.dart",
+          "test/features/learning/current_activity_evidence_test.dart",
+          "test/features/learning/data/drift_learning_projection_rebuilder_test.dart",
+          "test/features/learning/definition_quiz_mode_adapter_test.dart",
+          "test/features/learning/drift_associative_learning_adapter_test.dart",
+          "test/features/learning/drift_learning_event_store_test.dart",
+          "test/features/learning/drift_learning_repository_test.dart",
+          "test/features/learning/evidence_context_test.dart",
+          "test/features/learning/evidence_eligibility_policy_test.dart",
+          "test/features/learning/f02_session_admission_test.dart",
+          "test/features/learning/first_answer_accuracy_test.dart",
+          "test/features/learning/handwriting_scratchpad_test.dart",
+          "test/features/learning/learning_recovery_foundation_test.dart",
+          "test/features/learning/learning_side_effect_reconciler_test.dart",
+          "test/features/learning/learning_use_cases_test.dart",
+          "test/features/learning/lesson_mode_registry_test.dart",
+          "test/features/learning/matching_mode_adapter_test.dart",
+          "test/features/learning/native_mode_adapters_test.dart",
+          "test/features/learning/pair_matching/pair_active_timer_test.dart",
+          "test/features/learning/pair_matching/pair_board_accessibility_test.dart",
+          "test/features/learning/pair_matching/pair_board_golden_test.dart",
+          "test/features/learning/pair_matching/pair_board_view_test.dart",
+          "test/features/learning/pair_matching/pair_completion_clock_test.dart",
+          "test/features/learning/pair_matching/pair_configured_disposition_test.dart",
+          "test/features/learning/pair_matching/pair_matching_atomic_start_test.dart",
+          "test/features/learning/pair_matching/pair_matching_checkpoint_codec_test.dart",
+          "test/features/learning/pair_matching/pair_matching_compatibility_rollout_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "ce78cbf5e1243b233193d776b9e847c156ad65e4672fdd48cc21a8beea1d762b"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f3f693f17159d723-Explicit-Flutter-tests.stdout.log",
+        "sha256": "f3f693f17159d723bfc677844b6e637baca70140ce15df0c7b94f7c6660060c9"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-795ddf5d395ad4f6963cbecd1393e37c58c365a120e9441f2bbb21003baf7bb8-0f7862e6afe6.json",
+    "sha256": "0f7862e6afe6f007ab632fed02f08ae2ebbc32e4cee9fad5e719eee0ff137464",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "4db0c83e6ed2454d01e0764be47277820d85ecd6a5486347e944666a52275b8e",
+    "postFingerprint": "4db0c83e6ed2454d01e0764be47277820d85ecd6a5486347e944666a52275b8e",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/architecture/final_8_44_test_plan_contract_test.dart",
+          "test/architecture/fitness_test.dart",
+          "test/data/local/legacy_learning_import_test.dart",
+          "test/database/migration_v25_to_v26_test.dart",
+          "test/features/adventure/adventure_pair_renderer_parity_test.dart",
+          "test/features/device_model/model_download_manager_test.dart",
+          "test/features/export/research_lifecycle_export_test.dart",
+          "test/features/identity/drift_owner_upgrade_repository_test.dart",
+          "test/features/learning/drift_learning_repository_test.dart",
+          "test/features/learning/first_answer_accuracy_test.dart",
+          "test/features/learning/handwriting_scratchpad_test.dart",
+          "test/features/learning/learning_use_cases_test.dart",
+          "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+          "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+          "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+          "test/features/learning/session_configuration_mode_matrix_test.dart",
+          "test/features/quest/drift_quest_repository_test.dart",
+          "test/features/quest/quest_catalog_provider_test.dart",
+          "test/features/quest/quest_definition_codec_test.dart",
+          "test/features/quest/quest_learning_integration_test.dart",
+          "test/features/quest/quest_models_test.dart",
+          "test/features/quest/quest_period_test.dart",
+          "test/features/quest/quest_use_cases_test.dart",
+          "test/features/recommendation/recommendation_policy_test.dart",
+          "test/features/recommendation/recommendation_use_cases_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "dded2d00155dea8a66bcbfd5ac10cefc228367ec6c65ab96c55b5d60cab3df2c"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1a16df519138d99e-Explicit-Flutter-tests.stdout.log",
+        "sha256": "1a16df519138d99ed13b8a9ec76ed52a6a4908b7ee1f147fbac4c608a35b1dd7"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-85d01be73d854af0c8ef0c3326e41cd3374d7d08043e744a506dae4abfc4c405-3541eb3732fe.json",
+    "sha256": "3541eb3732fe915131110b326c3db2f7a5c525389d37bd8eed71f50e91862cf3",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "2ac7e860eeff4f7abb5afc99be142138e4fe66d33c19325591f52623a2aa99ec",
+    "postFingerprint": "2ac7e860eeff4f7abb5afc99be142138e4fe66d33c19325591f52623a2aa99ec",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/adventure/adventure_pair_renderer_parity_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "same host fallback"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "4deec0e76fcbed1f33290769b135606b26fb12e700989ee398370c964b298af3"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\8d23d3e44fbacb47-Explicit-Flutter-tests.stdout.log",
+        "sha256": "8d23d3e44fbacb47fc8f0481c031b6341bb38473d3b0a09a9360669e3bab2f7e"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-8ceca0723dd0def862ebbd4268c05be3379f44e242643f57793d2a0b307565dc-91d89f2a63bd.json",
+    "sha256": "91d89f2a63bd0a2d4ab592ada7c98200baddb74f6cdd52bc92956caeae123365",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "5fd21c27c0b194f219ef6e09e4e6a78cb938f350aa466d6d9f851088fc076c7e",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/scenarios/production_learning_restart_test.dart",
+          "test/scenarios/guest_upgrade_restart_test.dart",
+          "test/scenarios/production_feature_navigation_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "02209eb66825d880ee7aef0a10d0f42b7db06217e0c0e049805c382a64c86ca3"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6917a64159f1dfc5-Explicit-Flutter-tests.stdout.log",
+        "sha256": "6917a64159f1dfc5f9057a772f8c0c815cf343325d6d41783e1ef249f02b43ce"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3-1ca768473760.json",
+    "sha256": "1ca7684737602f046fd991c5b2a6e051c4c4f20f2c138c20c4173141be0379f0",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "71c43cceb4b28e60e756b3f34ca5e7c7b271fa63eb9313eb27a32b8235e72b57",
+    "postFingerprint": "71c43cceb4b28e60e756b3f34ca5e7c7b271fa63eb9313eb27a32b8235e72b57",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/scenarios/guest_upgrade_restart_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "419208f6faf2c4aaccea7fa7a38becd7a646c56677f2b497f38f27440085e736"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ce92684b9c465f4b-Explicit-Flutter-tests.stdout.log",
+        "sha256": "ce92684b9c465f4bbee4bfed6aa1e7636f05ac3ab38551eca1caa6e29b8cd43b"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-8ec3fd065c7672a4e5e7a7800819d0f11f3a1b62936ae96e75cbd366e3e39923-ec82fe66263c.json",
+    "sha256": "ec82fe66263c282c592421e18b36fe54b794ca372b1be33b76c48bf3fe6abf58",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "149da8398f5dcd85313a6dedb306959b32ab8f40a421de030d6e8136a03d36d4",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/research/research_session_proof_repository_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "accepted canonical source prepares Started before its first answer"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "c0c78b9f5c186c9ba35a72a60415b9de25d01205a8c0fb6b41c507d0d1bff2c7"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\534f9aab4870e691-Explicit-Flutter-tests.stdout.log",
+        "sha256": "534f9aab4870e6919ec08fe334e1f4ffcb5b8eb0e9b0406ea576c18369957bf8"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c-5b4f80f6fb0d.json",
+    "sha256": "5b4f80f6fb0d357c3be9cb74da5dd7257e39ae2e1618e30243bb679bcb3aa2f3",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "a1ef2f6baaf53273a73f0234c8faa3609199c945b8321d31e284429e2df585da",
+    "postFingerprint": "a1ef2f6baaf53273a73f0234c8faa3609199c945b8321d31e284429e2df585da",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/research/research_sync_authorizer_test.dart",
+          "test/features/sync/assessment_run_sync_test.dart",
+          "test/features/recommendation/recommendation_policy_test.dart",
+          "test/features/recommendation/recommendation_use_cases_test.dart",
+          "test/features/research/research_session_proof_repository_test.dart",
+          "test/features/research/research_runtime_sync_integration_test.dart",
+          "test/features/research/research_session_proof_source_integrity_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "e83b630198a94ef97866618288a274e37d2fcc931278cc94b96cb928a5aaf91d"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e537bb6369f73dc6-Explicit-Flutter-tests.stdout.log",
+        "sha256": "e537bb6369f73dc602f687cf117c0c05f5ab250b49f8f5b52e54a51967518747"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-a53ff962810dd17ff9418500c89dc0f1e6e6345f45f18fcec4d0cdd65c7dc740-a458195336f7.json",
+    "sha256": "a458195336f7102d22b7adbe7d9d02aef17d1c619f512a9e6951d3e699560b2e",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "d85676da1fbccf119134811c328b62ae7c03eb700a8261672da344566506d494",
+    "postFingerprint": "d85676da1fbccf119134811c328b62ae7c03eb700a8261672da344566506d494",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/sync/sync_engine_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "6970b5c2eddc6a1a593ac46349889d2c3cf46c52524a809bd1e4e52d40b403c4"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6d1f56823c5a7bce-Explicit-Flutter-tests.stdout.log",
+        "sha256": "6d1f56823c5a7bce946f066c79b0a801d2167c662f432a63ed5637a9bcde0495"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-b0085d770c57ab764a2946fed63bdc2fd48347928d6b28b94c0a54ff9c88fce2-80c2910625dd.json",
+    "sha256": "80c2910625dd6e31ada48df60b6bd0541b1d0c514b0ce6ad9f9e32433818bed6",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "71c43cceb4b28e60e756b3f34ca5e7c7b271fa63eb9313eb27a32b8235e72b57",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/main_navigation_screen_test.dart",
+          "test/screens/mastery_dashboard_screen_test.dart",
+          "test/screens/matching_mode_screen_test.dart",
+          "test/screens/media_dependency_composition_test.dart",
+          "test/screens/minimal_ui_comparison_test.dart",
+          "test/screens/object_scanner_screen_test.dart",
+          "test/screens/offline_content_manager_screen_test.dart",
+          "test/screens/offline_content_settings_entry_test.dart",
+          "test/screens/offline_vocabulary_journey_test.dart",
+          "test/screens/otp_screen_test.dart",
+          "test/screens/phonetic_explorer_screen_test.dart",
+          "test/screens/pre_post_assessment_screen_test.dart",
+          "test/screens/production_shell_navigation_test.dart",
+          "test/screens/profile_owner_lifecycle_test.dart",
+          "test/screens/profile_settings_screen_test.dart",
+          "test/screens/quest_status_screen_test.dart",
+          "test/screens/quiz_screen_test.dart",
+          "test/screens/registration_consent_recovery_test.dart",
+          "test/screens/registration_flow_test.dart",
+          "test/screens/score_screen_test.dart",
+          "test/screens/sentence_scramble_screen_test.dart",
+          "test/screens/setting_screen_data_erasure_test.dart",
+          "test/screens/setting_screen_test.dart",
+          "test/screens/shadowing_challenge_screen_test.dart",
+          "test/screens/smart_audio_playlist_screen_test.dart",
+          "test/screens/speak_to_text_screen_voice_test.dart",
+          "test/screens/srs_flashcards_screen_test.dart",
+          "test/screens/study_planning_hub_screen_test.dart",
+          "test/screens/study_reminder_settings_screen_test.dart",
+          "test/screens/thesis_chart_screen_test.dart",
+          "test/screens/today_hub_screen_test.dart",
+          "test/screens/vocab_list_screen_test.dart",
+          "test/screens/vocabulary_route_withdrawal_test.dart",
+          "test/screens/weakness_clinic_screen_test.dart",
+          "test/screens/word_scramble_screen_test.dart",
+          "test/screens/wordbook_import_screen_test.dart",
+          "test/services/adaptive_daily_quest_service_test.dart",
+          "test/services/adaptive_decay_scheduler_test.dart",
+          "test/services/ai_voice_reading_adapters_test.dart",
+          "test/services/apriori_error_miner_service_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "d68b3f8db0c498722d5c625570ab8dab6116f8ac9ec2ebc53deba488bfa3174f"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\51a8919cec039996-Explicit-Flutter-tests.stdout.log",
+        "sha256": "51a8919cec039996b9872ee88ba1668d82ac3ba276b52d9048ea20deb063480d"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-b88fd5d27904f88f9cb32243f30ef054131fc580c9088a5e25e1d32d92fe9610-1863aaad335f.json",
+    "sha256": "1863aaad335f14d682a857393f0d46d46de78c6c7a93bc0ad6cd4f1eeb250fcb",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "c9cad23dc91d401a08c720b7616901da6c5a115eceaf54570ea6569501d71aa6",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/adventure/adventure_pair_renderer_parity_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "same host fallback adventureOff preserves answer"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "6797ccf46cc1acc8f1f905e4e943f7ebd88b9b81547f5a7c0dd4dede94d58b1e"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9ea249cf1834efb1-Explicit-Flutter-tests.stdout.log",
+        "sha256": "9ea249cf1834efb1cce0693cabe744abbe5308cfca66209b0e971e050024f124"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900-7ee95247538d.json",
+    "sha256": "7ee95247538d0458c871e1c0577ed39eb9b53ff17bf5c47b86eefab51145da6f",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "ad532b891251aad864a998eadf0017955185253e253adcec69d7cf4b851347b3",
+    "postFingerprint": "ad532b891251aad864a998eadf0017955185253e253adcec69d7cf4b851347b3",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/export/research_lifecycle_export_test.dart",
+          "test/features/device_model/litert_image_classifier_test.dart",
+          "test/features/device_model/litert_benchmark_test.dart",
+          "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+          "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+          "test/features/learning/pair_matching/pair_matching_host_golden_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "85e3e57381bc0399dffb7d81dd4a07f6dcdc823b7ff450cd4e6dbc71423fc20d"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ed0c9fe4147e9158-Explicit-Flutter-tests.stdout.log",
+        "sha256": "ed0c9fe4147e91583e3ac69cb177a5b7d229305ef9c7da12677c0b0335240174"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-bf66f655b04095db53f910fa0427f72cb7a18173da54f888c6199e6dbe1929ff-14c0bbae2762.json",
+    "sha256": "14c0bbae2762c9a89d6f25e85779b73fe31a30e2ca3165cb95b9f7a80a310bf6",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "postFingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/matching_mode_screen_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "56edf3688b59743fcb75a8e56d096d41d83f98253899f415299f6c69ec5679f4"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\4078fdd45d524375-Explicit-Flutter-tests.stdout.log",
+        "sha256": "4078fdd45d524375f5d2d7ae0546fed87f743315ba7f4630c413697fb26a273e"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-c91824f8a5ea902d76908253b4cec54a828273be4a26df2187a19a45f783beaf-cdac6f6d04b8.json",
+    "sha256": "cdac6f6d04b84764b68edddbf7e8b451dfd28f42476e3e9affa02fa94ad47326",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "f82d80331cf61f42206f29dd3dcff9d515c55f5c535660ded971432346b64d04",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/architecture/adventure_authority_boundary_test.dart",
+          "test/architecture/alltcas_idea_feature_contract_docs_test.dart",
+          "test/architecture/alltcas_idea_feature_contract_models_test.dart",
+          "test/architecture/alltcas_idea_feature_contract_test.dart",
+          "test/architecture/fitness_test.dart",
+          "test/architecture/learning_screen_boundary_test.dart",
+          "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "test/architecture/local_first_authority_test.dart",
+          "test/architecture/notification_platform_contract_test.dart",
+          "test/architecture/pair_matching_f10_boundary_test.dart",
+          "test/architecture/participant_screen_boundary_test.dart",
+          "test/architecture/production_feature_contract_test.dart",
+          "test/architecture/production_feature_delivery_cardinality_test.dart",
+          "test/architecture/production_feature_invocation_boundary_test.dart",
+          "test/architecture/provider_composition_boundary_test.dart",
+          "test/architecture/streak_authority_test.dart",
+          "test/architecture/thai_encoding_test.dart",
+          "test/architecture/thai_navigation_glossary_boundary_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "6c6f468a346bf2c23b25ef429e109b21e1cb0a5b06a0ba6ecde40882d851d9d2"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0582b9f83e019f41-Explicit-Flutter-tests.stdout.log",
+        "sha256": "0582b9f83e019f412c23fa5deb4043011daedb305e6a51a82c08f20548b7cafc"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-d560e16e05c1ffc53a2032d6335109ab8f877af607349e584374e1640986a0dd-6a719f1c35fb.json",
+    "sha256": "6a719f1c35fb9ecad19de9751a4ad5d7ddabe82d7bd520659e780a267e273585",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "4db0c83e6ed2454d01e0764be47277820d85ecd6a5486347e944666a52275b8e",
+    "postFingerprint": "4db0c83e6ed2454d01e0764be47277820d85ecd6a5486347e944666a52275b8e",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/reminders/platform_reminder_scheduler_test.dart",
+          "test/features/reminders/study_reminder_use_cases_test.dart",
+          "test/features/research/research_runtime_sync_integration_test.dart",
+          "test/features/research/research_session_proof_repository_test.dart",
+          "test/features/research/research_session_proof_source_integrity_test.dart",
+          "test/features/research/research_session_proof_test.dart",
+          "test/features/research/research_sync_authorizer_test.dart",
+          "test/features/sync/assessment_run_sync_test.dart",
+          "test/features/sync/research_session_proof_transport_test.dart",
+          "test/features/sync/sync_engine_test.dart",
+          "test/runtime/app_bootstrap_test.dart",
+          "test/scenarios/guest_upgrade_restart_test.dart",
+          "test/scenarios/production_feature_navigation_test.dart",
+          "test/scenarios/production_learning_restart_test.dart",
+          "test/screens/associative_reading_launcher_screen_test.dart",
+          "test/screens/cefr_vocabulary_catalog_screen_test.dart",
+          "test/screens/choose_mode_screen_test.dart",
+          "test/screens/local_reading_library_screen_test.dart",
+          "test/screens/matching_mode_screen_test.dart",
+          "test/screens/sentence_scramble_screen_test.dart",
+          "test/screens/shadowing_challenge_screen_test.dart",
+          "test/screens/speak_to_text_screen_voice_test.dart",
+          "test/screens/study_reminder_settings_screen_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "714e60862fe1cd8c54d81b0dacae79f7b77081c605d0e1afe1286ccfe93005dc"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\5dd026352057f9d2-Explicit-Flutter-tests.stdout.log",
+        "sha256": "5dd026352057f9d2d3fddc901e89b0c325eb0aa73bee318de6091fa03a40e9c1"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-d9996c6c1db8186532011958128b53350934f87697ff17f409fb6d4c58f4ec3b-5bf91b110506.json",
+    "sha256": "5bf91b1105063d5949daf03718ca67516f81cdd6bbd653c0249f60403271c05c",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "postFingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/services/associative_memory_test.dart",
+          "test/services/background_audio_player_service_test.dart",
+          "test/services/brahmawong_research_analytics_service_test.dart",
+          "test/services/cefr_service_test.dart",
+          "test/services/cognitive_attention_analyzer_service_test.dart",
+          "test/services/collocation_service_test.dart",
+          "test/services/crisp_dm_analytics_service_test.dart",
+          "test/services/custom_wordbook_importer_test.dart",
+          "test/services/dataset_partitioning_service_test.dart",
+          "test/services/dynamic_story_contextualizer_service_test.dart",
+          "test/services/ghost_model_trainer_service_test.dart",
+          "test/services/ghost_shadow_duel_service_test.dart",
+          "test/services/guest_session_service_test.dart",
+          "test/services/interleaved_srs_scheduler_test.dart",
+          "test/services/kmeans_learner_profiler_service_test.dart",
+          "test/services/lexical_diversity_evaluator_service_test.dart",
+          "test/services/local_reading_catalog_test.dart",
+          "test/services/local_user_progress_store_test.dart",
+          "test/services/object_vocabulary_database_test.dart",
+          "test/services/phrasal_verb_service_test.dart",
+          "test/services/rank_service_test.dart",
+          "test/services/rapid_naming_speed_service_test.dart",
+          "test/services/research_experiment_test.dart",
+          "test/services/spaced_review_reminder_service_test.dart",
+          "test/services/srs_service_test.dart",
+          "test/services/streak_and_daily_quest_service_test.dart",
+          "test/services/thesis_appendix_exporter_service_test.dart",
+          "test/services/weakness_clinic_service_test.dart",
+          "test/support/persistent_manual_qa_storage_test.dart",
+          "test/utils/local_study_datetime_test.dart",
+          "test/utils/response_time_tracker_test.dart",
+          "test/voice/bundled_voice_asset_provider_test.dart",
+          "test/voice/file_standard_voice_pack_store_test.dart",
+          "test/voice/firestore_voice_telemetry_test.dart",
+          "test/voice/http_standard_voice_pack_source_test.dart",
+          "test/voice/installed_voice_pack_provider_test.dart",
+          "test/voice/native_tts_provider_test.dart",
+          "test/voice/native_voice_route_handler_test.dart",
+          "test/voice/omni_voice_provider_test.dart",
+          "test/voice/platform_filesystem_capacity_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "378ac83733ab637cb99ed9cd5a9ead09a1aef2eae853c98f057962ba614e77ac"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\be9ad5bc31e0a877-Explicit-Flutter-tests.stdout.log",
+        "sha256": "be9ad5bc31e0a877bda0f86f742a30b218d402f37d72869321ccf008253ba589"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-e00c27f9a946b3f11e989fa8ecd2cd41ee21b0c786bf71d3fc1d4a9366d78b5c-1c021126391c.json",
+    "sha256": "1c021126391ca67949afa63e992621fc46dfc0aa4e86fc57e048df0f0bd3f518",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "postFingerprint": "544e791f7829a9a5b571018edc4aaa81c383233b12036d46ff9d9230d4caa72a",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/voice/standard_voice_pack_download_manager_test.dart",
+          "test/voice/standard_voice_pack_manifest_test.dart",
+          "test/voice/voice_audio_cache_test.dart",
+          "test/voice/voice_audio_player_test.dart",
+          "test/voice/voice_auth_token_provider_test.dart",
+          "test/voice/voice_mirror_gateway_test.dart",
+          "test/voice/voice_mirror_recorder_test.dart",
+          "test/voice/voice_mirror_session_controller_test.dart",
+          "test/voice/voice_models_test.dart",
+          "test/voice/voice_orchestrator_cancellation_test.dart",
+          "test/voice/voice_orchestrator_telemetry_test.dart",
+          "test/voice/voice_orchestrator_test.dart",
+          "test/voice/voice_playback_cleanup_composition_test.dart",
+          "test/voice/voice_policy_test.dart",
+          "test/voice/voice_provider_descriptor_test.dart",
+          "test/voice/voice_provider_registry_test.dart",
+          "test/voice/voice_request_quota_test.dart",
+          "test/voice/voice_response_lifecycle_test.dart",
+          "test/voice/voice_service_factory_test.dart",
+          "test/voice/voice_telemetry_test.dart",
+          "test/voice/vox_cpm_mirror_provider_test.dart",
+          "test/voice/vox_cpm_standard_provider_test.dart",
+          "test/widget_test.dart",
+          "test/widgets/accent_selector_widget_test.dart",
+          "test/widgets/cefr_collocation_tree_widget_test.dart",
+          "test/widgets/gentle_streak_card_test.dart",
+          "test/widgets/live_audio_waveform_widget_test.dart",
+          "test/widgets/local_study_datetime_field_test.dart",
+          "test/widgets/recommendation_panel_test.dart",
+          "test/widgets/reward_avatar_preview_test.dart",
+          "test/widgets/rich_lexical_card_test.dart",
+          "test/widgets/study_heatmap_widget_test.dart",
+          "test/widgets/study_time_picker_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "1d0438a279e988a99864f86af30c0f875e8e0820fbcf147caac03d33692f7a06"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c63ee8f6fba007be-Explicit-Flutter-tests.stdout.log",
+        "sha256": "c63ee8f6fba007be6bd667f9360f6342326b0351363a4b7cf702056db843d6ed"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda-12c4892566f3.json",
+    "sha256": "12c4892566f333af520544f29ea0656fdf2073a0e140412e8a9c7ff1144b9155",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "7e977ada883b36a0c912e034bcdba1ca9401d51bc1a3d4b5a3d1f1f8cfb5619d",
+    "postFingerprint": "7e977ada883b36a0c912e034bcdba1ca9401d51bc1a3d4b5a3d1f1f8cfb5619d",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/architecture/fitness_test.dart",
+          "test/architecture/participant_screen_boundary_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "aa8963d6c78ea19a9c097cc754478a19acd0cd803aaa82a64356466623dc377f"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ccab786e1e555d7e-Explicit-Flutter-tests.stdout.log",
+        "sha256": "ccab786e1e555d7e66d788ab732f6f67ab195892ef422dd671d34cccdc550f1d"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-f2d02d1b7af92373c4b91c8d57739cb77ed834d60f3f1cfad1daaa5ac6cc4769-c23d84d5e561.json",
+    "sha256": "c23d84d5e56196f343e9754ec07c3454a57033b1c2322482e8fff86960401290",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "b057e45b506fd97579c8882b509fac9a923bdca2192d174572d3846b16dbb1ca",
+    "postFingerprint": "b057e45b506fd97579c8882b509fac9a923bdca2192d174572d3846b16dbb1ca",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/data/local/legacy_learning_import_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "B15 schema26 upgrades without changing modern records"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "e669107de5d5d52dd69d1a2744650a57d48fe776e9d5d8c79933dafa5bfb0cad"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e8218ec6d81759cc-Explicit-Flutter-tests.stdout.log",
+        "sha256": "e8218ec6d81759cccd636a34c560337262ccdb94003e537a1119820e254a0994"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-f34012fd6d3719e8610e9830f380d1c66873f316c1c1acda73bbb8c6e826c087-3092ad51a884.json",
+    "sha256": "3092ad51a884d5283d21dccbbe731642600790f0462b2f311585c8f4ef815fe2",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "InputDrift",
+    "fingerprint": "3a7156c833eb01ea052abbcbb23dbb8d38efac3364a3624c275e084e42403fbc",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+          "test/features/learning/pair_matching/pair_matching_density_preference_test.dart",
+          "test/features/learning/pair_matching/pair_matching_engine_test.dart",
+          "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+          "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+          "test/features/learning/pair_matching/pair_matching_host_golden_test.dart",
+          "test/features/learning/pair_matching/pair_matching_idempotency_test.dart",
+          "test/features/learning/pair_matching/pair_matching_owner_command_test.dart",
+          "test/features/learning/pair_matching/pair_matching_owner_upgrade_auth_test.dart",
+          "test/features/learning/pair_matching/pair_matching_owner_upgrade_test.dart",
+          "test/features/learning/pair_matching/pair_matching_plan_test.dart",
+          "test/features/learning/pair_matching/pair_matching_result_view_test.dart",
+          "test/features/learning/pair_matching/pair_matching_session_purpose_test.dart",
+          "test/features/learning/pair_matching/pair_matching_source_composer_test.dart",
+          "test/features/learning/pair_matching/pair_matching_source_property_test.dart",
+          "test/features/learning/pair_matching/pair_measurement_boundary_test.dart",
+          "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+          "test/features/learning/pair_matching/pair_repair_policy_test.dart",
+          "test/features/learning/pair_matching/pair_review_deferral_test.dart",
+          "test/features/learning/pair_matching/pair_star_policy_test.dart",
+          "test/features/learning/pair_matching/pair_support_classification_test.dart",
+          "test/features/learning/pair_matching/pair_timeout_race_test.dart",
+          "test/features/learning/pair_matching/pair_timeout_recovery_test.dart",
+          "test/features/learning/pair_matching/r15_pair_feedback_test.dart",
+          "test/features/learning/r15_learning_feedback_visual_test.dart",
+          "test/features/learning/sentence_practice_panel_test.dart",
+          "test/features/learning/session_configuration_mode_matrix_test.dart",
+          "test/features/learning/session_configuration_policy_test.dart",
+          "test/features/learning/session_configuration_sheet_test.dart",
+          "test/features/learning/session_configuration_store_test.dart",
+          "test/features/learning_packs/content_quality_policy_test.dart",
+          "test/features/learning_packs/learning_pack_catalog_test.dart",
+          "test/features/learning_packs/learning_pack_detail_test.dart",
+          "test/features/media_practice/image_preprocessor_test.dart",
+          "test/features/media_practice/object_scanner_use_cases_test.dart",
+          "test/features/media_practice/plugin_camera_gateway_test.dart",
+          "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+          "test/features/media_practice/transcript_evidence_boundaries_test.dart",
+          "test/features/motivation/streak_learning_integration_test.dart",
+          "test/features/motivation/streak_use_cases_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "22fe685a1343a862da82d3138e05598721606eab37158877c69b26af3baffe08"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\27135815e442372a-Explicit-Flutter-tests.stdout.log",
+        "sha256": "27135815e442372ad391f7385e460f4203f4c279bdbc9f6915751d749fddd957"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-f5af1ed4df5c1b8ef27faddfcef8f4907874b71065d080fa832c1c7e0e121344-dbc7b124bd87.json",
+    "sha256": "dbc7b124bd874a4de9735f6a9d774a413c5ad77e4eaa866ebe4aff60c765bbd3",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "8ae7f37d9805787d9cacd45df3955ec793f49c3f192acf64ca3ed0adbeb5e664",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/config/adventure_research_runtime_config_test.dart",
+          "test/config/android_network_security_test.dart",
+          "test/config/app_config_test.dart",
+          "test/config/flutter_dependency_surface_test.dart",
+          "test/config/m3_theme_test.dart",
+          "test/config/research_runtime_config_test.dart",
+          "test/data/local/app_database_migration_test.dart",
+          "test/data/local/app_database_safe_open_test.dart",
+          "test/data/local/app_database_test.dart",
+          "test/data/local/f02_legacy_budget_test.dart",
+          "test/data/local/legacy_learning_import_test.dart",
+          "test/features/accessibility/accessibility_policy_test.dart",
+          "test/features/account/account_use_cases_test.dart",
+          "test/features/account/local_data_deletion_test.dart",
+          "test/features/achievements/achievement_share_card_test.dart",
+          "test/features/achievements/achievement_share_card_use_cases_test.dart",
+          "test/features/adventure/adventure_pair_renderer_parity_test.dart",
+          "test/features/adventure/application/adventure_diagnostics_test.dart",
+          "test/features/adventure/application/adventure_entry_use_cases_test.dart",
+          "test/features/adventure/application/adventure_feature_contract_test.dart",
+          "test/features/adventure/application/adventure_journey_fact_readers_test.dart",
+          "test/features/adventure/application/adventure_journey_reader_test.dart",
+          "test/features/adventure/application/adventure_learning_bridge_test.dart",
+          "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+          "test/features/adventure/application/adventure_mixed_review_prompt_catalog_test.dart",
+          "test/features/adventure/application/adventure_motivation_projection_reader_test.dart",
+          "test/features/adventure/application/adventure_presentation_preferences_test.dart",
+          "test/features/adventure/application/adventure_recovery_use_cases_test.dart",
+          "test/features/adventure/application/adventure_repair_policy_test.dart",
+          "test/features/adventure/application/adventure_result_next_action_reader_test.dart",
+          "test/features/adventure/application/adventure_session_composer_test.dart",
+          "test/features/adventure/data/adventure_catalog_download_adapter_test.dart",
+          "test/features/adventure/data/adventure_world_catalog_validator_test.dart",
+          "test/features/adventure/domain/adventure_entry_test.dart",
+          "test/features/adventure/domain/adventure_journey_test.dart",
+          "test/features/adventure/domain/adventure_reaction_test.dart",
+          "test/features/adventure/domain/adventure_result_test.dart",
+          "test/features/adventure/domain/adventure_session_plan_test.dart",
+          "test/features/adventure/presentation/adventure_companion_panel_test.dart",
+          "test/features/adventure/presentation/adventure_hub_screen_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "5408e317054213aab19f2b3b58075208d9fe6d570df8ec572c46a01730fdad42"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1b13892e4bfdee4d-Explicit-Flutter-tests.stdout.log",
+        "sha256": "1b13892e4bfdee4d83ceaa390efe781f784eb873e43ebaccb41581b1f0c66077"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-fd7fca1d6f4ecb2a9743e6b97b9739202f2fc0b4976abdcd93613475324b08d9-3e14468d0c79.json",
+    "sha256": "3e14468d0c795c034467776087d43c13497a9406d766b7899165b771f00b2d05",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "ad532b891251aad864a998eadf0017955185253e253adcec69d7cf4b851347b3",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/motivation/timezone_policy_test.dart",
+          "test/features/offline_content/offline_content_manager_test.dart",
+          "test/features/preferences/display_preferences_controller_test.dart",
+          "test/features/preferences/f02_preference_merge_test.dart",
+          "test/features/preferences/learner_preferences_use_cases_test.dart",
+          "test/features/progress/achievement_policy_test.dart",
+          "test/features/progress/learning_calendar_reader_test.dart",
+          "test/features/progress/personal_learning_profile_test.dart",
+          "test/features/progress/progress_projector_test.dart",
+          "test/features/quest/drift_quest_repository_test.dart",
+          "test/features/quest/quest_catalog_provider_test.dart",
+          "test/features/quest/quest_definition_codec_test.dart",
+          "test/features/quest/quest_learning_integration_test.dart",
+          "test/features/quest/quest_models_test.dart",
+          "test/features/quest/quest_period_test.dart",
+          "test/features/quest/quest_use_cases_test.dart",
+          "test/features/recommendation/active_recall_ladder_test.dart",
+          "test/features/recommendation/recommendation_policy_test.dart",
+          "test/features/recommendation/recommendation_use_cases_test.dart",
+          "test/features/reminders/drift_study_reminder_repository_test.dart",
+          "test/features/reminders/f02_quiet_hours_test.dart",
+          "test/features/reminders/platform_reminder_scheduler_test.dart",
+          "test/features/reminders/study_reminder_use_cases_test.dart",
+          "test/features/research/adventure_research_runtime_test.dart",
+          "test/features/research/drift_experiment_assignment_repository_test.dart",
+          "test/features/research/drift_motivation_measurement_repository_test.dart",
+          "test/features/research/firestore_research_receipt_authority_test.dart",
+          "test/features/research/measurement_opportunity_repository_test.dart",
+          "test/features/research/motivation_instrument_test.dart",
+          "test/features/research/motivation_measurement_form_test.dart",
+          "test/features/research/motivation_measurement_use_cases_test.dart",
+          "test/features/research/research_p256_signature_verifier_test.dart",
+          "test/features/research/research_participation_lifecycle_test.dart",
+          "test/features/research/research_participation_panel_test.dart",
+          "test/features/research/research_participation_permit_validator_test.dart",
+          "test/features/research/research_participation_screen_test.dart",
+          "test/features/research/research_permit_document_test.dart",
+          "test/features/research/research_runtime_sync_integration_test.dart",
+          "test/features/research/research_session_proof_repository_test.dart",
+          "test/features/research/research_session_proof_source_integrity_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "d2723c19e006b08c0733fa6c3263ab404c15bee0132cc1707d3ec7f0d3140afb"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2a20b35ae918296d-Explicit-Flutter-tests.stdout.log",
+        "sha256": "2a20b35ae918296d802e0422fcc64dfa1f0d9f226263a5dc89da845c959afff5"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f-3d3150793222.json",
+    "sha256": "3d3150793222998dbf7840b10b866c3583e00ca84adce130b7d0caf911df232f",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "dcb4a189be8885d5114d4f86b61c79f4f049cb1109f713c22e96d9b2918ebf66",
+    "postFingerprint": "dcb4a189be8885d5114d4f86b61c79f4f049cb1109f713c22e96d9b2918ebf66",
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "verify-scope-integration.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope-integration.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "3095beabbdc7f76db51c4b7eef2213d864cf041eaf60f7ac5dd2905d144fd85a"
+      },
+      {
+        "Name": "r15-scope.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\r15-scope.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "3f5f267cd6203ee1b3b44c55663610930114a0861968c57e241fdbde49908166"
+      },
+      {
+        "Name": "verify-scope.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "ffc46fee699f6ab1182eb54ae58039bb6c8eb8205e12340fabe8ca2d55a8a3d8"
+      },
+      {
+        "Name": "verify-scope-selection.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope-selection.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "8f0df35baeea978f1aa6166a70dac38704f60f4f76f50663ff69ad2d502c54ff"
+      },
+      {
+        "Name": "verify-scope-integrity.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope-integrity.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "e4a4d3e214d8ea18514e6d4e44f829698d0062f20fb4e173614e74b62090e6e1"
+      },
+      {
+        "Name": "run-android-smoke.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\run-android-smoke.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "ae3052fc1f202349e56e6c501a8e2505e72bf90af4dbb4c1ac1c5bdceccbafef"
+      },
+      {
+        "Name": "verify-apk-model-runtime.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-apk-model-runtime.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "68c3bd4689ddf2eee0a361dd355415e7f56cacf05e27d40f9a73722d2c0c787f"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e4766d8b87b535c6-verify-scope-integration.tests.ps1.stdout.log",
+        "sha256": "e4766d8b87b535c64beb6807bdf5c6d46961de458d4321a9b0ecfc46d43c4d6a"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-integration.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f5e19adb3ceb47ed-r15-scope.tests.ps1.stdout.log",
+        "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-r15-scope.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\41cd3641d74d7c22-verify-scope.tests.ps1.stdout.log",
+        "sha256": "41cd3641d74d7c22d3d4fe4913bcff867804e873ab3d940438dec04dd35b202c"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d11b867732859d23-verify-scope-selection.tests.ps1.stdout.log",
+        "sha256": "d11b867732859d230c8b780ea924725a78b575c1a2f752cd8f28bb186885419c"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-selection.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1940186bf377bfc8-verify-scope-integrity.tests.ps1.stdout.log",
+        "sha256": "1940186bf377bfc83895fa655d9161c158d84816d8b1aa4eff9d5b5a40246775"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-integrity.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\edb52cd2959c7545-run-android-smoke.tests.ps1.stdout.log",
+        "sha256": "edb52cd2959c75455a2d81065d407d4e155a9367b76b3842139b52dc77155f2d"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-run-android-smoke.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\51c2360c05cb96d3-verify-apk-model-runtime.tests.ps1.stdout.log",
+        "sha256": "51c2360c05cb96d3566ff729e8515a148beb665830990b60bab872ba4bbcc0d4"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-apk-model-runtime.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-runtime-cli-cad4315f995dc5e20fcb079520a017e801d8b32b2d7ac0f09ae4de375ceff4eb-b90eddf8a58c.json",
+    "sha256": "b90eddf8a58cc72b062f8a6acd0223f652ea7141e83075134d2fd1be61608cc8",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Failed",
+    "fingerprint": "c60646767053896fea444920f7f96237beb6588e4fe2ef7eb15673103cdb07cc",
+    "postFingerprint": null,
+    "environmentFingerprint": "12a56272d95c4368ab1b1d19d54b91aabb093f79b5974d54107d9b77268cf0c2",
+    "selection": [
+      {
+        "Name": "verify-scope-integration.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope-integration.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "3095beabbdc7f76db51c4b7eef2213d864cf041eaf60f7ac5dd2905d144fd85a"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e3b0c44298fc1c14-verify-scope-integration.tests.ps1.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\415d6f4aedbb7a02-verify-scope-integration.tests.ps1.stderr.log",
+        "sha256": "415d6f4aedbb7a02b51de52d4060d4343ef00f5b76d88b3471fcdb4fe646e40f"
+      }
+    ]
+  },
+  {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-runtime-cli-e763c76181530b4ed06722eda7a6737ea2b15325ee6c3351f987cefdb85f3c6d-76875b10bcd7.json",
+    "sha256": "76875b10bcd72d588ced69aa0babc9fc3620e4f6c68fbeb2e2ca3f60d190454a",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "status": "Passed",
+    "fingerprint": "fcb0c54e54e044858f9cc362056cfd6625f133cfc6f818f8cdbacaeacfb995a1",
+    "postFingerprint": "fcb0c54e54e044858f9cc362056cfd6625f133cfc6f818f8cdbacaeacfb995a1",
+    "environmentFingerprint": "1ec2cd6fd2c2956bd5e11c6ca601369e1ca29e7211826d64f8e522b79a3efbbd",
+    "selection": [
+      {
+        "Name": "r15-scope.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\r15-scope.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "3f5f267cd6203ee1b3b44c55663610930114a0861968c57e241fdbde49908166"
+      },
+      {
+        "Name": "verify-scope-selection.tests.ps1",
+        "FilePath": "powershell",
+        "Arguments": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\tool\\cli\\tests\\verify-scope-selection.tests.ps1"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "8f0df35baeea978f1aa6166a70dac38704f60f4f76f50663ff69ad2d502c54ff"
+      }
+    ],
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f5e19adb3ceb47ed-r15-scope.tests.ps1.stdout.log",
+        "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-r15-scope.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      },
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d11b867732859d23-verify-scope-selection.tests.ps1.stdout.log",
+        "sha256": "d11b867732859d230c8b780ea924725a78b575c1a2f752cd8f28bb186885419c"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-selection.tests.ps1.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ]
+  }
+]

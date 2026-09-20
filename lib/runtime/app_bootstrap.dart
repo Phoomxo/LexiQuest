@@ -1228,8 +1228,9 @@ final class AppBootstrap {
     final buildInfo = const AppBuildInfo.fromEnvironment();
     late final QuestUseCases quest;
     void requireQuestLifetime() {
-      if (quest.isDisposed)
+      if (quest.isDisposed) {
         throw StateError('Quest runtime has been disposed.');
+      }
     }
 
     Future<void> requireQuestAuthority(String expectedOwnerId) async {
@@ -1266,8 +1267,9 @@ final class AppBootstrap {
                 ))
                 .getSingleOrNull();
         requireQuestLifetime();
-        if (transition != null)
+        if (transition != null) {
           throw StateError('Quest entry owner transition is active.');
+        }
       }
       requireQuestLifetime();
       final ownerAfter = await localOwners.getOrCreateActiveOwner();

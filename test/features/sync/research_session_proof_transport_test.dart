@@ -1194,8 +1194,9 @@ final class _Server implements cloud.FirebaseFirestore {
     final result = await handler(transaction);
     for (final entry in transaction.pending.entries) {
       documents[entry.key] = _copyMap(entry.value);
-      if (entry.key.contains('/research_session_proofs/'))
+      if (entry.key.contains('/research_session_proofs/')) {
         proofTransactionWrites++;
+      }
     }
     return result;
   }
@@ -1669,10 +1670,11 @@ final class _Device {
               ResearchSyncContract.collections.indexOf(b.mutation.collection),
             );
         if (order != 0) return order;
-        if (a.mutation.collection == _proofs && completedFirst)
+        if (a.mutation.collection == _proofs && completedFirst) {
           return (b.mutation.payload['proofRevision']! as int).compareTo(
             a.mutation.payload['proofRevision']! as int,
           );
+        }
         return a.mutation.entityId.compareTo(b.mutation.entityId);
       });
     for (final claim in ordered) {

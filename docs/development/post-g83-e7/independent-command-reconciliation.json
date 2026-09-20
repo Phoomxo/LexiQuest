@@ -1,0 +1,389 @@
+[
+  {
+    "command": "backendai",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendai.json",
+    "receiptStatus": "Passed",
+    "effectiveCommandInputs": [
+      {
+        "path": "backend/ai_api/.env.example",
+        "sha256": "8054a1349f640eb22a8e0a79729dcd85e053b4053d92a00e7b66600cc74226c3"
+      },
+      {
+        "path": "backend/ai_api/pyproject.toml",
+        "sha256": "89e8331df1ff9bb40302274885207b17a5033710e657568dba33435bee1e1e7b"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/app.py",
+        "sha256": "872751e6805f5414106f4a41b785e59bcb2d0bc1a348ccbf5914edaced2def70"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/auth.py",
+        "sha256": "e988908b8d99f17b415fc72c2758c8b0a2c1c791732db48f697636d656dd5f17"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/config.py",
+        "sha256": "775d7cfcbb9b2d2e393189775787c32be3b87e55285e7f1f3f319592dd8ec554"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/errors.py",
+        "sha256": "11c3a9258264b690da66e997ec40a0ba671b7dc11dd297451b9f8138a5f510fb"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/__init__.py",
+        "sha256": "3cf8af643b6d1c545d78fdcd5d87d14e2cf67c14a7be52b747ff93d7f60f1897"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/main.py",
+        "sha256": "61fcdd4bb6de45a8bca54f2b510000459d59a25ed5a93b7c3ae308ff8d394135"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/models.py",
+        "sha256": "661f94a492cfb5caf63923bc8893a72cd052d40dad4beb618aad72381c3728ef"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/services/base.py",
+        "sha256": "6a612b64472d49ba7486179efd9f3d32216d78e8ac0383cd62a21ab18ecf968c"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/services/cache.py",
+        "sha256": "0f96bb3dbebc6cbf5727d5c0968939fb88c0079e22a528e040e1bdb68dcafe21"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/services/__init__.py",
+        "sha256": "e2fd83b4170edc6ba4e815819dc44ca69c028db12b52a1875a61af73d8a434e4"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/services/llm_content_service.py",
+        "sha256": "f89825953f03ecd411134bbfac531061479910896203d74beda1bf857890be87"
+      },
+      {
+        "path": "backend/ai_api/src/lexiquest_ai/services/rate_limiter.py",
+        "sha256": "237e7d76f41802e3ffa06f1ff57582955b85db5f595bc92fd35551444fb13e48"
+      },
+      {
+        "path": "backend/ai_api/tests/conftest.py",
+        "sha256": "3cec5af278d8687f5db14722c697a515a3ec8b4c20573ea327d4c39ce8718b3f"
+      },
+      {
+        "path": "backend/ai_api/tests/test_app.py",
+        "sha256": "802db95f0340df0219ac452694089dcd4c5b33cc15aec0dc14170c1bc27b0d3a"
+      },
+      {
+        "path": "backend/ai_api/tests/test_auth.py",
+        "sha256": "704889b568ce7841e79b74f37e68a0555d3ed7bbfa4832a1d08fee2d2a848b58"
+      },
+      {
+        "path": "backend/ai_api/tests/test_dependency_pins.py",
+        "sha256": "d268a71e1733cdcc579c742e0eb2bcdf11b6699a56dca2d2e2ca9304d40247a3"
+      },
+      {
+        "path": "backend/ai_api/tests/test_llm_content_service.py",
+        "sha256": "5b508d7edf8a520ca7bb72a6c4a71cc034f33f0613231a0dcba945624e313e54"
+      },
+      {
+        "path": "backend/ai_api/tests/test_models.py",
+        "sha256": "17f75f8538f9d1ee907b09b85dffac79b0b16332e987f2eb7eabab44a299abae"
+      },
+      {
+        "path": "backend/ai_api/tests/test_response_budget.py",
+        "sha256": "e8efdedc2c4f094e655a3863e204d257b1b5309b601a1cceead9fc2ec403203d"
+      },
+      {
+        "path": "backend/ai_api/uv.lock",
+        "sha256": "aee3415fe95d4ee72e00dfedaee1d1c3ff427df9a1cb5728e32a8920dec13317"
+      },
+      {
+        "path": "tool/cli/verify-scope.ps1",
+        "sha256": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+      }
+    ],
+    "mismatches": [],
+    "broaderRunnerClosureChanges": "CLI fixture scripts now produce valid comments; these scripts are not executed by backend pytest commands. Original broad fingerprint remains historical, not asserted equal."
+  },
+  {
+    "command": "backendvoice",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendvoice.json",
+    "receiptStatus": "Passed",
+    "effectiveCommandInputs": [
+      {
+        "path": "backend/voice_api/.env.example",
+        "sha256": "590077871b5633a3f371dd2f28935f34a0c73f8e283f0459c0341fc65265d3ae"
+      },
+      {
+        "path": "backend/voice_api/osv-scanner.toml",
+        "sha256": "3db7a5a2af2629e94532458ac88a8ffe6f5ee63dfd19a7559b9f8e4344a2b3cd"
+      },
+      {
+        "path": "backend/voice_api/pyproject.toml",
+        "sha256": "a043edf7854d7140c8f186e8c02771fae54456c08ad253bbdf032db2cbda1286"
+      },
+      {
+        "path": "backend/voice_api/.python-version",
+        "sha256": "ceba8fa5c10f40fbed8feb7eb5238b63dda568908acfd874ee413747b29936c8"
+      },
+      {
+        "path": "backend/voice_api/README.md",
+        "sha256": "8a5a0137546e3bf2d4459fac01e2037cf47a733d771fb02e2a943cd1c2ac1a3f"
+      },
+      {
+        "path": "backend/voice_api/research/golden_texts.json",
+        "sha256": "1c0023cb9359c7e1218982a4b44f1165d98af313bed84bab7ed5327e22daa786"
+      },
+      {
+        "path": "backend/voice_api/research/run_golden_set.py",
+        "sha256": "7e7647a758d978c6dbcc891c34a7af52d0a97ab8b075f2a9060faa47ca8f44a5"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/app.py",
+        "sha256": "cca46efce2bbe88b11eed74f2cb3436618793d0671ee7bd3e7b94b3e2bd00ee7"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/auth.py",
+        "sha256": "c2801f5d8724d97d0e7db39bbe1417334b004d12f3ea0f79aa0a40c1157f46f6"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/config.py",
+        "sha256": "3ac19f1e686605d09158b3c0f55960598eb0083f3c97c1624370f41be9140a7f"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/engines/base.py",
+        "sha256": "ee47934e575fa353097b70c686237f05ea35376027200097a52a3843af3d7e06"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/engines/__init__.py",
+        "sha256": "a2c013e6a2638fdab9d2d998de453d2db10e98db58429887e7b1c21c63dd49e2"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
+        "sha256": "94b7dcbd41ac3f0b1dd942b2f8ac2b399cb2385b247082a50d5c8c6fb7b81166"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/errors.py",
+        "sha256": "3f090113eea3859a80bee6f777580acdf55afdf0bb21ef0be945b4bc41f40f1c"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/__init__.py",
+        "sha256": "edce9dedeefa5c54fc4c1c444beb92f07224dd0daf00553a52d0e988580207d4"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/main.py",
+        "sha256": "817a5f47be21a8201b09bd9fadc5722e8210967f1915ce995a696ff69cb33915"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/models.py",
+        "sha256": "b49ff729bd51cfafc4b23ac6c6a4d0a1e87fc03073f6464da72b71d6a6ad30a6"
+      },
+      {
+        "path": "backend/voice_api/src/lexiquest_voice/runtime_compat.py",
+        "sha256": "a44dbf93a5683aa41e1caaf0690552883da8f3cc8bf3d8029c96645ff7a6ca8c"
+      },
+      {
+        "path": "backend/voice_api/tests/conftest.py",
+        "sha256": "578124da46073895acda5d0f58da71589d7e86f0a8f34e61266d2b5490adcfd3"
+      },
+      {
+        "path": "backend/voice_api/tests/integration/test_firebase_omnivoice_e2e.py",
+        "sha256": "7a1e16820ac73ce98d8d4fc6d7551beedbf10f7ef88a41ad3b458be25e11005c"
+      },
+      {
+        "path": "backend/voice_api/tests/test_app.py",
+        "sha256": "c9a407bf4ef2f0f54660db91bae29c30799a606c5468a6be7d5f255b1c34e6cc"
+      },
+      {
+        "path": "backend/voice_api/tests/test_auth.py",
+        "sha256": "b41f3c7a52ec43f8358cd9ee02e38acd8e2201afedb4e580e84973f95c2ebb52"
+      },
+      {
+        "path": "backend/voice_api/tests/test_config.py",
+        "sha256": "b4b41740c3784e4cc5b609f78452f1a8897aa7d0af3390715e32ce73d970398e"
+      },
+      {
+        "path": "backend/voice_api/tests/test_dependency_pins.py",
+        "sha256": "3380e534fa5cb1aaeece945ce00b5df972c9192b5bc3f1a14183c38dbeff8aaf"
+      },
+      {
+        "path": "backend/voice_api/tests/test_golden_texts.py",
+        "sha256": "2552dd6a2292d6eea3dc64dbf54e9889eaffadc9d7f6c3bd092f285a2c7c9bcd"
+      },
+      {
+        "path": "backend/voice_api/tests/test_models.py",
+        "sha256": "1f5fa02f2ac22ec8ba4c8e2e768cacb07d7a5d2521cd6c1bbd01b7178583ca05"
+      },
+      {
+        "path": "backend/voice_api/tests/test_omnivoice_engine.py",
+        "sha256": "ba24d62c728688253f78b6e7eca29dfb859ef14d03356fdcd2d4f3a1b9242a98"
+      },
+      {
+        "path": "backend/voice_api/tests/test_runtime_compat.py",
+        "sha256": "cdfb3d6ebd0eeb7cac259019cbdfcc60a88509e6a62d2e6918ed764b85aae2d8"
+      },
+      {
+        "path": "backend/voice_api/uv.lock",
+        "sha256": "e9ed96ac92f5b566e1332d84d02199429df9b80485b4826d1b8ded43639620fa"
+      },
+      {
+        "path": "tool/cli/verify-scope.ps1",
+        "sha256": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+      }
+    ],
+    "mismatches": [],
+    "broaderRunnerClosureChanges": "CLI fixture scripts now produce valid comments; these scripts are not executed by backend pytest commands. Original broad fingerprint remains historical, not asserted equal."
+  },
+  {
+    "command": "backendlm",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendlm.json",
+    "receiptStatus": "Passed",
+    "effectiveCommandInputs": [
+      {
+        "path": "backend/lexiquest_lm/dataset/collect_cefr_words.py",
+        "sha256": "1d671aec661ffd5f51f88ed7ab2c5071dd29ae36a6f1af3aad6897adbcc0ac93"
+      },
+      {
+        "path": "backend/lexiquest_lm/dataset/enrich_dictionary.py",
+        "sha256": "24d6562de354b6e6a68cb429dfa56702e4c9ca20b3e1ee2de320b4d0ad43e189"
+      },
+      {
+        "path": "backend/lexiquest_lm/dataset/expand_wordlist.py",
+        "sha256": "ec59fd3e3a9f706b2ba7d7165fc9fe2a51dbe221126dc78c20f3510b4053067e"
+      },
+      {
+        "path": "backend/lexiquest_lm/dataset/fetch_huggingface.py",
+        "sha256": "66021c911b3c14c47230d98c62282c82fd83b1fa452949e08e54634462db43b9"
+      },
+      {
+        "path": "backend/lexiquest_lm/dataset/generate_synthetic.py",
+        "sha256": "5e201aafebc4a8cffd219dadb6a034d9839886e9512ce4c374949aa6c8d8c627"
+      },
+      {
+        "path": "backend/lexiquest_lm/dataset/merge_and_format.py",
+        "sha256": "202b0d0deef1b031b1dac4b8014cc3082529196a85132dd197c16ca586b264fd"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/hf_space/app.py",
+        "sha256": "8eeb90be4335ea8422c957e950aed3818360e065147e05e1de1953c4ec4bc026"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/hf_space/auth.py",
+        "sha256": "99d4ed118e640cb3cdc6c1ebb2ef10652f28f3b16b8dcd328361c9eaccbf3329"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/hf_space/Dockerfile",
+        "sha256": "e4fe9b00c53928f5011c059f64fe6c66ba731292cf6fe88537b3c0dad901c863"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/hf_space/README.md",
+        "sha256": "e2a62afb58596a83c21d6c5f631190654d7cb4d09562731fb4200d30eed42ac3"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/hf_space/requirements.txt",
+        "sha256": "a3cc365514221c7e18aea6128cc5368ff879d6839d9689266034c2f1ec20e087"
+      },
+      {
+        "path": "backend/lexiquest_lm/deploy/upload_adapter.py",
+        "sha256": "51e050917be69a2a6d2f9e8cce4358ecf1dbd431934d07da167ca0cfb918bedc"
+      },
+      {
+        "path": "backend/lexiquest_lm/pyproject.toml",
+        "sha256": "f1bc06790b781e9081644b407f73fd6b370f82e6418198d9a823a992fa392b1e"
+      },
+      {
+        "path": "backend/lexiquest_lm/README.md",
+        "sha256": "4280ee3378dcff6f089b5e15de06941359f7a086da78e6c014d912e2a2bd4f22"
+      },
+      {
+        "path": "backend/lexiquest_lm/scripts/DEPLOY.md",
+        "sha256": "96d3449323c34d204f52143cdae425724abbb69a93d40078ac74d7811d6430c2"
+      },
+      {
+        "path": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+        "sha256": "018e223038ce741ee431658b60e5e522d83c042632e7bf9b1f419c5ef22ec925"
+      },
+      {
+        "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/__init__.py",
+        "sha256": "0e81fa756bc39d42968ba98cb38dc7c64ba65308cd99be9c9eeac77fffdbccd2"
+      },
+      {
+        "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/io.py",
+        "sha256": "962bef905a0a548132db433e860edcdd8dc65642ae19109cf14f3df2345314e6"
+      },
+      {
+        "path": "backend/lexiquest_lm/src/lexiquest_lm/__init__.py",
+        "sha256": "0bbd78ca0b62d27198522cb7cf012034be21828a83d3ef45e872a93d7cfb204a"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/conftest.py",
+        "sha256": "0a1b2bfc34c5c6afc9784b3307fff8ff5a30ba93eb453e6d1112de9595488eb7"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_collect_cefr_words.py",
+        "sha256": "af5fe10cfcc32c56a86a79251f00aecf6bea2f189a3126708937e7068e756a40"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_dependency_pins.py",
+        "sha256": "ef9f68f8f6a9ee56c09929227855f7e480e12ea1ef78e8fc2d89045e5b9ada50"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_dormant_tool_contracts.py",
+        "sha256": "c66cfdbfaf06061b3a62952b131bf4f3b0451763ee5a4dc80de08e679c1633f7"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_enrich_dictionary.py",
+        "sha256": "c57913f4db470227504defbaf1c909503fcfda447721ae2c939820026585a79b"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_evaluate.py",
+        "sha256": "e1f16f3ae14c953f47549be053417ba36e04fa889ff4ad84582d691f1f3ac858"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_expand_wordlist.py",
+        "sha256": "0109b6def06444d1abfdbe00291473f2da7ea250ee1d317173700eda4c7723f6"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_generate_synthetic.py",
+        "sha256": "9d5f622e5e7fd652aa0792c864e0e89a4fe34624f67a836d80aa11082a81b56a"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_hf_space_auth.py",
+        "sha256": "97733c269df94455faddfe2c2b23736b400936ad24ba3b88b30fdf29dfda6923"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_hf_space_deployment.py",
+        "sha256": "70881a769b9feb3c3357b4c12f8961445336ac0646564c5b443ba40274b08203"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_merge_and_format.py",
+        "sha256": "9d32cd9bf0e33377332913036bfd9a7d538df495ccd5f76ebc7e630abab4d707"
+      },
+      {
+        "path": "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+        "sha256": "6f4bc57f056e1b95cb276a3522bc58582f93d3603c65c8ef7a8027b26f7a1b8e"
+      },
+      {
+        "path": "backend/lexiquest_lm/train/evaluate.py",
+        "sha256": "866b9c55bf48157cfe2da739546d11d10c9a7871a9d8a05925e461a59af66186"
+      },
+      {
+        "path": "backend/lexiquest_lm/train/__init__.py",
+        "sha256": "e7b498752fcbb6ed7db48feb0320e5a2082b7e1c18a2552bfcda9c8d6b2fde19"
+      },
+      {
+        "path": "backend/lexiquest_lm/train/lora_finetune.py",
+        "sha256": "133b14aec6fefb019338651779516ed0ff5678956e47a86f86b87050d21ca982"
+      },
+      {
+        "path": "backend/lexiquest_lm/train/tokenise_dataset.py",
+        "sha256": "299e552503ae9a3dd05ad9ddf95d1e7cbe72848239ce36e577324c0429e361fb"
+      },
+      {
+        "path": "backend/lexiquest_lm/uv.lock",
+        "sha256": "94e8ad66563f1e425a95e78dc47078fe31ed7ab11376856531fb40d1cbf8d64f"
+      },
+      {
+        "path": "tool/cli/verify-scope.ps1",
+        "sha256": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+      }
+    ],
+    "mismatches": [],
+    "broaderRunnerClosureChanges": "CLI fixture scripts now produce valid comments; these scripts are not executed by backend pytest commands. Original broad fingerprint remains historical, not asserted equal."
+  }
+]

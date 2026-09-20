@@ -1177,8 +1177,9 @@ final class DriftLearningRepository
       ownerId: ownerId,
       content: content.words.map((word) => word.content).toList(),
     );
-    if (words.length != content.words.length)
+    if (words.length != content.words.length) {
       throw StateError('Reading content is unavailable');
+    }
     final categories =
         await (database.select(database.vocabularyCategories)..where(
               (row) =>
@@ -1246,13 +1247,15 @@ LIMIT 1
       sessionId: candidates.single.read<String>('id'),
       activityType: 'associativeReading',
     );
-    if (recovery == null || recovery.checkpoint == null)
+    if (recovery == null || recovery.checkpoint == null) {
       throw StateError('Reading recovery is missing');
+    }
     final stored = AssociativeReadingCheckpoint.fromJson(
       recovery.checkpoint!.state,
     );
-    if (!stored.sameContent(content))
+    if (!stored.sameContent(content)) {
       throw StateError('Reading document content changed');
+    }
     stored.recallResults(recovery);
     await _validateReadingPins(ownerId, stored);
     await _requireReadingOwner(ownerId);
@@ -1354,8 +1357,9 @@ LIMIT 1
       strictExactIdentity: strictExactIdentity,
     );
     if (recoverySession.id.startsWith('reading:')) {
-      if (checkpoint == null)
+      if (checkpoint == null) {
         throw StateError('Canonical reading checkpoint missing');
+      }
       AssociativeReadingCheckpoint.fromJson(checkpoint.state);
     }
     if (checkpoint == null) {
@@ -2607,8 +2611,9 @@ LIMIT 1
         );
         if (row.id.startsWith('reading:') ||
             latest?.state['kind'] == 'associativeReading') {
-          if (latest == null)
+          if (latest == null) {
             throw StateError('Canonical reading checkpoint missing');
+          }
           await _requireReadingOwner(ownerId);
           final recovery = await _loadActivityRecoveryForSession(
             ownerId: ownerId,
@@ -2617,8 +2622,9 @@ LIMIT 1
           );
           readingCheckpoint = latest;
           readingState = AssociativeReadingCheckpoint.fromJson(latest.state);
-          if (readingState.stage != 6)
+          if (readingState.stage != 6) {
             throw StateError('Reading has not reached completion');
+          }
           readingState.recallResults(recovery!);
           await _validateReadingPins(ownerId, readingState);
         }

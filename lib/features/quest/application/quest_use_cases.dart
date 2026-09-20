@@ -118,8 +118,9 @@ final class QuestUseCases {
   Future<QuestRefreshOutcome> refreshDaily({
     required String expectedOwnerId,
   }) async {
-    if (!_validIdentifier(expectedOwnerId))
+    if (!_validIdentifier(expectedOwnerId)) {
       throw ArgumentError.value(expectedOwnerId, 'expectedOwnerId');
+    }
     await _requireRefreshAuthority(expectedOwnerId);
     var outcome = QuestRefreshOutcome.unchanged;
     QuestOwnerChanged? ownerFailure;
@@ -139,8 +140,9 @@ final class QuestUseCases {
     // This guard also runs after scheduling failed; it is deliberately outside
     // the best-effort catch. Disposed resources are checked before any reads.
     await _requireRefreshAuthority(expectedOwnerId);
-    if (ownerFailure != null)
+    if (ownerFailure != null) {
       Error.throwWithStackTrace(ownerFailure, ownerFailureStack!);
+    }
     if (outcome != QuestRefreshOutcome.unavailable) {
       for (final listener in List<void Function()>.of(_statusListeners)) {
         if (_disposed) break;
@@ -317,8 +319,9 @@ final class QuestUseCases {
       'rewardGrants': evaluation.completed
           .map((completion) {
             final reward = evaluation.pinnedRewards[completion.questInstanceId];
-            if (reward == null)
+            if (reward == null) {
               throw StateError('quest completion has no pinned reward');
+            }
             final rewardItemId = reward.rewardItemId;
             return <String, dynamic>{
               'ownerId': completion.ownerId,
@@ -390,8 +393,9 @@ final class QuestUseCases {
         }
         if (instance.state == QuestInstanceState.active &&
             (stored == null ||
-                stored.catalogVersion != instance.catalogVersion))
+                stored.catalogVersion != instance.catalogVersion)) {
           definition = null;
+        }
       }
       result.add(QuestStatusEntry(instance: instance, definition: definition));
     }

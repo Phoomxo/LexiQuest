@@ -10,6 +10,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import '../../support/current_database_contract.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -47,9 +48,36 @@ void main() {
         .toJson();
     await database.close();
     final raw = sqlite3.open('${directory.path}/lexiquest.sqlite');
-    // v27 adds only this table and its guard; the remaining physical schema
-    // is exactly v26. Retain a populated owner when exercising that upgrade.
-    raw.execute('DROP TABLE legacy_learning_records');
+    // Restore the v26 physical shape, not only its version marker. Later
+    // extension tables and the v28 first-send column must be absent.
+    for (final table in <String>[
+      'personal_set_members',
+      'personal_set_revisions',
+      'active_plan_pointers',
+      'study_plan_revisions',
+      'guided_repair_operations',
+      'written_practice_results',
+      'speaking_practice_results',
+      'audio_lesson_checkpoints',
+      'legacy_learning_records',
+    ]) {
+      raw.execute('DROP TABLE $table');
+    }
+    raw.execute(
+      'ALTER TABLE outbox_operations DROP COLUMN attempted_mutation_json',
+    );
+    expect(
+      raw.select(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+      ),
+      hasLength(49),
+    );
+    expect(
+      raw
+          .select('PRAGMA table_info(outbox_operations)')
+          .map((row) => row['name']),
+      isNot(contains('attempted_mutation_json')),
+    );
     raw.execute('PRAGMA user_version=26');
     raw.close();
     database = AppDatabase.production();
@@ -64,13 +92,7 @@ void main() {
             .get(),
         isEmpty,
       );
-      expect(
-        (await database.customSelect('PRAGMA user_version').getSingle())
-            .data
-            .values
-            .single,
-        27,
-      );
+      await expectCurrentDatabaseContract(database);
       expect(
         await database.customSelect('PRAGMA foreign_key_check').get(),
         isEmpty,
@@ -376,12 +398,15 @@ Map<String, Map<String, Object?>> seedLegacy(File file) {
             : 1;
       }
       values['owner_id'] = 'legacy-owner';
-      if (values.containsKey('target_word_keys_json'))
+      if (values.containsKey('target_word_keys_json')) {
         values['target_word_keys_json'] = '["word-a"]';
-      if (values.containsKey('payload_json'))
+      }
+      if (values.containsKey('payload_json')) {
         values['payload_json'] = '{"preserved":true}';
-      if (values.containsKey('content_fingerprint'))
+      }
+      if (values.containsKey('content_fingerprint')) {
         values['content_fingerprint'] = 'a' * 64;
+      }
       raw.execute(
         'INSERT INTO $name (${values.keys.join(',')}) VALUES (${values.keys.map((_) => '?').join(',')})',
         values.values.toList(),

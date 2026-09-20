@@ -1,0 +1,26 @@
+[
+  {
+    "path": "test/architecture/fitness_test.dart",
+    "before": "0711e5661e993a2d4c57b7db0f109d5df9755b9847792a4dc4bf27450c6f0d3a",
+    "after": "9dd435c3f55eb16dc5fa77da7c34bb75a21594db384ac14af4159cd91d848636",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "lib/screens/choose_mode_screen.dart",
+    "before": "c002af82c85c56726eaae8e6167944219f9f0b223d46d35ac448eeb9854cabbe",
+    "after": "c002af82c85c56726eaae8e6167944219f9f0b223d46d35ac448eeb9854cabbe",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "lib/screens/cefr_vocabulary_catalog_screen.dart",
+    "before": "b94a056a2d5c56bc43391714b9583556d88fb0397f1a0be493ecc1b729a86969",
+    "after": "b94a056a2d5c56bc43391714b9583556d88fb0397f1a0be493ecc1b729a86969",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "lib/screens/local_reading_library_screen.dart",
+    "before": "2813c3787cad34a684a23c6e8a088c622318f8b78de5ebac585c755ccab11b39",
+    "after": "2813c3787cad34a684a23c6e8a088c622318f8b78de5ebac585c755ccab11b39",
+    "normalizedEquivalent": true
+  }
+]

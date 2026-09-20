@@ -512,8 +512,9 @@ void main() {
               guard: (ownerId) async {
                 expect(ownerId, testOwner.id);
                 guards++;
-                if (loseAuthority && guards == 2)
+                if (loseAuthority && guards == 2) {
                   throw StateError('synthetic same-owner lease lost');
+                }
               },
             );
             subject.addStatusListener(() {
@@ -602,7 +603,7 @@ void main() {
           final pending = subject.refreshDaily(expectedOwnerId: testOwner.id);
           final drained = pending.then<void>(
             (_) {},
-            onError: (Object _, StackTrace __) {},
+            onError: (Object _, StackTrace _) {},
           );
           try {
             await entered.future.timeout(const Duration(seconds: 3));

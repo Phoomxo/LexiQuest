@@ -140,7 +140,7 @@ function researchEvent(f, type) {
 }
 
 describe('R4b Research trusted sync boundary', () => {
-  for (const version of [24, 25, 26, 27, 28, 23, 29, '25', '26', 25.5, 26.5]) {
+  for (const version of [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 23, 35, '34', '25', '26', 25.5, 26.5]) {
     it(`research schema transport enforces supported version ${version} (${typeof version})`, async () => {
       const f = researchFixture();
       f.run.databaseSchemaVersion = version;
@@ -148,7 +148,7 @@ describe('R4b Research trusted sync boundary', () => {
       f.authority.runPins.databaseSchemaVersion = version;
       await seedResearch(f);
       const write = writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run);
-      await ([24, 25, 26, 27, 28].includes(version) ? assertSucceeds(write) : assertFails(write));
+      await ([24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34].includes(version) ? assertSucceeds(write) : assertFails(write));
     });
   }
   it('research schema transport retains the exact trusted issuer schema pin', async () => {
@@ -3024,7 +3024,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]) {
+    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -3038,7 +3038,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 29, '25', '26', 25.5, 26.5]) {
+    for (const databaseSchemaVersion of [14, 35, '34', '25', '26', 25.5, 26.5]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

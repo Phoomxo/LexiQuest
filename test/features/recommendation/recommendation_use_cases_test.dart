@@ -345,12 +345,20 @@ void main() {
       occurredAtUtc: occurredAt,
       isCorrect: false,
     );
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      ['owner-2'],
+    );
     await _recordAttempt(
       database,
       ownerId: 'owner-2',
       wordId: 'word-2',
       occurredAtUtc: occurredAt,
       isCorrect: false,
+    );
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      ['owner-1'],
     );
     final changesBefore = await _totalChanges(database);
 

@@ -24,11 +24,9 @@ final class PairMatchingLearnScreen extends StatefulWidget {
     super.key,
     required this.dependencies,
     required PairMatchingHistoryProjection source,
-    required String replayOperationId,
-    required String expectedOwnerId,
-  }) : replaySource = source,
-       replayOperationId = replayOperationId,
-       expectedOwnerId = expectedOwnerId;
+    required String this.replayOperationId,
+    required String this.expectedOwnerId,
+  }) : replaySource = source;
   final AppDependencies dependencies;
   final PairMatchingHistoryProjection? replaySource;
   final String? replayOperationId;

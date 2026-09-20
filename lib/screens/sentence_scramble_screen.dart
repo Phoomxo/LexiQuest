@@ -132,8 +132,9 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   }
 
   Future<void> _checkSentence() async {
-    if (_isCorrect == true || _interactionLocked || !_acceptsModeOperations)
+    if (_isCorrect == true || _interactionLocked || !_acceptsModeOperations) {
       return;
+    }
     final userSentence = _userSelection.join(' ');
     final evaluation = _modeAdapter.evaluate(
       target: widget.targetSentence,

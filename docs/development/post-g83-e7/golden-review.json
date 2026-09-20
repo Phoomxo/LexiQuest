@@ -1,0 +1,44 @@
+[
+  {
+    "path": "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_active_typed_light.png",
+    "beforeSha256": "78b401cc39e46796ef4ec9032c7b84b7b15555f8df5fdb48ee5366b2c1d78aee",
+    "afterSha256": "c0ab09ab0632340149e1977adc14d14286a8946175ded5804287017b7ca96c8b",
+    "review": "Both images inspected. Current accepted M3Theme aligns app bar leading and changes theme outlines; lesson content, controls and scrolling unchanged. Narrow 200% view remains scrollable.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  },
+  {
+    "path": "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\standard_recovered_active_typed_light.png",
+    "beforeSha256": "04716dd4ab6ae2dcf4a87bfbb13a58b234f0aabacee6f6cadcb55f742b7e974a",
+    "afterSha256": "5d18d164cf2227a96e83ac00ed956628703e8c14d2e75f84cf66d7c4dff88eed",
+    "review": "Both images inspected. Current accepted M3Theme aligns app bar leading and changes theme outlines; lesson content, controls and scrolling unchanged. Narrow 200% view remains scrollable.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  },
+  {
+    "path": "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_support_dark_high_contrast.png",
+    "beforeSha256": "34ff7be1998570eae77b3cf28a367f0e98b0d5227c1368c217dffcee8ce30e59",
+    "afterSha256": "12d0c2e791703f2868e667f2ef89cfd76681c6d02887e7dbd3f130efcde192d9",
+    "review": "Both images inspected. Current accepted M3Theme aligns app bar leading and changes theme outlines; lesson content, controls and scrolling unchanged. Narrow 200% view remains scrollable.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  },
+  {
+    "path": "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_flashcard_revealed_narrow_text_200_reduced_motion.png",
+    "beforeSha256": "7dd883416444d95c6f8f475d18a93d6e7e8b0b1f7313abb8312a5c07674361e1",
+    "afterSha256": "681a7ce42a9226432883c392b03dda570dc17e12b76ff47e1dadd99e4c8742e5",
+    "review": "Both images inspected. Current accepted M3Theme aligns app bar leading and changes theme outlines; lesson content, controls and scrolling unchanged. Narrow 200% view remains scrollable.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  },
+  {
+    "path": "test\\features\\learning\\pair_matching\\goldens\\pair_board\\host_setup_thai_guardian.png",
+    "beforeSha256": "42185ca2fc057f0ae9c35310f16ad0c46f86556337211fed7654335f9175cce5",
+    "afterSha256": "0f4672e06865ab396662abb0f6dd31e7f57df73583a99e6cbad354b5a6971bbe",
+    "review": "Both original/current inspected; only accepted M3 appbar leading alignment differs; source counts/timer/guardian limit/exit controls intact.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  },
+  {
+    "path": "test\\features\\learning\\pair_matching\\goldens\\pair_board\\host_timeout_thai.png",
+    "beforeSha256": "bfa47e05dca2288effce848c557444d24b2be6efe620e58f6c389b37dc490d01",
+    "afterSha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d",
+    "review": "Both original/current inspected; only accepted M3 appbar leading alignment differs; source counts/timer/guardian limit/exit controls intact.",
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\golden-review"
+  }
+]

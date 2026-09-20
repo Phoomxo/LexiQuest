@@ -553,6 +553,7 @@ void main() {
           generateId: _ids([
             'journey-session',
             'journey-correct',
+            'journey-second-session',
             'journey-wrong',
           ]),
           nowUtc: () => now,
@@ -574,14 +575,20 @@ void main() {
           attemptNumber: 1,
         );
         now = now.add(const Duration(minutes: 1));
+        await learning.finishSession(quiz.id);
+        final secondQuiz = await learning.startQuiz(
+          limit: 1,
+          pinnedWordIds: [word.id],
+        );
+        expect(secondQuiz.id, isNot(quiz.id));
         final incorrectAt = now;
         await learning.recordAnswer(
-          sessionId: quiz.id,
+          sessionId: secondQuiz.id,
           wordId: word.id,
           promptMode: 'meaningChoice',
           isCorrect: false,
           responseTimeMs: 700,
-          attemptNumber: 2,
+          attemptNumber: 1,
         );
         await firstReconciliation.drain();
         await firstReconciliation.dispose();

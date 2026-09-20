@@ -1,0 +1,1057 @@
+[
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\0153c5563fcf-a1ef2f6baaf5-8e38654a\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\0153c5563fcf-a1ef2f6baaf5-8e38654a\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e96dbd7b1843c1ee-Explicit-Flutter-tests.stdout.log",
+    "sha256": "e96dbd7b1843c1eede1e5148b9bd79f998df5bfd131583fb1e9ba69c3afa5a8d",
+    "bytes": 398038,
+    "failureCases": [
+      "00:25 +756 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/sync_engine_test.dart: only the exact cloud acknowledgement translates to the local operation [E]"
+    ],
+    "completion": [
+      "00:47 +810 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\02209eb66825-5fd21c27c0b1-f3cf4e40\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\02209eb66825-5fd21c27c0b1-f3cf4e40\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6917a64159f1dfc5-Explicit-Flutter-tests.stdout.log",
+    "sha256": "6917a64159f1dfc5f9057a772f8c0c815cf343325d6d41783e1ef249f02b43ce",
+    "bytes": 46942,
+    "failureCases": [
+      "00:07 +13 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/guest_upgrade_restart_test.dart: anonymous nonparticipant bind preserves complete inventory and replays once after reopen [E]"
+    ],
+    "completion": [
+      "00:15 +37 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\1d0438a279e9-544e791f7829-a5538c60\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\1d0438a279e9-544e791f7829-a5538c60\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c63ee8f6fba007be-Explicit-Flutter-tests.stdout.log",
+    "sha256": "c63ee8f6fba007be6bd667f9360f6342326b0351363a4b7cf702056db843d6ed",
+    "bytes": 306246,
+    "failureCases": [],
+    "completion": [
+      "00:15 +380: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\20ba7a222a4d-0724ad3f7ea4-8d78d513\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d0489c5a5067ecdd-Explicit-Flutter-tests.stderr.log",
+    "sha256": "d0489c5a5067ecddb766844539eed2f3edfc2ea36dd859febb9f30bc601ef04e",
+    "bytes": 1602,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\20ba7a222a4d-0724ad3f7ea4-8d78d513\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\14d7ffea06f10bf6-Explicit-Flutter-tests.stdout.log",
+    "sha256": "14d7ffea06f10bf621720fa8aa63a66a7f5d7e956e887a801eca968a7ac82b23",
+    "bytes": 37116,
+    "failureCases": [
+      "01:02 +1 -1: loading C:/Users/Phet/.codex/worktrees/daea/LexiQuest/integration_test/field_trial_media_smoke_test.dart [E]"
+    ],
+    "completion": [
+      "01:02 +1 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\22fe685a1343-3a7156c833eb-0c3e91c2\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\22fe685a1343-3a7156c833eb-0c3e91c2\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\27135815e442372a-Explicit-Flutter-tests.stdout.log",
+    "sha256": "27135815e442372ad391f7385e460f4203f4c279bdbc9f6915751d749fddd957",
+    "bytes": 351624,
+    "failureCases": [
+      "00:07 +19 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_matching_host_golden_test.dart: golden actual setup shows source count and configured maximum [E]",
+      "00:08 +23 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_matching_host_golden_test.dart: golden actual timeout and Continue affordance [E]",
+      "00:08 +24 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_matching_configuration_test.dart: provided real policy configuration is immutable in atomic start and progressed recovery [E]",
+      "00:37 +214 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_practice_replay_test.dart: identical normal and replay ledger retains descriptive stars: wrong=false [E]",
+      "00:39 +218 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_practice_replay_test.dart: identical normal and replay ledger retains descriptive stars: wrong=true [E]",
+      "00:45 +223 -6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_practice_replay_test.dart: actual replay shell zero-tap pointer keyboard semantics background and close preserve time [E]",
+      "00:50 +253 -7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/learning/pair_matching/pair_practice_replay_test.dart: new exact replay commits recreational answers and preserves authority rows [E]"
+    ],
+    "completion": [
+      "03:28 +523 -7: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\2a7afb31a1cf-12b18c8cfe07-6765ce30\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\2a7afb31a1cf-12b18c8cfe07-6765ce30\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\69eb88983d8d48b2-Explicit-Flutter-tests.stdout.log",
+    "sha256": "69eb88983d8d48b2975ae6eed7f7871f5cd22b3ecc06f34c258acc42e13219d2",
+    "bytes": 232586,
+    "failureCases": [
+      "00:08 +17 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/production_learning_restart_test.dart: production learning projections survive a file-backed restart [E]",
+      "00:09 +27 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/guest_upgrade_restart_test.dart: anonymous nonparticipant bind preserves complete inventory and replays once after reopen [E]",
+      "00:10 +32 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/guest_upgrade_restart_test.dart: merged existing resolves complete overlapping inventory across reopen [E]",
+      "00:11 +36 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/production_feature_navigation_test.dart: Thai glossary preserves exact production entry identity and live gates [E]",
+      "00:14 +78 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/production_feature_navigation_test.dart: home/weakness reaches its exact fail-closed V2 gate [E]"
+    ],
+    "completion": [
+      "01:02 +430 -5: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3095beabbdc7-c60646767053-5fae7ff6\\verify-scope-integration.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\415d6f4aedbb7a02-verify-scope-integration.tests.ps1.stderr.log",
+    "sha256": "415d6f4aedbb7a02b51de52d4060d4343ef00f5b76d88b3471fcdb4fe646e40f",
+    "bytes": 2518,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3095beabbdc7-c60646767053-5fae7ff6\\verify-scope-integration.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e3b0c44298fc1c14-verify-scope-integration.tests.ps1.stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3095beabbdc7-dcb4a189be88-3ea4b341\\verify-scope-integration.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-integration.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3095beabbdc7-dcb4a189be88-3ea4b341\\verify-scope-integration.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e4766d8b87b535c6-verify-scope-integration.tests.ps1.stdout.log",
+    "sha256": "e4766d8b87b535c64beb6807bdf5c6d46961de458d4321a9b0ecfc46d43c4d6a",
+    "bytes": 220,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\378ac83733ab-544e791f7829-df02ea5f\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\378ac83733ab-544e791f7829-df02ea5f\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\be9ad5bc31e0a877-Explicit-Flutter-tests.stdout.log",
+    "sha256": "be9ad5bc31e0a877bda0f86f742a30b218d402f37d72869321ccf008253ba589",
+    "bytes": 156332,
+    "failureCases": [],
+    "completion": [
+      "00:12 +170: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3c78ba69f1f3-2ac7e860eeff-34222b11\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3c78ba69f1f3-2ac7e860eeff-34222b11\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9460ea4cae6b0aec-Explicit-Flutter-tests.stdout.log",
+    "sha256": "9460ea4cae6b0aec69e5ea1b99dcc2f015d3ed0cbc6be566e56612a8cf155f3e",
+    "bytes": 302780,
+    "failureCases": [
+      "00:05 +1 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart: golden: Adventure active typed prompt [E]",
+      "00:06 +3 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart: golden: Standard recovered active typed prompt [E]",
+      "00:07 +6 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart: golden: Adventure committed support in dark high contrast [E]",
+      "00:08 +19 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart: golden: Adventure flashcard repair at narrow 200 percent text [E]",
+      "00:20 +299 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/device_model/litert_benchmark_test.dart: runs bounded real CPU and XNNPACK benchmarks [E]",
+      "00:20 +299 -6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/device_model/litert_image_classifier_test.dart: opens the checksum-pinned model and runs real XNNPACK inference [E]",
+      "00:20 +299 -7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/device_model/litert_image_classifier_test.dart: verifier rejects a manifest with the wrong output contract [E]",
+      "00:23 +362 -8: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/export/research_lifecycle_export_test.dart: four research tables have exactly one personal owner lifecycle entry [E]",
+      "00:23 +367 -9: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/export/research_lifecycle_export_test.dart: personal archive exports coded motivation separately from engagement [E]"
+    ],
+    "completion": [
+      "00:24 +408 -9: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3f5f267cd620-dcb4a189be88-25e14b0c\\r15-scope.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-r15-scope.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3f5f267cd620-dcb4a189be88-25e14b0c\\r15-scope.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f5e19adb3ceb47ed-r15-scope.tests.ps1.stdout.log",
+    "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466",
+    "bytes": 158,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3f5f267cd620-fcb0c54e54e0-2cc140ea\\r15-scope.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-r15-scope.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\3f5f267cd620-fcb0c54e54e0-2cc140ea\\r15-scope.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f5e19adb3ceb47ed-r15-scope.tests.ps1.stdout.log",
+    "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466",
+    "bytes": 158,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-0a94c61e2f0a-4cb75499\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-0a94c61e2f0a-4cb75499\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\3d4b13b9f08e9482-Explicit-Flutter-tests.stdout.log",
+    "sha256": "3d4b13b9f08e9482d31d57ee96b55040af62b1dafeb0a4a6e56347d5b61dcebc",
+    "bytes": 22190,
+    "failureCases": [
+      "00:06 +4 -1: anonymous nonparticipant bind preserves complete inventory and replays once after reopen [E]",
+      "00:06 +4 -2: merged existing resolves complete overlapping inventory across reopen [E]"
+    ],
+    "completion": [
+      "00:06 +4 -2: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-71c43cceb4b2-50649322\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-71c43cceb4b2-50649322\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ce92684b9c465f4b-Explicit-Flutter-tests.stdout.log",
+    "sha256": "ce92684b9c465f4bbee4bfed6aa1e7636f05ac3ab38551eca1caa6e29b8cd43b",
+    "bytes": 19652,
+    "failureCases": [],
+    "completion": [
+      "00:08 +6: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-bb8612174afb-77e7cf61\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-bb8612174afb-77e7cf61\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\16c3bc2069fe69c6-Explicit-Flutter-tests.stdout.log",
+    "sha256": "16c3bc2069fe69c6d50acd677f76422679082264a5549f77d39f9a75965199b0",
+    "bytes": 20996,
+    "failureCases": [
+      "00:06 +4 -1: anonymous nonparticipant bind preserves complete inventory and replays once after reopen [E]"
+    ],
+    "completion": [
+      "00:08 +5 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-d0f5089a6ff5-f65e3295\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c44619330e527185-Explicit-Flutter-tests.stderr.log",
+    "sha256": "c44619330e527185f0811e6fbdf3b630df62277441bb947e7e309e0671fca726",
+    "bytes": 3078,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\419208f6faf2-d0f5089a6ff5-f65e3295\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0bde9ebc702c8917-Explicit-Flutter-tests.stdout.log",
+    "sha256": "0bde9ebc702c8917461e2465cc2ec8c6f43eec2dd6daa766870a4717e14e8b79",
+    "bytes": 14806,
+    "failureCases": [
+      "00:02 +0 -1: loading C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/scenarios/guest_upgrade_restart_test.dart [E]"
+    ],
+    "completion": [
+      "00:02 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\45e1056f00f6-7da6487a851e-6795b8bd\\Firestore-rules-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a7a706563466b270-Firestore-rules-tests.stderr.log",
+    "sha256": "a7a706563466b270184d7eebb9ddcd87619cc074965f4ae0409cf32f88ec0356",
+    "bytes": 2248,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\45e1056f00f6-7da6487a851e-6795b8bd\\Firestore-rules-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\218d58f1e56ff85c-Firestore-rules-tests.stdout.log",
+    "sha256": "218d58f1e56ff85c48508b3c186d429824972712ef65e894d4340350fde50a78",
+    "bytes": 529934,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\4deec0e76fcb-2ac7e860eeff-b4efc9b8\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\4deec0e76fcb-2ac7e860eeff-b4efc9b8\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\8d23d3e44fbacb47-Explicit-Flutter-tests.stdout.log",
+    "sha256": "8d23d3e44fbacb47fc8f0481c031b6341bb38473d3b0a09a9360669e3bab2f7e",
+    "bytes": 25280,
+    "failureCases": [],
+    "completion": [
+      "00:18 +9: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\5408e3170542-8ae7f37d9805-dd8a2584\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\5408e3170542-8ae7f37d9805-dd8a2584\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1b13892e4bfdee4d-Explicit-Flutter-tests.stdout.log",
+    "sha256": "1b13892e4bfdee4d83ceaa390efe781f784eb873e43ebaccb41581b1f0c66077",
+    "bytes": 423906,
+    "failureCases": [
+      "00:06 +176 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/data/local/legacy_learning_import_test.dart: B15 schema26 upgrades without changing modern records [E]",
+      "02:16 +449 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback adventureOff preserves answer [E]",
+      "02:17 +449 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback syncConstruction preserves answer [E]",
+      "02:18 +449 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback lateHealth preserves answer [E]",
+      "02:19 +449 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback adventureOff preserves timeoutChoice [E]",
+      "02:21 +449 -6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback syncConstruction preserves timeoutChoice [E]",
+      "02:22 +449 -7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/adventure/adventure_pair_renderer_parity_test.dart: same host fallback lateHealth preserves timeoutChoice [E]"
+    ],
+    "completion": [
+      "02:26 +452 -7: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\56edf3688b59-544e791f7829-63b9b373\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\56edf3688b59-544e791f7829-63b9b373\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\4078fdd45d524375-Explicit-Flutter-tests.stdout.log",
+    "sha256": "4078fdd45d524375f5d2d7ae0546fed87f743315ba7f4630c413697fb26a273e",
+    "bytes": 18446,
+    "failureCases": [],
+    "completion": [
+      "00:05 +7: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\56edf3688b59-e96414ba54da-93f545b7\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\56edf3688b59-e96414ba54da-93f545b7\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0dce3cf2c3da33d8-Explicit-Flutter-tests.stdout.log",
+    "sha256": "0dce3cf2c3da33d83865f7304e9eea41c20b14617408de30621c72c984fb5e18",
+    "bytes": 27360,
+    "failureCases": [
+      "00:12 +1 -1: explicit support is guided practice and never mastery [E]"
+    ],
+    "completion": [
+      "00:13 +6 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6797ccf46cc1-b057e45b506f-7c3b2c3c\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6797ccf46cc1-b057e45b506f-7c3b2c3c\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2c0191f4dcaf6a78-Explicit-Flutter-tests.stdout.log",
+    "sha256": "2c0191f4dcaf6a78d70c8aa7585e6ce2584878ecfb97110fa9cba2d452ea0f9f",
+    "bytes": 19608,
+    "failureCases": [
+      "00:08 +0 -1: same host fallback adventureOff preserves answer [E]"
+    ],
+    "completion": [
+      "00:08 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6797ccf46cc1-c9cad23dc91d-9c7b9ef2\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6797ccf46cc1-c9cad23dc91d-9c7b9ef2\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9ea249cf1834efb1-Explicit-Flutter-tests.stdout.log",
+    "sha256": "9ea249cf1834efb1cce0693cabe744abbe5308cfca66209b0e971e050024f124",
+    "bytes": 30860,
+    "failureCases": [
+      "00:06 +0 -1: same host fallback adventureOff preserves answer [E]"
+    ],
+    "completion": [
+      "00:06 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\68c3bd4689dd-dcb4a189be88-bcbd0107\\verify-apk-model-runtime.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-apk-model-runtime.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\68c3bd4689dd-dcb4a189be88-bcbd0107\\verify-apk-model-runtime.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\51c2360c05cb96d3-verify-apk-model-runtime.tests.ps1.stdout.log",
+    "sha256": "51c2360c05cb96d3566ff729e8515a148beb665830990b60bab872ba4bbcc0d4",
+    "bytes": 518,
+    "failureCases": [],
+    "completion": [
+      "verify-apk-model-runtime tests: 78 passed, 0 failed (of 78)"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6970b5c2eddc-d85676da1fbc-545eeef0\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6970b5c2eddc-d85676da1fbc-545eeef0\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6d1f56823c5a7bce-Explicit-Flutter-tests.stdout.log",
+    "sha256": "6d1f56823c5a7bce946f066c79b0a801d2167c662f432a63ed5637a9bcde0495",
+    "bytes": 32516,
+    "failureCases": [],
+    "completion": [
+      "00:04 +25: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6c6f468a346b-f82d80331cf6-3f31547f\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6c6f468a346b-f82d80331cf6-3f31547f\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0582b9f83e019f41-Explicit-Flutter-tests.stdout.log",
+    "sha256": "0582b9f83e019f412c23fa5deb4043011daedb305e6a51a82c08f20548b7cafc",
+    "bytes": 180360,
+    "failureCases": [
+      "00:07 +61 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/architecture/fitness_test.dart: T25 โ€” lifecycle manifest covers every live table exactly once [E]",
+      "00:10 +75 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/architecture/notification_platform_contract_test.dart: iOS notification integration is CocoaPods-backed at iOS 13 [E]",
+      "00:11 +81 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/architecture/participant_screen_boundary_test.dart: participant screens use application ports and typed navigation [E]"
+    ],
+    "completion": [
+      "00:27 +196 -3: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6f95923680e1-0724ad3f7ea4-1c45d87a\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\6f95923680e1-0724ad3f7ea4-1c45d87a\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\43eb1f5c961ac945-Explicit-Flutter-tests.stdout.log",
+    "sha256": "43eb1f5c961ac945b7ff01ee8c38b7600ef2305c2410fa8e8932e5da022bf438",
+    "bytes": 26486,
+    "failureCases": [],
+    "completion": [
+      "00:38 +1: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\714e60862fe1-4db0c83e6ed2-7a9c1b92\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\714e60862fe1-4db0c83e6ed2-7a9c1b92\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\5dd026352057f9d2-Explicit-Flutter-tests.stdout.log",
+    "sha256": "5dd026352057f9d2d3fddc901e89b0c325eb0aa73bee318de6091fa03a40e9c1",
+    "bytes": 543554,
+    "failureCases": [],
+    "completion": [
+      "04:17 +866: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\85e3e57381bc-ad532b891251-296ec797\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\85e3e57381bc-ad532b891251-296ec797\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ed0c9fe4147e9158-Explicit-Flutter-tests.stdout.log",
+    "sha256": "ed0c9fe4147e91583e3ac69cb177a5b7d229305ef9c7da12677c0b0335240174",
+    "bytes": 47036,
+    "failureCases": [],
+    "completion": [
+      "00:27 +38: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8dbd9ea4cb2f-403674729a99-82e1fe18\\Local-LM-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Local-LM-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8dbd9ea4cb2f-403674729a99-82e1fe18\\Local-LM-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\494ca57d9b0df835-Local-LM-tests.stdout.log",
+    "sha256": "494ca57d9b0df83536fd9895ff8769c3f727e9a7a54dae57ad3008fd793172b7",
+    "bytes": 368,
+    "failureCases": [],
+    "completion": [
+      "105 passed in 0.49s"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8f0df35baeea-dcb4a189be88-f617c202\\verify-scope-selection.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-selection.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8f0df35baeea-dcb4a189be88-f617c202\\verify-scope-selection.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d11b867732859d23-verify-scope-selection.tests.ps1.stdout.log",
+    "sha256": "d11b867732859d230c8b780ea924725a78b575c1a2f752cd8f28bb186885419c",
+    "bytes": 154,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8f0df35baeea-fcb0c54e54e0-dae70f68\\verify-scope-selection.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-selection.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\8f0df35baeea-fcb0c54e54e0-dae70f68\\verify-scope-selection.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\d11b867732859d23-verify-scope-selection.tests.ps1.stdout.log",
+    "sha256": "d11b867732859d230c8b780ea924725a78b575c1a2f752cd8f28bb186885419c",
+    "bytes": 154,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\aa8963d6c78e-7e977ada883b-60ff607b\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\aa8963d6c78e-7e977ada883b-60ff607b\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ccab786e1e555d7e-Explicit-Flutter-tests.stdout.log",
+    "sha256": "ccab786e1e555d7e66d788ab732f6f67ab195892ef422dd671d34cccdc550f1d",
+    "bytes": 35566,
+    "failureCases": [],
+    "completion": [
+      "00:04 +29: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\aa8963d6c78e-f82d80331cf6-28ce1441\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\aa8963d6c78e-f82d80331cf6-28ce1441\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\650a8868e3dcb050-Explicit-Flutter-tests.stdout.log",
+    "sha256": "650a8868e3dcb050d394158e4529d8a497f86ffc24b4a083696e40472d929835",
+    "bytes": 41150,
+    "failureCases": [
+      "00:03 +7 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/architecture/participant_screen_boundary_test.dart: participant screens use application ports and typed navigation [E]",
+      "00:04 +24 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/architecture/fitness_test.dart: T25 โ€” lifecycle manifest covers every live table exactly once [E]"
+    ],
+    "completion": [
+      "00:05 +27 -2: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\abd3abee056a-12b18c8cfe07-a8fb802c\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\abd3abee056a-12b18c8cfe07-a8fb802c\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2b3cdb9e84d5a404-Explicit-Flutter-tests.stdout.log",
+    "sha256": "2b3cdb9e84d5a404e93258f07b514067f3c1327cae122d2c154460893fb0c109",
+    "bytes": 190532,
+    "failureCases": [],
+    "completion": [
+      "00:29 +289: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ae3052fc1f20-dcb4a189be88-82d32513\\run-android-smoke.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-run-android-smoke.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ae3052fc1f20-dcb4a189be88-82d32513\\run-android-smoke.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\edb52cd2959c7545-run-android-smoke.tests.ps1.stdout.log",
+    "sha256": "edb52cd2959c75455a2d81065d407d4e155a9367b76b3842139b52dc77155f2d",
+    "bytes": 88,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\af05da0d9d5f-3a7156c833eb-6a492449\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\af05da0d9d5f-3a7156c833eb-6a492449\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\66c0c39db9914f09-Explicit-Flutter-tests.stdout.log",
+    "sha256": "66c0c39db9914f093c2194e46174c564497ffc1560afbc80699517767067e560",
+    "bytes": 17240,
+    "failureCases": [],
+    "completion": [
+      "00:06 +4: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\c0c78b9f5c18-149da8398f5d-7ab6343d\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\c0c78b9f5c18-149da8398f5d-7ab6343d\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\534f9aab4870e691-Explicit-Flutter-tests.stdout.log",
+    "sha256": "534f9aab4870e6919ec08fe334e1f4ffcb5b8eb0e9b0406ea576c18369957bf8",
+    "bytes": 18664,
+    "failureCases": [
+      "00:03 +0 -1: accepted canonical source prepares Started before its first answer [E]"
+    ],
+    "completion": [
+      "00:03 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\c0c78b9f5c18-69faf60f7a1c-7ca95d6f\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\c0c78b9f5c18-69faf60f7a1c-7ca95d6f\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\44db4e42cbc295f0-Explicit-Flutter-tests.stdout.log",
+    "sha256": "44db4e42cbc295f0dfcc00a5bc6cf58648d915a17d0a248e9313d3e952fa5393",
+    "bytes": 14036,
+    "failureCases": [
+      "00:03 +0 -1: accepted canonical source prepares Started before its first answer [E]"
+    ],
+    "completion": [
+      "00:03 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ce78cbf5e124-3a7156c833eb-191db7b9\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ce78cbf5e124-3a7156c833eb-191db7b9\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f3f693f17159d723-Explicit-Flutter-tests.stdout.log",
+    "sha256": "f3f693f17159d723bfc677844b6e637baca70140ce15df0c7b94f7c6660060c9",
+    "bytes": 343088,
+    "failureCases": [],
+    "completion": [
+      "00:47 +564: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\d2723c19e006-ad532b891251-84f69b28\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\d2723c19e006-ad532b891251-84f69b28\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2a20b35ae918296d-Explicit-Flutter-tests.stdout.log",
+    "sha256": "2a20b35ae918296d802e0422fcc64dfa1f0d9f226263a5dc89da845c959afff5",
+    "bytes": 456682,
+    "failureCases": [
+      "00:09 +210 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/recommendation/recommendation_policy_test.dart: DriftProgressQueries flashcard-first decisions uses the owner-scoped SRS mastery state and excludes another owner [E]",
+      "00:10 +248 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/recommendation/recommendation_use_cases_test.dart: owner isolation and equal-rank ordering are deterministic [E]",
+      "00:20 +728 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: accepted canonical source prepares Started before its first answer [E]",
+      "00:20 +731 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: signed import and committed capture enqueue and deliver all five real payload collections [E]",
+      "00:20 +731 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: completed zero-answer source prepares two immutable phases [E]",
+      "00:20 +744 -6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: outbox insert failure atomically rolls back the new proof [E]",
+      "00:21 +746 -7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: repeat preparation and Completed preserve Started acknowledgement metadata [E]",
+      "00:21 +754 -8: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: adapter composition denies newer withdrawn consent despite accepted study version [E]",
+      "00:21 +755 -9: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_repository_test.dart: adapter postflight rejects newer consent withdrawal during receipt await [E]",
+      "00:21 +759 -10: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: standard canonical completion and post deliver four neutral events with completed run [E]",
+      "00:21 +762 -11: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: canonical completion prepares Completed before neutral completion event exists [E]",
+      "00:22 +764 -12: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: Started malformed payload cannot supply source admission [E]",
+      "00:22 +768 -13: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: Started wrong session link cannot supply source admission [E]",
+      "00:22 +776 -14: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: actual Pair atomic learning start supplies an accepted proof [E]",
+      "00:22 +776 -15: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: adventure canonical completion and post deliver four neutral events with completed run [E]",
+      "00:23 +777 -16: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: later malformed Pair checkpoint prevents deriving Started from valid initial [E]",
+      "00:23 +778 -17: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: renewed permit defers new sibling and leaves original proof and ACK untouched [E]",
+      "00:23 +778 -18: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: runtime withdrawal while all claims held blocks attempts and preserves signed evidence [E]",
+      "00:23 +779 -19: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: genuinely signed renewal invalidates held wrappers then requeues current refs without duplicating evidence [E]",
+      "00:24 +780 -20: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: raw +321us system clock composes genuine runtime capture queue and authorizer [E]",
+      "00:24 +782 -21: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 committed E1 with lost ACK then signed renewal reconciles via conflict once [E]",
+      "00:24 +782 -22: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: bounded candidate scan passes 50 ACKs and later failure preserves the prefix [E]",
+      "00:24 +782 -23: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: different operation ID does not satisfy the exact proof upload intent [E]",
+      "00:25 +782 -24: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: assignment quarantine after composed approval invalidates source admission [E]",
+      "00:25 +783 -25: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: unexpected source clock StateError at read 2 propagates [E]",
+      "00:25 +783 -26: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 committed E1 with lost ACK then signed renewal reconciles via pull once [E]",
+      "00:25 +783 -27: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: malformed source clock non-UTC denies without throwing [E]",
+      "00:25 +784 -28: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: malformed source clock negative UTC denies without throwing [E]",
+      "00:25 +784 -29: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: denied proof prefix advances in bounded memory across repository recreation [E]",
+      "00:25 +784 -30: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: denied enqueue prefix reaches a later authorized opportunity after adapter recreation [E]",
+      "00:25 +787 -31: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: local proof cursor survives repository restart and isolates pull cursors [E]",
+      "00:25 +787 -32: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: local proof cursor wraps to later completion and newly inserted lower key [E]",
+      "00:25 +787 -33: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: malformed local proof cursor resets only after genuine admission [E]",
+      "00:25 +788 -34: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 conflicting historical response cannot acknowledge local fact or advance checkpoint [E]",
+      "00:26 +792 -35: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_session_proof_source_integrity_test.dart: local proof cursor storage failure rolls back proof and exact outbox [E]",
+      "00:26 +792 -36: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 new-device parent-first historical pull with server provenance true [E]",
+      "00:26 +793 -37: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 new-device parent-first historical pull with server provenance false [E]",
+      "00:27 +794 -38: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 adapter rejects server marker revision before forwarding despite local proof [E]",
+      "00:27 +795 -39: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 adapter rejects server marker serverTimestamp before forwarding despite local proof [E]",
+      "00:27 +797 -40: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 adapter rejects server marker clientTimestamp before forwarding despite local proof [E]",
+      "00:28 +798 -41: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_runtime_sync_integration_test.dart: P2 adapter rejects server marker uid before forwarding despite local proof [E]"
+    ],
+    "completion": [
+      "00:28 +800 -41: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\d68b3f8db0c4-71c43cceb4b2-0500554d\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\d68b3f8db0c4-71c43cceb4b2-0500554d\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\51a8919cec039996-Explicit-Flutter-tests.stdout.log",
+    "sha256": "51a8919cec039996b9872ee88ba1668d82ac3ba276b52d9048ea20deb063480d",
+    "bytes": 303784,
+    "failureCases": [
+      "00:18 +114 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/screens/matching_mode_screen_test.dart: explicit support is guided practice and never mastery [E]"
+    ],
+    "completion": [
+      "00:45 +423 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\dc12e5d1c96e-2236f01097e4-be9cc5e3\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\dc12e5d1c96e-2236f01097e4-be9cc5e3\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\cf4eaf3b673c93c9-Explicit-Flutter-tests.stdout.log",
+    "sha256": "cf4eaf3b673c93c9ebe22293188132e1e27a0ccb9b3141e865c2650534eeb71c",
+    "bytes": 60164,
+    "failureCases": [
+      "00:03 +16 -1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 29 [E]",
+      "00:03 +16 -2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 30 [E]",
+      "00:03 +16 -3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 31 [E]",
+      "00:03 +17 -4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 32 [E]",
+      "00:03 +17 -5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 33 [E]",
+      "00:03 +17 -6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/sync/assessment_run_sync_test.dart: assessment payload preserves supported database schema 34 [E]",
+      "00:03 +30 -7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 29 (int) [E]",
+      "00:04 +30 -8: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 30 (int) [E]",
+      "00:04 +30 -9: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 31 (int) [E]",
+      "00:04 +30 -10: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 32 (int) [E]",
+      "00:04 +30 -11: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 33 (int) [E]",
+      "00:04 +30 -12: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/research/research_sync_authorizer_test.dart: research schema transport keeps explicit version 34 (int) [E]"
+    ],
+    "completion": [
+      "00:05 +44 -12: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\dded2d00155d-4db0c83e6ed2-64807a7d\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\dded2d00155d-4db0c83e6ed2-64807a7d\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1a16df519138d99e-Explicit-Flutter-tests.stdout.log",
+    "sha256": "1a16df519138d99ed13b8a9ec76ed52a6a4908b7ee1f147fbac4c608a35b1dd7",
+    "bytes": 374620,
+    "failureCases": [],
+    "completion": [
+      "02:24 +552: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e4a4d3e214d8-dcb4a189be88-84ee96d7\\verify-scope-integrity.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope-integrity.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e4a4d3e214d8-dcb4a189be88-84ee96d7\\verify-scope-integrity.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1940186bf377bfc8-verify-scope-integrity.tests.ps1.stdout.log",
+    "sha256": "1940186bf377bfc83895fa655d9161c158d84816d8b1aa4eff9d5b5a40246775",
+    "bytes": 408,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e669107de5d5-b057e45b506f-aca07d3b\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e669107de5d5-b057e45b506f-aca07d3b\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e8218ec6d81759cc-Explicit-Flutter-tests.stdout.log",
+    "sha256": "e8218ec6d81759cccd636a34c560337262ccdb94003e537a1119820e254a0994",
+    "bytes": 12818,
+    "failureCases": [],
+    "completion": [
+      "00:03 +1: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e83b630198a9-a1ef2f6baaf5-863fd42b\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\e83b630198a9-a1ef2f6baaf5-863fd42b\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e537bb6369f73dc6-Explicit-Flutter-tests.stdout.log",
+    "sha256": "e537bb6369f73dc602f687cf117c0c05f5ab250b49f8f5b52e54a51967518747",
+    "bytes": 174460,
+    "failureCases": [],
+    "completion": [
+      "00:50 +318: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ed7d526a654c-aebc2267263b-661e6c4b\\Voice-API-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Voice-API-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ed7d526a654c-aebc2267263b-661e6c4b\\Voice-API-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0357d879b5576949-Voice-API-tests.stdout.log",
+    "sha256": "0357d879b557694962c83e8361334e3897407c0efadd6753d0cbf4faad7ddae9",
+    "bytes": 366,
+    "failureCases": [],
+    "completion": [
+      "74 passed in 0.67s"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ee83d1bbf68a-0ef792705624-06494c93\\AI-API-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f40b79797c68d0cb-AI-API-tests.stderr.log",
+    "sha256": "f40b79797c68d0cb695f3797f4b41bf89176961bdb325a1656e64287ae6db5fe",
+    "bytes": 2062,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ee83d1bbf68a-0ef792705624-06494c93\\AI-API-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\7ec4c64f174c5ac6-AI-API-tests.stdout.log",
+    "sha256": "7ec4c64f174c5ac6296d59655299e21d53ce1042456fefb5dd8cc875c91cb63a",
+    "bytes": 368,
+    "failureCases": [],
+    "completion": [
+      "109 passed in 0.63s"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ee83d1bbf68a-dcd9ed043964-e1a9d4ea\\AI-API-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-AI-API-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ee83d1bbf68a-dcd9ed043964-e1a9d4ea\\AI-API-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\8a722f6db70641f7-AI-API-tests.stdout.log",
+    "sha256": "8a722f6db70641f72054decb3217c16638bef53307ce56671d89e77cde2b24f7",
+    "bytes": 368,
+    "failureCases": [],
+    "completion": [
+      "109 passed in 0.43s"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\f273b6f98157-8430c5cbfc0b-2aa7ce67\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\f273b6f98157-8430c5cbfc0b-2aa7ce67\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\687bcad16cb93701-Explicit-Flutter-tests.stdout.log",
+    "sha256": "687bcad16cb937010e0deb9aff4d9a4c95e2a8066c0bda4dc2934a8ea7b6be0d",
+    "bytes": 21730,
+    "failureCases": [
+      "00:05 +0 -1: explicit support is guided practice and never mastery [E]"
+    ],
+    "completion": [
+      "00:05 +0 -1: Some tests failed."
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\fe7973938669-f82d80331cf6-104f8e4c\\Explicit-Flutter-tests.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\fe7973938669-f82d80331cf6-104f8e4c\\Explicit-Flutter-tests.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9083476fdd5d67d2-Explicit-Flutter-tests.stdout.log",
+    "sha256": "9083476fdd5d67d2b58545952d3ca286e5df0fc5aec54804b0a839b4e7b1a9fd",
+    "bytes": 33722,
+    "failureCases": [],
+    "completion": [
+      "00:08 +24: All tests passed!"
+    ]
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ffc46fee699f-dcb4a189be88-69655f74\\verify-scope.tests.ps1.stderr.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-verify-scope.tests.ps1.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "bytes": 392,
+    "failureCases": [],
+    "completion": []
+  },
+  {
+    "original": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\ffc46fee699f-dcb4a189be88-69655f74\\verify-scope.tests.ps1.stdout.log",
+    "archived": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\41cd3641d74d7c22-verify-scope.tests.ps1.stdout.log",
+    "sha256": "41cd3641d74d7c22d3d4fe4913bcff867804e873ab3d940438dec04dd35b202c",
+    "bytes": 452,
+    "failureCases": [],
+    "completion": []
+  }
+]

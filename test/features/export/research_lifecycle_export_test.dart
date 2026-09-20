@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/export/domain/export_contracts.dart'
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 
 import '../identity/research_lifecycle_fixtures.dart';
+import '../../support/current_database_contract.dart';
 
 void main() {
   late AppDatabase database;
@@ -27,10 +28,17 @@ void main() {
   test(
     'four research tables have exactly one personal owner lifecycle entry',
     () {
-      expect(ownerLifecycleManifest, hasLength(50));
+      expect(
+        ownerLifecycleManifest,
+        hasLength(currentDatabaseTableInventory.length),
+      );
+      expect(
+        ownerLifecycleManifest.map((entry) => entry.tableName).toSet(),
+        currentDatabaseTableInventory,
+      );
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(50),
+        hasLength(currentDatabaseTableInventory.length),
       );
       for (final table in researchLifecycleTables) {
         final entries = ownerLifecycleManifest.where(
@@ -121,7 +129,7 @@ void main() {
       final artifact = await exporter.prepareActive();
       final text = utf8.decode(artifact.bytes);
       final tables = archiveTables(artifact);
-      expect(tables, hasLength(50));
+      expect(tables, hasLength(currentDatabaseTableInventory.length));
       final run = records(tables, 'motivationMeasurementRuns').last;
       final response = records(tables, 'motivationResponses').last;
       final permit = records(tables, 'researchParticipationPermits').last;

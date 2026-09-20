@@ -173,12 +173,31 @@ void main() {
     );
     await _pumpUntilFound(tester, find.text('ดูวิธีคิด'));
     await tester.tap(find.text('ดูวิธีคิด'));
-    await tester.tap(
-      find.byKey(const ValueKey<String>('matching-word-word:airport')),
+    await tester.pumpAndSettle();
+    final word = find.byKey(
+      const ValueKey<String>('matching-word-word:airport'),
     );
-    await tester.tap(
-      find.byKey(const ValueKey<String>('matching-meaning-word:airport')),
+    await tester.ensureVisible(word);
+    await tester.pump();
+    expect(word.hitTestable(), findsOneWidget);
+    await tester.tap(word);
+    await _pumpUntilFound(
+      tester,
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'คำศัพท์ airport' &&
+            widget.properties.selected == true,
+      ),
     );
+    final meaning = find.byKey(
+      const ValueKey<String>('matching-meaning-word:airport'),
+    );
+    expect(tester.widget<OutlinedButton>(meaning).onPressed, isNotNull);
+    await tester.ensureVisible(meaning);
+    await tester.pump();
+    expect(meaning.hitTestable(), findsOneWidget);
+    await tester.tap(meaning);
     await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: place for flights'));
 
     final attempt =

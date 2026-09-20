@@ -56,7 +56,7 @@ final class _HandwritingScratchpadRouteState
           } else {
             setState(() => _ready = true);
           }
-        }, onError: (Object _, StackTrace __) {
+        }, onError: (Object _, StackTrace _) {
           if (mounted) setState(_retire);
         });
   }

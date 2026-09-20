@@ -238,6 +238,7 @@ void main() {
         replay.start.start(droppedConfiguration),
         throwsStateError,
       );
+      h.now = h.operation.plan.createdAtUtc.add(const Duration(minutes: 1));
       await replay.start.start(h.operation);
       await expectLater(
         h.real.addSessionConfigurationActiveEffort(

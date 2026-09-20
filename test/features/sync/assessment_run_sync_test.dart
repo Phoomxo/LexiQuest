@@ -30,7 +30,7 @@ import 'package:vocab_learning_app/product/feature_contract/feature_contract_dig
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
-  for (var version = 15; version <= 28; version++) {
+  for (var version = 15; version <= 34; version++) {
     test('assessment payload preserves supported database schema $version', () {
       final run = _run();
       final payload = {
@@ -50,7 +50,18 @@ void main() {
       );
     });
   }
-  for (final version in <Object>[14, 29, '25', 25.0, 25.5, '26', 26.0, 26.5]) {
+  for (final version in <Object>[
+    14,
+    35,
+    '34',
+    34.0,
+    '25',
+    25.0,
+    25.5,
+    '26',
+    26.0,
+    26.5,
+  ]) {
     test(
       'assessment payload rejects unsupported schema $version (${version.runtimeType})',
       () {

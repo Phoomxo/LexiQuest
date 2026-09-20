@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_routes.dart';
 import '../services/local_reading_catalog.dart';
 import 'cefr_article_reader_screen.dart';
 import 'cefr_vocabulary_catalog_screen.dart';
@@ -54,8 +55,10 @@ class LocalReadingLibraryScreen extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   final selected = LocalReadingCatalog.forLevel(level);
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
+                  AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'home/learn/reading/article',
                       builder: (_) => CefrArticleReaderScreen(
                         title: selected.title,
                         content: '${selected.text}\n\n${selected.reflection}',
@@ -77,11 +80,10 @@ class LocalReadingLibraryScreen extends StatelessWidget {
           OutlinedButton(
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(20)),
             key: const ValueKey('reading-library-vocabulary-catalog'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                settings: const RouteSettings(
-                  name: 'home/learn/reading/cefr/vocabulary',
-                ),
+            onPressed: () => AppNavigator.pushPage<void>(
+              context,
+              AppPage<void>(
+                name: 'home/learn/reading/cefr/vocabulary',
                 builder: (_) => const CefrVocabularyCatalogScreen(),
               ),
             ),

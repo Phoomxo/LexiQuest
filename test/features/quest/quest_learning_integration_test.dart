@@ -181,8 +181,9 @@ void main() {
                   required occurredAtUtc,
                   rewardItemId,
                 }) async {
-                  if (sinkUnavailable)
+                  if (sinkUnavailable) {
                     throw StateError('synthetic reward outage');
+                  }
                   expect(ownerId, _ownerId);
                   expect(xpAmount, 50);
                   expect(occurredAtUtc, originalTime);

@@ -103,7 +103,7 @@ function Get-AreaPathPattern {
     # dependency edit. This changes cache validity, not the selected tests.
     $flutterInputs = '^(lib/|test/|assets/|tool/|\.gitattributes$|pubspec\.(yaml|lock)$|analysis_options\.yaml$|dart_test\.yaml$|\.metadata$)'
     if ($TestTargets.Count -gt 0) {
-        return $flutterInputs
+        return $flutterInputs + '|^integration_test/'
     }
 
     switch ($SelectedArea) {
@@ -255,7 +255,7 @@ function New-FlutterTestSpec {
     return New-CommandSpec `
         -Name $Name `
         -FilePath 'flutter' `
-        -Arguments (@('test') + $targets + @('--reporter', 'compact') + $(if ($TestName) { @('--plain-name', $TestName) } else { @() }) + $(if ((Get-Variable LocalLearningPreview -ErrorAction SilentlyContinue) -and $LocalLearningPreview) { @('--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') } else { @() })) `
+        -Arguments (@('test') + $(if ($SourceArea -eq 'Integration') { @('-d', 'flutter-tester') } else { @() }) + $targets + @('--reporter', 'compact') + $(if ($TestName) { @('--plain-name', $TestName) } else { @() }) + $(if ((Get-Variable LocalLearningPreview -ErrorAction SilentlyContinue) -and $LocalLearningPreview) { @('--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') } else { @() })) `
         -SourceArea $SourceArea
 }
 
@@ -357,7 +357,12 @@ function Get-VerificationCommands {
             throw 'Explicit test targets cannot replace release verification.'
         }
         foreach ($target in $TestTargets) {
-            if ($target -notmatch '^test[/\\].+\.dart$' -or $target -match '(^|[/\\])\.\.([/\\]|$)' -or
+            $targetPattern = '^test[/\\].+\.dart$'
+            if ($SelectedArea -eq 'Integration') {
+                if ($SelectedLevel -ne 'Targeted') { throw 'Local integration targets require Targeted/Integration.' }
+                $targetPattern = '^integration_test[/\\].+_test\.dart$'
+            }
+            if ($target -notmatch $targetPattern -or $target -match '(^|[/\\])\.\.([/\\]|$)' -or
                 -not (Test-Path -LiteralPath (Join-Path $repoRoot $target) -PathType Leaf)) {
                 throw ('Invalid explicit Flutter test target: ' + $target)
             }
@@ -514,7 +519,7 @@ function Get-VerificationCommands {
                     -FilePath 'flutter' `
                     -Arguments @(
                         'analyze',
-                        'integration_test\production_learning_flow_test.dart'
+                        'integration_test\field_trial_core_journey_test.dart'
                     ) `
                     -SourceArea 'Integration'))
             } else {
@@ -526,7 +531,7 @@ function Get-VerificationCommands {
                         '-ExecutionPolicy',
                         'Bypass',
                         '-File',
-                        (Join-Path $scriptDir 'verify-android-e2e.ps1')
+                        (Join-Path $scriptDir 'run-android-smoke.ps1')
                     ) `
                     -SourceArea 'Integration'))
             }

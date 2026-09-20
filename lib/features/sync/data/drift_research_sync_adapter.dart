@@ -383,8 +383,9 @@ final class DriftResearchSyncAdapter {
           !ResearchSyncContract.same(s.payload, {
             'permitId': s.id,
             'ownerId': s.ownerId,
-          }))
+          })) {
         return false;
+      }
       return phase != ResearchSyncPhase.pull &&
           await ownerAllowed(
             s.ownerId,
@@ -611,8 +612,9 @@ final class DriftResearchSyncAdapter {
     final local = await snapshot(s.collection, s.ownerId, s.id);
     if (s.collection == SyncCollection.researchSessionProofs
         ? !ResearchSyncContract.same(local.payload, s.payload)
-        : !_sameFact(local.payload, s.payload))
+        : !_sameFact(local.payload, s.payload)) {
       return false;
+    }
     final admitted =
         await (database.select(database.outboxOperations)..where(
               (r) =>
@@ -1031,8 +1033,9 @@ final class DriftResearchSyncAdapter {
   ) async {
     final proof = ResearchSessionProof.decode(entity.payload);
     final updated = _utc(proof.endedAtUtcMs ?? proof.startedAtUtcMs);
-    if (entity.clientUpdatedAtUtc != updated)
+    if (entity.clientUpdatedAtUtc != updated) {
       throw const InvalidSyncPayloadFailure();
+    }
     final incoming = ResearchSyncSnapshot(
       SyncCollection.researchSessionProofs,
       owner,
@@ -1045,8 +1048,9 @@ final class DriftResearchSyncAdapter {
     );
     final previous = await _row(SyncCollection.researchSessionProofs, proof.id);
     if (previous != null) {
-      if (previous['owner_id'] != owner)
+      if (previous['owner_id'] != owner) {
         throw const InvalidSyncPayloadFailure();
+      }
       if (!ResearchSyncContract.same(
         researchSessionProofFromRow(previous).toJson(),
         proof.toJson(),
@@ -1060,8 +1064,9 @@ final class DriftResearchSyncAdapter {
     final provenance = entity.serverReadProvenance;
     if (provenance == null) {
       final known = await _proofOperation(incoming);
-      if (previous == null || known == null)
+      if (previous == null || known == null) {
         throw const ProviderUnavailableSyncFailure();
+      }
     }
     if (!await allowed(
       incoming,

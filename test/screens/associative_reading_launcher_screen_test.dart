@@ -416,7 +416,7 @@ void main() {
           await tester.enterText(find.byType(TextField).at(1), 'incorrect');
           tester.testTextInput.hide();
           await tester.pump();
-          if (partial)
+          if (partial) {
             await tester.runAsync(
               () => database.customStatement('''
 CREATE TRIGGER fail_second_reading_answer BEFORE INSERT ON answer_attempts
@@ -424,6 +424,7 @@ WHEN (SELECT COUNT(*) FROM answer_attempts) = 1
 BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
 '''),
             );
+          }
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
@@ -2129,6 +2130,7 @@ final class _BlockedAnswerCountingLearningRepository
     implements LearningRepository, LearningSessionLifecycleRepository {
   _BlockedAnswerCountingLearningRepository(this._delegate);
 
+  @override
   final DriftLearningRepository _delegate;
   final Completer<void> answerEntered = Completer<void>();
   final Completer<void> _answerRelease = Completer<void>();
@@ -2190,6 +2192,7 @@ final class _FailingProgressCountingLearningRepository
     implements LearningRepository, LearningSessionLifecycleRepository {
   _FailingProgressCountingLearningRepository(this._delegate);
 
+  @override
   final DriftLearningRepository _delegate;
   int abandonCalls = 0;
 
@@ -2229,6 +2232,7 @@ final class _DelayedProgressCountingLearningRepository
     implements LearningRepository, LearningSessionLifecycleRepository {
   _DelayedProgressCountingLearningRepository(this._delegate);
 
+  @override
   final DriftLearningRepository _delegate;
   final Completer<ReadingProgressSnapshot?> _progress =
       Completer<ReadingProgressSnapshot?>();
@@ -2276,6 +2280,7 @@ final class _BlockedAbandonAfterProgressFailureRepository
     implements LearningRepository, LearningSessionLifecycleRepository {
   _BlockedAbandonAfterProgressFailureRepository(this._delegate);
 
+  @override
   final DriftLearningRepository _delegate;
   final Completer<void> _firstAbandonStarted = Completer<void>();
   final Completer<void> _release = Completer<void>();
@@ -2337,6 +2342,7 @@ final class _CompletedProgressFailOnceAbandonRepository
     this.loseFirstAcknowledgement = false,
   });
 
+  @override
   final DriftLearningRepository _delegate;
   final int failuresBeforeSuccess;
   final bool loseFirstAcknowledgement;
@@ -2401,6 +2407,7 @@ final class _FailingProgressAndAbandonRepository
     required this.failuresBeforeSuccess,
   });
 
+  @override
   final DriftLearningRepository _delegate;
   final int failuresBeforeSuccess;
   int abandonCalls = 0;

@@ -5283,7 +5283,7 @@ void main() {
             );
             workerDrain = stale.then<void>(
               (_) {},
-              onError: (Object _, StackTrace __) {},
+              onError: (Object _, StackTrace _) {},
             );
             final request = await scheduler.blockedScheduleStarted.timeout(
               const Duration(seconds: 3),
@@ -5344,7 +5344,7 @@ void main() {
               (_) {
                 transitionSettled = true;
               },
-              onError: (Object _, StackTrace __) {
+              onError: (Object _, StackTrace _) {
                 transitionSettled = true;
               },
             );
@@ -5425,8 +5425,8 @@ void main() {
             scheduler.releaseBlockedCancel();
             try {
               await Future.wait<void>([
-                if (workerDrain != null) workerDrain,
-                if (transitionDrain != null) transitionDrain,
+                ?workerDrain,
+                ?transitionDrain,
               ]).timeout(const Duration(seconds: 3));
             } finally {
               await background?.dispose();

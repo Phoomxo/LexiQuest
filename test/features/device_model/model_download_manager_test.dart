@@ -1092,7 +1092,8 @@ final class _ControlledVerifier implements ModelFileVerifier {
     calls += 1;
     started.complete();
     if (block) await release.future;
-    if (reject)
+    if (reject) {
       throw const ModelLifecycleException(ModelFailureCode.interpreterRejected);
+    }
   }
 }

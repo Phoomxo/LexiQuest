@@ -436,28 +436,33 @@ class _AssociativeReadingSessionScreenState
         );
         if (!_canContinueInitialization) return progress;
         await learning.revalidateReadingSessionOwner(widget.ownerId!);
-        if (recovery?.checkpoint == null)
+        if (recovery?.checkpoint == null) {
           throw StateError('Reading checkpoint is unavailable');
+        }
         final state = AssociativeReadingCheckpoint.fromJson(
           recovery!.checkpoint!.state,
         );
-        if (!state.sameContent(widget.readingCheckpoint!))
+        if (!state.sameContent(widget.readingCheckpoint!)) {
           throw StateError('Reading content identity changed');
+        }
         _readingState = state;
         _legacyProgressNotice =
             progress != null && widget.recoveredActivity == null;
         _readingRevision = recovery.checkpoint!.revision;
         _recallResults = state.recallResults(recovery);
         for (var index = 0; index < _recallResults.length; index++) {
-          if (_recallResults[index] != null)
+          if (_recallResults[index] != null) {
             _restoredRecallOccurrences.add(index);
+          }
         }
-        if (recovery.session.state == 'abandoned')
+        if (recovery.session.state == 'abandoned') {
           throw StateError('Stopped reading cannot resume');
+        }
         if (recovery.session.state == 'active') {
           final lifecycle = _lessonLifecycle;
-          if (lifecycle == null)
+          if (lifecycle == null) {
             throw StateError('Reading lifecycle is unavailable');
+          }
           await lifecycle.start(
             sessionId: sessionId,
             ownerId: widget.ownerId,

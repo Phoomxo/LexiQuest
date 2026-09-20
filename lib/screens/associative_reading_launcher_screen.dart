@@ -409,12 +409,14 @@ class _AssociativeReadingLauncherScreenState
       final recovery = newRound
           ? null
           : await learning.loadReadingRecovery(initial);
-      if (recovery != null)
+      if (recovery != null) {
         configuration = recovery.session.sessionConfiguration;
+      }
       if (configuration == null) revalidateConfiguration = null;
       if (configuration != null) {
-        if (revalidateConfiguration == null)
+        if (revalidateConfiguration == null) {
           throw StateError('Reading configuration revalidation unavailable');
+        }
         await revalidateConfiguration(configuration);
       }
       final session = recovery == null
@@ -432,12 +434,13 @@ class _AssociativeReadingLauncherScreenState
       createdSessionId = terminal ? null : session.id;
       createdSessionOwnerId = terminal ? null : session.ownerId;
       if (!mounted) {
-        if (!terminal)
+        if (!terminal) {
           await learning.abandonSession(
             ownerId: session.ownerId,
             sessionId: session.id,
             abandonedAtUtc: DateTime.now().toUtc(),
           );
+        }
         return;
       }
       final terminalAuthority = _AssociativeReadingSessionTerminalAuthority();
@@ -527,7 +530,7 @@ class _AssociativeReadingLauncherScreenState
       final latest = await learning.loadActivityRecovery(
         activityType: 'associativeReading',
       );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _hasCompletedReading = latest?.session.state == 'completed';
           _recoveryContent =
@@ -535,6 +538,7 @@ class _AssociativeReadingLauncherScreenState
               ? AssociativeReadingCheckpoint.fromJson(latest!.checkpoint!.state)
               : null;
         });
+      }
     } catch (_) {
       final sessionId = createdSessionId;
       final ownerId = createdSessionOwnerId;

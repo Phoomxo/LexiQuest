@@ -387,8 +387,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     } on Object {
       if (!_acceptsModeOperations ||
           epoch != _listenEpoch ||
-          _acceptedFinalEpoch == epoch)
+          _acceptedFinalEpoch == epoch) {
         return;
+      }
       _listenEpoch += 1;
       _speechSession?.cancel().ignore();
       setState(() {

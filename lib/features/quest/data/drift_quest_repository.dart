@@ -132,8 +132,9 @@ final class DriftQuestRepository implements QuestRepository {
     required DateTime nowUtc,
   }) => _database.transaction(() async {
     final period = instance.period;
-    if (period == null || instance.definitionSnapshot == null || !nowUtc.isUtc)
+    if (period == null || instance.definitionSnapshot == null || !nowUtc.isUtc) {
       throw StateError('quest assignment lacks durable period or definition');
+    }
     final activeOwners =
         await (_database.select(_database.localOwners)
               ..where((row) => row.isActive.equals(true))
@@ -258,8 +259,9 @@ final class DriftQuestRepository implements QuestRepository {
     required Iterable<String> questIds,
   }) async {
     final ids = questIds.toSet().toList();
-    if (ids.length > 64)
+    if (ids.length > 64) {
       throw StateError('quest projection catalog exceeds 64');
+    }
     final rows =
         await (_database.select(_database.questInstances)
               ..where(
@@ -277,11 +279,13 @@ final class DriftQuestRepository implements QuestRepository {
               )
               ..limit(65))
             .get();
-    if (rows.length > 64)
+    if (rows.length > 64) {
       throw StateError('quest event window candidates exceed 64');
+    }
     final seen = <String>{};
-    if (rows.any((row) => !seen.add(row.questId)))
+    if (rows.any((row) => !seen.add(row.questId))) {
       throw StateError('overlapping canonical quest windows');
+    }
     return _instancesFromRows(rows);
   }
 
@@ -335,8 +339,9 @@ final class DriftQuestRepository implements QuestRepository {
           ],
         )
         .get();
-    if (matches.length > limit)
+    if (matches.length > limit) {
       throw StateError('quest source recovery exceeds bound');
+    }
     if (matches.isEmpty) return const [];
     final instanceRows =
         await (_database.select(_database.questInstances)..where(

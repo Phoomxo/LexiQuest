@@ -1,3 +1,9 @@
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:vocab_learning_app/features/goals/domain/study_plan.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/packaged_sense_crosswalk.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/personal_sets.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk_repository.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -46,6 +52,7 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
+  setUpAll(tz.initializeTimeZones);
   test(
     'committed learning retry preserves guest actor after account upgrade',
     () async {
@@ -2220,6 +2227,16 @@ final class _AnonymousBoundCloud implements SyncGateway {
 }
 
 const Map<String, String> _inventoryIdentityColumns = <String, String>{
+  'guided_repair_operations': "owner_id || ':' || operation_id",
+  'audio_lesson_checkpoints': "owner_id || ':' || activity_id",
+  'written_practice_results': "owner_id || ':' || activity_id",
+  'speaking_practice_results': "owner_id || ':' || activity_id",
+  'study_plan_revisions': "owner_id || ':' || operation_id",
+  'active_plan_pointers': 'owner_id',
+  'personal_set_revisions': "owner_id || ':' || set_id || ':' || revision",
+  'personal_set_members':
+      "owner_id || ':' || set_id || ':' || revision || ':' || position",
+  'legacy_learning_records': 'id',
   'research_consents': 'id',
   'experiment_assignments': 'id',
   'assessment_runs': 'id',
@@ -3024,6 +3041,7 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
     "('ai-usage-1', 'guest-owner', 20, 'fake-provider', 'fake-model', "
     "'tutorReply', 'success', 10)",
   );
+  await _seedExtensionInventory(database, 'guest-owner');
   await _seedForeignOwnerInventory(database);
 }
 
@@ -3034,51 +3052,69 @@ Future<void> _seedCompleteInventoryAssessmentRun(
   required String learningSessionId,
   required String assignmentId,
 }) async {
-  final repository = DriftAssessmentRepository(database);
-  final startedAtUtc = DateTime.fromMillisecondsSinceEpoch(
-    1723651200010,
-    isUtc: true,
+  final activeOwners = await (database.select(
+    database.localOwners,
+  )..where((row) => row.isActive.equals(true))).get();
+  expect(activeOwners, hasLength(1));
+  await database.customStatement(
+    'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+    [ownerId],
   );
-  await repository.start(
-    AssessmentRun(
-      id: runId,
-      ownerId: ownerId,
-      learningSessionId: learningSessionId,
-      studyCycleId: 'inventory-assessment-cycle',
-      phase: AssessmentPhase.pre,
-      state: AssessmentRunState.active,
-      protocolId: 'research-assessment-protocol',
-      protocolVersion: '2026.08',
-      experimentId: 'research-assessment',
-      experimentVersion: 1,
-      assignmentId: assignmentId,
-      cohort: 'treatment-a',
-      consentVersion: 1,
-      consentDecidedAtUtc: DateTime.fromMillisecondsSinceEpoch(10, isUtc: true),
-      instrumentId: 'vocabulary-outcome',
-      instrumentVersion: '1.0.0',
-      formId: 'inventory-form-a',
-      formVersion: '1.0.0',
-      instrumentChecksumSha256:
-          '1111111111111111111111111111111111111111111111111111111111111111',
-      formChecksumSha256:
-          '2222222222222222222222222222222222222222222222222222222222222222',
-      appVersion: '1.0.0',
-      buildId: 'guest-inventory-fixture',
-      databaseSchemaVersion: AppDatabase.currentSchemaVersion,
-      contentRevision: 'assessment-content-r1',
-      evidencePolicyVersion: EvidenceContext.currentPolicyVersion,
-      featureContractRevision: currentFeatureContractIdentity.revision,
-      featureContractHash: currentFeatureContractIdentity.semanticHash,
-      startedAtUtc: startedAtUtc,
-      completedAtUtc: null,
-      abandonedAtUtc: null,
-    ),
-  );
-  await repository.complete(
-    runId: runId,
-    completedAtUtc: startedAtUtc.add(const Duration(milliseconds: 10)),
-  );
+  try {
+    final repository = DriftAssessmentRepository(database);
+    final startedAtUtc = DateTime.fromMillisecondsSinceEpoch(
+      1723651200010,
+      isUtc: true,
+    );
+    await repository.start(
+      AssessmentRun(
+        id: runId,
+        ownerId: ownerId,
+        learningSessionId: learningSessionId,
+        studyCycleId: 'inventory-assessment-cycle',
+        phase: AssessmentPhase.pre,
+        state: AssessmentRunState.active,
+        protocolId: 'research-assessment-protocol',
+        protocolVersion: '2026.08',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+        assignmentId: assignmentId,
+        cohort: 'treatment-a',
+        consentVersion: 1,
+        consentDecidedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          10,
+          isUtc: true,
+        ),
+        instrumentId: 'vocabulary-outcome',
+        instrumentVersion: '1.0.0',
+        formId: 'inventory-form-a',
+        formVersion: '1.0.0',
+        instrumentChecksumSha256:
+            '1111111111111111111111111111111111111111111111111111111111111111',
+        formChecksumSha256:
+            '2222222222222222222222222222222222222222222222222222222222222222',
+        appVersion: '1.0.0',
+        buildId: 'guest-inventory-fixture',
+        databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+        contentRevision: 'assessment-content-r1',
+        evidencePolicyVersion: EvidenceContext.currentPolicyVersion,
+        featureContractRevision: currentFeatureContractIdentity.revision,
+        featureContractHash: currentFeatureContractIdentity.semanticHash,
+        startedAtUtc: startedAtUtc,
+        completedAtUtc: null,
+        abandonedAtUtc: null,
+      ),
+    );
+    await repository.complete(
+      runId: runId,
+      completedAtUtc: startedAtUtc.add(const Duration(milliseconds: 10)),
+    );
+  } finally {
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      [activeOwners.single.id],
+    );
+  }
 }
 
 Future<void> _seedForeignOwnerInventory(AppDatabase database) async {
@@ -3088,7 +3124,9 @@ Future<void> _seedForeignOwnerInventory(AppDatabase database) async {
     "('foreign-owner', 'firebase-foreign', 'firebaseBound', 2, 0)",
   );
   for (final table in ownerUpgradeInventory) {
-    if (table == 'experiment_assignments' || table == 'assessment_runs') {
+    if (_extensionInventoryTables.contains(table) ||
+        table == 'experiment_assignments' ||
+        table == 'assessment_runs') {
       continue;
     }
     final schema = await database
@@ -3154,6 +3192,7 @@ Future<void> _seedForeignOwnerInventory(AppDatabase database) async {
     'FROM quest_objective_progress WHERE instance_id = ?',
     variables: [const Variable<String>('quest-instance-1')],
   );
+  await _seedExtensionInventory(database, 'foreign-owner');
 }
 
 Future<void> _seedTargetCollisionInventory(AppDatabase database) async {
@@ -3163,7 +3202,9 @@ Future<void> _seedTargetCollisionInventory(AppDatabase database) async {
     "('account-owner', 'firebase-new', 'firebaseBound', 3, 0)",
   );
   for (final table in ownerUpgradeInventory) {
-    if (table == 'experiment_assignments' || table == 'assessment_runs') {
+    if (_extensionInventoryTables.contains(table) ||
+        table == 'experiment_assignments' ||
+        table == 'assessment_runs') {
       continue;
     }
     final schema = await database
@@ -3236,5 +3277,138 @@ Future<void> _seedTargetCollisionInventory(AppDatabase database) async {
     'current_count + 1, target_count + 1, source_event_ids_json '
     'FROM quest_objective_progress WHERE instance_id = ?',
     variables: [const Variable<String>('quest-instance-1')],
+  );
+  await _seedExtensionInventory(database, 'account-owner');
+}
+
+const _extensionInventoryTables = <String>{
+  'guided_repair_operations',
+  'audio_lesson_checkpoints',
+  'written_practice_results',
+  'speaking_practice_results',
+  'study_plan_revisions',
+  'active_plan_pointers',
+  'personal_set_revisions',
+  'personal_set_members',
+  'legacy_learning_records',
+};
+
+Future<void> _seedExtensionInventory(
+  AppDatabase database,
+  String ownerId,
+) async {
+  final originId = switch (ownerId) {
+    'guest-owner' => 'attempt-1',
+    'foreign-owner' => 'foreign:attempt-1',
+    'account-owner' => 'target:attempt-1',
+    _ => throw StateError('Unexpected inventory fixture owner'),
+  };
+  await database
+      .into(database.guidedRepairOperations)
+      .insert(
+        GuidedRepairOperationsCompanion.insert(
+          ownerId: ownerId,
+          operationId: 'inventory:$ownerId:repair',
+          originId: originId,
+          revision: 1,
+          payloadJson: '{"ownershipSentinel":"guided-repair"}',
+        ),
+      );
+  // Opaque payload sentinels exercise ownership transfer without interpreting
+  // the private format; feature suites separately validate those codecs.
+  for (final table in const [
+    'audio_lesson_checkpoints',
+    'written_practice_results',
+    'speaking_practice_results',
+  ]) {
+    await database.customInsert(
+      'INSERT INTO $table (owner_id, activity_id, revision, operation_id, payload_json) VALUES (?, ?, 1, ?, ?)',
+      variables: [
+        Variable<String>(ownerId),
+        Variable<String>('inventory:$ownerId:$table'),
+        Variable<String>('inventory:$ownerId:$table:1'),
+        Variable<String>(jsonEncode({'ownershipSentinel': table})),
+      ],
+    );
+  }
+  final plan = StudyPlanRevision.propose(
+    operationId: 'plan:$ownerId:upgrade',
+    expectedPriorRevision: 0,
+    createdAtUtc: DateTime.utc(2026, 7, 1),
+    timezoneId: 'Asia/Bangkok',
+    availableMinutes: 0,
+    authorityHash: 'upgrade-fixture',
+    goalId: null,
+    deadlineAtUtc: null,
+    dueItemIds: [],
+    newItemIds: [],
+  );
+  await database
+      .into(database.studyPlanRevisions)
+      .insert(
+        StudyPlanRevisionsCompanion.insert(
+          ownerId: ownerId,
+          operationId: plan.operationId,
+          revision: plan.revision,
+          payloadHash: plan.payloadHash,
+          payloadJson: jsonEncode(plan.toJson()),
+        ),
+      );
+  await database
+      .into(database.activePlanPointers)
+      .insert(
+        ActivePlanPointersCompanion.insert(
+          ownerId: ownerId,
+          operationId: plan.operationId,
+        ),
+      );
+  final crosswalk = SenseCrosswalk.fromBytes(
+    await File(PackagedSenseCrosswalk.assetPath).readAsBytes(),
+    expectedSha256: PackagedSenseCrosswalk.artifactHash,
+    corpusManifestHash: PackagedSenseCrosswalk.corpusManifestHash,
+    reviewManifest: PackagedSenseCrosswalk.manifest,
+  );
+  final personalSet = PersonalSetRevision.create(
+    setId: 'set:$ownerId:upgrade-fixture',
+    operationId: 'set:$ownerId:upgrade-save',
+    expectedPriorRevision: 0,
+    createdAtUtcMs: 1,
+    title: 'Retained objects',
+    crosswalkPin: SenseCrosswalkPin.fromJson({
+      'corpusManifestHash': PackagedSenseCrosswalk.corpusManifestHash,
+      'revision': 1,
+      'artifactHash': PackagedSenseCrosswalk.artifactHash,
+    }),
+    members: [crosswalk.entries.first.ref],
+  );
+  await database
+      .into(database.personalSetRevisions)
+      .insert(
+        PersonalSetRevisionsCompanion.insert(
+          ownerId: ownerId,
+          setId: personalSet.setId,
+          revision: 1,
+          operationId: personalSet.operationId,
+          payloadHash: personalSet.payloadHash,
+          payloadJson: jsonEncode(personalSet.toJson()),
+          archived: false,
+        ),
+      );
+  final refJson = jsonEncode(personalSet.members.single.toJson());
+  await database
+      .into(database.personalSetMembers)
+      .insert(
+        PersonalSetMembersCompanion.insert(
+          ownerId: ownerId,
+          setId: personalSet.setId,
+          revision: 1,
+          position: 0,
+          senseRefHash: sha256.convert(utf8.encode(refJson)).toString(),
+          senseRefJson: refJson,
+        ),
+      );
+  await database.customInsert(
+    "INSERT INTO legacy_learning_records(id,owner_id,source_table,payload_json) VALUES(?,?,'associations','{}')",
+    variables: [Variable<String>('legacy:$ownerId'), Variable<String>(ownerId)],
   );
 }

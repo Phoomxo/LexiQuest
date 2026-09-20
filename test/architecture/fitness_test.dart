@@ -24,6 +24,7 @@ import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
 import '../../tool/feature_contract/generate_feature_map.dart';
+import '../support/current_database_contract.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1053,7 +1054,8 @@ void main() {
           .map((entry) => entry.tableName)
           .toList(growable: false);
 
-      expect(liveTables, hasLength(50));
+      expect(liveTables, hasLength(currentDatabaseTableInventory.length));
+      expect(liveTables.toSet(), currentDatabaseTableInventory);
       expect(manifestTables, hasLength(liveTables.length));
       expect(manifestTables.toSet(), hasLength(manifestTables.length));
       expect(manifestTables.toSet(), liveTables.toSet());
