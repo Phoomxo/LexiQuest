@@ -7,10 +7,12 @@ final class AdventureMissionSheet extends StatefulWidget {
     super.key,
     required this.mission,
     required this.onStart,
+    this.onStartDialogue,
   });
 
   final AdventureMissionRef? mission;
   final Future<void> Function(AdventureMissionRef mission) onStart;
+  final Future<void> Function(AdventureMissionRef mission)? onStartDialogue;
 
   @override
   State<AdventureMissionSheet> createState() => _AdventureMissionSheetState();
@@ -19,12 +21,12 @@ final class AdventureMissionSheet extends StatefulWidget {
 final class _AdventureMissionSheetState extends State<AdventureMissionSheet> {
   var _starting = false;
 
-  Future<void> _start() async {
+  Future<void> _start({bool dialogue = false}) async {
     final mission = widget.mission;
     if (mission == null || _starting) return;
     setState(() => _starting = true);
     try {
-      await widget.onStart(mission);
+      await (dialogue ? widget.onStartDialogue! : widget.onStart)(mission);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,6 +71,11 @@ final class _AdventureMissionSheetState extends State<AdventureMissionSheet> {
                     )
                   : const Icon(Icons.play_arrow),
               label: Text(_starting ? 'กำลังเปิด…' : 'เริ่มภารกิจ'),
+            ),
+            if (widget.onStartDialogue != null) OutlinedButton(
+              key: const ValueKey('adventure-start-dialogue'),
+              onPressed: mission == null || _starting ? null : () => _start(dialogue: true),
+              child: const Text('Dialogue mission'),
             ),
           ],
         ),

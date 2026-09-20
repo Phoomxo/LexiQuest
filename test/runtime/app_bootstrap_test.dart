@@ -1,4 +1,11 @@
 import 'package:vocab_learning_app/features/voice/application/audio_lesson_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/dialogue_mission_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/domain/dialogue_mission.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/dialogue_mission_screen.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
+import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/features/voice/presentation/audio_lesson_screen.dart';
 import '../features/voice/audio_lesson_use_cases_test.dart' as audio_fixture;
 import '../features/media_practice/speaking_capture_test.dart' as speaking_fixture;
@@ -553,6 +560,98 @@ EvidenceContext _bootstrapMissingAssessmentEvidence() {
 void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
+
+    testWidgets('dialogue Adventure entry navigates to scene and canonical result', (tester) async {
+      final dependencies=(await tester.runAsync(()=>AppBootstrap(createDatabase:_testDatabase,initializeFirebase:() async {},initializeSupabase:() async {},
+        loadConfig:_validConfig,guestSessionService:_StubGuestSessionService(),createEntryStateStore:_createSignedOutEntryState,
+        cloudSyncEnabled:false,learningPreviewEnabled:true,dialogueMissionRollout:const DialogueMissionRollout.internal(),
+        buildFeatureRegistry:const BuildFeatureRegistry.allEnabled()).initialize()))!;
+      addTearDown(dependencies.dispose);
+      await tester.runAsync(() async {
+        final owner=await dependencies.personalSets!.begin();
+        await dependencies.database!.into(dependencies.database!.srsStates).insert(SrsStatesCompanion.insert(
+          id:'dialogue-nav-due',ownerId:owner.ownerId,wordId:'word:starter-book',dueAtUtcMs:1,algorithmVersion:1));
+        await dependencies.learnerPreferences!.saveHomeExperience(expectedOwnerId:owner.ownerId,homeExperience:HomeExperience.adventure);
+      });
+      Future<void> settle() async {for(var i=0;i<50;i++){await tester.pump(const Duration(milliseconds:30));await tester.runAsync(()=>Future<void>.delayed(const Duration(milliseconds:10)));}}
+      await tester.pumpWidget(AppDependenciesScope(dependencies:dependencies,child:const MaterialApp(home:MainNavigationScreen())));
+      await settle();
+      final entry=find.byKey(const ValueKey('home/learn/today-experience'));
+      await tester.scrollUntilVisible(entry,180,scrollable:find.byType(Scrollable).first);
+      await tester.tap(entry);await settle();
+      expect(find.byType(TodayExperienceHost),findsOneWidget);
+      final dialogue=find.byKey(const ValueKey('adventure-start-dialogue'));
+      await tester.scrollUntilVisible(dialogue,120,scrollable:find.byType(Scrollable).first);
+      await tester.tap(dialogue);await settle();
+      expect(find.byType(DialogueMissionScreen),findsOneWidget);
+      expect(ModalRoute.of(tester.element(find.byType(DialogueMissionScreen)))!.settings.name,'adventure/dialogue');
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('dialogue-choice-target')),120,scrollable:find.byType(Scrollable).first);
+      await tester.tap(find.byKey(const ValueKey('dialogue-choice-target')));await settle();
+      await tester.ensureVisible(find.text('Continue'));await tester.tap(find.text('Continue'));await settle();
+      await tester.ensureVisible(find.text('Finish mission'));await tester.tap(find.text('Finish mission'));await settle();
+      final sessions=await tester.runAsync(()=>dependencies.database!.select(dependencies.database!.learningSessions).get());
+      expect(sessions,hasLength(1));expect(sessions!.single.state,'completed');
+      expect(sessions.single.activityType,dialogueActivityType);
+      expect(tester.takeException(),isNull);
+      await tester.pumpWidget(const SizedBox());await settle();
+    });
+
+    for (final retirement in ['owner', 'adventure', 'quiz', 'background', 'route']) {
+      testWidgets('dialogue runtime composition and retirement $retirement', (tester) async {
+        final dependencies = (await tester.runAsync(() => AppBootstrap(
+          createDatabase: _testDatabase, initializeFirebase: () async {}, initializeSupabase: () async {},
+          loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+          dialogueMissionRollout: const DialogueMissionRollout.internal(), learningPreviewEnabled: true,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize()))!;
+        addTearDown(dependencies.dispose);
+        final service=dependencies.dialogueMissions!;
+        expect(service.isAvailable(),isTrue);
+        await tester.runAsync(() async {
+          final owner=await service.sets.begin();
+          await dependencies.database!.into(dependencies.database!.srsStates).insert(SrsStatesCompanion.insert(
+            id:'dialogue-due',ownerId:owner.ownerId,wordId:'word:starter-book',dueAtUtcMs:1,algorithmVersion:1));
+        });
+        final today=(await tester.runAsync(dependencies.todayHub!.load))!;
+        final m=DialogueMissionInventory.missions.firstWhere((m)=>today.reviewWork.any((w)=>w.identity.id==m.wordId));
+        final content=today.reviewWork.firstWhere((w)=>w.identity.id==m.wordId).identity;
+        final run=(await tester.runAsync(() async {
+          final owner=await service.sets.begin();
+          final config=SessionConfiguration.validated(schemaVersion:sessionConfigurationSchemaVersion,policyVersion:sessionConfigurationPolicyVersion,
+            ownerId:owner.ownerId,mode:LessonMode.cloze,itemCount:1,direction:SessionDirection.forward,
+            difficulty:SessionDifficulty.standard,hintBudget:0,timing:const SessionTiming.untimedAlternative(maximumActiveEffort:Duration(minutes:5)),
+            packIdentity:null,protocolId:'protocol:local',protocolVersion:'1',protocolLimitsIdentity:'dialogue-local');
+          final plan=await dependencies.adventureSessionComposer!.compose(
+            mission:AdventureMissionRef(missionId:'dialogue-runtime',ownerId:owner.ownerId,nodeId:'resume-review',kind:AdventureMissionKind.review,
+              sourceId:content.id,content:[content],reasonCode:'learnerOverride',sourceEvaluatedAtUtc:today.evaluatedAtUtc,suggestedMode:LessonMode.cloze,learnerOverrideApplied:true),
+            today:today,requestedConfiguration:config,entry:AdventureProductEntryDecision(entryAttemptId:'dialogue-entry',availability:AdventureAvailability.available,
+              destination:AdventureEntryDestination.adventure,fallbackReason:AdventureFallbackReason.none,catalogId:dependencies.adventureCatalog!.catalogId,
+              catalogVersion:dependencies.adventureCatalog!.catalogVersion,catalogSchemaVersion:1));
+          return service.start(owner,plan:plan,mission:m,operationId:'runtime-dialogue');
+        }))!;
+        Future<void> settle() async {for(var i=0;i<40;i++){await tester.pump(const Duration(milliseconds:30));await tester.runAsync(()=>Future<void>.delayed(const Duration(milliseconds:10)));}}
+        await tester.pumpWidget(AppDependenciesScope(dependencies:dependencies,child:MaterialApp(navigatorObservers:[appRouteObserver],home:DialogueMissionScreen(useCases:service,run:run))));
+        await settle();
+        await tester.scrollUntilVisible(find.byKey(const ValueKey('dialogue-choice-alternative')),150);
+        await tester.tap(find.byKey(const ValueKey('dialogue-choice-alternative')));await settle();
+        expect(find.textContaining('That does not fit'),findsOneWidget);
+        if(retirement=='owner') {await tester.runAsync(()=>DriftOwnerGeneration(dependencies.database!).advance());}
+        else if(retirement=='background') {tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);}
+        else if(retirement=='route') {Navigator.of(tester.element(find.byType(DialogueMissionScreen))).push(MaterialPageRoute<void>(builder:(_)=>const Scaffold(body:Text('Covered'))));}
+        else {(dependencies.features as RuntimeFeatureRegistry).emergencyOff(retirement=='quiz'?Feature.quiz:Feature.adventureMotivation);}
+        await settle();
+        if(retirement=='route'){Navigator.of(tester.element(find.text('Covered'))).pop();await settle();}
+        if(retirement=='background'){tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);await settle();}
+        expect(find.textContaining('Mission paused'),findsOneWidget);
+        expect(find.textContaining('That does not fit'),findsNothing);
+        expect(tester.takeException(),isNull);
+        await tester.pumpWidget(const SizedBox());await settle();
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        final attempts=await tester.runAsync(()=>dependencies.database!.select(dependencies.database!.answerAttempts).get());
+        expect(attempts,hasLength(1));
+      });
+    }
 
     test('study plans share production owner lifecycle and live planning flag', () async {
       _installNoOpSecureStorage();
@@ -2686,6 +2785,7 @@ void main() {
       expect(identical(dependencies.aiTutor, ai), isTrue);
       expect(dependencies.voice, isNotNull);
       expect(dependencies.audioLessons!.isAvailable(), isFalse);
+      expect(dependencies.dialogueMissions!.isAvailable(), isFalse);
       expect(aiBuilds, 1);
       expect(voiceBuilds, 1);
       expect(dependencies.localDataEraser, isNotNull);

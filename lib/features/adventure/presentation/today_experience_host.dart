@@ -73,6 +73,7 @@ final class TodayExperienceHost extends StatefulWidget {
     this.presentationPreferences,
     this.research,
     this.contextualStandardActions,
+    this.onStartDialogue,
   });
 
   final String ownerId;
@@ -92,6 +93,7 @@ final class TodayExperienceHost extends StatefulWidget {
   final AdventurePresentationPreferenceWriter? presentationPreferences;
   final AdventureResearchRuntime? research;
   final ContextualTodayActionsFactory? contextualStandardActions;
+  final Future<void> Function(AdventureMissionLaunchContext launch)? onStartDialogue;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
@@ -835,6 +837,11 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost>
             );
           },
           onPresentationChanged: _switch,
+          onStartDialogue: widget.onStartDialogue == null ? null : (mission) async {
+            if (!isCurrent()) return;
+            await widget.onStartDialogue!(AdventureMissionLaunchContext(mission: mission, today: today,
+              entryDecision: result.decision, rewardOwnership: rewardOwnership, isCurrent: isCurrent));
+          },
           onRefresh: _refresh,
         );
       }

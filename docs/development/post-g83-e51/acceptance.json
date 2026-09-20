@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E5.1",
+  "feature": "F07",
+  "status": "accepted local implementation; physical device and human acceptance pending E6/E7",
+  "baseSha": "962542ea09bce9a651c5ca769d788fd0761d9438",
+  "acceptedSourceSha": "External POST-G83-E51-accepted-handoff.json pins the final commit; these hashes are tested working-tree bytes.",
+  "branch": "lexiquest/post-g83-e51",
+  "verification": {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E5.1\\all-runs\\targeted-runtime-5b815c528cc9f1d0ed8cf01c876040f8a75223aeca8cff33c60f276b82f2d077.json",
+    "status": "Passed",
+    "fingerprint": "4573b78d7e7df8657861ce7be3b071ff0bce87aaf90142b06465612ba9e37fe3",
+    "environmentFingerprint": "53a47b12409792f29b566bdf495b6589604f59da6c9e30e16716acfe434abe86",
+    "tests": 460,
+    "targets": 19,
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "b9f1f5702a4fb5400060bb987cdee7b01c32f514d0db8894af7ebe90c2997b69",
+        "fingerprint": "4573b78d7e7df8657861ce7be3b071ff0bce87aaf90142b06465612ba9e37fe3",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T05:14:51.0057620+00:00",
+        "FinishedAt": "2026-09-20T05:19:14.9291589+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\9d39\\LexiQuest\\build\\verification\\962542ea09bce9a651c5ca769d788fd0761d9438\\b9f1f5702a4f-4573b78d7e7d-7ce89077\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\9d39\\LexiQuest\\build\\verification\\962542ea09bce9a651c5ca769d788fd0761d9438\\b9f1f5702a4f-4573b78d7e7d-7ce89077\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "4573b78d7e7df8657861ce7be3b071ff0bce87aaf90142b06465612ba9e37fe3",
+        "StdoutHash": "91605168B2803E5D999AA438E4E5DA7195DA83BDF87AFE67F1E274CD0919D9D2",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ],
+    "inputClosureRevalidated": 1437
+  },
+  "staticAnalysis": {
+    "errors": 0,
+    "warnings": 0,
+    "inheritedInfos": 7,
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E5.1\\static-analysis-final.json"
+  },
+  "sourceHashes": {
+    "lib/features/adventure/application/dialogue_mission_use_cases.dart": "a0a4501d2e6c9efc88c42f899cc3335f7f4c58664a039c98d0e46545b14fbe9b",
+    "lib/features/adventure/domain/dialogue_mission.dart": "f1cddbf23d19ebe7b5c450c9e05efbc8d0cf09a3e07df2b10810ac52d9772d9a",
+    "lib/features/adventure/presentation/adventure_hub_screen.dart": "ba7972fef18d89e4b7534f7df9c218ac211bb0d489be0a6912fef1cf366fc097",
+    "lib/features/adventure/presentation/adventure_mission_sheet.dart": "5898140b71ecde71e4dc5d849739b64cb94a303351498bd817c25fd73684a95d",
+    "lib/features/adventure/presentation/dialogue_mission_screen.dart": "80968b7b486217dd2488982af86c4ce9058f6ea90d8381156af6df0d324c6a12",
+    "lib/features/adventure/presentation/today_experience_host.dart": "ad08a927495030577071840f6cdddbfa1a37f4a42426af510ff93fa9196e41e3",
+    "lib/runtime/app_bootstrap.dart": "710367a6e3ffca2537e14d0c9d430a850b0399e1b4679ad49738cb584b850e14",
+    "lib/runtime/app_dependencies.dart": "aacb62968ba8c7fbb555afff6d17e4733478d70cb65480b8cfb9008c376e11d1",
+    "lib/screens/main_navigation_screen.dart": "0b60abbfe977a863b89c2dd80eb8337b261fe975c32912e320308a1ca2791c25",
+    "test/features/adventure/dialogue_mission_test.dart": "9550bb8fc7d0d2ea3a1cfe6a2a2d627d8db8e97d2af30ae7103dff14822d9110",
+    "test/features/adventure/dialogue_mission_use_cases_test.dart": "dd08e791029b7a38d9f7a3790a36c00c14bdc7a3b89532a654c1f824d581ccb9",
+    "test/features/identity/drift_owner_upgrade_repository_test.dart": "c6a83bea6a2afa54ff70552cae0dac1d0ddf545cb34d7bd6aeb721da368f249e",
+    "test/runtime/app_bootstrap_test.dart": "c100cb75a35d55029c4e0217e131acbebab72d19614f26fdb36b8ac5c5d0bf07"
+  },
+  "storage": {
+    "schema": 34,
+    "namedTables": 58,
+    "directOwnerDescriptors": 48,
+    "newTables": 0,
+    "state": "existing immutable LearningActivityCheckpoint events_v2"
+  },
+  "fixtures": {
+    "GRAPH-EXIT": "All three terminal paths of all three admitted scenes; every node permits exit",
+    "GRAPH-CYCLE": "Cycle, missing, dead end, unreachable, no objective, no exit and turn budget violations rejected",
+    "LOST-ACK": "Throw after choice commit, close/reopen physical SQLite, retry identical operation; one attempt and receipt",
+    "RESEARCH-OFF": "First choice and assisted repair leave SRS/reward/research storage unchanged",
+    "RESTORE-OLDER": "Reject unsupported future checkpoint and incomplete older checkpoint without writes; existing future archive schema decoder regression passes"
+  },
+  "limitations": [
+    "Rollout defaults off; internal runtime exercised",
+    "Source/AI-assisted content review only; no independent human calibration",
+    "Physical device and assistive testing retained in E6/E7",
+    "No deployment, cost, research activation or release claim",
+    "Standard/default requested; effective runtime tier unverified"
+  ],
+  "unresolvedRequiredImplementationDefects": []
+}

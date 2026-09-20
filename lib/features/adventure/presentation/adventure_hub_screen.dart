@@ -21,6 +21,7 @@ final class AdventureHubScreen extends StatelessWidget {
     required this.onPresentationChanged,
     required this.onRefresh,
     this.reactionLanguage,
+    this.onStartDialogue,
   });
 
   final AdventureJourneySnapshot snapshot;
@@ -30,6 +31,7 @@ final class AdventureHubScreen extends StatelessWidget {
   final ValueChanged<TodayExperiencePresentation> onPresentationChanged;
   final VoidCallback onRefresh;
   final AdventureReactionLanguage? reactionLanguage;
+  final Future<void> Function(AdventureMissionRef mission)? onStartDialogue;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -62,6 +64,7 @@ final class AdventureHubScreen extends StatelessWidget {
           AdventureMissionSheet(
             mission: snapshot.primaryMission,
             onStart: onStartMission,
+            onStartDialogue: onStartDialogue,
           ),
           const SizedBox(height: 24),
           AdventureCompanionPanel(

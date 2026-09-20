@@ -6,6 +6,9 @@ import 'package:uuid/uuid.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/dialogue_mission_use_cases.dart';
+import '../features/adventure/domain/dialogue_mission.dart';
+import '../features/adventure/presentation/dialogue_mission_screen.dart';
 import '../features/adventure/application/adventure_mixed_review_prompt_catalog.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_recovery_use_cases.dart';
@@ -86,6 +89,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   String? _selectedEntryId;
   bool _selectionInitialized = false;
   Listenable? _featureChanges;
+  final Map<String, String> _dialogueLaunchOperations = {};
 
   @override
   void didChangeDependencies() {
@@ -396,15 +400,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       .preferences
                   as LearnerAdventurePresentationPreferences,
           onStartMission: _startAdventureMission,
+          onStartDialogue: dependencies.dialogueMissions?.isAvailable() == true
+              ? (launch) => _startAdventureMission(launch, dialogue: true)
+              : null,
         ),
       ),
     );
   }
 
   Future<void> _startAdventureMission(
-    AdventureMissionLaunchContext launch,
-  ) async {
-    final mission = launch.mission;
+    AdventureMissionLaunchContext launch, {
+    bool dialogue = false,
+  }) async {
+    var mission = launch.mission;
     if (!await _todayOwnerMatches(mission.ownerId) || !mounted) {
       throw StateError('Adventure mission no longer belongs to this owner.');
     }
@@ -419,6 +427,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final dependencies = AppDependenciesScope.maybeOf(context);
+    DialogueMission? dialogueContent;
+    if (dialogue) {
+      for (final candidate in DialogueMissionInventory.missions) {
+        if (mission.content.any(
+          (identity) =>
+              identity.id == candidate.wordId &&
+              identity.revision == candidate.contentRevision,
+        )) {
+          dialogueContent = candidate;
+          break;
+        }
+      }
+      if (dialogueContent == null ||
+          dependencies?.dialogueMissions?.isAvailable() != true) {
+        throw StateError('No reviewed dialogue for the available content.');
+      }
+      mission = AdventureMissionRef(
+        missionId: mission.missionId,
+        ownerId: mission.ownerId,
+        nodeId: mission.nodeId,
+        kind: mission.kind,
+        sourceId: mission.sourceId,
+        content: mission.content
+            .where((identity) => identity.id == dialogueContent!.wordId)
+            .toList(),
+        reasonCode: 'learnerOverride',
+        sourceEvaluatedAtUtc: mission.sourceEvaluatedAtUtc,
+        suggestedMode: LessonMode.cloze,
+        learnerOverrideApplied: true,
+      );
+    }
     final features = dependencies == null
         ? null
         : widget.featureRegistry ?? dependencies.features;
@@ -465,19 +504,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             initial.packIdentity == null
         ? initial
         : null;
-    final configuration = await showSessionConfigurationSheet(
-      context: context,
-      registration: registration,
-      policy: const SessionConfigurationPolicy(),
-      limits: limits,
-      ownerId: initialContext.ownerId,
-      packs: const <SessionConfigurationPackOption>[],
-      initialConfiguration: usableInitial,
-      initialResetRequired: initial == null
-          ? initialContext.initialResetRequired
-          : null,
-      initialResetCanUseDefaults: initialContext.protocolResetRequired == null,
-    );
+    final configuration = dialogueContent != null
+        ? const SessionConfigurationPolicy().validate(
+            draft: const SessionConfigurationPolicy()
+                .defaultsFor(registration: registration, limits: limits)
+                .copyWith(
+                  itemCount: 1,
+                  hintBudget: 0,
+                  clearPackIdentity: true,
+                  timing: SessionTiming.untimedAlternative(
+                    maximumActiveEffort: Duration(
+                      seconds: limits.maximumUntimedActiveEffortSeconds,
+                    ),
+                  ),
+                ),
+            registration: registration,
+            limits: limits,
+            ownerId: initialContext.ownerId,
+            availablePackIdentities: const <ContentIdentity>[],
+          )
+        : await showSessionConfigurationSheet(
+            context: context,
+            registration: registration,
+            policy: const SessionConfigurationPolicy(),
+            limits: limits,
+            ownerId: initialContext.ownerId,
+            packs: const <SessionConfigurationPackOption>[],
+            initialConfiguration: usableInitial,
+            initialResetRequired: initial == null
+                ? initialContext.initialResetRequired
+                : null,
+            initialResetCanUseDefaults:
+                initialContext.protocolResetRequired == null,
+          );
     if (configuration == null || !mounted) return;
 
     Future<SessionConfiguration> revalidate(
@@ -545,10 +604,47 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (!mounted || !await _todayOwnerMatches(plan.ownerId)) {
       throw StateError('Adventure mission owner changed before launch.');
     }
+    if (dialogueContent != null) {
+      final service = dependencies.dialogueMissions!;
+      final launchKey =
+          '${plan.ownerId}:${dialogueContent.id}:${plan.sourceEvaluatedAtUtc.toIso8601String()}';
+      final operation = _dialogueLaunchOperations.putIfAbsent(
+        launchKey,
+        () => 'dialogue:${const Uuid().v4()}',
+      );
+      final run = await service.start(
+        await service.sets.begin(),
+        plan: plan,
+        mission: dialogueContent,
+        operationId: operation,
+      );
+      _dialogueLaunchOperations.remove(launchKey);
+      if (!mounted) return;
+      _openDialogue(service, run);
+      return;
+    }
     await _startAdventureMixedReview(
       dependencies: dependencies,
       plan: plan,
       rewardOwnership: launch.rewardOwnership,
+    );
+  }
+
+  void _openDialogue(DialogueMissionUseCases service, DialogueRun run) {
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage(
+        name: 'adventure/dialogue',
+        builder: (_) => DialogueMissionScreen(
+          useCases: service,
+          run: run,
+          resultBuilder: (_, summary) => ScoreScreen(
+            correctAnswers: summary.correctCount,
+            wrongAnswers: summary.wrongCount,
+            score: summary.score,
+          ),
+        ),
+      ),
     );
   }
 
@@ -913,6 +1009,44 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }) async {
     if (!await _todayOwnerMatches(session.ownerId) || !mounted) {
       throw StateError('Today resume no longer belongs to the active owner.');
+    }
+    if (session.activityType == dialogueActivityType) {
+      final service = AppDependenciesScope.maybeOf(context)?.dialogueMissions;
+      if (service == null) {
+        throw StateError('Dialogue recovery is unavailable.');
+      }
+      final owner = await service.sets.begin();
+      try {
+        final run = await service.resume(owner, session.id);
+        if (mounted) _openDialogue(service, run);
+      } catch (_) {
+        if (!mounted ||
+            !await _todayOwnerMatches(session.ownerId) ||
+            !mounted) {
+          return;
+        }
+        final end = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Mission cannot be reopened'),
+            content: const Text(
+              'The saved mission or its exact content is unavailable. Keep the saved choices and try again later, or end this mission without completing it.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep saved'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('End mission'),
+              ),
+            ],
+          ),
+        );
+        if (end == true) await service.abandon(owner, session.id);
+      }
+      return;
     }
     if (session.activityType == mixedReviewActivityType) {
       final dependencies = AppDependenciesScope.maybeOf(context);

@@ -62,6 +62,12 @@ import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'research_lifecycle_fixtures.dart' show seedLifecycleResearch;
 
+const _supplementalOwnershipTables = [
+  'audio_lesson_checkpoints',
+  'written_practice_results',
+  'speaking_practice_results',
+];
+
 void main() {
   setUpAll(tz.initializeTimeZones);
 
@@ -3204,6 +3210,20 @@ void main() {
     expect(result.targetOwnerId, 'account-owner');
     expect(deletedSecretOwnerIds, ['guest-owner']);
     expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
+    for (final table in _supplementalOwnershipTables) {
+      final row = await database.customSelect(
+        'SELECT activity_id, revision, operation_id, payload_json FROM $table WHERE owner_id = ?',
+        variables: const [Variable<String>('account-owner')],
+      ).getSingle();
+      expect(row.read<String>('activity_id'), 'inventory:$table');
+      expect(row.read<int>('revision'), 1);
+      expect(row.read<String>('operation_id'), 'inventory:$table:1');
+      expect(row.read<String>('payload_json'), jsonEncode({'ownershipSentinel': table}));
+    }
+    final repair = await (database.select(database.guidedRepairOperations)
+      ..where((r) => r.ownerId.equals('account-owner'))).getSingle();
+    expect(repair.originId, 'attempt-1');
+    expect(repair.payloadJson, '{"ownershipSentinel":"guided-repair"}');
     for (final table in ownerUpgradeInventory) {
       expect(
         await _ownerCount(database, table, 'guest-owner'),
@@ -5994,6 +6014,19 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  // Opaque payload sentinels exercise ownership transfer without interpreting
+  // the private format; feature suites separately validate those codecs.
+  for (final table in _supplementalOwnershipTables) {
+    await database.customInsert(
+      'INSERT INTO $table (owner_id, activity_id, revision, operation_id, payload_json) VALUES (?, ?, 1, ?, ?)',
+      variables: [
+        const Variable<String>('guest-owner'),
+        Variable<String>('inventory:$table'),
+        Variable<String>('inventory:$table:1'),
+        Variable<String>(jsonEncode({'ownershipSentinel': table})),
+      ],
+    );
+  }
   final plan = StudyPlanRevision.propose(operationId: 'plan:upgrade', expectedPriorRevision: 0,
     createdAtUtc: DateTime.utc(2026, 7, 1), timezoneId: 'Asia/Bangkok', availableMinutes: 0,
     authorityHash: 'upgrade-fixture', goalId: null, deadlineAtUtc: null, dueItemIds: [], newItemIds: []);
@@ -6170,6 +6203,12 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     'provider_provenance) VALUES '
     "('attempt-1', 'guest-owner', 'session-1', 'word-1', 'meaning', 1, "
     '100, 1, 15, NULL)',
+  );
+  await database.into(database.guidedRepairOperations).insert(
+    GuidedRepairOperationsCompanion.insert(
+      ownerId: 'guest-owner', operationId: 'inventory:repair', originId: 'attempt-1',
+      revision: 1, payloadJson: '{"ownershipSentinel":"guided-repair"}',
+    ),
   );
   await database.customInsert(
     "INSERT INTO srs_states VALUES "
