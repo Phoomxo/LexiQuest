@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": 8,
+  "revision": 9,
   "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
-  "sourceSha": "c3617a2dcaa1e57eedaf2de750eb7dd9c8d25528",
+  "sourceSha": "a07c7d9c415fb4853a529ee1321fb860982bb40f",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
-  "activePhase": "V3",
-  "status": "documentary-phase-complete-gate-not-met",
-  "currentTaskId": "01a0bf81-3881-7c10-bc29-783868bf6212",
+  "activePhase": "V1-R1",
+  "status": "technical-probe-ready-for-dispatch",
+  "currentTaskId": null,
   "implementationWriter": null,
   "model": "gpt-6-astra",
   "thinking": "medium",
@@ -82,5 +82,14 @@
     "externalRootIsHistorical": true,
     "sidebarSectionId": "c5d1a7a5-7ae3-4108-81a9-609218725f84",
     "sidebarSectionName": "LexiQuest · อารี"
+  },
+  "recoveryWork": {
+    "id": "V1-R1",
+    "plan": "V1-R1.md",
+    "scope": "Unauthenticated protocol adapter and isolated binary diagnostic; production unchanged",
+    "taskId": null,
+    "status": "ready-for-dispatch",
+    "v2Gate": "NOT_MET",
+    "latestUserAuthorization": "Find a practical route and start development; preserve in-app/free/no-key/no-developer-mode requirements"
   }
 }

@@ -16,7 +16,7 @@
 
 ## Current Full-System authority — 2026-09-13 revision 4
 
-- User branch policy: use `lexiquest/` only; never use codex/codeic in branch names. Inspect native worktree names and rename before source writes. Preserve accepted historical receipts; see external `branch-naming-policy.json`.
+- User branch policy (latest correction): use `feature/` for new work; never use codex/codeic in branch names. This supersedes the older `lexiquest/`-only policy; preserve historical branches and receipts. Inspect native worktree branch names and correct before source writes.
 
 - Subsequent tasks use Standard/default only: no Fast/1.5x or fast/priority service tier. Keep GPT-6 Astra/medium. Follow external `speed-policy.json`, propagate in each prompt/handoff, and verify effective tier when supported. `create_thread` has no serviceTier field; prompt/config alone do not prove runtime enforcement. If Fast is observed, switch through a supported control or report the limitation before continuing.
 

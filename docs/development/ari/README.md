@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-20 · branch `feature/ari-feasibility`
 
-**สถานะ: ตรวจเอกสารจบ แต่ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง** V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
+**สถานะ: เปิด V1 อีกครั้งเพื่อเขียนเครื่องมือทดลอง App Server** ตาม [V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 
 | หัวข้อ | งานย่อย | ผลล่าสุด | รายงาน / handoff |
 |---|---|---|---|
