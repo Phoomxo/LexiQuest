@@ -1,20 +1,11 @@
 # App/device integration — prelogin checkpoint, 2026-09-21
 
 Accepted base: `7407111bbb3f85ae1bc519dfe8b10ed37e501c05`.
-Task `01a0bfbd-9961-7da3-982b-77970bdc7027`; writer released for handoff.
+Task `01a0bfbd-9961-7da3-982b-77970bdc7027`; writer retained for the user-authorized device testing continuation.
 
-**Native private-login debug app installed and launched on Vivo V2041 (SDK 33);
-end-to-end application is not complete.** Initial ADB absence was resolved when
-the user connected USB. APK hash rechecked, install succeeded, activity started
-and process remained present. The isolated bridge and adb reverse are active
-for a 15-minute private-login handoff. Browser return, UI visual acceptance and
-authenticated inference remain NOT_RUN. No screen/DOM/log inspection during login. Inference remains disabled;
-the bridge has no turn/thread/reply route. [Evidence](app-device-integration-evidence.json)
-and [handoff](app-device-integration-handoff.json) distinguish every layer.
+**Vivo V2041 installation, launch, browser device authorization and native login status passed. Inference remains disabled.** OpenAI confirmed sign-in and Ari confirmed the account connection after the explicit status check. The bridge has no turn/thread/reply route. [Evidence](app-device-integration-evidence.json) and [handoff](app-device-integration-handoff.json) distinguish login from inference.
 
-Latest authorization supersedes device deferral: application implementation →
-automated checks → physical Vivo checks → user-owned private OpenAI login →
-authenticated acceptance. No credential collection or inspection during login.
+The user explicitly authorized agent taps using the sole cached account and inspection of consent/settings. The blocked Continue button was caused by the disabled Codex device-code authentication switch. Enabling that switch in web ChatGPT security settings and restarting device authorization resolved it. Developer mode, MFA and the existing native ChatGPT session were not changed. Rapid ADB input omitted a character; paced entry succeeded. No passwords, MFA codes, tokens or device challenge values are recorded in this report. The bridge remains ephemeral with a 15-minute lifetime.
 
 ## Execution plan
 
@@ -94,7 +85,7 @@ Open/reopen that app after provisioning. User selects Connect → OpenAI, enters
 credentials privately and returns to press the explicit status button. Stop all
 browser/screen/DOM/log inspection throughout credential entry. Never request a
 code/password/token in chat. Device-code support is beta and requires the ChatGPT
-security setting; its physical return UX is still untested.
+security setting; its browser opening and explicit native return check passed in this session.
 
 ## Unresolved acceptance
 
@@ -106,9 +97,10 @@ documents individual tool switches, but a minimal tool-free inference setup has
 not been validated against the pinned binary. Those are prerequisites for the
 remaining inference adapter, not evidence that such support is impossible.
 
-No physical, login, Free-Thailand, provider-revoke, hosted-distribution, V2, E7 or
-pilot acceptance is claimed. No successor task was dispatched: this checkpoint
-is an explicit handoff for missing device/account/provider prerequisites, not a
-claim that all requested software or acceptance work is finished.
+Login-only physical acceptance passed. Free-Thailand, provider-revoke, hosted-distribution, V2, E7, inference and pilot acceptance remain unclaimed. No successor task was dispatched. Existing source gates were reused because implementation files were unchanged.
 
-Physical update: designated Vivo connected; installation and process launch passed. User owns private login. Earlier zero-device/no-install statements above describe the initial build checkpoint. Full device behavior and account acceptance remain open.
+## Autonomous physical testing — 2026-09-21
+
+User delegated device control, diagnosis and repairs. [Coverage matrix](device-test-matrix.json) and [sanitized observations](device-observations.jsonl) record actual steps. The installed main app is version 1.0.0 (23), last updated 2026-09-13; its exact source SHA is unconfirmed. Five primary tabs opened. CSV saved on-device (file existence verified, content validation pending). AI in the main app still uses the separate key-based integration. Quiz configuration accepted more questions than available and displayed a misleading no-vocabulary message; count-specific recovery is implemented and all 31 Quiz screen tests pass; on-device retest is pending. USB transport became offline during retest; targeted reconnect did not restore control. Remaining menus, gameplay completion, persistence, camera, audio accuracy and live provider acceptance are explicitly pending. No user account sign-out, data clearing, purchases or research activation occurred.
+
+Prepared `lib/main.dart` local-learning-preview APK in isolated `com.lexiquest.app.ariTest`: build, package and v2 signature verified; SHA-256 `20460f8e7f93f5e852d61b3b818b5364f7d22997b07c6945f33b0d775952ab9b`. Cloud sync disabled by preview profile. Not installed because transport remains offline. Focused analysis: no issues. Test-only source verification does not close physical retest or whole-app acceptance.

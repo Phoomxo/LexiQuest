@@ -3,7 +3,7 @@
   "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "date": "2026-09-21",
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
-  "status": "vivo-install-launch-pass-private-login-pending",
+  "status": "vivo-device-login-pass-inference-gated",
   "sourceFiles": [
     {
       "path": "lib/main_ari_test.dart",
@@ -136,8 +136,8 @@
     "inference": "NOT_RUN"
   },
   "physical": {
-    "status": "INSTALL_LAUNCH_PASS_AUTH_PENDING",
-    "checkedAtUtc": "2026-09-20T17:26:12.122258+00:00",
+    "status": "INSTALL_LAUNCH_LOGIN_PASS",
+    "checkedAtUtc": "2026-09-20T18:14:39.783594+00:00",
     "manufacturer": "vivo",
     "model": "V2041",
     "androidSdk": 33,
@@ -149,14 +149,23 @@
     "processPresent": true,
     "adbReverse": "tcp:8765 -> tcp:8765",
     "privateBridge": "STARTED_15_MINUTE_LIFETIME",
-    "uiVisualInspection": "NOT_RUN_PRIVACY_HANDOFF",
-    "browserReturn": "NOT_RUN",
-    "nativePluginLaunch": "NOT_RUN",
-    "privateLogin": "PENDING_USER",
-    "authenticatedAcceptance": "NOT_RUN",
-    "originalAppDataModified": false
+    "uiVisualInspection": "PASS_USER_AUTHORIZED_CONSENT_AND_SETTINGS_ONLY",
+    "browserReturn": "PASS_MANUAL_FOREGROUND_AND_EXPLICIT_STATUS_CHECK",
+    "nativePluginLaunch": "PASS_OPENAI_BROWSER_OPENED",
+    "privateLogin": "PASS_CACHED_ACCOUNT_DEVICE_AUTH",
+    "authenticatedAcceptance": "LOGIN_ONLY_PASS_INFERENCE_NOT_RUN",
+    "originalAppDataModified": false,
+    "loginDiagnosis": {
+      "cause": "Codex device-code authentication disabled in web ChatGPT security settings",
+      "resolution": "User authorized agent enabled only this switch, selected sole cached account, completed fresh device challenge, and checked native status",
+      "providerConfirmation": "Signed in to Codex",
+      "nativeConfirmation": "Account connected; inference disabled",
+      "inputObservation": "Rapid ADB text entry left one character missing; paced entry completed successfully",
+      "nativeChatGPTSignedOut": false,
+      "secretsRecorded": false
+    }
   },
-  "authenticatedAcceptance": "NOT_RUN",
+  "authenticatedAcceptance": "LOGIN_ONLY_PASS_INFERENCE_NOT_RUN",
   "inference": {
     "status": "NOT_IMPLEMENTED_GATED",
     "reason": "Provider-enforced quota-only spending and minimal tool policy are unverified; bridge rejects all inference/RPC proxy endpoints."
@@ -201,7 +210,6 @@
     ],
     "remaining": [
       "Authenticated provider inference intentionally unavailable",
-      "Physical provisioning/browser/device-code return not tested without Vivo",
       "Production account integrations not enabled; isolated DB owner/account watches tested locally",
       "Local disconnect does not establish provider revoke"
     ]

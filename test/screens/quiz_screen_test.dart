@@ -1783,6 +1783,66 @@ void main() {
     },
   );
 
+  testWidgets(
+    'configured quiz shortage explains recovery without recording a session',
+    (tester) async {
+      late String ownerId;
+      await tester.runAsync(() async {
+        ownerId = (await owners.getOrCreateActiveOwner()).id;
+      });
+      final configuration = SessionConfiguration.validated(
+        schemaVersion: sessionConfigurationSchemaVersion,
+        policyVersion: sessionConfigurationPolicyVersion,
+        ownerId: ownerId,
+        mode: LessonMode.meaningQuiz,
+        itemCount: 3,
+        direction: SessionDirection.forward,
+        difficulty: SessionDifficulty.standard,
+        hintBudget: 0,
+        timing: const SessionTiming.timed(Duration(minutes: 5)),
+        packIdentity: null,
+        protocolId: 'protocol:test',
+        protocolVersion: '1',
+        protocolLimitsIdentity: 'limits:test',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QuizScreen(
+                    learning: learning,
+                    evidenceAdapter: CurrentActivityEvidenceAdapter(
+                      learning: learning,
+                    ),
+                    sessionConfiguration: configuration,
+                  ),
+                ),
+              ),
+              child: const Text('Launch configured quiz'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Launch configured quiz'));
+      final recovery = find.text('กลับไปปรับจำนวนข้อ');
+      await _pumpUntilFound(tester, recovery);
+      expect(find.textContaining('คำศัพท์ไม่ครบ 3 ข้อ'), findsOneWidget);
+      expect(find.textContaining('ยังไม่มีคำศัพท์สำหรับ Quiz'), findsNothing);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await database.select(database.vocabularyWords).get(),
+        hasLength(2),
+      );
+      await tester.tap(recovery);
+      await tester.pumpAndSettle();
+      expect(find.text('Launch configured quiz'), findsOneWidget);
+      expect(find.byType(QuizScreen), findsNothing);
+    },
+  );
+
   testWidgets('missing category shows honest empty state', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

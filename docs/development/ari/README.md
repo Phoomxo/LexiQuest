@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-21 · branch `feature/ari-app-device-integration`
 
-**สถานะปัจจุบัน: ติดตั้งและเปิดรุ่นทดสอบบน Vivo V2041 จริงแล้ว (INSTALL/LAUNCH PASS); สะพาน USB เปิดชั่วคราว รอผู้ใช้ล็อกอิน OpenAI ส่วนตัว. ยังไม่ตรวจ browser return/authenticated acceptance และยังไม่เปิด inference จริง. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json). V2 NOT_MET.**
+**สถานะปัจจุบัน: Vivo V2041 เชื่อมบัญชีสำเร็จแล้ว; หน้า OpenAI และสถานะอารียืนยันตรงกัน หลังเปิดการอนุญาตรหัสอุปกรณ์ในเว็บตามคำสั่งผู้ใช้. ยังไม่เปิด inference จริง และสะพานทดสอบมีอายุ 15 นาที. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json). V2 NOT_MET.**
 
 **ผลก่อนหน้า: V1-R1 diagnostic เสร็จแล้ว — fake tests 17/17 และ binary smoke แบบไม่ล็อกอิน PASS** ตาม [รายงาน V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 
@@ -41,6 +41,8 @@ V1-R1 completed; writer released: task `01a0bf9c-3cc6-7a91-8355-6b857c613a75` ·
 
 Application foundation completed; writer released: task `01a0bfa7-c450-7f10-8974-3dafeef31c43` · worktree `C:/Users/Phet/.codex/worktrees/bb3c/LexiQuest` · branch `feature/ari-managed-session-foundation`. Device acceptance: deferred-until-implementation-complete. [Design/report](application-foundation.md).
 
-Current amendment: app-device-integration checkpoint in task 01a0bfbd-9961-7da3-982b-77970bdc7027, branch feature/ari-app-device-integration. Writer released for handoff. Order: implementation -> automated tests -> physical device tests -> private user login -> authenticated acceptance. Earlier device deferral is superseded when implementation is ready. V2 remains NOT_MET.
+Current amendment: app-device-integration checkpoint in task 01a0bfbd-9961-7da3-982b-77970bdc7027, branch feature/ari-app-device-integration. Writer reacquired for user-authorized physical testing and defect recovery. Order: implementation -> automated tests -> physical device tests -> private user login -> authenticated acceptance. Earlier device deferral is superseded when implementation is ready. V2 remains NOT_MET.
 
-Latest handoff: task `01a0bfbd-9961-7da3-982b-77970bdc7027`, branch `feature/ari-app-device-integration`; native private-login debug APK verified, inference gated, no physical/authenticated PASS. Earlier foundation device deferral is historical.
+Latest handoff: task `01a0bfbd-9961-7da3-982b-77970bdc7027`, branch `feature/ari-app-device-integration`; native private-login debug APK verified, inference gated, physical installation and device login PASS; inference NOT_RUN. Earlier foundation device deferral is historical.
+
+Autonomous device testing authorized: [coverage and defects](device-test-matrix.json), [observed actions](device-observations.jsonl). Five primary tabs and several submenu flows inspected on installed version23; Quiz shortage recovery fixed with 31 screen tests passing. Full device acceptance remains incomplete while the Vivo ADB transport is offline.

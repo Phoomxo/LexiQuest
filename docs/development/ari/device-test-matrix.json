@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 1,
+  "updatedAtUtc": "2026-09-20T18:36:06.053161+00:00",
+  "authorization": "User delegates physical Vivo control, menu/function testing, evidence capture, diagnosis and repairs; no repeated screenshot handoffs. Preserve native ChatGPT account.",
+  "status": "IN_PROGRESS_DEVICE_ADB_OFFLINE",
+  "device": {
+    "model": "Vivo V2041",
+    "sdk": 33,
+    "mainPackage": "com.lexiquest.app",
+    "versionName": "1.0.0",
+    "versionCode": 23,
+    "lastUpdateTimeDevice": "2026-09-13 08:14:41",
+    "installedSourceSha": "UNCONFIRMED"
+  },
+  "sourceBranch": "feature/ari-app-device-integration",
+  "observations": "device-observations.jsonl",
+  "cases": [
+    {
+      "id": "LOGIN",
+      "status": "PASS_LOGIN_ONLY",
+      "evidence": "app-device-integration-evidence.json"
+    },
+    {
+      "id": "NAV_PRIMARY",
+      "status": "PASS_NAVIGATION_ONLY",
+      "observed": [
+        "learning",
+        "vocabulary",
+        "progress",
+        "rewards",
+        "profile"
+      ]
+    },
+    {
+      "id": "SYSTEM_STATUS",
+      "status": "OBSERVED",
+      "actual": "Local data ready; detail says external system ready. No live provider request tested."
+    },
+    {
+      "id": "VOCABULARY",
+      "status": "PASS_LIST_ONLY",
+      "actual": "Starter category opens and lists bag/book/bottle/chair/clock/cup/door/key/pencil/plate; CRUD pending."
+    },
+    {
+      "id": "AI_MAIN",
+      "status": "GAP_CONFIRMED",
+      "actual": "Main app still asks for provider API key; Gemini trial selected; no key and no sending consent. Ari device login is separate and inference remains unavailable."
+    },
+    {
+      "id": "SHADOWING",
+      "status": "PARTIAL",
+      "actual": "Configuration/start opens bag exercise; tapped playback and returned. Audible output and human pronunciation quality unverified."
+    },
+    {
+      "id": "GHOST_DUEL",
+      "status": "EMPTY_STATE_OBSERVED",
+      "actual": "20 evidence records shown; no qualifying weakness available to start. Gameplay not run."
+    },
+    {
+      "id": "QUESTS",
+      "status": "PARTIAL",
+      "actual": "Current daily goal 0/5 and historical cards open; expanding shows details. Completion/reward transaction pending."
+    },
+    {
+      "id": "SHOP",
+      "status": "PARTIAL",
+      "actual": "Avatar level4, XP70, coins70 and catalog open; no purchase made."
+    },
+    {
+      "id": "EXPORT_CSV",
+      "status": "PASS_FILE_CREATION_ONLY",
+      "actual": "Native save picker accepted; /sdcard/Download/lexiquest-20260920T182935.csv exists, 2641 bytes. Content integrity not yet verified."
+    },
+    {
+      "id": "SETTINGS",
+      "status": "PARTIAL",
+      "actual": "Theme controls respond, restored original system theme; rendering persistence not yet verified. Research consent remains off; no data deletion."
+    },
+    {
+      "id": "QUIZ_COUNT",
+      "status": "FAIL_MISLEADING_EMPTY_STATE",
+      "actual": "Configuration accepts20 while visible starter category has10 words; starting shows no vocabulary. Input automation intended2 but field became20; selected20 was explicitly observed before launch. Retest interrupted by USB offline.",
+      "sourceDiagnosis": "LearningUseCases.startQuiz returns empty if configured count differs from selected words; screen used generic no-vocabulary message.",
+      "fix": "Count-specific message and return action implemented; full Quiz screen test file passes; physical retest pending."
+    },
+    {
+      "id": "CAMERA",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "TYPED_RECALL",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "MATCHING",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "DEFINITION_QUIZ",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "OTHER_LEARNING_MODES",
+      "status": "INVENTORY_PENDING"
+    },
+    {
+      "id": "TODAY_AND_PLANNING",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "REVIEW_AND_WEAKNESS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "HISTORY_AND_RESTART",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "NETWORK_FAILURE_RECOVERY",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "AUDIO_RECORDING",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "ACCOUNT_SYNC",
+      "status": "NOT_RUN_NO_NEW_SIGNOUT"
+    },
+    {
+      "id": "OTHER_EXPORT_FORMATS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "ACCESSIBILITY_RESOURCES",
+      "status": "NOT_RUN"
+    }
+  ],
+  "blocker": {
+    "actual": "ADB lost transport during second quiz launch; reappeared offline. Windows still sees ADB Interface.",
+    "attempts": [
+      "Enumerated device and Windows interface",
+      "Verified only expected SDK ADB process",
+      "Targeted adb -s designated-device reconnect; remains offline"
+    ],
+    "needed": "Restore USB debugging transport on Vivo; no global ADB restart or data clear."
+  },
+  "acceptance": "Not all menus/functions tested; navigation is not end-to-end acceptance. Prior accepted source tests not rerun.",
+  "regression": {
+    "status": "PASS",
+    "result": "build/verification/7a2b971cad84a8decf43bc992c6b3fefc54cec13/targeted-learning-e12c8b895713898dcf6849384fea1d5df0f27bb92e5158629fc1cb49c6527149.json",
+    "fingerprint": "f3163ffd2fcd728bbd72cdad53a02fbc43f0ecd80a1566a1453ff6d982afa30a",
+    "redResult": "build/verification/7a2b971cad84a8decf43bc992c6b3fefc54cec13/617fc2381877-990113562e7f-2f278888/Explicit-Flutter-tests.stdout.log",
+    "redCause": "Recovery button absent before fix",
+    "physicalRetest": "PENDING_ADB_OFFLINE",
+    "count": 31,
+    "analyze": "NO_ISSUES"
+  },
+  "preparedApk": {
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "sha256": "20460f8e7f93f5e852d61b3b818b5364f7d22997b07c6945f33b0d775952ab9b",
+    "package": "com.lexiquest.app.ariTest",
+    "entrypoint": "lib/main.dart",
+    "profile": "tool/cli/profiles/local-learning-preview.json",
+    "cloudSyncEnabled": false,
+    "scope": "Full local learning preview, not live cloud acceptance",
+    "build": "PASS",
+    "signatureV2": "PASS",
+    "installed": "NOT_RUN_ADB_OFFLINE",
+    "priorLoginApk": "build/ari-login-verified.apk"
+  },
+  "remainingSourceMenuInventory": [
+    {
+      "id": "home/vocabulary",
+      "label": "คำศัพท์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn",
+      "label": "เรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/today-experience",
+      "label": "ภารกิจวันนี้",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/today",
+      "label": "วันนี้",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/study-planning",
+      "label": "วางแผนการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/mastery",
+      "label": "ความก้าวหน้า",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/weakness",
+      "label": "จุดที่ควรฝึกเพิ่ม",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/achievements",
+      "label": "รางวัล",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/profile",
+      "label": "โปรไฟล์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/rewards/shop",
+      "label": "ร้านค้า",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/practice/object-scanner",
+      "label": "สแกนวัตถุ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/practice/shadowing",
+      "label": "ฝึกพูดตาม",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/learning/ghost-duel",
+      "label": "ดวลกับสถิติเดิม",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/ai-tutor/chat",
+      "label": "ผู้ช่วยสอน AI",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/ai-tutor/settings",
+      "label": "ตั้งค่าการเชื่อมต่อ AI",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/export/center",
+      "label": "ส่งออกข้อมูล",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/rewards/quests",
+      "label": "ภารกิจการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "drawer/settings",
+      "label": "ตั้งค่า",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/associative-reading",
+      "label": "อ่านเชื่อมโยงความจำ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz",
+      "label": "แบบทดสอบจากคลังคำศัพท์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/typed-recall",
+      "label": "นึกคำแล้วพิมพ์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/matching",
+      "label": "จับคู่คำศัพท์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/cloze",
+      "label": "เติมคำในประโยค",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/definition",
+      "label": "เลือกคำจากคำอธิบาย",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/handwriting-scratchpad",
+      "label": "กระดานฝึกเขียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/srs",
+      "label": "ทบทวนคำศัพท์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/reading/cefr",
+      "label": "อ่านตามระดับภาษา CEFR",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/dictation",
+      "label": "ฟังแล้วพิมพ์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/sentence-scramble",
+      "label": "เรียงประโยค",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/quiz/word-scramble",
+      "label": "เรียงตัวอักษร",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/speech/speaking",
+      "label": "ฝึกออกเสียง",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/learn/speech/shadowing",
+      "label": "ฝึกพูดตาม",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "today-hub-resume-action",
+      "label": "เรียนต่อ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "today-hub-start-recommendation",
+      "label": "เริ่มกิจกรรมที่แนะนำ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "today-hub-assessment-action",
+      "label": "เริ่มแบบประเมิน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "today-hub-open-review",
+      "label": "เปิดศูนย์ทบทวน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "today-hub-open-history",
+      "label": "ดูประวัติการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/open-catalog",
+      "label": "เลือกชุดเนื้อหาการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/open-goals",
+      "label": "เป้าหมายการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/open-learning-preferences",
+      "label": "การตั้งค่าการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/display",
+      "label": "การแสดงผล",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "theme-system",
+      "label": "ระบบ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "theme-light",
+      "label": "สว่าง",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "theme-dark",
+      "label": "มืด",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "reduced-motion-switch",
+      "label": "ลดการเคลื่อนไหว",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/account",
+      "label": "บัญชีผู้ใช้",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/offline-content",
+      "label": "เนื้อหาออฟไลน์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/research-consent",
+      "label": "ความยินยอมงานวิจัย",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/cloud-status",
+      "label": "สถานะการเชื่อมต่อระบบออนไลน์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/change-password",
+      "label": "เปลี่ยนรหัสผ่าน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "settings/logout",
+      "label": "ออกจากระบบ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "erase-local-data",
+      "label": "ลบข้อมูลในเครื่องทั้งหมด",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/mastery",
+      "label": "ความชำนาญ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/srs",
+      "label": "ทบทวนคำศัพท์",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/effort",
+      "label": "เวลาเรียนจริง",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/accuracy",
+      "label": "ความแม่นยำ",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/weakness",
+      "label": "จุดที่ควรฝึกเพิ่ม",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "profile/engagement",
+      "label": "ความต่อเนื่องในการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/today/review",
+      "label": "ศูนย์ทบทวน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "home/today/history",
+      "label": "ประวัติการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "research/assessment",
+      "label": "แบบประเมิน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/catalog",
+      "label": "ชุดเนื้อหาการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/goals",
+      "label": "เป้าหมายการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    },
+    {
+      "id": "study-planning/learning-preferences",
+      "label": "การตั้งค่าการเรียน",
+      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+    }
+  ],
+  "observationsSha256": "393d3ffb702496c172874206763770b556b8fcfcb6efe028240976efc75c7f27"
+}

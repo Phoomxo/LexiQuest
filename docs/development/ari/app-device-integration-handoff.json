@@ -4,8 +4,8 @@
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
   "branch": "feature/ari-app-device-integration",
   "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
-  "status": "vivo-install-launch-pass-private-login-pending",
-  "writerReleased": true,
+  "status": "physical-testing-awaiting-vivo-adb-transport",
+  "writerReleased": false,
   "implementationPushed": true,
   "report": "app-device-integration.md",
   "evidence": "app-device-integration-evidence.json",
@@ -24,27 +24,25 @@
     "analyze": "NO_ISSUES",
     "localBinary": "PRELOGIN_PASS",
     "apk": "BUILD_SIGNATURE_PACKAGE_PASS",
-    "physical": "VIVO_V2041_INSTALL_LAUNCH_PASS"
+    "physical": "VIVO_V2041_INSTALL_LAUNCH_DEVICE_LOGIN_PASS"
   },
   "notRun": [
-    "physical browser return",
-    "private login",
-    "authenticated acceptance",
     "Free Thailand",
     "provider revoke",
-    "pilot"
+    "pilot",
+    "authenticated inference acceptance"
   ],
   "v2Gate": "NOT_MET",
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "User completes private OpenAI login on Vivo and taps explicit return/status button; do not inspect screen/browser/DOM/logs during entry.",
-    "Bridge expires 15 minutes after launch; if expired, reprovision without clearing app data.",
-    "Inference remains gated and this account cannot by itself certify Free Thailand, quota-only billing, or provider revoke."
+    "Restore designated Vivo ADB transport; device remains offline after targeted reconnect. Do not clear data or sign out native ChatGPT.",
+    "Install prepared local-preview APK to isolated ariTest package after confirming source/hash/signature; preserve original main package.",
+    "Retest quiz count shortage recovery and complete remaining device cases from matrix; source tests pass31 but no physical retest PASS.",
+    "Respect latest authorization: control device, diagnose and fix recoverable failures autonomously; stop failed methods, never weaken acceptance or dispatch unresolved work to bypass gates."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
-    "user private ChatGPT sign-in and device-code security setting",
     "supported provider enforcement for quota-only inference"
   ],
   "policy": {
@@ -53,5 +51,6 @@
     "thinkingRequested": "medium",
     "speed": "Standard/default requested; runtime tier not observable"
   },
-  "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a"
+  "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
+  "deviceCoverage": "device-test-matrix.json"
 }

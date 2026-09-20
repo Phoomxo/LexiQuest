@@ -497,6 +497,16 @@ class _QuizScreenState extends State<QuizScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.data!.isEmpty) {
+              final configuration = _sessionConfiguration;
+              if (configuration != null) {
+                return _QuizMessage(
+                  icon: Icons.library_add_outlined,
+                  message:
+                      'คำศัพท์ไม่ครบ ${configuration.itemCount} ข้อตามที่เลือก '
+                      'กรุณาลดจำนวนข้อหรือเลือกเนื้อหาใหม่',
+                  onReconfigure: () => Navigator.of(context).maybePop(),
+                );
+              }
               return const _QuizMessage(
                 icon: Icons.library_add_outlined,
                 message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
@@ -876,10 +886,15 @@ class _QuizScreenState extends State<QuizScreen> {
 }
 
 class _QuizMessage extends StatelessWidget {
-  const _QuizMessage({required this.icon, required this.message});
+  const _QuizMessage({
+    required this.icon,
+    required this.message,
+    this.onReconfigure,
+  });
 
   final IconData icon;
   final String message;
+  final VoidCallback? onReconfigure;
 
   @override
   Widget build(BuildContext context) {
@@ -892,6 +907,13 @@ class _QuizMessage extends StatelessWidget {
             Icon(icon, size: 48),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
+            if (onReconfigure != null) ...[
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onReconfigure,
+                child: const Text('กลับไปปรับจำนวนข้อ'),
+              ),
+            ],
           ],
         ),
       ),
