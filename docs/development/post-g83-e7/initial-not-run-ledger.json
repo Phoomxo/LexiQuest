@@ -1,0 +1,679 @@
+{
+  "sourceCommit": "133e382db5e4c59d29975b39a47e5dfa3820d2d2",
+  "cases": [
+    {
+      "TestCaseID": "E7-COV-f01",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f02",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f03",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f04",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f05",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f06",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f07",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f08",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f09",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f10",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f11",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f12",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f13",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f14",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f15",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f16",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f17",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f18",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f19",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f20",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f21",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f22",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f23",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f24",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f25",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f26",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f27",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f28",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f29",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f30",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f31",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f32",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f33",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f34",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f35",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f36",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f37",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f38",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f39",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f40",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f41",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f42",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f43",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-COV-f44",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-associativeReading",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-meaningQuiz",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-typedRecall",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-definitionQuiz",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-cloze",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-matching",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-flashcard",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-handwritingScratchpad",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-dictation",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-speaking",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-shadowing",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-cefrReading",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-sentenceScramble",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-wordScramble",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-adventure-journey",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MODE-ghost-duel",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-01",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-02",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-03",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-04",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-05",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-06",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-07",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-08",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-09",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-10",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-11",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-12",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-13",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-MG-14",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-01",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-02",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-03",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-04",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-05",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-06",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-07",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-08",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-09",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-10",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-11",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FORM-12",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F01",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F02",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F03",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F04",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F05",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F06",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F07",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F08",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-F09",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-ANDROID-JOURNEY",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-EXTENSION-JOURNEYS",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-PERFORMANCE",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-FOCUS-LOCALE",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-DISK-CONTENT-FAULT",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-PHYSICAL-CAMERA",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-PHYSICAL-AUDIO",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-TALKBACK",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-LIVE-PROVIDER",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-HUMAN-RUBRIC",
+      "status": "NOT RUN"
+    },
+    {
+      "TestCaseID": "E7-TWO-DEVICE-SYNC",
+      "status": "NOT RUN"
+    }
+  ],
+  "commands": [
+    {
+      "id": "LOCAL-001",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-002",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-003",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-004",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-005",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-006",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-007",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-008",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-009",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-010",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-011",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-012",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-013",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-014",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-015",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-016",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-017",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-018",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-019",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-020",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-021",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-022",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-023",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-024",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-025",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-026",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-027",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-028",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-029",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-030",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-031",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-032",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-033",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-034",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-035",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-036",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-037",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-038",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-039",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-040",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-041",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-042",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-043",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-044",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-045",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-046",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-047",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-048",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-049",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-050",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-051",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-052",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-053",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-054",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-055",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-056",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "LOCAL-057",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "BACKENDAI",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "BACKENDVOICE",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "BACKENDLM",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "RULES",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "CAMERA-EVALUATOR",
+      "status": "NOT RUN"
+    }
+  ]
+}
