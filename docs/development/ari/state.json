@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
+  "revision": 11,
   "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
-  "sourceSha": "a07c7d9c415fb4853a529ee1321fb860982bb40f",
+  "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "V1-R1",
-  "status": "technical-probe-ready-for-dispatch",
-  "currentTaskId": null,
+  "status": "technical-probe-complete-gate-not-met",
+  "currentTaskId": "01a0bf9c-3cc6-7a91-8355-6b857c613a75",
   "implementationWriter": null,
   "model": "gpt-6-astra",
   "thinking": "medium",
@@ -87,9 +87,14 @@
     "id": "V1-R1",
     "plan": "V1-R1.md",
     "scope": "Unauthenticated protocol adapter and isolated binary diagnostic; production unchanged",
-    "taskId": null,
-    "status": "ready-for-dispatch",
+    "taskId": "01a0bf9c-3cc6-7a91-8355-6b857c613a75",
+    "status": "diagnostic-complete",
     "v2Gate": "NOT_MET",
-    "latestUserAuthorization": "Find a practical route and start development; preserve in-app/free/no-key/no-developer-mode requirements"
+    "latestUserAuthorization": "Find a practical route and start development; preserve in-app/free/no-key/no-developer-mode requirements",
+    "report": "V1-R1.md",
+    "evidence": "V1-R1-evidence.json",
+    "handoff": "V1-R1-handoff.json",
+    "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
+    "writerReleased": true
   }
 }

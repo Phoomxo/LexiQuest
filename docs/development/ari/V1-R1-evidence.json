@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
+  "scope": "V1 technical diagnostic only",
+  "runtime": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "fakeTests": {
+    "status": "PASS",
+    "kind": "synthetic process and scripted client, no Codex login",
+    "runs": [
+      {
+        "command": "python -m unittest discover -s tool/experiments/ari_app_server -p test_adapter.py -v",
+        "tests": 15,
+        "seconds": 2.341,
+        "exitCode": 0
+      },
+      {
+        "command": "python -m unittest discover -s tool/experiments/ari_app_server -p test_probe.py -v",
+        "tests": 2,
+        "seconds": 0.032,
+        "exitCode": 0
+      }
+    ],
+    "redPhase": [
+      {
+        "suite": "test_adapter",
+        "failures": 11,
+        "cause": "adapter not implemented yet"
+      },
+      {
+        "suite": "test_probe",
+        "failures": 2,
+        "cause": "smoke driver not implemented yet"
+      }
+    ],
+    "coverage": [
+      "out-of-order request IDs and notifications",
+      "RPC error code without raw error payload",
+      "timeout and late response",
+      "local task cancellation and late response",
+      "loginId cancellation tombstones queued and late events (fake only)",
+      "EOF/process death",
+      "invalid JSON and ambiguous result/error envelope",
+      "closed session cannot deliver queued or exit-time events",
+      "owned child ignoring EOF is terminated and reaped",
+      "server credential-refresh request rejected without credentials",
+      "actual fake child environment/cwd inspection with contaminated parent input",
+      "parent environment unchanged",
+      "cleanup rejects root redirection",
+      "unexpected account stops before logout",
+      "smoke driver only sends permitted requests"
+    ]
+  },
+  "realBinary": {
+    "status": "PASS",
+    "receipt": "V1-R1-binary-smoke.json",
+    "sha256": "ef44241f6ce2b6ccc10e879157b2c2c95c371b112f1c95d190a85b27ee72a610",
+    "tested": [
+      "version",
+      "help",
+      "schema generation and selected schema equality",
+      "initialize",
+      "initialized notification",
+      "account/read refreshToken=false",
+      "unauthenticated account/logout",
+      "account/updated authMode=null",
+      "account/read after logout",
+      "child exit and owned temp cleanup"
+    ],
+    "notTested": [
+      "account/login/start",
+      "account/login/cancel against real login",
+      "thread/start",
+      "turn/start",
+      "model inference",
+      "remote revoke",
+      "rate limits or billing",
+      "hosted multi-user isolation"
+    ]
+  },
+  "runnerDecision": {
+    "runner": "tool/cli/verify-scope.ps1",
+    "decision": "focused unittest fallback authorized by V1-R1",
+    "reason": "CliTestTargets only accepts tool/cli/tests/*.tests.ps1; TestTargets is Flutter; backend selection invokes fixed pytest suites. No custom standard-library Python diagnostic selector. No wrapper or unrelated verifier change added."
+  },
+  "sourceFingerprint": {
+    "algorithm": "SHA256 exact bytes; .py pinned LF via local .gitattributes",
+    "files": {
+      "tool/experiments/ari_app_server/adapter.py": "b5ce17c1f178e5a37ae7c0c8d6f9c6eb1d6c4c07cba2b617317c608e2cfad668",
+      "tool/experiments/ari_app_server/fake_server.py": "283c4cb47087d28b478a79c4a2ec646f62303b88ddc463998d3cf2f814820c00",
+      "tool/experiments/ari_app_server/probe.py": "fc8ddddfe67179ce37668e490041a682a3c9675928b037e449874057e4e7992d",
+      "tool/experiments/ari_app_server/test_adapter.py": "2c455e1ee496a904630b1aecd049b954c86f10857eab013bbbe1aaede019f885",
+      "tool/experiments/ari_app_server/test_probe.py": "acd4cfef08d9e50ac25454185c47d88bdb50825d8f4314920f5ccd556cff7435"
+    }
+  },
+  "schema": {
+    "directory": "V1-R1-schema",
+    "origin": "codex-cli 0.146.0 app-server generate-json-schema",
+    "clientRequest": "Four selected request variants with transitive definitions retained; other seven files copied verbatim from generated root/v2 schemas. Not a complete SDK or general JSON Schema validator."
+  },
+  "sources": [
+    {
+      "url": "https://learn.chatgpt.com/docs/app-server",
+      "checked": "2026-09-20",
+      "use": "stdio framing, initialization, account methods; binary schema is execution authority"
+    },
+    {
+      "url": "https://learn.chatgpt.com/docs/auth",
+      "checked": "2026-09-20",
+      "use": "device-code beta requires ChatGPT security settings/workspace permission; no auth-cache copy used"
+    }
+  ],
+  "gates": {
+    "V2": "NOT_MET",
+    "T01-T08": "NOT_RUN",
+    "pilot": "NOT_RUN 0/5",
+    "E7": "UNCHANGED_NOT_CLOSED"
+  },
+  "executionPolicy": {
+    "subagents": 0,
+    "writers": 1,
+    "requestedModel": "gpt-6-astra",
+    "requestedThinking": "medium",
+    "requestedSpeed": "Standard/default; no Fast/priority requested",
+    "effectiveServiceTier": "NOT_OBSERVABLE; not certified"
+  },
+  "limitations": [
+    "Configuration isolation is not an OS tenant sandbox or a network traffic audit.",
+    "Client is one child/session with a single event consumer; no reconnect, hosted routing, durable credentials or inference.",
+    "Local task cancellation stops waiting; it is not server-side turn interruption.",
+    "Local logout in an empty home does not demonstrate provider-side token revocation."
+  ],
+  "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
+  "packagingRecovery": {
+    "issue": "git diff --cached --check treated preserved CRLF in exact-byte JSON as trailing whitespace",
+    "cause": "-text preserves Windows CRLF, default Git whitespace does not recognize it",
+    "resolution": "scope whitespace=cr-at-eol to new receipt/schema JSON; preserve bytes and hashes; staged diff check passed",
+    "codeOrSchemaChanged": false
+  }
+}

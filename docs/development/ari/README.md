@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-20 · branch `feature/ari-feasibility`
 
-**สถานะ: เปิด V1 อีกครั้งเพื่อเขียนเครื่องมือทดลอง App Server** ตาม [V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
+**สถานะ: V1-R1 diagnostic เสร็จแล้ว — fake tests 17/17 และ binary smoke แบบไม่ล็อกอิน PASS** ตาม [รายงาน V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 
 | หัวข้อ | งานย่อย | ผลล่าสุด | รายงาน / handoff |
 |---|---|---|---|
@@ -32,3 +32,7 @@ Task เดิมถูกสร้างแบบ projectless ผิดจา�
 นำเข้าหลักฐานเดิม 16 ไฟล์รวม 478,049 bytes โดยคงเนื้อหาและตรวจ SHA-256 ทุกไฟล์ใน `evidence/` ไม่ใช่การรันหรือรับ PASS ใหม่ พาธภายนอกที่ฝังอยู่เป็นประวัติ ใช้ลิงก์ในดัชนีนี้เพื่ออ่านสำเนาใน Git ต้นฉบับภายนอกคงไว้สำหรับตรวจย้อนกลับ ไม่เป็นที่เขียนงานใหม่
 
 การเปิดงานต่อ: ต้องแก้ช่องว่าง route/entitlement/billing/distribution/revoke ตาม V1 ก่อนเริ่ม V2 โดยไม่เอาผล live tests มาเป็น prerequisite ก่อนสร้างต้นแบบ ไม่มีคำสั่งรันงานเก่า G/E จากการจัดเอกสารครั้งนี้
+
+V1-R1 completed; writer released: task `01a0bf9c-3cc6-7a91-8355-6b857c613a75` · branch `feature/ari-app-server-probe` · [แผนและรายงาน](V1-R1.md) · [สถานะ](state.json).
+
+หลักฐานใหม่: [V1-R1 evidence](V1-R1-evidence.json) · [binary smoke](V1-R1-binary-smoke.json) · [handoff](V1-R1-handoff.json). ไม่มี successor/V2 dispatch.
