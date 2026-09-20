@@ -559,7 +559,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.data!.isEmpty) {
-              return const _SrsMessage('ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน');
+              return _SrsMessage(
+                (widget.sessionConfiguration?.itemCount ?? 1) > 1
+                    ? 'คำศัพท์ที่ถึงกำหนดทบทวนยังไม่ครบจำนวนที่เลือก\n'
+                          'ลองลดจำนวนข้อหรือกลับมาทบทวนภายหลัง'
+                    : 'ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน',
+              );
             }
             _session ??= snapshot.data;
             return _buildCard();

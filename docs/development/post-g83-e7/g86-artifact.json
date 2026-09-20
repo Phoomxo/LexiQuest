@@ -228,5 +228,28 @@
     "nativeRuntimeIntegrity": "PASS: g86-e25-default-runtime.log",
     "all33PackagedAssetsMatch": true,
     "installed": false
+  },
+  "d22Preview": {
+    "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-75b44bab-local-preview-debug.apk",
+    "apkSha256": "7e242875521ebccdf15f645d4a3ec6032d9a9a3423444343bbcf90ba13765a69",
+    "installedSha256": "7e242875521ebccdf15f645d4a3ec6032d9a9a3423444343bbcf90ba13765a69",
+    "apkBytes": 268602722,
+    "dartDefines": {
+      "LEXIQUEST_LEARNING_PREVIEW": "true",
+      "LEXIQUEST_CLOUD_SYNC_ENABLED": "false",
+      "LEXIQUEST_BUILD_ID": "e7-d22-preview"
+    },
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-d22-runtime.log"
+  },
+  "d22Default": {
+    "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-75b44bab-production-debug.apk",
+    "apkSha256": "883cb43895b43188193d7b24f705595c1389d37e50f780f21cbbcd9dacd5361b",
+    "installedSha256": "883cb43895b43188193d7b24f705595c1389d37e50f780f21cbbcd9dacd5361b",
+    "dartDefines": {},
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-75-default-runtime.log"
   }
 }

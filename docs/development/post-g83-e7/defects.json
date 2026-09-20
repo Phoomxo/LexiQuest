@@ -492,9 +492,29 @@
       "77a513263baf-93eae16bea52-a4a6e6f1/Explicit-Flutter-tests.stdout.log"
     ],
     "fix": "Observe committed controller terminal state immediately; remove listener before disposal. Preserve existing compensation and owner/session identity checks.",
+    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "fixSHA": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "retest": "targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json; g86-d22-analyze.log",
+    "diagnostic": "Copied native database recovery and10correct canonical attempts pass; exact diagnostic source archived externally, excluded from portable tests.",
+    "nativeRetest": [
+      "g86-d22-native-return.xml",
+      "g86-final-durable-proof.json"
+    ]
+  },
+  {
+    "DefectID": "E7-D23",
+    "TestCaseID": "G86-srs-insufficient-due-count",
+    "sourceSHA": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "title": "Configured SRS shortage falsely reports zero due words",
+    "severity": "low",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Exact-count admission returns an empty session when fewer than the requested items are due; UI used the zero-due message for both outcomes.",
+    "expected": "Explain insufficient requested count and suggest reducing it without admitting a partial or fake session.",
+    "actual": "Two due words with ten requested showed no due words.",
+    "fix": "Use count-shortage copy for multi-item configuration; admission and evidence policies unchanged.",
     "status": "fixed-local-verified-native-retest-pending",
     "fixSHA": null,
-    "retest": "targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json; g86-d22-analyze.log",
-    "diagnostic": "Copied native database recovery and10correct canonical attempts pass; exact diagnostic source archived externally, excluded from portable tests."
+    "evidence": "59e4d601672a-60de5aa32875-ec353b01/Explicit-Flutter-tests.stdout.log",
+    "retest": "targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json; g86-d23-analyze.log"
   }
 ]

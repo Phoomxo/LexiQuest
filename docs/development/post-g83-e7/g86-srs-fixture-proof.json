@@ -1,0 +1,77 @@
+{
+  "status": "PASS",
+  "source": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+  "checks": [
+    "48 original attempts and 38 original rewards unchanged",
+    "book independent recall advanced SRS to 7 days and granted exactly one reward",
+    "window reveal produced exposure without SRS advancement or reward",
+    "only temporary window due date restored using compare-and-set while app stopped",
+    "all other database rows unchanged by fixture restoration"
+  ],
+  "newAttempts": [
+    {
+      "id": "attempt:a103c356-4028-4da8-983f-25cf68f6d59f",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:b5ea43d5-f0b8-4081-b14b-90ed5453ad68",
+      "word_id": "word:starter-book",
+      "prompt_mode": "srsRecall",
+      "is_correct": 1,
+      "response_time_ms": 13351,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789899556444,
+      "provider_provenance": null,
+      "evidence_class": "independentRecall",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"independentRecall\",\"skillId\":\"srs-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    },
+    {
+      "id": "attempt:6b295032-e034-40d7-8e27-b01cb992247d",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:b5ea43d5-f0b8-4081-b14b-90ed5453ad68",
+      "word_id": "word:starter-window",
+      "prompt_mode": "flashcardExposure",
+      "is_correct": 0,
+      "response_time_ms": 28185,
+      "attempt_number": 2,
+      "occurred_at_utc_ms": 1789899586704,
+      "provider_provenance": null,
+      "evidence_class": "exposure",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"exposure\",\"skillId\":\"srs-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    }
+  ],
+  "newRewards": [
+    {
+      "id": "reward:coin:09bb61a638e81eb0a25ee392bf508aaaf4ab2ecd8148de94e52a7faf933e9e63",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "idempotency_key": "economy:v1:coins:c92f00ad089a5e714ff817f99e1a2e4357442f369956c20bfb51a9d35897f999",
+      "transaction_type": "coinGrant",
+      "amount": 1,
+      "item_id": null,
+      "catalog_version": 0,
+      "source_event_id": "attempt:a103c356-4028-4da8-983f-25cf68f6d59f",
+      "occurred_at_utc_ms": 1789899556444
+    }
+  ],
+  "fixtureLimitation": "Explicit due-date fixture on task-created emulator data; not natural elapsed interval or physical-device acceptance",
+  "pins": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-srs-fixture.json",
+      "sha256": "4f581c1919000a24bb9ae6d5e0b814704811d0077d427f6b938cdcb07a4ee867"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-default-before-srs-fixture-db\\rows.json",
+      "sha256": "12e2054b7623324a0a982413ce4068c94e4b7942ab3e3a34cee63740ccf12cbf"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-srs-seeded-db\\rows.json",
+      "sha256": "f358ee472200994b05fe54f2678f72772a14b7025c22f12289b829478cab5f45"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-srs-after-review-db\\rows.json",
+      "sha256": "8d15b6a5f4aad14b33ffe21e3058fefe7774fa50758c1a7ae8707ff670aa8adb"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-srs-restored-db\\rows.json",
+      "sha256": "99e81d31b70fb3009f7282c641228f7b8043a468804ffbc788a8b1a3e293c500"
+    }
+  ]
+}

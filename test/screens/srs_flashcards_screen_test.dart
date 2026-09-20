@@ -16,6 +16,10 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
@@ -63,6 +67,63 @@ class FakeVoiceProvider implements VoiceProvider {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+    'configured SRS shortage explains the requested count without a fake session',
+    (tester) async {
+      final repository = _DeferredLearningRepository();
+      final learning = LearningUseCases(
+        owners: _ScenarioOwnerRepository(),
+        repository: repository,
+        generateId: () => throw StateError(
+          'Insufficient due items must not create a session',
+        ),
+        nowUtc: () => DateTime.utc(2026, 9, 20),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'srs-shortage'),
+      );
+      final registration = buildLessonModeRegistry().resolve(
+        LessonMode.flashcard,
+      )!;
+      const policy = SessionConfigurationPolicy();
+      const limits = SessionConfigurationProtocolLimits.standard();
+      final configuration = policy.validate(
+        draft: policy.defaultsFor(registration: registration, limits: limits),
+        registration: registration,
+        limits: limits,
+        ownerId: 'owner-a',
+        availablePackIdentities: const [],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const FlashcardModeAdapter(),
+            sessionConfiguration: configuration,
+          ),
+        ),
+      );
+      repository.due.complete(const [
+        QuizWord(
+          id: 'one-due-word',
+          categoryId: 'c',
+          spelling: 'book',
+          meaning: 'หนังสือ',
+          partOfSpeech: 'noun',
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'คำศัพท์ที่ถึงกำหนดทบทวนยังไม่ครบจำนวนที่เลือก\nลองลดจำนวนข้อหรือกลับมาทบทวนภายหลัง',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน'), findsNothing);
+      expect(find.byKey(const ValueKey('flashcard-remembered')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   for (final reduced in [false, true]) {
     for (final disposeDuringReverse in [false, true]) {
