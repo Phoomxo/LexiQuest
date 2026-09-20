@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
+  "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
+  "branch": "feature/ari-app-device-integration",
+  "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "status": "prelogin-debug-app-verified-device-and-authenticated-not-run",
+  "writerReleased": true,
+  "implementationPushed": false,
+  "report": "app-device-integration.md",
+  "evidence": "app-device-integration-evidence.json",
+  "implemented": [
+    "opt-in canonical database owner/account host with network, navigation, background/dispose fencing",
+    "native private device-code UI with explicit user-owned return check and no automatic auth inspection",
+    "isolated ephemeral App Server login broker restricted to loopback and fresh random private capability",
+    "debug package separate from existing application; inherited BYOK/storage unchanged"
+  ],
+  "notImplemented": [
+    "Provider inference: no verified provider-enforced quota-only control or validated minimal-tool configuration; /reply and arbitrary RPC are rejected"
+  ],
+  "verified": {
+    "flutter": 17,
+    "bridge": 9,
+    "analyze": "NO_ISSUES",
+    "localBinary": "PRELOGIN_PASS",
+    "apk": "BUILD_SIGNATURE_PACKAGE_PASS"
+  },
+  "notRun": [
+    "Vivo install",
+    "physical browser return",
+    "private login",
+    "authenticated acceptance",
+    "Free Thailand",
+    "provider revoke",
+    "pilot"
+  ],
+  "v2Gate": "NOT_MET",
+  "e7": "UNCHANGED_NOT_CLOSED",
+  "successor": null,
+  "nextActions": [
+    "Connect designated Vivo over USB and accept its RSA debugging prompt on phone if unauthorized; never restart global ADB or clear app data.",
+    "Install inspected isolated APK with adb -s <serial> install -r <apk>; recheck package/hash first.",
+    "Run documented local login bridge for that Vivo; launch isolated app; user opens OpenAI, completes private login, and explicitly taps status check. Do not capture/inspect browser, DOM, credentials, or logs during login.",
+    "Resolve quota-only enforcement and minimal-tool configuration before implementing/enabling inference; a logged-in Pro account cannot certify Free Thailand. No paid fallback."
+  ],
+  "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
+  "externalPrerequisites": [
+    "Vivo visible in ADB",
+    "user private ChatGPT sign-in and device-code security setting",
+    "supported provider enforcement for quota-only inference"
+  ],
+  "policy": {
+    "subagents": false,
+    "modelRequested": "gpt-6-astra",
+    "thinkingRequested": "medium",
+    "speed": "Standard/default requested; runtime tier not observable"
+  }
+}

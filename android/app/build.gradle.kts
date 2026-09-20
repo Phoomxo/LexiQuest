@@ -8,6 +8,7 @@ plugins {
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
+val ariLocalTest = providers.gradleProperty("ariLocalTest").orNull == "true"
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -77,6 +78,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            if (ariLocalTest) {
+                applicationIdSuffix = ".ariTest"
+            }
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
             manifestPlaceholders.putAll(
@@ -98,6 +104,9 @@ android {
 }
 
 gradle.taskGraph.whenReady {
+    if (ariLocalTest && allTasks.any { it.name.contains("Release") }) {
+        throw GradleException("Ari local test is debug-only.")
+    }
     val isReleaseArtifact = allTasks.any { task ->
         task.name.startsWith("packageRelease") ||
             task.name.startsWith("bundleRelease")
@@ -116,6 +125,11 @@ gradle.taskGraph.whenReady {
                 "tool/cli/package-field-release.ps1.",
         )
     }
+}
+
+tasks.configureEach {
+    // The isolated test package never initializes Firebase or cloud services.
+    if (ariLocalTest && name == "processDebugGoogleServices") enabled = false
 }
 
 kotlin {

@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
+  "date": "2026-09-21",
+  "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
+  "status": "software-prelogin-verified-physical-and-authenticated-not-run",
+  "sourceFiles": [
+    {
+      "path": "lib/main_ari_test.dart",
+      "sha256": "cc77aa80adc026f32c05c173bde5b4caf5f4bb8c8ea6de0997ba98ed6724d904"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/managed_tutor_host.dart",
+      "sha256": "df8a0b6c91c5b30f481e2850933e2ff878997b5df3776dd115e1fac18a38f800"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/managed_tutor_runtime.dart",
+      "sha256": "32bfab52f1acf0d221a21ec7cb3a40cfa5e4b1dbcc5144994324663cf078a002"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/local_login_bridge.dart",
+      "sha256": "cfdefe39196c61905c1f7c03ab278cd721232c289fab3472e7d6629fcb449382"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart",
+      "sha256": "0c184a45e6c5fb809d39adcbc692c84f07275195f2aa8f9f55c5a19942f8b9e5"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/managed_tutor_panel.dart",
+      "sha256": "23eca9f00c1c72bf71f1d2ca746d2e1bbca26295b17f787ba30acfc1fd227cb7"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "8f390b8453520003a0184a1d6c0773ccc9a65872a37d73b31204fea3ce57a097"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "sha256": "75983aa4170fbca8a0acacfc9a7bc05131bce9d32d33fec58190310df34d6a89"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/login_bridge.py",
+      "sha256": "4b63b259514ab414e28a984192d83953713432c5318e8db9746420034ea74d90"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/test_login_bridge.py",
+      "sha256": "3e162daf72ca6aaa2de51ebadf43821e5b31cb2fae19a6068f0308cafc45899a"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/local_login_bridge_test.dart",
+      "sha256": "801e760b601100d58db795bc1454a7331e0163390a5a386102507eee17e4f286"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_host_test.dart",
+      "sha256": "62bc020cd8c230738f1ac0debb8aad425830df1b2b05a410b7d8758c0f478ea1"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_panel_test.dart",
+      "sha256": "f225145c88784cee663e07c977dfcb750eed9ac20a483bb6642e3def1a8c65a9"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_runtime_test.dart",
+      "sha256": "a6593075d28fb7d451c526f628763cb3cde5bf8719f262a4292fb8eb2d9cac90"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_test_screen_test.dart",
+      "sha256": "c0532e5730b4dd5f483d2abe3c11f8884ee238864c9dc9e63b5be74ff9adcc53"
+    }
+  ],
+  "flutter": {
+    "status": "Passed",
+    "count": 17,
+    "newTests": 14,
+    "affectedExistingPanelTests": 3,
+    "fingerprint": "ba86f538a9ce5fd12efde67f36a9deca37e5f2dbb9fe71c856a055d6b29ae9af",
+    "postFingerprint": "ba86f538a9ce5fd12efde67f36a9deca37e5f2dbb9fe71c856a055d6b29ae9af",
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/ai_tutor/managed/managed_tutor_host_test.dart",
+          "test/features/ai_tutor/managed/local_login_bridge_test.dart",
+          "test/features/ai_tutor/managed/managed_tutor_test_screen_test.dart",
+          "test/features/ai_tutor/managed/managed_tutor_runtime_test.dart",
+          "test/features/ai_tutor/managed/managed_tutor_panel_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "AI",
+        "commandKey": "2fdd06047af5fa5bfd85f9de677ba01804a59e1f396f6015d2c4d60c85453a19"
+      }
+    ],
+    "command": {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "2fdd06047af5fa5bfd85f9de677ba01804a59e1f396f6015d2c4d60c85453a19",
+      "fingerprint": "ba86f538a9ce5fd12efde67f36a9deca37e5f2dbb9fe71c856a055d6b29ae9af",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-20T17:12:00.2491096+00:00",
+      "FinishedAt": "2026-09-20T17:12:08.9707791+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\7407111bbb3f85ae1bc519dfe8b10ed37e501c05\\2fdd06047af5-ba86f538a9ce-8087c4bd\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\7407111bbb3f85ae1bc519dfe8b10ed37e501c05\\2fdd06047af5-ba86f538a9ce-8087c4bd\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "ba86f538a9ce5fd12efde67f36a9deca37e5f2dbb9fe71c856a055d6b29ae9af",
+      "StdoutHash": "128313967AAA94AA4000E595BDA64DA44E6464DC9510C9296B001430CA94A090",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    },
+    "result": "build/verification/7407111bbb3f85ae1bc519dfe8b10ed37e501c05/targeted-ai-a2f68076987c8979a90d9d55326520e4249a4ca07956ef8af61e57fe27808ad2.json"
+  },
+  "python": {
+    "status": "PASS",
+    "count": 9,
+    "command": "python -m unittest discover -s tool/experiments/ari_app_server -p test_login_bridge.py -v",
+    "logSha256": "f6c181f3cb43e6826014a2e0178a612d83f8508c6c99a17c575390224aa40e4e"
+  },
+  "analyze": {
+    "status": "PASS_NO_ISSUES",
+    "logSha256": "8e6a6dba5baa43d3e21e37387c6d847ae86e499f9dcbe5afba26eb3468f7108b"
+  },
+  "localBinary": {
+    "status": "PASS_PRELOGIN_ONLY",
+    "version": "codex-cli 0.146.0",
+    "sha256": "bc343ba420dc2e2e9f59e6fc5e5bf0aae1cd8c771fc319665241fc9c0271fddb",
+    "schemaSha256": {
+      "LoginAccountParams.json": "2fa026dc2c9109b5e6b75c51d80809573be7de3986f3486389429dd6694350d9",
+      "LoginAccountResponse.json": "cc5cee5be0badb73e655e3e91e5353501546d17b7e7bfe0fbff9aefe73466ad9",
+      "ThreadStartParams.json": "f64dd3baaef9d956c8bc8ebb8d2fc3384c9237ee087cfbb7e1e764c8696a420c",
+      "TurnStartParams.json": "57807218a89b8d1e6932b86746a60382ea1c731f4c4a3a84a86a438eb07e89a4"
+    },
+    "isolatedHome": true,
+    "credentialStore": "ephemeral",
+    "authenticated": false,
+    "childReaped": true,
+    "temporaryHomeRemoved": true,
+    "login": "NOT_RUN",
+    "inference": "NOT_RUN"
+  },
+  "physical": {
+    "status": "NOT_RUN",
+    "adbCommand": "C:/Users/Phet/AppData/Local/Android/Sdk/platform-tools/adb.exe devices -l",
+    "observation": "List of devices attached; zero devices",
+    "installed": false,
+    "browserReturn": "NOT_RUN",
+    "nativePluginLaunch": "COMPILED_NOT_DEVICE_TESTED"
+  },
+  "authenticatedAcceptance": "NOT_RUN",
+  "inference": {
+    "status": "NOT_IMPLEMENTED_GATED",
+    "reason": "Provider-enforced quota-only spending and minimal tool policy are unverified; bridge rejects all inference/RPC proxy endpoints."
+  },
+  "reusedEvidence": {
+    "renameTests": 77,
+    "protocolTests": 17,
+    "foundationTests": 63,
+    "note": "No unchanged gates rerun; 3 affected panel tests rerun in current 17."
+  },
+  "v2Gate": "NOT_MET",
+  "pilot": "NOT_RUN 0/5",
+  "e7": "UNCHANGED_NOT_CLOSED",
+  "providerRevoke": "NOT_RUN",
+  "freeThailand": "NOT_RUN",
+  "hostedDistribution": "UNCONFIRMED",
+  "apk": {
+    "status": "PASS",
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "sha256": "21d82cb6be433bdce41fe78506372be009472cb7928147c98d258077817478db",
+    "bytes": 139590031,
+    "package": "com.lexiquest.app.ariTest",
+    "minSdk": 26,
+    "targetSdk": 36,
+    "debuggable": true,
+    "signatureV2": true,
+    "signerCertificateSha256": "1f10bbeedb0b8f18bcbb789c31d862bcfe9a3d146920033fb93eb1d228b0c5b4",
+    "debugEntryPresent": true,
+    "providerCredentialsBundled": false,
+    "pairingCapabilityBundled": false,
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "buildLogSha256": "0d282b0f97b9637817dfa6e4af300aa06982d317e3183127b96369f9726b24f9",
+    "warning": "Inherited plugin Kotlin/deprecation warnings; not a release build."
+  },
+  "review": {
+    "mode": "single-writer self-review; no subagents per user",
+    "findingsFixed": [
+      "offline draft loss",
+      "cancelled login child cleanup",
+      "JSON content-type charset compatibility",
+      "explicit Android project argument for isolated package"
+    ],
+    "remaining": [
+      "Authenticated provider inference intentionally unavailable",
+      "Physical provisioning/browser/device-code return not tested without Vivo",
+      "Production account integrations not enabled; isolated DB owner/account watches tested locally",
+      "Local disconnect does not establish provider revoke"
+    ]
+  },
+  "sources": [
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://learn.chatgpt.com/docs/auth",
+    "https://learn.chatgpt.com/docs/config-file/config-sample",
+    "https://learn.chatgpt.com/docs/pricing"
+  ],
+  "buildDefect": {
+    "firstBuild": "PASS_COMPILE_FAIL_PACKAGE_CHECK",
+    "cause": "Environment-only Gradle flag did not affect Flutter-produced APK; explicit --android-project-arg does. Existing release packager already uses this explicit argument convention.",
+    "fixedBuild": "PASS_COMPILE_AND_PACKAGE_CHECK",
+    "wrongPackageInstalled": false
+  }
+}

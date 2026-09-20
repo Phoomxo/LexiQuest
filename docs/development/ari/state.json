@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": 13,
+  "revision": 15,
   "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
-  "activePhase": "application-foundation",
-  "status": "application-foundation-implemented-simulated-tested-live-not-run",
-  "currentTaskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
+  "activePhase": "app-device-integration",
+  "status": "prelogin-debug-app-verified-device-and-authenticated-not-run",
+  "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": null,
   "model": "gpt-6-astra",
   "thinking": "medium",
@@ -97,7 +97,7 @@
     "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
     "writerReleased": true
   },
-  "deviceAcceptance": "deferred-until-implementation-complete",
+  "deviceAcceptance": "NOT_RUN_NO_ADB_DEVICE",
   "applicationFoundation": {
     "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
     "status": "complete-within-authorized-foundation-scope",
@@ -113,5 +113,21 @@
     "live": "NOT_RUN",
     "v2Gate": "NOT_MET",
     "successor": "application host lifecycle integration; proposed, not dispatched"
+  },
+  "applicationIntegration": {
+    "branch": "feature/ari-app-device-integration",
+    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+    "sourceSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
+    "amendment": "app implementation -> automated tests -> physical device tests -> user-owned private login -> authenticated acceptance",
+    "status": "prelogin-debug-app-verified-device-and-authenticated-not-run",
+    "writerReleased": true,
+    "report": "app-device-integration.md",
+    "evidence": "app-device-integration-evidence.json",
+    "handoff": "app-device-integration-handoff.json",
+    "flutterTests": 17,
+    "bridgeTests": 9,
+    "authenticatedAcceptance": "NOT_RUN",
+    "inference": "NOT_IMPLEMENTED_GATED",
+    "successor": null
   }
 }

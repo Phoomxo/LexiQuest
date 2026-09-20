@@ -5,6 +5,35 @@ import 'package:vocab_learning_app/features/ai_tutor/presentation/managed_tutor_
 import 'support.dart';
 
 void main() {
+  testWidgets('offline retains unsent draft until owner disconnect', (
+    tester,
+  ) async {
+    final h = Harness();
+    addTearDown(h.controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ManagedTutorPanel(controller: h.controller)),
+      ),
+    );
+    Future<void> connect() async {
+      final work = h.controller.connect(ownerId: h.owner, accountId: 'a');
+      await tester.pump();
+      h.transport.connections.last.complete();
+      await tester.pump();
+      await work;
+    }
+
+    await connect();
+    await tester.enterText(find.byType(TextField), 'bottle draft');
+    h.controller.setOffline();
+    await tester.pump();
+    await connect();
+    expect(find.text('bottle draft'), findsOneWidget);
+    h.controller.ownerChanged();
+    await tester.pump();
+    await connect();
+    expect(find.text('bottle draft'), findsNothing);
+  });
   testWidgets(
     'panel integrates pending cancel, in-app reply, owner clear and no login',
     (tester) async {

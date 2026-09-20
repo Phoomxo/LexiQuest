@@ -20,6 +20,23 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        if (applicationContext.packageName == "com.lexiquest.app.ariTest" &&
+            (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+                "com.lexiquest.app/ari-test").setMethodCallHandler { call, result ->
+                if (call.method != "openLogin") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://auth.openai.com/codex/device")))
+                        result.success(null)
+                    } catch (_: Exception) {
+                        result.error("UNAVAILABLE", "Cannot open login page.", null)
+                    }
+                }
+            }
+        }
         exports
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

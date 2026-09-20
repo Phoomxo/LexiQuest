@@ -29,7 +29,10 @@ class _ManagedTutorPanelState extends State<ManagedTutorPanel> {
   }
 
   void _changed() {
-    if (widget.controller.state != ManagedTutorState.ready) _draft.clear();
+    if (widget.controller.state == ManagedTutorState.disconnected ||
+        widget.controller.replyText != null) {
+      _draft.clear();
+    }
     setState(() {});
   }
 

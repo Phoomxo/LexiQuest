@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-20 · branch `feature/ari-feasibility`
 
-**สถานะปัจจุบัน: application foundation implemented; simulated tests 63 PASS; live NOT_RUN — [รายงาน](application-foundation.md) · [handoff](application-foundation-handoff.json). V2 gate NOT_MET; device acceptance deferred-until-implementation-complete.**
+**สถานะปัจจุบัน: debug app สำหรับ private login พร้อม build และ automated tests (Flutter 17 / bridge 9 PASS); Vivo ไม่พบใน ADB จึง physical/login NOT_RUN. ยังไม่เปิด inference จริงและไม่ถือว่าฝั่งแอปสมบูรณ์ตาม end-to-end acceptance. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json) · [handoff](app-device-integration-handoff.json). V2 NOT_MET.**
 
 **ผลก่อนหน้า: V1-R1 diagnostic เสร็จแล้ว — fake tests 17/17 และ binary smoke แบบไม่ล็อกอิน PASS** ตาม [รายงาน V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 
@@ -40,3 +40,7 @@ V1-R1 completed; writer released: task `01a0bf9c-3cc6-7a91-8355-6b857c613a75` ·
 หลักฐานใหม่: [V1-R1 evidence](V1-R1-evidence.json) · [binary smoke](V1-R1-binary-smoke.json) · [handoff](V1-R1-handoff.json). ไม่มี successor/V2 dispatch.
 
 Application foundation completed; writer released: task `01a0bfa7-c450-7f10-8974-3dafeef31c43` · worktree `C:/Users/Phet/.codex/worktrees/bb3c/LexiQuest` · branch `feature/ari-managed-session-foundation`. Device acceptance: deferred-until-implementation-complete. [Design/report](application-foundation.md).
+
+Current amendment: app-device-integration checkpoint in task 01a0bfbd-9961-7da3-982b-77970bdc7027, branch feature/ari-app-device-integration. Writer released for handoff. Order: implementation -> automated tests -> physical device tests -> private user login -> authenticated acceptance. Earlier device deferral is superseded when implementation is ready. V2 remains NOT_MET.
+
+Latest handoff: task `01a0bfbd-9961-7da3-982b-77970bdc7027`, branch `feature/ari-app-device-integration`; native private-login debug APK verified, inference gated, no physical/authenticated PASS. Earlier foundation device deferral is historical.
