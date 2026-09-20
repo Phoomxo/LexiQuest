@@ -624,8 +624,34 @@
         "sha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399"
       }
     ],
-    "status": "reviewed-golden-update-retest-in-progress",
+    "status": "fixed-local-verified-G88-regression-in-progress",
     "review": "g88-d26-golden-review.json",
-    "testStrengthening": "Bounded readiness assertion now precedes capture; no screenshot matcher tolerance or business assertions weakened."
+    "testStrengthening": "Bounded readiness assertion now precedes capture; no screenshot matcher tolerance or business assertions weakened.",
+    "fixSHA": "0ae0bdf9263e3388b0ee02187ea710128f02d2c6",
+    "retest": "build/verification/3a56a391b9ef1b911e49c05dc8edaca6ebf8981d/targeted-learning-43c47ea71d6b0f23f07d9bcbdf18ed779ecdcf46e19445467fcac48ffd45f3f4.json",
+    "affectedRegression": "Actual Pair host golden file all3tests pass; other Pair behavior targets retain individual successful results from G88 batch04 with failed golden target explicitly superseded."
+  },
+  {
+    "DefectID": "E7-D27",
+    "TestCaseID": "E7-COV-f42",
+    "sourceSHA": "0ae0bdf9263e3388b0ee02187ea710128f02d2c6",
+    "environment": "Windows/flutter-tester",
+    "title": "Today review fixture skips attached-session exit confirmation",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "rootCause": "D24 preserves the admitted session before preparation can fail. Back correctly requires explicit abandonment; the integration-style navigation fixture expected an immediate pop.",
+    "files": [
+      "test/screens/main_navigation_screen_test.dart"
+    ],
+    "steps": "G88 regression batch07 and isolated named reproduction",
+    "expected": "Insufficient-options session remains active until confirmed exit, then abandons exactly once without answers; subsequent review sessions complete normally.",
+    "actual": "Test expected ReviewCenterScreen while exit confirmation remained open.",
+    "evidence": [
+      "87956c5d3ad6-3974f68b53f4-88b10d0e/Explicit-Flutter-tests.stdout.log",
+      "839bf3f81962-3974f68b53f4-cafb334a/Explicit-Flutter-tests.stdout.log"
+    ],
+    "fix": "Exercise explicit confirmation; strengthen active-before/abandoned-after and no-answer assertions. No production change.",
+    "status": "fixed-local-verified-G88-regression-in-progress",
+    "retest": "build/verification/0ae0bdf9263e3388b0ee02187ea710128f02d2c6/targeted-learning-6feddb3ffd30d2063ad1974162da345c6ac132a46c685a3d71d37df5667d48cd.json"
   }
 ]

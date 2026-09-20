@@ -425,10 +425,18 @@ void main() {
       );
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(find.byType(ReviewCenterScreen), findsOneWidget);
+      expect(find.text('ออกจาก Quiz?'), findsOneWidget);
       var sessions = await database.select(database.learningSessions).get();
       expect(sessions, hasLength(1));
+      expect(sessions.single.state, 'active');
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      await tester.tap(find.text('ออก'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReviewCenterScreen), findsOneWidget);
+      sessions = await database.select(database.learningSessions).get();
+      expect(sessions, hasLength(1));
       expect(sessions.single.state, 'abandoned');
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
 
       await _seedNavigationReviewDistractor(database, ownerId);
       await tester.tap(find.text('เริ่มทบทวน'));
