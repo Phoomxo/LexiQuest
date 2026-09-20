@@ -25,6 +25,7 @@ void main() {
     final tutor = _FakeAiTutor()..replyText = wrong;
     await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
     await tester.pumpAndSettle();
+    expect(find.text('ฝึกสนทนากับอารี'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('ai-tutor-input')),
       'ช่วยแก้ He go to school every day.',
@@ -32,6 +33,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
     await tester.pumpAndSettle();
     expect(find.text(wrong), findsOneWidget);
+    expect(find.text('อารี'), findsOneWidget);
     expect(tester.takeException(), isNull);
     // Rubric G1 correctness=0: visible transport success is not quality PASS.
   });

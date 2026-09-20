@@ -1,0 +1,359 @@
+{
+  "schemaVersion": 1,
+  "reviewedDate": "2026-09-20",
+  "assistantName": "อารี",
+  "plan": "ari-feasibility.md",
+  "baseSha": "34d520760d55ad14c06a266c0c6bd88152444619",
+  "branch": "feature/ari-feasibility",
+  "decision": {
+    "outcome": "PARTIALLY_SUPPORTED",
+    "v2Gate": "NOT_MET",
+    "productionImplementationAuthorizedByThisResult": false,
+    "reason": "No route verified across native mobile, Thai free accounts, provider revocation and no-paid-usage requirements. Not a claim of permanent impossibility.",
+    "e7AcceptanceChanged": false
+  },
+  "statusDefinitions": {
+    "REVIEWED": "Documentation review completed; not runtime PASS.",
+    "UNCONFIRMED": "Reviewed but prerequisite evidence insufficient.",
+    "NOT_RUN": "No live execution or acceptance evidence."
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://developers.openai.com/plugins/build/auth",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S2",
+      "url": "https://learn.chatgpt.com/docs/sites",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S3",
+      "url": "https://learn.chatgpt.com/docs/plugins",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S4",
+      "url": "https://developers.openai.com/api/docs/guides/chatkit",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S5",
+      "url": "https://learn.chatgpt.com/docs/app-server",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S6",
+      "url": "https://learn.chatgpt.com/docs/auth",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S7",
+      "url": "https://learn.chatgpt.com/docs/pricing",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S8",
+      "url": "https://developers.openai.com/plugins/deploy/connect-chatgpt",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S9",
+      "url": "https://developers.openai.com/plugins/deploy/submission",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    },
+    {
+      "id": "S10",
+      "url": "https://developers.openai.com/blog/codex-as-a-platform",
+      "retrieved": "2026-09-20",
+      "method": "Opened official page and read relevant section; findings in plan."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "R1",
+      "requirement": "Conversation inside native LexiQuest",
+      "status": "PARTIAL",
+      "finding": "App Server streams to product UI; target mobile runtime/transport unconfirmed.",
+      "sources": [
+        "S5",
+        "S10"
+      ]
+    },
+    {
+      "id": "R2",
+      "requirement": "ChatGPT Free in Thailand on mobile",
+      "status": "UNCONFIRMED",
+      "finding": "Free is included in Codex documentation; full target combination unverified.",
+      "sources": [
+        "S5",
+        "S7"
+      ]
+    },
+    {
+      "id": "R3",
+      "requirement": "No user API key",
+      "status": "PARTIAL",
+      "finding": "Codex managed ChatGPT auth exists; identity-only sign-in is insufficient.",
+      "sources": [
+        "S2",
+        "S3",
+        "S5",
+        "S6"
+      ]
+    },
+    {
+      "id": "R4",
+      "requirement": "No user Developer mode",
+      "status": "UNCONFIRMED",
+      "finding": "Development MCP and publishing are distinct; complete native route unverified.",
+      "sources": [
+        "S8",
+        "S9"
+      ]
+    },
+    {
+      "id": "R5",
+      "requirement": "No paid fallback or project-funded inference",
+      "status": "UNCONFIRMED",
+      "finding": "No integration added; candidate credit/overage enforcement unresolved.",
+      "sources": [
+        "S4",
+        "S7"
+      ]
+    },
+    {
+      "id": "R6",
+      "requirement": "Revocation and owner isolation",
+      "status": "UNCONFIRMED",
+      "finding": "Logout documented; remote grant revocation and mobile account switching untested.",
+      "sources": [
+        "S5"
+      ]
+    }
+  ],
+  "workItems": [
+    {
+      "id": "V0.1",
+      "status": "REVIEWED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V0.2",
+      "status": "REVIEWED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V0.3",
+      "status": "UNCONFIRMED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V1.1",
+      "status": "UNCONFIRMED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V1.2",
+      "status": "UNCONFIRMED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V1.3",
+      "status": "UNCONFIRMED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V2.1",
+      "status": "NOT_RUN",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V2.2",
+      "status": "NOT_RUN",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V2.3",
+      "status": "NOT_RUN",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V3.1",
+      "status": "REVIEWED",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V3.2",
+      "status": "NOT_RUN",
+      "details": "See corresponding row in ari-feasibility.md"
+    },
+    {
+      "id": "V3.3",
+      "status": "REVIEWED",
+      "details": "See corresponding row in ari-feasibility.md"
+    }
+  ],
+  "liveCases": [
+    {
+      "id": "T01",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T02",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T03",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T04",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T05",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T06",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T07",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    },
+    {
+      "id": "T08",
+      "status": "NOT_RUN",
+      "reason": "V0-V1 prerequisite gate not met",
+      "evidence": []
+    }
+  ],
+  "usability": {
+    "participants": 0,
+    "plannedParticipants": 5,
+    "minimumIndependentSuccesses": 4,
+    "status": "NOT_RUN",
+    "educationalEffectivenessClaim": false
+  },
+  "codeVerification": {
+    "status": "Passed",
+    "testCount": 77,
+    "exitCode": 0,
+    "baseSha": "34d520760d55ad14c06a266c0c6bd88152444619",
+    "finishedAt": "2026-09-20T15:26:51.0210178+00:00",
+    "inputFingerprint": "14c1d50fffa6a997875ec3296b319ec9ddbec873e5b9dd71b08984c46b041e0f",
+    "postFingerprint": "14c1d50fffa6a997875ec3296b319ec9ddbec873e5b9dd71b08984c46b041e0f",
+    "targets": [
+      "test/screens/ai_tutor_screen_test.dart",
+      "test/screens/ai_tutor_settings_screen_test.dart",
+      "test/features/ai_tutor/ai_gateway_adapters_test.dart"
+    ],
+    "fullResult": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\targeted-ai.json",
+    "fullResultSha256": "2045fc7657f6e2b4ab632a31f04a1bbc84fc76f30251c1db3936908af77c8944",
+    "stdoutSha256": "9C8567A11F67CA431784B0A7D006505950A665DE95008BB5FEB2B0BD2B944AD4",
+    "stderrSha256": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F",
+    "files": [
+      {
+        "path": "lib/screens/ai_tutor_screen.dart",
+        "sha256": "4bbd26bc0c9e3b5fea616795b5bd3d2a95e2040dd111602e9b667139e6f13168"
+      },
+      {
+        "path": "lib/screens/ai_tutor_settings_screen.dart",
+        "sha256": "47863940852d94c39a36b8a1f6aa83886ddc5c764bc90df58b041945fcbf4408"
+      },
+      {
+        "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "sha256": "7380a9f8a39c96ce81a0b0b3952d9854582d4607917aaad054485a16f82bc715"
+      },
+      {
+        "path": "test/screens/ai_tutor_screen_test.dart",
+        "sha256": "05b1420e6bf89c270b373ecd8aacdcb6cafd8458a919c099fc3e8658d0721663"
+      },
+      {
+        "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+        "sha256": "f29226dbe8008ec49ad7ac8565c0f7441f2acef8d39af2f67338d4b3c5eedc95"
+      }
+    ],
+    "type": "Local tests using fakes; not live ChatGPT/mobile acceptance",
+    "analysis": {
+      "status": "PASS",
+      "scope": [
+        "lib/screens/ai_tutor_screen.dart",
+        "lib/screens/ai_tutor_settings_screen.dart",
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "test/screens/ai_tutor_screen_test.dart",
+        "test/features/ai_tutor/ai_gateway_adapters_test.dart"
+      ],
+      "result": "No issues found",
+      "log": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\dart-analysis.log",
+      "sha256": "458e4508222dc5f0b8f509f19c7497c8f9d7b45a67a9a6ade15eecb81e9e942e"
+    },
+    "format": {
+      "status": "PASS",
+      "result": "5 files, 0 changes after line-ending normalization"
+    },
+    "review": {
+      "kind": "self-review of complete change diff",
+      "scope": "5 Dart files plus plan/evidence and external supersession pointers",
+      "finding": "Naming and documentation only; no routing, auth, quota, schema, vocabulary or feature gate changes. Existing safety assertions retained.",
+      "whitespaceCheck": "PASS with cr-at-eol for existing CRLF source"
+    }
+  },
+  "preservation": {
+    "internalIdsChanged": false,
+    "schemaChanged": false,
+    "vocabularyChanged": false,
+    "productionApiAdded": false,
+    "providerIntegrationAdded": false,
+    "featureGatesChanged": false,
+    "historicalPlanReceipt": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/supersession-receipt.json"
+  },
+  "feedback": [
+    {
+      "issue": "Mixed line endings in edited Dart files",
+      "resolution": "Normalized formatting; bounded tests rerun on final inputs.",
+      "status": "RESOLVED"
+    },
+    {
+      "issue": "Guessed home_screen.dart path did not exist",
+      "resolution": "Discovered actual tree with rg --files and used scoped searches.",
+      "status": "RESOLVED"
+    },
+    {
+      "issue": "Verification stdout was UTF-16, not UTF-8",
+      "resolution": "Detected BOM, decoded correctly, preserved original raw log hashes.",
+      "status": "RESOLVED"
+    },
+    {
+      "issue": "git diff --check treated existing CRLF in contract file as trailing whitespace",
+      "resolution": "Preserved existing line-ending convention; CR-aware whitespace check passed.",
+      "status": "RESOLVED"
+    }
+  ]
+}

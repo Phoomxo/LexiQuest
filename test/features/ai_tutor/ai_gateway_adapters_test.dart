@@ -202,6 +202,7 @@ void main() {
           expect(turns[1]['content'], '**คำตอบ**');
           expect(turns[2]['content'], contains('latest😀'));
           expect(jsonEncode(body), contains('CEFR B2'));
+          expect(jsonEncode(body), contains('Ari (อารี)'));
           expect(jsonEncode(body), isNot(contains('secret-context-key')));
           expect(jsonEncode(body), isNot(contains('private-session')));
           expect(reply.usage, isNull);
@@ -227,6 +228,7 @@ void main() {
         expect(body['max_output_tokens'] ?? body['max_tokens'], 160);
         final encoded = jsonEncode(body);
         expect(encoded, contains('CEFR A1'));
+        expect(encoded, contains('Ari (อารี)'));
         expect(encoded, isNot(contains('B1-B2')));
         expect(encoded, isNot(contains('test-key')));
       }

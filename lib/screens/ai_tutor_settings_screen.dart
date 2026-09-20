@@ -144,7 +144,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     if (tutor == null) {
       setState(() {
         _loading = false;
-        _error = 'ผู้ช่วย AI ยังไม่พร้อมใช้งานในรุ่นนี้';
+        _error = 'อารียังไม่พร้อมใช้งานในรุ่นนี้';
       });
       return;
     }
@@ -462,7 +462,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('ลบรหัสเชื่อมต่อ AI?'),
         content: const Text(
-          'ผู้ช่วย AI จะหยุดเชื่อมต่อผู้ให้บริการจนกว่าจะตรวจสอบรหัสเชื่อมต่อ '
+          'อารีจะหยุดเชื่อมต่อผู้ให้บริการจนกว่าจะตรวจสอบรหัสเชื่อมต่อ '
           'และรุ่น AI ใหม่',
         ),
         actions: [

@@ -212,7 +212,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     final text = _inputController.text.trim();
     if (text.isEmpty || _isGenerating) return;
     if (tutor == null) {
-      setState(() => _error = 'ผู้ช่วยฝึกภาษา AI ยังไม่พร้อมใช้งานในรุ่นนี้');
+      setState(() => _error = 'อารียังไม่พร้อมใช้งานในรุ่นนี้');
       return;
     }
     // Re-read the local owner/credential fence before attaching any history.
@@ -285,7 +285,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         ).priorTurns;
         _messages.add(
           ChatMessage(
-            sender: 'ผู้ช่วย AI',
+            sender: 'อารี',
             text: reply.text,
             isUser: false,
             model: reply.model,
@@ -507,7 +507,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ฝึกสนทนากับ AI'),
+        title: const Text('ฝึกสนทนากับอารี'),
         actions: [
           IconButton(
             tooltip: 'เริ่มบทสนทนาใหม่',
