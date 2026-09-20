@@ -1,4 +1,5 @@
 import 'package:vocab_learning_app/features/voice/application/audio_lesson_use_cases.dart';
+import 'package:vocab_learning_app/features/review/application/transfer_probe_use_cases.dart';
 import 'package:vocab_learning_app/features/adventure/application/dialogue_mission_use_cases.dart';
 import 'package:vocab_learning_app/features/adventure/domain/dialogue_mission.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
@@ -560,6 +561,22 @@ EvidenceContext _bootstrapMissingAssessmentEvidence() {
 void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
+    for (final internal in [false, true]) {
+      test('transfer probe runtime rollout and feature retirement internal=$internal', () async {
+        final dependencies = await AppBootstrap(createDatabase: _testDatabase,
+          initializeFirebase: () async {}, initializeSupabase: () async {}, loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(), createEntryStateStore: _createSignedOutEntryState,
+          cloudSyncEnabled: false, learningPreviewEnabled: true,
+          transferProbeRollout: internal ? const TransferProbeRollout.internal() : const TransferProbeRollout.implementedOff(),
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled()).initialize();
+        addTearDown(dependencies.dispose);
+        final service = dependencies.transferProbes!;
+        expect(service.isAvailable(), internal);
+        expect(identical(service.learning, dependencies.learning), isTrue);
+        (dependencies.features as RuntimeFeatureRegistry).emergencyOff(Feature.dailyContinuity);
+        expect(service.isAvailable(), isFalse);
+      });
+    }
 
     testWidgets('dialogue Adventure entry navigates to scene and canonical result', (tester) async {
       final dependencies=(await tester.runAsync(()=>AppBootstrap(createDatabase:_testDatabase,initializeFirebase:() async {},initializeSupabase:() async {},

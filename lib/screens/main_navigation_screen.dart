@@ -1166,6 +1166,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       final currentDependencies = AppDependenciesScope.of(routeContext);
       return ReviewCenterScreen(
         useCases: currentDependencies.reviewCenter!,
+        transferProbes: currentDependencies.transferProbes,
         lessonShellBuilder: (request) =>
             _buildTodayReviewLesson(currentDependencies, request),
       );

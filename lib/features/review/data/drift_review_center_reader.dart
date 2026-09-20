@@ -1,4 +1,7 @@
 import 'package:drift/drift.dart';
+import 'dart:convert';
+import '../../learning/data/drift_learning_repository.dart';
+import '../domain/transfer_probe.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../events/domain/event_envelope_v2.dart';
@@ -229,8 +232,15 @@ final class DriftReviewCenterReader implements ReviewCenterReader {
         verifiedArtifactChecksumSha256: manifest?.checksumSha256,
       );
       if (!candidates.any(
-        (candidate) => candidate.evidenceContentRevision == sourceRevision,
-      )) {
+            (candidate) => candidate.evidenceContentRevision == sourceRevision,
+          ) &&
+          !(richMetadata != null &&
+              await _isTransferProbe(
+                row,
+                sourceRevision,
+                word.contentChecksumSha256,
+                manifest?.checksumSha256,
+              ))) {
         continue;
       }
       _tryAdd(
@@ -307,6 +317,62 @@ final class DriftReviewCenterReader implements ReviewCenterReader {
       return null;
     } on TypeError {
       return null;
+    }
+  }
+
+  Future<bool> _isTransferProbe(
+    AnswerAttempt row,
+    String sourceRevision,
+    String? coreHash,
+    String? lexicalHash,
+  ) async {
+    if (row.promptMode != 'clozeTyped' ||
+        coreHash == null ||
+        lexicalHash == null) {
+      return false;
+    }
+    try {
+      final recovery = await DriftLearningRepository(database)
+          .loadExactActivityRecovery(
+            ownerId: row.ownerId,
+            sessionId: row.sessionId,
+            activityType: 'transferProbe',
+          );
+      final state = recovery?.checkpoint?.state;
+      if (state == null ||
+          state['schemaVersion'] != 1 ||
+          state['kind'] != 'transferProbe' ||
+          state['policy'] != TransferProbePolicy.revision ||
+          state['inventoryHash'] != TransferProbeInventory.fingerprint ||
+          recovery!.session.state != 'completed' ||
+          recovery.attempts.length != 1 ||
+          recovery.attempts.single.id != row.id ||
+          (state['result'] as Map?)?['evidenceId'] != row.id ||
+          (state['result'] as Map?)?['correct'] != row.isCorrect) {
+        return false;
+      }
+      final item = TransferProbeInventory.items.singleWhere(
+        (i) =>
+            i.wordId == row.wordId &&
+            jsonEncode(i.toJson()) == jsonEncode(state['item']),
+      );
+      final origin = state['origin'] as Map;
+      if (origin['coreHash'] != coreHash ||
+          origin['lexicalHash'] != lexicalHash) {
+        return false;
+      }
+      return sourceRevision ==
+          LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+            promptMode: 'clozeTyped',
+            wordId: row.wordId,
+            revision: item.revision,
+            checksumSha256: item.evidenceHash(
+              coreHash: coreHash,
+              lexicalHash: lexicalHash,
+            ),
+          );
+    } on Object {
+      return false;
     }
   }
 

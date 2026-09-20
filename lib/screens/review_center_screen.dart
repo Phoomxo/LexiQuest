@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../features/review/application/transfer_probe_use_cases.dart';
+import '../features/review/presentation/transfer_probe_screen.dart';
 
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/review/application/review_center_use_cases.dart';
@@ -16,10 +18,12 @@ final class ReviewCenterScreen extends StatefulWidget {
     super.key,
     required this.useCases,
     required this.lessonShellBuilder,
+    this.transferProbes,
   });
 
   final ReviewCenterUseCases useCases;
   final ReviewLessonShellBuilder lessonShellBuilder;
+  final TransferProbeUseCases? transferProbes;
 
   @override
   State<ReviewCenterScreen> createState() => _ReviewCenterScreenState();
@@ -44,57 +48,68 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final probes = widget.transferProbes;
+    final embedded = probes?.isAvailable() == true;
+    final queue = FutureBuilder<List<ReviewQueueItem>>(
+      future: _load,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _ReviewMessage(
+            semanticsLabel: 'โหลดรายการทบทวนไม่สำเร็จ',
+            message: 'ไม่สามารถโหลดรายการทบทวนได้',
+            action: FilledButton.icon(
+              onPressed: _retry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('ลองอีกครั้ง'),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return Center(
+            child: Semantics(
+              label: 'กำลังโหลดรายการทบทวน',
+              child: const CircularProgressIndicator(),
+            ),
+          );
+        }
+        final items = snapshot.data!;
+        if (items.isEmpty) {
+          return const _ReviewMessage(
+            semanticsLabel: 'รายการทบทวนว่าง',
+            message: 'ยังไม่มีรายการที่ต้องทบทวน',
+          );
+        }
+        return ListView.separated(
+          shrinkWrap: embedded,
+          physics: embedded ? const NeverScrollableScrollPhysics() : null,
+          padding: const EdgeInsets.all(16),
+          itemCount: items.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return _ReviewItemCard(
+              item: item,
+              opening: _openingIdentity == _identityKey(item),
+              onLaunch: _openingIdentity == null ? () => _launch(item) : null,
+            );
+          },
+        );
+      },
+    );
     return Scaffold(
       appBar: AppBar(
         title: Text(
           NavigationGlossary.require('home/today/review').fullThaiLabel,
         ),
       ),
-      body: FutureBuilder<List<ReviewQueueItem>>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return _ReviewMessage(
-              semanticsLabel: 'โหลดรายการทบทวนไม่สำเร็จ',
-              message: 'ไม่สามารถโหลดรายการทบทวนได้',
-              action: FilledButton.icon(
-                onPressed: _retry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('ลองอีกครั้ง'),
-              ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return Center(
-              child: Semantics(
-                label: 'กำลังโหลดรายการทบทวน',
-                child: const CircularProgressIndicator(),
-              ),
-            );
-          }
-          final items = snapshot.data!;
-          if (items.isEmpty) {
-            return const _ReviewMessage(
-              semanticsLabel: 'รายการทบทวนว่าง',
-              message: 'ยังไม่มีรายการที่ต้องทบทวน',
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final identity = _identityKey(item);
-              return _ReviewItemCard(
-                item: item,
-                opening: _openingIdentity == identity,
-                onLaunch: _openingIdentity == null ? () => _launch(item) : null,
-              );
-            },
-          );
-        },
-      ),
+      body: embedded
+          ? ListView(
+              children: [
+                TransferProbeReviewPanel(useCases: probes!, onReturned: _retry),
+                queue,
+              ],
+            )
+          : queue,
     );
   }
 

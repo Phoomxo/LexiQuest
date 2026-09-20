@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E5.2",
+  "feature": "F09",
+  "status": "accepted-implementation",
+  "baseSha": "d949b0571dbe672f08f4c92661d021868abb661d",
+  "verification": {
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E5.2\\all-runs\\targeted-runtime-9120799ac1c2c6de0c545b50f374dead3069a3de32182519115f1fbaa4bf9ee0.json",
+    "status": "Passed",
+    "fingerprint": "37d9453c4218ffc7a4b66b6577bdbf1561649f31ac80247d8db7c7519f44a139",
+    "environmentFingerprint": "5cebbd2953de6515ac71b77563503b741a15d7fed7feee22c327178e492f161c",
+    "tests": 380,
+    "targets": 12,
+    "inputClosureRevalidated": 1442,
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "2bc5256beac43b956207985a08c854e62a5aa7e64db183f23a328f68ddb66fdd",
+        "fingerprint": "37d9453c4218ffc7a4b66b6577bdbf1561649f31ac80247d8db7c7519f44a139",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T06:09:17.4402651+00:00",
+        "FinishedAt": "2026-09-20T06:13:28.9119400+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\9609\\LexiQuest\\build\\verification\\d949b0571dbe672f08f4c92661d021868abb661d\\2bc5256beac4-37d9453c4218-cd33361d\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\9609\\LexiQuest\\build\\verification\\d949b0571dbe672f08f4c92661d021868abb661d\\2bc5256beac4-37d9453c4218-cd33361d\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "37d9453c4218ffc7a4b66b6577bdbf1561649f31ac80247d8db7c7519f44a139",
+        "StdoutHash": "C065367C3D0414BB694B38566A9E1A09EB3E6747AC2225AE19E0100CD7E45A2C",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "staticAnalysis": {
+    "errors": 0,
+    "warnings": 0,
+    "inheritedInfos": 6,
+    "log": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E5.2\\static-analysis-final.log",
+    "sha256": "d1424950aa9ad5f2f1c5f670f62fd1c4b9d16fb8f6cec0ce5e4a45a56e1e1e85"
+  },
+  "storage": {
+    "schema": 34,
+    "namedTables": 58,
+    "directOwnerDescriptors": 48,
+    "newTables": 0
+  },
+  "visualQA": {
+    "method": "Four rendered widget images visually inspected; actions exercised by widget tests; not device evidence",
+    "sourceFingerprint": "37d9453c4218ffc7a4b66b6577bdbf1561649f31ac80247d8db7c7519f44a139",
+    "files": [
+      {
+        "path": "docs\\development\\post-g83-e52\\visual\\probe-ready-320-text200.png",
+        "sha256": "d8662ddafec8251a2e85367b348c66cca7cfd504dfe18de5859603f131354a0c"
+      },
+      {
+        "path": "docs\\development\\post-g83-e52\\visual\\probe-ready-390-text100.png",
+        "sha256": "3254471c9093e9a4849dc48248d5c336d4ee95b15a4e8b72d848c65514323789"
+      },
+      {
+        "path": "docs\\development\\post-g83-e52\\visual\\probe-result-320-text200.png",
+        "sha256": "55db2e1f170f3de30b052acb448871ae1e66b3009bd2d9fc6a36a62266afc459"
+      },
+      {
+        "path": "docs\\development\\post-g83-e52\\visual\\probe-result-390-text100.png",
+        "sha256": "d3d3b8bb8158c5c84e3c02a867e6f640aabbc928754a55abd3eed9c48a377fcd"
+      }
+    ]
+  },
+  "limitations": [
+    "Rollout default off; internal runtime tested",
+    "Local wall-clock timing unverified; no efficacy claim",
+    "Three starter words with six authored contexts; source/AI review, not independent human calibration",
+    "Physical device, assistive and whole-system acceptance remain E6/E7",
+    "Standard/default requested; effective runtime tier not exposed"
+  ],
+  "unresolvedRequiredImplementationDefects": []
+}

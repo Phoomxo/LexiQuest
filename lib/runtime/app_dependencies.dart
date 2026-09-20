@@ -1,4 +1,5 @@
 import '../features/adventure/application/dialogue_mission_use_cases.dart';
+import '../features/review/application/transfer_probe_use_cases.dart';
 import '../features/media_practice/application/speaking_scenario_use_cases.dart';
 import '../features/voice/application/audio_lesson_use_cases.dart';
 import 'package:flutter/widgets.dart';
@@ -131,6 +132,7 @@ final class AppDependencies {
     this.speakingScenarios,
     this.audioLessons,
     this.dialogueMissions,
+    this.transferProbes,
     this.personalSetActivities,
     this.learningGoals,
     this.learnerPreferences,
@@ -216,6 +218,7 @@ final class AppDependencies {
   final SpeakingScenarioUseCases? speakingScenarios;
   final AudioLessonUseCases? audioLessons;
   final DialogueMissionUseCases? dialogueMissions;
+  final TransferProbeUseCases? transferProbes;
   final PersonalSetActivities? personalSetActivities;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;

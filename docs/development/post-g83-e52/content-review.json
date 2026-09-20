@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "slice": "E5.2",
+  "feature": "F09",
+  "design": "ORIGINAL DESIGN; no screenshot-backed competitor feature",
+  "reviewKind": "source-and-AI-assisted-engineering-review",
+  "independentHumanReview": false,
+  "inventoryHash": "1aa9be64afc8a1b47a72d837b9e56fe3a1fd6c2fc755a62034b5bac79282a05b",
+  "items": [
+    {
+      "id": "transfer:book:a",
+      "revision": 1,
+      "wordId": "word:starter-book",
+      "contextHash": "2ffe46c55a8f3e1deb2c7a74f939a1490e33568743c3c1a22632e0d63fa44f6d",
+      "sentence": "At the library, she borrowed a book with a hundred pages."
+    },
+    {
+      "id": "transfer:book:b",
+      "revision": 1,
+      "wordId": "word:starter-book",
+      "contextHash": "4e9fe780e38f0ac0ef8e3300988c3191365f20156289d8df8417cf297c34dd2e",
+      "sentence": "He opened a book and turned to page ten to read the story."
+    },
+    {
+      "id": "transfer:pencil:a",
+      "revision": 1,
+      "wordId": "word:starter-pencil",
+      "contextHash": "442cc7f27a9e17ef018b5e5d3b89d47e5c142764a2154d5fc5de87b9e74b0348",
+      "sentence": "The artist sharpened a pencil before drawing the tree."
+    },
+    {
+      "id": "transfer:pencil:b",
+      "revision": 1,
+      "wordId": "word:starter-pencil",
+      "contextHash": "53639e50e470ea46f1000d530f0c5aac3de43a48809a9d34dd9c6b8634ab49ba",
+      "sentence": "Use a pencil for this sketch so you can erase the lines."
+    },
+    {
+      "id": "transfer:bottle:a",
+      "revision": 1,
+      "wordId": "word:starter-bottle",
+      "contextHash": "d3a319768fef879bbabe41419495ecc5cb42fe3456f199af9349f25f2355dc1d",
+      "sentence": "She unscrewed the cap of the bottle and drank the water."
+    },
+    {
+      "id": "transfer:bottle:b",
+      "revision": 1,
+      "wordId": "word:starter-bottle",
+      "contextHash": "f0eeb72c4b28de041eac9840fcf32475a4aa9fed5844448289b3075ce3ff50e5",
+      "sentence": "The glass bottle has a narrow neck and holds olive oil."
+    }
+  ],
+  "criteria": [
+    "Six original sentences: two per admitted starter-object sense (book, pencil, bottle)",
+    "Exact single English word matching a displayed Thai meaning; spelling recall, not an open-ended use rubric",
+    "Distinct context hashes from F06 base and from each other; shown contexts are consumed even when abandoned",
+    "One hint is saved before display and permanently changes this probe to guidedPractice",
+    "Origin evidence, original sense/set/core/lexical revisions and probe item revision are retained",
+    "24 hours is a versioned engineering rule, not an empirically validated learning constant",
+    "UTC controls admission; local device time is display only; all delay claims remain timing-unverified",
+    "No general CEFR, independent human calibration, learning efficacy or research outcome claim"
+  ],
+  "physicalDeviceAcceptance": false
+}

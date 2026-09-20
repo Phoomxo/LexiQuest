@@ -1,4 +1,5 @@
 import '../features/adventure/application/dialogue_mission_use_cases.dart';
+import '../features/review/application/transfer_probe_use_cases.dart';
 import '../features/media_practice/application/speaking_scenario_use_cases.dart';
 import '../features/voice/application/audio_lesson_use_cases.dart';
 import 'dart:async';
@@ -474,6 +475,7 @@ final class AppBootstrap {
     this.speakingScenarioRollout = const SpeakingScenarioRollout.implementedOff(),
     this.audioLessonRollout = const AudioLessonRollout.implementedOff(),
     this.dialogueMissionRollout = const DialogueMissionRollout.implementedOff(),
+    this.transferProbeRollout = const TransferProbeRollout.implementedOff(),
     this.writtenPracticeRollout = const WrittenPracticeRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
@@ -601,6 +603,7 @@ final class AppBootstrap {
   final SpeakingScenarioRollout speakingScenarioRollout;
   final AudioLessonRollout audioLessonRollout;
   final DialogueMissionRollout dialogueMissionRollout;
+  final TransferProbeRollout transferProbeRollout;
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
@@ -1814,6 +1817,12 @@ final class AppBootstrap {
       // screen-owned provider fallback.
     }
 
+    final transferProbes = TransferProbeUseCases(sets: personalSets, learning: learning, evidence: currentActivityEvidence,
+      isAvailable: () => transferProbeRollout.enabled && runtimeFeatures.isEnabled(Feature.dailyContinuity) && runtimeFeatures.isEnabled(Feature.quiz));
+    resources.own(transferProbes.dispose);
+    void retireTransferProbes() { if (!transferProbes.isAvailable()) transferProbes.retire(); }
+    runtimeFeatures.addListener(retireTransferProbes);
+    resources.own(() => runtimeFeatures.removeListener(retireTransferProbes));
     final dialogueMissions = DialogueMissionUseCases(sets: personalSets, learning: learning, evidence: currentActivityEvidence,
       isAvailable: () => dialogueMissionRollout.enabled && runtimeFeatures.isEnabled(Feature.adventureMotivation) && runtimeFeatures.isEnabled(Feature.quiz));
     resources.own(dialogueMissions.dispose);
@@ -1952,6 +1961,7 @@ final class AppBootstrap {
       personalSets: personalSets,
       audioLessons: audioLessons,
       dialogueMissions: dialogueMissions,
+      transferProbes: transferProbes,
       speakingScenarios: SpeakingScenarioUseCases(sets: personalSets,
         isAvailable: () => speakingScenarioRollout.enabled && runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.speechPractice)),
       writtenPractice: WrittenPracticeUseCases(sets: personalSets,
