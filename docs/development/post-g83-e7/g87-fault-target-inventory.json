@@ -1,0 +1,63 @@
+{
+  "status": "inventory-not-acceptance",
+  "targets": [
+    {
+      "path": "test/features/offline_content/offline_content_manager_test.dart",
+      "plannedSha256": "e3baa1c598dad03af5b62f4bf869d95a090ecfdd2799d12e887b1919265d0917",
+      "currentSha256": "e3baa1c598dad03af5b62f4bf869d95a090ecfdd2799d12e887b1919265d0917",
+      "declarations": [
+        "B08 cancellation drains staging without publishing and can retry",
+        "B08 storage write failure stays interrupted and repairs without losing manifest",
+        "B08 new revision removal preserves pinned old bytes and session on reopen",
+        "f44 verified download is atomic, pinned, and restart safe",
+        "f44 checksum mismatch quarantines and never publishes bytes",
+        "f44 interrupted download repairs once with the same identity",
+        "f44 review publish failures after rename persist an interrupted state",
+        "f44 review rejects a noncanonical durable download-state id",
+        "f44 removal preserves manifest and cleanup skips pinned revision",
+        "f44 review recovery publishes complete orphan bytes and interrupts partials",
+        "f44 review recovery adopts a verified final orphan without network",
+        "f44 review adapter authority must validate installed bytes before publish",
+        "f44 review model adapter revalidates authoritative installed bytes offline",
+        "f44 review catalog quarantines corrupted authoritative model and repair redownloads",
+        "f44 review catalog quarantines a deleted verified receipt before repair",
+        "f44 review conflicting operations serialize while adjacent retries join",
+        "f44 review removal rechecks authoritative pins inside the lease",
+        "f44 review Drift authority pins active paused and assessment revisions",
+        "f44 review canonical artifact keys reject traversal and foreign rows",
+        "f44 review rejects a symlinked artifact root",
+        "f44 second review corrupt verified final remains integrity quarantined on restart",
+        "f44 second review cleanup counts authoritative model bytes and stops at real threshold",
+        "f44 final review model removal waits outside the Drift pin transaction",
+        "f44 second review cleanup counts authoritative voice install and receipt bytes",
+        "f44 review catalog quarantines corrupted authoritative voice with checksum evidence",
+        "f44 review voice catalog rejects record and pack aliases",
+        "f44 second review rejects linked published and partial leaves without touching targets",
+        "f44 second review model removal ignores foreign database path and confines deletion",
+        "f44 second review disposal drains in-flight work and rejects new work",
+        "f44 second review successful removal preserves learning and research audit rows"
+      ]
+    },
+    {
+      "path": "test/features/motivation/timezone_policy_test.dart",
+      "plannedSha256": "334c717fa1c4aed7be6fb5d617333023935f94fa0537200dfb918b008e5de654",
+      "currentSha256": "334c717fa1c4aed7be6fb5d617333023935f94fa0537200dfb918b008e5de654",
+      "declarations": [
+        "23:59 Bangkok maps to Aug 4",
+        "00:01 Bangkok maps to Aug 5",
+        "midnight UTC is Aug 4 in Bangkok (UTC+7)",
+        "New York 23:59 EDT (UTC-4) maps correctly",
+        "learning day boundary is midnight in learner timezone \u2014 Golden Journey #11",
+        "two UTC times mapping to same Bangkok day are same learning day",
+        "streak survives timezone change \u2014 Golden Journey #11",
+        "same moment is same learning day",
+        "next boundary from Bangkok 23:59 is 17:00 UTC",
+        "next boundary from Bangkok midnight is exactly 24 h later",
+        "returned boundary is in UTC",
+        "spring-forward day ends at its timezone-specific next midnight",
+        "fall-back day boundary is strictly after the repeated local hour",
+        "does not derive tomorrow from device-local calendar arithmetic"
+      ]
+    }
+  ]
+}

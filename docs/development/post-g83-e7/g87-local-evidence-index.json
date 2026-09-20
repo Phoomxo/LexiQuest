@@ -1,0 +1,27 @@
+[
+  {
+    "path": "build\\verification\\7706ff86de993b7d2fa44d56d44a50920e3becdb\\targeted-integration-2c7966d93bddbeb8dc25756f4344a03cbc1ae424e18cef2ec6e2c3fac169a0fe.json",
+    "sha256": "583cf52e26879f872561a8304609c25aafec0b86606767b4c10c2ffa222f8ada",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\583cf52e26879f87-targeted-integration-2c7966d93bddbeb8dc25756f4344a03cbc1ae424e18cef2ec6e2c3fac169a0fe.json"
+  },
+  {
+    "path": "build\\verification\\7706ff86de993b7d2fa44d56d44a50920e3becdb\\fb5f05d67f01-3e939f050780-ec79c810\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "9b17618898a4d005781592f6c08dfaddafbd025c469c6d3c91049c09aea0265a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9b17618898a4d005-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "path": "build\\verification\\7706ff86de993b7d2fa44d56d44a50920e3becdb\\fb5f05d67f01-3e939f050780-ec79c810\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "069c9a0db37dba33a59f3c72c5f7e1366a0474f83b4cd8437f18847bc5c08cbc",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\069c9a0db37dba33-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "path": "build\\verification\\7706ff86de993b7d2fa44d56d44a50920e3becdb\\fb5f05d67f01-b364e0cd62bb-913c1843\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "path": "build\\verification\\7706ff86de993b7d2fa44d56d44a50920e3becdb\\fb5f05d67f01-b364e0cd62bb-913c1843\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "a9292a6c6586ce5632f588be0f93764ce777f0eecf1202dd8e309d866bff5cd6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a9292a6c6586ce56-Explicit-Flutter-tests.stdout.log"
+  }
+]

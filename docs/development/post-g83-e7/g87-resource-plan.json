@@ -1,0 +1,14 @@
+{
+  "status": "host-harness-verified-native-measurement-pending",
+  "test": "integration_test/e7_quiz_resource_test.dart",
+  "hostEvidence": "targeted-integration-2c7966d93bddbeb8dc25756f4344a03cbc1ae424e18cef2ec6e2c3fac169a0fe.json",
+  "hostNotDeviceEvidence": true,
+  "method": "30 next-item tap-to-ready-UI-frame samples after3warmups; real QuizScreen and isolated native Drift memory DB; no production database access; raster completion excluded",
+  "budgetP95Ms": 300,
+  "memory": "ADB dumpsys meminfo at baseline/loaded/peak/after-close on actual artifact",
+  "incidents": [
+    "Initial harness compile missed required abandonedAtUtc; supplied real UTC cleanup timestamp and host run passed",
+    "Analyzer required braces around conditional return; braces added and analyzer passed"
+  ],
+  "nativeArtifactPolicy": "Build from committed test source; adb install-r-t; restore production APK and verify installed learner rows after harness"
+}
