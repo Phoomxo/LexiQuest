@@ -39,6 +39,7 @@ import 'package:vocab_learning_app/screens/export_center_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import 'support/field_trial_external_fakes.dart';
+import 'support/autonomous_service_receipt.dart';
 
 final class _JourneyPhaseTrace {
   String _current = 'not-started';
@@ -87,14 +88,18 @@ final class _JourneyPhaseTrace {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final serviceReceipt = writeAutonomousServiceReceipt();
 
   testWidgets(
     'guest completes the production learning loop and keeps evidence on restart',
     (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      await serviceReceipt;
+      if (!const bool.fromEnvironment('AUTONOMOUS_DEVICE_VIEWPORT')) {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+      }
       final phaseTrace = _JourneyPhaseTrace();
       addTearDown(phaseTrace.reportFinal);
       phaseTrace.begin('01-fixture-setup');
@@ -137,6 +142,14 @@ void main() {
         phaseTrace.complete('03-guest-login');
 
         phaseTrace.begin('04-vocabulary-create');
+        final categoriesAtStart = await _countRows(
+          first.database!,
+          'SELECT COUNT(*) AS count FROM vocabulary_categories',
+        );
+        final wordsAtStart = await _countRows(
+          first.database!,
+          'SELECT COUNT(*) AS count FROM vocabulary_words',
+        );
         await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
         await _pumpUntilFound(
           tester,
@@ -149,22 +162,66 @@ void main() {
         );
         await tester.enterText(
           find.byKey(const ValueKey('category-name-field')),
+          '   ',
+        );
+        await tester.tap(find.byKey(const ValueKey('save-category')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('category-name-field')),
+          findsOneWidget,
+        );
+        expect(
+          await _countRows(
+            first.database!,
+            'SELECT COUNT(*) AS count FROM vocabulary_categories',
+          ),
+          categoriesAtStart,
+          reason: 'Whitespace category must not create a durable row',
+        );
+        debugPrintSynchronously('[AUTONOMOUS] category-whitespace-rejected');
+        await tester.enterText(
+          find.byKey(const ValueKey('category-name-field')),
           'Field travel',
         );
         FocusManager.instance.primaryFocus?.unfocus();
         await tester.pump();
+        await tester.tap(find.byKey(const ValueKey('save-category')));
         await tester.tap(find.byKey(const ValueKey('save-category')));
         await _pumpUntilGone(
           tester,
           find.byKey(const ValueKey('category-name-field')),
         );
         await _pumpUntilFound(tester, find.text('Field travel'));
+        expect(
+          await _countRows(
+            first.database!,
+            'SELECT COUNT(*) AS count FROM vocabulary_categories',
+          ),
+          categoriesAtStart + 1,
+          reason: 'Rapid repeated category save must create exactly one row',
+        );
+        debugPrintSynchronously('[AUTONOMOUS] category-double-save-one-row');
         await tester.tap(find.text('Field travel'));
         await _pumpUntilFound(tester, find.byKey(const ValueKey('add-word')));
         await tester.pump(const Duration(milliseconds: 400));
         await tester.ensureVisible(find.byKey(const ValueKey('add-word')));
         await tester.tap(find.byKey(const ValueKey('add-word')));
         await _pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
+        await _tapVisibleCenter(
+          tester,
+          find.byKey(const ValueKey('save-word')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('word-field')), findsOneWidget);
+        expect(
+          await _countRows(
+            first.database!,
+            'SELECT COUNT(*) AS count FROM vocabulary_words',
+          ),
+          wordsAtStart,
+          reason: 'Empty word form must not create a durable row',
+        );
+        debugPrintSynchronously('[AUTONOMOUS] word-empty-rejected');
         await tester.enterText(
           find.byKey(const ValueKey('word-field')),
           'station',
@@ -178,7 +235,17 @@ void main() {
           'noun',
         );
         await tester.tap(find.byKey(const ValueKey('save-word')));
+        await tester.tap(find.byKey(const ValueKey('save-word')));
         await _pumpUntilFound(tester, find.text('station'));
+        expect(
+          await _countRows(
+            first.database!,
+            'SELECT COUNT(*) AS count FROM vocabulary_words',
+          ),
+          wordsAtStart + 1,
+          reason: 'Rapid repeated word save must create exactly one row',
+        );
+        debugPrintSynchronously('[AUTONOMOUS] word-double-save-one-row');
         phaseTrace.complete('04-vocabulary-create');
 
         phaseTrace.begin('05-quiz');
@@ -189,6 +256,7 @@ void main() {
         await _openConfiguredMode(tester, 'home/learn/quiz');
         await _pumpUntilFound(tester, find.text('station'));
         await tester.tap(find.text('transport stop'));
+        await tester.tap(find.text('transport stop'));
         final quizButtons = find.descendant(
           of: find.byType(QuizScreen),
           matching: find.byType(FilledButton),
@@ -196,6 +264,15 @@ void main() {
         await _pumpUntilEnabled(tester, quizButtons.last);
         await tester.tap(quizButtons.last);
         await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        expect(
+          await _countRows(
+            first.database!,
+            'SELECT COUNT(*) AS count FROM answer_attempts',
+          ),
+          1,
+          reason: 'Rapid repeated quiz answer must persist exactly once',
+        );
+        debugPrintSynchronously('[AUTONOMOUS] answer-double-submit-one-row');
         await tester.tap(
           find.descendant(
             of: find.byType(ScoreScreen),

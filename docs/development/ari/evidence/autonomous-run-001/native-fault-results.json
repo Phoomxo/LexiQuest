@@ -1,0 +1,8 @@
+{
+  "suite": "autonomous-device-faults",
+  "evidenceLevel": "DEVICE_FIXTURE",
+  "results": {
+    "host fakes render camera microphone and model unavailable states": "success",
+    "operator override survives a production-shell restart": "success"
+  }
+}

@@ -36,10 +36,9 @@
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "P0:map exact current requirements/routes/modes and reconcile case provenance using autonomous-test-plan.json.",
-    "P1:inspect existing integration runner and implement isolated disposable-owner fixtures;current firebaseBound test owner is not safe for destructive cases.",
-    "Then execute A01-A16 sequentially with controlled device input,independent data oracles,defect repair and180minute real endurance.",
-    "Recovery authorization remains active:fix/retest automatically;never weaken acceptance,clear original accounts or bypass gates through successors."
+    "Close confirmed single-choice/content and accessibility gaps; complete remaining per-entry interaction variants, native process-death/performance/endurance and externally dependent acceptance. Do not rerun unchanged passed targets.",
+    "Original accounts must remain intact. Use disposable fixture owners for destructive variants.",
+    "Recovery authorization remains active: diagnose, correct and retest; no weakened assertions or false PASS. One writer, no subagents."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
@@ -55,5 +54,7 @@
   "deviceCoverage": "device-test-matrix.json",
   "physicalFixBase": "72472a553e6cc740cda21e9ef00be7ec305c215c",
   "installedPreviewSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
-  "autonomousPlan": "autonomous-test-plan.json"
+  "autonomousPlan": "autonomous-test-plan.json",
+  "autonomousExecution": "autonomous-run-001.json",
+  "autonomousInventory": "autonomous-inventory.json"
 }

@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "status": "BOUNDED_EXECUTION_RECORDED_WHOLE_APP_OPEN",
+  "atUtc": "2026-09-20T21:03:29.062580+00:00",
+  "baseSha": "72eca4585df9eaea05700e89c23d383770ad8a66",
+  "hostBatch": {
+    "status": "PASS",
+    "tests": 44,
+    "result": "build/verification/72eca4585df9eaea05700e89c23d383770ad8a66/targeted-learning-7c08e3ac6b88eda7cd38c41eb92e399767a2540f780613d705b4716ef4083675.json",
+    "level": "HOST_RULE_AND_WIDGET_WITH_FILE_BACKED_SYNC",
+    "durableReceipt": "docs/development/ari/evidence/autonomous-run-001/H01-verifier.json.gz"
+  },
+  "nativeCore": {
+    "status": "PASS_BOUNDED",
+    "testCases": 1,
+    "frameworkTeardownSentinel": 1,
+    "completedPhases": [
+      "01-fixture-setup",
+      "02-bootstrap",
+      "03-guest-login",
+      "04-vocabulary-create",
+      "05-quiz",
+      "06-associative-launch-to-stage-3",
+      "07-associative-stage-3-recall",
+      "08-associative-stage-4-association",
+      "09-associative-stage-5-transfer",
+      "10-associative-finish",
+      "11-srs-due-and-review",
+      "12-progress-and-reward-snapshot",
+      "13-mastery",
+      "14-achievements",
+      "15-profile",
+      "16-shop",
+      "17-quest",
+      "18-dispose-before-reopen",
+      "19-reopen-bootstrap",
+      "20-reopen-state-validation",
+      "21-reopen-ui",
+      "22-export",
+      "23-sign-out"
+    ],
+    "level": "DEVICE_FIXTURE",
+    "serial": "9582188822004C6",
+    "package": "com.lexiquest.app.ariTest",
+    "apkSha256": "facffe48789e0c982def091a79324eeeddebb6525d07693ce18a68649874396b",
+    "fixtureSha256": "5ca9755b69a2c167cf3b9060fec17fbf9d230d793e6823a5614858173afdb6a6",
+    "viewport": "actual Vivo view, no desktop override",
+    "fakeBoundaries": [
+      "account",
+      "camera",
+      "speech",
+      "AI",
+      "export save adapter"
+    ],
+    "srsDueSeed": "Explicit fixture-only UPDATE due_at_utc_ms=0 for selected existing SRS row; not a scheduler-algorithm proof",
+    "restart": "database/dependency dispose and reopen in same app process; not Android process death",
+    "cleanup": "23phases,46transitions and final cleanup trace; no fixture temp directory remains",
+    "driverExit": 0
+  },
+  "runnerIncidents": [
+    {
+      "id": "R01",
+      "status": "RECOVERED",
+      "cause": "Vivo redacts VM URL from logcat; driver could not discover endpoint",
+      "fix": "Authenticated endpoint written only in integration fixture private code_cache; owned USB forward, URL redacted from saved logs and removed afterward; service auth remains enabled."
+    },
+    {
+      "id": "R02",
+      "status": "RECOVERED",
+      "cause": "Async setup before registering tests allowed zero-case suite to finish; success line alone invalid",
+      "fix": "Register test synchronously,await setup inside test; require all23phases and cleanup,not success line."
+    },
+    {
+      "id": "R03",
+      "status": "RECOVERED",
+      "cause": "Assumed cache directory differed from actual Directory.systemTemp",
+      "fix": "Discovered exact code_cache file location; corrected helper without blind retries."
+    },
+    {
+      "id": "R04",
+      "status": "RECOVERED_NATIVE_RETEST_PASS",
+      "cause": "Variant asserted global vocabulary table starts empty; production bootstrap seeds a packaged starter owner/category. Failure0expected/1actual is not evidence that whitespace was saved.",
+      "fix": "Capture exact before counts and assert unchanged for invalid input,+1for each valid double-save. No <= or skipped assertion; preserves starter rows.",
+      "evidence": "build/autonomous-core-native-run-03.log"
+    },
+    {
+      "id": "R05",
+      "status": "RECOVERED_VALID_GATE_PASS",
+      "cause": "H02 initially completed151tests but verifier detected source input drift caused by integration fixture edits during its run.",
+      "fix": "Freeze all source/test inputs and rerun same12targets; H02 has matching pre/post fingerprints. Invalid run excluded from count."
+    },
+    {
+      "id": "R06",
+      "status": "RECOVERED_SAME_APK_RETEST_PASS",
+      "cause": "Phone was asleep at launch; first fault suite later failed teardown with an active SemanticsHandle. UIAutomator inspection overlapped the test and is the suspected trigger.",
+      "fix": "Wake phone, temporary USB stay-awake, no concurrent UI inspection. Same APK passed, then result-bearing fixture passed again. Original stay-awake0 restored. No semantics assertion disabled."
+    },
+    {
+      "id": "R07",
+      "status": "RECOVERED",
+      "cause": "Streamed APK installation returned an empty failure; device remained authorized with8.7GB free.",
+      "fix": "Use explicit push/non-streamed installation of same signed isolated-package artifact; installation succeeded."
+    }
+  ],
+  "wholeAppAcceptance": "NOT_COMPLETE",
+  "next": "Close confirmed single-choice/content and accessibility gaps; complete remaining per-entry interaction variants, native process-death/performance/endurance and externally dependent acceptance. Do not rerun unchanged passed targets.",
+  "nativeAdversarialCore": {
+    "status": "PASS",
+    "level": "DEVICE_FIXTURE",
+    "assertions": [
+      "category-whitespace-rejected",
+      "category-double-save-one-row",
+      "word-empty-rejected",
+      "word-double-save-one-row",
+      "answer-double-submit-one-row"
+    ],
+    "completedPhases": 23,
+    "driverExit": 0,
+    "runLog": "build/autonomous-core-native-run-04.log",
+    "apkSha256": "f9180de3822a25a1934fcbde698afd52970afa0b3befef8aa1f3f240760e9b90",
+    "fixtureSha256": "780294ddeee136f5ad3322444a506a57f3d237221db75b47c78060eb093f9dcc",
+    "restartScope": "Dependency/database reopen,same Android process",
+    "baselineCorrection": "Production packaged starter rows preserved; exact before/after deltas asserted."
+  },
+  "hostBatches": [
+    {
+      "id": "H01",
+      "status": "PASS",
+      "scope": "Learning rules, durable sync recovery, scramble and SRS",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 44,
+      "targets": [
+        "test/scenarios/device_certification_journey_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/screens/definition_quiz_screen_test.dart",
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart",
+        "test/features/learning/srs_policy_test.dart"
+      ],
+      "fingerprint": "fd334596406567ef246728790faf4bd5a43c0be2d5ef9f7110bde90c52f392c5",
+      "startedAt": "2026-09-20T20:30:33.4592895+00:00",
+      "finishedAt": "2026-09-20T20:30:54.1002446+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H01-verifier.json.gz",
+        "sha256": "cf7dd79f4e67012a425ac197fa5c49a89a6291058b3c097beac6070412f911e8",
+        "uncompressedSha256": "fab36e9420fc4f2b1a5dd801d78650b0f6fd26a7e6004e3fc3dfff7a3a5b4047"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H01-stdout.log.gz",
+        "sha256": "e2f0414c6029eedb84a3085396cd48a617cb037de63787726a77766aba4c76ab",
+        "uncompressedSha256": "807d70cc61702230cc041234db9bddc5e6bca9f1422b95c70c996f0ee997a408"
+      },
+      "terminal": "00:09 +44: All tests passed!"
+    },
+    {
+      "id": "H02",
+      "status": "PASS",
+      "scope": "Configuration, timeout races, replay, cloze and definition",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 151,
+      "targets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_mode_matrix_test.dart",
+        "test/features/learning/pair_matching/pair_timeout_race_test.dart",
+        "test/features/learning/pair_matching/pair_timeout_recovery_test.dart",
+        "test/features/learning/pair_matching/pair_matching_idempotency_test.dart",
+        "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+        "test/features/learning/pair_matching/pair_board_accessibility_test.dart",
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/screens/vocabulary_route_withdrawal_test.dart"
+      ],
+      "fingerprint": "ca788d3f176bf8248ed94aa4cb1e923bffb47f9f977fe8fe1c93b135cbdf2040",
+      "startedAt": "2026-09-20T20:55:27.7470783+00:00",
+      "finishedAt": "2026-09-20T20:57:00.0589543+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H02-verifier.json.gz",
+        "sha256": "b5e6d5df818e64dbec5c20f78b2a79f148e06f9f50ae17a95933a8d7a70780f9",
+        "uncompressedSha256": "221ad340d87849644f8b5cbf1ad19f4506b2aa4149257ca81981c2aa3b80afe9"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H02-stdout.log.gz",
+        "sha256": "d1e1c5384842e1ea58f753a2fd3f94f3d5b08024e3ddd137da8f4976dd23562a",
+        "uncompressedSha256": "f8ba69108be09c175ec59fa6998f198a4045f92d9d63ce797a0f905cc8650884"
+      },
+      "terminal": "01:21 +151: All tests passed!"
+    },
+    {
+      "id": "H03",
+      "status": "PASS",
+      "scope": "Owner export/delete, study planning, assessment isolation, offline artifacts",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 108,
+      "targets": [
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/screens/study_planning_hub_screen_test.dart",
+        "test/features/goals/study_plan_use_cases_test.dart",
+        "test/features/goals/study_plan_lifecycle_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/export_center_flow_test.dart",
+        "test/features/export/export_use_cases_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart"
+      ],
+      "fingerprint": "ca788d3f176bf8248ed94aa4cb1e923bffb47f9f977fe8fe1c93b135cbdf2040",
+      "startedAt": "2026-09-20T20:57:22.5697670+00:00",
+      "finishedAt": "2026-09-20T20:57:50.0450456+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H03-verifier.json.gz",
+        "sha256": "123802d658dd8bdd55d10131d37479f06f4e64f04eb92f3a55bc38c4363d58e4",
+        "uncompressedSha256": "641a00ed6ed7c2fecdf1b55020111f7c7ce2f207ef46ab3341cc3729f421e3e8"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H03-stdout.log.gz",
+        "sha256": "ca1f55efebcd7c365a15ee107bc151324574460eb323aba090b6a6fcd422cad2",
+        "uncompressedSha256": "ed32751a88c72ebacc033b27ea0f4e008d31ee50b8ffac19f91b06e8c56f8cf1"
+      },
+      "terminal": "00:16 +108: All tests passed!"
+    },
+    {
+      "id": "H04",
+      "status": "PASS",
+      "scope": "Navigation, 14-mode registry, SRS, reading and speaking lifecycles",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 156,
+      "targets": [
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/navigation/navigation_glossary_test.dart",
+        "test/scenarios/production_feature_navigation_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/screens/associative_reading_session_screen_test.dart",
+        "test/scenarios/associative_reading_restart_test.dart",
+        "test/screens/local_reading_library_screen_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/features/media_practice/speaking_capture_test.dart",
+        "test/features/media_practice/speaking_scenario_lifecycle_test.dart"
+      ],
+      "fingerprint": "ca788d3f176bf8248ed94aa4cb1e923bffb47f9f977fe8fe1c93b135cbdf2040",
+      "startedAt": "2026-09-20T20:58:34.7530786+00:00",
+      "finishedAt": "2026-09-20T20:59:11.6163779+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H04-verifier.json.gz",
+        "sha256": "6087d128daaa5003da26ba33f9ebe707b497db10b4b844465222d628fa092e1a",
+        "uncompressedSha256": "379f642ffa8dffc48cfe84711fd9c56f2bac314d81654355c727ce21da81dab5"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H04-stdout.log.gz",
+        "sha256": "649044f6a2183634e94630099c2f2c47042fcf35ab66ec2f777ade1021172853",
+        "uncompressedSha256": "f2db1350db5d93fb605e0bdd7a2c3c43004e6cc1ce2b6845fe0455cfae67c4d2"
+      },
+      "terminal": "00:26 +156: All tests passed!"
+    },
+    {
+      "id": "H05",
+      "status": "PASS",
+      "scope": "Rewards, quests, calendar boundaries and sync faults",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 153,
+      "targets": [
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/rewards/reward_eligibility_test.dart",
+        "test/features/quest/quest_use_cases_test.dart",
+        "test/features/quest/quest_period_test.dart",
+        "test/features/sync/reward_transaction_sync_test.dart",
+        "test/features/sync/sync_engine_test.dart"
+      ],
+      "fingerprint": "68f72de4a1636860473358f4544a05e16f2a7d01fa1e16ed73155be43c374d0f",
+      "startedAt": "2026-09-20T20:59:44.4878089+00:00",
+      "finishedAt": "2026-09-20T21:00:02.4446955+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H05-verifier.json.gz",
+        "sha256": "bc251fb3f0251772b9ad5ecffebbce5befb3e2bc8a137d3e00f21ea4c874f7ff",
+        "uncompressedSha256": "9584cc247fe169a0515d4d5db19bdbb6924f4e82808ba25605aab26a369a7bdd"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H05-stdout.log.gz",
+        "sha256": "d1806cc96051df11a4348c3861317d4657c563ef036636e25fa70f0ad2baa5c0",
+        "uncompressedSha256": "f5df80894bbdc1d218f44e0531ba419d25e829188057ee623cfb6211092bdc78"
+      },
+      "terminal": "00:07 +153: All tests passed!"
+    },
+    {
+      "id": "H06",
+      "status": "PASS",
+      "scope": "Camera/speech/voice failure, cancellation and fallback",
+      "evidenceLevel": "HOST_RULE_REPOSITORY_AND_WIDGET",
+      "tests": 84,
+      "targets": [
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/features/media_practice/plugin_camera_gateway_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/transcript_evidence_boundaries_test.dart",
+        "test/features/voice/voice_use_cases_test.dart",
+        "test/features/voice/route_voice_session_mixin_test.dart",
+        "test/scenarios/ai_voice_fallback_journey_test.dart"
+      ],
+      "fingerprint": "8322fad1a55f50477bde46d1090683faf39aa4ea73bec0ec6629458cb253d527",
+      "startedAt": "2026-09-20T21:00:33.0612538+00:00",
+      "finishedAt": "2026-09-20T21:00:51.7755014+00:00",
+      "result": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H06-verifier.json.gz",
+        "sha256": "f12f5e8dbf51821d2925ef01e66c4b922100760b2e1dfb4c217503f6c38642f9",
+        "uncompressedSha256": "d50f9857fdd99a0e4cd83bba548a44806c7b3574e01d21e6fa25cb27760917fa"
+      },
+      "stdout": {
+        "path": "docs/development/ari/evidence/autonomous-run-001/H06-stdout.log.gz",
+        "sha256": "d6b37b51b6abb05ebed09de2fb57e3a23d3937f09f2aa8936e8fc3e4e149c7c7",
+        "uncompressedSha256": "3ebad60605d7161a93fd1641d8ebbffaec7bf207554f1fbb59be1102513f8913"
+      },
+      "terminal": "00:07 +84: All tests passed!"
+    }
+  ],
+  "hostSummary": {
+    "testsPassed": 696,
+    "distinctTargetFiles": 53,
+    "batches": 6,
+    "countsExcludeInvalidInputDriftRun": true,
+    "sourceCaveat": "H01 predates integration harness extraction; production application source unchanged. Each batch retains its exact input closure; no claim all harness revisions share a fingerprint."
+  },
+  "nativeLogs": {
+    "autonomous-core-native-run-02.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-core-native-run-02.log.gz",
+      "sha256": "4ee31d00e83a9f60c7e18baabd6d75d261c36e845ff47c61dc3dc8d2d5ef672c",
+      "uncompressedSha256": "97d9061327b7524fe6b7bc8456fdd7a4153682458a9d394209147589c1ee4fae"
+    },
+    "autonomous-core-native-run-03.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-core-native-run-03.log.gz",
+      "sha256": "0552d6c043d2ec409f58a626f1e01ae641bdb5349ac2cc6d55fd7acc80fec8ea",
+      "uncompressedSha256": "5c535e1bc870adb85b12fada725a7ecf0a6d514c6fbacceb538a9c40c974d641"
+    },
+    "autonomous-core-native-run-04.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-core-native-run-04.log.gz",
+      "sha256": "b5dd156f5cf357a573b586139094d0c44c36df3a7239e96b920b6b47234d6fd4",
+      "uncompressedSha256": "0281616079fc21e42e5ee49f038545cb18d80d9235db018d64c0780c53b8049f"
+    },
+    "autonomous-faults-native-run-01.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-faults-native-run-01.log.gz",
+      "sha256": "67bc300ceaaf819507fd1c1ee7b480740f554cbcce118be6cd3b726846caf72f",
+      "uncompressedSha256": "f88a634b6d0a387f1c677d7659a304256135749ef43abf76b1dcfaf2bdc40516"
+    },
+    "autonomous-faults-native-run-02.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-faults-native-run-02.log.gz",
+      "sha256": "1bb650761bcf2d9696b2e1f2cfcc02d900ecb236cdded0820548d9d20e57f151",
+      "uncompressedSha256": "1af7aa50136a76a99a53edf5ca77c342f623cb776ca7b9deec4877a4ab808c6a"
+    },
+    "autonomous-faults-native-run-03.log": {
+      "path": "docs/development/ari/evidence/autonomous-run-001/autonomous-faults-native-run-03.log.gz",
+      "sha256": "461e526699462d6cea6639dd56152d38a0cef9587f76d0e15b217b18d0d0a3bc",
+      "uncompressedSha256": "5fdc51c325947ceb986e7c94d775818d20e469cb6c51702e1e07bfc1c56847cd"
+    }
+  },
+  "nativeFaults": {
+    "status": "PASS_BOUNDED",
+    "testCases": 2,
+    "evidenceLevel": "DEVICE_FIXTURE",
+    "results": {
+      "host fakes render camera microphone and model unavailable states": "success",
+      "operator override survives a production-shell restart": "success"
+    },
+    "driverExit": 0,
+    "apkSha256": "b39cb266d51547585fccf163ec1790bbb62cba8091635c20f3b7fd6d4f8ae357",
+    "fixtureSha256": "9cc583755381ffb33072978d0c61dd879595e1c219bf4d3794d787de4db6b183",
+    "result": "docs/development/ari/evidence/autonomous-run-001/native-fault-results.json",
+    "scope": [
+      "camera permission denied",
+      "camera allowed but model unavailable",
+      "speech permission denied",
+      "AI menu emergency-off survives dependency/database reopen"
+    ],
+    "limitations": "Injected gateways on native Vivo; no real sensor accuracy, provider inference or Android process-death acceptance.",
+    "cleanup": "No lexiquest-field-* directories remain in private code_cache after successful suite."
+  },
+  "restoration": {
+    "status": "PASS",
+    "package": "com.lexiquest.app.ariTest",
+    "previewApkSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
+    "installation": "aapt package guard + exact hash guard + adb non-streamed replace success",
+    "originalApplication": "com.lexiquest.app not cleared, uninstalled, signed out or replaced",
+    "originalChatGPTAccount": "Not signed out or changed by this testing run",
+    "globalStayAwakeBefore": 0,
+    "globalStayAwakeRestored": 0,
+    "vmAuth": "Never disabled; owned USB forwards and private endpoint receipts removed by helper"
+  },
+  "notProven": [
+    "Every interaction variant for every menu",
+    "180minute real-clock endurance",
+    "Native process death at transactional save/acknowledgement checkpoints",
+    "TalkBack usability",
+    "Held-out physical camera accuracy",
+    "Human hearing/pronunciation and learning effectiveness",
+    "Live provider inference, quota/billing/revoke",
+    "Production hosted sync",
+    "Actual isolated Anki import"
+  ]
+}

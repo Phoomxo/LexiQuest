@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "planId": "ari-autonomous-coverage-2026-09-21",
-  "status": "DESIGNED_NOT_EXECUTED",
+  "status": "EXECUTING_PARTIAL_ACCEPTANCE_OPEN",
   "createdAtUtc": "2026-09-20T20:22:59.212521+00:00",
   "sourceSha": "79baf922176a3554fd0e410f933bb09a0f4f5008",
   "report": "app-device-integration.md#autonomous-test-plan-2026-09-21",
@@ -24,7 +24,11 @@
         "test/features/learning/lesson_mode_registry_test.dart"
       ],
       "acceptance": "Expected route/state, actionable failure, no lost session or inaccessible recovery.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H02",
+        "H04"
+      ]
     },
     {
       "id": "A02",
@@ -39,7 +43,11 @@
         "test/scenarios/device_certification_journey_test.dart"
       ],
       "acceptance": "Exact row/value changes and owner isolation; no duplicate side effects.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H01",
+        "H02"
+      ]
     },
     {
       "id": "A03",
@@ -56,7 +64,12 @@
         "integration_test/field_trial_core_journey_test.dart"
       ],
       "acceptance": "Expected feedback and exact evidence/reward deltas; guided/replay actions never create independent evidence improperly.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H01",
+        "H02",
+        "H04"
+      ]
     },
     {
       "id": "A04",
@@ -72,7 +85,10 @@
         "test/features/learning"
       ],
       "acceptance": "Content present and internally consistent; automated checks do not certify language level or teaching effectiveness.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H04"
+      ]
     },
     {
       "id": "A05",
@@ -89,7 +105,11 @@
         "test/features/history/learning_history_reader_test.dart"
       ],
       "acceptance": "Reference schedule and evidence counts match; fake clock only in fixture, phone wall clock unchanged.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H01",
+        "H04"
+      ]
     },
     {
       "id": "A06",
@@ -105,7 +125,10 @@
         "test/features/sync/reward_transaction_sync_test.dart"
       ],
       "acceptance": "Ledger reconciles opening+earned-spent=closing; one transaction per logical action.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H05"
+      ]
     },
     {
       "id": "A07",
@@ -123,7 +146,10 @@
         "test/features/assessment/assessment_isolation_test.dart"
       ],
       "acceptance": "Production defaults unchanged; fixtures prove domain/UI behavior only, no live study enrollment or rollout.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H03"
+      ]
     },
     {
       "id": "A08",
@@ -139,7 +165,11 @@
         "test/scenarios/device_certification_journey_test.dart"
       ],
       "acceptance": "Owner A cannot read/write/delete B; migrated data preserves declared invariants; existing user sessions untouched.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H01",
+        "H03"
+      ]
     },
     {
       "id": "A09",
@@ -156,7 +186,11 @@
         "test/scenarios/file_backed_sync_recovery_test.dart"
       ],
       "acceptance": "Queue converges exactly once with durable restart; real hosted sync remains separate acceptance.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H01",
+        "H05"
+      ]
     },
     {
       "id": "A10",
@@ -172,7 +206,8 @@
         "docs/development/ari/app-device-integration-evidence.json"
       ],
       "acceptance": "State recovery/isolation under simulated provider; no claim of working inference or guaranteed provider billing.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "REMAINS_OPEN",
+      "executionBatches": []
     },
     {
       "id": "A11",
@@ -189,7 +224,11 @@
         "test/voice/voice_response_lifecycle_test.dart"
       ],
       "acceptance": "Native lifecycle separately evidenced from injected waveform tests; microphone recognition/hearing quality remains external when no verified unattended audio path exists.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H04",
+        "H06"
+      ]
     },
     {
       "id": "A12",
@@ -206,7 +245,10 @@
         "tool/cli/verify-device-model.ps1"
       ],
       "acceptance": "Report model metrics separately from live-camera capture; held-out set frozen before run,no tuning on it; no web-image score substitutes for camera accuracy.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H06"
+      ]
     },
     {
       "id": "A13",
@@ -224,7 +266,10 @@
         "tool/cli/tests/android_export_lifecycle.py"
       ],
       "acceptance": "Expected fields,counts,hashes and rendered text match independent expectations; TSV validity alone is not Anki import success.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H03"
+      ]
     },
     {
       "id": "A14",
@@ -241,7 +286,11 @@
         "test/features/learning/pair_matching/pair_board_accessibility_test.dart"
       ],
       "acceptance": "Semantic and visual checks pass on tested configurations; human TalkBack usability not inferred.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "PARTIAL_BOUNDED_EVIDENCE_NOT_DOMAIN_ACCEPTANCE",
+      "executionBatches": [
+        "H02",
+        "H04"
+      ]
     },
     {
       "id": "A15",
@@ -257,7 +306,8 @@
         "docs/development/2026-09-08-autonomous-device-results.md"
       ],
       "acceptance": "Real elapsed time required; no crash/ANR/data mismatch; budgets pinned before run,charging bias disclosed; no human dependency for unattended soak.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "REMAINS_OPEN",
+      "executionBatches": []
     },
     {
       "id": "A16",
@@ -273,7 +323,8 @@
         "tool/cli/verify-scope.ps1"
       ],
       "acceptance": "All applicable declared assertions evidenced with exact source/artifact; no unresolved mandatory defects or undocumented omissions.",
-      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+      "status": "REMAINS_OPEN",
+      "executionBatches": []
     }
   ],
   "evidenceLevels": [
@@ -364,5 +415,8 @@
     "Schema-level exports and visual review",
     "Real-clock180minute endurance"
   ],
-  "recovery": "Stop failed method,inspect evidence,correct runner/fixture/product and retest affected cases;never weaken acceptance or promote simulated evidence. Continue independent authorized work while genuine external prerequisites remain."
+  "recovery": "Stop failed method,inspect evidence,correct runner/fixture/product and retest affected cases;never weaken acceptance or promote simulated evidence. Continue independent authorized work while genuine external prerequisites remain.",
+  "executionEvidence": "autonomous-run-001.json",
+  "inventory": "autonomous-inventory.json",
+  "wholeAppAcceptance": "NOT_COMPLETE"
 }

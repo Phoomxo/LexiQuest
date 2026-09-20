@@ -744,7 +744,8 @@
     "apkSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
     "source": "72472a553e6cc740cda21e9ef00be7ec305c215c plus handwriting self-check feedback repair",
     "cloudSync": false,
-    "installed": true
+    "installed": true,
+    "restoredAfterAutonomousFixtures": true
   },
   "historyRegression": {
     "tests": 38,
@@ -766,7 +767,12 @@
     {
       "id": "CONTENT_SINGLE_CHOICE",
       "status": "OPEN_QUALITY_LIMITATION",
-      "actual": "Configured one-item cloze and definition rounds expose only one choice; scoring completion is not evidence of learning challenge."
+      "actual": "Configured one-item cloze and definition rounds expose only one choice; scoring completion is not evidence of learning challenge.",
+      "sourceDiagnosis": "Both adapters derive distractor candidates from session.questions only; one selected question produces no alternative. Existing deterministic/distinct-option tests do not assert minimum distractor count.",
+      "sourceRefs": [
+        "lib/features/learning/application/definition_quiz_mode_adapter.dart:210",
+        "lib/features/learning/application/cloze_mode_adapter.dart:193"
+      ]
     },
     {
       "id": "ASSOCIATIVE_CONTENT",
@@ -776,8 +782,11 @@
     {
       "id": "PAIR_ACCESSIBILITY",
       "status": "OPEN_ACCESSIBILITY_LIMITATION",
-      "actual": "Active pair game unavailable in UIAutomator tree; screenshot-based control works,screen-reader acceptance unproven."
+      "actual": "Active pair game unavailable in UIAutomator tree; screenshot-based control works,screen-reader acceptance unproven.",
+      "hostEvidence": "H02 pair_board_accessibility_test.dart PASS; does not close native UIAutomator/TalkBack gap."
     }
   ],
-  "autonomousPlan": "autonomous-test-plan.json"
+  "autonomousPlan": "autonomous-test-plan.json",
+  "autonomousExecution": "autonomous-run-001.json",
+  "autonomousInventory": "autonomous-inventory.json"
 }

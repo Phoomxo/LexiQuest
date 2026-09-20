@@ -183,3 +183,44 @@ Measure crash/ANR, frame latency, memory trend/resource release and data/transac
 Autonomous acceptance closes only when the inventory has no unmapped entries, every applicable required case has qualifying evidence, required product defects are fixed/retested, all synthetic state is reconciled/cleaned, no test process remains unexplained, and a final artifact/source identity is recorded. An outstanding runner failure is not a product PASS. No unresolved quality issue can disappear into a summary.
 
 Deliver: current coverage matrix; detailed cases with evidence levels; defect/fix/retest ledger; exact artifact/source/fixture hashes; performance/endurance results; and a concise Thai report separating autonomous completion from genuinely external acceptance. External gaps remain visible: live provider rights/billing/revoke, hosted service credentials/configuration, human hearing/pronunciation/usability, fresh independent physical camera scenes, and Anki runtime availability if absent. Retain original app/account data throughout. No routine approval question is needed to continue already authorized independent work.
+
+## Autonomous execution 2026-09-21
+
+**ผลรอบนี้: ผ่าน 696 host tests จาก 53 ไฟล์ที่ไม่ซ้ำกัน และ native fixture บน Vivo อีก 3 test cases ที่มีขอบเขตชัดเจน; ยังไม่ผ่านการตรวจรับทั้งระบบ.** [หลักฐานและ hash](autonomous-run-001.json) · [ทะเบียนเมนูและโหมด](autonomous-inventory.json) · [ช่องว่างเดิม](device-test-matrix.json). Source base `72eca4585df9eaea05700e89c23d383770ad8a66`; application source ไม่เปลี่ยนในรอบนี้ มีการเพิ่ม/ปรับ integration fixtures เท่านั้น แต่ละ verifier เก็บ input closure และก่อน/หลัง fingerprint ของตัวเองใน `evidence/autonomous-run-001/*.gz` จึงไม่อ้างว่า harness ทุกรุ่นเป็น source เดียวกัน
+
+| ชุด | สิ่งที่ตรวจจริง | ผล |
+|---|---|---:|
+| H01 | ข้อมูลถาวร/เจ้าของข้อมูล, offline sync recovery, quiz/scramble, SRS และเวลา | 44 PASS |
+| H02 | ค่าเริ่มรอบและขอบเขต, จับคู่หมดเวลา/กดใกล้จบรอบ/เล่นซ้ำ, cloze/definition, การถอนสิทธิ์หน้าคำศัพท์ | 151 PASS |
+| H03 | export/delete ของเจ้าของทดสอบ, แผนเรียน, assessment isolation, ยกเลิก/เขียนไฟล์ล้มเหลว/ลองใหม่, offline artifacts | 108 PASS |
+| H04 | ทะเบียน 14 โหมด, glossary/navigation guards, SRS, อ่านแล้วเปิดฐานข้อมูลใหม่, วงจรพูดและ shadowing | 156 PASS |
+| H05 | รางวัล/ซื้อ/สวมใส่/เจ้าของเปลี่ยนระหว่างคำสั่ง, quest ตามปฏิทิน, sync timeout/conflict/ซ้ำ | 153 PASS |
+| H06 | กล้องและ speech gateway, cancellation, transcript evidence, voice lifecycle/fallback | 84 PASS |
+
+ไม่มี target file ซ้ำระหว่างหกชุด จำนวนนี้ไม่นับ H02 รอบที่ verifier ปฏิเสธเพราะ input drift และไม่นับผลเก่าที่ผ่านก่อนหน้าเพิ่มเข้าไปเพื่อขยายยอด ทะเบียนพบ 64 navigation/action IDs และ 14 canonical lesson modes; 64 เป็นรายการ metadata ไม่ใช่ 64 requirement packages ของ full-system และไม่ได้หมายความว่าทดสอบทุกการกดครบแล้ว
+
+Native core ใช้ viewport จริงของ Vivo V2041 และฐานข้อมูลชั่วคราวที่แยกจากบัญชีเดิม ทำ 23 ช่วง: guest → สร้างคำศัพท์ → quiz → associative ทั้งหกขั้น → SRS → progress/rewards → หน้าหลัก/ร้านค้า/quest → ปิดและเปิด dependency/database → ตรวจค่าคงเดิม → export → sign out ของ fake account. เพิ่ม assertion อิสระจากแถว SQL ห้าข้อ: หมวดว่างไม่เพิ่มแถว, double-save หมวดเพิ่มหนึ่งแถว, คำศัพท์ว่างไม่เพิ่มแถว, double-save คำเพิ่มหนึ่งแถว, double-answer เพิ่ม answer_attempts หนึ่งแถว ผ่านทั้งหมดใน journey เดียว ไม่ได้นับ 23 ช่วงเป็น 23 test cases และไม่นับ rerun baseline ซ้ำเป็นอีกหนึ่ง coverage case
+
+Native fault suite อีกสอง cases ผ่าน: กล้องถูกปฏิเสธ/โมเดลไม่มี/ไมโครโฟนถูกปฏิเสธ และ emergency-off ของเมนู AI คงอยู่หลังเปิด dependency/database ใหม่ ผลสองชื่อถูกบันทึกเป็น `success` ใน [native-fault-results.json](evidence/autonomous-run-001/native-fault-results.json) พร้อม driver exit0. การรันบนมือถือใช้ production widgets แต่ account/camera/speech/AI/export gateways บางส่วนเป็น fake; ไม่มีการกล่าวอ้างว่าเป็นการวัดความแม่นยำ sensor หรือ live provider. การ restart ของ fixtures เป็นภายใน Android process เดียว และ SRS due row ถูก seed อย่างเปิดเผย จึงไม่แทน native process-death หรือการพิสูจน์ scheduler algorithm
+
+### สิ่งที่ยังเป็นปัญหา
+
+1. **CONTENT_SINGLE_CHOICE — ยังเปิด:** cloze/definition ที่กำหนดหนึ่งข้อแสดงคำตอบเดียว ตรวจ source ยืนยันว่า distractors มาจาก `session.questions` เท่านั้น (`definition_quiz_mode_adapter.dart:210`, `cloze_mode_adapter.dart:193`). การผ่าน tests ของความไม่ซ้ำและความคงที่ของ options ไม่ได้พิสูจน์ว่าโจทย์มีตัวลวงขั้นต่ำ คะแนนสำเร็จจึงไม่ใช่หลักฐานคุณภาพการเรียน
+2. **ASSOCIATIVE_CONTENT — ยังเปิด:** local passage ที่เห็นมีลักษณะรายการคำศัพท์มากกว่าเรื่องต่อเนื่อง ผลทดสอบ flow/persistence ไม่ได้ปิดคุณภาพภาษาและการสอน
+3. **PAIR_ACCESSIBILITY — ยังเปิด:** host semantics tests ผ่าน แต่ active native board ก่อนหน้าไม่ปรากฏใน UIAutomator tree; ยังไม่พิสูจน์ TalkBack usability และยังไม่สรุปว่าเป็น TalkBack defect จาก automation tree เพียงอย่างเดียว
+
+บั๊กการใช้งานสี่ข้อที่แก้และ retest ก่อนหน้ายังคงอยู่ใน ledger เดิม: quiz shortage, blank dictation, history alias และ feedback ของ handwriting รอบนี้ไม่ได้อ้างว่าแก้ production defect ใหม่จากจำนวน tests ที่ผ่าน
+
+### ปัญหาตัวทดสอบและการกู้คืน
+
+Vivo ปิดบัง VM endpoint ใน logcat จึงใช้ endpoint ที่ยังมี authentication ใน private `code_cache` และ forward USB ที่เป็นของรอบทดสอบเท่านั้น; ไม่ปิด VM auth. แก้ async registration ที่เคยสร้างผลศูนย์ cases, แก้สมมติฐาน path และจำนวน starter rows ด้วย exact before/after deltas. H02 ต้องรันซ้ำเพราะแก้ fixture ระหว่าง gate; รอบที่ยอมรับมี fingerprint คงเดิมและ assertion เดิมทุกข้อ
+
+Fault run แรกเจอหน้าจอดับและ active SemanticsHandle ระหว่างที่มี UIAutomator แทรกอ่านหน้าจอ การอ่านแทรกเป็นสาเหตุที่สงสัย; same APK ผ่านหลังแยกช่องทางควบคุม จากนั้น fixture ที่เพิ่ม receipt ของชื่อ cases ผ่านอีกครั้ง ไม่ปิดการตรวจ semantics. Streamed install ล้มเหลวหนึ่งครั้งโดยไม่มีรายละเอียด; ตรวจพบ device authorized/พื้นที่ว่างแล้วเปลี่ยนเป็น non-streamed installation สำเร็จ. รายละเอียด R01–R07 และ raw logs ที่บีบอัดอยู่ใน structured evidence
+
+### สภาพเครื่องและการทำซ้ำ
+
+คืน APK preview ปกติ SHA256 `2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0` ด้วย package/hash guard และ replace install สำเร็จ ตรวจพบหน้าเรียนภาษาไทยพร้อมห้าแท็บและสถานะข้อมูลในเครื่องพร้อมใช้ ไม่มี temporary fixture directory, private VM receipt หรือ ADB forward ของรอบนี้เหลืออยู่ ค่า USB stay-awake คืนเป็น0. ไม่ลบ/ลงทับ/ออกจาก `com.lexiquest.app` หรือบัญชี ChatGPT เดิม
+
+Fixture entry points: `integration_test/field_trial_core_journey_test.dart` และ `integration_test/autonomous_device_faults_test.dart`. Build ใช้ `--dart-define=AUTONOMOUS_DEVICE_VIEWPORT=true --android-project-arg=ariLocalTest=true --target-platform android-arm64`; ตรวจ package ก่อน install ทุกครั้ง. Helper `integration_test/support/attach_autonomous_fixture.py` เก็บวิธี attach แบบปิดบัง URL ให้ทำซ้ำได้ โดยรับ `--serial --log --adb --flutter`; helper ฉบับ parameterized ตรวจ syntax/CLI แล้ว แต่ actual native runs ใช้ scratch predecessor ที่บันทึก logs ไว้ ต้องไม่อ่าน UIAutomator หรือส่ง taps อีกช่องทางขณะ driver ทำงาน
+
+**Remaining acceptance:** ทุก interaction variant ของ 64 entries, single-choice/story quality, native save/ack process-death, TalkBack, resource budgets และ endurance180นาทีจริงยังไม่ปิด; endurance ไม่ใช่ external blocker และไม่ได้อ้างว่ารันแล้ว. Live inference/quota/billing/revoke, hosted sync, human speech/learning quality, fresh held-out camera และ actual Anki import ยังแยกเป็นช่องว่างเฉพาะด้าน ห้ามนำ host/native-fixture PASS ไปแทนผลเหล่านี้ แผนยังเป็น `EXECUTING_PARTIAL_ACCEPTANCE_OPEN`; ไม่มี background tester หรือ successor task ที่ทำงานต่อโดยไม่ได้ระบุ
