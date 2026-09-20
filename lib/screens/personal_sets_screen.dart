@@ -1,3 +1,4 @@
+import '../features/media_practice/presentation/speaking_scenario_screen.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -492,6 +493,16 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                         child: const Text('กลับไปแก้ไข'),
                       ),
                     ] else ...[
+                      if (dependencies?.speakingScenarios?.isAvailable() == true && dependencies?.speechPractice != null)
+                        OutlinedButton(onPressed: () {
+                          final owner = _owner;
+                          final app = dependencies?.speakingScenarios;
+                          final speech = dependencies?.speechPractice;
+                          if (owner == null || app == null || speech == null) return;
+                          AppNavigator.pushPage<void>(context,
+                            AppPage<void>(name: 'learning/speaking-scenario', builder: (_) =>
+                              SpeakingScenarioScreen(useCases: app, speech: speech, owner: owner, set: revision)));
+                        }, child: const Text('Speak in a scenario · ฝึกพูด')),
                       if (dependencies?.writtenPractice?.isAvailable() == true)
                         OutlinedButton(onPressed: () {
                           final owner = _owner;

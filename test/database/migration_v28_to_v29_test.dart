@@ -33,7 +33,7 @@ void main() {
       final database = AppDatabase(NativeDatabase(file));
       try {
         await expectCurrentDatabaseContract(database);
-        expect(AppDatabase.currentSchemaVersion, 32);
+        expect(AppDatabase.currentSchemaVersion, 33);
         final row = await database
             .select(database.outboxOperations)
             .getSingle();

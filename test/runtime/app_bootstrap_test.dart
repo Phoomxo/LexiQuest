@@ -1,3 +1,6 @@
+import '../features/media_practice/speaking_capture_test.dart' as speaking_fixture;
+import 'package:vocab_learning_app/features/media_practice/application/speaking_scenario_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/presentation/speaking_scenario_screen.dart';
 import 'package:vocab_learning_app/features/learning/application/context_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/written_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/presentation/written_practice_screen.dart';
@@ -814,6 +817,88 @@ void main() {
       });
     }
 
+    for (final retirement in ['owner', 'studyPlanning', 'speech', 'route', 'background']) {
+      testWidgets('speaking runtime retires private results on $retirement', (tester) async {
+        final gateway = speaking_fixture.Gateway();
+        final dependencies = (await tester.runAsync(() => AppBootstrap(
+          createDatabase: _testDatabase, initializeFirebase: () async {}, initializeSupabase: () async {},
+          loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+          speechRecognitionGatewayFactory: () => gateway,
+          speakingScenarioRollout: const SpeakingScenarioRollout.internal(),
+          learningPreviewEnabled: true, buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize()))!;
+        // Native cleanup must run outside the widget test's paused fake clock.
+        addTearDown(() => tester.runAsync(() => dependencies.dispose().timeout(const Duration(seconds: 10))));
+        expect(dependencies.speakingScenarios!.isAvailable(), isTrue);
+        final set = (await tester.runAsync(() async {
+          final sets = dependencies.personalSets!;
+          final owner = await sets.begin();
+          final pin = SenseCrosswalkPin.fromJson({'corpusManifestHash': PackagedSenseCrosswalk.corpusManifestHash,
+            'revision': 1, 'artifactHash': PackagedSenseCrosswalk.artifactHash});
+          final refs = (await sets.candidates(owner, pin)).entries.take(2).map((e) => e.ref).toList();
+          return sets.save(owner, PersonalSetRevision.create(setId: 'writing-set', operationId: 'writing-create', expectedPriorRevision: 0,
+            createdAtUtcMs: DateTime.now().toUtc().millisecondsSinceEpoch, title: 'Writing objects', crosswalkPin: pin, members: refs));
+        }))!;
+        final owner = (await tester.runAsync(dependencies.personalSets!.begin))!;
+        Future<void> settle() async {
+          for (var i = 0; i < 35; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          }
+        }
+        await tester.pumpWidget(AppDependenciesScope(dependencies: dependencies,
+          child: MaterialApp(navigatorObservers: [appRouteObserver], home: SpeakingScenarioScreen(useCases: dependencies.speakingScenarios!, speech: dependencies.speechPractice!, owner: owner, set: set))));
+        await settle();
+        await tester.tap(find.text('Practice')); await settle();
+        await tester.ensureVisible(find.byKey(const Key('speaking-record')));
+        await tester.tap(find.byKey(const Key('speaking-record'))); await settle();
+        await tester.runAsync(() async { gateway.emit('I read a book.', true); await Future<void>.delayed(const Duration(milliseconds: 20)); });
+        await settle();
+        await tester.ensureVisible(find.byKey(const Key('speaking-confirm')));
+        await tester.tap(find.byKey(const Key('speaking-confirm'))); await settle();
+        await tester.ensureVisible(find.byKey(const Key('speaking-submit')));
+        await tester.tap(find.byKey(const Key('speaking-submit'))); await settle();
+        expect(find.textContaining('Meaning 2/2'), findsOneWidget);
+        await tester.ensureVisible(find.byKey(const Key('speaking-revise')));
+        await tester.tap(find.byKey(const Key('speaking-revise'))); await settle();
+        await tester.ensureVisible(find.byKey(const Key('speaking-record')));
+        await tester.tap(find.byKey(const Key('speaking-record'))); await settle();
+        if (retirement == 'route') {
+          final context = tester.element(find.byType(SpeakingScenarioScreen));
+          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Covered'))));
+        } else if (retirement == 'background') {
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        } else if (retirement == 'owner') {
+          await tester.runAsync(() => DriftOwnerGeneration(dependencies.database!).advance());
+        } else {
+          (dependencies.features as RuntimeFeatureRegistry).emergencyOff(retirement == 'speech' ? Feature.speechPractice : Feature.studyPlanning);
+        }
+        await settle();
+        await tester.runAsync(() async { gateway.emit('late private words', true); await Future<void>.delayed(const Duration(milliseconds: 20)); });
+        await settle();
+        if (retirement == 'route') {
+          Navigator.of(tester.element(find.text('Covered'))).pop(); await settle();
+        }
+        if (retirement == 'background') { tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed); await settle(); }
+        expect(gateway.cancels, greaterThan(0));
+        expect(find.textContaining('late private words'), findsNothing);
+        expect(find.text('I read a book.'), findsNothing);
+        expect(find.byKey(const Key('speaking-response')), findsNothing);
+        expect(find.textContaining('Session closed'), findsOneWidget);
+        await tester.runAsync(() async {
+          final db = dependencies.database!;
+          expect(await db.select(db.speakingPracticeResults).get(), hasLength(1));
+          expect(await db.select(db.answerAttempts).get(), isEmpty);
+          expect(await db.select(db.srsStates).get(), isEmpty);
+          expect(await db.select(db.pointsLedgerEntries).get(), isEmpty);
+          expect(await db.select(db.outboxOperations).get(), isEmpty);
+        });
+        await tester.pumpWidget(const SizedBox.shrink()); await settle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     test('personal sets reject drafts after actual logout rollback and erasure', () async {
       _installNoOpSecureStorage();
       final dependencies = await AppBootstrap(
@@ -825,6 +910,7 @@ void main() {
       addTearDown(dependencies.dispose);
       expect(dependencies.personalSets, isNotNull);
       expect(dependencies.writtenPractice!.isAvailable(), isFalse);
+      expect(dependencies.speakingScenarios!.isAvailable(), isFalse);
       final sets = dependencies.personalSets!;
       final before = await sets.begin();
       final guest = await dependencies.upgradeGuestOwner!.createLocalGuestAfterLogout(sourceOwnerId: before.ownerId);

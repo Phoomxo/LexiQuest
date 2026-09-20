@@ -1,3 +1,4 @@
+import '../features/media_practice/application/speaking_scenario_use_cases.dart';
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
@@ -125,6 +126,7 @@ final class AppDependencies {
     this.studyPlans,
     this.guidedRepair,
     this.writtenPractice,
+    this.speakingScenarios,
     this.personalSetActivities,
     this.learningGoals,
     this.learnerPreferences,
@@ -207,6 +209,7 @@ final class AppDependencies {
   final StudyPlanUseCases? studyPlans;
   final GuidedRepairUseCases? guidedRepair;
   final WrittenPracticeUseCases? writtenPractice;
+  final SpeakingScenarioUseCases? speakingScenarios;
   final PersonalSetActivities? personalSetActivities;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;

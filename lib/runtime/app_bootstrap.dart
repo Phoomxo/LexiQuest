@@ -1,3 +1,4 @@
+import '../features/media_practice/application/speaking_scenario_use_cases.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -468,6 +469,7 @@ final class AppBootstrap {
         const LearningTimeCaptureRollout.implementedOff(),
     FocusTimerRollout focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.contextPracticeRollout = const ContextPracticeRollout.implementedOff(),
+    this.speakingScenarioRollout = const SpeakingScenarioRollout.implementedOff(),
     this.writtenPracticeRollout = const WrittenPracticeRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
@@ -592,6 +594,7 @@ final class AppBootstrap {
   final FocusTimerRollout focusTimerRollout;
   final ContextPracticeRollout contextPracticeRollout;
   final WrittenPracticeRollout writtenPracticeRollout;
+  final SpeakingScenarioRollout speakingScenarioRollout;
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
@@ -1926,6 +1929,8 @@ final class AppBootstrap {
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       personalSets: personalSets,
+      speakingScenarios: SpeakingScenarioUseCases(sets: personalSets,
+        isAvailable: () => speakingScenarioRollout.enabled && runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.speechPractice)),
       writtenPractice: WrittenPracticeUseCases(sets: personalSets,
         isAvailable: () => writtenPracticeRollout.enabled &&
           runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.quiz)),

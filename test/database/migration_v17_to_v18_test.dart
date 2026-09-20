@@ -12,7 +12,7 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 32);
+    expect(AppDatabase.currentSchemaVersion, 33);
     expect(schemaEighteenInventory, hasLength(40));
     expect(schemaEighteenInventory.difference(schemaSeventeenInventory), const {
       'learning_time_segments',
@@ -73,6 +73,7 @@ final schemaSeventeenInventory = currentDatabaseTableInventory
       'active_plan_pointers',
       'guided_repair_operations',
       'written_practice_results',
+      'speaking_practice_results',
       'learning_time_segments',
       'learning_goals',
       'study_reminders',
@@ -93,6 +94,7 @@ final schemaEighteenInventory = currentDatabaseTableInventory.difference(const {
       'active_plan_pointers',
       'guided_repair_operations',
       'written_practice_results',
+      'speaking_practice_results',
   'learning_goals',
   'study_reminders',
   'session_configurations',

@@ -165,6 +165,13 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
     allowedExportFields: ['recordCount'],
   ),
   OwnerLifecycleTableDescriptor(
+    tableName: 'speaking_practice_results', alias: 'speakingPracticeResults',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
     tableName: 'guided_repair_operations', alias: 'guidedRepairOperations',
     authority: OwnerLifecycleAuthority.directOwner,
     exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
@@ -904,6 +911,7 @@ final Set<String> ownerLifecycleDirectOwnerTableNames =
 /// target-owner credential metadata, never deletion of the global table.
 const ownerLifecyclePhysicalDeletionOrder = <String>[
   'written_practice_results',
+  'speaking_practice_results',
   'guided_repair_operations',
   'active_plan_pointers',
   'study_plan_revisions',

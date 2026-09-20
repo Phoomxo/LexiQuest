@@ -3,6 +3,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 const currentDatabaseTableInventory = <String>{
   'written_practice_results',
+  'speaking_practice_results',
   'guided_repair_operations',
   'study_plan_revisions',
   'active_plan_pointers',
