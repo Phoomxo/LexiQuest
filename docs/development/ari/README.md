@@ -1,6 +1,6 @@
 # LexiQuest — ดัชนีงานอารี
 
-จุดติดตามงานเดียวใน repository · 2026-09-20 · branch `feature/ari-feasibility`
+จุดติดตามงานเดียวใน repository · 2026-09-21 · branch `feature/ari-app-device-integration`
 
 **สถานะปัจจุบัน: debug app สำหรับ private login พร้อม build และ automated tests (Flutter 17 / bridge 9 PASS); Vivo ไม่พบใน ADB จึง physical/login NOT_RUN. ยังไม่เปิด inference จริงและไม่ถือว่าฝั่งแอปสมบูรณ์ตาม end-to-end acceptance. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json) · [handoff](app-device-integration-handoff.json). V2 NOT_MET.**
 

@@ -128,6 +128,8 @@
     "bridgeTests": 9,
     "authenticatedAcceptance": "NOT_RUN",
     "inference": "NOT_IMPLEMENTED_GATED",
-    "successor": null
+    "successor": null,
+    "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
+    "implementationPushed": true
   }
 }

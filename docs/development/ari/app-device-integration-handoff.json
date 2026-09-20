@@ -6,7 +6,7 @@
   "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
   "status": "prelogin-debug-app-verified-device-and-authenticated-not-run",
   "writerReleased": true,
-  "implementationPushed": false,
+  "implementationPushed": true,
   "report": "app-device-integration.md",
   "evidence": "app-device-integration-evidence.json",
   "implemented": [
@@ -54,5 +54,6 @@
     "modelRequested": "gpt-6-astra",
     "thinkingRequested": "medium",
     "speed": "Standard/default requested; runtime tier not observable"
-  }
+  },
+  "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a"
 }
