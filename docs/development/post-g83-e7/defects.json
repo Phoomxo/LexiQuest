@@ -435,13 +435,17 @@
       "g86-sentence-board.xml",
       "build/verification/ae29ec3dd1107d6b6196ecdb3020e221da6f19da/31c903d620c8-267b91a682ec-0c943b9e/Explicit-Flutter-tests.stdout.log"
     ],
-    "status": "fixed-local-verified-native-retest-pending",
+    "status": "fixed-local-and-native-verified-G88-review-pending",
     "fixSHA": "0fdcf59e38e363376803044114be439b545347c6",
     "fix": "ReviewedSentenceScrambleLoader uses existing reviewed cloze example pinning; no fabricated fallback; cached load retired on session replacement.",
     "retest": [
       "targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json (93, earlier loader)",
       "targeted-learning-0c71f3187526ad69753d214c0858c98318a1b30a608f18e5a29ad545733bf6c6.json (77, final route/loader)",
       "g86-d20-analyze.log (No issues)"
+    ],
+    "nativeRetest": [
+      "g86-d20-board.xml",
+      "g86-d20-result.xml"
     ]
   },
   {
@@ -458,13 +462,39 @@
       "g86-associative-reading.xml",
       "g86-associative-step2.xml"
     ],
-    "status": "fixed-local-verified-native-retest-pending",
-    "fixSHA": null,
+    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "fixSHA": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
     "fix": "Stage-two view removes inline meanings only from an exact app-generated glossary with its generated document ID. Ordinary passages and persisted original document identity remain unchanged. Bounded deterministic parsing avoids dynamic backtracking.",
     "retest": [
       "targeted-learning-e6edb2e5f4e6339cd5f3482bc8b835381f759b1dc841aefa01015fbb12dbbe3f.json (initial3targets)",
       "targeted-learning-a8a327eb02e9d7705da9057dcbf79fbf1787057c492463c87637b53bd613c3f5.json (finalparser2targets)",
       "g86-d21-analyze.log (No issues)"
+    ],
+    "nativeRetest": [
+      "g86-d21-stage2.xml",
+      "g86-d21-resumed-stage2.xml",
+      "g86-reading-stage6.xml"
     ]
+  },
+  {
+    "DefectID": "E7-D22",
+    "TestCaseID": "G86-reading-completion-return",
+    "sourceSHA": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+    "title": "Completed reading shows false launcher failure before route disposal",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Navigator result resumes launcher before reverse-animation disposal marks terminal authority. Launcher then tries to abandon the already-completed session.",
+    "expected": "Successful durable completion returns without error and exposes new round immediately.",
+    "actual": "Native session and10attempts are complete, but launcher shows cannot start reading snackbar.",
+    "evidence": [
+      "g86-reading-completed.xml",
+      "g86-reading-after-completion-db/rows.json",
+      "77a513263baf-93eae16bea52-a4a6e6f1/Explicit-Flutter-tests.stdout.log"
+    ],
+    "fix": "Observe committed controller terminal state immediately; remove listener before disposal. Preserve existing compensation and owner/session identity checks.",
+    "status": "fixed-local-verified-native-retest-pending",
+    "fixSHA": null,
+    "retest": "targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json; g86-d22-analyze.log",
+    "diagnostic": "Copied native database recovery and10correct canonical attempts pass; exact diagnostic source archived externally, excluded from portable tests."
   }
 ]

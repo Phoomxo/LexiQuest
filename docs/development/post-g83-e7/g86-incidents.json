@@ -51,6 +51,18 @@
       "resolution": "Use runtime QuizSession construction; assertions unchanged; 77 affected tests passed.",
       "evidence": "3ccf866735e6-c1acfc2f0f77-f13106f2/Explicit-Flutter-tests.stdout.log",
       "status": "resolved-test-fixture"
+    },
+    {
+      "id": "E7-G86-TOOL-03",
+      "kind": "native-input-script-selection",
+      "observed": "First-empty-field traversal skipped clipped field4 and shifted later values; no submission yet.",
+      "resolution": "Stopped traversal, inspected numbered screenshot, corrected4..10before submitting; final10/10 and10canonical attempts independently verified.",
+      "evidence": [
+        "g86-reading-recall-9-5.png",
+        "g86-reading-correct-middle.xml",
+        "g86-reading-stage6.xml"
+      ],
+      "status": "resolved-tool-method"
     }
   ]
 }

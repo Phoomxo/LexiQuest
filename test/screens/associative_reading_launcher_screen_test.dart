@@ -608,6 +608,11 @@ BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
           await tester.tap(find.text('จบกิจกรรม'));
           await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
           await tester.pumpAndSettle();
+          expect(
+            find.text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
+            findsNothing,
+          );
+          expect(find.text('เริ่มรอบใหม่'), findsOneWidget);
           final completedEvents = (await tester.runAsync(() async {
             final sessions = await database
                 .select(database.learningSessions)

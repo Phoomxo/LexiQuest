@@ -727,6 +727,7 @@ final class _AssociativeReadingSessionRouteState
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_onControllerChanged);
     final disabledFeature = _firstDisabledFeature();
     _routeEnabled = disabledFeature == null;
     if (disabledFeature != null) {
@@ -743,6 +744,17 @@ final class _AssociativeReadingSessionRouteState
       _onTerminalFailurePublished,
     );
     if (!_routeEnabled) _beginRollback();
+  }
+
+  void _onControllerChanged() {
+    final state = _controller.state;
+    if ((state.status == LessonSessionStatus.completed ||
+            state.status == LessonSessionStatus.abandoned) &&
+        state.sessionId == widget.sessionId) {
+      // Navigator's result can resolve before the reverse animation disposes
+      // this route. Publish committed terminal state before the launcher resumes.
+      widget.terminalAuthority.markDurableTerminal();
+    }
   }
 
   void _onFeatureChanged() {
@@ -793,6 +805,7 @@ final class _AssociativeReadingSessionRouteState
   void _disposeController() {
     if (_controllerDisposed) return;
     _controllerDisposed = true;
+    _controller.removeListener(_onControllerChanged);
     _controller.dispose();
   }
 
