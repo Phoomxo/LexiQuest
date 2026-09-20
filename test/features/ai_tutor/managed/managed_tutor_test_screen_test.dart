@@ -10,6 +10,52 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'support.dart';
 
 void main() {
+  testWidgets('authenticated chat route activates the tutor connection', (
+    tester,
+  ) async {
+    final h = Harness();
+    final identity = ValueNotifier<ManagedTutorIdentity?>(
+      const ManagedTutorIdentity('owner-a', 'a'),
+    );
+    final bridge = LocalLoginBridge(
+      token: 'local',
+      client: MockClient(
+        (r) async => http.Response(
+          r.url.path == '/login'
+              ? '{"verificationUrl":"https://auth.openai.com/codex/device","userCode":"TEST-CODE"}'
+              : '{"authenticated":true,"inferenceEnabled":true}',
+          200,
+        ),
+      ),
+    );
+    final host = ManagedTutorHost(
+      controller: h.controller,
+      identity: identity,
+      network: const Stream.empty(),
+      enabled: true,
+      clearSession: () async {},
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ManagedTutorTestScreen(
+          host: host,
+          bridge: bridge,
+          openLogin: (_) async {},
+        ),
+      ),
+    );
+    await tester.tap(find.text('เชื่อมบัญชี ChatGPT'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('กรอกเสร็จแล้ว ตรวจสถานะ'));
+    await tester.pump();
+    expect(h.transport.connections, hasLength(1));
+    h.transport.connections.single.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('พร้อมสนทนา'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    identity.dispose();
+  });
   testWidgets('navigation tombstones delayed login and closes it after arrival', (
     tester,
   ) async {

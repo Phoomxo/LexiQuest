@@ -44,11 +44,11 @@ void main() {
     await expectLater(bridge.status(), throwsA(isA<AiTutorException>()));
   });
   test('authenticated login never claims inference ready', () async {
-    var calls = 0;
+    final paths = <String>[];
     final bridge = LocalLoginBridge(
       token: 'local',
-      client: MockClient((_) async {
-        calls++;
+      client: MockClient((request) async {
+        paths.add(request.url.path);
         return http.Response(
           '{"authenticated":true,"inferenceEnabled":false}',
           200,
@@ -80,7 +80,10 @@ void main() {
       ),
       throwsA(isA<AiTutorException>()),
     );
-    expect(calls, 1); // No billable endpoint can be requested.
+    expect(paths, [
+      '/status',
+      '/status',
+    ]); // No connect/reply without readiness.
   });
   test(
     'disconnect clears on bridge and dispose rejects later requests',

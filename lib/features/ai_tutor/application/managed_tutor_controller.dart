@@ -36,6 +36,9 @@ final class ManagedTutorController extends ChangeNotifier {
   ManagedTutorState get state => _state;
   String? _replyText;
   String? get replyText => _replyText;
+  final List<({bool isUser, String text})> _messages = [];
+  List<({bool isUser, String text})> get messages =>
+      List.unmodifiable(_messages);
   ManagedTutorBinding? _binding;
   AiCancellation? _cancellation;
   int _generation = 0;
@@ -74,6 +77,7 @@ final class ManagedTutorController extends ChangeNotifier {
         text.length > 4000) {
       return;
     }
+    _messages.add((isUser: true, text: text));
     await _perform(binding, ManagedTutorState.replying, (cancel) async {
       final reply = await transport.reply(
         binding: binding,
@@ -184,6 +188,7 @@ final class ManagedTutorController extends ChangeNotifier {
     _cancellation = null;
     _binding = null;
     _replyText = null;
+    _messages.clear();
   }
 
   void _stop(ManagedTutorState state) {
@@ -195,6 +200,7 @@ final class ManagedTutorController extends ChangeNotifier {
   void _publish(ManagedTutorState state, {String? reply}) {
     _state = state;
     _replyText = reply;
+    if (reply != null) _messages.add((isUser: false, text: reply));
     notifyListeners();
   }
 

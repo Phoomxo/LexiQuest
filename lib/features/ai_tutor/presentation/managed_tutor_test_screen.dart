@@ -5,6 +5,8 @@ import '../application/managed_tutor_host.dart';
 import '../data/local_login_bridge.dart';
 import '../domain/ai_tutor_contracts.dart';
 import 'managed_tutor_panel.dart';
+import 'managed_practice_card.dart';
+import '../application/managed_tutor_controller.dart';
 
 /// Explicit developer-test composition only. No provider account identifiers.
 class ManagedTutorTestScreen extends StatefulWidget {
@@ -13,7 +15,9 @@ class ManagedTutorTestScreen extends StatefulWidget {
     required this.host,
     required this.bridge,
     required this.openLogin,
+    this.loadWords,
   });
+  final Future<List<Map<String, dynamic>>> Function()? loadWords;
   final ManagedTutorHost host;
   final LocalLoginBridge bridge;
   final Future<void> Function(Uri) openLogin;
@@ -30,11 +34,16 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
   int _epoch = 0;
   Future<void> _work = Future.value();
   PageRoute<dynamic>? _route;
+  List<Map<String, dynamic>> _words = [];
+  String? _selectedId;
+  int _wordsEpoch = 0;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.host.identity.addListener(_ownerChanged);
+    widget.host.controller.addListener(_chatChanged);
+    unawaited(_loadWords());
   }
 
   @override
@@ -48,7 +57,29 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
     }
   }
 
-  void _ownerChanged() => _disconnect();
+  void _chatChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadWords() async {
+    final epoch = ++_wordsEpoch;
+    try {
+      final words = await widget.loadWords?.call() ?? <Map<String, dynamic>>[];
+      if (!mounted || epoch != _wordsEpoch) return;
+      setState(() => _words = words);
+    } on Object {
+      if (mounted && epoch == _wordsEpoch) setState(() => _words = []);
+    }
+  }
+
+  void _ownerChanged() {
+    _words = [];
+    _selectedId = null;
+    widget.bridge.selectedWord = null;
+    _disconnect();
+    unawaited(_loadWords());
+  }
+
   Future<void> _clearBridge() async {
     try {
       await widget.bridge.disconnect();
@@ -114,9 +145,15 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
     try {
       final authenticated = await widget.bridge.status();
       if (!mounted || epoch != _epoch) return;
+      if (authenticated && widget.bridge.inferenceEnabled) {
+        await widget.host.connect();
+        if (!mounted || epoch != _epoch) return;
+      }
       setState(() {
         _status = authenticated
-            ? 'เชื่อมบัญชีแล้ว — ยังไม่เปิดการส่งคำถามจริง'
+            ? (widget.bridge.inferenceEnabled
+                  ? 'เชื่อมบัญชีแล้ว ดูสถานะห้องสนทนาด้านล่าง'
+                  : 'เชื่อมบัญชีแล้ว — ยังไม่เปิดการส่งคำถามจริง')
             : 'ยังไม่เชื่อมบัญชี หรือรหัสหมดอายุ กรุณาเชื่อมใหม่';
       });
     } on Object {
@@ -156,6 +193,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
     WidgetsBinding.instance.removeObserver(this);
     appRouteObserver.unsubscribe(this);
     widget.host.identity.removeListener(_ownerChanged);
+    widget.host.controller.removeListener(_chatChanged);
     widget.host.dispose();
     unawaited(
       _work.then((_) => _clearBridge()).whenComplete(widget.bridge.dispose),
@@ -165,7 +203,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('อารี · ทดสอบการเชื่อมบัญชี')),
+    appBar: AppBar(title: const Text('อารี · ห้องสนทนาทดสอบ')),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
@@ -175,9 +213,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
           const Text(
             'Device-code เป็น beta ต้องเปิดใน ChatGPT security settings ก่อนใช้งาน',
           ),
-          const Text(
-            'ยังไม่เปิดการส่งคำถามจริง: รอยืนยันการจำกัดโควตาโดยไม่ใช้เครดิตเสียเงิน และการปิด agent tools',
-          ),
+          const Text('สนทนาและฝึกคำศัพท์กับอารี ผลการฝึกรอบนี้ไม่เพิ่มคะแนน'),
           const SizedBox(height: 16),
           Semantics(liveRegion: true, child: Text(_status)),
           if (_busy) const LinearProgressIndicator(),
@@ -221,12 +257,71 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
                     },
               child: const Text('เชื่อมบัญชี ChatGPT'),
             ),
+          if (_challenge == null)
+            OutlinedButton(
+              onPressed: _busy
+                  ? null
+                  : () {
+                      _work = _work.then((_) => _check());
+                    },
+              child: const Text('เปิดห้องสนทนา'),
+            ),
           TextButton(
             onPressed: _disconnect,
             child: Text(_busy || _privateLogin ? 'ยกเลิก' : 'ออกจากระบบทดสอบ'),
           ),
           const Divider(height: 32),
+          if (_words.isNotEmpty)
+            DropdownButtonFormField<String>(
+              key: ValueKey(_selectedId),
+              initialValue: _selectedId,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'เลือกคำศัพท์ให้ช่วย',
+              ),
+              items: _words
+                  .map(
+                    (w) => DropdownMenuItem<String>(
+                      value: w['id'] as String,
+                      child: Text(w['spelling'] as String),
+                    ),
+                  )
+                  .toList(),
+              onChanged:
+                  _busy ||
+                      widget.host.controller.state == ManagedTutorState.replying
+                  ? null
+                  : (id) {
+                      widget.host.disconnect();
+                      setState(() {
+                        _selectedId = id;
+                        widget.bridge.toolResults = const [];
+                        widget.bridge.selectedWord = _words.firstWhere(
+                          (w) => w['id'] == id,
+                        );
+                        _status =
+                            'เลือกคำแล้ว กดเปิดห้องสนทนาเพื่อเริ่มบทสนทนาใหม่';
+                      });
+                    },
+            ),
+          const Text(
+            'อารีใช้เฉพาะข้อมูลคำที่เลือกในบทสนทนานี้ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่',
+          ),
           ManagedTutorPanel(controller: widget.host.controller),
+          if (widget.host.controller.state == ManagedTutorState.ready &&
+              widget.bridge.selectedWord != null)
+            for (final receipt in widget.bridge.toolResults)
+              if (receipt['name'] == 'create_practice_draft')
+                ManagedPracticeCard(
+                  word: widget.bridge.selectedWord!,
+                  receipt: receipt,
+                )
+              else
+                Text(
+                  receipt['status'] == 'completed'
+                      ? 'อ่านข้อมูลคำศัพท์สำเร็จ'
+                      : 'อ่านข้อมูลคำศัพท์ไม่สำเร็จ',
+                ),
         ],
       ),
     ),

@@ -4,8 +4,8 @@
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
   "branch": "feature/ari-app-device-integration",
   "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
-  "status": "physical-testing-in-progress",
-  "writerReleased": false,
+  "status": "chat-mcp-live-checkpoint",
+  "writerReleased": true,
   "implementationPushed": false,
   "report": "app-device-integration.md",
   "evidence": "app-device-integration-evidence.json",
@@ -13,10 +13,11 @@
     "opt-in canonical database owner/account host with network, navigation, background/dispose fencing",
     "native private device-code UI with explicit user-owned return check and no automatic auth inspection",
     "isolated ephemeral App Server login broker restricted to loopback and fresh random private capability",
-    "debug package separate from existing application; inherited BYOK/storage unchanged"
+    "debug package separate from existing application; inherited BYOK/storage unchanged",
+    "Bounded isolated managed chat with actual provider turns and real selected-word stdio MCP; validated unscored native practice."
   ],
   "notImplemented": [
-    "Provider inference: no verified provider-enforced quota-only control or validated minimal-tool configuration; /reply and arbitrary RPC are rejected"
+    "Standalone production managed chat and all-menu MCP integration; persistent chat/progress-awarding tools remain open."
   ],
   "verified": {
     "flutter": 17,
@@ -24,26 +25,41 @@
     "analyze": "NO_ISSUES",
     "localBinary": "PRELOGIN_PASS",
     "apk": "BUILD_SIGNATURE_PACKAGE_PASS",
-    "physical": "VIVO_V2041_INSTALL_LAUNCH_DEVICE_LOGIN_PASS"
+    "physical": "VIVO_V2041_INSTALL_LAUNCH_DEVICE_LOGIN_PASS",
+    "chatMcp": "BOUNDED_VIVO_LIVE_PASS"
   },
   "notRun": [
     "Free Thailand",
     "provider revoke",
-    "pilot",
-    "authenticated inference acceptance"
+    "pilot"
   ],
   "v2Gate": "NOT_MET",
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
+    "Latest user priority: demonstrate real in-app chatbot response and a real bounded tool action with visible results. Reuse existing chat UI and managed account foundation; bridge live inference and tool execution before expanding all-menu coverage. Quota/cost research is not the primary development blocker. Do not infer permission to purchase credits or substitute an unapproved paid service.",
     "Close confirmed single-choice/content and accessibility gaps; complete remaining per-entry interaction variants, native process-death/performance/endurance and externally dependent acceptance. Do not rerun unchanged passed targets.",
     "Original accounts must remain intact. Use disposable fixture owners for destructive variants.",
     "Recovery authorization remains active: diagnose, correct and retest; no weakened assertions or false PASS. One writer, no subagents."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
-    "supported provider enforcement for quota-only inference"
+    "Standalone/mobile production provider route, distribution and account-policy acceptance remain open; USB prototype real replies and tools are now proven."
   ],
+  "latestUserPriority": {
+    "date": "2026-09-21",
+    "focus": "Working central in-app chat, real responses and observable tool outcomes before quota/cost investigation",
+    "functionalAcceptance": [
+      "Type a Thai message on Vivo and receive a real provider response in the application",
+      "Follow up using the same conversation context",
+      "Ask about a selected vocabulary item and trace a real bounded tool result into the answer",
+      "A supported app action yields a verifiable result without duplicate effects",
+      "Cancel, unavailable service and stale conversation produce honest visible states"
+    ],
+    "currentEvidence": "Chat UI and managed lifecycle exist; managed live reply and MCP tool loop remain unimplemented/unproven. Login success does not close these criteria.",
+    "referenceStatus": "Astra AI source observations exist in post-g83-e0-e1/reference-observations.json with implementation comparison pending. Exact AllTech reference not yet matched in inspected repository.",
+    "referenceAudit": "User confirmed AllTCAS and Astra AI; local feature map and Astra observations used for vocabulary-context/explanation/practice adaptation."
+  },
   "policy": {
     "subagents": false,
     "modelRequested": "gpt-6-astra",
@@ -56,5 +72,6 @@
   "installedPreviewSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
   "autonomousPlan": "autonomous-test-plan.json",
   "autonomousExecution": "autonomous-run-001.json",
-  "autonomousInventory": "autonomous-inventory.json"
+  "autonomousInventory": "autonomous-inventory.json",
+  "chatMcpExecution": "chat-mcp-001.json"
 }

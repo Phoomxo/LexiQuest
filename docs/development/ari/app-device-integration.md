@@ -1,13 +1,28 @@
-# App/device integration — prelogin checkpoint, 2026-09-21
+# App/device integration — live chat/MCP checkpoint, 2026-09-21
 
 Accepted base: `7407111bbb3f85ae1bc519dfe8b10ed37e501c05`.
-Task `01a0bfbd-9961-7da3-982b-77970bdc7027`; writer retained for the user-authorized device testing continuation.
+Task `01a0bfbd-9961-7da3-982b-77970bdc7027`; writer released at the bounded live chat/MCP checkpoint; broader system acceptance remains open.
 
-**Vivo V2041 installation, launch, browser device authorization and native login status passed. Inference remains disabled.** OpenAI confirmed sign-in and Ari confirmed the account connection after the explicit status check. The bridge has no turn/thread/reply route. [Evidence](app-device-integration-evidence.json) and [handoff](app-device-integration-handoff.json) distinguish login from inference.
+**Vivo V2041 installation, launch, browser device authorization and native login status passed. The authorized chat/MCP prototype now has real Vivo evidence: Thai replies, contextual follow-up, selected-word lookup, unscored practice, cancel/reconnect and USB-offline recovery passed. Standalone production acceptance remains open.** OpenAI confirmed sign-in and Ari confirmed the account connection after the explicit status check. The bridge has no turn/thread/reply route. [Evidence](app-device-integration-evidence.json) and [handoff](app-device-integration-handoff.json) distinguish login from inference.
 
 The user explicitly authorized agent taps using the sole cached account and inspection of consent/settings. The blocked Continue button was caused by the disabled Codex device-code authentication switch. Enabling that switch in web ChatGPT security settings and restarting device authorization resolved it. Developer mode, MFA and the existing native ChatGPT session were not changed. Rapid ADB input omitted a character; paced entry succeeded. No passwords, MFA codes, tokens or device challenge values are recorded in this report. The bridge remains ephemeral with a 15-minute lifetime.
 
 ## Execution plan
+
+Latest user correction, 2026-09-21: prioritize a working in-app chatbot with real responses and observable tool outcomes. Quota/cost investigation is no longer the primary prerequisite for advancing this prototype; the earlier no-inference-until-quota-proof sequencing below is historical. This does not authorize purchasing credits or introducing an unapproved paid provider. Existing login and simulated component tests remain distinct from live response/tool acceptance. Acceptance now begins with Thai send/reply on Vivo, contextual follow-up, selected-word tool retrieval reflected in the answer, a verifiable app action, and cancellation/failure handling. Preserve all earlier open defects without diverting this priority back to broad unrelated testing.
+
+Reference audit before this slice: `lib/screens/ai_tutor_screen.dart` already supplies a conversation UI on the existing BYOK path; `ManagedTutorPanel`/controller supplies managed-session UI and lifecycle but currently holds a reply rather than implementing a complete live conversation/tool loop. `docs/development/post-g83-e0-e1/reference-observations.json` contains Astra AI observations and intended adaptations, with implementation comparison pending. User clarified the names as AllTCAS and Astra AI. AllTCAS maps to `docs/generated/alltcas-idea-integration-feature-map.md` (44-feature contract); Astra observations are in `docs/development/post-g83-e0-e1/reference-observations.json`. MCP was not integrated throughout the menus and the central-chat loop had not yet been demonstrated. The bounded loop is now demonstrated below; all-menu integration remains open.
+
+### Authorized chatbot implementation slice
+
+User authorized adaptation of the named chatbot references to LexiQuest; user confirmed AllTCAS and Astra AI. Adapt canonical lexical context from the AllTCAS-derived feature map and explanation-then-practice from inspected Astra observations. This is a vocabulary-domain adaptation, not a claim to reproduce either complete product.
+
+1. Add a bounded, private developer chat bridge beside the existing login-only diagnostic. Use the pinned App Server binary, isolated ChatGPT login and an ephemeral conversation; implement actual turn completion, contextual follow-up, cancellation and fixed failure responses. Keep the original login diagnostic's acceptance intact. No production deployment, account replacement or data migration.
+2. Add a real stdio MCP server exposing selected-word lookup and a bounded practice draft from an explicit vocabulary snapshot. No arbitrary filesystem, shell, account or reward tools. Validate tool inputs and preserve word identity; distinguish returned tool receipts from generated prose. Test initialize/list/call using the real subprocess before model integration.
+3. Extend the managed Flutter panel to a visible conversation, connect the authorized reply route, provide an explicit selected-word context, and display tool outcomes. Reuse canonical owner fencing; clear context/conversation on identity changes; prevent duplicate send and late replies. Use failing tests before implementation, bounded Python bridge/MCP tests and `verify-scope.ps1 -Level Targeted -Area AI` for affected Flutter targets.
+4. Build only the isolated debug package, preserve the prior APK/account, then exercise Thai message, follow-up, actual MCP lookup/practice, cancellation and failure on Vivo. Record real-provider and simulated results separately with hashes. Provider/login failure is diagnosed while independent work continues; never fabricate live PASS. The USB developer bridge is a prototype dependency, not a claim of standalone mobile distribution.
+
+Official protocol references checked for this slice: [App Server](https://learn.chatgpt.com/docs/app-server) and [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference). Pin actual request shapes against the installed binary schemas before dispatch.
 
 1. Add an opt-in host around ManagedTutorController/Panel. Fence owner/account,
    network, route, background and disposal; test stale completions and cleanup.
@@ -15,7 +30,7 @@ The user explicitly authorized agent taps using the sole cached account and insp
 2. Pin actual App Server login schema. Build an authenticated loopback-only
    developer bridge with isolated memory-only credentials, bounded cleanup and
    no API-key path. Native debug UI must distinguish login from tutor readiness.
-   Do not implement inference unless supported no-tool/quota behavior is established.
+   Historical sequencing: no inference before quota/no-tool investigation. Superseded for this bounded prototype by the latest functional-acceptance authorization above; no paid fallback or credit purchase is inferred.
 3. Run bounded verify-scope tests, focused analysis and local binary prelogin
    smoke. Build and inspect debug APK. Check ADB and install only on identifiable
    user Vivo, preserving installed data. Device absence does not block software.
@@ -224,3 +239,27 @@ Fault run แรกเจอหน้าจอดับและ active Semantic
 Fixture entry points: `integration_test/field_trial_core_journey_test.dart` และ `integration_test/autonomous_device_faults_test.dart`. Build ใช้ `--dart-define=AUTONOMOUS_DEVICE_VIEWPORT=true --android-project-arg=ariLocalTest=true --target-platform android-arm64`; ตรวจ package ก่อน install ทุกครั้ง. Helper `integration_test/support/attach_autonomous_fixture.py` เก็บวิธี attach แบบปิดบัง URL ให้ทำซ้ำได้ โดยรับ `--serial --log --adb --flutter`; helper ฉบับ parameterized ตรวจ syntax/CLI แล้ว แต่ actual native runs ใช้ scratch predecessor ที่บันทึก logs ไว้ ต้องไม่อ่าน UIAutomator หรือส่ง taps อีกช่องทางขณะ driver ทำงาน
 
 **Remaining acceptance:** ทุก interaction variant ของ 64 entries, single-choice/story quality, native save/ack process-death, TalkBack, resource budgets และ endurance180นาทีจริงยังไม่ปิด; endurance ไม่ใช่ external blocker และไม่ได้อ้างว่ารันแล้ว. Live inference/quota/billing/revoke, hosted sync, human speech/learning quality, fresh held-out camera และ actual Anki import ยังแยกเป็นช่องว่างเฉพาะด้าน ห้ามนำ host/native-fixture PASS ไปแทนผลเหล่านี้ แผนยังเป็น `EXECUTING_PARTIAL_ACCEPTANCE_OPEN`; ไม่มี background tester หรือ successor task ที่ทำงานต่อโดยไม่ได้ระบุ
+
+
+## Chat/MCP live execution — 2026-09-21
+
+User confirmed **AllTCAS + Astra AI**. Implemented a bounded vocabulary adaptation: choose canonical personal/shipped vocabulary, ask Ari in the app, keep follow-up context, and open a validated practice draft returned by MCP. The existing production BYOK screen is unchanged; this managed-account route is an explicitly enabled debug prototype that still depends on a USB-connected desktop bridge.
+
+**Observed on Vivo V2041:** authenticated native chat returned a Thai explanation of `bottle` and an example sentence, alongside a successful selected-word MCP receipt. A follow-up asking for practice without repeating the word produced the corresponding MCP draft; the native button opened it. `wrong` produced retry feedback; `BOTTLE` produced correct/unscored feedback. A request cancelled while pending did not publish a late reply; explicit reconnect worked. Switching to `chair` started a new conversation and returned the correct Thai explanation with another lookup receipt. Removing only the test USB reverse mapping produced the offline state; restoring it and explicitly reconnecting recovered. Backgrounding cleared the conversation and the isolated login, confirmed by a fresh status check.
+
+Inputs for these physical prompts were English; responses and practice feedback were Thai. Native Thai keyboard input is not claimed from this run. The safe HTTP/Flutter tests cover Thai payload transport separately. The UI shows Markdown markers as plain text; this and composer scrolling/login layout remain polish work before production integration. Cancelling currently clears the in-memory conversation. No persistent chat history, all-menu tool catalog, progress-awarding practice, standalone mobile backend, or production distribution is claimed.
+
+### Defects found and repaired
+
+- **CHAT-01:** Native login succeeded but opening chat immediately disconnected. Drift invalidated the owner-generation query whenever the lease wrote to the shared runtime-flags table. The watcher now uses `watchSingleOrNull().distinct()` so actual generation changes still invalidate the session, while unrelated lease writes do not. A real in-memory Drift test reproduced `ready` → `disconnected` before the fix and passed after it; physical reopening and three completed provider turns then passed.
+- **CHAT-02:** The word selector omitted the shipped catalog by filtering personal owner rows only. It now reuses `PackagedStarterAccess.wordsFor`, including its exact catalog/manifest authorization rather than trusting a global flag. The catalog tests passed and the physical selector showed the authorized words; `bottle` and `chair` both reached MCP.
+- **CHAT-03:** A completed MCP transport item could contain `isError`; that result must be labelled failed. The new failing test passed after correcting receipt status. This is simulated failure evidence, not a claim that a real tool error occurred during the successful live journey.
+- Readiness is now required before the Flutter bridge can send a reply. Existing login-only mode remains non-inference-capable. Navigation/owner/cancellation fences and bounded HTTP allowlists remain covered.
+
+Verification: **46 managed Flutter tests (8 files), 9 catalog/access tests, and 37 Python tests passed**; focused analysis found no issues; the isolated APK built and installed successfully. Python evidence includes actual stdio MCP subprocesses plus simulated provider protocol/HTTP tests. A separate real pinned App Server smoke discovered and called both MCP tools without model inference. These evidence levels are kept separate in [chat-mcp-001.json](chat-mcp-001.json).
+
+The live APK SHA256 is `3de6bc67a14ca9161ad793a08d3e50f1c941dbd9a39a86cfc12fd8667231e740`, saved locally at `build/ari-chat-prototype.apk`. Native evidence images: [ready](evidence/chat-mcp-001/ari-chat-ready.png), [wrong answer](evidence/chat-mcp-001/ari-practice-wrong.png), [correct answer](evidence/chat-mcp-001/ari-practice-correct.png). No codes, bearer capabilities or account identifiers are in these artifacts.
+
+Recovery notes: USB changed from offline to unauthorized and then authorized after the user reconnected. The browser's separate code fields dropped characters with rapid key injection; verified per-field entry succeeded. Early test-fixture compilation and a missing Drift extension import were corrected; no test was skipped or weakened. Build emitted existing future-Kotlin-plugin compatibility warnings, without failing.
+
+After testing, the isolated session was cleared, the bridge process stopped, its USB reverse mapping removed, stay-awake restored to0, and the prior normal preview APK restored and launched successfully. The original `com.lexiquest.app` remains version23. No background tester, successor task or provider session is left running by this slice. Broader system coverage remains in the existing autonomous ledger; this closes only the bounded functional demonstration above, not V2's full original distribution/Free-plan requirements or whole-app acceptance.

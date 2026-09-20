@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-21 · branch `feature/ari-app-device-integration`
 
-**สถานะปัจจุบัน: Vivo V2041 เชื่อมบัญชีสำเร็จแล้ว; หน้า OpenAI และสถานะอารียืนยันตรงกัน หลังเปิดการอนุญาตรหัสอุปกรณ์ในเว็บตามคำสั่งผู้ใช้. ยังไม่เปิด inference จริง และสะพานทดสอบมีอายุ 15 นาที. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json). V2 NOT_MET.**
+**สถานะปัจจุบัน: ต้นแบบแชตและ MCP ผ่านการสาธิตจริงบน Vivo แล้ว — ตอบไทย ถามต่อ อ่านคำศัพท์ เปิดแบบฝึก ยกเลิก และกู้คืนเมื่อออฟไลน์. ยังพึ่งสะพาน USB และยังไม่ใช่การรับรอง production/ทุกเมนู. [รายงาน](app-device-integration.md#chatmcp-live-execution--2026-09-21) · [หลักฐาน](chat-mcp-001.json). V2 เดิมยัง NOT_MET.**
 
 **ผลก่อนหน้า: V1-R1 diagnostic เสร็จแล้ว — fake tests 17/17 และ binary smoke แบบไม่ล็อกอิน PASS** ตาม [รายงาน V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 

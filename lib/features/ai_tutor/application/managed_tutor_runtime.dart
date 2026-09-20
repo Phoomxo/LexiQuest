@@ -16,10 +16,12 @@ final class ManagedTutorRuntime {
     required ManagedTutorTransport transport,
     required Stream<bool> network,
     required Future<void> Function() clearSession,
+    Duration operationTimeout = const Duration(seconds: 30),
   }) {
     final query = database.select(database.localOwners)
       ..where((row) => row.isActive.equals(true));
     final controller = ManagedTutorController(
+      operationTimeout: operationTimeout,
       transport: transport,
       ownerCoordinator: OwnerOperationCoordinator(
         gate: DriftOwnerOperationGate(database),
@@ -56,7 +58,8 @@ final class ManagedTutorRuntime {
         (database.select(database.runtimeFlags)..where(
               (r) => r.key.equals(RuntimeFlagNamespaces.ownerGeneration),
             ))
-            .watch()
+            .watchSingleOrNull()
+            .distinct()
             .listen(
               (_) {
                 final current = identity.value;

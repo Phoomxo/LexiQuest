@@ -70,10 +70,32 @@ class _ManagedTutorPanelState extends State<ManagedTutorPanel> {
         const SizedBox(height: 8),
         Semantics(liveRegion: true, child: Text(label)),
         if (busy) const LinearProgressIndicator(),
-        if (controller.replyText case final String reply) ...[
-          const SizedBox(height: 12),
-          SelectableText(reply),
-        ],
+        for (final message in controller.messages)
+          Align(
+            alignment: message.isUser
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: message.isUser
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.isUser ? 'คุณ' : 'อารี',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  SelectableText(message.text),
+                ],
+              ),
+            ),
+          ),
         if (ready) ...[
           const SizedBox(height: 12),
           TextField(

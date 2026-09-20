@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'config/m3_theme.dart';
 import 'data/local/app_database.dart';
 import 'features/identity/data/drift_local_owner_repository.dart';
@@ -13,6 +14,7 @@ import 'features/ai_tutor/application/managed_tutor_runtime.dart';
 import 'features/ai_tutor/data/local_login_bridge.dart';
 import 'features/ai_tutor/presentation/managed_tutor_test_screen.dart';
 import 'navigation/app_routes.dart';
+import 'features/vocabulary/data/packaged_starter_access.dart';
 
 /// Separate explicitly enabled debug entry. No Firebase/cloud/research bootstrap.
 Future<void> main() async {
@@ -85,9 +87,10 @@ class _AriTestAppState extends State<_AriTestApp> {
         database: database,
         transport: bridge,
         network: bridge.network,
+        operationTimeout: const Duration(seconds: 110),
         clearSession: () async {
-          // Tutor transport is disabled. Login cleanup is explicitly owned by
-          // the screen, including owner change and private browser handoff.
+          // Controller cancels the active request; screen owns account cleanup
+          // so the private browser login can return without losing its session.
         },
       );
       setState(() {
@@ -126,6 +129,33 @@ class _AriTestAppState extends State<_AriTestApp> {
         : ManagedTutorTestScreen(
             host: _runtime!.host,
             bridge: _bridge!,
+            loadWords: () async {
+              final owner = _runtime!.identity.value?.ownerId;
+              if (owner == null) return [];
+              final db = _database!;
+              final rows =
+                  await (db.select(db.vocabularyWords)
+                        ..where(
+                          (w) =>
+                              PackagedStarterAccess.wordsFor(db, owner) &
+                              w.isDeleted.equals(false),
+                        )
+                        ..orderBy([(w) => OrderingTerm.asc(w.spelling)])
+                        ..limit(50))
+                      .get();
+              if (_runtime!.identity.value?.ownerId != owner) return [];
+              return rows
+                  .map(
+                    (w) => <String, dynamic>{
+                      'id': w.id,
+                      'spelling': w.spelling,
+                      'meaning': w.meaning,
+                      'partOfSpeech': w.partOfSpeech,
+                      'revision': w.contentRevision,
+                    },
+                  )
+                  .toList();
+            },
             openLogin: (_) => const MethodChannel(
               'com.lexiquest.app/ari-test',
             ).invokeMethod<void>('openLogin'),

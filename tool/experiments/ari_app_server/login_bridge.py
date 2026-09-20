@@ -169,10 +169,10 @@ async def start_isolated(binary):
         raise
 
 
-async def run(args):
+async def run(args, session_factory=LoginSession, start_factory=start_isolated, bridge_factory=Bridge):
     token = secrets.token_urlsafe(32)
-    session = LoginSession(lambda: start_isolated(args.binary))
-    bridge = Bridge(session, token)
+    session = session_factory(lambda: start_factory(args.binary))
+    bridge = bridge_factory(session, token)
     # Provision only the designated debug app's private sandbox, never argv/logs.
     # Device identity is checked independently before this explicit invocation.
     config = json.dumps({'token': token}).encode()

@@ -1,18 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": 20,
-  "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
+  "revision": 21,
+  "authorization": "Latest user authorization prioritizes a working chatbot and MCP demonstration, adapting AllTCAS and Astra AI; historical quota-only sequencing is superseded for this bounded prototype. No credit purchase or unapproved paid fallback.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "physical-testing-in-progress",
+  "status": "chat-mcp-live-checkpoint",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
-  "implementationWriter": {
-    "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
-    "scope": "User-authorized sequential Vivo testing and reproduced quiz/dictation/history/handwriting feedback repairs.",
-    "branch": "feature/ari-app-device-integration"
-  },
+  "implementationWriter": null,
   "model": "gpt-6-astra",
   "thinking": "medium",
   "speedPolicy": "Standard/default; no Fast or priority; runtime enforcement not verified by create_thread",
@@ -137,5 +133,7 @@
     "implementationPushed": true,
     "physical": "INSTALL_LAUNCH_LOGIN_PASS"
   },
-  "deviceCoverage": "device-test-matrix.json"
+  "deviceCoverage": "device-test-matrix.json",
+  "chatMcpExecution": "chat-mcp-001.json",
+  "currentWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest"
 }
