@@ -251,5 +251,16 @@
     "dartDefines": {},
     "all33PackagedAssetsMatch": true,
     "nativeRuntimeIntegrity": "PASS: g86-75-default-runtime.log"
+  },
+  "d23Default": {
+    "sourceCommit": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-4fa8cdcc-production-debug.apk",
+    "apkSha256": "c2079fe69928850bbedb2eedd01c5aafebcad21871ba37f067ed3810d2e4bb3f",
+    "installedSha256": "c2079fe69928850bbedb2eedd01c5aafebcad21871ba37f067ed3810d2e4bb3f",
+    "dartDefines": {},
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-d23-runtime.log",
+    "nativeRetest": "g86-d23-message.xml",
+    "durability": "50 attempts, 39 rewards, 20 sessions and all SRS rows unchanged across update/reopen"
   }
 }

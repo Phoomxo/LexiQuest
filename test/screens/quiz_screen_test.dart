@@ -83,6 +83,36 @@ void main() {
             updatedAtUtcMs: 1,
           ),
         );
+    // A real alternative outside the tested category keeps one-question
+    // lifecycle fixtures valid without turning an answer into a giveaway.
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-distractor',
+            ownerId: owner.id,
+            name: 'Alternatives',
+            normalizedName: 'alternatives',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-z-distractor',
+            ownerId: owner.id,
+            categoryId: 'category-distractor',
+            spelling: 'river',
+            normalizedSpelling: 'river',
+            meaning: 'แม่น้ำ',
+            normalizedMeaning: 'แม่น้ำ',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
     learning = LearningUseCases(
       owners: owners,
       repository: DriftLearningRepository(database),
@@ -496,6 +526,114 @@ void main() {
     });
     expect(session.ownerId, ownerId);
     expect(session.sessionConfigurationJson, isNotNull);
+  });
+
+  for (final typed in [false, true]) {
+    testWidgets(
+      'single question loads owner-scoped distractors (typed=$typed)',
+      (tester) async {
+        late String ownerId;
+        await tester.runAsync(() async {
+          ownerId = (await owners.getOrCreateActiveOwner()).id;
+          await _insertWord(
+            database,
+            ownerId: ownerId,
+            id: 'word-2',
+            spelling: 'airport',
+            meaning: 'สนามบิน',
+          );
+        });
+        final configuration = SessionConfiguration.validated(
+          schemaVersion: sessionConfigurationSchemaVersion,
+          policyVersion: sessionConfigurationPolicyVersion,
+          ownerId: ownerId,
+          mode: typed ? LessonMode.typedRecall : LessonMode.meaningQuiz,
+          itemCount: 1,
+          direction: SessionDirection.forward,
+          difficulty: SessionDifficulty.standard,
+          hintBudget: 0,
+          timing: const SessionTiming.timed(Duration(minutes: 5)),
+          packIdentity: null,
+          protocolId: 'protocol:test',
+          protocolVersion: '1',
+          protocolLimitsIdentity: 'limits:test',
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: typed
+                ? QuizScreen.typedRecall(
+                    learning: learning,
+                    evidenceAdapter: CurrentActivityEvidenceAdapter(
+                      learning: learning,
+                    ),
+                    modeAdapter: const TypedRecallModeAdapter(),
+                    sessionConfiguration: configuration,
+                  )
+                : QuizScreen(
+                    learning: learning,
+                    evidenceAdapter: CurrentActivityEvidenceAdapter(
+                      learning: learning,
+                    ),
+                    modeAdapter: const MeaningQuizModeAdapter(),
+                    sessionConfiguration: configuration,
+                  ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('station'));
+        expect(find.text('สนามบิน'), findsOneWidget);
+      },
+    );
+  }
+
+  testWidgets('missing alternatives cannot create recognition evidence', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await (database.delete(
+        database.vocabularyWords,
+      )..where((row) => row.id.equals('word-z-distractor'))).go();
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QuizScreen(
+                    categoryId: 'category-1',
+                    learning: learning,
+                    evidenceAdapter: CurrentActivityEvidenceAdapter(
+                      learning: learning,
+                    ),
+                    modeAdapter: const MeaningQuizModeAdapter(),
+                  ),
+                ),
+              ),
+              child: const Text('Open unavailable quiz'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open unavailable quiz'));
+    await _pumpUntilFound(
+      tester,
+      find.text('ตัวเลือกสำหรับทบทวนยังไม่เพียงพอ'),
+    );
+    expect(find.text('สถานี'), findsNothing);
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+    expect(await database.select(database.rewardTransactions).get(), isEmpty);
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ออก'));
+    await _pumpUntilFound(tester, find.text('Open unavailable quiz'));
+    expect(
+      (await database.select(database.learningSessions).getSingle()).state,
+      'abandoned',
+    );
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
   });
 
   testWidgets('pinned checksum drift abandons the created session', (

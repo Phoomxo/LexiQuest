@@ -512,9 +512,42 @@
     "expected": "Explain insufficient requested count and suggest reducing it without admitting a partial or fake session.",
     "actual": "Two due words with ten requested showed no due words.",
     "fix": "Use count-shortage copy for multi-item configuration; admission and evidence policies unchanged.",
+    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "fixSHA": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+    "evidence": "59e4d601672a-60de5aa32875-ec353b01/Explicit-Flutter-tests.stdout.log",
+    "retest": "targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json; g86-d23-analyze.log",
+    "nativeRetest": [
+      "g86-d23-message.xml",
+      "g86-d23-final-db/rows.json"
+    ]
+  },
+  {
+    "DefectID": "E7-D24",
+    "TestCaseID": "G86-single-question-recognition-options",
+    "sourceSHA": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "title": "One-question choice lesson offers only its correct answer",
+    "rootCause": "Normal quiz and mixed typed-recall sessions derived choices only from selected question words; only attached review loaded an external owner-scoped distractor bank.",
+    "expected": "Provide distinct non-equivalent alternatives or fail closed without answer/reward evidence.",
+    "actual": "One-question bag lesson presented only its correct meaning and accepted it as recognition.",
+    "evidence": [
+      "g86-ghost-seed-question.xml",
+      "g86-single-choice-feedback.xml",
+      "g86-single-result-view.xml",
+      "3640e6a8996c-e7655690da7b-de2776e4/Explicit-Flutter-tests.stdout.log"
+    ],
     "status": "fixed-local-verified-native-retest-pending",
     "fixSHA": null,
-    "evidence": "59e4d601672a-60de5aa32875-ec353b01/Explicit-Flutter-tests.stdout.log",
-    "retest": "targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json; g86-d23-analyze.log"
+    "fix": "Read owner-scoped distractors when a question lacks options; preserve selected question count and attached-review authority; pass bank to mixed typed recall; retain admitted session for explicit cleanup if preparation is unavailable.",
+    "fixtureCorrection": "Existing one-question lifecycle fixtures now include a genuine alternative in a different category; original one-question lifecycle/persistence assertions unchanged. Six route fixtures explicitly opt into a real alternate word; no assertions relaxed.",
+    "testMethodIncident": "First typed-regression attempt used a nonexistent constructor parameter and failed compilation. Corrected to QuizScreen.typedRecall, then verified both normal and typed cases fail on original screen source before restoring fixed source.",
+    "retest": {
+      "combined": "3e8dd471fda9-be09da518967-636c1d02/Explicit-Flutter-tests.stdout.log",
+      "combinedDisposition": "299 passing tests; six failures restricted to choose_mode_screen_test one-word fixtures. Six other target files unchanged and passing evidence retained.",
+      "correctedRoute": "targeted-learning-eaf57345f079d1a8426799df64d9da516c3af578feefe031c3998d07c1a61b4b.json;67passed",
+      "analyzer": "g86-d24-analyze.log;No issues",
+      "negative": "Unavailable quiz exits to abandoned session; no answer or reward; selected session count retained."
+    }
   }
 ]

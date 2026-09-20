@@ -444,6 +444,7 @@ final class TypedRecallModeAdapter
   TypedRecallQuizReviewController createQuizReview({
     required QuizSession session,
     MeaningQuizModeAdapter meaningQuiz = const MeaningQuizModeAdapter(),
+    Iterable<QuizWord> distractorWords = const <QuizWord>[],
     required LearningUseCases learning,
     required CurrentActivityEvidenceAdapter evidence,
     TypedRecallSupportUsage? supportUsage,
@@ -461,7 +462,10 @@ final class TypedRecallModeAdapter
         'Typed recall evidence must use the session LearningUseCases authority.',
       );
     }
-    final questions = meaningQuiz.pinQuestions(session);
+    final questions = meaningQuiz.pinQuestions(
+      session,
+      distractorWords: distractorWords,
+    );
     final typedPrompts = <TypedRecallPrompt?>[
       for (final question in questions)
         if (question.direction == MeaningQuizDirection.meaningToWord)

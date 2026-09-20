@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
-  "status": "partial; remaining native journeys and D21 open",
+  "status": "Native journeys recorded; D24 local fix and native retest pending; external acoustic/physical gates remain pending",
   "emulator": "LexiQuest_API_35",
   "modes": [
     {
@@ -48,22 +48,24 @@
     {
       "mode": "shadowing",
       "configuration": "default",
-      "status": "partial-native-entry-only",
-      "result": "Entered and tapped local voice button; abandoned recorded. No acoustic or microphone acceptance.",
+      "status": "native-permission-and-fallback-only",
+      "result": "One-time microphone permission, retry/listening and no-clear-speech fallback with text practice; no acoustic acceptance.",
       "evidence": [
-        "g86-shadowing-offline.xml",
-        "g86-history-open.xml"
-      ]
+        "g86-shadowing-settled.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015"
     },
     {
       "mode": "flashcard",
-      "status": "empty-due-state-verified",
-      "result": "Due queue is empty; no answer journey claimed",
+      "status": "completed-controlled-fixture",
+      "result": "Two due timestamps explicitly seeded on task-created data; unrevealed self-rating advances SRS, reveal-only exposure does not; temporary unrevised due timestamp restored. Native shortage message verified after update.",
       "evidence": [
-        "g86-flashcard-entry.xml"
+        "g86-srs-finished.xml",
+        "g86-srs-fixture-proof.json",
+        "g86-d23-message.xml"
       ],
-      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
-      "configuration": "local-preview"
+      "sourceCommit": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+      "configuration": "default"
     },
     {
       "mode": "cloze",
@@ -87,48 +89,95 @@
     },
     {
       "mode": "sentenceScramble",
-      "status": "defect-D20-native-retest-pending",
-      "result": "Mixed-language fabricated sentence found; source fix tested",
+      "status": "completed",
+      "result": "Reviewed sentence I carry my clothes in a bag arranged correctly; 100%.",
       "evidence": [
-        "g86-sentence-board.xml"
+        "g86-d20-board.xml",
+        "g86-d20-result.xml"
       ],
-      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
       "configuration": "local-preview"
     },
     {
       "mode": "associativeReading",
-      "status": "defect-D21-open",
-      "result": "Stage1→2 works but cue-fading retains translations",
+      "status": "completed",
+      "result": "Ten-word recall10/10 and original content preserved across stage2 restart through stage6; new one-word round1/1 returns without false failure.",
       "evidence": [
-        "g86-associative-reading.xml",
-        "g86-associative-step2.xml"
+        "g86-d21-stage2.xml",
+        "g86-d21-resumed-stage2.xml",
+        "g86-reading-stage6.xml",
+        "g86-d22-native-return.xml",
+        "g86-final-durable-proof.json"
       ],
-      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
       "configuration": "local-preview"
     },
     {
       "mode": "cefrReading",
-      "status": "pending"
-    },
-    {
-      "mode": "dictation",
-      "status": "pending"
-    },
-    {
-      "mode": "speaking",
-      "status": "pending"
-    },
-    {
-      "mode": "handwritingScratchpad",
-      "status": "partial-native-controls",
-      "result": "Two strokes, undo, clear; no OCR, reward or self-check completion claim",
+      "status": "completed-controls",
+      "result": "A1 local article opened, word selected and finished; levels remain approximate and uncertified; no acoustic-quality claim.",
       "evidence": [
-        "g86-handwriting-strokes.xml",
-        "g86-handwriting-undo.xml",
-        "g86-handwriting-clear.xml"
+        "g86-cefr-a1.xml",
+        "g86-cefr-word-replay.xml",
+        "g86-cefr-finished.xml"
       ],
       "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
       "configuration": "local-preview"
+    },
+    {
+      "mode": "dictation",
+      "status": "completed-typed-submission",
+      "result": "Typed bag accepted100%; playback controls invoked; no listening-accuracy or audio-quality claim.",
+      "evidence": [
+        "g86-dictation-result.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "speaking",
+      "status": "native-permission-and-fallback-only",
+      "result": "Denied permission handled; subsequent one-time permission and retry enter listening then no-clear-speech retry. No acoustic acceptance or successful transcript.",
+      "evidence": [
+        "g86-speaking-settled.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "status": "completed-controls-and-cleanup",
+      "result": "Two strokes/undo/clear, typed bag/self-check invoked, exit and reopen empty; no OCR, canonical score or persistent self-grade claim.",
+      "evidence": [
+        "g86-handwriting-strokes.xml",
+        "g86-handwriting-undo.xml",
+        "g86-handwriting-clear.xml",
+        "g86-handwriting-reopened-empty.xml"
+      ],
+      "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "ghostDuel",
+      "configuration": "default",
+      "sourceCommit": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+      "status": "completed",
+      "result": "Honest no-weakness state, then two deliberately incorrect lesson answers create precondition; two-word duel records two correct recreational attempts and completes.",
+      "evidence": [
+        "g86-ghost-board.xml",
+        "g86-ghost-result.xml",
+        "g86-ghost-proof.json"
+      ]
+    },
+    {
+      "mode": "adventureJourney",
+      "configuration": "default and local-preview",
+      "status": "implemented-off-native-boundary",
+      "result": "Feature.adventureMotivation hidden in fieldDefaults; LearningPreviewFeatureRegistry enables only dailyContinuity. No rollout override applied. Local behavioral tests remain separate; no native Adventure completion claimed.",
+      "sourcePaths": [
+        "lib/runtime/registries/feature_registry.dart",
+        "lib/runtime/learning_preview_feature_registry.dart"
+      ]
     }
   ],
   "otherPaths": {
@@ -136,5 +185,6 @@
     "replay": "passed with persisted recreational evidence and unchanged progress/rewards",
     "defaultCloud": "network disabled; consent declined",
     "physicalProviderAndHuman": "pending; no substitution"
-  }
+  },
+  "sourcePolicy": "Each journey names its actual artifact source; final source reconciliation belongs to G8.8."
 }

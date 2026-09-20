@@ -327,11 +327,38 @@ class _QuizScreenState extends State<QuizScreen> {
     try {
       final session = await load;
       if (!mounted) return session;
+      _session = session;
       if (!session.isEmpty) {
         final lifecycle = _lessonLifecycle;
+        var distractorWords = const <QuizWord>[];
+        final needsDistractors = const MeaningQuizModeAdapter()
+            .pinQuestions(
+              session,
+              direction: widget.typedRecall
+                  ? SessionDirection.mixed
+                  : _sessionConfiguration?.direction ?? SessionDirection.mixed,
+            )
+            .any((question) => question.options.length < 2);
+        if (widget.attachedSession != null || needsDistractors) {
+          final sessionOwnerId = session.ownerId;
+          if (sessionOwnerId == null) {
+            throw StateError('Review distractor authority is unavailable.');
+          }
+          distractorWords = await _learning!.readReviewDistractors(
+            ownerId: sessionOwnerId,
+            excludingWordIds: session.questions.map(
+              (question) => question.word.id,
+            ),
+          );
+          if (distractorWords.isEmpty) {
+            throw const InsufficientMeaningQuizOptions();
+          }
+        }
+        if (!mounted || lifecycle?.acceptsOperations == false) return session;
         if (widget.typedRecall) {
           _typedReview = _typedRecallAdapter!.createQuizReview(
             session: session,
+            distractorWords: distractorWords,
             learning: _learning!,
             evidence: _evidenceAdapter!,
             supportUsage: () => TypedRecallSupport(
@@ -359,23 +386,6 @@ class _QuizScreenState extends State<QuizScreen> {
           if (!mounted || _lessonLifecycle?.acceptsOperations == false) {
             return session;
           }
-          var distractorWords = const <QuizWord>[];
-          if (widget.attachedSession != null) {
-            final sessionOwnerId = session.ownerId;
-            if (sessionOwnerId == null) {
-              throw StateError('Review distractor authority is unavailable.');
-            }
-            distractorWords = await _learning!.readReviewDistractors(
-              ownerId: sessionOwnerId,
-              excludingWordIds: session.questions.map(
-                (question) => question.word.id,
-              ),
-            );
-            if (distractorWords.isEmpty) {
-              throw const InsufficientMeaningQuizOptions();
-            }
-          }
-          if (!mounted) return session;
           final meaningReview = _modeAdapter!.createReview(
             session: session,
             learning: _learning!,
@@ -393,10 +403,9 @@ class _QuizScreenState extends State<QuizScreen> {
             lexicalWords: lexicalWords,
             distractorWords: distractorWords,
           );
-          if (widget.attachedSession != null &&
-              meaningReview.questions.any(
-                (question) => question.options.length < 2,
-              )) {
+          if (meaningReview.questions.any(
+            (question) => question.options.length < 2,
+          )) {
             meaningReview.dispose();
             throw const InsufficientMeaningQuizOptions();
           }
@@ -552,8 +561,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         _lessonLifecycle?.recordInteraction();
                       },
                       onSubmitted: (_) {
-                        if (_typedResponseReady &&
-                            !actionLocked) {
+                        if (_typedResponseReady && !actionLocked) {
                           _recordTyped();
                         }
                       },
@@ -567,9 +575,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     FilledButton(
                       key: const ValueKey<String>('typed-recall-submit'),
                       onPressed:
-                          _isAnswered ||
-                              actionLocked ||
-                              !_typedResponseReady
+                          _isAnswered || actionLocked || !_typedResponseReady
                           ? null
                           : _recordTyped,
                       child: const Text('ตรวจคำตอบ'),
@@ -796,7 +802,9 @@ class _QuizScreenState extends State<QuizScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('ออกจาก Quiz?'),
-        content: const Text('คำตอบที่บันทึกแล้วจะยังอยู่ การออกจะจบเซสชันที่ยังไม่เสร็จ'),
+        content: const Text(
+          'คำตอบที่บันทึกแล้วจะยังอยู่ การออกจะจบเซสชันที่ยังไม่เสร็จ',
+        ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
