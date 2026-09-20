@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
-  "status": "Native journeys recorded; D24 local fix and native retest pending; external acoustic/physical gates remain pending",
+  "status": "local-emulator-coverage-complete; implemented-off and external acoustic/physical gates separately retained",
   "emulator": "LexiQuest_API_35",
   "modes": [
     {
@@ -186,5 +186,9 @@
     "defaultCloud": "network disabled; consent declined",
     "physicalProviderAndHuman": "pending; no substitution"
   },
-  "sourcePolicy": "Each journey names its actual artifact source; final source reconciliation belongs to G8.8."
+  "sourcePolicy": "Each journey names its actual artifact source; final source reconciliation belongs to G8.8.",
+  "finalNativeRetest": {
+    "source": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+    "evidence": "g86-d24-native-proof.json"
+  }
 }

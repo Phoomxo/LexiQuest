@@ -262,5 +262,14 @@
     "nativeRuntimeIntegrity": "PASS: g86-d23-runtime.log",
     "nativeRetest": "g86-d23-message.xml",
     "durability": "50 attempts, 39 rewards, 20 sessions and all SRS rows unchanged across update/reopen"
+  },
+  "d24Default": {
+    "sourceCommit": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-1ec4071d-production-debug.apk",
+    "apkSha256": "77c5014a6bed0a36d6ef36315ac9bb982fac3a77324ad6d71d5562008e3f0604",
+    "installedSha256": "77c5014a6bed0a36d6ef36315ac9bb982fac3a77324ad6d71d5562008e3f0604",
+    "dartDefines": {},
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-d24-runtime.log"
   }
 }

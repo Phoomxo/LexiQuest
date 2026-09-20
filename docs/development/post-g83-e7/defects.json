@@ -537,8 +537,8 @@
       "g86-single-result-view.xml",
       "3640e6a8996c-e7655690da7b-de2776e4/Explicit-Flutter-tests.stdout.log"
     ],
-    "status": "fixed-local-verified-native-retest-pending",
-    "fixSHA": null,
+    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "fixSHA": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
     "fix": "Read owner-scoped distractors when a question lacks options; preserve selected question count and attached-review authority; pass bank to mixed typed recall; retain admitted session for explicit cleanup if preparation is unavailable.",
     "fixtureCorrection": "Existing one-question lifecycle fixtures now include a genuine alternative in a different category; original one-question lifecycle/persistence assertions unchanged. Six route fixtures explicitly opt into a real alternate word; no assertions relaxed.",
     "testMethodIncident": "First typed-regression attempt used a nonexistent constructor parameter and failed compilation. Corrected to QuizScreen.typedRecall, then verified both normal and typed cases fail on original screen source before restoring fixed source.",
@@ -548,6 +548,9 @@
       "correctedRoute": "targeted-learning-eaf57345f079d1a8426799df64d9da516c3af578feefe031c3998d07c1a61b4b.json;67passed",
       "analyzer": "g86-d24-analyze.log;No issues",
       "negative": "Unavailable quiz exits to abandoned session; no answer or reward; selected session count retained."
-    }
+    },
+    "nativeRetest": [
+      "g86-d24-native-proof.json"
+    ]
   }
 ]

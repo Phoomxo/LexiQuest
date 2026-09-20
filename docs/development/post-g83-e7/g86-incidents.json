@@ -63,6 +63,27 @@
         "g86-reading-stage6.xml"
       ],
       "status": "resolved-tool-method"
+    },
+    {
+      "id": "E7-G86-EVIDENCE-01",
+      "kind": "reused-capture-filename",
+      "observed": "Two old shadowing entry pins differ from current bytes; later capture reused the filenames.",
+      "historicalPins": [
+        {
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-entry.png",
+          "sha256": "d55f41cf05c829cd170553b4db037c07482768c8201f67d093a8d676f302f2b2"
+        },
+        {
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-entry.xml",
+          "sha256": "dfba910704cfcd5a319a4b009e09eaa77c84e4858612ffc4857423bc64ad8a01"
+        }
+      ],
+      "recoveredCopies": {
+        "dfba910704cfcd5a319a4b009e09eaa77c84e4858612ffc4857423bc64ad8a01": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-config-0.xml"
+      },
+      "disposition": "Retire those two old pins from acceptance; retain them here without claiming verification. Independent uniquely named offline, one-time permission, retry and settled evidence support the recorded control-only result. Acoustic acceptance remains pending.",
+      "resolution": "New index stores content-addressed archived bytes for every pin; unique filenames required for subsequent captures.",
+      "status": "resolved-current-coverage-historical-two-captures-unavailable"
     }
   ]
 }
