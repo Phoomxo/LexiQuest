@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_FEEDBACK_RETEST_PENDING",
+  "baseCommit": "40588ed8cd2524fcd6b0a6f58a7b0955659ed4a8",
+  "previousGoalTurn": "PROGRESS: optional independent startup implemented and verified",
+  "scope": "Read-only bilingual guidance for all14 enum modes; real shell status and owner fences; visible committed-feedback projection",
+  "host": {
+    "initialRegressionPassed": 159,
+    "finalFeedbackScreenTestsPassed": 47,
+    "finalLessonFeedbackRegressionPassed": 162,
+    "pythonPassed": 44,
+    "counts": "Overlapping selections, not additive",
+    "analysis": "No issues found",
+    "cases": [
+      "All14 mode-specific guidance projections with en/th and actual direction",
+      "No tool action for submitting/scoring; manual control remains usable without scope",
+      "Owner switch and covered route suppress context",
+      "Late owner attachment preserves in-progress draft",
+      "Bounded valid JSON for quoted/control/emoji feedback",
+      "Real controller: read-only snapshots leave exactly one stored answer",
+      "Visible native feedback works when controller feedback is absent"
+    ]
+  },
+  "native": {
+    "apk": "build/ari-optional-assistance.apk",
+    "sha256": "fd6062eb830d255ef2a3256c4a1e9d87ee5ae2b4b47b66fc74ecd0e1990a15ca",
+    "note": "Hash checked below; this APK predates visible-feedback fix",
+    "sourceManifest": "evidence/lesson-assistance-005/source-manifest.json",
+    "package": "com.lexiquest.app.ariTest",
+    "passed": [
+      "Cold launch with no bridge/provider pairing shows original app",
+      "Open optional unpaired section preserves vocabulary tab",
+      "Manual one-question meaning quiz completed 1correct/0wrong with no MCP",
+      "Later optional pairing/login preserves result screen",
+      "Live MCP list_menu_actions reports meaning-quiz forward and 0/1 committed",
+      "Manual answer changes native progress and live MCP reports1/1",
+      "Remove owned USB reverse: AI becomes offline; manual lesson still completes1correct/0wrong"
+    ],
+    "failure": {
+      "id": "ASSIST-01",
+      "actual": "Live AI reports1/1 but cannot see last committed feedback displayed by native Quiz",
+      "cause": "Native Quiz owns AnswerFeedbackPanel; shell reflects count but controller.feedback is null",
+      "fix": "Project the visible committed panel through lesson/committed-feedback, scoped to lesson owner and current route",
+      "hostRetest": "PASS",
+      "nativeRetest": "PENDING_NEW_BUILD"
+    },
+    "evidence": [
+      "evidence/lesson-assistance-005/vivo-baseline-no-mcp-result.png",
+      "evidence/lesson-assistance-005/vivo-after-mcp-offline-result.png",
+      "device-observations.jsonl"
+    ]
+  },
+  "recovery": [
+    "Draft remount reproduced empty typed answer; retain stable binding tree",
+    "Context fixture used unprefixed owner; corrected to actual fixture owner ID; isolation assertions retained",
+    "Dictation fixture tapped disabled button before blank-guard rebuild; pump then assert enabled, durable-commit assertions retained",
+    "Long escaped answer reproduced malformed truncated JSON; bound before encoding and mark truncated"
+  ],
+  "cleanup": {
+    "bridgeStopped": true,
+    "ownedReverseRemoved": true,
+    "listenerClosed": true,
+    "providerProcessAbsent": true,
+    "currentRunTemporaryHomeRemoved": true,
+    "olderUnrelatedHomePreserved": true,
+    "privateCapabilityAbsent": true,
+    "stayAwakeRestored": 0,
+    "originalAppVersionCode": 23
+  },
+  "remaining": [
+    "Build/install visible-feedback fix and verify live native result",
+    "Current-question contextual help beyond mode guidance and committed result",
+    "Representative native coverage and baseline parity for all14 modes",
+    "Remaining workflow typed operations and nonlearning assistance",
+    "Standalone mobile/provider delivery and whole-system acceptance"
+  ],
+  "writerReleased": false
+}

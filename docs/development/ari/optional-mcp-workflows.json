@@ -167,7 +167,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "meaning-quiz",
@@ -178,7 +179,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "typed-recall",
@@ -189,7 +191,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "definition-quiz",
@@ -200,7 +203,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "cloze",
@@ -211,7 +215,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "matching",
@@ -222,7 +227,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "flashcard",
@@ -233,7 +239,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "handwriting-scratchpad",
@@ -244,7 +251,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "dictation",
@@ -255,7 +263,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "speaking",
@@ -266,7 +275,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "shadowing",
@@ -277,7 +287,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "cefr-reading",
@@ -288,7 +299,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "sentence-scramble",
@@ -299,7 +311,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     },
     {
       "id": "word-scramble",
@@ -310,7 +323,8 @@
         "Learner-owned answers and original scoring",
         "No-MCP and connection-loss regression"
       ],
-      "direction": "Respect existing mode capability; do not assume all directions supported"
+      "direction": "Respect existing mode capability; do not assume all directions supported",
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
     }
   ],
   "stages": [
@@ -322,7 +336,7 @@
     {
       "id": "S2",
       "scope": "Bounded context assistance for each learning mode; explicit no-score assistance and stale/owner fences",
-      "status": "PENDING"
+      "status": "PARTIAL_MODE_GUIDANCE_HOST_PASS_NATIVE_FEEDBACK_RETEST_PENDING"
     },
     {
       "id": "S3",
@@ -350,6 +364,12 @@
       "sourceManifest": "evidence/optional-ai-004/source-manifest.json",
       "native": "Not built or exercised for this change yet",
       "remaining": "Full manual data/lesson parity and 14-mode context integration remain open"
+    },
+    {
+      "id": "lesson-assistance-005",
+      "receipt": "lesson-assistance-005.json",
+      "scope": "14 mode descriptors, real lesson status and visible feedback; representative no-MCP/live/offline native journey",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

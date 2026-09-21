@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -77,6 +80,56 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  testWidgets(
+    'optional MCP lesson context reads committed results without adding evidence',
+    (tester) async {
+      final fixture = await _fixture();
+      final registry = MenuActionRegistry(currentOwner: () => fixture.startCommand.ownerId);
+      await fixture.controller.start(fixture.startCommand);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('Original exercise'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(fixture.controller.sessionOwnerId, fixture.startCommand.ownerId);
+      Map readContext() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere((row) => row['id'] == 'lesson/assistance')['value']
+                    as String,
+              )
+              as Map;
+      expect(readContext()['mode'], 'meaning-quiz');
+      expect(readContext()['committedResponses'], 0);
+      expect(readContext().containsKey('lastCommittedFeedback'), isFalse);
+      expect(registry.snapshot()['actions'], isEmpty);
+      await fixture.controller.submit(fixture.submission());
+      await tester.pump();
+      expect(readContext()['committedResponses'], 1);
+      expect(
+        (readContext()['lastCommittedFeedback'] as Map)['correctAnswer'],
+        fixture.controller.feedback!.canonicalCorrectAnswer,
+      );
+      for (var i = 0; i < 5; i++) {
+        readContext();
+      }
+      expect(fixture.controller.state.committedResponseCount, 1);
+      expect(fixture.repository.recordCalls, 1);
+      expect(await fixture.database.select(fixture.database.answerAttempts).get(), hasLength(1));
+      expect(find.text('Original exercise'), findsOneWidget);
+      registry.invalidateSession(preserveContext: true);
+      expect(readContext()['committedResponses'], 1);
+      await tester.pumpWidget(const SizedBox());
+      expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
+
   test(
     'guided repair entry requires acknowledged incorrect feedback',
     () async {
@@ -3772,6 +3825,8 @@ void main() {
         expect(find.byType(AnswerFeedbackPanel), findsNothing);
 
         await tester.enterText(find.byType(TextField), 'wrong');
+        await tester.pump();
+        expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ')).onPressed, isNotNull);
         await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
         await fixture.repository.recordStarted.future;
         await tester.pump();
@@ -3831,6 +3886,8 @@ void main() {
         voice: voice,
       );
       await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.pump();
+      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ')).onPressed, isNotNull);
       await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
       await tester.pumpAndSettle();
 
@@ -3890,6 +3947,8 @@ void main() {
         currentActivityEvidence: evidence,
       );
       await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.pump();
+      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ')).onPressed, isNotNull);
       await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
       await tester.pumpAndSettle();
 
@@ -3942,6 +4001,8 @@ void main() {
         voice: voice,
       );
       await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.pump();
+      expect(tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ')).onPressed, isNotNull);
       await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
       await fixture.repository.recordStarted.future;
       await tester.pump();

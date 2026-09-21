@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ai_tutor/presentation/lesson_assistance_context.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../review/domain/content_quality_report.dart';
@@ -29,7 +30,8 @@ final class AnswerFeedbackPanel extends StatelessWidget {
 
   final AnswerFeedback feedback;
   final VoidCallback? onRetry;
-  final Future<GuidedRepairTicket> Function(GuidedRepairUseCases)? onOpenGuidedRepair;
+  final Future<GuidedRepairTicket> Function(GuidedRepairUseCases)?
+  onOpenGuidedRepair;
   final VoidCallback? onNext;
   final ContentIdentity? bookmarkIdentity;
   final BookmarkLearningItemAction? onBookmark;
@@ -142,10 +144,13 @@ final class AnswerFeedbackPanel extends StatelessWidget {
         ),
       ),
     );
-    return LayoutBuilder(
-      builder: (context, constraints) => constraints.hasBoundedHeight
-          ? SingleChildScrollView(child: panel)
-          : panel,
+    return CommittedFeedbackAssistance(
+      feedback: feedback,
+      child: LayoutBuilder(
+        builder: (context, constraints) => constraints.hasBoundedHeight
+            ? SingleChildScrollView(child: panel)
+            : panel,
+      ),
     );
   }
 }

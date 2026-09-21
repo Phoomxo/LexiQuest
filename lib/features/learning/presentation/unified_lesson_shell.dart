@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../ai_tutor/presentation/lesson_assistance_context.dart';
 
 import 'package:flutter/material.dart';
 
@@ -1562,154 +1563,160 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
     final resetRequired = controller.configurationResetRequired;
-    return AccessibilityScope(
-      child: UnifiedLessonSessionLifecycleScope(
-        ephemeralStates: _ephemeralStates,
-        lifecycle: UnifiedLessonSessionLifecycle._(
-          controller,
-          _now,
-          widget.routeLifecycle,
-          _ephemeralStates,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: <Widget>[
-              AccessibilitySemanticRegion(
-                role: AccessibilitySemanticRole.contextAndProgress,
-                label:
-                    'บทเรียน: ${switch (controller.state.status) {
-                      LessonSessionStatus.planned => 'พร้อมเริ่ม',
-                      LessonSessionStatus.active => 'กำลังเรียน',
-                      LessonSessionStatus.paused => 'หยุดพัก',
-                      LessonSessionStatus.completed => 'เรียนจบแล้ว',
-                      LessonSessionStatus.abandoned => 'ยุติกิจกรรมแล้ว',
-                    }} ความคืบหน้า '
-                    '${(displayedProgress * 100).round()} เปอร์เซ็นต์',
-                child: LinearProgressIndicator(value: displayedProgress),
-              ),
-              if (_focusGateEnabled && !terminal)
-                if (controller.focusTimer case final timer?)
-                  if (timer.snapshot.sessionId != null)
-                    FocusTimerWidget(
-                      controller: timer,
-                      nowUtc: _now,
-                      onStart: controller.startFocusTimer,
-                      onPause: controller.pauseFocusTimer,
-                      onResume: controller.resumeFocusTimer,
-                      onFinish: controller.finishFocusTimer,
-                    ),
-              if (widget.companionBuilder case final companionBuilder?)
-                companionBuilder(context, controller)
-              else
-                ContextualCompanionWidget(
-                  reaction: controller.companionReaction,
+    return LessonAssistanceContext(
+      ownerId: controller.sessionOwnerId,
+      state: controller.state,
+      direction: controller.sessionConfiguration?.direction,
+      feedback: controller.feedback,
+      child: AccessibilityScope(
+        child: UnifiedLessonSessionLifecycleScope(
+          ephemeralStates: _ephemeralStates,
+          lifecycle: UnifiedLessonSessionLifecycle._(
+            controller,
+            _now,
+            widget.routeLifecycle,
+            _ephemeralStates,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: <Widget>[
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.contextAndProgress,
+                  label:
+                      'บทเรียน: ${switch (controller.state.status) {
+                        LessonSessionStatus.planned => 'พร้อมเริ่ม',
+                        LessonSessionStatus.active => 'กำลังเรียน',
+                        LessonSessionStatus.paused => 'หยุดพัก',
+                        LessonSessionStatus.completed => 'เรียนจบแล้ว',
+                        LessonSessionStatus.abandoned => 'ยุติกิจกรรมแล้ว',
+                      }} ความคืบหน้า '
+                      '${(displayedProgress * 100).round()} เปอร์เซ็นต์',
+                  child: LinearProgressIndicator(value: displayedProgress),
                 ),
-              Expanded(
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: controller.admitsLearningTime
-                      ? (_) {
-                          if (widget.routeLifecycle?.acceptsOperations !=
-                              false) {
-                            controller.noteActiveLearningInteraction(_now());
+                if (_focusGateEnabled && !terminal)
+                  if (controller.focusTimer case final timer?)
+                    if (timer.snapshot.sessionId != null)
+                      FocusTimerWidget(
+                        controller: timer,
+                        nowUtc: _now,
+                        onStart: controller.startFocusTimer,
+                        onPause: controller.pauseFocusTimer,
+                        onResume: controller.resumeFocusTimer,
+                        onFinish: controller.finishFocusTimer,
+                      ),
+                if (widget.companionBuilder case final companionBuilder?)
+                  companionBuilder(context, controller)
+                else
+                  ContextualCompanionWidget(
+                    reaction: controller.companionReaction,
+                  ),
+                Expanded(
+                  child: Listener(
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: controller.admitsLearningTime
+                        ? (_) {
+                            if (widget.routeLifecycle?.acceptsOperations !=
+                                false) {
+                              controller.noteActiveLearningInteraction(_now());
+                            }
                           }
-                        }
-                      : null,
-                  child: Builder(
-                    builder: (modeContext) {
-                      final modeSurface = widget.builder(modeContext);
-                      Widget? committedFeedback;
-                      if (controller.feedback case final feedback?) {
-                        committedFeedback = AccessibilitySemanticRegion(
-                          role: AccessibilitySemanticRole.feedback,
-                          child: AnswerFeedbackPanel(
-                            feedback: feedback,
-                            onOpenGuidedRepair: (app) => app.open(
-                              controller.requireGuidedRepairFeedback(),
+                        : null,
+                    child: Builder(
+                      builder: (modeContext) {
+                        final modeSurface = widget.builder(modeContext);
+                        Widget? committedFeedback;
+                        if (controller.feedback case final feedback?) {
+                          committedFeedback = AccessibilitySemanticRegion(
+                            role: AccessibilitySemanticRole.feedback,
+                            child: AnswerFeedbackPanel(
+                              feedback: feedback,
+                              onOpenGuidedRepair: (app) => app.open(
+                                controller.requireGuidedRepairFeedback(),
+                              ),
+                              bookmarkIdentity: feedback.bookmarkIdentity,
+                              onBookmark: bookmarkLearningItem,
+                              reportIdentity: feedback.bookmarkIdentity,
+                              onReport: reportContent,
+                              contrastiveFeedback:
+                                  widget.contrastiveFeedback ??
+                                  dependencies?.contrastiveFeedback,
+                              featureRegistry: dependencies?.features,
                             ),
-                            bookmarkIdentity: feedback.bookmarkIdentity,
-                            onBookmark: bookmarkLearningItem,
-                            reportIdentity: feedback.bookmarkIdentity,
-                            onReport: reportContent,
-                            contrastiveFeedback:
-                                widget.contrastiveFeedback ??
-                                dependencies?.contrastiveFeedback,
-                            featureRegistry: dependencies?.features,
+                          );
+                        }
+                        final AccessibilityModeFeedbackSurface?
+                        accessibleSurface =
+                            modeSurface is AccessibilityModeFeedbackSurface
+                            ? modeSurface as AccessibilityModeFeedbackSurface
+                            : null;
+                        final placedModeSurface = accessibleSurface == null
+                            ? modeSurface
+                            : accessibleSurface.withShellFeedback(
+                                committedFeedback,
+                              );
+
+                        final auxiliary = <Widget>[
+                          if (controller.state.status ==
+                                  LessonSessionStatus.active &&
+                              widget.routeLifecycle?.ownsPairSession != true &&
+                              hintState != null)
+                            HintPanel(
+                              state: hintState,
+                              onRevealNext: controller.revealNextHint,
+                              enabled: controller.canRevealHint,
+                            ),
+                          if (accessibleSurface == null &&
+                              committedFeedback != null)
+                            committedFeedback,
+                          if (resetRequired != null)
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: SessionConfigurationResetPrompt(
+                                error: resetRequired,
+                                onReset: () => Navigator.of(context).maybePop(),
+                              ),
+                            ),
+                          if (controller.configurationLimitReached)
+                            Semantics(
+                              key: const ValueKey(
+                                'session-configuration-limit-reached',
+                              ),
+                              liveRegion: true,
+                              label: 'ถึงขีดจำกัดของกิจกรรมแล้ว',
+                              child: const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('ถึงขีดจำกัดของกิจกรรมแล้ว'),
+                              ),
+                            ),
+                        ];
+                        return LayoutBuilder(
+                          builder: (context, constraints) => Column(
+                            children: <Widget>[
+                              if (auxiliary.isNotEmpty)
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: constraints.maxHeight / 2,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    key: const ValueKey(
+                                      'lesson-auxiliary-scroll',
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: auxiliary,
+                                    ),
+                                  ),
+                                ),
+                              Expanded(child: placedModeSurface),
+                            ],
                           ),
                         );
-                      }
-                      final AccessibilityModeFeedbackSurface?
-                      accessibleSurface =
-                          modeSurface is AccessibilityModeFeedbackSurface
-                          ? modeSurface as AccessibilityModeFeedbackSurface
-                          : null;
-                      final placedModeSurface = accessibleSurface == null
-                          ? modeSurface
-                          : accessibleSurface.withShellFeedback(
-                              committedFeedback,
-                            );
-
-                      final auxiliary = <Widget>[
-                        if (controller.state.status ==
-                                LessonSessionStatus.active &&
-                            widget.routeLifecycle?.ownsPairSession != true &&
-                            hintState != null)
-                          HintPanel(
-                            state: hintState,
-                            onRevealNext: controller.revealNextHint,
-                            enabled: controller.canRevealHint,
-                          ),
-                        if (accessibleSurface == null &&
-                            committedFeedback != null)
-                          committedFeedback,
-                        if (resetRequired != null)
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: SessionConfigurationResetPrompt(
-                              error: resetRequired,
-                              onReset: () => Navigator.of(context).maybePop(),
-                            ),
-                          ),
-                        if (controller.configurationLimitReached)
-                          Semantics(
-                            key: const ValueKey(
-                              'session-configuration-limit-reached',
-                            ),
-                            liveRegion: true,
-                            label: 'ถึงขีดจำกัดของกิจกรรมแล้ว',
-                            child: const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text('ถึงขีดจำกัดของกิจกรรมแล้ว'),
-                            ),
-                          ),
-                      ];
-                      return LayoutBuilder(
-                        builder: (context, constraints) => Column(
-                          children: <Widget>[
-                            if (auxiliary.isNotEmpty)
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: constraints.maxHeight / 2,
-                                ),
-                                child: SingleChildScrollView(
-                                  key: const ValueKey(
-                                    'lesson-auxiliary-scroll',
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: auxiliary,
-                                  ),
-                                ),
-                              ),
-                            Expanded(child: placedModeSurface),
-                          ],
-                        ),
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -197,6 +197,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool _configurationIdle = false;
 
   LessonSessionState get state => _state;
+  String? get sessionOwnerId => _sessionOwnerId;
   SessionConfiguration? get sessionConfiguration => _sessionConfiguration;
   SessionConfigurationResetRequired? get configurationResetRequired =>
       _configurationResetRequired;
@@ -214,12 +215,15 @@ final class UnifiedLessonController extends ChangeNotifier {
     _requireNoTerminalMutation('open guided repair');
     _requireNoUncommittedSubmission('open guided repair');
     final value = _feedback;
-    if ((_state.status != LessonSessionStatus.active && _state.status != LessonSessionStatus.paused) ||
-        value == null || value.isCorrect) {
+    if ((_state.status != LessonSessionStatus.active &&
+            _state.status != LessonSessionStatus.paused) ||
+        value == null ||
+        value.isCorrect) {
       throw StateError('Guided repair requires committed incorrect feedback');
     }
     return value;
   }
+
   CompanionReaction? get companionReaction => _companionReaction;
   HintState? get hintState => _hints?.state;
   HintUsageSnapshot snapshotHintUsageForAcceptedEvidence() {
