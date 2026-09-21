@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -143,15 +145,22 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
                       : () => _replayPair(pairResult),
                 );
               }
-              return _HistoryCard(
-                key: ValueKey('learning-history-${entry.sessionId}'),
-                entry: entry,
-                opening: _openingSessionId == entry.sessionId,
-                replayEnabled:
-                    _openingSessionId == null &&
-                    entry.contentAvailability ==
-                        LearningHistoryContentAvailability.available,
-                onReplay: () => _replay(entry),
+              return MenuActionBinding(
+                id: 'history/session/$index',
+                label: 'ข้อมูลประวัติการเรียนรายการที่ ${index + 1}',
+                ownerId: entry.ownerId,
+                onInvoke: null,
+                readValue: _historyAssistance(entry),
+                child: _HistoryCard(
+                  key: ValueKey('learning-history-${entry.sessionId}'),
+                  entry: entry,
+                  opening: _openingSessionId == entry.sessionId,
+                  replayEnabled:
+                      _openingSessionId == null &&
+                      entry.contentAvailability ==
+                          LearningHistoryContentAvailability.available,
+                  onReplay: () => _replay(entry),
+                ),
               );
             },
           );
@@ -509,6 +518,39 @@ String _pairElapsedLabel(
       : 'เวลาเรียนจริงทั้งรอบ $seconds วินาที';
 }
 
+String? _historyInterpretation(LessonMode? mode) => switch (mode) {
+  LessonMode.flashcard => 'บัตรคำใช้การประเมินความจำด้วยตนเอง ไม่ใช่คะแนนสอบ',
+  LessonMode.meaningQuiz ||
+  LessonMode.definitionQuiz => 'กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก',
+  LessonMode.cloze => 'กิจกรรมตอบคำถามจากบริบทของประโยค',
+  LessonMode.associativeReading =>
+    'การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง',
+  _ => null,
+};
+
+String _historyAssistance(LearningHistoryEntry entry) => jsonEncode({
+  'scope': 'one-displayed-session-not-overall-proficiency',
+  'mode': entry.mode?.name,
+  'state': entry.terminalState.name,
+  'activeSeconds': entry.activeLearningDuration.inSeconds,
+  if (entry.assessmentSummary == null) ...{
+    'firstAnswers': {
+      'correct': entry.firstAnswers.correct,
+      'total': entry.firstAnswers.total,
+    },
+    'repairAnswers': {
+      'correct': entry.repairAnswers.correct,
+      'total': entry.repairAnswers.total,
+    },
+    'interpretation': _historyInterpretation(entry.mode),
+    'localCefrMetadataUnavailable': entry.localCefrPresentation != null,
+  } else ...{
+    'assessmentPhase': entry.assessmentSummary!.phase.name,
+    'assessmentCorrect': entry.assessmentSummary!.correctCount,
+    'assessmentSampleSize': entry.assessmentSummary!.sampleSize,
+  },
+});
+
 final class _HistoryCard extends StatelessWidget {
   const _HistoryCard({
     super.key,
@@ -587,17 +629,8 @@ final class _HistoryCard extends StatelessWidget {
                   Text(
                     'ฝึกซ้ำแก้คำตอบ ${entry.repairAnswers.correct}/${entry.repairAnswers.total}',
                   ),
-                if (entry.mode == LessonMode.meaningQuiz ||
-                    entry.mode == LessonMode.definitionQuiz)
-                  const Text('กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก'),
-                if (entry.mode == LessonMode.cloze)
-                  const Text('กิจกรรมตอบคำถามจากบริบทของประโยค'),
-                if (entry.mode == LessonMode.flashcard)
-                  const Text(
-                    'บัตรคำใช้การประเมินความจำด้วยตนเอง ไม่ใช่คะแนนสอบ',
-                  ),
-                if (entry.mode == LessonMode.associativeReading)
-                  const Text('การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง'),
+                if (_historyInterpretation(entry.mode) case final explanation?)
+                  Text(explanation),
                 const SizedBox(height: 4),
                 Text(durationLabel),
               ] else ...[

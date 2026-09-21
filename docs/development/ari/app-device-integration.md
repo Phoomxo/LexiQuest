@@ -389,3 +389,8 @@ Reproduced and fixed mounted owner-bound context missing after late AI login. Ex
 ### Study-plan assistance012 — 2026-09-21
 
 W08 now exposes separate owner-bound summaries of actual proposed and accepted plans to optional AI. Counts, revision, budget, day/timezone and deadline flags come from displayed domain plans; busy/error/unowned states expose nothing. Native controls and persistence remain unchanged. Real-storage test verifies preview does not persist, native acceptance updates summary and owner switch hides context. Screen tests, 7 Python chat tests and analysis passed. [Evidence](study-plan-assistance-012.json). Native and remaining W08 acceptance are pending.
+
+
+### History assistance013 — 2026-09-21
+
+Owner-bound ordinary history cards expose session evidence separately to optional AI. First/repair answers, self-assessment and reading exposure retain distinct meanings; no overall proficiency inferred. All18 history screen tests, 7 Python chat tests and targeted analysis passed. New context tests use fixture readers. [Evidence](history-assistance-013.json). Pair history, assessment-specific acceptance and native verification remain open. Writer retained; full14 scope remains open.

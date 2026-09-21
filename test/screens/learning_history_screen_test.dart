@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart'
@@ -46,24 +49,40 @@ void main() {
     testWidgets('R15 history explains ${sample.$1.name} evidence', (
       tester,
     ) async {
+      String? owner = 'owner:history';
+      final registry = MenuActionRegistry(currentOwner: () => owner);
       await tester.pumpWidget(
-        _app(
-          reader: _Reader([
-            _entry(
-              sessionId: 'semantic-history',
-              mode: sample.$1,
-              state: LearningHistoryTerminalState.completed,
-              packTitle: null,
-              localWordSet: true,
-              duration: const Duration(minutes: 1),
-              startedAtUtc: DateTime.utc(2026, 9, 13),
-            ),
-          ]),
+        MenuActionScope(
+          registry: registry,
+          child: _app(
+            reader: _Reader([
+              _entry(
+                sessionId: 'semantic-history',
+                mode: sample.$1,
+                state: LearningHistoryTerminalState.completed,
+                packTitle: null,
+                localWordSet: true,
+                duration: const Duration(minutes: 1),
+                startedAtUtc: DateTime.utc(2026, 9, 13),
+              ),
+            ]),
+          ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.text(sample.$2), findsOneWidget);
       expect(find.textContaining('100%'), findsNothing);
+      final context = registry.snapshot()['context'] as List;
+      final data =
+          jsonDecode(context.single['value'] as String) as Map<String, dynamic>;
+      expect(data['mode'], sample.$1.name);
+      expect(data['state'], 'completed');
+      expect(data['interpretation'], sample.$2);
+      expect(data['firstAnswers']['total'], 0);
+      expect(data.containsKey('score'), isFalse);
+      expect(registry.snapshot()['actions'], isEmpty);
+      owner = 'other';
+      expect(registry.snapshot()['context'], isEmpty);
     });
   }
 
