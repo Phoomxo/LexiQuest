@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -19,19 +22,91 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
-  for (final interruption in ['replacement', 'background', 'cover', 'new-scan']) {
-    testWidgets('F04 stale scanner speech stays silent after $interruption', (tester) async {
+  for (final mapped in [true, false]) {
+    testWidgets(
+      'optional camera context distinguishes mapping mapped=$mapped',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final registry = MenuActionRegistry(currentOwner: () => 'test');
+        final voice = VoiceUseCases(
+          provider: _FakeVoice(),
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
+        final scanner = _FakeScanner()
+          ..captureResult = mapped
+              ? _fakeObjectScanResult()
+              : _fakeUnmappedScanResult();
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: ObjectScannerScreen(scanner: scanner, voice: voice),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('object-scanner-capture-button')),
+        );
+        await tester.pumpAndSettle();
+        final data = jsonDecode(
+          (registry.snapshot()['context'] as List).single['value'] as String,
+        );
+        expect(data['vocabularyMapped'], mapped);
+        expect(data['saved'], false);
+        expect(data['english'], mapped ? 'apple' : null);
+        expect(data['confidence'], mapped ? 0.91 : 0.78);
+        expect(data.containsKey('image'), false);
+        expect(registry.snapshot()['actions'], isEmpty);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pumpAndSettle();
+        final cleared = jsonDecode(
+          (registry.snapshot()['context'] as List).single['value'] as String,
+        );
+        expect(cleared.containsKey('english'), false);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+
+  for (final interruption in [
+    'replacement',
+    'background',
+    'cover',
+    'new-scan',
+  ]) {
+    testWidgets('F04 stale scanner speech stays silent after $interruption', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(const Size(800, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final provider = _DeferredScannerVoice();
-      final voice = VoiceUseCases(provider: provider, disposeProvider: () async {});
+      final voice = VoiceUseCases(
+        provider: provider,
+        disposeProvider: () async {},
+      );
       addTearDown(voice.dispose);
       final navigator = GlobalKey<NavigatorState>();
-      await tester.pumpWidget(MaterialApp(navigatorKey: navigator,
-        navigatorObservers: [appRouteObserver],
-        home: ObjectScannerScreen(scanner: _FakeScanner(), voice: voice)));
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          navigatorObservers: [appRouteObserver],
+          home: ObjectScannerScreen(scanner: _FakeScanner(), voice: voice),
+        ),
+      );
       await tester.pumpAndSettle();
-      final capture = find.byKey(const ValueKey('object-scanner-capture-button'));
+      final capture = find.byKey(
+        const ValueKey('object-scanner-capture-button'),
+      );
       await tester.tap(capture);
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.volume_up_outlined));
@@ -44,20 +119,35 @@ void main() {
           expect(provider.calls, hasLength(2));
           provider.calls[1].complete(_scannerVoiceResult);
         case 'background':
-          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
         case 'cover':
-          unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
-            builder: (_) => const Scaffold(body: Text('Cover')))));
+          unawaited(
+            navigator.currentState!.push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: Text('Cover')),
+              ),
+            ),
+          );
         case 'new-scan':
           await tester.tap(capture);
       }
       await tester.pumpAndSettle();
-      expect(find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน', skipOffstage: false), findsNothing);
+      expect(
+        find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน', skipOffstage: false),
+        findsNothing,
+      );
       provider.calls[0].completeError(StateError('retired speech'));
       await tester.pumpAndSettle();
-      expect(find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน', skipOffstage: false), findsNothing);
+      expect(
+        find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน', skipOffstage: false),
+        findsNothing,
+      );
       if (interruption == 'background') {
-        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
         await tester.pumpAndSettle();
       }
       if (interruption == 'cover') {
@@ -70,15 +160,26 @@ void main() {
       await tester.pumpAndSettle();
     });
   }
-  testWidgets('F04 current scanner speech failure remains visible', (tester) async {
+  testWidgets('F04 current scanner speech failure remains visible', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(800, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final provider = _DeferredScannerVoice();
-    final voice = VoiceUseCases(provider: provider, disposeProvider: () async {});
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
     addTearDown(voice.dispose);
-    await tester.pumpWidget(MaterialApp(home: ObjectScannerScreen(scanner: _FakeScanner(), voice: voice)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(scanner: _FakeScanner(), voice: voice),
+      ),
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('object-scanner-capture-button')));
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.volume_up_outlined));
     await tester.pump();
@@ -90,28 +191,46 @@ void main() {
   });
 
   for (final fails in [false, true]) {
-    testWidgets('F01 background benchmark cannot publish after resume fails=$fails', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(800, 1400));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final pending = Completer<void>();
-      final scanner = _FakeScanner()..benchmarkPending = pending;
-      await tester.pumpWidget(MaterialApp(home: ObjectScannerScreen(
-        scanner: scanner,
-        voice: VoiceUseCases(provider: _FakeVoice(), disposeProvider: () async {}),
-      )));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('object-scanner-benchmark-model')));
-      await tester.pump();
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      await tester.pump();
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump();
-      if (fails) { pending.completeError(StateError('old benchmark')); } else { pending.complete(); }
-      await tester.pumpAndSettle();
-      expect(find.textContaining('peakRSS='), findsNothing);
-      expect(find.text('การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+    testWidgets(
+      'F01 background benchmark cannot publish after resume fails=$fails',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final pending = Completer<void>();
+        final scanner = _FakeScanner()..benchmarkPending = pending;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ObjectScannerScreen(
+              scanner: scanner,
+              voice: VoiceUseCases(
+                provider: _FakeVoice(),
+                disposeProvider: () async {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('object-scanner-benchmark-model')),
+        );
+        await tester.pump();
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        if (fails) {
+          pending.completeError(StateError('old benchmark'));
+        } else {
+          pending.complete();
+        }
+        await tester.pumpAndSettle();
+        expect(find.textContaining('peakRSS='), findsNothing);
+        expect(find.text('การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
   testWidgets(
     'B11 save error retains preview and retry waits for durable acknowledgement',
@@ -1538,8 +1657,13 @@ final class _FakeVoice implements VoiceProvider {
   }
 }
 
-const _scannerVoiceResult = VoicePlaybackResult(requestedEngine: VoiceEngine.nativeTts,
-  actualEngine: VoiceEngine.nativeTts, usedFallback: false, cacheHit: false);
+const _scannerVoiceResult = VoicePlaybackResult(
+  requestedEngine: VoiceEngine.nativeTts,
+  actualEngine: VoiceEngine.nativeTts,
+  usedFallback: false,
+  cacheHit: false,
+);
+
 final class _DeferredScannerVoice implements VoiceProvider {
   final calls = <Completer<VoicePlaybackResult>>[];
   @override
@@ -1548,6 +1672,7 @@ final class _DeferredScannerVoice implements VoiceProvider {
     calls.add(call);
     return call.future;
   }
+
   @override
   Future<void> stop() async {}
 }

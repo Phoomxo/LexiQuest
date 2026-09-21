@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/device_model/application/model_benchmark.dart';
@@ -473,8 +475,10 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
-      _cameraForeground = false;
-      _invalidateCapture();
+      setState(() {
+        _cameraForeground = false;
+        _invalidateCapture();
+      });
       _downloadCancellation?.cancel();
       _scannerLease?.pause().ignore();
     }
@@ -505,148 +509,196 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final result = _result;
     final epoch = _captureEpoch;
     final scannerReady = _scannerLease?.isReady == true;
-    return Scaffold(
-      appBar: AppBar(title: const Text('สแกนวัตถุเป็นคำศัพท์')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text('จัดวัตถุให้อยู่กลางภาพและใช้แสงเพียงพอ'),
-            const SizedBox(height: 12),
-            AspectRatio(
-              aspectRatio: 4 / 3,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: ColoredBox(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: _initializing
-                      ? const Center(child: CircularProgressIndicator())
-                      : scannerReady
-                      ? scanner.buildPreview()
-                      : const Center(
-                          child: Icon(Icons.no_photography_outlined, size: 64),
-                        ),
+    return MenuActionBinding(
+      id: 'camera/assistance',
+      label: 'Current object scan evidence',
+      onInvoke: null,
+      readValue: jsonEncode({
+        'ready': scannerReady && _cameraForeground,
+        'capturing': _capturing,
+        'modelUnavailable': _modelUnavailable,
+        'saving': _saving,
+        'interpretation': 'model-suggestion-not-ground-truth-no-image-shared',
+        if (result != null) ...{
+          'label': String.fromCharCodes(
+            (result.matchedClassification ?? result.primary).label.runes.take(
+              30,
+            ),
+          ),
+          'confidence':
+              (result.matchedClassification ?? result.primary).confidence,
+          'vocabularyMapped': result.vocabulary != null,
+          'textTruncated':
+              (result.matchedClassification ?? result.primary)
+                      .label
+                      .runes
+                      .length >
+                  30 ||
+              (result.vocabulary?.englishWord.runes.length ?? 0) > 30 ||
+              (result.vocabulary?.thaiTranslation.runes.length ?? 0) > 30,
+          'saved': _accepted,
+          if (result.vocabulary != null) ...{
+            'english': String.fromCharCodes(
+              result.vocabulary!.englishWord.runes.take(30),
+            ),
+            'thai': String.fromCharCodes(
+              result.vocabulary!.thaiTranslation.runes.take(30),
+            ),
+          },
+        },
+      }),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('สแกนวัตถุเป็นคำศัพท์')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text('จัดวัตถุให้อยู่กลางภาพและใช้แสงเพียงพอ'),
+              const SizedBox(height: 12),
+              AspectRatio(
+                aspectRatio: 4 / 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ColoredBox(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: _initializing
+                        ? const Center(child: CircularProgressIndicator())
+                        : scannerReady
+                        ? scanner.buildPreview()
+                        : const Center(
+                            child: Icon(
+                              Icons.no_photography_outlined,
+                              size: 64,
+                            ),
+                          ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              key: const ValueKey<String>('object-scanner-capture-button'),
-              onPressed: scannerReady && !_capturing && !_saving
-                  ? _capture
-                  : null,
-              icon: _capturing
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.camera_alt_outlined),
-              label: Text(
-                _capturing
-                    ? 'กำลังวิเคราะห์...'
-                    : scannerReady && (result != null || _error != null)
-                    ? 'ถ่ายใหม่'
-                    : 'ถ่ายภาพและวิเคราะห์',
-              ),
-            ),
-            if (scannerReady) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                key: const ValueKey<String>('object-scanner-benchmark-model'),
-                onPressed: _benchmarking || _capturing ? null : _benchmarkModel,
-                icon: _benchmarking
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const ValueKey<String>('object-scanner-capture-button'),
+                onPressed: scannerReady && !_capturing && !_saving
+                    ? _capture
+                    : null,
+                icon: _capturing
                     ? const SizedBox.square(
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.speed_outlined),
+                    : const Icon(Icons.camera_alt_outlined),
                 label: Text(
-                  _benchmarking
-                      ? 'กำลังทดสอบ CPU/XNNPACK...'
-                      : 'ทดสอบประสิทธิภาพ CPU/XNNPACK',
+                  _capturing
+                      ? 'กำลังวิเคราะห์...'
+                      : scannerReady && (result != null || _error != null)
+                      ? 'ถ่ายใหม่'
+                      : 'ถ่ายภาพและวิเคราะห์',
                 ),
               ),
-            ],
-            if (_benchmarks.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Card(
-                key: const ValueKey<String>('object-scanner-benchmark-result'),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
-                      for (final result in _benchmarks)
-                        Text(_benchmarkSummary(result)),
-                    ],
+              if (scannerReady) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('object-scanner-benchmark-model'),
+                  onPressed: _benchmarking || _capturing
+                      ? null
+                      : _benchmarkModel,
+                  icon: _benchmarking
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.speed_outlined),
+                  label: Text(
+                    _benchmarking
+                        ? 'กำลังทดสอบ CPU/XNNPACK...'
+                        : 'ทดสอบประสิทธิภาพ CPU/XNNPACK',
                   ),
                 ),
-              ),
-            ],
-            if (_modelUnavailable) ...[
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                key: const ValueKey<String>('object-scanner-download-model'),
-                onPressed: _downloading
-                    ? () => _downloadCancellation?.cancel()
-                    : _downloadModel,
-                icon: Icon(_downloading ? Icons.stop : Icons.download),
-                label: Text(
-                  _downloading
-                      ? 'ยกเลิกดาวน์โหลด'
-                      : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
-                ),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                key: const ValueKey<String>('object-scanner-error'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              if (!scannerReady && !_initializing && !_modelUnavailable)
-                OutlinedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _initializing = true;
-                      _error = null;
-                    });
-                    _initialize();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('ลองเปิดกล้องอีกครั้ง'),
-                ),
-            ],
-            if (result != null) ...[
-              const SizedBox(height: 16),
-              _ResultCard(
-                result: result,
-                accepted: _accepted,
-                saving: _saving,
-                onSpeak: () => _speak(
-                  result.vocabulary?.englishWord ??
-                      (result.matchedClassification ?? result.primary).label,
-                ),
-                onAccept: result.vocabulary == null
-                    ? null
-                    : () => _accept(result, epoch),
-              ),
-              if (result.vocabulary == null)
-                OutlinedButton.icon(
-                  onPressed: () => AppNavigator.pushPage<void>(
-                    context,
-                    AppPage<void>(
-                      name: 'vocabulary/create',
-                      builder: (_) => const CategoriesPage(),
+              ],
+              if (_benchmarks.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Card(
+                  key: const ValueKey<String>(
+                    'object-scanner-benchmark-result',
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
+                        for (final result in _benchmarks)
+                          Text(_benchmarkSummary(result)),
+                      ],
                     ),
                   ),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('เพิ่มคำด้วยตนเอง'),
                 ),
+              ],
+              if (_modelUnavailable) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('object-scanner-download-model'),
+                  onPressed: _downloading
+                      ? () => _downloadCancellation?.cancel()
+                      : _downloadModel,
+                  icon: Icon(_downloading ? Icons.stop : Icons.download),
+                  label: Text(
+                    _downloading
+                        ? 'ยกเลิกดาวน์โหลด'
+                        : 'ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว',
+                  ),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  key: const ValueKey<String>('object-scanner-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                if (!scannerReady && !_initializing && !_modelUnavailable)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _initializing = true;
+                        _error = null;
+                      });
+                      _initialize();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('ลองเปิดกล้องอีกครั้ง'),
+                  ),
+              ],
+              if (result != null) ...[
+                const SizedBox(height: 16),
+                _ResultCard(
+                  result: result,
+                  accepted: _accepted,
+                  saving: _saving,
+                  onSpeak: () => _speak(
+                    result.vocabulary?.englishWord ??
+                        (result.matchedClassification ?? result.primary).label,
+                  ),
+                  onAccept: result.vocabulary == null
+                      ? null
+                      : () => _accept(result, epoch),
+                ),
+                if (result.vocabulary == null)
+                  OutlinedButton.icon(
+                    onPressed: () => AppNavigator.pushPage<void>(
+                      context,
+                      AppPage<void>(
+                        name: 'vocabulary/create',
+                        builder: (_) => const CategoriesPage(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('เพิ่มคำด้วยตนเอง'),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -439,3 +439,8 @@ Owner-bound quest context exposes persisted state/progress and conditional rewar
 ### Rewards assistance023 — 2026-09-21
 
 Owner-bound shop account and catalog contexts separate coins/XP/level and unlocked/owned/equipped/preview states. Canonical avatar load supplies owner metadata; ownerless fixtures are not shared. No new purchase/equip tools. Real Drift context assertions and full equipment regression suite passed; analysis clean. [Evidence](rewards-assistance-023.json). Native and fullW10 acceptance pending.
+
+
+### Camera assistance024 — 2026-09-21
+
+Optional scan context distinguishes model confidence, mapped vocabulary and accepted persistence without images. New background test exposed stale context after internal invalidation; lifecycle now schedules rebuild and retest passed. Full scanner suite plus final2context cases passed. [Evidence](camera-assistance-024.json). Fake-sensor evidence only; native quality and connection-mode acceptance remain open.
