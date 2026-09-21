@@ -81,6 +81,7 @@ void main() {
         ownerId: 'owner-1',
         nowUtc: DateTime.utc(2026, 7, 30, 12),
       );
+      expect(result.ownerId, 'owner-1');
 
       expect(result.sampleSize, 0);
       expect(result.accuracy, isNull);

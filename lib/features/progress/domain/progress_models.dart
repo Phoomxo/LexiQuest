@@ -62,6 +62,7 @@ final class AchievementEvidence {
 
 final class ProgressSnapshot {
   const ProgressSnapshot({
+    this.ownerId,
     required this.sampleSize,
     required this.correctCount,
     required this.wrongCount,
@@ -82,6 +83,8 @@ final class ProgressSnapshot {
     this.latestEvidenceAtUtc,
   });
 
+  /// Data owner from the canonical query; absent legacy fixtures cannot be shared.
+  final String? ownerId;
   final int sampleSize;
   final int correctCount;
   final int wrongCount;

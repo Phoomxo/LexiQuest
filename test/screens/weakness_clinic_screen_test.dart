@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +30,36 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'optional weakness evidence is owner-bound and distinguishes due',
+    (tester) async {
+      String? owner = 'weakness-owner';
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: WeaknessClinicScreen(loader: () async => _snapshot),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final entries = registry.snapshot()['context'] as List;
+      final data = entries
+          .map((e) => jsonDecode(e['value'] as String) as Map<String, dynamic>)
+          .toList();
+      expect(data.any((e) => e['dueReviewCount'] == 1), true);
+      final word = data.singleWhere((e) => e.containsKey('spelling'));
+      expect(word['spelling'], 'ephemeral');
+      expect(word['incorrectCount'], 2);
+      expect(word['sampleSize'], 3);
+      expect(word['interpretation'], 'incorrect-history-not-necessarily-due');
+      expect(registry.snapshot()['actions'], isEmpty);
+      owner = 'other';
+      expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
+
   testWidgets('displays weaknesses derived from attempt evidence', (
     tester,
   ) async {
@@ -182,6 +215,7 @@ final class _WeaknessProtocols implements SessionConfigurationProtocolProvider {
 }
 
 const _snapshot = ProgressSnapshot(
+  ownerId: 'weakness-owner',
   sampleSize: 3,
   correctCount: 1,
   wrongCount: 2,

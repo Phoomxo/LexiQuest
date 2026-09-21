@@ -1,0 +1,10 @@
+{
+  "files": {
+    "lib/features/progress/domain/progress_models.dart": "f7762dd983f588a70e4a5033c414d899c2dfcf13ab84b580e0a68724affe7d9d",
+    "lib/features/progress/data/drift_progress_queries.dart": "17f5eab321b20263b29531a68f776b391a3f99e827f6ca12591ea41343e6711c",
+    "lib/screens/weakness_clinic_screen.dart": "6ca5ad560369bbacc2328efaf416715eaad08ea06977fe2f9e5f9bd599ddcdf1",
+    "test/screens/weakness_clinic_screen_test.dart": "461e235b4438e84ffe8fe150befde779d1d605fc643eff63681e12ef6c418f0c",
+    "test/features/progress/progress_projector_test.dart": "24e9f55d9de3ac0dc356dbcf097dbb41e9b42dfea207d7328c8aa9aeebeb59e6"
+  },
+  "normalization": "Original line endings restored post-test; tokens unchanged"
+}

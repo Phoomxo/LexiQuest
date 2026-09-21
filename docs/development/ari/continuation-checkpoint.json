@@ -1,14 +1,14 @@
 {
-  "revision": 42,
+  "revision": 43,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: planning native baseline/connected/disconnected representative journey",
+  "previousTurn": "PROGRESS: W07 owner-bound weakness evidence and actual query owner test",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Study plan018 actual provider PASS; other native scope still open",
+  "current": "Weakness019 host verified; native pending",
   "next": [
-    "Native history/dashboard/Pair AI evidence",
-    "Remaining workflow/mode implementation",
-    "Nonempty planning and offline native checks"
+    "Review center and remaining workflow assistance",
+    "Batch native history/progress/weakness checks",
+    "Full14 coverage completion before queued whole-project review"
   ],
   "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
   "nativeInstalledApk": "build/ari-preview-017.apk",

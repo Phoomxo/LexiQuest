@@ -141,6 +141,7 @@ final class DriftProgressQueries {
 
     final weaknesses = await _loadWeaknesses(ownerId);
     return ProgressSnapshot(
+      ownerId: ownerId,
       sampleSize: attempts.length,
       correctCount: correctCount,
       wrongCount: wrongCount,

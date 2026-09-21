@@ -414,3 +414,8 @@ Built and installed136a11bf isolated APK. Without AI pairing, dashboard27/41, To
 ### Study-plan native018 — 2026-09-21
 
 Installed e00acb14 isolated preview. Native proposal10minutes, acceptance r1 and reopen passed without provider. Actual provider list_menu_actions read accepted r1/10minutes/0due/0new/0carry-over correctly. After explicit disconnect, native proposalr2/reject retainedr1. [Evidence](study-plan-native-018.json). Browser return required native reload and input-focus recovery re-entered route, so no-rebuild late-attach is not claimed. Empty-plan representative only; fullW08/all14 remains open. Bridge stopped, reverse removed, USB stay-awake2 retained.
+
+
+### Weakness assistance019 — 2026-09-21
+
+W07 clinic exposes owner-bound evidence summary and mounted word context, distinguishing incorrect history from due SRS. Progress query now carries owner metadata; ownerless legacy data is not shared. Native review/scoring unchanged. Screen and real-query projector suites passed, analysis clean. [Evidence](weakness-assistance-019.json). Native and completeW07 acceptance remain open.

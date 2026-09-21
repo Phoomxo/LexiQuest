@@ -1,0 +1,28 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W07 weakness clinic",
+  "baseCommit": "1032c54fa2cea580c295c1b6b2962c2ba88e57b4",
+  "implementation": [
+    "Canonical progress query includes data owner; optional field preserves legacy callers",
+    "Ownerless snapshots expose no personal AI context",
+    "Summary separates total answer evidence, weakness words and due SRS count",
+    "Mounted word cards expose spelling/meaning and incorrect/sample counts without scoring or scheduling changes",
+    "Text bounded60Unicode codepoints per field with explicit truncation flag to preserve structured context transport"
+  ],
+  "verification": {
+    "red": "New owner-bound test failed before owner field/context existed",
+    "green": "Weakness screen and canonical progress projector tests passed",
+    "analysis": "No issues found",
+    "assertions": [
+      "Correct2/3 history and separate due1",
+      "No new AI write action",
+      "Different owner hides context",
+      "Real Drift query returns requested owner"
+    ]
+  },
+  "open": [
+    "Native connected/disconnected clinic coverage",
+    "Empty-state explanatory context",
+    "Full W07 and all14 workflow/mode acceptance"
+  ]
+}

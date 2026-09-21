@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/flashcard_mode_adapter.dart';
@@ -66,7 +68,21 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
               'ยังไม่พบคำที่ตอบผิด\nจำนวนตัวอย่าง: ${progress.sampleSize}',
             );
           }
-          return _WeaknessBody(progress, onReviewDue: _openConfiguredSrs);
+          final body = _WeaknessBody(progress, onReviewDue: _openConfiguredSrs);
+          if (progress.ownerId == null) return body;
+          return MenuActionBinding(
+            id: 'review/weakness-summary',
+            label: 'Weakness evidence summary',
+            ownerId: progress.ownerId,
+            onInvoke: null,
+            readValue: jsonEncode({
+              'sampleSize': progress.sampleSize,
+              'dueReviewCount': progress.dueReviewCount,
+              'weaknessWordCount': progress.weaknesses.length,
+              'interpretation': 'incorrect-history-not-necessarily-due',
+            }),
+            child: body,
+          );
         },
       ),
     );
@@ -276,7 +292,7 @@ class _WeaknessBody extends StatelessWidget {
                 );
               }
               final item = progress.weaknesses[index];
-              return Card(
+              final card = Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -294,6 +310,26 @@ class _WeaknessBody extends StatelessWidget {
                     ],
                   ),
                 ),
+              );
+              if (progress.ownerId == null) return card;
+              return MenuActionBinding(
+                id: 'review/weakness/$index',
+                label: 'Weakness item ${index + 1}',
+                ownerId: progress.ownerId,
+                onInvoke: null,
+                readValue: jsonEncode({
+                  'spelling': String.fromCharCodes(
+                    item.spelling.runes.take(60),
+                  ),
+                  'meaning': String.fromCharCodes(item.meaning.runes.take(60)),
+                  'textTruncated':
+                      item.spelling.runes.length > 60 ||
+                      item.meaning.runes.length > 60,
+                  'incorrectCount': item.incorrectCount,
+                  'sampleSize': item.sampleSize,
+                  'interpretation': 'incorrect-history-not-necessarily-due',
+                }),
+                child: card,
               );
             },
           ),
