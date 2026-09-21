@@ -379,3 +379,8 @@ Import009 update: 9 import-domain tests passed including wrong-owner, post-owner
 ### Vocabulary native010 — 2026-09-21
 
 Live provider category create, mixed import preview/save and confirmed word deletion passed on Vivo at c2210ac4. Native category/word/empty state matched saved/deleted receipts. After disconnect manual invalid-row import returned 0/0/1 and native category cleanup worked. Own fixture, reverse and capability removed; original account retained. Own temporary directory retained after automatic policy rejection of combined cleanup. [Evidence](vocabulary-native-010.json). All14 workflow/mode acceptance remains OPEN.
+
+
+### Late context011 — 2026-09-21
+
+Reproduced and fixed mounted owner-bound context missing after late AI login. Explicit data-owner bindings survive disconnected/same-owner admission but retire on a different account; generic session context retains previous clearing. Registry/binding and four baseline startup scenarios passed; analysis clean. [Evidence](late-context-011.json). Native build/retest pending. Whole scope remains open.

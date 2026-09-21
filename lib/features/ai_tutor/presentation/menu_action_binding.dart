@@ -174,6 +174,7 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
         label: _toolLabel,
         available: _available,
         value: () => widget.readValue!,
+        dataOwner: widget.ownerId,
       );
       return;
     }

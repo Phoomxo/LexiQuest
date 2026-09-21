@@ -5,6 +5,47 @@ import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_bi
 import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 
 void main() {
+  testWidgets(
+    'owner-bound context admits late AI without rebuilding and retires on account switch',
+    (tester) async {
+      String? owner;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: const MaterialApp(
+            home: MenuActionBinding(
+              id: 'target',
+              label: 'book',
+              ownerId: 'a',
+              readValue: 'word-a',
+              onInvoke: null,
+              child: Text('existing dialog'),
+            ),
+          ),
+        ),
+      );
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'a';
+      registry.invalidateSession(preserveContext: true);
+      expect(
+        (registry.snapshot()['context'] as List).single['value'],
+        'word-a',
+      );
+      owner = null;
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'a';
+      expect(
+        (registry.snapshot()['context'] as List).single['value'],
+        'word-a',
+      );
+      owner = 'b';
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'a';
+      expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
+
   testWidgets('long user labels stay bounded without changing native text', (
     tester,
   ) async {

@@ -148,7 +148,7 @@ class _AriTestAppState extends State<AriTestApp> {
       );
       final menus = _menus!;
       runtime.identity.addListener(() {
-        menus.invalidateSession();
+        menus.invalidateSession(preserveContext: true);
         _menuRoutes?.refresh();
         if (mounted) setState(() {});
       });

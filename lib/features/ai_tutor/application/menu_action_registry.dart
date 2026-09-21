@@ -26,6 +26,7 @@ final class MenuActionRegistry {
           String id,
           String label,
           String owner,
+          bool dataBound,
           bool Function() available,
           String Function() value,
         })
@@ -36,18 +37,20 @@ final class MenuActionRegistry {
     required String label,
     required bool Function() available,
     required String Function() value,
+    String? dataOwner,
   }) {
     _refreshOwner();
     if (id.isEmpty || id.length > 160 || label.isEmpty || label.length > 200) {
       throw ArgumentError('Invalid context descriptor');
     }
     final key = Object();
-    final owner = currentOwner();
+    final owner = dataOwner ?? currentOwner();
     if (owner != null) {
       _context[key] = (
         id: id,
         label: label,
         owner: owner,
+        dataBound: dataOwner != null,
         available: available,
         value: value,
       );
@@ -69,7 +72,11 @@ final class MenuActionRegistry {
       _sessionEpoch++;
       _revision++;
       _receipts.clear();
-      _context.clear();
+      // Mounted owner-bound data can attach after AI login, but never migrate
+      // to a different account. Session-only context keeps its old lifecycle.
+      _context.removeWhere(
+        (_, entry) => !entry.dataBound || (next != null && entry.owner != next),
+      );
     }
   }
 
