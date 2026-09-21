@@ -1,22 +1,22 @@
 {
-  "revision": 49,
+  "revision": 50,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W11 shadowing assessment context and preserved empty/retry evidence",
+  "previousTurn": "PROGRESS: latest native build installed; quest/shop/export/offline disconnected baseline exercised",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Shadowing025 host passed; native pending",
+  "current": "Native026 partial baseline; connected context checks remain",
   "next": [
-    "Batch build/native019-025 and history/progress",
+    "Live-provider native019-025 and history/progress checks",
     "Remaining speech/sync/preferences and14mode gaps",
     "Full acceptance then queued whole-project review"
   ],
-  "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
-  "nativeInstalledApk": "build/ari-preview-017.apk",
+  "nativeInstalledSource": "d527c531adf55d5d79299dc2ffc2228394b90e7d",
+  "nativeInstalledApk": "build/ari-assistance-025.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No known bridge/test/build remains; bridge83085 stopped and reverse removed",
-  "testFixture": "Isolated app accepted planr1 retained; screen at plan, AI collapsed/disconnected"
+  "testFixture": "Isolated app offline page; temporary voice download removed; original ready item retained; AI collapsed/disconnected"
 }

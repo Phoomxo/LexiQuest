@@ -449,3 +449,7 @@ Optional scan context distinguishes model confidence, mapped vocabulary and acce
 ### Shadowing assistance025 — 2026-09-21
 
 Owner-bound final speech context distinguishes transcript similarity from acoustic pronunciation and records actual saved/retry state. Interim/empty input has no invented score; native learning authority unchanged. Full shadowing suite and analysis passed. [Evidence](shadowing-assistance-025.json). Fake speech gateway evidence only; microphone and fullW11 acceptance remain open.
+
+## Native baseline026
+
+Installed source d527c531 (APK hash in native-baseline-026.json). Disconnected native quest details, reward balances, Anki selection and offline download/delete exercised. Offline voice fixture restored to not-downloaded; existing ready content and original app preserved. Shop insufficient-funds feedback and expansion accessibility labels are review candidates, not resolved defects. Live-provider checks for019–025 and all14 acceptance remain open. Whole-project SDLC/Agile review remains queued after current acceptance under post-mcp-project-review-plan.json. USB stay-awake2 retained.
