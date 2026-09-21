@@ -430,6 +430,18 @@
       "receipt": "process-recovery-037.json",
       "scope": "Native process death and explicit reauth/read reply, host durable owner-change invalidation; unchanged learning evidence",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "transfer-probe-038",
+      "receipt": "transfer-probe-038.json",
+      "scope": "Probe owner-bound method/committed-feedback context;33host tests;rollout unchanged native probe pending",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "scramble-feedback-039",
+      "receipt": "scramble-feedback-039.json",
+      "scope": "Two native scramble committed feedback and loader remount defects fixed;6real production-host registry states,24screen77loader tests,native baseline word/sentence results;liveprovider pending",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

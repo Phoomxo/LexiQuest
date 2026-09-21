@@ -1,23 +1,23 @@
 {
-  "revision": 62,
+  "revision": 63,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "038 transfer-probe optional read-only assistance;33host testsPASS,analysis/build/installPASS; native baseline unchanged",
+  "previousTurn": "039 fixed missing scramble committed feedback and native loader remount;6production host+24screen+77loader testsPASS;analysis/build/install/native word+sentence baselinePASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Transfer-probe host acceptance implemented; live provider probe pending existing rollout; all14scopeOPEN",
+  "current": "Live-provider feedback retest for word/sentence still pending;remaining mode coverage;all14scopeOPEN",
   "next": [
-    "Complete remaining mode-specific baseline/connected/disconnected persistence checks",
-    "Transfer-probe/sync and mapped camera/speech successful-result acceptance",
-    "Whole-project review after current MCP acceptance"
+    "Native live-provider read-back of word/sentence committed results039",
+    "Remaining mode-specific baseline/connected/disconnected checks; inspect other native direct pending.record paths for same projection gap",
+    "Sync, mappedcamera/successfulspeech acceptance;whole-project review after MCP acceptance"
   ],
-  "nativeInstalledSource": "038 working source pinned in evidence/transfer-probe-038/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-038.apk",
+  "nativeInstalledSource": "039 working source pinned in evidence/scramble-feedback-039/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-039.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No bridge/build/test live",
-  "testFixture": "Isolated dashboard28/42,30m53s,0due unchanged;AIcollapsed/disconnected;USBstayawake2;noanswers created038.",
+  "testFixture": "Dashboard28/42,30m53s,0due;3recreational test submissions039;AIcollapsed/disconnected;USBstayawake2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

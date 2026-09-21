@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/learning/domain/answer_feedback.dart';
 import '../features/accessibility/domain/accessibility_policy.dart';
 import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
@@ -53,7 +54,6 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   PendingCurrentActivityEvidence? _pendingEvidence;
   PendingLearningSessionClose? _pendingSessionClose;
   UnifiedLessonSessionLifecycle? _lifecycle;
-  bool _pendingWasCorrect = false;
   bool _sessionCompleted = false;
   late int _nextAttemptNumber;
 
@@ -162,13 +162,18 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
           attemptNumber: _nextAttemptNumber,
         )
         .pending;
-    _pendingWasCorrect = evaluation.isCorrect;
     setState(() {});
     try {
-      await (_lifecycle?.runAcceptedOperation(pending.record) ??
-          pending.record());
+      final result =
+          await (_lifecycle?.recordCapturedEvidence(
+                pending,
+                feedbackContext: AnswerFeedbackContext(
+                  canonicalCorrectAnswer: widget.targetSentence,
+                ),
+              ) ??
+              pending.record());
       if (identical(_pendingEvidence, pending)) {
-        await _afterEvidenceCommitted(_pendingWasCorrect);
+        await _afterEvidenceCommitted(result.isCorrect);
       }
     } catch (_) {
       if (mounted) setState(() {});
@@ -190,10 +195,16 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
       return;
     }
     try {
-      await (_lifecycle?.runAcceptedOperation(pending.retry) ??
-          pending.retry());
+      final result =
+          await (_lifecycle?.recordCapturedEvidence(
+                pending,
+                feedbackContext: AnswerFeedbackContext(
+                  canonicalCorrectAnswer: widget.targetSentence,
+                ),
+              ) ??
+              pending.retry());
       if (identical(_pendingEvidence, pending)) {
-        await _afterEvidenceCommitted(_pendingWasCorrect);
+        await _afterEvidenceCommitted(result.isCorrect);
       }
     } catch (_) {
       if (mounted) setState(() {});

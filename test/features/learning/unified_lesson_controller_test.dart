@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
+import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
@@ -80,6 +82,145 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    for (final wordMode in [true, false]) {
+      testWidgets(
+        'native scramble MCP $connection keeps committed feedback word=$wordMode',
+        (tester) async {
+          final adapter = wordMode
+              ? const WordScrambleModeAdapter()
+              : const SentenceScrambleModeAdapter();
+          final fixture = await _fixture(adapter: adapter, blockRecord: true);
+          String? providerOwner = fixture.startCommand.ownerId;
+          final registry = MenuActionRegistry(
+            currentOwner: () => providerOwner,
+          );
+          tester.view.physicalSize = const Size(1200, 1500);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final evidence = CurrentActivityEvidenceAdapter(
+            learning: fixture.learning,
+          );
+          final features = RuntimeFeatureRegistry(const BuildFeatureRegistry.allEnabled());
+          final app = AppDependenciesScope(
+            dependencies: _bookmarkDependencies(fixture.database,
+              features: features, learning: fixture.learning, currentActivityEvidence: evidence),
+            child: MaterialApp(home: UnifiedLessonModeHost(
+              adapter: adapter, createController: (_) => fixture.controller,
+              feature: Feature.quiz, featureRegistry: features,
+              learning: fixture.learning, nowUtc: () => DateTime.now().toUtc(),
+              builder: (_) => NativeVocabularyLessonModeLoader(
+                builder: (_, session, question) => wordMode ? WordScrambleScreen(
+                  word: question.word.spelling, ownerId: session.ownerId,
+                  sessionId: session.id, wordId: question.word.id, evidenceAdapter: evidence,
+                ) : SentenceScrambleScreen(targetSentence: 'A lesson.',
+                  ownerId: session.ownerId, sessionId: session.id,
+                  wordId: question.word.id, evidenceAdapter: evidence,
+                ),
+              ),
+            )),
+          );
+          await tester.pumpWidget(
+            connection == 'absent'
+                ? app
+                : MenuActionScope(registry: registry, child: app),
+          );
+          await tester.pumpAndSettle();
+          final modeFinder = wordMode ? find.byType(WordScrambleScreen) : find.byType(SentenceScrambleScreen);
+          final originalState = tester.state(modeFinder);
+          expect(
+            registry.snapshot()['context'].toString(),
+            isNot(contains('correctAnswer')),
+          );
+          if (wordMode) {
+            final letters = createStableScramble('lesson');
+            final used = <int>{};
+            for (final letter in 'lesson'.split('')) {
+              final index = letters
+                  .asMap()
+                  .entries
+                  .firstWhere((e) => e.value == letter && !used.contains(e.key))
+                  .key;
+              used.add(index);
+              await tester.tap(find.byKey(ValueKey('word-letter-$index')));
+              await tester.pump();
+            }
+          } else {
+            for (final token in ['A', 'lesson.']) {
+              await tester.tap(
+                find.byWidgetPredicate(
+                  (w) => w is ChoiceChip && (w.label as Text).data == token,
+                ),
+              );
+              await tester.pump();
+            }
+          }
+          final submit = wordMode
+              ? find.widgetWithText(FilledButton, 'ตรวจสอบคำตอบ')
+              : find.byType(ElevatedButton);
+          await tester.ensureVisible(submit);
+          await tester.pumpAndSettle();
+          await tester.tap(submit);
+          await fixture.repository.recordStarted.future;
+          await tester.pump();
+          expect(fixture.controller.state.committedResponseCount, 0);
+          expect(
+            registry.snapshot()['context'].toString(),
+            isNot(contains('correctAnswer')),
+          );
+          if (connection == 'disconnected') {
+            providerOwner = null;
+            registry.invalidateSession(preserveContext: true);
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+          fixture.repository.releaseRecord();
+          await tester.pumpAndSettle();
+          expect(
+            await fixture.database
+                .select(fixture.database.answerAttempts)
+                .get(),
+            hasLength(1),
+          );
+          expect(fixture.repository.recordCalls, 1);
+          expect(tester.state(modeFinder), same(originalState), reason: 'Committed feedback must not recreate the native exercise');
+
+          expect(fixture.controller.state.committedResponseCount, 1);
+          expect(fixture.controller.feedback?.isCorrect, true);
+          expect(
+            fixture.controller.feedback?.canonicalCorrectAnswer,
+            wordMode ? 'lesson' : 'A lesson.',
+          );
+          providerOwner = fixture.startCommand.ownerId;
+          if (connection != 'absent') {
+            final entries = registry.snapshot()['context'] as List;
+            final data =
+                jsonDecode(
+                      entries.singleWhere(
+                            (dynamic e) => e['id'] == 'lesson/assistance',
+                          )['value']
+                          as String,
+                    )
+                    as Map;
+            expect(data['mode'], adapter.mode.id);
+            expect(data['committedResponses'], 1);
+            expect(
+              data['lastCommittedFeedback']['correctAnswer'],
+              wordMode ? 'lesson' : 'A lesson.',
+            );
+            expect(data['lastCommittedFeedback']['isCorrect'], true);
+          } else {
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+          expect(registry.snapshot()['actions'], isEmpty);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pumpAndSettle();
+        },
+      );
+    }
+  }
   testWidgets('MCP disconnect during durable answer does not reveal or duplicate evidence across registered adapters', (tester) async {
     for (final registration in buildLegacyLessonModeRegistry().registrations) {
       final fixture = await _fixture(adapter: registration.adapter, blockRecord: true);

@@ -1117,10 +1117,9 @@ class _NativeVocabularyModeLoaderState
           return (modeSurface as AccessibilityModeFeedbackSurface)
               .withShellFeedback(feedback);
         }
-        if (feedback == null) return modeSurface;
         return Column(
           children: <Widget>[
-            feedback,
+            ?feedback,
             Expanded(child: modeSurface),
           ],
         );
