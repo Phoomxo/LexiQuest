@@ -1,0 +1,8 @@
+{
+  "lib/main_ari_test.dart": "76122def1896a1c911a29fc3f7c93519cbc8d6fc6ca645110d491b7ea98414e2",
+  "lib/features/ai_tutor/data/local_bridge_pairing.dart": "6ca163e60094bfdc1e764a24b1ede8324f3fd2a8a98c23eaf7bf7dbd59cca9e7",
+  "lib/features/ai_tutor/data/local_login_bridge.dart": "1f1afe09e74da6074ec9e0860bf8f70452191e8d449e7245a04b1e3c72e76f8e",
+  "test/features/ai_tutor/managed/local_bridge_pairing_test.dart": "d61e85469b8ac0ed439e965f92a379c59a80181c998a0e30645789cc59ea081e",
+  "test/features/ai_tutor/managed/local_login_bridge_test.dart": "0517d9cead1c3fbc2663c29ab8a1c6244f2357e75846a5dec3cb3929795c53ec",
+  "tool/experiments/ari_app_server/login_bridge.py": "6d641584ed10b8387647345fd5197f5ba1dab7450f0648bd96bf11aa6f9960b1"
+}

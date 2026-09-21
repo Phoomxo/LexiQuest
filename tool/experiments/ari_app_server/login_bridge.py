@@ -4,6 +4,7 @@ Loopback + random bearer capability, single session, 15 minute maximum lifetime.
 No logs, provider payload dumps, API keys, existing auth, or public listeners.
 Credentials live only in the isolated App Server process (ephemeral store).
 """
+from datetime import datetime, timezone, timedelta
 import argparse
 import asyncio
 import hmac
@@ -175,7 +176,8 @@ async def run(args, session_factory=LoginSession, start_factory=start_isolated, 
     bridge = bridge_factory(session, token)
     # Provision only the designated debug app's private sandbox, never argv/logs.
     # Device identity is checked independently before this explicit invocation.
-    config = json.dumps({'token': token}).encode()
+    config = json.dumps({'token': token, 'expiresAtUtc':
+        (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()}).encode()
     adb = [args.adb, '-s', args.serial]
     manufacturer = subprocess.run(adb + ['shell', 'getprop', 'ro.product.manufacturer'],
         capture_output=True, text=True, timeout=15)

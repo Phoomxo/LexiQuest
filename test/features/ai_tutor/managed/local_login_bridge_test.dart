@@ -7,6 +7,33 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/features/ai_tutor/domain/managed_tutor_transport.dart';
 
 void main() {
+  test('explicit new login reloads rotated private pairing', () async {
+    final fresh = List.filled(43, 'b').join();
+    final bridge = LocalLoginBridge(
+      token: 'old-capability',
+      reloadPairing: () async => fresh,
+      client: MockClient((request) async {
+        expect(request.headers['authorization'], 'Bearer $fresh');
+        return http.Response('{"verificationUrl":"https://auth.openai.com/codex/device","userCode":"TEST-CODE"}', 200);
+      }),
+    );
+    addTearDown(bridge.dispose);
+    expect((await bridge.login()).userCode, 'TEST-CODE');
+  });
+  test('expired or removed pairing cannot reuse cached capability for login', () async {
+    var calls = 0;
+    final bridge = LocalLoginBridge(
+      token: 'old-capability',
+      reloadPairing: () async => null,
+      client: MockClient((request) async {
+        calls++;
+        return http.Response('{"verificationUrl":"https://auth.openai.com/codex/device","userCode":"TEST-CODE"}', 200);
+      }),
+    );
+    addTearDown(bridge.dispose);
+    await expectLater(bridge.login(), throwsA(isA<AiTutorException>()));
+    expect(calls, 0);
+  });
   test('capability is header only; fixed loopback and empty request', () async {
     final bridge = LocalLoginBridge(
       token: 'private-local-capability',

@@ -1,22 +1,22 @@
 {
-  "revision": 58,
+  "revision": 59,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: camera unknown result/lifecycle and speech unclear-input baseline observed; response count unchanged",
+  "previousTurn": "PROGRESS: native history baseline; reproduced pairing recreation/rotation defects, implemented fixes,14Flutter+16Python PASS; native recreation challengePASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native034 representative baseline recorded; full acceptance OPEN",
+  "current": "Pairing035 full authenticated return and native rotation retests pending; all14 acceptanceOPEN",
   "next": [
-    "Native history and connected camera/speech checks",
-    "Remaining14workflow/mode acceptance",
-    "Whole-project review then sequential SDLC/Agile remediation"
+    "New035 APK: complete authenticated browser return and native bridge rotation retest",
+    "Live native history,camera,speech then remaining14workflow/mode acceptance",
+    "Then authorized whole-project review/SDLC fixes"
   ],
-  "nativeInstalledSource": "6fc67593c2a039e7062166085046d97578f8561b",
-  "nativeInstalledApk": "build/ari-assistance-031.apk",
+  "nativeInstalledSource": "035 working source pinned in evidence/pairing-recovery-035/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-035.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "Bridge16335 stopped and reverse removed; no known live worker",
-  "testFixture": "Isolated app progress dashboard28/42,26m13s,0due. AI collapsed/disconnected; USB stayawake2. Floating bubble can intercept upper-left taps; use Android Back."
+  "liveProcesses": "No bridge/build/test live;96651 cancelled terminal; ownedreverse/config removed",
+  "testFixture": "Isolated app home,AIcollapsed/notconnected; original accounts unchanged; USBstayawake2. Floating SMSbubble interceptsupperleft. UseAndroidBack."
 }

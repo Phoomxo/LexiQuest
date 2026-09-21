@@ -6,7 +6,6 @@ import 'runtime/app_dependencies.dart';
 import 'features/ai_tutor/application/menu_action_registry.dart';
 import 'features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import 'data/local/app_database.dart';
 import 'features/identity/data/drift_local_owner_repository.dart';
 import 'features/ai_tutor/application/managed_tutor_runtime.dart';
 import 'features/ai_tutor/data/local_login_bridge.dart';
+import 'features/ai_tutor/data/local_bridge_pairing.dart';
 import 'features/ai_tutor/presentation/managed_tutor_test_screen.dart';
 import 'features/vocabulary/data/packaged_starter_access.dart';
 
@@ -39,15 +39,12 @@ Future<void> main() async {
 Future<LocalLoginBridge?> _loadLocalBridge() async {
   final support = await getApplicationSupportDirectory();
   final config = File('${support.path}/ari-bridge.json');
-  if (!await config.exists()) return null;
-  if (await config.length() > 1024) throw StateError('Invalid pairing');
-  final data = jsonDecode(await config.readAsString()) as Map<String, dynamic>;
-  await config.delete();
-  final token = data['token'];
-  if (token is! String || !RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(token)) {
-    throw StateError('Invalid pairing');
-  }
-  return LocalLoginBridge(token: token);
+  final token = await loadLocalBridgePairing(config);
+  if (token == null) return null;
+  return LocalLoginBridge(
+    token: token,
+    reloadPairing: () => loadLocalBridgePairing(config),
+  );
 }
 
 class AriTestApp extends StatefulWidget {

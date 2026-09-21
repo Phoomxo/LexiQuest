@@ -412,6 +412,12 @@
       "receipt": "camera-speech-native-034.json",
       "scope": "Disconnected camera unknown result and speech unclear-input handling; no added answer",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "pairing-recovery-035",
+      "receipt": "pairing-recovery-035.json",
+      "scope": "Pairing process recreation and explicit re-pairing fixes, host tests, native challenge after recreation",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

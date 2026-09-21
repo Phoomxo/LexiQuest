@@ -485,3 +485,7 @@ Same-owner Vivo live provider read settings and changed/restored theme with tool
 ## Camera/speech native034
 
 Disconnected camera capture returned unknown-object guidance; resume reset result. Speech recording start/stop produced unclear-speech guidance without a score. Android Back returned to dashboard28/42 unchanged, active time26m13s (previous25m23s),0due. External floating bubble intercepted a coordinate tap; app restored and Android Back used. USB stayawake2 verified. These observations do not establish recognition accuracy or connected assistance acceptance. Full scope stays OPEN. Evidence: camera-speech-native-034.json. Whole-project review remains queued after MCP acceptance; findings schema and sequential SDLC/Agile repair criteria recorded in the existing plan.
+
+## Pairing recovery035
+
+Native history baseline loaded abandoned shadowing with no first answers. Live history check exposed actual debug pairing loss after Android recreation and stale capability across bridge rotation. Retain private pairing with explicit15minuteUTC expiry; reload on explicit login and invalidate old transport binding. Red tests reproduced both defects;14Flutter and16Python tests passed, analysis clean,debugAPK built/installed. Native force-stop/relaunch retained pairing and requested a login challenge. Authenticated browser-return and native rotation retests remain pending; no provider reply this batch. Original accounts preserved; bridge/reverse/privateconfig cleaned; USBstayawake2 retained. Evidence: pairing-recovery-035.json. Full14scope OPEN.

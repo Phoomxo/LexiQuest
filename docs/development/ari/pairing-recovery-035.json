@@ -1,0 +1,40 @@
+{
+  "status": "HOST_FIX_AND_NATIVE_RECREATION_PASS_FULL_FLOW_PENDING",
+  "baseCommit": "85bfa2a166a516b6b999896030f9d85620bf467a",
+  "apk": "build/ari-assistance-035.apk",
+  "apkSha256": "09a68f449c64932940464d6d0dd001407a163fb1ec2971e481ca13d3edc6f8f1",
+  "sourcePins": "evidence/pairing-recovery-035/source-pins.json",
+  "defects": [
+    {
+      "id": "ARI-PAIRING-RECREATION",
+      "cause": "main debug loader deleted private config at first read; actual Android recreation after browser return lost pairing while bridge remained live",
+      "fix": "Retain private capability with explicit UTC expiry max15minutes; host cleans configuration at bridge termination; missing/expired/invalid config fails closed",
+      "retest": "Host repeat read and expiry tests; native read, force-stop/relaunch isolated app, reload and request new login challenge passed",
+      "remaining": "Authenticated browser-return round trip with newAPK pending"
+    },
+    {
+      "id": "ARI-PAIRING-ROTATION",
+      "cause": "Mounted transport held token from previous bridge; newly provisioned token not reloaded",
+      "fix": "Explicit login reloads validated private pairing, invalidates prior binding/inference/tool receipts; null/invalid/disposed blocks request",
+      "retest": "Host fresh authorization header and no cached-token request after missing pairing passed",
+      "remaining": "Native rotating livebridge while app remains mounted pending"
+    }
+  ],
+  "tests": {
+    "flutter": 14,
+    "pythonLoginChat": 16,
+    "analysis": "No issues",
+    "build": "Debug arm64 PASS",
+    "redEvidence": [
+      "442f30e594fc-696119b21eab-dd41472e:3behavior failures",
+      "8ae4a165458d-9fe583948489-ae0effd9:2rotation failures"
+    ]
+  },
+  "nativeHistory": "Baseline displayed abandoned shadowing, zero first answers,235activeSeconds and prior completed1/1review. No connected history read claim.",
+  "cleanup": "Cancelled native login challenge; bridge96651 terminal; removed ownedreverse8765 and exact private pairing file; no listener. AI collapsed, home foreground, USBstayawake2 retained. Original app/accounts preserved.",
+  "limits": [
+    "All14workflow/mode acceptance remainsOPEN",
+    "No provider reply in this batch",
+    "Expiry uses development-host and device UTC clocks; native current clocks accepted"
+  ]
+}

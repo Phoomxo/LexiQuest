@@ -16,11 +16,12 @@ final class DeviceLoginChallenge {
 /// The short-lived bridge capability is unrelated to provider credentials.
 final class LocalLoginBridge implements ManagedTutorTransport {
   // Named public parameter keeps the capability out of the public object API.
-  LocalLoginBridge({required String token, http.Client? client})
+  LocalLoginBridge({required String token, http.Client? client, this.reloadPairing})
     // ignore: prefer_initializing_formals
     : _token = token,
       _client = client ?? http.Client();
   String _token;
+  final Future<String?> Function()? reloadPairing;
   final http.Client _client;
   bool _disposed = false;
   bool inferenceEnabled = false;
@@ -65,6 +66,26 @@ final class LocalLoginBridge implements ManagedTutorTransport {
   }
 
   Future<DeviceLoginChallenge> login() async {
+    if (_disposed) throw const AiTutorException(AiFailureCode.cancelled);
+    final reload = reloadPairing;
+    if (reload != null) {
+      _connectedBinding = null;
+      inferenceEnabled = false;
+      toolResults = const [];
+      menuActions?.invalidateSession(preserveContext: true);
+      _token = '';
+      final String? fresh;
+      try {
+        fresh = await reload();
+      } on Object {
+        throw const AiTutorException(AiFailureCode.providerUnavailable);
+      }
+      if (_disposed) throw const AiTutorException(AiFailureCode.cancelled);
+      if (fresh == null || !RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(fresh)) {
+        throw const AiTutorException(AiFailureCode.providerUnavailable);
+      }
+      _token = fresh;
+    }
     final data = await _post('/login');
     final code = data['userCode'];
     if (data['verificationUrl'] != 'https://auth.openai.com/codex/device' ||
