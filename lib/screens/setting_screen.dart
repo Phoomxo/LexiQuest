@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
@@ -465,10 +466,12 @@ class _SettingScreenState extends State<SettingScreen> {
                     children: [
                       MenuActionBinding(
                         id: displayEntry.id,
+                        ownerId: display.ownerId,
                         label: displayEntry.fullThaiLabel,
                         onInvoke: null,
-                        readValue:
-                            'ธีม ${display.themeMode.name} · ลดการเคลื่อนไหว ${display.reducedMotionEnabled}',
+                        readValue: display.ownerId == null
+                            ? null
+                            : 'ธีม ${display.themeMode.name} · ลดการเคลื่อนไหว ${display.reducedMotionEnabled}',
                         child: Tooltip(
                           message: displayEntry.tooltip,
                           child: Semantics(
@@ -501,6 +504,7 @@ class _SettingScreenState extends State<SettingScreen> {
                             message: systemThemeEntry.tooltip,
                             child: MenuActionBinding(
                               id: systemThemeEntry.id,
+                              ownerId: display.ownerId,
                               label: systemThemeEntry.fullThaiLabel,
                               onInvoke: _displayBusy
                                   ? null
@@ -531,6 +535,7 @@ class _SettingScreenState extends State<SettingScreen> {
                             message: lightThemeEntry.tooltip,
                             child: MenuActionBinding(
                               id: lightThemeEntry.id,
+                              ownerId: display.ownerId,
                               label: lightThemeEntry.fullThaiLabel,
                               onInvoke: _displayBusy
                                   ? null
@@ -561,6 +566,7 @@ class _SettingScreenState extends State<SettingScreen> {
                             message: darkThemeEntry.tooltip,
                             child: MenuActionBinding(
                               id: darkThemeEntry.id,
+                              ownerId: display.ownerId,
                               label: darkThemeEntry.fullThaiLabel,
                               onInvoke: _displayBusy
                                   ? null
@@ -593,6 +599,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         message: reducedMotionEntry.tooltip,
                         child: MenuActionBinding(
                           id: reducedMotionEntry.id,
+                          ownerId: display.ownerId,
                           label: reducedMotionEntry.fullThaiLabel,
                           onInvoke: _displayBusy
                               ? null
@@ -839,9 +846,15 @@ class _SettingScreenState extends State<SettingScreen> {
               id: cloudStatusEntry.id,
               label: cloudStatusEntry.fullThaiLabel,
               onInvoke: null,
-              readValue: cloudReady
-                  ? 'พร้อมใช้งาน'
-                  : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+              readValue: jsonEncode({
+                'firebaseAvailability':
+                    dependencies?.runtimeStatus.firebase.name ?? 'unknown',
+                'syncEngineConfigured': dependencies?.syncEngine != null,
+                'syncCompletion': 'not-observed',
+                'interpretation':
+                    'service-readiness-is-not-network-connectivity-or-confirmed-sync',
+                'baselineRequiresMcp': false,
+              }),
               child: Tooltip(
                 message: cloudStatusEntry.tooltip,
                 child: Semantics(

@@ -1,0 +1,5 @@
+{
+  "lib/screens/setting_screen.dart": "c87c9a40e5da7538a5fa34cd80123f9574833740e9888d65b26e3b9ce6a88804",
+  "lib/features/preferences/application/display_preferences_controller.dart": "02dd083263b1637324a03f4c81c655c92f6f20159c38d668ebc54aa895ca32ff",
+  "test/screens/setting_screen_test.dart": "913529b3a577642c0f9b89c9bb162ce47d965154bea192e0dc870f9b1d2677a5"
+}

@@ -1,6 +1,7 @@
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,8 @@ void main() {
       upgradeGuestOwner: UpgradeGuestOwner(_StaticOwnerUpgradeRepository()),
       entryState: _StaticAppEntryStateStore(),
     );
-    final registry = MenuActionRegistry(currentOwner: () => 'settings-owner');
+    String? activeOwner = 'local:settings-owner';
+    final registry = MenuActionRegistry(currentOwner: () => activeOwner);
     await tester.pumpWidget(
       MenuActionScope(
         registry: registry,
@@ -81,7 +83,7 @@ void main() {
     await tester.pumpAndSettle();
     final result = registry.execute(
       id: 'theme-dark',
-      owner: 'settings-owner',
+      owner: 'local:settings-owner',
       revision: registry.snapshot()['revision'] as int,
       requestId: 'theme',
     );
@@ -91,7 +93,7 @@ void main() {
     for (final mode in [ThemeMode.light, ThemeMode.system, ThemeMode.dark]) {
       final changed = await registry.execute(
         id: 'theme-${mode.name}',
-        owner: 'settings-owner',
+        owner: 'local:settings-owner',
         revision: registry.snapshot()['revision'] as int,
         requestId: 'mode-${mode.name}',
       );
@@ -102,7 +104,7 @@ void main() {
     for (final enabled in [true, false]) {
       await registry.execute(
         id: 'reduced-motion-switch',
-        owner: 'settings-owner',
+        owner: 'local:settings-owner',
         revision: registry.snapshot()['revision'] as int,
         requestId: 'motion-$enabled',
       );
@@ -119,13 +121,37 @@ void main() {
       ]),
     );
     expect(context.toString(), isNot(contains('private@example.test')));
+    final cloud = jsonDecode(
+      context.singleWhere(
+            (dynamic row) => row['id'] == 'settings/cloud-status',
+          )['value']
+          as String,
+    );
+    expect(cloud['firebaseAvailability'], 'unknown');
+    expect(cloud['syncEngineConfigured'], false);
+    expect(cloud['syncCompletion'], 'not-observed');
+    activeOwner = 'different-owner';
+    final otherContext = registry.snapshot()['context'] as List;
+    expect(
+      otherContext.where((dynamic row) => row['id'] == 'settings/display'),
+      isEmpty,
+    );
+    final forbidden = await registry.execute(
+      id: 'theme-light',
+      owner: activeOwner,
+      revision: registry.snapshot()['revision'] as int,
+      requestId: 'wrong-owner-theme',
+    );
+    expect(forbidden['status'], isNot('invoked'));
+    expect(controller.themeMode, ThemeMode.dark);
+    activeOwner = 'local:settings-owner';
     for (final id in [
       'settings/change-password',
       'settings/research-consent',
     ]) {
       final opened = await registry.execute(
         id: id,
-        owner: 'settings-owner',
+        owner: 'local:settings-owner',
         revision: registry.snapshot()['revision'] as int,
         requestId: id.replaceAll('/', '-'),
       );
@@ -144,7 +170,7 @@ void main() {
     );
     final erased = await registry.execute(
       id: 'erase-local-data',
-      owner: 'settings-owner',
+      owner: 'local:settings-owner',
       revision: snapshot['revision'] as int,
       requestId: 'erase',
     );

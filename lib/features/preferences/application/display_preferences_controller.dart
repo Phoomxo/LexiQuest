@@ -19,6 +19,7 @@ final class DisplayPreferencesController extends ChangeNotifier {
   static ThemeMode get fallbackThemeMode => ThemeMode.system;
 
   bool get isInitialized => _isInitialized;
+  String? get ownerId => _ownerId;
 
   ThemeMode get themeMode => switch (_display.themeMode) {
     LearnerThemePreference.system => ThemeMode.system,

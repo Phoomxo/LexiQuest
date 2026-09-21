@@ -465,3 +465,7 @@ Source64710021 installed and tested with live provider. Original offline prompt 
 ## Review assistance029
 
 Added optional owner-pinned queue summary and mounted-row explanation, separating due SRS from saved/reported/incorrect reasons. Empty queue is explicit; no learner answer or scoring tools added. New context tests failed before implementation; full screen and reader suites passed afterward, targeted analysis clean. Native029 not run; installed APK remains64710021. All14 acceptance remains open. Evidence: review-assistance-029.json.
+
+## Settings assistance030
+
+Bound display context and existing AI setting actions to canonical preference owner. Cloud context now distinguishes service availability from unobserved sync completion. Full settings suite passed; wrong-owner access rejected. Corrected historical test owner prefix mismatch without weakening assertions; final analysis clean. Native030 and real cloud sync remain pending. Evidence: settings-assistance-030.json.
