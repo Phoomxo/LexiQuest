@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 55,
+  "revision": 56,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
@@ -213,5 +213,6 @@
   "latestNativeContext": "native-context-028.json",
   "latestReviewAssistance": "review-assistance-029.json",
   "latestSettingsAssistance": "settings-assistance-030.json",
-  "latestLessonDisconnect": "lesson-disconnect-031.json"
+  "latestLessonDisconnect": "lesson-disconnect-031.json",
+  "latestReviewSettingsNative": "review-settings-native-032.json"
 }

@@ -473,3 +473,7 @@ Bound display context and existing AI setting actions to canonical preference ow
 ## Lesson disconnect031
 
 Added and passed a shared-controller regression across four registered adapters (associative reading, meaning quiz, flashcard, typed recall). During a blocked durable answer write, simulated provider-owner loss hides context; completion and replay retain exactly one answer record. Reattachment exposes only committed feedback. Real controller/Drift host execution, not native mode UI or live provider interruption. No production source changed. Full14 acceptance remains open. Evidence: lesson-disconnect-031.json.
+
+## Native review/settings032 baseline
+
+Installed6fc67593 isolated APK. With provider disconnected, completed book review1/1 and returned to canonical queue. Native light/reduced-motion settings retained across route reentry; restored original system/false values. Automated review fixture remains in test app only. Initial accessibility output problem recovered via file dump; app remained alive/awake. Connected AI029–030 and whole14scope remain open. Evidence: review-settings-native-032.json.

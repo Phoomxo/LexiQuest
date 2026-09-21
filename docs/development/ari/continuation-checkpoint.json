@@ -1,22 +1,22 @@
 {
-  "revision": 55,
+  "revision": 56,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: durable controller/registry disconnect regression passed across4registered adapters",
+  "previousTurn": "PROGRESS: new APK installed; disconnected native review completion and settings persistence passed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Lesson031host evidence added; native029-030pending",
+  "current": "Native032 baseline passed; connected029-030 stillpending",
   "next": [
-    "Batch native029-030 and remaining progress/history/weakness/camera/shadowing",
-    "Complete remaining sync/transfer-probe and14mode gaps",
-    "Full MCP acceptance then queued project-wide SDLC review"
+    "Connected native029-030 and progress/history/weakness/camera/shadowing",
+    "Remaining sync/transfer-probe and14mode acceptance gaps",
+    "Full MCP acceptance then queued whole-project review"
   ],
-  "nativeInstalledSource": "6471002102efd8ac46212cb1b7560224295b631a",
-  "nativeInstalledApk": "build/ari-assistance-027.apk",
+  "nativeInstalledSource": "6fc67593c2a039e7062166085046d97578f8561b",
+  "nativeInstalledApk": "build/ari-assistance-031.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No known live test/build/bridge",
-  "testFixture": "Isolated app export PDF selected; AI collapsed/disconnected; voice fixture removed"
+  "liveProcesses": "Build89182 terminal; install successful; no bridge or known worker",
+  "testFixture": "One additional successful book review session is retained in isolated test app, automated test evidence not genuine learner data. Original app/accounts preserved. Screen at settings; theme system/reducedmotionfalse; AI collapsed/disconnected."
 }
