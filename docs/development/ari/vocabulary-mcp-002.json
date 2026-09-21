@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "status": "VOCABULARY_NAVIGATION_VERIFIED_FULL_COVERAGE_OPEN",
+  "baseCommit": "2e1da202832c8d72054e190ecbdc881ff70434ee",
+  "host": {
+    "tests": 76,
+    "files": 13,
+    "result": "PASS",
+    "receipt": "evidence/vocabulary-mcp-002/verification.json",
+    "analysis": "No issues found",
+    "labelRetest": {
+      "tests": 13,
+      "result": "PASS",
+      "receipt": "evidence/vocabulary-mcp-002/labels-verification.json"
+    }
+  },
+  "apk": {
+    "path": "build/ari-vocabulary-menus-final.apk",
+    "sha256": "38d795e2c4258d791f4a31f6ad18e8a236b09fc7954b8690b317e8b502dfd7f9",
+    "package": "com.lexiquest.app.ariTest",
+    "installed": true
+  },
+  "addedActions": [
+    "vocabulary/add-category",
+    "vocabulary/category/{mounted-index}",
+    "vocabulary/add-word",
+    "vocabulary/word/{mounted-index}/edit",
+    "vocabulary/word/{mounted-index}/examples",
+    "vocabulary/import"
+  ],
+  "fixes": [
+    "Personal record actions bind to their data owner; stale-owner labels and execution disappear before a UI rebuild.",
+    "Category record replacement invalidates old snapshot revision even when using the same list index.",
+    "Live model called starter category personal because action descriptors omitted mutability. Added explicit personal/read-only category labels; RED/GREEN host assertions passed, native retest pending."
+  ],
+  "fixtureCorrections": [
+    "Read actual TextField controller rather than TextFormField.",
+    "Load shared CEFR asset future outside expired widget test clock zones and yield after mounting the example page; retained actual example assertion and checked catalog resolution."
+  ],
+  "native": {
+    "status": "REPRESENTATIVE_JOURNEYS_PASS",
+    "firstApkSha256": "5ae0b66816ceed6fa3d83c44c19901be9ba03dfdd5d3449b160cbe1e616ac271",
+    "passed": [
+      "Live provider opened real category and correctly could not add to starter category",
+      "Live provider opened add-category dialog",
+      "After a manually seeded isolated QA category, live provider opened that exact category and empty add-word form",
+      "Live provider returned from add form and opened import screen for ARI QA 002; no import persisted"
+    ],
+    "failed": [
+      "Before label fix, provider called starter category personal. Fixed descriptor and physical retest passed."
+    ],
+    "fixture": "ARI QA 002 created only in com.lexiquest.app.ariTest via native UI; no word saved",
+    "screenshot": "evidence/vocabulary-mcp-002/vivo-add-word.png",
+    "finalApkSha256": "38d795e2c4258d791f4a31f6ad18e8a236b09fc7954b8690b317e8b502dfd7f9",
+    "finalRetest": "Live provider correctly identified ARI QA 002 as personal and starter category as read-only, opened read-only category and reported add-word unavailable.",
+    "screenshots": [
+      "evidence/vocabulary-mcp-002/vivo-add-word.png",
+      "evidence/vocabulary-mcp-002/vivo-import.png",
+      "evidence/vocabulary-mcp-002/vivo-readonly-retest.png"
+    ],
+    "fixtureCleanup": "Deleted only ARI QA 002 via native confirmation; starter category remains, no words or imports saved."
+  },
+  "remaining": [
+    "Virtualized offscreen data discovery/scroll controls",
+    "Typed MCP form arguments and validated save/delete/import persistence",
+    "Word edit and CEFR examples passed host tests; not exercised through live provider on Vivo this round",
+    "Native Markdown rendering (literal ** visible), Thai keyboard, sensors, endurance, usability, standalone distribution remain open"
+  ],
+  "sourceManifest": "evidence/vocabulary-mcp-002/source-manifest.json",
+  "cleanup": {
+    "originalApp": "com.lexiquest.app versionCode23 unchanged",
+    "originalAccounts": "not logged out",
+    "testApp": "final isolated APK remains installed, backgrounded",
+    "session": "no pinned app-server --stdio process remains; owned temporary directories c528sxp1 and j9xi3mtn removed; older unrelated alvs3idy untouched",
+    "reverse8765": "removed",
+    "listener8765": "none",
+    "privatePairingFile": "absent",
+    "stayAwake": "restored to0",
+    "recovery": "Computed recursive cleanup was policy-rejected; resolved exact owned paths and removed with literal paths without Force successfully."
+  }
+}

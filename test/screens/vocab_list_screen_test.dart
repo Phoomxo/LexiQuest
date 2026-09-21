@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'package:vocab_learning_app/features/vocabulary/application/cefr_practice_examples.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:drift/native.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart' show AppDatabase;
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    show AppDatabase;
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -21,9 +25,15 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_import_
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  // The shared asset Future must not retain an expired widget-test clock zone.
+  setUpAll(() async {
+    await CefrPracticeExamples.load();
+  });
   late AppDatabase gateDatabase;
   late AppDependencies gateDependencies;
   setUp(() {
@@ -54,6 +64,243 @@ void main() {
     dependencies: gateDependencies,
     child: MaterialApp(home: home),
   );
+
+  testWidgets(
+    'MCP category menus open exact category and add dialog without mutation',
+    (tester) async {
+      final category = _category(readOnly: false);
+      final vocabulary = _vocabulary(
+        _VocabularyRepository(const [], categories: [category]),
+      );
+      final registry = MenuActionRegistry(
+        currentOwner: () => _OwnerRepository.owner.id,
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: app(home: CategoriesPage(vocabulary: vocabulary)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      var request = 0;
+      Future<void> invoke(String id) async {
+        final result = await registry.execute(
+          id: id,
+          owner: _OwnerRepository.owner.id,
+          revision: registry.snapshot()['revision'] as int,
+          requestId: 'vocab-${request++}',
+        );
+        expect(result['status'], 'invoked');
+        await tester.pumpAndSettle();
+      }
+
+      await invoke('vocabulary/add-category');
+      expect(find.byType(AlertDialog), findsOneWidget);
+      Navigator.of(tester.element(find.byType(AlertDialog))).pop();
+      await tester.pumpAndSettle();
+      await invoke('vocabulary/category/0');
+      expect(find.byType(VocabListScreen), findsOneWidget);
+      expect(
+        tester.widget<VocabListScreen>(find.byType(VocabListScreen)).categoryId,
+        category.id,
+      );
+      await invoke('vocabulary/add-word');
+      expect(find.byKey(const ValueKey('word-field')), findsOneWidget);
+      expect(find.byKey(const ValueKey('save-word')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('MCP hides old owner category labels and callbacks immediately', (
+    tester,
+  ) async {
+    var owner = _OwnerRepository.owner.id;
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: app(
+          home: CategoriesPage(
+            vocabulary: _vocabulary(
+              _VocabularyRepository(
+                const [],
+                categories: [_category(readOnly: false)],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(registry.snapshot().toString(), contains('My words'));
+    owner = 'owner:replacement';
+    final fresh = registry.snapshot();
+    expect(fresh.toString(), isNot(contains('My words')));
+    final result = await registry.execute(
+      id: 'vocabulary/category/0',
+      owner: owner,
+      revision: fresh['revision'] as int,
+      requestId: 'changed-owner',
+    );
+    expect(result['status'], 'unavailable');
+    expect(find.byType(VocabListScreen), findsNothing);
+  });
+
+  testWidgets(
+    'MCP rejects a category index snapshot after its record is replaced',
+    (tester) async {
+      final streams = _CategoryStreams();
+      addTearDown(streams.close);
+      final registry = MenuActionRegistry(
+        currentOwner: () => _OwnerRepository.owner.id,
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: app(
+            home: CategoriesPage(
+              vocabulary: _vocabulary(
+                _VocabularyRepository(const [], categoryStream: streams.watch),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      streams.controllers.single.add([_category(readOnly: false)]);
+      await tester.pumpAndSettle();
+      expect(
+        registry.snapshot().toString(),
+        contains('เปิดหมวดส่วนตัว My words'),
+      );
+      final previous = registry.snapshot()['revision'] as int;
+      streams.controllers.single.add([_category(readOnly: true)]);
+      await tester.pumpAndSettle();
+      expect(
+        registry.snapshot().toString(),
+        contains('เปิดหมวดอ่านอย่างเดียว Everyday English'),
+      );
+      final stale = await registry.execute(
+        id: 'vocabulary/category/0',
+        owner: _OwnerRepository.owner.id,
+        revision: previous,
+        requestId: 'old-category',
+      );
+      expect(stale['status'], 'stale');
+      expect(find.byType(VocabListScreen), findsNothing);
+      final fresh = await registry.execute(
+        id: 'vocabulary/category/0',
+        owner: _OwnerRepository.owner.id,
+        revision: registry.snapshot()['revision'] as int,
+        requestId: 'new-category',
+      );
+      expect(fresh['status'], 'invoked');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<VocabListScreen>(find.byType(VocabListScreen)).categoryId,
+        PackagedStarterIdentity.categoryId,
+      );
+    },
+  );
+
+  for (final readOnly in [false, true]) {
+    testWidgets('MCP word routes preserve read-only policy $readOnly', (
+      tester,
+    ) async {
+      final category = _category(readOnly: readOnly);
+      final word = _word(
+        id: 'word:route',
+        ownerId: category.ownerId,
+        categoryId: category.id,
+        cefrLevel: 'A1',
+      );
+      final registry = MenuActionRegistry(
+        currentOwner: () => _OwnerRepository.owner.id,
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: app(
+            home: VocabListScreen(
+              categoryId: category.id,
+              categoryName: category.name,
+              vocabulary: _vocabulary(_VocabularyRepository([word])),
+              importer: _importer(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      var request = 0;
+      Future<void> invoke(String id, String status) async {
+        final result = await registry.execute(
+          id: id,
+          owner: _OwnerRepository.owner.id,
+          revision: registry.snapshot()['revision'] as int,
+          requestId: 'word-${request++}',
+        );
+        expect(result['status'], status);
+        await tester.pumpAndSettle();
+      }
+
+      await invoke('vocabulary/word/0/examples', 'invoked');
+      await tester.runAsync(() async {
+        final catalog = await CefrPracticeExamples.load();
+        expect(catalog.editorialLoadFailed, isFalse);
+        expect(
+          CefrPracticeExamples.resolve(
+            catalog,
+            spelling: 'book',
+            meaning: 'หนังสือ',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A1',
+          ),
+          isNotNull,
+        );
+      });
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('cefr-practice-example')),
+        findsOneWidget,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await invoke(
+        'vocabulary/word/0/edit',
+        readOnly ? 'unavailable' : 'invoked',
+      );
+      if (!readOnly) {
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('word-field')))
+              .controller!
+              .text,
+          'book',
+        );
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
+      await invoke('vocabulary/add-word', readOnly ? 'unavailable' : 'invoked');
+      if (!readOnly) {
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
+      await invoke('vocabulary/import', readOnly ? 'unavailable' : 'invoked');
+      if (!readOnly) {
+        expect(
+          tester
+              .widget<AddMultipleWordsScreen>(
+                find.byType(AddMultipleWordsScreen),
+              )
+              .categoryId,
+          category.id,
+        );
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets(
     'category retry replaces failed streams and ignores retired data',
@@ -286,6 +533,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('ดูตัวอย่างการใช้'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await CefrPracticeExamples.load();
+      });
       await tester.pumpAndSettle();
       expect(find.text('ตัวอย่างการใช้คำ'), findsOneWidget);
       expect(

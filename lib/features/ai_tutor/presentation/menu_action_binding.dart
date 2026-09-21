@@ -92,11 +92,15 @@ final class MenuActionBinding extends StatefulWidget {
     required this.onInvoke,
     required this.child,
     this.readValue,
+    this.ownerId,
   });
   final String id, label;
   final MenuAction? onInvoke;
   final Widget child;
   final String? readValue;
+
+  /// Personal records stay bound to their data owner even before a UI rebuild.
+  final String? ownerId;
   @override
   State<MenuActionBinding> createState() => _MenuActionBindingState();
 }
@@ -105,6 +109,9 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
   MenuActionRegistry? _registry;
   VoidCallback? _unbind;
   bool _available() {
+    if (widget.ownerId != null && widget.ownerId != _registry?.currentOwner()) {
+      return false;
+    }
     if (!mounted || widget.onInvoke == null && widget.readValue == null) {
       return false;
     }
@@ -159,6 +166,7 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     // Callback closures may be rebuilt without changing the advertised action.
     // Availability is always rechecked immediately before invocation.
     if (oldWidget.id != widget.id ||
+        oldWidget.ownerId != widget.ownerId ||
         oldWidget.label != widget.label ||
         oldWidget.readValue != widget.readValue ||
         widget.readValue != null) {

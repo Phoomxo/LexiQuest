@@ -1,0 +1,18 @@
+{
+  "lib/screens/categories_page.dart": {
+    "sha256": "588c7a6a2c454c2fec3832cd80ae99026e8d518f17a9723aa80964da4c228c02",
+    "normalizedLfSha256": "0a1adcec2a84268c1d02909f0c2424436a9dd9de072317595f5fa3843351c3a2"
+  },
+  "lib/screens/vocab_list_screen.dart": {
+    "sha256": "a1d939eb4c14e9a48c5317c97bcde29d067c2e0ba01192988cda1f216f6474f0",
+    "normalizedLfSha256": "561d04fd585dd19b25628e3f42bd09cb5f4a59104fc4d45763552a9e09fb355e"
+  },
+  "lib/features/ai_tutor/presentation/menu_action_binding.dart": {
+    "sha256": "4e59c443a81980d4111a385f2335e00d5812ab075d14f0e855632d50b867384a",
+    "normalizedLfSha256": "4e59c443a81980d4111a385f2335e00d5812ab075d14f0e855632d50b867384a"
+  },
+  "test/screens/vocab_list_screen_test.dart": {
+    "sha256": "1238eda2a196ccba2a4ed858097601ce2397e0dca1d9f93205a92ed6a6ad32d4",
+    "normalizedLfSha256": "1238eda2a196ccba2a4ed858097601ce2397e0dca1d9f93205a92ed6a6ad32d4"
+  }
+}

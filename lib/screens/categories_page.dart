@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
@@ -97,35 +98,49 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final category = categories[index];
+                    void openCategory() {
+                      if (!_admitted) return;
+                      final features = _features;
+                      AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'vocabulary/category',
+                          builder: (_) => VocabListScreen(
+                            featureRegistry: features,
+                            vocabulary: widget.vocabulary,
+                            categoryId: category.id,
+                            categoryName: category.name,
+                          ),
+                        ),
+                      );
+                    }
+
                     return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.folder_outlined),
-                        title: Text(category.name),
-                        subtitle: const Text('แตะเพื่อดูคำศัพท์'),
-                        trailing: category.isReadOnly
-                            ? null
-                            : IconButton(
-                                tooltip: 'ลบหมวดหมู่',
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () =>
-                                    _confirmDelete(context, useCases, category),
-                              ),
-                        onTap: () {
-                          if (!_admitted) return;
-                          final features = _features;
-                          AppNavigator.pushPage<void>(
-                            context,
-                            AppPage<void>(
-                              name: 'vocabulary/category',
-                              builder: (_) => VocabListScreen(
-                                featureRegistry: features,
-                                vocabulary: widget.vocabulary,
-                                categoryId: category.id,
-                                categoryName: category.name,
-                              ),
-                            ),
-                          );
-                        },
+                      child: MenuActionBinding(
+                        key: ValueKey(category.id),
+                        ownerId: category.isReadOnly ? null : category.ownerId,
+                        id: 'vocabulary/category/$index',
+                        label: category.isReadOnly
+                            ? 'เปิดหมวดอ่านอย่างเดียว ${category.name}'
+                            : 'เปิดหมวดส่วนตัว ${category.name}',
+                        onInvoke: openCategory,
+                        child: ListTile(
+                          leading: const Icon(Icons.folder_outlined),
+                          title: Text(category.name),
+                          subtitle: const Text('แตะเพื่อดูคำศัพท์'),
+                          trailing: category.isReadOnly
+                              ? null
+                              : IconButton(
+                                  tooltip: 'ลบหมวดหมู่',
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => _confirmDelete(
+                                    context,
+                                    useCases,
+                                    category,
+                                  ),
+                                ),
+                          onTap: openCategory,
+                        ),
                       ),
                     );
                   },
@@ -134,12 +149,17 @@ class _CategoriesPageState extends State<CategoriesPage> {
             ),
       floatingActionButton: useCases == null
           ? null
-          : FloatingActionButton.extended(
-              key: const ValueKey('add-category'),
-              heroTag: 'categories-add',
-              onPressed: () => _showAddCategory(context, useCases),
-              icon: const Icon(Icons.add),
-              label: const Text('เพิ่มหมวดหมู่'),
+          : MenuActionBinding(
+              id: 'vocabulary/add-category',
+              label: 'เพิ่มหมวดหมู่',
+              onInvoke: () => _showAddCategory(context, useCases),
+              child: FloatingActionButton.extended(
+                key: const ValueKey('add-category'),
+                heroTag: 'categories-add',
+                onPressed: () => _showAddCategory(context, useCases),
+                icon: const Icon(Icons.add),
+                label: const Text('เพิ่มหมวดหมู่'),
+              ),
             ),
     );
   }

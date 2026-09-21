@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 23,
+  "revision": 25,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "all-menu-mcp-debug-accepted",
+  "status": "mcp-vocabulary-navigation-verified-full-coverage-open",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": null,
   "model": "gpt-6-astra",
@@ -126,7 +126,17 @@
     "inference": "LIVE_CHAT_AND_APP_MENU_MCP_PASS",
     "physical": "INSTALL_LOGIN_MCP_NAVIGATION_RECONNECT_CONTEXT_PASS",
     "successor": null,
-    "productionDistribution": "NOT_CERTIFIED"
+    "productionDistribution": "NOT_CERTIFIED",
+    "vocabularyMcpCheckpoint": {
+      "evidence": "docs/development/ari/vocabulary-mcp-002.json",
+      "status": "VOCABULARY_NAVIGATION_VERIFIED_FULL_COVERAGE_OPEN",
+      "nextScope": [
+        "Virtualized offscreen data discovery/scroll controls",
+        "Typed MCP form arguments and validated save/delete/import persistence",
+        "Word edit and CEFR examples passed host tests; not exercised through live provider on Vivo this round",
+        "Native Markdown rendering (literal ** visible), Thai keyboard, sensors, endurance, usability, standalone distribution remain open"
+      ]
+    }
   },
   "deviceCoverage": "device-test-matrix.json",
   "chatMcpExecution": "chat-mcp-001.json",

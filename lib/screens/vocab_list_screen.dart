@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
@@ -125,32 +126,52 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           final word = words[index];
                           final isReadOnly =
                               isReadOnlyCategory || word.isReadOnly;
-                          return ListTile(
-                            title: Text(word.spelling),
-                            subtitle: Text(
-                              '${word.meaning} · ${word.partOfSpeech}',
-                            ),
-                            onTap: isReadOnly
+                          return MenuActionBinding(
+                            key: ValueKey(word.id),
+                            ownerId: word.isReadOnly ? null : word.ownerId,
+                            id: 'vocabulary/word/$index/edit',
+                            label: 'แก้ไขคำ ${word.spelling}',
+                            onInvoke: isReadOnly
                                 ? null
                                 : () => _openWordEditor(context, word: word),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (word.cefrLevel != null)
-                                  IconButton(
-                                    tooltip: 'ดูตัวอย่างการใช้',
-                                    icon: const Icon(Icons.menu_book_outlined),
-                                    onPressed: () =>
-                                        _openExamples(context, word),
-                                  ),
-                                if (!isReadOnly)
-                                  IconButton(
-                                    tooltip: 'ลบคำศัพท์',
-                                    icon: const Icon(Icons.delete_outline),
-                                    onPressed: () =>
-                                        _deleteWord(context, useCases, word),
-                                  ),
-                              ],
+                            child: ListTile(
+                              title: Text(word.spelling),
+                              subtitle: Text(
+                                '${word.meaning} · ${word.partOfSpeech}',
+                              ),
+                              onTap: isReadOnly
+                                  ? null
+                                  : () => _openWordEditor(context, word: word),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (word.cefrLevel != null)
+                                    MenuActionBinding(
+                                      id: 'vocabulary/word/$index/examples',
+                                      ownerId: word.isReadOnly
+                                          ? null
+                                          : word.ownerId,
+                                      label: 'ดูตัวอย่างคำ ${word.spelling}',
+                                      onInvoke: () =>
+                                          _openExamples(context, word),
+                                      child: IconButton(
+                                        tooltip: 'ดูตัวอย่างการใช้',
+                                        icon: const Icon(
+                                          Icons.menu_book_outlined,
+                                        ),
+                                        onPressed: () =>
+                                            _openExamples(context, word),
+                                      ),
+                                    ),
+                                  if (!isReadOnly)
+                                    IconButton(
+                                      tooltip: 'ลบคำศัพท์',
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () =>
+                                          _deleteWord(context, useCases, word),
+                                    ),
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -167,37 +188,49 @@ class _VocabListScreenState extends State<VocabListScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (importer != null)
-                  FloatingActionButton.small(
-                    heroTag: 'words-import',
-                    tooltip: 'นำเข้าคำศัพท์',
-                    onPressed: () {
-                      if (!_admitted) return;
-                      final features = _features;
-                      AppNavigator.pushPage<void>(
-                        context,
-                        AppPage<void>(
-                          name: 'vocabulary/import',
-                          builder: (_) => AddMultipleWordsScreen(
-                            featureRegistry: features,
-                            importer: widget.importer,
-                            categoryId: widget.categoryId,
-                            categoryName: widget.categoryName,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Icon(Icons.file_upload_outlined),
+                  MenuActionBinding(
+                    id: 'vocabulary/import',
+                    label: 'นำเข้าคำศัพท์',
+                    onInvoke: () => _openImporter(context),
+                    child: FloatingActionButton.small(
+                      heroTag: 'words-import',
+                      tooltip: 'นำเข้าคำศัพท์',
+                      onPressed: () => _openImporter(context),
+                      child: const Icon(Icons.file_upload_outlined),
+                    ),
                   ),
                 const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  key: const ValueKey('add-word'),
-                  heroTag: 'words-add',
-                  onPressed: () => _openWordEditor(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('เพิ่มคำศัพท์'),
+                MenuActionBinding(
+                  id: 'vocabulary/add-word',
+                  label: 'เพิ่มคำศัพท์',
+                  onInvoke: () => _openWordEditor(context),
+                  child: FloatingActionButton.extended(
+                    key: const ValueKey('add-word'),
+                    heroTag: 'words-add',
+                    onPressed: () => _openWordEditor(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('เพิ่มคำศัพท์'),
+                  ),
                 ),
               ],
             ),
+    );
+  }
+
+  void _openImporter(BuildContext context) {
+    if (!_admitted) return;
+    final features = _features;
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/import',
+        builder: (_) => AddMultipleWordsScreen(
+          featureRegistry: features,
+          importer: widget.importer,
+          categoryId: widget.categoryId,
+          categoryName: widget.categoryName,
+        ),
+      ),
     );
   }
 
