@@ -123,26 +123,37 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
                   entry.pairSummary != null ||
                   entry.pairPurposeUnavailable;
               if (pairEntry) {
-                return _PairHistoryCard(
-                  key: ValueKey('pair-history-${entry.sessionId}'),
-                  entry: entry,
-                  result: pairResult,
-                  sourceEntry: entries
-                      .where(
-                        (candidate) =>
-                            candidate.sessionId == pairResult?.sourceSessionId,
-                      )
-                      .firstOrNull,
-                  overview: page.pairOverview,
-                  pairReadFailed: page.pairReadFailed,
-                  opening: _openingSessionId == entry.sessionId,
-                  replayEnabled:
-                      pairResult?.result.stars != null &&
-                      widget.onPairReplay != null &&
-                      _openingSessionId == null,
-                  onReplay: pairResult == null
-                      ? null
-                      : () => _replayPair(pairResult),
+                return MenuActionBinding(
+                  id: 'history/session/$index',
+                  label: 'Pair Matching history ${index + 1}',
+                  ownerId: entry.ownerId,
+                  onInvoke: null,
+                  readValue: _pairHistoryAssistance(
+                    entry,
+                    page.pairReadFailed ? null : pairResult,
+                  ),
+                  child: _PairHistoryCard(
+                    key: ValueKey('pair-history-${entry.sessionId}'),
+                    entry: entry,
+                    result: pairResult,
+                    sourceEntry: entries
+                        .where(
+                          (candidate) =>
+                              candidate.sessionId ==
+                              pairResult?.sourceSessionId,
+                        )
+                        .firstOrNull,
+                    overview: page.pairOverview,
+                    pairReadFailed: page.pairReadFailed,
+                    opening: _openingSessionId == entry.sessionId,
+                    replayEnabled:
+                        pairResult?.result.stars != null &&
+                        widget.onPairReplay != null &&
+                        _openingSessionId == null,
+                    onReplay: pairResult == null
+                        ? null
+                        : () => _replayPair(pairResult),
+                  ),
                 );
               }
               return MenuActionBinding(
@@ -517,6 +528,33 @@ String _pairElapsedLabel(
       ? 'Full interactive duration $seconds seconds'
       : 'เวลาเรียนจริงทั้งรอบ $seconds วินาที';
 }
+
+String _pairHistoryAssistance(
+  LearningHistoryEntry entry,
+  PairMatchingHistoryProjection? result,
+) => jsonEncode({
+  'scope': 'one-displayed-session-not-overall-proficiency',
+  'mode': 'matching',
+  'state': entry.terminalState.name,
+  'resultAvailable': result != null,
+  'replayAddsProgressOrRewards': false,
+  if (result != null) ...{
+    'purpose': result.purpose.name,
+    'firstAnswers': {
+      'correct': result.firstAnswers.correct,
+      'total': result.firstAnswers.total,
+    },
+    'repairAnswers': {
+      'correct': result.repairAnswers.correct,
+      'total': result.repairAnswers.total,
+    },
+    'matched': result.result.matched,
+    'independent': result.result.independent,
+    'assisted': result.result.assisted,
+    'stars': result.result.stars,
+    'interactiveElapsedMs': result.timer.interactiveElapsedMs,
+  },
+});
 
 String? _historyInterpretation(LessonMode? mode) => switch (mode) {
   LessonMode.flashcard => 'บัตรคำใช้การประเมินความจำด้วยตนเอง ไม่ใช่คะแนนสอบ',

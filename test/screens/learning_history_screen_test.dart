@@ -763,6 +763,63 @@ void main() {
     },
   );
 
+  for (final unavailable in [false, true]) {
+    testWidgets('optional Pair history context unavailable=$unavailable', (
+      tester,
+    ) async {
+      final fixture = await _canonicalPairFixture(token: 'ai-pair');
+      String? owner = fixture.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      final entry = _entry(
+        sessionId: fixture.projection.sessionId,
+        ownerId: fixture.ownerId,
+        mode: LessonMode.matching,
+        state: LearningHistoryTerminalState.completed,
+        packTitle: null,
+        localWordSet: true,
+        duration: const Duration(minutes: 1),
+        startedAtUtc: DateTime.utc(2026, 9, 5),
+        pairSummary: fixture.projection,
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: _app(
+            reader: _Reader([entry]),
+            owners: _Owners(fixture.ownerId),
+            pairReader: unavailable
+                ? const _FailingPairPurposeReader()
+                : _PairPurposeReader({
+                    fixture.projection.sessionId: fixture.purpose,
+                  }),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final values = registry.snapshot()['context'] as List;
+      final data =
+          jsonDecode(values.single['value'] as String) as Map<String, dynamic>;
+      expect(data['mode'], 'matching');
+      expect(data['resultAvailable'], !unavailable);
+      expect(data['replayAddsProgressOrRewards'], false);
+      if (unavailable) {
+        expect(data.containsKey('stars'), false);
+        expect(data.containsKey('matched'), false);
+      } else {
+        expect(data['stars'], fixture.projection.result.stars);
+        expect(data['matched'], fixture.projection.result.matched);
+        expect(
+          data['firstAnswers']['total'],
+          fixture.projection.firstAnswers.total,
+        );
+        expect(data['purpose'], 'learning');
+      }
+      expect(registry.snapshot()['actions'], isEmpty);
+      owner = 'different-owner';
+      expect(registry.snapshot()['context'], isEmpty);
+    });
+  }
+
   testWidgets('malformed Pair data disables both replay authorities', (
     tester,
   ) async {

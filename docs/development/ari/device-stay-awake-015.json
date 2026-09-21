@@ -1,0 +1,19 @@
+{
+  "authorization": "User explicitly requested display stays awake/unlocked for unattended testing",
+  "serial": "9582188822004C6",
+  "setting": "global stay_on_while_plugged_in",
+  "before": 0,
+  "after": 2,
+  "command": "adb shell svc power stayon usb",
+  "verified": {
+    "mWakefulness": "Awake",
+    "mIsPowered": true,
+    "mPlugType": 2,
+    "mStayOn": true,
+    "keyguardShowing": false,
+    "inputRestricted": false
+  },
+  "screenOffTimeoutUnchanged": 1800000,
+  "retention": "Retain user-requested USB stay-awake setting during further testing; do not revert as routine cleanup",
+  "limits": "USB-powered display idle only; manual lock and unplug can still lock; credentials unchanged"
+}

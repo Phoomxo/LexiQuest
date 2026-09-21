@@ -394,3 +394,8 @@ W08 now exposes separate owner-bound summaries of actual proposed and accepted p
 ### History assistance013 — 2026-09-21
 
 Owner-bound ordinary history cards expose session evidence separately to optional AI. First/repair answers, self-assessment and reading exposure retain distinct meanings; no overall proficiency inferred. All18 history screen tests, 7 Python chat tests and targeted analysis passed. New context tests use fixture readers. [Evidence](history-assistance-013.json). Pair history, assessment-specific acceptance and native verification remain open. Writer retained; full14 scope remains open.
+
+
+### Pair history014 and USB display015 — 2026-09-21
+
+Optional Pair history exposes canonical result counts, nullable stars/time and practice-only meaning. Failed purpose verification suppresses scores. Added available/unavailable and owner-fence tests; full history screen suite and analysis passed. [Evidence](pair-history-assistance-014.json). Native acceptance remains pending. User-requested USB stay-awake set to2 and verified awake/powered/stayOn with keyguard not showing; retain during testing. [Device setting](device-stay-awake-015.json).

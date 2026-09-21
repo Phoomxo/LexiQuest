@@ -1,18 +1,19 @@
 {
-  "revision": 38,
+  "revision": 39,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W09 host implementation and evidence",
+  "previousTurn": "PROGRESS: Pair history host acceptance and USB stay-awake verified",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "History013 host verified; native pending",
+  "current": "Pair014 host verified; native011-014 pending",
   "next": [
-    "Add Pair history evidence and tests",
-    "Expand remaining workflow coverage against optional-mcp-workflows.json",
-    "Batch native verification of011/012/013 changes"
+    "Replay and assessment context acceptance",
+    "Remaining workflow/mode implementation",
+    "Build and native verification of011-014"
   ],
   "nativeInstalledSource": "c2210ac4",
   "nativeInstalledApk": "build/ari-import-009.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
-  "openScope": "All14 workflow/mode acceptance OPEN"
+  "openScope": "All14 workflow/mode acceptance OPEN",
+  "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked"
 }
