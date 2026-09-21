@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:drift/native.dart';
@@ -36,11 +39,27 @@ void main() {
     );
     addTearDown(subject.dispose);
     await subject.refreshDaily(expectedOwnerId: 'owner-secret');
+    String? aiOwner = 'owner-secret';
+    final registry = MenuActionRegistry(currentOwner: () => aiOwner);
     await tester.pumpWidget(
-      MaterialApp(home: QuestStatusScreen(quest: subject)),
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: QuestStatusScreen(quest: subject)),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.text('กำลังทำ'), findsOneWidget);
+    final context = registry.snapshot()['context'] as List;
+    final data = jsonDecode(context.single['value'] as String);
+    expect(data['state'], 'active');
+    expect(data['definitionAvailable'], true);
+    expect(data['rewardMeaning'], 'conditional-not-earned-balance');
+    expect(data['progress'], isNotEmpty);
+    expect(registry.snapshot()['actions'], isEmpty);
+    aiOwner = 'other';
+    expect(registry.snapshot()['context'], isEmpty);
+    aiOwner = 'owner-secret';
+
     expect(find.text('ทำได้ในครั้งถัดไป'), findsNothing);
     clock = clock.add(const Duration(days: 1));
     await subject.refreshDaily(expectedOwnerId: 'owner-secret');

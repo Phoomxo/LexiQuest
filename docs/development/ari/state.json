@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 45,
+  "revision": 46,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "offline-assistance-host-pass-native-pending",
+  "status": "quest-assistance-host-pass-native-pending",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": {
     "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
@@ -203,5 +203,6 @@
   "latestStudyPlanNative": "study-plan-native-018.json",
   "latestWeaknessAssistance": "weakness-assistance-019.json",
   "latestExportAssistance": "export-assistance-020.json",
-  "latestOfflineAssistance": "offline-assistance-021.json"
+  "latestOfflineAssistance": "offline-assistance-021.json",
+  "latestQuestAssistance": "quest-assistance-022.json"
 }

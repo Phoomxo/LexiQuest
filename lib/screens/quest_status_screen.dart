@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/quest/application/quest_use_cases.dart';
@@ -159,70 +161,98 @@ class _QuestStatusList extends StatelessWidget {
           ('weekly-correct-20-v1', 1) => 'ฝึกคำศัพท์ประจำสัปดาห์',
           _ => null,
         };
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  definition == null
-                      ? 'รายละเอียดภารกิจฉบับนี้ยังไม่พร้อม'
-                      : translated ?? definition.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(_icon(instance.state)),
-                    const SizedBox(width: 8),
-                    Text(_label(instance.state)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (definition == null)
-                  const Text(
-                    'ยังอ่านเป้าหมายของรุ่นที่ได้รับไม่ได้ ลองเปิดหน้านี้ใหม่ภายหลัง ความคืบหน้าที่บันทึกไว้ยังอยู่',
-                  )
-                else ...[
+        return MenuActionBinding(
+          id: 'quests/status/$index',
+          label: 'Quest status item ${index + 1}',
+          ownerId: instance.ownerId,
+          onInvoke: null,
+          readValue: jsonEncode({
+            'state': instance.state.name,
+            'definitionAvailable': definition != null,
+            'catalogVersion': instance.catalogVersion,
+            if (definition != null) ...{
+              'title': String.fromCharCodes(
+                (translated ?? definition.title).runes.take(60),
+              ),
+              'titleTruncated':
+                  (translated ?? definition.title).runes.length > 60,
+              'conditionalXp': definition.reward.xpAmount,
+            },
+            'rewardMeaning': 'conditional-not-earned-balance',
+            'progress': [
+              for (final progress in instance.progress.take(4))
+                {
+                  'current': progress.currentCount,
+                  'target': progress.targetCount,
+                },
+            ],
+            'progressTruncated': instance.progress.length > 4,
+          }),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                   Text(
-                    translated == null
-                        ? definition.description
-                        : instance.questId == 'daily-correct-5-v1'
-                        ? 'ตอบคำถามคำศัพท์ให้ถูกตามเป้าหมายประจำวัน'
-                        : 'ตอบคำถามคำศัพท์ให้ถูกตามเป้าหมายประจำสัปดาห์',
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                for (final progress in instance.progress) ...[
-                  Text(
-                    '${definition == null
-                        ? 'ความคืบหน้าที่บันทึกไว้'
-                        : translated != null
-                        ? 'คำตอบถูก'
-                        : definition.objectives.firstWhere((objective) => objective.objectiveId == progress.objectiveId).description}: ${progress.currentCount} จาก ${progress.targetCount}',
+                    definition == null
+                        ? 'รายละเอียดภารกิจฉบับนี้ยังไม่พร้อม'
+                        : translated ?? definition.title,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                ],
-                ExpansionTile(
-                  key: ValueKey('quest-details/${instance.instanceId}'),
-                  tilePadding: EdgeInsets.zero,
-                  title: const Text('รายละเอียดภารกิจ'),
-                  children: [
-                    Text(
-                      'รหัสภารกิจ ${instance.questId} · รุ่น ${instance.catalogVersion}',
-                    ),
-                    Text('ได้รับเมื่อ ${instance.assignedAtUtc.toLocal()}'),
-                    if (definition != null) ...[
-                      Text(definition.title),
-                      Text(definition.description),
-                      Text(
-                        'รางวัลตามเงื่อนไข ${definition.reward.xpAmount} XP — ไม่ใช่ยอดที่ได้รับแล้ว',
-                      ),
+                  Row(
+                    children: [
+                      Icon(_icon(instance.state)),
+                      const SizedBox(width: 8),
+                      Text(_label(instance.state)),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (definition == null)
+                    const Text(
+                      'ยังอ่านเป้าหมายของรุ่นที่ได้รับไม่ได้ ลองเปิดหน้านี้ใหม่ภายหลัง ความคืบหน้าที่บันทึกไว้ยังอยู่',
+                    )
+                  else ...[
+                    Text(
+                      translated == null
+                          ? definition.description
+                          : instance.questId == 'daily-correct-5-v1'
+                          ? 'ตอบคำถามคำศัพท์ให้ถูกตามเป้าหมายประจำวัน'
+                          : 'ตอบคำถามคำศัพท์ให้ถูกตามเป้าหมายประจำสัปดาห์',
+                    ),
+                    const SizedBox(height: 12),
                   ],
-                ),
-              ],
+                  for (final progress in instance.progress) ...[
+                    Text(
+                      '${definition == null
+                          ? 'ความคืบหน้าที่บันทึกไว้'
+                          : translated != null
+                          ? 'คำตอบถูก'
+                          : definition.objectives.firstWhere((objective) => objective.objectiveId == progress.objectiveId).description}: ${progress.currentCount} จาก ${progress.targetCount}',
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  ExpansionTile(
+                    key: ValueKey('quest-details/${instance.instanceId}'),
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('รายละเอียดภารกิจ'),
+                    children: [
+                      Text(
+                        'รหัสภารกิจ ${instance.questId} · รุ่น ${instance.catalogVersion}',
+                      ),
+                      Text('ได้รับเมื่อ ${instance.assignedAtUtc.toLocal()}'),
+                      if (definition != null) ...[
+                        Text(definition.title),
+                        Text(definition.description),
+                        Text(
+                          'รางวัลตามเงื่อนไข ${definition.reward.xpAmount} XP — ไม่ใช่ยอดที่ได้รับแล้ว',
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

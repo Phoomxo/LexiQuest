@@ -429,3 +429,8 @@ W13 optional guidance reports actual format/selection and operation status witho
 ### Offline assistance021 — 2026-09-21
 
 W14 mounted offline rows expose actual state, verification, byte counts, failure and native availability. Downloaded bytes are explicitly distinct from verified readiness or cloud sync. Existing native controls unchanged. Five status cases and full screen regression passed; analysis clean. [Evidence](offline-assistance-021.json). Fake-manager host evidence only; native, cloud-sync and fullW14 acceptance remain open.
+
+
+### Quest assistance022 — 2026-09-21
+
+Owner-bound quest context exposes persisted state/progress and conditional rewards, preserving native projection and score authorities. Missing definitions remain explicit; bounded title/objectives have truncation flags. Real Drift daily fixture plus complete screen suite passed; analysis clean. [Evidence](quest-assistance-022.json). Native and remaining W10/full14 remain open.
