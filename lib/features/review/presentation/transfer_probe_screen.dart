@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../ai_tutor/presentation/menu_action_binding.dart';
 import '../../../navigation/app_routes.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../identity/application/owner_generation.dart';
@@ -155,111 +157,144 @@ class _TransferProbeScreenState extends State<TransferProbeScreen>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('ลองจำในบริบทใหม่')),
-    body: SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_retired)
-                const Text(
-                  'Practice paused. Exit and reopen to continue saved work.',
-                )
-              else ...[
-                const Text(
-                  'Timing unverified — personal practice using this device’s clock.',
-                ),
-                Text('Earlier learning: ${_run.offer.originUtc.toLocal()}'),
-                if (_run.result == null) ...[
-                  const SizedBox(height: 16),
+  Widget build(BuildContext context) => MenuActionBinding(
+    id: 'review/transfer-probe',
+    label: 'วิธีฝึกจำคำในบริบทใหม่และผลที่บันทึกแล้ว',
+    ownerId: _run.owner.ownerId,
+    onInvoke: null,
+    readValue: _retired
+        ? null
+        : jsonEncode({
+            'mode': 'transfer-probe',
+            'languages': ['en', 'th'],
+            'status': _busy
+                ? 'saving'
+                : _run.summary != null
+                ? 'completed'
+                : _error != null
+                ? 'retry-required'
+                : 'answering',
+            'timing': 'unverified',
+            'assisted': _run.assisted,
+            'guidance':
+                'Explain how to recall an English word from Thai meaning and sentence context. Learner answers and requests hints in the original exercise. Do not supply answers before committed feedback.',
+            'interpretation':
+                'One-word spelling practice; not general writing ability or proven long-term transfer. Assisted describes the native first-letter hint, not AI usage.',
+            if (_run.result != null && _run.summary != null)
+              'lastCommittedFeedback': {
+                'isCorrect': _run.correct,
+                'correctAnswer': _run.item.answer,
+                'sentence': _run.item.sentence,
+              },
+          }),
+    child: Scaffold(
+      appBar: AppBar(title: const Text('ลองจำในบริบทใหม่')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_retired)
                   const Text(
-                    'Recall the English word for this meaning in a new sentence.',
+                    'Practice paused. Exit and reopen to continue saved work.',
+                  )
+                else ...[
+                  const Text(
+                    'Timing unverified — personal practice using this device’s clock.',
                   ),
-                  Text(_run.session.questions.single.word.meaning),
-                  Text(
-                    _run.item.prompt,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  if (_run.assisted)
+                  Text('Earlier learning: ${_run.offer.originUtc.toLocal()}'),
+                  if (_run.result == null) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Recall the English word for this meaning in a new sentence.',
+                    ),
+                    Text(_run.session.questions.single.word.meaning),
                     Text(
-                      'Assisted practice · First letter: ${_run.item.answer[0]}',
+                      _run.item.prompt,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  TextField(
-                    key: const ValueKey('probe-answer'),
-                    controller: _answer,
-                    enabled: !_busy && !_ending && _pendingAnswer == null,
-                    maxLength: 120,
-                    decoration: const InputDecoration(
-                      labelText: 'English word',
+                    if (_run.assisted)
+                      Text(
+                        'Assisted practice · First letter: ${_run.item.answer[0]}',
+                      ),
+                    TextField(
+                      key: const ValueKey('probe-answer'),
+                      controller: _answer,
+                      enabled: !_busy && !_ending && _pendingAnswer == null,
+                      maxLength: 120,
+                      decoration: const InputDecoration(
+                        labelText: 'English word',
+                      ),
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      onSubmitted: (_) {
+                        if (!_busy) _submit();
+                      },
                     ),
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    onSubmitted: (_) {
-                      if (!_busy) _submit();
-                    },
-                  ),
-                  FilledButton(
-                    key: const ValueKey('probe-submit'),
-                    onPressed: _busy || _ending ? null : _submit,
-                    child: Text(
-                      _pendingAnswer == null
-                          ? 'Check answer'
-                          : 'Retry same answer',
+                    FilledButton(
+                      key: const ValueKey('probe-submit'),
+                      onPressed: _busy || _ending ? null : _submit,
+                      child: Text(
+                        _pendingAnswer == null
+                            ? 'Check answer'
+                            : 'Retry same answer',
+                      ),
                     ),
-                  ),
-                  if (!_run.assisted && _pendingAnswer == null)
-                    OutlinedButton(
-                      onPressed: _busy || _ending
-                          ? null
-                          : () => _act(() => widget.useCases.hint(_run)),
-                      child: const Text('Show a hint · assisted practice'),
+                    if (!_run.assisted && _pendingAnswer == null)
+                      OutlinedButton(
+                        onPressed: _busy || _ending
+                            ? null
+                            : () => _act(() => widget.useCases.hint(_run)),
+                        child: const Text('Show a hint · assisted practice'),
+                      ),
+                    TextButton(
+                      onPressed: _busy ? null : _abandon,
+                      child: Text(
+                        _ending
+                            ? 'Retry ending practice'
+                            : 'End without completing',
+                      ),
                     ),
-                  TextButton(
-                    onPressed: _busy ? null : _abandon,
-                    child: Text(
-                      _ending
-                          ? 'Retry ending practice'
-                          : 'End without completing',
+                  ] else ...[
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        _run.correct! ? 'Correct' : 'Keep practising',
+                      ),
                     ),
-                  ),
-                ] else ...[
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(_run.correct! ? 'Correct' : 'Keep practising'),
-                  ),
-                  Text(_run.item.sentence),
-                  Text(
-                    _run.assisted
-                        ? 'Assisted spelling practice'
-                        : 'Independent spelling recall',
-                  ),
-                  const Text(
-                    'This checks one word in context, not general writing ability or proven long-term transfer.',
-                  ),
-                  Text(
-                    'Saved learning result · ${_run.summary!.correctCount} correct',
-                  ),
+                    Text(_run.item.sentence),
+                    Text(
+                      _run.assisted
+                          ? 'Assisted spelling practice'
+                          : 'Independent spelling recall',
+                    ),
+                    const Text(
+                      'This checks one word in context, not general writing ability or proven long-term transfer.',
+                    ),
+                    Text(
+                      'Saved learning result · ${_run.summary!.correctCount} correct',
+                    ),
+                  ],
+                  if (_error != null)
+                    Semantics(liveRegion: true, child: Text(_error!)),
+                  if (_busy)
+                    const LinearProgressIndicator(
+                      semanticsLabel: 'Saving practice',
+                    ),
                 ],
-                if (_error != null)
-                  Semantics(liveRegion: true, child: Text(_error!)),
-                if (_busy)
-                  const LinearProgressIndicator(
-                    semanticsLabel: 'Saving practice',
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: Text(
+                    _run.summary == null
+                        ? 'Keep saved and return to Review'
+                        : 'Return to Review',
                   ),
-              ],
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                child: Text(
-                  _run.summary == null
-                      ? 'Keep saved and return to Review'
-                      : 'Return to Review',
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

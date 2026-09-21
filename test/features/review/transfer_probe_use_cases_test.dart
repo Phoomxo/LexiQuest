@@ -16,6 +16,8 @@ import 'package:vocab_learning_app/features/export/application/owner_lifecycle_a
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 
@@ -374,6 +376,121 @@ void main() {
       );
     },
   );
+  for (final scenario in ['correct', 'incorrect', 'save-failure']) {
+    testWidgets('optional probe assistance preserves learner writes $scenario', (
+      tester,
+    ) async {
+      await tester.runAsync(origin);
+      now = now.add(const Duration(days: 1));
+      final s = service();
+      final run = (await tester.runAsync(() async {
+        final owner = await sets.begin();
+        return s.start(
+          owner,
+          offer: (await s.offers(owner)).first,
+          operationId: 'ai-probe',
+        );
+      }))!;
+      String? currentOwner = run.owner.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => currentOwner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: TransferProbeScreen(useCases: s, run: run),
+          ),
+        ),
+      );
+      Future<void> settle() async {
+        for (var i = 0; i < 30; i++) {
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+        }
+      }
+
+      Map<String, dynamic> context() {
+        final entry = (registry.snapshot()['context'] as List).singleWhere(
+          (dynamic item) => item['id'] == 'review/transfer-probe',
+        );
+        final value = entry['value'] as String;
+        expect(value.length, lessThan(1000));
+        return jsonDecode(value) as Map<String, dynamic>;
+      }
+
+      await settle();
+      final initial = context();
+      expect(initial['status'], 'answering');
+      expect(initial['timing'], 'unverified');
+      expect(initial['lastCommittedFeedback'], isNull);
+      expect(jsonEncode(initial), isNot(contains(run.item.answer)));
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(
+        await tester.runAsync(() => db.select(db.answerAttempts).get()),
+        hasLength(1),
+        reason: 'Only the genuine prior context attempt exists',
+      );
+      currentOwner = 'other';
+      expect(registry.snapshot()['context'], isEmpty);
+      currentOwner = run.owner.ownerId;
+      if (scenario == 'incorrect') {
+        final hint = find.text('Show a hint · assisted practice');
+        await tester.ensureVisible(hint);
+        await tester.runAsync(() => tester.tap(hint));
+        await settle();
+        expect(context()['assisted'], true);
+        expect(context()['lastCommittedFeedback'], isNull);
+        expect(jsonEncode(context()), isNot(contains(run.item.answer)));
+      }
+      if (scenario == 'save-failure') {
+        await tester.runAsync(
+          () => db.customStatement(
+            "CREATE TRIGGER fail_ai_probe BEFORE INSERT ON events_v2 WHEN NEW.event_type='LearningActivityCheckpoint' AND json_extract(NEW.payload_json, '\$.state.kind')='transferProbe' BEGIN SELECT RAISE(ABORT, 'injected checkpoint failure'); END",
+          ),
+        );
+      }
+      await tester.enterText(
+        find.byKey(const ValueKey('probe-answer')),
+        scenario == 'incorrect' ? 'wrong' : run.item.answer,
+      );
+      final submit = find.byKey(const ValueKey('probe-submit'));
+      await tester.ensureVisible(submit);
+      await tester.runAsync(() => tester.tap(submit));
+      await settle();
+      if (scenario == 'save-failure') {
+        expect(context()['lastCommittedFeedback'], isNull);
+        expect(context()['status'], 'retry-required');
+        expect(
+          await tester.runAsync(() => db.select(db.answerAttempts).get()),
+          hasLength(1),
+        );
+        await tester.runAsync(
+          () => db.customStatement('DROP TRIGGER fail_ai_probe'),
+        );
+        await tester.ensureVisible(submit);
+        await tester.runAsync(() => tester.tap(submit));
+        await settle();
+      }
+      final feedback = context()['lastCommittedFeedback'] as Map;
+      expect(context()['status'], 'completed');
+      expect(feedback['isCorrect'], scenario != 'incorrect');
+      expect(feedback['correctAnswer'], run.item.answer);
+      expect(feedback['sentence'], run.item.sentence);
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(
+        await tester.runAsync(() => db.select(db.answerAttempts).get()),
+        hasLength(2),
+        reason: 'AI reads and retry must not duplicate answers',
+      );
+      await tester.runAsync(() => DriftOwnerGeneration(db).advance());
+      await settle();
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(find.textContaining('Practice paused'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await settle();
+    });
+  }
   for (final layout in [(320.0, 2.0), (390.0, 1.0)]) {
     testWidgets('probe typed answer and result remain usable at $layout', (
       tester,

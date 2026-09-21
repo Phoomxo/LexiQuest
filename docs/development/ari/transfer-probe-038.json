@@ -1,0 +1,44 @@
+{
+  "status": "HOST_ASSISTANCE_PASS_NATIVE_BASELINE_PASS_PROBE_LIVE_PENDING",
+  "sourceBase": "8516af14607100fbe99b5c1d2717be0554e10891",
+  "changes": "Owner-bound read-only context for transfer probe. Method only before result; correct answer and sentence only after durable summary. No answer, hint, scoring or save tools. Original controls and rollout unchanged.",
+  "host": {
+    "passedTests": 33,
+    "red": "Three added widget cases failed because transfer-probe context did not exist; captured in build/verification/8516af14607100fbe99b5c1d2717be0554e10891/e80e26593480-8d3210b6a396-1ccc590e/Explicit-Flutter-tests.stdout.log",
+    "newCases": [
+      "Correct learner answer",
+      "Incorrect answer after native first-letter hint",
+      "Checkpoint write failure rolls back and retry commits once"
+    ],
+    "assertions": [
+      "No answer before committed feedback",
+      "No actions exposed",
+      "Context JSON below registry limit",
+      "Wrong owner sees no context",
+      "Durable owner generation retires context",
+      "Prior genuine origin plus exactly one committed probe attempt"
+    ],
+    "existingCoverage": "Real file-backed Drift, persistence, eligibility, lifecycle retirement, baseline screen without AI scope and policy checks",
+    "analysis": "No issues found; two changed Dart files",
+    "limitations": "Uses injected clock for eligibility and registry inspection; no live provider or network-disconnect claim for probe"
+  },
+  "native": {
+    "build": "PASS",
+    "install": "PASS isolated package com.lexiquest.app.ariTest",
+    "baseline": "Home -> Today 10 review words -> Review center -> dashboard without provider; 28/42,1853 active seconds,0due unchanged",
+    "probe": "NOT_RUN; default TransferProbeRollout.implementedOff preserved; no research activation or device-clock change",
+    "usbStayAwake": 2,
+    "provider": "No bridge or login started"
+  },
+  "diagnostic": "First accessibility probe failed removing temporary XML; exact path inspection found it already absent. Fresh app-only dump succeeded. No app failure inferred.",
+  "limits": [
+    "14 workflow groups and14 modes acceptance remains OPEN",
+    "Transfer probe live provider acceptance still pending behind existing rollout",
+    "Whole-project review is queued after current MCP acceptance"
+  ],
+  "next": [
+    "Complete outstanding per-mode baseline/connected/disconnected evidence",
+    "Review remaining sync, mapped-camera and successful-speech acceptance",
+    "Execute post-mcp-project-review-plan.json after current scope acceptance"
+  ]
+}
