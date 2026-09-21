@@ -374,3 +374,8 @@ Vivo remains offline after per-device reconnect and ADB server restart. User ask
 Typed bulk fill/preview/save now uses the existing manual importer. Real Drift mixed accepted/duplicate/rejected outcomes and replay passed; three targeted Flutter files and 9 Python menu transport tests passed. Preview explicitly does not check database capacity/duplicates or persist. Analysis clean after braces-only correction. [Evidence](import-mcp-009.json). USB now reports Vivo device, but this source is not yet installed or verified natively. Owner/cancellation/readback adversarial expansion remains pending; all-workflow completion remains open.
 
 Import009 update: 9 import-domain tests passed including wrong-owner, post-owner-lookup cancellation and corrupted readback. APK built and installed successfully on isolated Vivo app; local startup, vocabulary tab and category open/cancel observed without a provider. Connected import/category/delete journeys remain pending. Earlier USB-offline and not-installed statements are historical.
+
+
+### Vocabulary native010 — 2026-09-21
+
+Live provider category create, mixed import preview/save and confirmed word deletion passed on Vivo at c2210ac4. Native category/word/empty state matched saved/deleted receipts. After disconnect manual invalid-row import returned 0/0/1 and native category cleanup worked. Own fixture, reverse and capability removed; original account retained. Own temporary directory retained after automatic policy rejection of combined cleanup. [Evidence](vocabulary-native-010.json). All14 workflow/mode acceptance remains OPEN.

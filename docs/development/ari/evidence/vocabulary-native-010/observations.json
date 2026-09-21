@@ -1,0 +1,3112 @@
+[
+  {
+    "at": "2026-09-21T05:13:36.737532+00:00",
+    "action": [
+      "tap",
+      "145",
+      "2150"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เรียน",
+        "bounds": "[44,270][158,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มฝึกสั้น ๆ\nเลือกความหมายที่ถูกต้อง",
+        "bounds": "[44,440][1036,858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มแบบทดสอบ",
+        "bounds": "[88,682][513,814]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "วันนี้และแผนเรียน",
+        "bounds": "[44,924][1036,932]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1368][1025,1522]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1522][1025,1654]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ",
+        "bounds": "[55,1654][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Create and save a vocabulary category named ARIQA010 using the app controls.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:13:52.156991+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,734][1036,888]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1368][1025,1522]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1522][1025,1654]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ",
+        "bounds": "[55,1654][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Create and save a vocabulary category named ARIQA010 using the app controls.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:00.179342+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "ยกเลิก",
+        "bounds": "[437,143][609,275]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึก",
+        "bounds": "[631,143][859,275]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ปิด",
+        "bounds": "[0,0][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1368][1025,1506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:12.631461+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[838,462][970,594]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,682][1036,913]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,734][1036,888]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1368][1025,1522]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1522][1025,1654]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1654][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Create and save a vocabulary category named ARIQA010 using the app controls.",
+        "bounds": "[88,1913][992,2045]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกหมวดคำศัพท์ **ARIQA010** สำเร็จแล้ว ✅",
+        "bounds": "[88,2188][992,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:20.467892+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2110",
+      "850",
+      "1400",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[838,462][970,594]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,682][1036,913]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,734][1036,888]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1846]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกหมวดคำศัพท์ **ARIQA010** สำเร็จแล้ว ✅",
+        "bounds": "[88,1361][992,1409]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1491][1025,1714]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,1656][981,1714]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1714][231,1846]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1714][557,1846]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1846][1025,1912]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,1912][1025,1978]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1978][1025,2044]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,2044][1025,2110]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2110][1025,2176]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: filled",
+        "bounds": "[55,2176][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[0,0][0,0]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:35.315118+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[838,462][970,594]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,682][1036,913]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,734][1036,888]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1792]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1372][1025,1660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 3,956 อักขระ",
+        "bounds": "[835,1603][981,1660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1660][231,1792]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1660][557,1792]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1792][1025,1858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,1858][1025,1924]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1924][1025,1990]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,1990][1025,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2056][1025,2122]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: filled",
+        "bounds": "[55,2122][1025,2188]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2188][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: saved",
+        "bounds": "[0,0][0,0]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:43.668960+00:00",
+    "action": [
+      "tap",
+      "140",
+      "1720"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[838,462][970,594]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,682][1036,913]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,734][1036,888]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,932][216,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,932][432,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,932][648,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,932][864,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,932][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Create and save a vocabulary category named ARIQA010 using the app controls.",
+        "bounds": "[88,1371][992,1503]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกหมวดคำศัพท์ **ARIQA010** สำเร็จแล้ว ✅",
+        "bounds": "[88,1646][992,1781]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Open the bulk import screen inside ARIQA010.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:14:53.717028+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,779][748,845]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Create and save a vocabulary category named ARIQA010 using the app controls.",
+        "bounds": "[88,1371][992,1503]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกหมวดคำศัพท์ **ARIQA010** สำเร็จแล้ว ✅",
+        "bounds": "[88,1646][992,1781]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Open the bulk import screen inside ARIQA010.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:15:07.452734+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2110",
+      "850",
+      "1420",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าจอนำเข้าคำศัพท์แบบกลุ่มในหมวด **ARIQA010** แล้วครับ ✅",
+        "bounds": "[88,1361][992,1470]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1552][1025,1775]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,1717][981,1775]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1775][231,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1775][557,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1907][1025,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,1973][1025,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2039][1025,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,2105][1025,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2171][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:15:23.286585+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,366]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1371][1025,1506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:16:00.012999+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1361][1025,1775]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 3,716 อักขระ",
+        "bounds": "[813,1717][981,1775]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1775][231,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1775][557,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1907][1025,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,1973][1025,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2039][1025,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,2105][1025,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2171][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:16:28.321023+00:00",
+    "action": [
+      "tap",
+      "140",
+      "1830"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าจอนำเข้าคำศัพท์แบบกลุ่มในหมวด **ARIQA010** แล้วครับ ✅",
+        "bounds": "[88,1361][992,1385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Fill three import rows: book with Thai meaning for book and nounFill three import rows: book with Thai meaning for book and noun; repeat exactly the same row; pen with EMPTY meaning and noun. Preview then save these rows unchanged. Report exact accepted duplicate and rejected counts.",
+        "bounds": "[88,1528][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:16:41.012185+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าจอนำเข้าคำศัพท์แบบกลุ่มในหมวด **ARIQA010** แล้วครับ ✅",
+        "bounds": "[88,1361][992,1385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Fill three import rows: book with Thai meaning for book and nounFill three import rows: book with Thai meaning for book and noun; repeat exactly the same row; pen with EMPTY meaning and noun. Preview then save these rows unchanged. Report exact accepted duplicate and rejected counts.",
+        "bounds": "[88,1528][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:16:48.855867+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าจอนำเข้าคำศัพท์แบบกลุ่มในหมวด **ARIQA010** แล้วครับ ✅",
+        "bounds": "[88,1361][992,1385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Fill three import rows: book with Thai meaning for book and nounFill three import rows: book with Thai meaning for book and noun; repeat exactly the same row; pen with EMPTY meaning and noun. Preview then save these rows unchanged. Report exact accepted duplicate and rejected counts.",
+        "bounds": "[88,1528][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:05.271692+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book\nหนังสือ · noun",
+        "bounds": "[0,473][1080,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[882,506][1014,638]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าจอนำเข้าคำศัพท์แบบกลุ่มในหมวด **ARIQA010** แล้วครับ ✅",
+        "bounds": "[88,1361][992,1374]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Fill three import rows: book with Thai meaning for book and nounFill three import rows: book with Thai meaning for book and noun; repeat exactly the same row; pen with EMPTY meaning and noun. Preview then save these rows unchanged. Report exact accepted duplicate and rejected counts.",
+        "bounds": "[88,1517][992,2045]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,2188][992,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:15.172498+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2110",
+      "850",
+      "1400",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book\nหนังสือ · noun",
+        "bounds": "[0,473][1080,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[882,506][1014,638]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,1361][992,1805]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1887][1025,2110]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,2052][981,2110]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2110][231,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2110][557,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[0,0][0,0]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:25.403417+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2120",
+      "850",
+      "1650",
+      "400"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book\nหนังสือ · noun",
+        "bounds": "[0,473][1080,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[882,506][1014,638]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1841]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,1361][992,1404]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1486][1025,1709]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,1651][981,1709]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1709][231,1841]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1709][557,1841]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1841][1025,1907]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: filled",
+        "bounds": "[55,1907][1025,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1973][1025,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: previewed",
+        "bounds": "[55,2039][1025,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2105][1025,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: saved",
+        "bounds": "[55,2171][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:38.792392+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book\nหนังสือ · noun",
+        "bounds": "[0,473][1080,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[882,506][1014,638]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1371][1025,1726]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 3,917 อักขระ",
+        "bounds": "[835,1668][981,1726]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1726][231,1858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1726][557,1858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1858][1025,1924]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: filled",
+        "bounds": "[55,1924][1025,1990]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1990][1025,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: previewed",
+        "bounds": "[55,2056][1025,2122]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2122][1025,2188]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: saved",
+        "bounds": "[55,2188][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:46.047334+00:00",
+    "action": [
+      "tap",
+      "140",
+      "1790"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book\nหนังสือ · noun",
+        "bounds": "[0,473][1080,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[882,506][1014,638]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,1361][992,1781]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Delete the word book from ARIQA010 and confirm its deletion using the app controls.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:17:59.664774+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "ลบคำศัพท์",
+        "bounds": "[221,422][859,499]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบ “book” (หนังสือ) หรือไม่",
+        "bounds": "[221,543][859,609]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[487,675][659,807]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบ",
+        "bounds": "[681,675][859,807]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ปิด",
+        "bounds": "[0,0][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี\nคุณ",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,1361][992,1781]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Delete the word book from ARIQA010 and confirm its deletion using the app controls.",
+        "bounds": "[88,1924][992,2056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2105][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2105][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:10.739709+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,779][748,845]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกการนำเข้าแล้ว ✅  \n- รับเข้า: **1**  \n- ซ้ำ: **1**  \n- ปฏิเสธ: **1**  \n- rejectedTruncated: **false**  \n\nแถวที่ 3 ถูกปฏิเสธ เพราะไม่มีความหมาย (`missingMeaning`) ครับ",
+        "bounds": "[88,1361][992,1770]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Delete the word book from ARIQA010 and confirm its deletion using the app controls.",
+        "bounds": "[88,1913][992,2045]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำ **book — หนังสือ** จากหมวด **ARIQA010** สำเร็จและยืนยันแล้ว ✅",
+        "bounds": "[88,2188][992,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:18.302033+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2120",
+      "850",
+      "1410",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,779][748,845]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบคำ **book — หนังสือ** จากหมวด **ARIQA010** สำเร็จและยืนยันแล้ว ✅",
+        "bounds": "[88,1401][992,1536]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1618][1025,1841]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,1783][981,1841]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,1841][231,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,1841][557,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,1973][1025,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: invoked",
+        "bounds": "[55,2039][1025,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2105][1025,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ execute_menu_action: deleted",
+        "bounds": "[55,2171][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:29.679350+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1900"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,779][748,845]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,789][1036,921]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,954][1036,1108]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เชื่อมบัญชี ChatGPT",
+        "bounds": "[55,1361][1025,1434]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,1434][1025,1566]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,1566][1025,1698]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1786][1025,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1940][1025,2072]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2072][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:38.912039+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,1284][748,1350]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,1797][1036,1929]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,1962][1036,2116]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:41.484841+00:00",
+    "action": [
+      "tap",
+      "970",
+      "1860"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์ · ARIQA010",
+        "bounds": "[198,116][806,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,440][1036,1056]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้า",
+        "bounds": "[44,1100][1036,1232]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:18:55.614758+00:00",
+    "action": [
+      "tap",
+      "520",
+      "1165"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010",
+        "bounds": "[198,116][464,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[154,319][992,385]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีคำศัพท์ในหมวดนี้",
+        "bounds": "[332,1284][748,1350]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "นำเข้าคำศัพท์",
+        "bounds": "[904,1654][1036,1786]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มคำศัพท์",
+        "bounds": "[668,1819][1036,1973]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่ม 0 · ซ้ำ 0 · ไม่ผ่าน 1",
+        "bounds": "[0,2017][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:19:04.030275+00:00",
+    "action": [
+      "tap",
+      "75",
+      "150"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ARIQA010\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[838,462][970,594]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,682][1036,913]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,1742][1036,1896]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:19:06.755311+00:00",
+    "action": [
+      "tap",
+      "900",
+      "525"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "ลบหมวดหมู่",
+        "bounds": "[176,893][904,970]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบ “ARIQA010” และซ่อนคำศัพท์ในหมวดนี้หรือไม่",
+        "bounds": "[176,1014][904,1146]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[532,1212][704,1344]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ลบ",
+        "bounds": "[726,1212][904,1344]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ปิด",
+        "bounds": "[0,0][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-21T05:19:15.892700+00:00",
+    "action": [
+      "tap",
+      "810",
+      "1280"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คลังคำศัพท์",
+        "bounds": "[44,270][310,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำศัพท์เริ่มต้นรอบตัว\nแตะเพื่อดูคำศัพท์",
+        "bounds": "[44,429][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มหมวดหมู่",
+        "bounds": "[646,1742][1036,1896]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]

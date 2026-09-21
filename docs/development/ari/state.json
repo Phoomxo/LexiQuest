@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 34,
+  "revision": 35,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "optional-import-host-pass-native-installed-partial",
+  "status": "vocabulary-native-category-import-delete-pass-whole-scope-open",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": {
     "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
@@ -190,5 +190,6 @@
   "latestLessonAssistance": "lesson-assistance-006.json",
   "latestCategoryForms": "category-mcp-007.json",
   "latestWordDelete": "word-delete-008.json",
-  "latestImport": "import-mcp-009.json"
+  "latestImport": "import-mcp-009.json",
+  "latestVocabularyNative": "vocabulary-native-010.json"
 }
