@@ -527,6 +527,7 @@ final class AppBootstrap {
            loadContentArtifactBytes ?? _productionContentArtifactBytes;
 
   factory AppBootstrap.production({
+    FeatureRegistry buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
     AdventureResearchRuntimeConfig adventureResearchConfig =
         const AdventureResearchRuntimeConfig.off(),
     ResearchMeasurementSyncRollout researchMeasurementSyncRollout =
@@ -539,6 +540,7 @@ final class AppBootstrap {
         const LearnerPreferenceSyncRollout.off(),
   }) {
     return AppBootstrap(
+      buildFeatureRegistry: buildFeatureRegistry,
       initializeFirebase: _initializeFirebaseProduction,
       initializeSupabase: _initializeSupabaseOptional,
       loadConfig: AppConfig.fromEnvironment,

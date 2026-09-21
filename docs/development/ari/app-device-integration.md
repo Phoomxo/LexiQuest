@@ -404,3 +404,8 @@ Optional Pair history exposes canonical result counts, nullable stars/time and p
 ### Progress assistance016 — 2026-09-21
 
 Dashboard owner-bound summary distinguishes weekly, cumulative and current evidence; no-evidence fields remain absent and zero-sample accuracy nullable. Profile reload/error clears context. Full dashboard tests and analysis passed; fixture-based host evidence, native pending. [Evidence](progress-assistance-016.json). User authorized subsequent entire-project code review, evidence collection, root-cause analysis and sequential SDLC/Agile remediation: [queued plan](post-mcp-project-review-plan.json). Current14-workflow goal remains active.
+
+
+### Native progress and preview admission017 — 2026-09-21
+
+Built and installed136a11bf isolated APK. Without AI pairing, dashboard27/41, Today and ordinary history opened on Vivo. Planning was hidden by field defaults: introduced explicit Ari-only planning/offline admission while preserving production defaults and research gates. Preview registry and four baseline AI startup cases passed; analysis clean. [Evidence](preview-admission-017.json). Updated preview needs build/install; connected/disconnected acceptance remains pending. USB stay-awake2 retained.

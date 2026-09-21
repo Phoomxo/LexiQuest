@@ -1,3 +1,5 @@
+import 'runtime/ari_preview_feature_registry.dart';
+import 'runtime/registries/feature_registry.dart';
 import 'main.dart' show MyApp;
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
@@ -79,7 +81,11 @@ class _AriTestAppState extends State<AriTestApp> {
     try {
       final dependencies =
           await (widget.loadDependencies ??
-              AppBootstrap.production().initialize)();
+              AppBootstrap.production(
+                buildFeatureRegistry: const AriPreviewFeatureRegistry(
+                  BuildFeatureRegistry.fieldDefaults(),
+                ),
+              ).initialize)();
       if (!mounted) {
         await dependencies.dispose();
         return;

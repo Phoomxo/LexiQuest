@@ -1,17 +1,18 @@
 {
-  "revision": 40,
+  "revision": 41,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: dashboard assistance host acceptance and authorized whole-project follow-up persisted",
+  "previousTurn": "PROGRESS: native no-provider dashboard/history and preview-admission defect fixed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Progress016 host verified; native011-016 pending",
+  "current": "Preview017 host passed; new build/install next",
   "next": [
-    "Replay and assessment context acceptance",
-    "Remaining workflow/mode implementation",
-    "Build and native verification of011-014"
+    "Build/install preview017",
+    "Native planning/offline baseline checks",
+    "Live-provider and disconnected011-017 checks",
+    "Remaining14 workflow/mode implementation"
   ],
-  "nativeInstalledSource": "c2210ac4",
-  "nativeInstalledApk": "build/ari-import-009.apk",
+  "nativeInstalledSource": "136a11bff85234d893d7251b49358547eab68ff4",
+  "nativeInstalledApk": "build/ari-progress-016.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",

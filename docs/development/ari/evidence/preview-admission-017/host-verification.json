@@ -1,0 +1,49 @@
+{
+  "areaFingerprints": {
+    "Runtime": "8be079eb83e1501247133b3d4bce00ef27810c8c7814920cb1e12d95f954b53d"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "136a11bff85234d893d7251b49358547eab68ff4",
+  "baseSha": "136a11bff85234d893d7251b49358547eab68ff4",
+  "level": "Targeted",
+  "area": "Runtime",
+  "fingerprint": "8be079eb83e1501247133b3d4bce00ef27810c8c7814920cb1e12d95f954b53d",
+  "environmentFingerprint": "c7a78bd6811bdcb78707c017f42ca420c33d17cc68a0735f749054a7c0cff947",
+  "selection": [
+    {
+      "Name": "Explicit Flutter tests",
+      "FilePath": "flutter",
+      "Arguments": [
+        "test",
+        "test/runtime/ari_preview_feature_registry_test.dart",
+        "test/features/ai_tutor/managed/optional_ai_app_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "SourceArea": "Runtime",
+      "commandKey": "e57741d21cc93919939bc3a1d71b8db3117f84b0d82593da1722b5e1323d7ffe"
+    }
+  ],
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-21T05:48:06.4759901+00:00",
+  "finishedAt": "2026-09-21T05:48:44.1985660+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "e57741d21cc93919939bc3a1d71b8db3117f84b0d82593da1722b5e1323d7ffe",
+      "fingerprint": "8be079eb83e1501247133b3d4bce00ef27810c8c7814920cb1e12d95f954b53d",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-21T05:48:08.0388862+00:00",
+      "FinishedAt": "2026-09-21T05:48:39.5269299+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\136a11bff85234d893d7251b49358547eab68ff4\\e57741d21cc9-8be079eb83e1-15bd4998\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\136a11bff85234d893d7251b49358547eab68ff4\\e57741d21cc9-8be079eb83e1-15bd4998\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "8be079eb83e1501247133b3d4bce00ef27810c8c7814920cb1e12d95f954b53d",
+      "StdoutHash": "CC48DD432714D25C6BE4C19A7CB76376FB38A58D856F0DEFBBD87345DD909D3A",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "8be079eb83e1501247133b3d4bce00ef27810c8c7814920cb1e12d95f954b53d",
+  "fullReceipt": "build/verification/136a11bff85234d893d7251b49358547eab68ff4/targeted-runtime-55ed13e982219026c5e7b5775d33f5b99d5d56aa6248c214e3298a2fcb0feb71.json"
+}
