@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_PENDING_USB_OFFLINE",
+  "baseCommit": "68566d4f4651b363896e3f137496b66fadd3b3ba",
+  "scope": "Optional confirmed word deletion with exact target and verified removal; safe bounded tool labels",
+  "host": {
+    "flutterPassed": 42,
+    "pythonPassed": 45,
+    "analysis": "No issues found",
+    "receipt": "evidence/word-delete-008/host-verification.json",
+    "postTestChanges": "Braces, removal of redundant non-null assertion, restored line endings only",
+    "cases": [
+      "Open confirmation does not mutate",
+      "Wrong target rejected",
+      "Cancel leaves word intact",
+      "Confirm produces tombstone for exact stored word",
+      "Owner change hides target context and actions",
+      "Wrong owner and retired mutation cannot delete",
+      "Packaged read-only words expose no delete control",
+      "Native cancel and long-list controls still work without MCP",
+      "Long Unicode labels remain valid bounded descriptors without altering full native text",
+      "Actual stdio MCP carries deleted receipt without marking it as an error"
+    ]
+  },
+  "implementation": {
+    "deleteRequestRequired": "Provider instructions require explicit user deletion request and exact current confirmation target; ask if ambiguous",
+    "verification": "Existing deleteWord use case with owner/mutation guard; check active owner-scoped word list for absence before deleted receipt",
+    "limitations": [
+      "Guard checked before repository write; cancellation does not roll back an already committed write",
+      "Session-local finite replay, not durable cross-session exactly-once",
+      "Live-provider/native deletion and late-attach confirmation context are not yet verified"
+    ]
+  },
+  "native": {
+    "status": "NOT_RUN_NEW_SOURCE",
+    "device": "9582188822004C6 offline after server restart",
+    "prerequisite": "User USB reconnect/unlock/trust prompt requested",
+    "bridgeRunning": false,
+    "partialOwnedRemoteFile": "/data/local/tmp/ari-category-008.apk"
+  },
+  "next": [
+    "Restore authorized USB and remove partial owned APK; build/install latest isolated app and verify artifact hash",
+    "Live category create/duplicate and confirmed word-delete acceptance",
+    "Typed import and remaining workflow/mode baseline-connected-disconnected coverage"
+  ],
+  "wholeScopeComplete": false
+}

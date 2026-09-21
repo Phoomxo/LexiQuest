@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
+import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -409,6 +410,119 @@ void main() {
     await tester.runAsync(database.close);
   });
 
+  testWidgets('MCP word delete requires exact target and verifies tombstone', (
+    tester,
+  ) async {
+    final vocabulary = dependencies.vocabulary!;
+    final category = await tester.runAsync(
+      () => vocabulary.createCategory('Delete fixture'),
+    );
+    final word = await tester.runAsync(
+      () => vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category!.id,
+          spelling: 'book',
+          meaning: 'หนังสือ',
+          partOfSpeech: 'noun',
+        ),
+      ),
+    );
+    var owner = category!.ownerId;
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(
+            home: VocabListScreen(
+              categoryId: category.id,
+              categoryName: category.name,
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.widgetWithText(ListTile, 'book'));
+    var request = 0;
+    Future<Map<String, Object?>> invoke(
+      String id, {
+      Map<String, String> values = const {},
+    }) async {
+      Map<String, Object?>? result;
+      registry
+          .execute(
+            id: id,
+            owner: owner,
+            revision: registry.snapshot()['revision'] as int,
+            requestId: 'delete-${request++}',
+            values: values,
+          )
+          .then((value) => result = value);
+      for (var i = 0; i < 50 && result == null; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      expect(
+        result,
+        isNotNull,
+        reason: 'Delete command must finish within bounded frame/IO pumps',
+      );
+      await tester.pumpAndSettle();
+      return result!;
+    }
+
+    expect((await invoke('vocabulary/word/0/delete'))['status'], 'invoked');
+    expect(find.byType(AlertDialog), findsOneWidget);
+    owner = 'other-owner';
+    expect(registry.snapshot()['actions'], isEmpty);
+    expect(registry.snapshot()['context'], isEmpty);
+    owner = category.ownerId;
+
+    expect(
+      (await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      ))!.single.isDeleted,
+      isFalse,
+    );
+    expect(
+      (await invoke(
+        'vocabulary/word-delete-confirm',
+        values: {'wordId': 'wrong-target'},
+      ))['status'],
+      'invalid',
+    );
+    await invoke('vocabulary/word-delete-cancel');
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(
+      (await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      ))!.single.isDeleted,
+      isFalse,
+    );
+    await invoke('vocabulary/word/0/delete');
+    expect(
+      (await invoke(
+        'vocabulary/word-delete-confirm',
+        values: {'wordId': word!.id},
+      ))['status'],
+      'deleted',
+    );
+    final rows = await tester.runAsync(
+      () => database.select(database.vocabularyWords).get(),
+    );
+    expect(rows, hasLength(1));
+    expect(rows!.single.id, word.id);
+    expect(rows.single.isDeleted, isTrue);
+    expect(rows.single.ownerId, owner);
+    expect(find.byType(AlertDialog), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(database.close);
+  });
+
   testWidgets(
     'MCP fills Thai word, verifies persistence and does not replay a write',
     (tester) async {
@@ -772,7 +886,7 @@ void main() {
       expect(delete.hitTestable(), findsOneWidget);
       await tester.tap(delete);
       await tester.pumpAndSettle();
-      expect(find.text('ลบ “word19” หรือไม่'), findsOneWidget);
+      expect(find.text('ลบ “word19” (คำทดสอบ) หรือไม่'), findsOneWidget);
       await tester.tap(find.text('ยกเลิก'));
       await tester.pumpAndSettle();
       expect(find.text('word19'), findsOneWidget);

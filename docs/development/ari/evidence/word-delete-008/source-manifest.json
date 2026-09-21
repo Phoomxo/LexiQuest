@@ -1,0 +1,12 @@
+{
+  "lib/features/ai_tutor/presentation/menu_action_binding.dart": "528b98f5ab15cac7324a9418e050583d3a5580018f79a246991a25a26bf344bb",
+  "lib/features/vocabulary/application/vocabulary_use_cases.dart": "59c34855b185cae21d6b56f1ab5c4ff166ab287e5ec705aa6c0a79bec3d9d2a5",
+  "lib/screens/vocab_list_screen.dart": "e166171ff9c9dc1e5bacc90550b0db86b5321fd41fc4da3d76bb787c605d79ca",
+  "test/features/ai_tutor/managed/menu_action_binding_test.dart": "b53aef0ab9d1284f92bc1dd72df00e6246f7f71110ed5b2e2d43825db264b144",
+  "test/features/vocabulary/vocabulary_use_cases_test.dart": "c487af97fa330de8c5f2d83288d815389bbe34aa08e7c21ce767cc530cf4624b",
+  "test/screens/offline_vocabulary_journey_test.dart": "f4cf6cd7e6d6250072a69320d52a72b5a82ff5c8972864af9fbf3fb2ad8514d8",
+  "test/screens/vocab_list_screen_test.dart": "7e9c2001a228d11abb5e66118e6abf128f9027fff41516d20f5981a23fdb9b03",
+  "tool/experiments/ari_app_server/chat_bridge.py": "e896c91e3813bab575db05929ffd3afef4ec035ec8d602a33b792c9f7aa61c9f",
+  "tool/experiments/ari_app_server/test_menu_channel.py": "1a957b6721526b7bcd1072f9a38904a2603067d62b50aeb0a0a18e98474cae05",
+  "tool/experiments/ari_app_server/tutor_mcp.py": "122d42e4b4d8f61d79c9d3af09ee57252d06bef44e812ec54e3c777124b7fd8b"
+}

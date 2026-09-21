@@ -102,6 +102,20 @@ void main() {
         (await database.select(database.vocabularyWords).get()).single.spelling,
         'book',
       );
+      await expectLater(
+        useCases.deleteWord(word.id, expectedOwnerId: 'wrong-owner'),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      await expectLater(
+        useCases.deleteWord(word.id, mutationAllowed: () => false),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      expect(
+        (await database.select(database.vocabularyWords).get())
+            .single
+            .isDeleted,
+        isFalse,
+      );
     },
   );
 

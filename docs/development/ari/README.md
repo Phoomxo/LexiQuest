@@ -62,3 +62,5 @@ Typed word forms continuation: [evidence](typed-word-mcp-003.json). Fill/save tr
 Latest optional-assistance checkpoint: [native evidence](lesson-assistance-006.json). Visible committed feedback passed on Vivo; provider routing corrected and natural-language word create, duplicate rejection and edit/read-back passed. All14 workflow/mode acceptance remains open. Original app preserved; test fixtures and connection resources cleaned up.
 
 Category forms and late AI attachment: [checkpoint](category-mcp-007.json). Typed category fill/save and independent local-owner binding implemented; 40 host tests and analysis passed. New native APK built but USB authorization is pending; no native PASS or whole-workflow completion claimed.
+
+Confirmed word deletion: [checkpoint](word-delete-008.json). Exact-target confirmation, owner guards and verified deletion implemented; Flutter42 and Python45 passed. Vivo is offline and native acceptance remains pending; original manual workflows are retained.

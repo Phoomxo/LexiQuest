@@ -382,6 +382,12 @@
       "receipt": "category-mcp-007.json",
       "scope": "Category typed fill/save and late AI attachment to category/word forms",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "word-delete-008",
+      "receipt": "word-delete-008.json",
+      "scope": "Confirmed exact-target word deletion, original manual cancellation and bounded descriptors",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

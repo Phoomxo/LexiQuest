@@ -5,6 +5,69 @@ import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_bi
 import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 
 void main() {
+  testWidgets('long user labels stay bounded without changing native text', (
+    tester,
+  ) async {
+    final registry = MenuActionRegistry(currentOwner: () => 'a');
+    final label = List.filled(120, '📚').join();
+    var invoked = false;
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  MenuActionBinding(
+                    id: 'action',
+                    label: label,
+                    onInvoke: () => invoked = true,
+                    child: Text(label),
+                  ),
+                  MenuActionBinding(
+                    id: 'context',
+                    label: label,
+                    onInvoke: null,
+                    readValue: 'target-id',
+                    child: const SizedBox.shrink(),
+                  ),
+                  MenuActionBinding(
+                    id: 'form',
+                    label: label,
+                    onInvoke: null,
+                    onForm: (_) => {'status': 'filled'},
+                    child: const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    final snapshot = registry.snapshot();
+    for (final item in [
+      ...snapshot['actions'] as List,
+      ...snapshot['context'] as List,
+    ]) {
+      expect((item['label'] as String).length, lessThanOrEqualTo(200));
+      expect((item['label'] as String).runes, isNot(contains(0xfffd)));
+    }
+    expect(find.text(label), findsOneWidget);
+    expect(
+      (await registry.execute(
+        id: 'action',
+        owner: 'a',
+        revision: snapshot['revision'] as int,
+        requestId: 'long-label',
+      ))['status'],
+      'invoked',
+    );
+    expect(invoked, isTrue);
+  });
+
   testWidgets(
     'route context covers canonical child routes without private arguments',
     (tester) async {

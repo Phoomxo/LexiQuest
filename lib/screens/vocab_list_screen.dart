@@ -164,11 +164,22 @@ class _VocabListScreenState extends State<VocabListScreen> {
                                       ),
                                     ),
                                   if (!isReadOnly)
-                                    IconButton(
-                                      tooltip: 'ลบคำศัพท์',
-                                      icon: const Icon(Icons.delete_outline),
-                                      onPressed: () =>
+                                    MenuActionBinding(
+                                      id: 'vocabulary/word/$index/delete',
+                                      ownerId: word.ownerId,
+                                      label:
+                                          'ลบคำ ${word.spelling} — ${word.meaning}',
+                                      onInvoke: () =>
                                           _deleteWord(context, useCases, word),
+                                      child: IconButton(
+                                        tooltip: 'ลบคำศัพท์',
+                                        icon: const Icon(Icons.delete_outline),
+                                        onPressed: () => _deleteWord(
+                                          context,
+                                          useCases,
+                                          word,
+                                        ),
+                                      ),
                                     ),
                                 ],
                               ),
@@ -302,32 +313,112 @@ class _VocabListScreenState extends State<VocabListScreen> {
     VocabularyWord word,
   ) async {
     if (!_admitted) return;
+    var deleting = false;
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบคำศัพท์'),
-        content: Text('ลบ “${word.spelling}” หรือไม่'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบ'),
-          ),
-        ],
+      builder: (dialogContext) => MenuActionBinding(
+        id: 'vocabulary/word-delete-target',
+        label: '${word.spelling} — ${word.meaning}',
+        ownerId: word.ownerId,
+        onInvoke: null,
+        readValue: word.id,
+        child: StatefulBuilder(
+          builder: (dialogContext, updateDialog) {
+            void cancel() => Navigator.pop(dialogContext, false);
+            return MenuActionBinding(
+              id: 'vocabulary/word-delete-confirm',
+              label: 'ยืนยันลบคำ ${word.spelling}',
+              ownerId: word.ownerId,
+              onInvoke: null,
+              fields: const {'wordId': 256},
+              onForm: (values) async {
+                if (values['wordId'] != word.id) return {'status': 'invalid'};
+                if (deleting || !_admitted) return {'status': 'busy'};
+                updateDialog(() => deleting = true);
+                try {
+                  final result = await _mcpDeleteWord(
+                    dialogContext,
+                    useCases,
+                    word,
+                  );
+                  if (result['status'] == 'deleted' && dialogContext.mounted) {
+                    Navigator.pop(dialogContext, false);
+                  }
+                  return result;
+                } finally {
+                  if (dialogContext.mounted) {
+                    updateDialog(() => deleting = false);
+                  }
+                }
+              },
+              child: AlertDialog(
+                title: const Text('ลบคำศัพท์'),
+                content: Text(
+                  'ลบ “${word.spelling}” (${word.meaning}) หรือไม่',
+                ),
+                actions: [
+                  MenuActionBinding(
+                    id: 'vocabulary/word-delete-cancel',
+                    label: 'ยกเลิกการลบคำศัพท์',
+                    ownerId: word.ownerId,
+                    onInvoke: cancel,
+                    child: TextButton(
+                      onPressed: cancel,
+                      child: const Text('ยกเลิก'),
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: deleting
+                        ? null
+                        : () => Navigator.pop(dialogContext, true),
+                    child: const Text('ลบ'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
     if (accepted != true || !_admitted) return;
     try {
-      await useCases.deleteWord(word.id);
+      await useCases.deleteWord(word.id, expectedOwnerId: word.ownerId);
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('ลบคำศัพท์ไม่สำเร็จ')));
       }
+    }
+  }
+
+  Future<Map<String, Object?>> _mcpDeleteWord(
+    BuildContext dialogContext,
+    VocabularyUseCases useCases,
+    VocabularyWord word,
+  ) async {
+    final registry = MenuActionScope.maybeOf(dialogContext);
+    final revision = registry?.snapshot()['revision'];
+    bool allowed() =>
+        _admitted &&
+        dialogContext.mounted &&
+        ModalRoute.of(dialogContext)?.isCurrent == true &&
+        registry?.currentOwner() == word.ownerId &&
+        registry?.snapshot()['revision'] == revision;
+    if (!allowed()) return {'status': 'stale'};
+    try {
+      await useCases.deleteWord(
+        word.id,
+        expectedOwnerId: word.ownerId,
+        mutationAllowed: allowed,
+      );
+      final remaining = await useCases.vocabulary.listAllWords(word.ownerId);
+      if (remaining.any((record) => record.id == word.id)) {
+        return {'status': 'verification_failed'};
+      }
+      return {'status': 'deleted', 'wordId': word.id};
+    } catch (_) {
+      return {'status': 'failed'};
     }
   }
 }

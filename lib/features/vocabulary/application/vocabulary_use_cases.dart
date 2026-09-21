@@ -297,9 +297,17 @@ final class VocabularyUseCases {
     return updated;
   }
 
-  Future<void> deleteWord(String wordId) async {
+  Future<void> deleteWord(
+    String wordId, {
+    String? expectedOwnerId,
+    bool Function()? mutationAllowed,
+  }) async {
     final canonicalWordId = _required(wordId, 'wordId', maxLength: 256);
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        mutationAllowed?.call() == false) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
     await vocabulary.deleteWord(
       ownerId: owner.id,
       wordId: canonicalWordId,

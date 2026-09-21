@@ -280,6 +280,15 @@ void main() {
         await tester.pageBack();
         await tester.pumpAndSettle();
       }
+      await invoke(
+        'vocabulary/word/0/delete',
+        readOnly ? 'unavailable' : 'invoked',
+      );
+      if (!readOnly) {
+        expect(find.byType(AlertDialog), findsOneWidget);
+        await invoke('vocabulary/word-delete-cancel', 'invoked');
+        expect(find.byType(AlertDialog), findsNothing);
+      }
       await invoke('vocabulary/add-word', readOnly ? 'unavailable' : 'invoked');
       if (!readOnly) {
         await tester.pageBack();

@@ -141,12 +141,27 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     return active;
   }
 
+  String get _toolLabel {
+    if (widget.label.length <= 200) return widget.label;
+    // Bound the tool descriptor without cutting a surrogate pair or changing
+    // the full native label in the child widget.
+    final result = StringBuffer();
+    var length = 0;
+    for (final rune in widget.label.runes) {
+      final units = rune > 0xffff ? 2 : 1;
+      if (length + units > 199) break;
+      result.writeCharCode(rune);
+      length += units;
+    }
+    return '$result…';
+  }
+
   void _bind() {
     _unbind?.call();
     if (widget.onForm != null) {
       _unbind = _registry?.registerForm(
         id: widget.id,
-        label: widget.label,
+        label: _toolLabel,
         fields: widget.fields,
         available: _available,
         invoke: (values) => widget.onForm!(values),
@@ -156,7 +171,7 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     if (widget.readValue != null) {
       _unbind = _registry?.registerContext(
         id: widget.id,
-        label: widget.label,
+        label: _toolLabel,
         available: _available,
         value: () => widget.readValue!,
       );
@@ -164,7 +179,7 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     }
     _unbind = _registry?.register(
       id: widget.id,
-      label: widget.label,
+      label: _toolLabel,
       available: _available,
       invoke: () => widget.onInvoke!(),
       dispatchOnly: true,
