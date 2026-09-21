@@ -400,6 +400,12 @@
       "receipt": "lesson-disconnect-031.json",
       "scope": "Four registered adapters shared controller durable-write disconnect/replay; simulated registry loss not native input acceptance",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "settings-review-progress-native-033",
+      "receipt": "settings-review-progress-native-033.json",
+      "scope": "Live settings owner-bound command success/restoration and read-only review/progress/weakness; native baseline after disconnect",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

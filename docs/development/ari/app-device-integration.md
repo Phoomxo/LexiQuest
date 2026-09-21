@@ -477,3 +477,7 @@ Added and passed a shared-controller regression across four registered adapters 
 ## Native review/settings032 baseline
 
 Installed6fc67593 isolated APK. With provider disconnected, completed book review1/1 and returned to canonical queue. Native light/reduced-motion settings retained across route reentry; restored original system/false values. Automated review fixture remains in test app only. Initial accessibility output problem recovered via file dump; app remained alive/awake. Connected AI029–030 and whole14scope remain open. Evidence: review-settings-native-032.json.
+
+## Live settings/review/progress033
+
+Same-owner Vivo live provider read settings and changed/restored theme with tool receipts and native chip verification. Review10/0due, progress28/42and1523seconds, weakness42sample/11words/spoon1wrong matched native values. Cloud readiness and historical errors correctly distinguished from sync completion/SRSdue. Explicit disconnect retained native list scrolling. No new practice answers; original accounts and restored display settings preserved. Remaining history/camera/speech/mode acceptance stays open. Evidence: settings-review-progress-native-033.json.

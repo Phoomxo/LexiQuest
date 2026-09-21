@@ -1,14 +1,14 @@
 {
-  "revision": 56,
+  "revision": 57,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: new APK installed; disconnected native review completion and settings persistence passed",
+  "previousTurn": "PROGRESS: live settings read/mutation/restore, review, progress and weakness native checks passed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native032 baseline passed; connected029-030 stillpending",
+  "current": "Native033 representative pass; remaining full-scope gaps open",
   "next": [
-    "Connected native029-030 and progress/history/weakness/camera/shadowing",
-    "Remaining sync/transfer-probe and14mode acceptance gaps",
-    "Full MCP acceptance then queued whole-project review"
+    "Native history/camera/shadowing and mode-specific gaps",
+    "Remaining sync/transfer-probe and complete14workflow/mode acceptance",
+    "Then authorized whole-project SDLC review"
   ],
   "nativeInstalledSource": "6fc67593c2a039e7062166085046d97578f8561b",
   "nativeInstalledApk": "build/ari-assistance-031.apk",
@@ -17,6 +17,6 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "Build89182 terminal; install successful; no bridge or known worker",
-  "testFixture": "One additional successful book review session is retained in isolated test app, automated test evidence not genuine learner data. Original app/accounts preserved. Screen at settings; theme system/reducedmotionfalse; AI collapsed/disconnected."
+  "liveProcesses": "Bridge16335 stopped and reverse removed; no known live worker",
+  "testFixture": "Isolated app weakness page scrolled to11bag; AI collapsed/disconnected; theme system and reducedmotionfalse. Prior032review fixture retained."
 }
