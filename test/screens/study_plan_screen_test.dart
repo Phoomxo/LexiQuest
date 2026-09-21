@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
@@ -57,6 +60,48 @@ void main() {
           await tester.pump(const Duration(milliseconds: 1));
         }
       });
+  screenTest('MCP distinguishes proposed and accepted plan without writing', (
+    tester,
+  ) async {
+    String? owner = 'a';
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: StudyPlanScreen(useCases: app)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    Map<String, dynamic> read(String id) =>
+        jsonDecode(
+              ((registry.snapshot()['context'] as List).singleWhere(
+                    (e) => e['id'] == id,
+                  ))['value']
+                  as String,
+            )
+            as Map<String, dynamic>;
+    expect(read('study-planning/active-summary')['state'], 'none');
+    await tester.enterText(find.byKey(const ValueKey('plan-minutes')), '0');
+    await tester.tap(find.text('ดูข้อเสนอและเปรียบเทียบ'));
+    await tester.pumpAndSettle();
+    expect(read('study-planning/proposal-summary')['state'], 'proposed');
+    expect(read('study-planning/proposal-summary')['minutes'], 0);
+    expect(read('study-planning/active-summary')['state'], 'none');
+    expect(await app.active(await app.begin()), isNull);
+    await tester.tap(find.text('ยอมรับแผน'));
+    await tester.pumpAndSettle();
+    expect(read('study-planning/active-summary')['state'], 'accepted');
+    expect(read('study-planning/active-summary')['revision'], 1);
+    expect(read('study-planning/proposal-summary')['state'], 'none');
+    expect((await app.active(await app.begin()))!.availableMinutes, 0);
+    expect(
+      registry.snapshot()['actions'],
+      isEmpty,
+      reason: 'Read-only assistance cannot accept or restore plans',
+    );
+    owner = 'b';
+    expect(registry.snapshot()['context'], isEmpty);
+  });
   screenTest(
     'real screen previews rejects accepts and shows old versus new budget',
     (tester) async {

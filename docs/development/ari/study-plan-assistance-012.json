@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_PENDING",
+  "workflow": "W08 study planning",
+  "scope": "Optional read-only summary of actual visible proposed and accepted plans",
+  "baseCommit": "a86b8b73",
+  "fields": [
+    "state",
+    "revision",
+    "minutes",
+    "learningDay",
+    "timezone",
+    "dueCount",
+    "newCount",
+    "carryOverCount",
+    "missedDays",
+    "deadlinePassed",
+    "deadlineUtc",
+    "planning-not-score purpose",
+    "one-minute estimate"
+  ],
+  "preservation": "Native preview/accept/reject/restore paths unchanged; no AI write or acceptance control introduced",
+  "isolation": "Bound to loaded owner; hidden while busy/error/no owner and on route/owner mismatch; no archive or goal title exported",
+  "verification": {
+    "red": "New real-storage screen test initially failed missing context",
+    "host": "evidence/study-plan-assistance-012/host-verification.json",
+    "pythonChatTests": 7,
+    "analysis": "No issues found",
+    "cases": [
+      "proposed plan remains unpersisted",
+      "native acceptance yields accepted revision1",
+      "proposal cleared after acceptance",
+      "owner switch hides all summaries",
+      "existing plan conflicts restore and owner lifecycle checks retained"
+    ]
+  },
+  "native": "NOT_RUN_NEW_SOURCE",
+  "open": [
+    "Live-provider explanation and baseline/connected/disconnected native coverage",
+    "Goal and preference assistance beyond study-plan summary",
+    "All14 workflow/mode acceptance remains OPEN"
+  ]
+}

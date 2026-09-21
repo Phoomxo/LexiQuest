@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -269,10 +270,31 @@ final class _StudyPlanScreenState extends State<StudyPlanScreen>
     );
   }
 
+  String? _assistanceSummary(StudyPlanRevision? plan, String state) {
+    if (_owner == null || _busy || _error != null) return null;
+    return jsonEncode({
+      'state': plan == null ? 'none' : state,
+      'purpose': 'planning-only-not-score-or-completion',
+      'estimateMinutesPerItem': 1,
+      if (plan != null) ...{
+        'revision': plan.revision,
+        'minutes': plan.availableMinutes,
+        'learningDay': plan.learningDay,
+        'timezone': plan.timezoneId,
+        'dueCount': plan.dueItems.length,
+        'newCount': plan.newItems.length,
+        'carryOverCount': plan.carryOver.length,
+        'missedDays': plan.missedDays,
+        'deadlinePassed': plan.deadlinePassed,
+        'deadlineUtc': plan.deadlineAtUtc?.toIso8601String(),
+      },
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _pending;
-    return Scaffold(
+    final screen = Scaffold(
       appBar: AppBar(title: const Text('แผนการเรียนของฉัน')),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -421,6 +443,21 @@ final class _StudyPlanScreenState extends State<StudyPlanScreen>
             ],
           ),
         ),
+      ),
+    );
+    return MenuActionBinding(
+      id: 'study-planning/active-summary',
+      label: 'ข้อมูลแผนที่ยอมรับแล้ว',
+      ownerId: _owner?.ownerId,
+      onInvoke: null,
+      readValue: _assistanceSummary(_active, 'accepted'),
+      child: MenuActionBinding(
+        id: 'study-planning/proposal-summary',
+        label: 'ข้อเสนอแผนที่ยังไม่บันทึก',
+        ownerId: _owner?.ownerId,
+        onInvoke: null,
+        readValue: _assistanceSummary(_pending, 'proposed'),
+        child: screen,
       ),
     );
   }

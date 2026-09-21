@@ -384,3 +384,8 @@ Live provider category create, mixed import preview/save and confirmed word dele
 ### Late context011 — 2026-09-21
 
 Reproduced and fixed mounted owner-bound context missing after late AI login. Explicit data-owner bindings survive disconnected/same-owner admission but retire on a different account; generic session context retains previous clearing. Registry/binding and four baseline startup scenarios passed; analysis clean. [Evidence](late-context-011.json). Native build/retest pending. Whole scope remains open.
+
+
+### Study-plan assistance012 — 2026-09-21
+
+W08 now exposes separate owner-bound summaries of actual proposed and accepted plans to optional AI. Counts, revision, budget, day/timezone and deadline flags come from displayed domain plans; busy/error/unowned states expose nothing. Native controls and persistence remain unchanged. Real-storage test verifies preview does not persist, native acceptance updates summary and owner switch hides context. Screen tests, 7 Python chat tests and analysis passed. [Evidence](study-plan-assistance-012.json). Native and remaining W08 acceptance are pending.
