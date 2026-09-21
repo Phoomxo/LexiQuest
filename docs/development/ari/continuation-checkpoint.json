@@ -1,14 +1,14 @@
 {
-  "revision": 60,
+  "revision": 61,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: livehistory+shadowing guidancePASS; camera misleading-ready reproduced/fixed and native retestPASS;40Flutter+16PythonPASS",
+  "previousTurn": "PROGRESS: native forced-process-death and explicit reauthentication with live reply verified;11host testsPASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "036 representative checks passed; complete14scope stillOPEN",
+  "current": "037 explicit reauth works; automatic restore notclaimed; all14scopeOPEN",
   "next": [
-    "Native authenticated process-death recovery after browser authorization remains unproven",
-    "Remaining all14mode acceptance, sync/transfer and mapped camera/speech success cases",
-    "Whole-project SDLC review after MCP acceptance"
+    "Complete remaining mode-specific baseline/connected/disconnected persistence checks",
+    "Transfer-probe/sync and mapped camera/speech successful-result acceptance",
+    "Whole-project review after current MCP acceptance"
   ],
   "nativeInstalledSource": "036 working source pinned in evidence/camera-result-036/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-036.apk",
@@ -17,6 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test live;40164 terminal; ownedreverse/config removed",
-  "testFixture": "Isolated app camera result matchstick16percent/unmapped,no groundtruth,no save;AIcollapsed/disconnected. Dashboard28/42,30m53s,0due. One additional emptyshadowing test session. USBstayawake2."
+  "liveProcesses": "No bridge/build/test live;63137terminal;ownedreverse/configremoved",
+  "testFixture": "Isolated dashboard28/42,30m53s,0due unchanged; AIcollapsed/disconnected; USBstayawake2; no answers/sessions created037.",
+  "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

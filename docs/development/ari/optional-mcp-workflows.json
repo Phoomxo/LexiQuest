@@ -424,6 +424,12 @@
       "receipt": "camera-result-036.json",
       "scope": "Native history and speech guidance;camera no-result projection defect red/green and live retest;baseline afterdisconnect",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "process-recovery-037",
+      "receipt": "process-recovery-037.json",
+      "scope": "Native process death and explicit reauth/read reply, host durable owner-change invalidation; unchanged learning evidence",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false
