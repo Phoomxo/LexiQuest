@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "status": "IMPLEMENTED_HOST_VERIFIED_NATIVE_PENDING",
+  "baseCommit": "b0309e1440a1844bb23327b77fdf34508e4f5c01",
+  "scope": [
+    "Bounded string fields through existing execute_menu_action; absent values keeps navigation backward-compatible",
+    "Word form fill without persistence, separate save using original domain validation and fresh persisted record read-back",
+    "Create/edit word, strict CEFR and length validation, duplicate rejection",
+    "Payload-aware same-session replay, owner binding, stale form revision and cancelled-turn fencing"
+  ],
+  "verification": {
+    "combinedFlutter": {
+      "passed": 99,
+      "receipt": "evidence/typed-word-mcp-003/combined.json"
+    },
+    "affectedCancelRetest": {
+      "passed": 12,
+      "receipt": "evidence/typed-word-mcp-003/cancel-retest.json"
+    },
+    "python": {
+      "passed": 44,
+      "command": "python -m unittest discover -s tool/experiments/ari_app_server -p 'test_*.py'",
+      "includes": "Actual stdio MCP subprocess, simulated HTTP/provider protocol; no live provider this round"
+    },
+    "analysis": "No issues found in changed source/tests",
+    "counts": "Overlapping runs, not additive"
+  },
+  "realStorageAssertions": [
+    "Draft fill creates no row",
+    "Thai spelling/meaning and CEFR persist and read back",
+    "Replayed identical request produces one row",
+    "Fresh duplicate create rejects rather than producing a second row",
+    "Edit retains one row and increments localRevision to2",
+    "Wrong-owner and revoked mutation guard reject writes",
+    "Old form revision rejected after draft change",
+    "Manual typing preserves focus while MCP descriptors refresh"
+  ],
+  "apk": {
+    "path": "build/ari-typed-word-forms.apk",
+    "sha256": "b359e9377d99adf628c52f990bd323d9cb41f46ef55b1d18c0beff5d97ac9f10",
+    "package": "com.lexiquest.app.ariTest",
+    "installed": true,
+    "build": "PASS; existing future Kotlin compatibility warning"
+  },
+  "native": {
+    "status": "PENDING_SCREEN_UNLOCK",
+    "device": "Vivo V2041 connected via USB",
+    "evidence": "dumpsys window mDreamingLockscreen=true",
+    "userInput": "Unlock-only request already pending; no credential requested",
+    "acceptanceStillRequired": [
+      "Live-provider fill/save in disposable category",
+      "Native reopen and read-back",
+      "Native duplicate and edit feedback; cleanup own fixture"
+    ]
+  },
+  "limitations": [
+    "Only word create/edit forms wired; category/import/delete typed forms remain open",
+    "Replay protection is session-local, not a durable cross-session exactly-once ledger",
+    "Cancellation invalidates commands and blocks not-yet-issued writes; an already committed database write cannot be undone by cancelling the reply. Do not automatically retry ambiguous writes.",
+    "Offscreen list discovery, native Thai keyboard, standalone mobile backend and broader acceptance remain open"
+  ],
+  "recovery": [
+    "Initial missing form APIs recorded RED before implementation",
+    "Stale form saved unexpectedly: reproduced and corrected by descriptor revision refresh",
+    "Initial remount approach lost typing focus: reproduced and replaced with revisionKey without remounting",
+    "A fixture waited for real database IO under fake clock; stopped method and used tester.runAsync, assertions unchanged",
+    "Fixed await on void testTextInput.hide; no test skips or weaker assertions"
+  ],
+  "sourceManifest": "evidence/typed-word-mcp-003/source-manifest.json",
+  "writerReleased": false
+}

@@ -231,8 +231,16 @@ final class VocabularyUseCases {
     onLocalMutation?.call();
   }
 
-  Future<VocabularyWord> createWord(CreateWordCommand command) async {
+  Future<VocabularyWord> createWord(
+    CreateWordCommand command, {
+    String? expectedOwnerId,
+    bool Function()? mutationAllowed,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        mutationAllowed?.call() == false) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
     final now = _currentUtc();
     final created = await vocabulary.createWord(
       _wordFromInput(
@@ -252,8 +260,16 @@ final class VocabularyUseCases {
     return created;
   }
 
-  Future<VocabularyWord> updateWord(UpdateWordCommand command) async {
+  Future<VocabularyWord> updateWord(
+    UpdateWordCommand command, {
+    String? expectedOwnerId,
+    bool Function()? mutationAllowed,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        mutationAllowed?.call() == false) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
     final now = _currentUtc();
     final updated = await vocabulary.updateWord(
       _wordFromInput(

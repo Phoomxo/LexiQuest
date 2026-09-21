@@ -76,6 +76,7 @@ void main() {
           )
           .then<Object?>((value) => value, onError: (Object error) => error);
       await polling.future.timeout(const Duration(seconds: 2));
+      final retiredRevision = registry.snapshot()['revision'] as int;
       switch (fence) {
         case 'cancel':
           cancellation.cancel();
@@ -90,21 +91,42 @@ void main() {
       await reply;
       expect(effects, 0);
       expect(postedResults, 0);
+      expect(
+        (await registry.execute(
+          id: 'action',
+          owner: 'a',
+          revision: retiredRevision,
+          requestId: 'retired',
+        ))['status'],
+        'stale',
+      );
     });
   }
-  test(
-    'pending provider turn receives the result of a real app callback',
-    () async {
+  for (final typed in [false, true]) {
+    test('pending provider turn receives real result typed=$typed', () async {
       var effects = 0;
       final registry = MenuActionRegistry(currentOwner: () => 'a');
-      registry.register(
-        id: 'theme-dark',
-        label: 'มืด',
-        available: () => true,
-        invoke: () {
-          effects++;
-        },
-      );
+      if (typed) {
+        registry.registerForm(
+          id: 'theme-dark',
+          label: 'form',
+          fields: {'meaning': 500},
+          available: () => true,
+          invoke: (values) {
+            effects++;
+            return {'status': 'filled', 'meaning': values['meaning']};
+          },
+        );
+      } else {
+        registry.register(
+          id: 'theme-dark',
+          label: 'มืด',
+          available: () => true,
+          invoke: () {
+            effects++;
+          },
+        );
+      }
       final completed = Completer<void>();
       var delivered = false;
       final bridge = LocalLoginBridge(
@@ -132,6 +154,7 @@ void main() {
                         'arguments': {
                           'id': 'theme-dark',
                           'revision': registry.snapshot()['revision'],
+                          if (typed) 'values': {'meaning': 'หนังสือ'},
                         },
                       },
               };
@@ -139,8 +162,9 @@ void main() {
             case '/menu/result':
               final body = jsonDecode(r.body) as Map;
               expect(body['response']['result'], {
-                'status': 'invoked',
+                'status': typed ? 'filled' : 'invoked',
                 'id': 'theme-dark',
+                if (typed) 'meaning': 'หนังสือ',
               });
               completed.complete();
               response = {'accepted': true};
@@ -171,6 +195,6 @@ void main() {
       expect(registry.snapshot()['recentActions'], isNotEmpty);
       await bridge.disconnect();
       expect(registry.snapshot()['recentActions'], isEmpty);
-    },
-  );
+    });
+  }
 }

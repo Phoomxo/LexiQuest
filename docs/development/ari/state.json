@@ -1,14 +1,18 @@
 {
   "schemaVersion": 1,
-  "revision": 25,
+  "revision": 27,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "mcp-vocabulary-navigation-verified-full-coverage-open",
+  "status": "mcp-typed-word-host-verified-native-pending",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
-  "implementationWriter": null,
+  "implementationWriter": {
+    "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+    "branch": "feature/ari-app-device-integration",
+    "scope": "Typed form inputs, truthful save results, replay/owner fences"
+  },
   "model": "gpt-6-astra",
   "thinking": "medium",
   "speedPolicy": "Standard/default; no Fast or priority; runtime enforcement not verified by create_thread",
@@ -119,7 +123,7 @@
     "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
     "baseCommit": "503864cac44d7ebeaffa101a79a82c324d820f9e",
     "status": "DEBUG_MENU_INTEGRATION_ACCEPTED_NOT_WHOLE_APP_RELEASE",
-    "writerReleased": true,
+    "writerReleased": false,
     "report": "app-device-integration.md",
     "evidence": "all-menu-mcp-001.json",
     "sourceManifest": "evidence/all-menu-mcp-001/source-manifest.json",
@@ -136,6 +140,12 @@
         "Word edit and CEFR examples passed host tests; not exercised through live provider on Vivo this round",
         "Native Markdown rendering (literal ** visible), Thai keyboard, sensors, endurance, usability, standalone distribution remain open"
       ]
+    },
+    "typedWordMcpCheckpoint": {
+      "evidence": "docs/development/ari/typed-word-mcp-003.json",
+      "status": "IMPLEMENTED_HOST_VERIFIED_NATIVE_PENDING",
+      "nativePrerequisite": "Vivo screen unlock; user request pending",
+      "writerReleased": false
     }
   },
   "deviceCoverage": "device-test-matrix.json",

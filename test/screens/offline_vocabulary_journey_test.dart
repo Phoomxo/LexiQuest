@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -146,6 +149,173 @@ void main() {
   Future<void> finishRouteTransition(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 500));
   }
+
+  testWidgets(
+    'MCP fills Thai word, verifies persistence and does not replay a write',
+    (tester) async {
+      final vocabulary = dependencies.vocabulary!;
+      final category = await tester.runAsync(
+        () => vocabulary.createCategory('MCP test'),
+      );
+      var owner = category!.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(home: AddWordScreen(categoryId: category.id)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      var request = 0;
+      Future<Map<String, Object?>> invoke(
+        String id, {
+        Map<String, String> values = const {},
+      }) async {
+        final result = await tester.runAsync(
+          () => registry.execute(
+            id: id,
+            owner: owner,
+            revision: registry.snapshot()['revision'] as int,
+            requestId: 'form-${request++}',
+            values: values,
+          ),
+        );
+        await tester.pumpAndSettle();
+        return result!;
+      }
+
+      expect((await invoke('vocabulary/word-save'))['status'], 'invalid');
+      await tester.tap(find.byKey(const ValueKey('word-field')));
+      await tester.enterText(find.byKey(const ValueKey('word-field')), 'b');
+      await tester.pump();
+      expect(
+        tester
+            .widget<EditableText>(
+              find.descendant(
+                of: find.byKey(const ValueKey('word-field')),
+                matching: find.byType(EditableText),
+              ),
+            )
+            .focusNode
+            .hasFocus,
+        isTrue,
+        reason:
+            'Manual typing must not lose focus when refreshing MCP commands.',
+      );
+      tester.testTextInput.hide();
+      final emptyRevision = registry.snapshot()['revision'] as int;
+      final values = {
+        'spelling': 'book',
+        'meaning': 'หนังสือ',
+        'partOfSpeech': 'noun',
+        'cefrLevel': 'A1',
+      };
+      expect(
+        (await invoke('vocabulary/word-fill', values: values))['status'],
+        'filled',
+      );
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('meaning-field')))
+            .controller!
+            .text,
+        'หนังสือ',
+      );
+      expect(
+        (await tester.runAsync(
+          () => registry.execute(
+            id: 'vocabulary/word-save',
+            owner: owner,
+            revision: emptyRevision,
+            requestId: 'outdated-draft',
+          ),
+        ))!['status'],
+        'stale',
+      );
+      final before = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(before, isEmpty);
+      final revision = registry.snapshot()['revision'] as int;
+      final saved = await tester.runAsync(
+        () => registry.execute(
+          id: 'vocabulary/word-save',
+          owner: owner,
+          revision: revision,
+          requestId: 'persist',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(saved!['status'], 'saved');
+      expect((saved['record'] as Map)['meaning'], 'หนังสือ');
+      final rows = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(rows, hasLength(1));
+      expect(rows!.single.meaning, 'หนังสือ');
+      expect(
+        await registry.execute(
+          id: 'vocabulary/word-save',
+          owner: owner,
+          revision: revision,
+          requestId: 'persist',
+        ),
+        saved,
+      );
+      final repeated = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(repeated, hasLength(1));
+      expect((await invoke('vocabulary/word-save'))['status'], 'duplicate');
+      final savedWord = await tester.runAsync(
+        () => vocabulary.readPinnedByIds([rows.single.id]),
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: AddWordScreen(
+                key: const ValueKey('edit'),
+                categoryId: category.id,
+                word: savedWord!.single,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        (await invoke(
+          'vocabulary/word-fill',
+          values: {...values, 'cefrLevel': 'X9'},
+        ))['status'],
+        'invalid',
+      );
+      expect(
+        (await invoke(
+          'vocabulary/word-fill',
+          values: {...values, 'meaning': 'หนังสือเรียน'},
+        ))['status'],
+        'filled',
+      );
+      expect((await invoke('vocabulary/word-save'))['status'], 'saved');
+      final edited = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(edited, hasLength(1));
+      expect(edited!.single.meaning, 'หนังสือเรียน');
+      expect(edited.single.localRevision, 2);
+      owner = 'other-owner';
+      expect(registry.snapshot()['actions'], isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(database.close);
+    },
+  );
 
   testWidgets(
     'word search distinguishes no matches from an empty category',

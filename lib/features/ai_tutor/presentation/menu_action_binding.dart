@@ -93,9 +93,17 @@ final class MenuActionBinding extends StatefulWidget {
     required this.child,
     this.readValue,
     this.ownerId,
+    this.onForm,
+    this.fields = const {},
+    this.revisionKey,
   });
   final String id, label;
   final MenuAction? onInvoke;
+  final MenuFormAction? onForm;
+  final Map<String, int> fields;
+
+  /// Refresh command identity without remounting the user's focused form.
+  final Object? revisionKey;
   final Widget child;
   final String? readValue;
 
@@ -112,7 +120,10 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     if (widget.ownerId != null && widget.ownerId != _registry?.currentOwner()) {
       return false;
     }
-    if (!mounted || widget.onInvoke == null && widget.readValue == null) {
+    if (!mounted ||
+        widget.onInvoke == null &&
+            widget.readValue == null &&
+            widget.onForm == null) {
       return false;
     }
     if (ModalRoute.of(context)?.isCurrent == false) return false;
@@ -132,6 +143,16 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
 
   void _bind() {
     _unbind?.call();
+    if (widget.onForm != null) {
+      _unbind = _registry?.registerForm(
+        id: widget.id,
+        label: widget.label,
+        fields: widget.fields,
+        available: _available,
+        invoke: (values) => widget.onForm!(values),
+      );
+      return;
+    }
     if (widget.readValue != null) {
       _unbind = _registry?.registerContext(
         id: widget.id,
@@ -166,6 +187,9 @@ class _MenuActionBindingState extends State<MenuActionBinding> {
     // Callback closures may be rebuilt without changing the advertised action.
     // Availability is always rechecked immediately before invocation.
     if (oldWidget.id != widget.id ||
+        oldWidget.revisionKey != widget.revisionKey ||
+        oldWidget.fields != widget.fields ||
+        (oldWidget.onForm == null) != (widget.onForm == null) ||
         oldWidget.ownerId != widget.ownerId ||
         oldWidget.label != widget.label ||
         oldWidget.readValue != widget.readValue ||

@@ -34,7 +34,12 @@ def valid_arguments(name, args):
     if name == 'list_menu_actions':
         return args == {}
     return (name == 'execute_menu_action' and isinstance(args, dict)
-            and set(args) == {'id', 'revision'}
+            and set(args) in ({'id', 'revision'}, {'id', 'revision', 'values'})
+            and isinstance(args.get('values', {}), dict)
+            and len(args.get('values', {})) <= 8
+            and all(isinstance(k, str) and re.fullmatch(r'[a-zA-Z][a-zA-Z0-9_]{0,39}', k)
+                    and isinstance(v, str) and len(v) <= 4000
+                    for k, v in args.get('values', {}).items())
             and isinstance(args['id'], str) and 0 < len(args['id']) <= 160
             and type(args['revision']) is int and args['revision'] >= 0)
 

@@ -35,6 +35,49 @@ void main() {
   });
 
   test(
+    'bound form cannot create or update under a different active owner',
+    () async {
+      final category = await useCases.createCategory('personal');
+      final command = CreateWordCommand(
+        categoryId: category.id,
+        spelling: 'book',
+        meaning: 'หนังสือ',
+        partOfSpeech: 'noun',
+      );
+      await expectLater(
+        useCases.createWord(command, expectedOwnerId: 'wrong-owner'),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      await expectLater(
+        useCases.createWord(command, mutationAllowed: () => false),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      expect(await database.select(database.vocabularyWords).get(), isEmpty);
+      final word = await useCases.createWord(
+        command,
+        expectedOwnerId: category.ownerId,
+      );
+      await expectLater(
+        useCases.updateWord(
+          UpdateWordCommand(
+            id: word.id,
+            categoryId: category.id,
+            spelling: 'bag',
+            meaning: 'กระเป๋า',
+            partOfSpeech: 'noun',
+          ),
+          expectedOwnerId: 'wrong-owner',
+        ),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      expect(
+        (await database.select(database.vocabularyWords).get()).single.spelling,
+        'book',
+      );
+    },
+  );
+
+  test(
     'create commands normalize text and propagate stable ownership',
     () async {
       final category = await useCases.createCategory('  Travel   Plans ');

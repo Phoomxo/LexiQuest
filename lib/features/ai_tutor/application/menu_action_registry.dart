@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 typedef MenuAction = FutureOr<void> Function();
+typedef MenuFormAction =
+    FutureOr<Map<String, Object?>> Function(Map<String, String> values);
 
 /// Explicit application callbacks only; no arbitrary routes, scripts or fields.
 final class MenuActionRegistry {
@@ -8,7 +11,10 @@ final class MenuActionRegistry {
   final String? Function() currentOwner;
   final _actions = <String, List<_Action>>{};
   final _receipts =
-      <String, ({String id, int revision, Map<String, Object?> result})>{};
+      <
+        String,
+        ({String id, int revision, String payload, Map<String, Object?> result})
+      >{};
   int _revision = 0;
   int _sessionEpoch = 0;
   String? _owner;
@@ -88,6 +94,44 @@ final class MenuActionRegistry {
     };
   }
 
+  void Function() registerForm({
+    required String id,
+    required String label,
+    required Map<String, int> fields,
+    required bool Function() available,
+    required MenuFormAction invoke,
+  }) {
+    if (id.isEmpty ||
+        id.length > 160 ||
+        label.isEmpty ||
+        label.length > 200 ||
+        fields.length > 8 ||
+        fields.entries.any(
+          (e) =>
+              !RegExp(r'^[a-zA-Z][a-zA-Z0-9_]{0,39}$').hasMatch(e.key) ||
+              e.value < 1 ||
+              e.value > 4000,
+        )) {
+      throw ArgumentError('Invalid form descriptor');
+    }
+    final action = _Action(
+      label,
+      available,
+      () {},
+      false,
+      fields: Map.unmodifiable(fields),
+      form: invoke,
+    );
+    _actions.putIfAbsent(id, () => []).add(action);
+    _revision++;
+    return () {
+      if (_actions[id]?.remove(action) == true) {
+        if (_actions[id]!.isEmpty) _actions.remove(id);
+        _revision++;
+      }
+    };
+  }
+
   Map<String, Object?> snapshot() {
     _refreshOwner();
     return {
@@ -111,7 +155,11 @@ final class MenuActionRegistry {
         if (_owner != null)
           for (final entry in _actions.entries)
             if (_available(entry.value) case final action?)
-              {'id': entry.key, 'label': action.label},
+              {
+                'id': entry.key,
+                'label': action.label,
+                if (action.form != null) 'fields': action.fields,
+              },
       ],
     };
   }
@@ -121,6 +169,7 @@ final class MenuActionRegistry {
     required String owner,
     required int revision,
     required String requestId,
+    Map<String, String> values = const {},
   }) async {
     _refreshOwner();
     Map<String, Object?> receipt(String status) => {'status': status, 'id': id};
@@ -128,9 +177,13 @@ final class MenuActionRegistry {
     if (!RegExp(r'^[A-Za-z0-9_-]{1,80}$').hasMatch(requestId)) {
       return receipt('invalid');
     }
+    final keys = values.keys.toList()..sort();
+    final payload = jsonEncode({for (final key in keys) key: values[key]});
     final previous = _receipts[requestId];
     if (previous != null) {
-      return previous.id == id && previous.revision == revision
+      return previous.id == id &&
+              previous.revision == revision &&
+              previous.payload == payload
           ? previous.result
           : receipt('conflict');
     }
@@ -138,6 +191,14 @@ final class MenuActionRegistry {
     if (revision != _revision) return receipt('stale');
     final action = _available(_actions[id] ?? []);
     if (action == null) return receipt('unavailable');
+    if (values.length != action.fields.length ||
+        values.entries.any(
+          (e) =>
+              !action.fields.containsKey(e.key) ||
+              e.value.length > action.fields[e.key]!,
+        )) {
+      return receipt('invalid');
+    }
     // Refuse a new session after its finite replay window fills; never evict a
     // receipt and accidentally execute a previously completed request again.
     if (_receipts.length >= 128) return receipt('session_limit');
@@ -145,30 +206,36 @@ final class MenuActionRegistry {
     final epoch = _sessionEpoch;
     Map<String, Object?> result;
     try {
-      final completion = action.invoke();
-      if (action.dispatchOnly && completion is Future<void>) {
-        // UI navigation futures often complete only when the opened page is
-        // closed. Acknowledge dispatch, and preserve late errors for the next
-        // status read/replay without blocking the learner's next command.
-        unawaited(
-          completion.then<void>(
-            (_) {},
-            onError: (Object error, StackTrace stack) {
-              _refreshOwner();
-              if (_sessionEpoch == epoch && _owner == owner) {
-                _receipts[requestId] = (
-                  id: id,
-                  revision: revision,
-                  result: Map.unmodifiable(receipt('failed')),
-                );
-              }
-            },
-          ),
-        );
+      if (action.form != null) {
+        final response = await action.form!(Map.unmodifiable(values));
+        result = {...response, 'id': id};
       } else {
-        await completion;
+        final completion = action.invoke();
+        if (action.dispatchOnly && completion is Future<void>) {
+          // UI navigation futures often complete only when the opened page is
+          // closed. Acknowledge dispatch, and preserve late errors for the next
+          // status read/replay without blocking the learner's next command.
+          unawaited(
+            completion.then<void>(
+              (_) {},
+              onError: (Object error, StackTrace stack) {
+                _refreshOwner();
+                if (_sessionEpoch == epoch && _owner == owner) {
+                  _receipts[requestId] = (
+                    id: id,
+                    revision: revision,
+                    payload: payload,
+                    result: Map.unmodifiable(receipt('failed')),
+                  );
+                }
+              },
+            ),
+          );
+        } else {
+          await completion;
+        }
+        result = receipt(currentOwner() == owner ? 'invoked' : 'stale');
       }
-      result = receipt(currentOwner() == owner ? 'invoked' : 'stale');
     } on Object {
       result = receipt(
         'failed',
@@ -181,10 +248,13 @@ final class MenuActionRegistry {
       _receipts[requestId] = (
         id: id,
         revision: revision,
+        payload: payload,
         result: Map.unmodifiable(result),
       );
     }
-    return result;
+    return _owner == owner && _sessionEpoch == epoch
+        ? result
+        : receipt('stale');
   }
 
   _Action? _available(List<_Action> actions) {
@@ -199,7 +269,16 @@ final class MenuActionRegistry {
 }
 
 final class _Action {
-  _Action(this.label, this.available, this.invoke, this.dispatchOnly);
+  _Action(
+    this.label,
+    this.available,
+    this.invoke,
+    this.dispatchOnly, {
+    this.fields = const {},
+    this.form,
+  });
+  final Map<String, int> fields;
+  final MenuFormAction? form;
   final String label;
   final bool Function() available;
   final MenuAction invoke;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
@@ -32,6 +33,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _partOfSpeechController;
   String? _cefrLevel;
   bool _saving = false;
+  String? _formOwner;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _formOwner ??= MenuActionScope.maybeOf(context)?.currentOwner();
+  }
 
   static const _cefrOptions = <String>['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -70,7 +78,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   Widget _buildContent(BuildContext context) {
     final useCases =
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
-    return Scaffold(
+    final screen = Scaffold(
       appBar: AppBar(
         title: Text(widget.word == null ? 'เพิ่มคำศัพท์' : 'แก้ไขคำศัพท์'),
       ),
@@ -80,6 +88,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           TextField(
             key: const ValueKey('word-field'),
             controller: _wordController,
+            onChanged: (_) => setState(() {}),
             textInputAction: TextInputAction.next,
             maxLength: maxSpellingLength,
             decoration: const InputDecoration(
@@ -91,6 +100,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           TextField(
             key: const ValueKey('meaning-field'),
             controller: _meaningController,
+            onChanged: (_) => setState(() {}),
             textInputAction: TextInputAction.next,
             maxLength: maxMeaningLength,
             decoration: const InputDecoration(
@@ -102,6 +112,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           TextField(
             key: const ValueKey('part-of-speech-field'),
             controller: _partOfSpeechController,
+            onChanged: (_) => setState(() {}),
             maxLength: maxPartOfSpeechLength,
             decoration: const InputDecoration(
               labelText: 'ชนิดของคำ',
@@ -110,7 +121,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            key: const ValueKey('cefr-field'),
+            key: ValueKey('cefr-field-${_cefrLevel ?? 'none'}'),
             initialValue: _cefrLevel,
             decoration: const InputDecoration(
               labelText: 'ระดับ CEFR (ไม่บังคับ)',
@@ -140,14 +151,66 @@ class _AddWordScreenState extends State<AddWordScreen> {
         ],
       ),
     );
+    if (_formOwner == null || useCases == null) return screen;
+    return MenuActionBinding(
+      id: 'vocabulary/word-fill',
+      label: 'กรอกคำศัพท์ (ยังไม่บันทึก)',
+      ownerId: _formOwner,
+      onInvoke: null,
+      fields: const {
+        'spelling': maxSpellingLength,
+        'meaning': maxMeaningLength,
+        'partOfSpeech': maxPartOfSpeechLength,
+        'cefrLevel': 2,
+      },
+      onForm: (values) {
+        if (!_admitted || _saving) return {'status': 'busy'};
+        final level = values['cefrLevel']!;
+        if (level.isNotEmpty && !_cefrOptions.contains(level)) {
+          return {'status': 'invalid'};
+        }
+        setState(() {
+          _wordController.text = values['spelling']!;
+          _meaningController.text = values['meaning']!;
+          _partOfSpeechController.text = values['partOfSpeech']!;
+          _cefrLevel = level.isEmpty ? null : level;
+        });
+        return {'status': 'filled', 'values': values};
+      },
+      child: MenuActionBinding(
+        revisionKey: (
+          _wordController.text,
+          _meaningController.text,
+          _partOfSpeechController.text,
+          _cefrLevel,
+        ),
+        id: 'vocabulary/word-save',
+        label: 'บันทึกคำศัพท์และตรวจผล',
+        ownerId: _formOwner,
+        onInvoke: null,
+        onForm: (_) => _save(useCases, expectedOwnerId: _formOwner),
+        child: screen,
+      ),
+    );
   }
 
-  Future<void> _save(VocabularyUseCases useCases) async {
-    if (!_admitted || _saving) return;
+  Future<Map<String, Object?>> _save(
+    VocabularyUseCases useCases, {
+    String? expectedOwnerId,
+  }) async {
+    if (!_admitted || _saving) return {'status': 'busy'};
+    final registry = MenuActionScope.maybeOf(context);
+    final revision = registry?.snapshot()['revision'];
+    bool allowed() =>
+        _admitted &&
+        (expectedOwnerId == null ||
+            registry?.currentOwner() == expectedOwnerId &&
+                registry?.snapshot()['revision'] == revision);
     setState(() => _saving = true);
     try {
+      final VocabularyWord saved;
       if (widget.word == null) {
-        await useCases.createWord(
+        saved = await useCases.createWord(
           CreateWordCommand(
             categoryId: widget.categoryId,
             spelling: _wordController.text,
@@ -155,9 +218,11 @@ class _AddWordScreenState extends State<AddWordScreen> {
             partOfSpeech: _partOfSpeechController.text,
             cefrLevel: _cefrLevel,
           ),
+          expectedOwnerId: expectedOwnerId,
+          mutationAllowed: allowed,
         );
       } else {
-        await useCases.updateWord(
+        saved = await useCases.updateWord(
           UpdateWordCommand(
             id: widget.word!.id,
             categoryId: widget.categoryId,
@@ -167,17 +232,50 @@ class _AddWordScreenState extends State<AddWordScreen> {
             cefrLevel: _cefrLevel,
             source: widget.word!.source,
           ),
+          expectedOwnerId: expectedOwnerId,
+          mutationAllowed: allowed,
         );
       }
-      if (mounted) Navigator.pop(context);
+      final records = await useCases.readPinnedByIds([saved.id]);
+      final persisted = records
+          .where(
+            (w) =>
+                w.id == saved.id &&
+                w.ownerId == saved.ownerId &&
+                w.categoryId == saved.categoryId &&
+                w.spelling == saved.spelling &&
+                w.meaning == saved.meaning &&
+                w.partOfSpeech == saved.partOfSpeech &&
+                w.cefrLevel == saved.cefrLevel &&
+                !w.isDeleted,
+          )
+          .firstOrNull;
+      if (persisted == null) return {'status': 'verification_failed'};
+      if (mounted && Navigator.of(context).canPop()) Navigator.pop(context);
+      return {
+        'status': 'saved',
+        'record': {
+          'wordId': persisted.id,
+          'categoryId': persisted.categoryId,
+          'spelling': persisted.spelling,
+          'meaning': persisted.meaning,
+          'partOfSpeech': persisted.partOfSpeech,
+          'cefrLevel': persisted.cefrLevel,
+          'revision': persisted.localRevision,
+        },
+      };
     } on InvalidVocabularyFailure {
       _message('กรุณากรอกข้อมูลให้ครบและไม่เกินความยาวที่กำหนด');
+      return {'status': 'invalid'};
     } on DuplicateVocabularyFailure {
       _message('มีคำศัพท์และความหมายนี้แล้ว');
+      return {'status': 'duplicate'};
     } on CategoryWordLimitFailure {
       _message('หมวดหมู่นี้มีคำศัพท์ครบ 50 คำแล้ว');
+      return {'status': 'limit'};
     } catch (_) {
       _message('บันทึกคำศัพท์ไม่สำเร็จ');
+      return {'status': 'failed'};
     } finally {
       if (mounted) setState(() => _saving = false);
     }

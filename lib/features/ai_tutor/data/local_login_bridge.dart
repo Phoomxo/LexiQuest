@@ -190,7 +190,14 @@ final class LocalLoginBridge implements ManagedTutorTransport {
             result = {'status': 'available', ...registry.snapshot()};
           } else if (registry != null &&
               request['name'] == 'execute_menu_action' &&
-              arguments.length == 2 &&
+              arguments.keys.every(
+                (key) => const ['id', 'revision', 'values'].contains(key),
+              ) &&
+              (arguments['values'] == null ||
+                  arguments['values'] is Map &&
+                      (arguments['values'] as Map).entries.every(
+                        (e) => e.key is String && e.value is String,
+                      )) &&
               arguments['id'] is String &&
               arguments['revision'] is int) {
             result = await registry.execute(
@@ -198,6 +205,9 @@ final class LocalLoginBridge implements ManagedTutorTransport {
               owner: binding.ownerId,
               revision: arguments['revision'] as int,
               requestId: request['requestId'] as String,
+              values: Map<String, String>.from(
+                arguments['values'] as Map? ?? const {},
+              ),
             );
           }
           if (finished || cancellation.isCancelled || _disposed) return;
@@ -218,6 +228,7 @@ final class LocalLoginBridge implements ManagedTutorTransport {
     unawaited(
       cancellation.whenCancelled.then((_) async {
         if (!finished && !_disposed) {
+          menuActions?.invalidateSession(preserveContext: true);
           try {
             await _post('/cancel');
           } on Object {
