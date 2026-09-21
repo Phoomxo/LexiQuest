@@ -388,6 +388,12 @@
       "receipt": "word-delete-008.json",
       "scope": "Confirmed exact-target word deletion, original manual cancellation and bounded descriptors",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "native-context-028",
+      "receipt": "native-context-028.json",
+      "scope": "Live offline byte interpretation retest, quest progress, reward balance and Anki guidance; disconnected PDF selection",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

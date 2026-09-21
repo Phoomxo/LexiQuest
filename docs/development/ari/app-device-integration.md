@@ -457,3 +457,7 @@ Installed source d527c531 (APK hash in native-baseline-026.json). Disconnected n
 ## Offline native027 and byte interpretation repair
 
 Live provider context read and refresh on the mounted Vivo offline screen succeeded before/after a native download. Found misleading3066/708-byte ratio: manifest payload and installed total include different files. Added explicit byte meaning and non-comparability to optional AI context; five red assertions reproduced the missing contract and the full screen suite passed after repair. Native repair retest remains required; all14 acceptance remains open. Explicit disconnect preserved native removal; temporary voice fixture removed, original content/accounts and USB stay-awake retained. Details: offline-native-027.json.
+
+## Native connected context028
+
+Source64710021 installed and tested with live provider. Original offline prompt now reports verified5819/3066 bytes separately; misleading ratio not repeated. Quest5/5 and conditional50XP, shop15coins/75XP/level4/next5XP, and Anki vocabulary-only idle guidance matched native UI. Tool receipts observed. Explicit disconnect retained manual PDF selection. No reward mutation or file export acceptance claimed. Bridge/reverse stopped; original content/accounts retained and temporary voice fixture removed. Full scope remains open; see native-context-028.json.

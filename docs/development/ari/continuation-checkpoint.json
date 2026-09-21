@@ -1,22 +1,22 @@
 {
-  "revision": 51,
+  "revision": 52,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: live offline context refresh verified; byte interpretation defect reproduced and host fix passed",
+  "previousTurn": "PROGRESS: native byte interpretation retest and quest/shop/export live context passed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Offline027 byte interpretation native retest pending",
+  "current": "Native028 representative pass; full14 scope remains open",
   "next": [
-    "Build and native retest offline byte interpretation027",
-    "Continue connected native019-025/history/progress",
-    "Remaining14 workflow/mode gaps then queued whole-project review"
+    "ReviewCenter has no assistance bindings: add owner-bound read projection without answer submission",
+    "Continue native progress/history/weakness/camera/shadowing checks",
+    "Complete remaining workflow/mode acceptance before whole-project review"
   ],
-  "nativeInstalledSource": "d527c531adf55d5d79299dc2ffc2228394b90e7d",
-  "nativeInstalledApk": "build/ari-assistance-025.apk",
+  "nativeInstalledSource": "6471002102efd8ac46212cb1b7560224295b631a",
+  "nativeInstalledApk": "build/ari-assistance-027.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "Bridge81194 stopped; no known test/build/bridge; reverse8765 removed",
-  "testFixture": "Isolated app offline page; temporary voice download removed; original ready item retained; AI collapsed/disconnected"
+  "liveProcesses": "Bridge47317 stopped; build53687/install18142 terminal; no known live workers; reverse8765 removed",
+  "testFixture": "Isolated app export PDF selected; AI collapsed/disconnected; voice fixture removed"
 }

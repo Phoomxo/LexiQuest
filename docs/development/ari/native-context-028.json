@@ -1,0 +1,40 @@
+{
+  "status": "REPRESENTATIVE_NATIVE_CONNECTED_CONTEXT_PASS_NOT_WHOLE_WORKFLOW_ACCEPTANCE",
+  "source": "6471002102efd8ac46212cb1b7560224295b631a",
+  "apk": "build/ari-assistance-027.apk",
+  "apkSha256": "72e6283f34e7ade939fb529857da0f979eeaa765e0601a16df224fce82789a48",
+  "package": "com.lexiquest.app.ariTest",
+  "evidence": "device-observations.jsonl",
+  "liveProviderCases": [
+    {
+      "workflow": "W14",
+      "result": "Offline027 defect native retest passed for original prompt: verified5819 and3066 bytes reported separately, no3066/708 ratio. list_menu_actions receipt observed. Both ready items matched UI; temporary voice fixture downloaded by native control and removed after query."
+    },
+    {
+      "workflow": "W10",
+      "result": "Quest status completed5/5; AI explained conditional50XP is not evidence of credited balance. list_menu_actions receipt observed."
+    },
+    {
+      "workflow": "W10",
+      "result": "Shop AI read15spendable coins,75lifetimeXP,avatarlevel4,nextlevel5XP; all matched native UI. Explained XP is not language proficiency. No purchase/equip performed."
+    },
+    {
+      "workflow": "W13",
+      "result": "Anki selected via native UI; AI reported vocabulary+meaning only and idle not proof of file saved. No file export performed."
+    }
+  ],
+  "disconnected": "Explicit disconnect then native PDF format selection succeeded. Provider bridge47317 stopped exit1 after CtrlC, reverse8765 removed, no listening connection returned.",
+  "preservation": "Original app/accounts untouched; isolated existing5819-byte offline content retained; temporary voice fixture returned to notDownloaded; USBstayawake2 verified and retained.",
+  "limitations": [
+    "Representative live outputs are not deterministic proof for all prompts",
+    "No cloud-sync acceptance",
+    "No reward mutation acceptance in this batch",
+    "No native export file byte verification in this batch",
+    "Other workflows and14modes remain open"
+  ],
+  "next": [
+    "ReviewCenter has no assistance bindings: add owner-bound read projection without answer submission",
+    "Continue native progress/history/weakness/camera/shadowing checks",
+    "Complete remaining workflow/mode acceptance before whole-project review"
+  ]
+}
