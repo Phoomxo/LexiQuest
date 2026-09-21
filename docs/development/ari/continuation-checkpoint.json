@@ -1,13 +1,13 @@
 {
-  "revision": 46,
+  "revision": 47,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W10 quest context and real Drift host verification",
+  "previousTurn": "PROGRESS: W10 shop account/item context and real Drift host acceptance",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Quest022 host verified; native pending",
+  "current": "Rewards023 host passed; native pending",
   "next": [
-    "Shop/earned reward and speech/camera assistance",
-    "Batch native019-022 and history/progress",
+    "Speech/camera assistance",
+    "Batch native019-023 and history/progress",
     "Remaining14 acceptance then queued whole-project review"
   ],
   "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",

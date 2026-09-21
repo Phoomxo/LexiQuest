@@ -42,7 +42,13 @@ final class AvatarProgression {
 }
 
 final class AvatarRewardState {
-  const AvatarRewardState({required this.account, required this.progression});
+  const AvatarRewardState({
+    this.ownerId,
+    required this.account,
+    required this.progression,
+  });
+
+  final String? ownerId;
 
   final RewardAccount account;
   final AvatarProgression progression;

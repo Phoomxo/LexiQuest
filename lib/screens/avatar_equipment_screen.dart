@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/rewards/application/reward_use_cases.dart';
@@ -215,6 +217,33 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
     return 'avatar:$operation:${item.id}:$now:$sequence';
   }
 
+  Widget _withItemContext(
+    AvatarRewardState state,
+    RewardCatalogItem item,
+    Widget child,
+  ) {
+    if (state.ownerId == null) return child;
+    return MenuActionBinding(
+      id: 'rewards/item/${item.id}',
+      label: 'Reward catalog item',
+      ownerId: state.ownerId,
+      onInvoke: null,
+      readValue: jsonEncode({
+        'itemId': item.id,
+        'priceCoins': item.price,
+        'catalogVersion': item.catalogVersion,
+        'unlocked': state.progression.isItemUnlocked(item.id),
+        'owned':
+            item.price == 0 || state.account.ownedItemIds.contains(item.id),
+        'equipped': state.account.equippedBySlot[item.slot] == item.id,
+        'previewing': _previewItemId == item.id,
+        'busy': _busyItems.contains(item.id),
+        'interpretation': 'preview-is-not-purchase-or-equip',
+      }),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,7 +292,7 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
           final equippedHeadgear = account.equippedBySlot['headgear'];
           final visibleHeadgear = _previewItemId ?? equippedHeadgear;
           final isPreviewing = _previewItemId != null;
-          return ListView(
+          final body = ListView(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
             children: [
@@ -297,22 +326,27 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
               ),
               const SizedBox(height: 12),
               for (final item in RewardCatalog.items)
-                _CatalogTile(
-                  item: item,
-                  unlocked: progression.isItemUnlocked(item.id),
-                  owned:
-                      item.price == 0 || account.ownedItemIds.contains(item.id),
-                  equipped: account.equippedBySlot[item.slot] == item.id,
-                  busy: _busyItems.contains(item.id),
-                  message: _itemMessages[item.id],
-                  canPreview: RewardAvatarPreview.supports(
-                    catalogVersion: item.catalogVersion,
-                    itemId: item.id,
+                _withItemContext(
+                  state,
+                  item,
+                  _CatalogTile(
+                    item: item,
+                    unlocked: progression.isItemUnlocked(item.id),
+                    owned:
+                        item.price == 0 ||
+                        account.ownedItemIds.contains(item.id),
+                    equipped: account.equippedBySlot[item.slot] == item.id,
+                    busy: _busyItems.contains(item.id),
+                    message: _itemMessages[item.id],
+                    canPreview: RewardAvatarPreview.supports(
+                      catalogVersion: item.catalogVersion,
+                      itemId: item.id,
+                    ),
+                    previewing: _previewItemId == item.id,
+                    onPreview: () => _preview(item),
+                    onPurchase: () => _purchase(item),
+                    onEquip: () => _equip(item),
                   ),
-                  previewing: _previewItemId == item.id,
-                  onPreview: () => _preview(item),
-                  onPurchase: () => _purchase(item),
-                  onEquip: () => _equip(item),
                 ),
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
@@ -320,6 +354,27 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
                 children: [Text('แค็ตตาล็อก v${account.catalogVersion}')],
               ),
             ],
+          );
+          if (state.ownerId == null) return body;
+          return MenuActionBinding(
+            id: 'rewards/account',
+            label: 'Reward account evidence',
+            ownerId: state.ownerId,
+            onInvoke: null,
+            readValue: jsonEncode({
+              'coinBalance': account.coinBalance,
+              'lifetimeXp': progression.lifetimeXp,
+              'level': progression.level,
+              'xpUntilNextLevel': progression.xpUntilNextLevel,
+              'catalogVersion': account.catalogVersion,
+              'previewIsEquipped': false,
+              'previewing': isPreviewing,
+              'mutationPending':
+                  _busyItems.isNotEmpty || _checkingItems.isNotEmpty,
+              'interpretation':
+                  'coins-are-spendable-xp-is-lifetime-not-language-proficiency',
+            }),
+            child: body,
           );
         },
       ),

@@ -47,7 +47,11 @@ final class RewardUseCases implements RewardAccountReader {
       owner.id,
       () => repository.load(owner.id),
     );
-    return AvatarRewardState(account: account, progression: progression);
+    return AvatarRewardState(
+      ownerId: owner.id,
+      account: account,
+      progression: progression,
+    );
   }
 
   Future<PurchaseResult> purchase({

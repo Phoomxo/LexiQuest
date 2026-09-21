@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
@@ -397,12 +400,39 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 7, 30),
     );
 
+    String? aiOwner = 'local:owner';
+    final registry = MenuActionRegistry(currentOwner: () => aiOwner);
     await tester.pumpWidget(
-      MaterialApp(home: AvatarEquipmentScreen(rewards: rewards)),
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: AvatarEquipmentScreen(rewards: rewards)),
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('ร้านค้ารางวัล'), findsOneWidget);
+    final entries = registry.snapshot()['context'] as List;
+    final summary = jsonDecode(
+      entries.singleWhere((e) => e['id'] == 'rewards/account')['value']
+          as String,
+    );
+    expect(summary['coinBalance'], 40);
+    expect(summary['lifetimeXp'], 40);
+    expect(summary['level'], 3);
+    expect(summary['previewIsEquipped'], false);
+    final ocean = jsonDecode(
+      entries.singleWhere((e) => e['id'] == 'rewards/item/theme_ocean')['value']
+          as String,
+    );
+    expect(ocean['priceCoins'], 80);
+    expect(ocean['owned'], false);
+    expect(ocean['equipped'], false);
+    expect(ocean['previewing'], false);
+    expect(registry.snapshot()['actions'], isEmpty);
+    aiOwner = 'other';
+    expect(registry.snapshot()['context'], isEmpty);
+    aiOwner = 'local:owner';
+
     expect(find.text('เลเวลอวาตาร์'), findsOneWidget);
     expect(find.text('เลเวล 3'), findsOneWidget);
     expect(find.text('XP สะสม 40'), findsOneWidget);

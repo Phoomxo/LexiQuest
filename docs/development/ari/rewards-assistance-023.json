@@ -1,0 +1,24 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W10 shop/avatar rewards",
+  "baseCommit": "415897316e0c611da4654cee09d2dd512496515c",
+  "implementation": [
+    "Avatar read model carries canonical owner; legacy ownerless models expose no AI context",
+    "Account summary separates spendable coins, lifetime XP and avatar level from language proficiency",
+    "Item state separates catalog price, unlocked, owned, equipped and previewing",
+    "Busy/checking metadata avoids treating pending mutations as completed",
+    "No new AI purchase/equip/reward actions; native behavior retained"
+  ],
+  "verification": {
+    "red": "New account context assertion failed before implementation",
+    "green": "Full avatar equipment screen suite passed",
+    "analysis": "No issues found",
+    "newCase": "Real Drift40XP/40coins level3 plus ocean price80 and ownership/equipment flags; owner switch hides context",
+    "existingRegressions": "Real purchase/equip and acknowledgement/readback failures, preview-only persistence, authority replacement and repair retained"
+  },
+  "open": [
+    "Native three-connection-mode coverage",
+    "Context transitions during purchase/preview success beyond static assertions",
+    "Whole W10/all14 acceptance"
+  ]
+}
