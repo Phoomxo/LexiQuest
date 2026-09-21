@@ -406,6 +406,12 @@
       "receipt": "settings-review-progress-native-033.json",
       "scope": "Live settings owner-bound command success/restoration and read-only review/progress/weakness; native baseline after disconnect",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "camera-speech-native-034",
+      "receipt": "camera-speech-native-034.json",
+      "scope": "Disconnected camera unknown result and speech unclear-input handling; no added answer",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

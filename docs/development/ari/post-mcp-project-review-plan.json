@@ -31,5 +31,25 @@
     "No skipped or weakened tests; recover failures autonomously",
     "No deploy or purchase authorization inferred"
   ],
-  "completion": "Every review area accounted for; confirmed defects resolved and verified or concrete indispensable external prerequisite explicitly documented; no invented whole-system PASS"
+  "completion": "Every review area accounted for; confirmed defects resolved and verified or concrete indispensable external prerequisite explicitly documented; no invented whole-system PASS",
+  "findingSchema": [
+    "id",
+    "sourceRevision",
+    "fileAndLine",
+    "workflow",
+    "reproduction",
+    "expected",
+    "actual",
+    "evidence",
+    "severity",
+    "rootCause",
+    "userImpact",
+    "repairDesign",
+    "compatibilityOrMigration",
+    "acceptanceCheck",
+    "retestResult",
+    "status"
+  ],
+  "agileExecution": "One prioritized repair increment at a time: reproduce, root-cause/design, implementation, bounded verify-scope checks, affected device regression, review and update findings. Preserve unchanged accepted evidence.",
+  "dataHandling": "Collect code and technical test evidence; exclude credentials, private messages and unrelated account content."
 }

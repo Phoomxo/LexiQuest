@@ -481,3 +481,7 @@ Installed6fc67593 isolated APK. With provider disconnected, completed book revie
 ## Live settings/review/progress033
 
 Same-owner Vivo live provider read settings and changed/restored theme with tool receipts and native chip verification. Review10/0due, progress28/42and1523seconds, weakness42sample/11words/spoon1wrong matched native values. Cloud readiness and historical errors correctly distinguished from sync completion/SRSdue. Explicit disconnect retained native list scrolling. No new practice answers; original accounts and restored display settings preserved. Remaining history/camera/speech/mode acceptance stays open. Evidence: settings-review-progress-native-033.json.
+
+## Camera/speech native034
+
+Disconnected camera capture returned unknown-object guidance; resume reset result. Speech recording start/stop produced unclear-speech guidance without a score. Android Back returned to dashboard28/42 unchanged, active time26m13s (previous25m23s),0due. External floating bubble intercepted a coordinate tap; app restored and Android Back used. USB stayawake2 verified. These observations do not establish recognition accuracy or connected assistance acceptance. Full scope stays OPEN. Evidence: camera-speech-native-034.json. Whole-project review remains queued after MCP acceptance; findings schema and sequential SDLC/Agile repair criteria recorded in the existing plan.

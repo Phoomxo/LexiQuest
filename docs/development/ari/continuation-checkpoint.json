@@ -1,14 +1,14 @@
 {
-  "revision": 57,
+  "revision": 58,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: live settings read/mutation/restore, review, progress and weakness native checks passed",
+  "previousTurn": "PROGRESS: camera unknown result/lifecycle and speech unclear-input baseline observed; response count unchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native033 representative pass; remaining full-scope gaps open",
+  "current": "Native034 representative baseline recorded; full acceptance OPEN",
   "next": [
-    "Native history/camera/shadowing and mode-specific gaps",
-    "Remaining sync/transfer-probe and complete14workflow/mode acceptance",
-    "Then authorized whole-project SDLC review"
+    "Native history and connected camera/speech checks",
+    "Remaining14workflow/mode acceptance",
+    "Whole-project review then sequential SDLC/Agile remediation"
   ],
   "nativeInstalledSource": "6fc67593c2a039e7062166085046d97578f8561b",
   "nativeInstalledApk": "build/ari-assistance-031.apk",
@@ -18,5 +18,5 @@
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "Bridge16335 stopped and reverse removed; no known live worker",
-  "testFixture": "Isolated app weakness page scrolled to11bag; AI collapsed/disconnected; theme system and reducedmotionfalse. Prior032review fixture retained."
+  "testFixture": "Isolated app progress dashboard28/42,26m13s,0due. AI collapsed/disconnected; USB stayawake2. Floating bubble can intercept upper-left taps; use Android Back."
 }
