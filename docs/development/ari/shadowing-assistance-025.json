@@ -1,0 +1,31 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W11 shadowing speech",
+  "baseCommit": "dac9f05940db8f58f348161a48da9a9305beaa98",
+  "implementation": [
+    "Owner-bound assessed transcript context, bounded40codepoints",
+    "Interim/empty speech does not expose invented assessment",
+    "Similarity explicitly text-only, not acoustic pronunciation",
+    "Original80percent algorithmv1 and saved/retry state preserved",
+    "No audio bytes, listening tools or learner answer tools added"
+  ],
+  "verification": {
+    "red": "New context assertions failed before implementation",
+    "green": "Full shadowing screen suite passed",
+    "analysis": "No issues found",
+    "newAssertions": [
+      "Blank final remains unscored",
+      "Final transcript100percent with saved evidence",
+      "One answer only",
+      "Different owner hides personal context",
+      "No new AI actions"
+    ],
+    "fixture": "Manual speech gateway and injected learning repository; physical microphone not tested this round"
+  },
+  "open": [
+    "Native microphone and connection loss coverage",
+    "Other speech/audio surfaces",
+    "Long text/context lifecycle expansion",
+    "Complete W11/14mode acceptance"
+  ]
+}

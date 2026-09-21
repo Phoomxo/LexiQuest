@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -47,13 +50,18 @@ void main() {
       disposeProvider: () async {},
     );
     addTearDown(voice.dispose);
+    String? aiOwner = 'owner-1';
+    final registry = MenuActionRegistry(currentOwner: () => aiOwner);
     await tester.pumpWidget(
-      MaterialApp(
-        home: ShadowingChallengeScreen(
-          voice: voice,
-          speechPractice: SpeechPracticeUseCases(gateway),
-          learning: learning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: ShadowingChallengeScreen(
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(gateway),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
         ),
       ),
     );
@@ -66,12 +74,29 @@ void main() {
     gateway.emitFinal('  ');
     await tester.pumpAndSettle();
     expect(repository.commands, isEmpty);
+    Map<String, dynamic> context() =>
+        jsonDecode(
+              (registry.snapshot()['context'] as List).single['value']
+                  as String,
+            )
+            as Map<String, dynamic>;
+    expect(context().containsKey('similarityPercent'), false);
+    expect(
+      context()['interpretation'],
+      'transcript-similarity-not-acoustic-pronunciation',
+    );
     expect(find.textContaining('0%'), findsNothing);
     await tester.tap(listen);
     await tester.pump();
     gateway.emitFinal('Practice makes perfect');
     await tester.pumpAndSettle();
     expect(repository.commands, hasLength(1));
+    expect(context()['similarityPercent'], 100);
+    expect(context()['evidenceSaved'], true);
+    expect(context()['finalTranscript'], 'Practice makes perfect');
+    expect(registry.snapshot()['actions'], isEmpty);
+    aiOwner = 'other';
+    expect(registry.snapshot()['context'], isEmpty);
   });
   for (final compact in [false, true]) {
     testWidgets('R15.10 visual shadowing compact=$compact', (tester) async {

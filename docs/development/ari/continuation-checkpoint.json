@@ -1,14 +1,14 @@
 {
-  "revision": 48,
+  "revision": 49,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W12 scan guidance and stale-background-context defect repaired",
+  "previousTurn": "PROGRESS: W11 shadowing assessment context and preserved empty/retry evidence",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Camera024 host passed; native pending",
+  "current": "Shadowing025 host passed; native pending",
   "next": [
-    "Speech assistance",
-    "Batch native019-024 and history/progress",
-    "Remaining14 acceptance then queued whole-project review"
+    "Batch build/native019-025 and history/progress",
+    "Remaining speech/sync/preferences and14mode gaps",
+    "Full acceptance then queued whole-project review"
   ],
   "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
   "nativeInstalledApk": "build/ari-preview-017.apk",

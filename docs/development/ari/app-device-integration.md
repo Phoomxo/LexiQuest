@@ -444,3 +444,8 @@ Owner-bound shop account and catalog contexts separate coins/XP/level and unlock
 ### Camera assistance024 — 2026-09-21
 
 Optional scan context distinguishes model confidence, mapped vocabulary and accepted persistence without images. New background test exposed stale context after internal invalidation; lifecycle now schedules rebuild and retest passed. Full scanner suite plus final2context cases passed. [Evidence](camera-assistance-024.json). Fake-sensor evidence only; native quality and connection-mode acceptance remain open.
+
+
+### Shadowing assistance025 — 2026-09-21
+
+Owner-bound final speech context distinguishes transcript similarity from acoustic pronunciation and records actual saved/retry state. Interim/empty input has no invented score; native learning authority unchanged. Full shadowing suite and analysis passed. [Evidence](shadowing-assistance-025.json). Fake speech gateway evidence only; microphone and fullW11 acceptance remain open.
