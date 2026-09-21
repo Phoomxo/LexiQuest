@@ -1,0 +1,46 @@
+{
+  "status": "REPRESENTATIVE_NATIVE_BASELINE_CONNECTED_DISCONNECTED_PASS",
+  "sourceCommit": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
+  "apk": "build/ari-preview-017.apk",
+  "apkSha256": "136c8c6d24d724fd7ae0ea038801ab71434714aca7b59f9a3c8a6fa762e40395",
+  "device": "Vivo V2041 / 9582188822004C6",
+  "build": "PASS",
+  "install": "PASS",
+  "workflow": "W08 study-plan representative journey",
+  "evidence": "evidence/study-plan-native-018/observations.json",
+  "baseline": [
+    "Planning hub accessible",
+    "Preview10minutes yields proposal r1 with0due/0new/0carry-over",
+    "Native accept persists r1",
+    "Leave/reopen reads accepted r1"
+  ],
+  "connected": {
+    "provider": "Actual existing ChatGPT account, private device code kept out of logs",
+    "tool": "list_menu_actions: available visible in app",
+    "answer": "Accepted revision1,10minutes, due0,new0,carry-over0, no pending proposal",
+    "matchesNative": true,
+    "caveat": "Browser round-trip triggers existing plan reload guard; reload performed. Accidental back due to unfocused input caused one route re-entry, so pure no-rebuild late-attach native acceptance not claimed."
+  },
+  "disconnected": [
+    "Explicit AI disconnect",
+    "Native preview produces r2",
+    "Native reject discards proposal and retains r1"
+  ],
+  "retainedFixture": "Accepted r1 10minute empty plan in isolated test app; original app untouched",
+  "cleanup": {
+    "bridgeSession83085": "Stopped terminal exit1 via CtrlC",
+    "reverse8765": "Removed; list empty",
+    "listener8765": "None observed",
+    "stayAwake": 2,
+    "originalAccounts": "Preserved"
+  },
+  "open": [
+    "Nonempty due/new/carry-over native planning",
+    "Live provider proposed-vs-accepted simultaneous context",
+    "Goals/preferences and full W08",
+    "Native history/progress/Pair AI checks",
+    "Offline content admission native check",
+    "All14 workflow/mode acceptance"
+  ],
+  "observedIssue": "Blanket phrase no overdue deadline is an explanation of deadlinePassed=false; no actual deadline configured. No invented numeric outcomes observed."
+}
