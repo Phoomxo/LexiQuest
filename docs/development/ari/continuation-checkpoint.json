@@ -1,14 +1,14 @@
 {
-  "revision": 63,
+  "revision": 64,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "039 fixed missing scramble committed feedback and native loader remount;6production host+24screen+77loader testsPASS;analysis/build/install/native word+sentence baselinePASS",
+  "previousTurn": "040 live sentence method guidance+committed result; word current-mode result; explicit disconnect with partial sentence preserved and completed onVivo",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Live-provider feedback retest for word/sentence still pending;remaining mode coverage;all14scopeOPEN",
+  "current": "039scramble live-provider acceptance now verified representative; remaining mode-specific context and persistence coverage",
   "next": [
-    "Native live-provider read-back of word/sentence committed results039",
-    "Remaining mode-specific baseline/connected/disconnected checks; inspect other native direct pending.record paths for same projection gap",
-    "Sync, mappedcamera/successfulspeech acceptance;whole-project review after MCP acceptance"
+    "Inspect speaking/CEFR direct evidence paths and add appropriate optional context without implying acoustic assessment or scored reading",
+    "Complete other mode-specific baseline/connected/disconnected checks using real production loaders",
+    "Sync,mappedcamera/successfulspeech acceptance;whole-project review after MCP acceptance"
   ],
   "nativeInstalledSource": "039 working source pinned in evidence/scramble-feedback-039/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-039.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test live",
-  "testFixture": "Dashboard28/42,30m53s,0due;3recreational test submissions039;AIcollapsed/disconnected;USBstayawake2",
+  "liveProcesses": "No bridge/build/test live;22745terminal;ownedreverse/configremoved;listener8765absent",
+  "testFixture": "Dashboard28/42,30m53s,0due;3additional recreational submissions040;AIcollapsed/disconnected;USBstayawake2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

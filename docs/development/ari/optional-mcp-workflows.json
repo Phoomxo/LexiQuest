@@ -312,7 +312,9 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "nativeAssistanceEvidence": "scramble-native-040.json",
+      "hostPersistenceEvidence": "scramble-feedback-039.json"
     },
     {
       "id": "word-scramble",
@@ -324,7 +326,9 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "nativeAssistanceEvidence": "scramble-native-040.json",
+      "hostPersistenceEvidence": "scramble-feedback-039.json"
     }
   ],
   "stages": [
@@ -441,6 +445,12 @@
       "id": "scramble-feedback-039",
       "receipt": "scramble-feedback-039.json",
       "scope": "Two native scramble committed feedback and loader remount defects fixed;6real production-host registry states,24screen77loader tests,native baseline word/sentence results;liveprovider pending",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "scramble-native-040",
+      "receipt": "scramble-native-040.json",
+      "scope": "Live sentence guidance/result and word current-mode result;explicit provider disconnect preserves partial sentence and native completion",
       "wholeModeAcceptance": false
     }
   ],
