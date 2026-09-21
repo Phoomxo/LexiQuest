@@ -418,6 +418,12 @@
       "receipt": "pairing-recovery-035.json",
       "scope": "Pairing process recreation and explicit re-pairing fixes, host tests, native challenge after recreation",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "camera-result-036",
+      "receipt": "camera-result-036.json",
+      "scope": "Native history and speech guidance;camera no-result projection defect red/green and live retest;baseline afterdisconnect",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

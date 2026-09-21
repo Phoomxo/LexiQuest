@@ -22,6 +22,41 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('camera assistance distinguishes ready camera from failed scan and retry', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final registry = MenuActionRegistry(currentOwner: () => 'test');
+    final voice = VoiceUseCases(provider: _FakeVoice(), disposeProvider: () async {});
+    addTearDown(voice.dispose);
+    final scanner = _FakeScanner()
+      ..captureFailure = const CameraPracticeException(CameraFailureCode.notConfident);
+    await tester.pumpWidget(MenuActionScope(
+      registry: registry,
+      child: MaterialApp(home: ObjectScannerScreen(scanner: scanner, voice: voice)),
+    ));
+    await tester.pumpAndSettle();
+    Map read() => jsonDecode((registry.snapshot()['context'] as List).single['value'] as String) as Map;
+    expect(read()['cameraReady'], true);
+    expect(read()['scanResultAvailable'], false);
+    expect(read()['visibleMessage'], isNull);
+    await tester.tap(find.byKey(const ValueKey('object-scanner-capture-button')));
+    await tester.pumpAndSettle();
+    final failed = read();
+    expect(failed['cameraReady'], true);
+    expect(failed['scanResultAvailable'], false);
+    expect(failed['visibleMessage'], 'ยังระบุวัตถุไม่ได้ กรุณาถ่ายใหม่ให้วัตถุอยู่กลางภาพและมีแสงเพียงพอ');
+    expect(find.text(failed['visibleMessage'] as String), findsOneWidget);
+    expect(failed.containsKey('label'), false);
+    scanner.captureFailure = null;
+    await tester.tap(find.byKey(const ValueKey('object-scanner-capture-button')));
+    await tester.pumpAndSettle();
+    expect(read()['scanResultAvailable'], true);
+    expect(read()['visibleMessage'], isNull);
+    expect(read()['english'], 'apple');
+    expect(registry.snapshot()['actions'], isEmpty);
+    expect(scanner.captureCalls, 2);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   for (final mapped in [true, false]) {
     testWidgets(
       'optional camera context distinguishes mapping mapped=$mapped',

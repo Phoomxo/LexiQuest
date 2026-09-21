@@ -514,7 +514,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       label: 'Current object scan evidence',
       onInvoke: null,
       readValue: jsonEncode({
-        'ready': scannerReady && _cameraForeground,
+        'cameraReady': scannerReady && _cameraForeground,
+        'scanResultAvailable': result != null,
+        'visibleMessage': _error,
         'capturing': _capturing,
         'modelUnavailable': _modelUnavailable,
         'saving': _saving,

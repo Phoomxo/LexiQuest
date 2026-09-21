@@ -1,0 +1,50 @@
+{
+  "status": "REPRODUCED_CAMERA_CONTEXT_DEFECT_FIXED_LIVE_RETEST_PASS_FULL_SCOPE_OPEN",
+  "baseCommit": "de89e17389946792502b9917b69000fa398f9a71",
+  "apk": "build/ari-assistance-036.apk",
+  "apkSha256": "8a56a0c91c29061389bceacd6368523477aec73ad19844400a179ebaa5aa13c0",
+  "sourcePins": "evidence/camera-result-036/source-pins.json",
+  "defect": {
+    "id": "ARI-CAMERA-READY-AMBIGUITY",
+    "reproduction": "Native notConfident message after scan, followed by asking live provider to read camera context and explain result. On035 provider falsely said scan result ready.",
+    "cause": "ready represented camera readiness; projection omitted explicit result availability and the visible failure message.",
+    "fix": "Rename ready to cameraReady; include scanResultAvailable and controlled visibleMessage. Clarify interpretation in bridge prompt. No raw image shared.",
+    "host": "New regression red on missing cameraReady, then verifies initial ready/no result, notConfident message equal native text, successful retry clears message and exposes result; full40screen testsPASS,16Python bridge/menuPASS,analysisclean,buildPASS.",
+    "nativeRetest": "Same request on036 yielded camera ready but no scan result, no object name or image access, and retake guidance matching UI. list_menu_actions receipt observed.",
+    "limits": "No object-recognition accuracy or mapped vocabulary save acceptance from this test"
+  },
+  "nativeOther": [
+    {
+      "area": "W01 pairing035",
+      "observed": "Newbridge79261 while app remained mounted successfully obtained fresh challenge; browser sign-in success, return/check and livehistory response. New036browser sign-in/return/check also succeeded.",
+      "limits": "These returns did not deliberately force process death after completed authorization; challenge recovery after force-stop was verified035."
+    },
+    {
+      "area": "W09 history013",
+      "observed": "Live read latest shadowing abandoned,0/0firstanswers,235seconds; correctly declined pronunciation/proficiency inference. Native UI matched; no lesson start from read."
+    },
+    {
+      "area": "W11 shadowing025",
+      "observed": "Live read referencebag,provided Thai method/pronunciation guidance and said no recorded speech/score. list_menu_actions observed. Explicitdisconnect preservedbag and0percent controls; reference-listen tapped without UIerror.",
+      "limits": "No acoustic playback verification, recognized transcript or pronunciation scoring acceptance."
+    },
+    {
+      "area": "baseline camera afterdisconnect",
+      "observed": "No bridge running; capture produced native matchstick16percent, no verified translation, listen control.",
+      "limits": "No groundtruth for object, no correctness/accuracy claim; no vocabulary saved."
+    }
+  ],
+  "dashboardAfter": {
+    "correct": 28,
+    "responses": 42,
+    "weeklyActiveSeconds": 1853,
+    "due": 0
+  },
+  "fixture": "One additional isolated shadowing session started and exited without submitting answer. Active time is test activity, not learner study outcome.",
+  "cleanup": "Explicitdisconnect;79261and40164 stopped terminal; ownedreverse8765/privateconfig removed,no listener. USBstayawake2 retained. Original app/accounts preserved.",
+  "next": [
+    "Native authenticated process-death recovery after browser authorization remains unproven",
+    "Remaining all14mode acceptance, sync/transfer and mapped camera/speech success cases",
+    "Whole-project SDLC review after MCP acceptance"
+  ]
+}

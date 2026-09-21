@@ -1,22 +1,22 @@
 {
-  "revision": 59,
+  "revision": 60,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: native history baseline; reproduced pairing recreation/rotation defects, implemented fixes,14Flutter+16Python PASS; native recreation challengePASS",
+  "previousTurn": "PROGRESS: livehistory+shadowing guidancePASS; camera misleading-ready reproduced/fixed and native retestPASS;40Flutter+16PythonPASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Pairing035 full authenticated return and native rotation retests pending; all14 acceptanceOPEN",
+  "current": "036 representative checks passed; complete14scope stillOPEN",
   "next": [
-    "New035 APK: complete authenticated browser return and native bridge rotation retest",
-    "Live native history,camera,speech then remaining14workflow/mode acceptance",
-    "Then authorized whole-project review/SDLC fixes"
+    "Native authenticated process-death recovery after browser authorization remains unproven",
+    "Remaining all14mode acceptance, sync/transfer and mapped camera/speech success cases",
+    "Whole-project SDLC review after MCP acceptance"
   ],
-  "nativeInstalledSource": "035 working source pinned in evidence/pairing-recovery-035/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-035.apk",
+  "nativeInstalledSource": "036 working source pinned in evidence/camera-result-036/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-036.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test live;96651 cancelled terminal; ownedreverse/config removed",
-  "testFixture": "Isolated app home,AIcollapsed/notconnected; original accounts unchanged; USBstayawake2. Floating SMSbubble interceptsupperleft. UseAndroidBack."
+  "liveProcesses": "No bridge/build/test live;40164 terminal; ownedreverse/config removed",
+  "testFixture": "Isolated app camera result matchstick16percent/unmapped,no groundtruth,no save;AIcollapsed/disconnected. Dashboard28/42,30m53s,0due. One additional emptyshadowing test session. USBstayawake2."
 }
