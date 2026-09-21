@@ -424,3 +424,8 @@ W07 clinic exposes owner-bound evidence summary and mounted word context, distin
 ### Export assistance020 — 2026-09-21
 
 W13 optional guidance reports actual format/selection and operation status without sharing file paths or bytes. Native export remains authoritative. Selection changes clear previous saved status. Both export screen/flow suites passed with real local bytes and injected picker; analysis clean. [Evidence](export-assistance-020.json). Native and whole-workflow acceptance pending.
+
+
+### Offline assistance021 — 2026-09-21
+
+W14 mounted offline rows expose actual state, verification, byte counts, failure and native availability. Downloaded bytes are explicitly distinct from verified readiness or cloud sync. Existing native controls unchanged. Five status cases and full screen regression passed; analysis clean. [Evidence](offline-assistance-021.json). Fake-manager host evidence only; native, cloud-sync and fullW14 acceptance remain open.

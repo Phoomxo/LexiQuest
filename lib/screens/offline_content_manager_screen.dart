@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning_packs/domain/content_manifest.dart';
@@ -134,55 +136,77 @@ final class _OfflineContentManagerScreenState
               final entry = states[index];
               final state = entry.state;
               final identity = state.identity;
-              return Semantics(
-                container: true,
-                explicitChildNodes: true,
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          entry.title,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(_statusText(state)),
-                        if (!state.hasVerifiedBytes &&
-                            entry.requiredBytes != null)
+              return MenuActionBinding(
+                id: 'offline/content/$index',
+                label: 'Offline content item ${index + 1}',
+                onInvoke: null,
+                readValue: jsonEncode({
+                  'type': identity.type.name,
+                  'revision': identity.revision,
+                  'title': String.fromCharCodes(entry.title.runes.take(80)),
+                  'titleTruncated': entry.title.runes.length > 80,
+                  'status': state.status.name,
+                  'verified': state.hasVerifiedBytes,
+                  'downloadedBytes': state.downloadedBytes,
+                  'requiredBytes': entry.requiredBytes,
+                  'failureCode': state.failureCode?.name,
+                  'inUse': !entry.canRemove,
+                  'busy': _busy.contains(identity),
+                  'cancelling': _cancelling.contains(identity),
+                  'nativeActionsEnabled': widget.canInvoke(),
+                  'interpretation':
+                      'downloaded-bytes-do-not-imply-verified-or-cloud-synced',
+                }),
+                child: Semantics(
+                  container: true,
+                  explicitChildNodes: true,
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                           Text(
-                            'พื้นที่ไฟล์อย่างน้อย ${_byteLabel(entry.requiredBytes!)} '
-                            '· อาจต้องใช้พื้นที่ชั่วคราวเพิ่ม',
+                            entry.title,
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                        if (!entry.canRemove) ...[
                           const SizedBox(height: 12),
-                          const Text('จำเป็นต่อการเรียนที่กำลังดำเนินอยู่'),
-                        ],
-                        const SizedBox(height: 12),
-                        _action(entry),
-                        const SizedBox(height: 12),
-                        ExpansionTile(
-                          key: ValueKey(
-                            'offline-content/details/${identity.id}',
-                          ),
-                          tilePadding: EdgeInsets.zero,
-                          title: const Text('รายละเอียดไฟล์'),
-                          children: [
+                          Text(_statusText(state)),
+                          if (!state.hasVerifiedBytes &&
+                              entry.requiredBytes != null)
                             Text(
-                              'รหัส: ${identity.id} · รุ่น ${identity.revision}',
+                              'พื้นที่ไฟล์อย่างน้อย ${_byteLabel(entry.requiredBytes!)} '
+                              '· อาจต้องใช้พื้นที่ชั่วคราวเพิ่ม',
                             ),
-                            Text(
-                              '${state.hasVerifiedBytes ? 'ขนาดที่ตรวจสอบแล้ว' : 'ข้อมูลที่ดาวน์โหลดได้'}: ${state.downloadedBytes} ไบต์',
-                            ),
-                            if (state.failureCode != null)
-                              Text(
-                                'สาเหตุ: ${_failureText(state.failureCode!)}',
-                              ),
+                          if (!entry.canRemove) ...[
+                            const SizedBox(height: 12),
+                            const Text('จำเป็นต่อการเรียนที่กำลังดำเนินอยู่'),
                           ],
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          _action(entry),
+                          const SizedBox(height: 12),
+                          ExpansionTile(
+                            key: ValueKey(
+                              'offline-content/details/${identity.id}',
+                            ),
+                            tilePadding: EdgeInsets.zero,
+                            title: const Text('รายละเอียดไฟล์'),
+                            children: [
+                              Text(
+                                'รหัส: ${identity.id} · รุ่น ${identity.revision}',
+                              ),
+                              Text(
+                                '${state.hasVerifiedBytes ? 'ขนาดที่ตรวจสอบแล้ว' : 'ข้อมูลที่ดาวน์โหลดได้'}: ${state.downloadedBytes} ไบต์',
+                              ),
+                              if (state.failureCode != null)
+                                Text(
+                                  'สาเหตุ: ${_failureText(state.failureCode!)}',
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

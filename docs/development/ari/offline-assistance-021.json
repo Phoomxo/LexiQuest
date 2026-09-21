@@ -1,0 +1,31 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W14 offline content",
+  "baseCommit": "5a28df02daec38ad3d1141653f43f6c2d32fee59",
+  "scope": "Read-only mounted content state from existing manager; not cloud-sync acceptance",
+  "fields": [
+    "type/revision",
+    "bounded title and truncation flag",
+    "status",
+    "verified",
+    "downloaded/required bytes",
+    "failure code",
+    "in-use",
+    "busy/cancelling",
+    "native action availability"
+  ],
+  "preservation": "Native download/verify/remove/cancel unchanged; no new AI write or file access",
+  "verification": {
+    "red": "New context tests failed before implementation",
+    "green": "Full offline-content screen suite passed",
+    "analysis": "No issues found",
+    "cases": "Five statuses, verified flag agrees with canonical state, no path or write actions, disabled native availability retained",
+    "fixture": "Fake manager state/control tests; not physical offline download evidence"
+  },
+  "open": [
+    "Native current-source three connection modes",
+    "Cloud-sync assistance",
+    "Empty/error explanatory contexts",
+    "Full W14 and all14 workflow/mode acceptance"
+  ]
+}

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:drift/native.dart';
@@ -25,6 +28,37 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  for (final status in OfflineContentStatus.values) {
+    testWidgets('optional offline context reports actual ${status.name}', (
+      tester,
+    ) async {
+      final state = _state(status);
+      final registry = MenuActionRegistry(currentOwner: () => 'test');
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: OfflineContentManagerScreen(
+              manager: _FakeManager([state]),
+              canInvoke: () => false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final data = jsonDecode(
+        (registry.snapshot()['context'] as List).single['value'] as String,
+      );
+      expect(data['status'], status.name);
+      expect(data['verified'], state.hasVerifiedBytes);
+      expect(data['downloadedBytes'], state.downloadedBytes);
+      expect(data['nativeActionsEnabled'], false);
+      expect(data['revision'], state.identity.revision);
+      expect(data.containsKey('path'), false);
+      expect(registry.snapshot()['actions'], isEmpty);
+    });
+  }
+
   testWidgets('B08 shows manifest size and cancels a pending download', (
     tester,
   ) async {

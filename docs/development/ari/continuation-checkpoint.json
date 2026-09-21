@@ -1,14 +1,15 @@
 {
-  "revision": 44,
+  "revision": 45,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W13 export guidance/status with real-file host verification",
+  "previousTurn": "PROGRESS: W14 offline optional context with five-state host coverage",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Export020 host verified; native pending",
+  "current": "Offline021 host verified; native pending",
   "next": [
-    "Remaining W10-W12/W14 assistance",
-    "Batch native history/progress/weakness/export checks",
-    "Complete14 workflow/mode acceptance then queued whole-project review"
+    "W10 rewards/quests and W11-W12 speech/camera assistance",
+    "Cloud sync context and remaining workflow gaps",
+    "Batch native019-021 and history/progress",
+    "Complete14 acceptance then queued whole-project review"
   ],
   "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
   "nativeInstalledApk": "build/ari-preview-017.apk",
