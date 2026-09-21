@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -54,6 +57,136 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  for (final failFirst in [false, true]) {
+    testWidgets(
+      'optional speaking context distinguishes final result and saved evidence fail=$failFirst',
+      (tester) async {
+        String? owner = 'owner-1';
+        final registry = MenuActionRegistry(currentOwner: () => owner);
+        final gateway = _ResultLifecycleSpeechGateway();
+        final release = Completer<void>();
+        final repository = _CountingLearningRepository(
+          failFirstRecord: failFirst,
+          firstRecordRelease: release,
+        );
+        await _pumpSpeechResultRegression(
+          tester,
+          gateway,
+          repository,
+          registry: registry,
+          ownerId: 'owner-1',
+        );
+        Map<String, dynamic> context() {
+          final value =
+              (registry.snapshot()['context'] as List).single['value']
+                  as String;
+          expect(value.length, lessThan(1000));
+          return jsonDecode(value) as Map<String, dynamic>;
+        }
+
+        expect(context()['resultAvailable'], false);
+        expect(
+          context()['interpretation'],
+          'transcript-similarity-not-acoustic-pronunciation',
+        );
+        gateway.emit('station', isFinal: false);
+        await tester.pumpAndSettle();
+        expect(context().containsKey('finalTranscript'), false);
+        expect(context().containsKey('similarityPercent'), false);
+        expect(repository.commands, isEmpty);
+        gateway.emit('station', isFinal: true);
+        await tester.pumpAndSettle();
+        expect(context()['resultAvailable'], true);
+        expect(context()['similarityPercent'], 100);
+        expect(context()['finalTranscript'], 'station');
+        expect(
+          context()['evidenceSaved'],
+          false,
+          reason: 'Record is still blocked',
+        );
+        expect(registry.snapshot()['actions'], isEmpty);
+        owner = null;
+        registry.invalidateSession(preserveContext: true);
+        expect(registry.snapshot()['context'], isEmpty);
+        release.complete();
+        await tester.pumpAndSettle();
+        owner = 'owner-1';
+        if (failFirst) {
+          expect(context()['evidenceSaved'], false);
+          expect(context()['retryRequired'], true);
+          await tester.tap(
+            find.byKey(const ValueKey('current-evidence-retry')),
+          );
+          await tester.pumpAndSettle();
+        }
+        expect(context()['evidenceSaved'], true);
+        expect(context()['retryRequired'], false);
+        expect(repository.successfulRecordCalls, 1);
+        expect(repository.recordCalls, failFirst ? 2 : 1);
+        gateway.emit('wrong late result', isFinal: true);
+        await tester.pumpAndSettle();
+        expect(context()['finalTranscript'], 'station');
+        expect(repository.successfulRecordCalls, 1);
+        owner = 'other';
+        expect(registry.snapshot()['context'], isEmpty);
+        owner = 'owner-1';
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pumpAndSettle();
+        expect(context()['resultAvailable'], false);
+        expect(context()['evidenceSaved'], true, reason: 'Clearing raw text does not undo a committed record');
+        expect(context().containsKey('finalTranscript'), false);
+        expect(context().containsKey('similarityPercent'), false);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+
+  for (final identified in [true, false]) {
+    testWidgets(
+      'optional speaking context bounds personal text identified=$identified',
+      (tester) async {
+        final registry = MenuActionRegistry(currentOwner: () => 'owner-1');
+        final gateway = _ResultLifecycleSpeechGateway();
+        final repository = _CountingLearningRepository();
+        final target = List.filled(60, 'a"\n🧠').join();
+        await _pumpSpeechResultRegression(
+          tester,
+          gateway,
+          repository,
+          registry: registry,
+          ownerId: identified ? 'owner-1' : null,
+          target: target,
+        );
+        gateway.emit(target, isFinal: true);
+        await tester.pumpAndSettle();
+        if (!identified) {
+          expect(registry.snapshot()['context'], isEmpty);
+        } else {
+          final value =
+              (registry.snapshot()['context'] as List).single['value']
+                  as String;
+          expect(value.length, lessThan(1000));
+          final data = jsonDecode(value) as Map;
+          expect(data['textTruncated'], true);
+          expect(
+            (data['finalTranscript'] as String).runes.length,
+            lessThanOrEqualTo(40),
+          );
+          expect(data['evidenceSaved'], true);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(repository.successfulRecordCalls, 1);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
   testWidgets('empty final has no score or durable answer and allows retry', (
     tester,
   ) async {
@@ -1236,6 +1369,9 @@ Future<void> _pumpSpeechResultRegression(
   _ResultLifecycleSpeechGateway gateway,
   _CountingLearningRepository repository, {
   FakeVoiceProvider? voiceProvider,
+  MenuActionRegistry? registry,
+  String? ownerId,
+  String target = 'station',
 }) async {
   tester.view.physicalSize = const Size(800, 1200);
   tester.view.devicePixelRatio = 1;
@@ -1254,20 +1390,32 @@ Future<void> _pumpSpeechResultRegression(
     disposeProvider: () async {},
   );
   addTearDown(voice.dispose);
-  await tester.pumpWidget(
-    MaterialApp(
-      home: SpeakToTextScreen(
-        correctWord: 'station',
-        voice: voice,
-        speechPractice: SpeechPracticeUseCases(gateway),
-        learning: learning,
-        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-        sessionId: 'session-result',
-        wordId: 'word-station',
-      ),
+  final app = MaterialApp(
+    home: SpeakToTextScreen(
+      correctWord: target,
+      ownerId: ownerId,
+      voice: voice,
+      speechPractice: SpeechPracticeUseCases(gateway),
+      learning: learning,
+      evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+      sessionId: 'session-result',
+      wordId: 'word-station',
     ),
   );
+  await tester.pumpWidget(
+    registry == null ? app : MenuActionScope(registry: registry, child: app),
+  );
   await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(
+    find.byKey(const ValueKey('speech-listen-button')),
+    300,
+    scrollable: find
+        .descendant(
+          of: find.byType(ListView).first,
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
   await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
   await tester.pumpAndSettle();
 }

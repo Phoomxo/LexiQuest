@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 
@@ -69,6 +71,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   UnifiedLessonSessionLifecycle? _lifecycle;
   UnifiedLessonSessionLifecycleScope? _lifecycleScope;
   bool _sessionCompleted = false;
+  bool _evidenceSaved = false;
 
   SpeakingModeAdapter get _modeAdapter => widget.modeAdapter;
   bool get _acceptsModeOperations =>
@@ -201,6 +204,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _recognitionFailure = null;
       _transcript = '';
       _assessment = null;
+      _evidenceSaved = false;
     });
     _startedAtUtc = DateTime.now().toUtc();
     try {
@@ -307,6 +311,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     try {
       await (_lifecycle?.runAcceptedOperation(pending.record) ??
           pending.record());
+      _evidenceSaved = true;
       _pendingEvidence = null;
       await _completeShellSession();
     } catch (_) {
@@ -325,6 +330,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     try {
       await (_lifecycle?.runAcceptedOperation(pending.retry) ??
           pending.retry());
+      _evidenceSaved = true;
       _pendingEvidence = null;
       await _completeShellSession();
     } catch (_) {
@@ -468,7 +474,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       ?_error,
       if (_recognitionFailure != null) _speechFailureText(_recognitionFailure!),
     ];
-    return PopScope(
+    final surface = PopScope(
       canPop: !evidenceLocked,
       child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('ฝึกออกเสียง')),
@@ -609,6 +615,42 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
           ),
         ),
       ),
+    );
+    return MenuActionBinding(
+      id: 'speech/speaking-assistance',
+      label: 'ผลข้อความจากการฝึกพูด',
+      ownerId: widget.ownerId,
+      onInvoke: null,
+      readValue: widget.ownerId == null
+          ? null
+          : jsonEncode({
+              'interpretation':
+                  'transcript-similarity-not-acoustic-pronunciation',
+              'languages': ['en', 'th'],
+              'reference': String.fromCharCodes(
+                widget.correctWord.runes.take(40),
+              ),
+              'listening': _listening,
+              'resultAvailable': assessment != null,
+              'evidenceSaved': _evidenceSaved,
+              'retryRequired':
+                  (_pendingEvidence?.requiresRetry ?? false) ||
+                  _sessionCloseRetryRequired,
+              'recognitionFailure': _recognitionFailure?.name,
+              'guidance':
+                  'Explain the visible reference and final recognized text. No audio, pitch or phoneme assessment is provided. Saved status is separate from text similarity.',
+              if (assessment != null) ...{
+                'finalTranscript': String.fromCharCodes(
+                  assessment.transcript.runes.take(40),
+                ),
+                'similarityPercent': assessment.similarityPercent,
+                'isExactTextMatch': assessment.isExactMatch,
+              },
+              'textTruncated':
+                  widget.correctWord.runes.length > 40 ||
+                  (assessment?.transcript.runes.length ?? 0) > 40,
+            }),
+      child: surface,
     );
   }
 

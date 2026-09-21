@@ -1,23 +1,24 @@
 {
-  "revision": 64,
+  "revision": 65,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "040 live sentence method guidance+committed result; word current-mode result; explicit disconnect with partial sentence preserved and completed onVivo",
+  "previousTurn": "041 optional speaking context and saved receipt privacy-clear regression repaired;50host pass;native noMatch remains pending",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "039scramble live-provider acceptance now verified representative; remaining mode-specific context and persistence coverage",
+  "current": "Remaining mode-specific MCP acceptance",
   "next": [
-    "Inspect speaking/CEFR direct evidence paths and add appropriate optional context without implying acoustic assessment or scored reading",
-    "Complete other mode-specific baseline/connected/disconnected checks using real production loaders",
-    "Sync,mappedcamera/successfulspeech acceptance;whole-project review after MCP acceptance"
+    "Successful physical recognition and connected/disconnected speaking evidence",
+    "Other mode-specific acceptance including CEFR",
+    "Inspect shadowing premature evidenceSaved=true before record acknowledgment; not yet fixed",
+    "Complete MCP acceptance before queued whole-project SDLC/Agile review"
   ],
-  "nativeInstalledSource": "039 working source pinned in evidence/scramble-feedback-039/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-039.apk",
+  "nativeInstalledSource": "041 source pinned in evidence/speaking-assistance-041/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-041.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test live;22745terminal;ownedreverse/configremoved;listener8765absent",
-  "testFixture": "Dashboard28/42,30m53s,0due;3additional recreational submissions040;AIcollapsed/disconnected;USBstayawake2",
+  "liveProcesses": "No bridge/build/test live",
+  "testFixture": "Dashboard28/42,34m00s,0due;AIcollapsed/disconnected;USBstayawake2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

@@ -452,6 +452,12 @@
       "receipt": "scramble-native-040.json",
       "scope": "Live sentence guidance/result and word current-mode result;explicit provider disconnect preserves partial sentence and native completion",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "speaking-assistance-041",
+      "receipt": "speaking-assistance-041.json",
+      "scope": "Read-only speaking context;50host pass; native noMatch trials and final installation smoke",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

@@ -515,3 +515,10 @@ On final APK039, Vivo completed bag and I carry my clothes in a bag. with correc
 UnchangedAPK039 passed live-provider checks onVivo: sentence method guidance without target answer; exact committed sentence result read back without including the answer in the prompt; subsequent word mode result correctly read as bag rather than stale sentence context. Native controls submitted all responses. With I carry my already selected in a new sentence, explicit AI disconnect preserved the draft; remaining four words completed a correct result. Three additional recreational test submissions retained; mastery dashboard28/42,30m53s,0due unchanged.
 
 Bridge22745 stopped, ownedreverse/privatepairing removed, no8765listener; USBstayawake2 retained. No new host tests because application source unchanged. Other modes/14workflow acceptance remain open. [Evidence](scramble-native-040.json).
+
+
+### Speaking optional context — checkpoint041
+
+Owner-bound read-only context separates final transcript similarity from acoustic pronunciation and storage acknowledgment. Four new screen cases use repository/recognizer doubles; final 50 targeted speech tests passed. A red/green regression preserves the saved receipt when raw speech is cleared for privacy. Source and receipt pins: [evidence](speaking-assistance-041.json).
+
+Vivo intermediate build returned noMatch for PC synthetic speech and app TTS; successful native recognition remains pending. Final receipt-fix APK installed successfully and opens the baseline home; no live provider trial in041. USB stay-awake remains2. Whole14workflow/mode acceptance stays OPEN. Whole-project code review/data/root-cause analysis and sequential SDLC/Agile repairs remain queued after MCP acceptance per the user request.
