@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 // Explicitly synthetic local widget journeys. The native document picker is
 // injected; real export generation, consent reads and temporary file bytes run.
 import 'dart:async';
@@ -31,7 +33,8 @@ void main() {
         if (format == ExportFormat.researchJson) {
           await tester.runAsync(fixture.consent.accept);
         }
-        await _open(tester, fixture);
+        final registry = MenuActionRegistry(currentOwner: () => 'test');
+        await _open(tester, fixture, registry: registry);
         await _choose(tester, format);
         await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
         await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
@@ -45,6 +48,21 @@ void main() {
         final bytes = (await tester.runAsync(saved.readAsBytes))!;
         expect(bytes, orderedEquals(artifact.bytes));
         expect(_status(tester), contains(saved.path));
+        final data = jsonDecode(
+          (registry.snapshot()['context'] as List).single['value'] as String,
+        );
+        expect(data['status'], 'saved');
+        expect(data.containsKey('path'), false);
+        expect(data.toString(), isNot(contains(saved.path)));
+        if (format == ExportFormat.csv) {
+          await _tap(tester, find.text('คลังคำศัพท์'));
+          final changed = jsonDecode(
+            (registry.snapshot()['context'] as List).single['value'] as String,
+          );
+          expect(changed['status'], 'idle');
+          expect(changed['selection']['vocabulary'], false);
+          expect(fixture.artifacts, hasLength(1));
+        }
         if (format == ExportFormat.pdf) {
           expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
         } else {
@@ -164,9 +182,16 @@ void main() {
   });
 }
 
-Future<void> _open(WidgetTester tester, _ExportFixture fixture) async {
+Future<void> _open(
+  WidgetTester tester,
+  _ExportFixture fixture, {
+  MenuActionRegistry? registry,
+}) async {
   await tester.pumpWidget(
-    MaterialApp(home: ExportCenterScreen(exports: fixture.exports)),
+    MenuActionScope(
+      registry: registry ?? MenuActionRegistry(currentOwner: () => 'test'),
+      child: MaterialApp(home: ExportCenterScreen(exports: fixture.exports)),
+    ),
   );
   await tester.pumpAndSettle();
 }

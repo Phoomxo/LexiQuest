@@ -419,3 +419,8 @@ Installed e00acb14 isolated preview. Native proposal10minutes, acceptance r1 and
 ### Weakness assistance019 — 2026-09-21
 
 W07 clinic exposes owner-bound evidence summary and mounted word context, distinguishing incorrect history from due SRS. Progress query now carries owner metadata; ownerless legacy data is not shared. Native review/scoring unchanged. Screen and real-query projector suites passed, analysis clean. [Evidence](weakness-assistance-019.json). Native and completeW07 acceptance remain open.
+
+
+### Export assistance020 — 2026-09-21
+
+W13 optional guidance reports actual format/selection and operation status without sharing file paths or bytes. Native export remains authoritative. Selection changes clear previous saved status. Both export screen/flow suites passed with real local bytes and injected picker; analysis clean. [Evidence](export-assistance-020.json). Native and whole-workflow acceptance pending.

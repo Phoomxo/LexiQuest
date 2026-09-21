@@ -1,9 +1,52 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
 
 void main() {
+  testWidgets('optional export guidance reflects format without write tools', (
+    tester,
+  ) async {
+    final registry = MenuActionRegistry(currentOwner: () => 'test');
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: const MaterialApp(home: ExportCenterScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final format in ExportFormat.values) {
+      final choice = find.byKey(ValueKey(format));
+      await tester.scrollUntilVisible(
+        choice,
+        format == ExportFormat.csv ? -200 : 200,
+      );
+      await tester.tap(choice);
+      await tester.pumpAndSettle();
+      final data = jsonDecode(
+        (registry.snapshot()['context'] as List).single['value'] as String,
+      );
+      expect(data['format'], format.name);
+      expect(data['status'], 'idle');
+      expect(
+        data['researchConsentRequired'],
+        format == ExportFormat.researchJson,
+      );
+      expect(
+        data['scope'],
+        format == ExportFormat.anki
+            ? 'vocabulary-only'
+            : format == ExportFormat.ownerArchiveJson
+            ? 'owner-manifest-not-restore'
+            : 'selected-data',
+      );
+      expect(registry.snapshot()['actions'], isEmpty);
+    }
+  });
+
   testWidgets(
     'archive hides selective controls and selective formats retain choices',
     (tester) async {

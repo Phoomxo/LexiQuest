@@ -1,14 +1,14 @@
 {
-  "revision": 43,
+  "revision": 44,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: W07 owner-bound weakness evidence and actual query owner test",
+  "previousTurn": "PROGRESS: W13 export guidance/status with real-file host verification",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Weakness019 host verified; native pending",
+  "current": "Export020 host verified; native pending",
   "next": [
-    "Review center and remaining workflow assistance",
-    "Batch native history/progress/weakness checks",
-    "Full14 coverage completion before queued whole-project review"
+    "Remaining W10-W12/W14 assistance",
+    "Batch native history/progress/weakness/export checks",
+    "Complete14 workflow/mode acceptance then queued whole-project review"
   ],
   "nativeInstalledSource": "e00acb14e7127f891f0fa6a24dc5c81a54b62868",
   "nativeInstalledApk": "build/ari-preview-017.apk",
