@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -13,6 +16,73 @@ import 'package:vocab_learning_app/config/m3_theme.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  for (final empty in [false, true]) {
+    testWidgets(
+      'optional progress context preserves availability empty=$empty',
+      (tester) async {
+        final profile = empty ? _empty : _profile;
+        String? owner = profile.ownerId;
+        final registry = MenuActionRegistry(currentOwner: () => owner);
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: MasteryDashboardScreen(loader: () async => profile),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final data =
+            jsonDecode(
+                  (registry.snapshot()['context'] as List).single['value']
+                      as String,
+                )
+                as Map<String, dynamic>;
+        expect(
+          data['weekly']['accuracy']['availability'],
+          profile.accuracy.availability.name,
+        );
+        expect(
+          data['weekly']['accuracy']['sampleSize'],
+          empty ? null : profile.accuracy.sampleSize,
+        );
+        expect(data['weekly']['accuracy']['fraction'], profile.accuracy.value);
+        expect(
+          data['cumulative']['mastery']['masteredWordCount'],
+          empty ? null : profile.mastery.masteredWordCount,
+        );
+        expect(
+          data['current']['srs']['dueReviewCount'],
+          empty ? null : profile.srs.dueReviewCount,
+        );
+        expect(data['weekly']['timezone'], profile.calendar.timezoneId);
+        expect(data['interpretation'], 'separate-axes-not-overall-proficiency');
+        owner = 'different-owner';
+        expect(registry.snapshot()['context'], isEmpty);
+      },
+    );
+  }
+  testWidgets('optional progress context clears during reload and failure', (
+    tester,
+  ) async {
+    final registry = MenuActionRegistry(currentOwner: () => _profile.ownerId);
+    Future<PersonalLearningProfile> initial() async => _profile;
+    final pending = Completer<PersonalLearningProfile>();
+    Widget app(MasteryProfileLoader loader) => MenuActionScope(
+      registry: registry,
+      child: MaterialApp(home: MasteryDashboardScreen(loader: loader)),
+    );
+    await tester.pumpWidget(app(initial));
+    await tester.pumpAndSettle();
+    expect(registry.snapshot()['context'], isNotEmpty);
+    await tester.pumpWidget(app(() => pending.future));
+    await tester.pump();
+    expect(registry.snapshot()['context'], isEmpty);
+    pending.completeError(StateError('test unavailable'));
+    await tester.pumpAndSettle();
+    expect(registry.snapshot()['context'], isEmpty);
+  });
+
   testWidgets('R15.5 opens existing goals route from dashboard', (
     tester,
   ) async {

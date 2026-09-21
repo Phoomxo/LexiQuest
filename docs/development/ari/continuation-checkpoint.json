@@ -1,10 +1,10 @@
 {
-  "revision": 39,
+  "revision": 40,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: Pair history host acceptance and USB stay-awake verified",
+  "previousTurn": "PROGRESS: dashboard assistance host acceptance and authorized whole-project follow-up persisted",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Pair014 host verified; native011-014 pending",
+  "current": "Progress016 host verified; native011-016 pending",
   "next": [
     "Replay and assessment context acceptance",
     "Remaining workflow/mode implementation",
@@ -15,5 +15,6 @@
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
-  "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked"
+  "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
+  "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized"
 }

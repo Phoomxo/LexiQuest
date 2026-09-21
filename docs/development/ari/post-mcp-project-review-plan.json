@@ -1,0 +1,35 @@
+{
+  "status": "QUEUED_AFTER_CURRENT_MCP_ACCEPTANCE",
+  "authority": "User 2026-09-21: review entire project, collect data, analyze defects and corrective approaches, then fix with SDLC and Agile",
+  "scope": "Entire LexiQuest project; not limited to MCP changed files",
+  "sequence": [
+    {
+      "stage": "Inventory and requirements",
+      "deliverable": "Versioned review coverage matrix spanning application, backend, storage/migrations, AI/MCP, learning/games, sync/offline, camera/audio, build/dependencies and tests; reuse authoritative prior evidence"
+    },
+    {
+      "stage": "Evidence collection and code review",
+      "deliverable": "Findings ledger with source revision, exact location, reproducible scenario, expected/actual behavior, evidence strength and unreviewed areas; no whole-project claim from samples"
+    },
+    {
+      "stage": "Analysis and remediation design",
+      "deliverable": "Root cause, severity, user impact, dependencies, compatibility/migration risks and acceptance checks for each confirmed defect"
+    },
+    {
+      "stage": "Sequential Agile repair cycles",
+      "deliverable": "Prioritized bounded increments: reproduce, design, implement, targeted tests, review and durable commit; one writer"
+    },
+    {
+      "stage": "System verification",
+      "deliverable": "Frozen-source appropriate regression and native checks, defect retest, final coverage ledger distinguishing passed/failed/pending"
+    }
+  ],
+  "constraints": [
+    "Do not start parallel implementation or new task without explicit request",
+    "Do not install/invoke Codex Security",
+    "Preserve baseline, ownership, data and original accounts",
+    "No skipped or weakened tests; recover failures autonomously",
+    "No deploy or purchase authorization inferred"
+  ],
+  "completion": "Every review area accounted for; confirmed defects resolved and verified or concrete indispensable external prerequisite explicitly documented; no invented whole-system PASS"
+}

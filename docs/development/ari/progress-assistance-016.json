@@ -1,0 +1,30 @@
+{
+  "status": "HOST_VERIFIED_NATIVE_PENDING",
+  "scope": "W09 dashboard optional read-only owner-bound summary",
+  "baseCommit": "78a2571b6d4979fced3442556ab0752253e351a7",
+  "semantics": [
+    "Weekly accuracy and effort separated from cumulative mastery/XP and current SRS/streak",
+    "No-evidence axes omit numerical values",
+    "Zero-sample accuracy remains nullable",
+    "No word identifiers or private profile text exported",
+    "Loading/reload/error unmount context",
+    "Native dashboard controls unchanged"
+  ],
+  "verification": {
+    "red": "Three new tests failed missing context",
+    "green": "Full dashboard screen tests passed",
+    "analysis": "No issues found",
+    "cases": [
+      "Available and empty profile retain availability",
+      "Owner mismatch hides summary",
+      "Reload and failed load clear context"
+    ],
+    "evidence": "evidence/progress-assistance-016/host-verification.json",
+    "fixture": "Injected profile fixtures, not native or fresh storage acceptance"
+  },
+  "open": [
+    "Native baseline/connected/disconnected verification",
+    "Detailed skill/weakness assistance",
+    "All14 workflow/mode acceptance"
+  ]
+}

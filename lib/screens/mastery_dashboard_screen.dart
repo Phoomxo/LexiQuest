@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
@@ -101,17 +102,72 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          return _DashboardBody(
-            snapshot.data!,
-            onOpenWeakness: widget.onOpenWeakness,
-            onOpenReview: widget.onOpenReview,
-            openLearningCalendar:
-                widget.openLearningCalendar ?? _openLearningCalendar,
+          final profile = snapshot.data!;
+          return MenuActionBinding(
+            id: 'progress/profile-summary',
+            label: 'Learning progress evidence',
+            ownerId: profile.ownerId,
+            onInvoke: null,
+            readValue: _profileAssistance(profile),
+            child: _DashboardBody(
+              profile,
+              onOpenWeakness: widget.onOpenWeakness,
+              onOpenReview: widget.onOpenReview,
+              openLearningCalendar:
+                  widget.openLearningCalendar ?? _openLearningCalendar,
+            ),
           );
         },
       ),
     );
   }
+}
+
+String _profileAssistance(PersonalLearningProfile profile) {
+  Map<String, Object?> axis(
+    ProfileAxisAvailability availability,
+    Map<String, Object?> values,
+  ) => {
+    'availability': availability.name,
+    if (availability == ProfileAxisAvailability.available) ...values,
+  };
+  return jsonEncode({
+    'interpretation': 'separate-axes-not-overall-proficiency',
+    'weekly': {
+      'weekStart': profile.calendar.weekStart.toIso8601String(),
+      'timezone': profile.calendar.timezoneId,
+      'accuracy': axis(profile.accuracy.availability, {
+        'sampleSize': profile.accuracy.sampleSize,
+        'correctCount': profile.accuracy.correctCount,
+        'fraction': profile.accuracy.value,
+      }),
+      'effort': axis(profile.effort.availability, {
+        'activeSeconds': profile.effort.activeDuration.inSeconds,
+      }),
+    },
+    'cumulative': {
+      'mastery': axis(profile.mastery.availability, {
+        'masteredWordCount': profile.mastery.masteredWordCount,
+      }),
+      'engagement': axis(profile.engagement.availability, {
+        'totalXp': profile.engagement.totalXp,
+        'completedQuestCount': profile.engagement.completedQuestCount,
+        'achievementCount': profile.engagement.achievementCount,
+      }),
+    },
+    'current': {
+      'srs': axis(profile.srs.availability, {
+        'trackedWordCount': profile.srs.trackedWordCount,
+        'dueReviewCount': profile.srs.dueReviewCount,
+      }),
+      'weakness': axis(profile.weakness.availability, {
+        'wordCount': profile.weakness.items.length,
+      }),
+      'streak': axis(profile.engagement.availability, {
+        'days': profile.engagement.currentStreakDays,
+      }),
+    },
+  });
 }
 
 class _DashboardBody extends StatelessWidget {
