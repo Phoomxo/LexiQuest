@@ -19,7 +19,7 @@ MENU_TOOLS = [
     {'name': 'list_menu_actions', 'description': 'Read currently available LexiQuest menu actions and their revision. Only advertised actions may be invoked. Unavailable and covered screens are excluded.',
      'inputSchema': {'type': 'object', 'properties': {}, 'additionalProperties': False},
      'annotations': {'readOnlyHint': True, 'openWorldHint': False}},
-    {'name': 'execute_menu_action', 'description': 'Invoke one real app control from the latest list. An invoked result only confirms the callback ran; it does not certify a save, lesson completion or score. For forms, supply every advertised fields key in values with string values within its length limit. filled means draft updated, saved means persistence verified, deleted means removal verified; never infer saving or deletion from invoked. Destructive confirmation requires an explicit user deletion request and the exact target from the currently open confirmation.',
+    {'name': 'execute_menu_action', 'description': 'Invoke one real app control from the latest list. An invoked result only confirms the callback ran; it does not certify a save, lesson completion or score. For forms, supply every advertised fields key in values with string values within its length limit. previewed means row format checked without persistence or database duplicate/capacity checks; filled means draft updated, saved means persistence verified, deleted means removal verified; never infer saving or deletion from invoked. Destructive confirmation requires an explicit user deletion request and the exact target from the currently open confirmation.',
      'inputSchema': {'type': 'object', 'properties': {
          'id': {'type': 'string', 'maxLength': 160},
          'revision': {'type': 'integer', 'minimum': 0},
@@ -91,7 +91,7 @@ def serve(context, menu=None):
                 data = menu_call(menu, params['name'], params.get('arguments', {}))
                 result = {'content': [{'type': 'text', 'text': json.dumps(data, ensure_ascii=False)}],
                           'structuredContent': data,
-                          'isError': data.get('status') not in ('invoked', 'available', 'filled', 'saved', 'deleted')}
+                          'isError': data.get('status') not in ('invoked', 'available', 'filled', 'saved', 'deleted', 'previewed')}
             elif (method == 'tools/call' and isinstance(params, dict)
                   and params.get('name') in {t['name'] for t in TOOLS}
                   and params.get('arguments', {}) == {}):

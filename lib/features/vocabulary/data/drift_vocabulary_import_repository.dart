@@ -208,6 +208,23 @@ final class DriftVocabularyImportRepository
         );
   }
 
+  @override
+  Future<VocabularyImportResult?> readResult({
+    required String importId,
+    required String ownerId,
+    required String categoryId,
+  }) async {
+    final record =
+        await (database.select(database.vocabularyImports)..where(
+              (row) =>
+                  row.id.equals(importId) &
+                  row.ownerId.equals(ownerId) &
+                  row.categoryId.equals(categoryId),
+            ))
+            .getSingleOrNull();
+    return record == null ? null : _restoreResult(record);
+  }
+
   Future<VocabularyImportResult> _restoreResult(
     db.VocabularyImport replay,
   ) async {

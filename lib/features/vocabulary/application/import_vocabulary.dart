@@ -31,6 +31,7 @@ final class ImportVocabulary {
     required List<Map<String, String>> rows,
     required String sourceName,
     bool Function()? isCancelled,
+    String? expectedOwnerId,
   }) async {
     final cancellation = isCancelled ?? _neverCancelled;
     if (cancellation()) {
@@ -41,6 +42,10 @@ final class ImportVocabulary {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        cancellation()) {
+      throw const VocabularyImportCancelled();
+    }
     final canonicalCategoryId = categoryId.trim();
     if (canonicalCategoryId.isEmpty) {
       throw ArgumentError.value(categoryId, 'categoryId', 'must not be blank');
@@ -105,6 +110,41 @@ final class ImportVocabulary {
     );
     onLocalMutation?.call();
     return result;
+  }
+
+  List<VocabularyImportRowFailure> previewRows(
+    List<Map<String, String>> rows,
+  ) => [
+    for (var i = 0; i < rows.length; i++)
+      if (_validateRow(rows[i]) case final String code)
+        VocabularyImportRowFailure(rowNumber: i + 1, code: code),
+  ];
+
+  Future<bool> verifyResult(
+    VocabularyImportResult result, {
+    required String expectedOwnerId,
+    required String categoryId,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) return false;
+    final stored = await repository.readResult(
+      importId: result.importId,
+      ownerId: expectedOwnerId,
+      categoryId: categoryId,
+    );
+    if (stored == null ||
+        stored.accepted != result.accepted ||
+        stored.duplicates != result.duplicates ||
+        stored.rejected.length != result.rejected.length) {
+      return false;
+    }
+    for (var i = 0; i < stored.rejected.length; i++) {
+      if (stored.rejected[i].rowNumber != result.rejected[i].rowNumber ||
+          stored.rejected[i].code != result.rejected[i].code) {
+        return false;
+      }
+    }
+    return true;
   }
 
   String _nextId() {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/domain/vocabulary_import.dart';
@@ -29,6 +30,50 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   final TextEditingController _rowsController = TextEditingController();
   bool _saving = false;
   bool _cancelled = false;
+  String? _formOwner;
+  bool _ownerBindingStarted = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final importer =
+        widget.importer ??
+        AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
+    if (!_ownerBindingStarted && importer != null) {
+      _ownerBindingStarted = true;
+      _bindOwner(importer);
+    }
+  }
+
+  Future<void> _bindOwner(ImportVocabulary importer) async {
+    try {
+      final owner = await importer.owners.getOrCreateActiveOwner();
+      if (mounted) setState(() => _formOwner = owner.id);
+    } catch (_) {
+      // Local form interaction remains available without optional tool admission.
+    }
+  }
+
+  List<Map<String, String>> _rows() => [
+    for (final line in _rowsController.text.split(RegExp(r'\r?\n')))
+      if (line.trim().isNotEmpty) _parseLine(line),
+  ];
+
+  Map<String, String> _parseLine(String line) {
+    final columns = line.split(',');
+    return {
+      'word': columns.isNotEmpty ? columns[0] : '',
+      'meaning': columns.length > 1 ? columns[1] : '',
+      'partOfSpeech': columns.length > 2 ? columns[2] : '',
+    };
+  }
+
+  List<Map<String, Object>> _failures(
+    List<VocabularyImportRowFailure> failures,
+  ) => [
+    for (final failure in failures.take(20))
+      {'rowNumber': failure.rowNumber, 'code': failure.code},
+  ];
 
   @override
   void dispose() {
@@ -54,7 +99,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
     final importer =
         widget.importer ??
         AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
-    return Scaffold(
+    final screen = Scaffold(
       appBar: AppBar(title: Text('นำเข้าคำศัพท์ · ${widget.categoryName}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -64,6 +109,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
           TextField(
             key: const ValueKey('import-rows-field'),
             controller: _rowsController,
+            onChanged: (_) => setState(() {}),
             minLines: 8,
             maxLines: 16,
             decoration: const InputDecoration(
@@ -88,32 +134,90 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
         ],
       ),
     );
+    return MenuActionBinding(
+      id: 'vocabulary/import-fill',
+      label: 'กรอกข้อมูลนำเข้า (ยังไม่บันทึก)',
+      ownerId: _formOwner,
+      onInvoke: null,
+      fields: const {'rows': 4000},
+      onForm: _formOwner == null || importer == null
+          ? null
+          : (values) {
+              if (!_admitted || _saving) return {'status': 'busy'};
+              setState(() => _rowsController.text = values['rows']!);
+              return {'status': 'filled', 'totalRows': _rows().length};
+            },
+      child: MenuActionBinding(
+        id: 'vocabulary/import-preview',
+        label: 'ตรวจรูปแบบแถวก่อนนำเข้า',
+        ownerId: _formOwner,
+        onInvoke: null,
+        onForm: _formOwner == null || importer == null
+            ? null
+            : (_) {
+                if (!_admitted || _saving) return {'status': 'busy'};
+                final rows = _rows();
+                final rejected = importer.previewRows(rows);
+                return {
+                  'status': 'previewed',
+                  'totalRows': rows.length,
+                  'validRows': rows.length - rejected.length,
+                  'databaseChecked': false,
+                  'rejected': _failures(rejected),
+                  'rejectedCount': rejected.length,
+                  'rejectedTruncated': rejected.length > 20,
+                };
+              },
+        child: MenuActionBinding(
+          id: 'vocabulary/import-save',
+          label: 'นำเข้าและตรวจผลบันทึก',
+          revisionKey: _rowsController.text,
+          ownerId: _formOwner,
+          onInvoke: null,
+          onForm: _formOwner == null || importer == null
+              ? null
+              : (_) => _import(importer, expectedOwnerId: _formOwner),
+          child: screen,
+        ),
+      ),
+    );
   }
 
-  Future<void> _import(ImportVocabulary importer) async {
-    if (!_admitted || _saving) return;
+  Future<Map<String, Object?>> _import(
+    ImportVocabulary importer, {
+    String? expectedOwnerId,
+  }) async {
+    if (!_admitted || _saving) return {'status': 'busy'};
+    final registry = MenuActionScope.maybeOf(context);
+    final revision = registry?.snapshot()['revision'];
+    bool cancelled() =>
+        _cancelled ||
+        !_admitted ||
+        (expectedOwnerId != null &&
+            (registry?.currentOwner() != expectedOwnerId ||
+                registry?.snapshot()['revision'] != revision));
     setState(() {
       _saving = true;
       _cancelled = false;
     });
     try {
-      final rows = <Map<String, String>>[];
-      for (final line in _rowsController.text.split(RegExp(r'\r?\n'))) {
-        if (line.trim().isEmpty) continue;
-        final columns = line.split(',');
-        rows.add({
-          'word': columns.isNotEmpty ? columns[0] : '',
-          'meaning': columns.length > 1 ? columns[1] : '',
-          'partOfSpeech': columns.length > 2 ? columns[2] : '',
-        });
-      }
+      final rows = _rows();
       final result = await importer(
         categoryId: widget.categoryId,
         rows: rows,
         sourceName: 'manual-import',
-        isCancelled: () => _cancelled,
+        isCancelled: cancelled,
+        expectedOwnerId: expectedOwnerId,
       );
-      if (!mounted) return;
+      if (expectedOwnerId != null &&
+          !await importer.verifyResult(
+            result,
+            expectedOwnerId: expectedOwnerId,
+            categoryId: widget.categoryId,
+          )) {
+        return {'status': 'verification_failed'};
+      }
+      if (!mounted) return {'status': 'cancelled'};
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -122,19 +226,32 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
           ),
         ),
       );
-      Navigator.pop(context);
+      if (Navigator.of(context).canPop()) Navigator.pop(context);
+      return {
+        'status': expectedOwnerId == null ? 'invoked' : 'saved',
+        'record': {
+          'importId': result.importId,
+          'accepted': result.accepted,
+          'duplicates': result.duplicates,
+          'rejected': _failures(result.rejected),
+          'rejectedCount': result.rejected.length,
+          'rejectedTruncated': result.rejected.length > 20,
+        },
+      };
     } on VocabularyImportCancelled {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('ยกเลิกการนำเข้าแล้ว')));
       }
+      return {'status': 'cancelled'};
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('นำเข้าคำศัพท์ไม่สำเร็จ')));
       }
+      return {'status': 'failed'};
     } finally {
       if (mounted) setState(() => _saving = false);
     }

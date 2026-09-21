@@ -195,4 +195,108 @@ void main() {
       expect(await database.select(database.vocabularyWords).get(), isEmpty);
     },
   );
+  test('MCP owner mismatch cannot write import or words', () async {
+    final category = await vocabulary.createCategory('Owner guard');
+    await expectLater(
+      importer(
+        categoryId: category.id,
+        sourceName: 'owner-guard',
+        expectedOwnerId: 'different-owner',
+        rows: const [
+          {'word': 'book', 'meaning': 'หนังสือ', 'partOfSpeech': 'noun'},
+        ],
+      ),
+      throwsA(isA<VocabularyImportCancelled>()),
+    );
+    expect(await database.select(database.vocabularyImports).get(), isEmpty);
+    expect(await database.select(database.vocabularyWords).get(), isEmpty);
+  });
+
+  test('MCP cancellation after owner lookup prevents persistence', () async {
+    final category = await vocabulary.createCategory('Cancel guard');
+    var checks = 0;
+    await expectLater(
+      importer(
+        categoryId: category.id,
+        sourceName: 'cancel-guard',
+        isCancelled: () => ++checks >= 2,
+        rows: const [
+          {'word': 'book', 'meaning': 'หนังสือ', 'partOfSpeech': 'noun'},
+        ],
+      ),
+      throwsA(isA<VocabularyImportCancelled>()),
+    );
+    expect(checks, 2);
+    expect(await database.select(database.vocabularyImports).get(), isEmpty);
+    expect(await database.select(database.vocabularyWords).get(), isEmpty);
+  });
+
+  test('MCP readback rejects wrong scope and altered outcomes', () async {
+    final category = await vocabulary.createCategory('Readback');
+    final owner = await importer.owners.getOrCreateActiveOwner();
+    final result = await importer(
+      categoryId: category.id,
+      sourceName: 'readback',
+      rows: const [
+        {'word': 'book', 'meaning': 'หนังสือ', 'partOfSpeech': 'noun'},
+        {'word': 'pen', 'meaning': '', 'partOfSpeech': 'noun'},
+      ],
+    );
+    Future<bool> verify(
+      VocabularyImportResult value, {
+      String? ownerId,
+      String? categoryId,
+    }) => importer.verifyResult(
+      value,
+      expectedOwnerId: ownerId ?? owner.id,
+      categoryId: categoryId ?? category.id,
+    );
+    expect(await verify(result), isTrue);
+    expect(await verify(result, ownerId: 'other'), isFalse);
+    expect(await verify(result, categoryId: 'other'), isFalse);
+    for (final altered in [
+      VocabularyImportResult(
+        importId: 'missing',
+        accepted: result.accepted,
+        duplicates: result.duplicates,
+        rejected: result.rejected,
+      ),
+      VocabularyImportResult(
+        importId: result.importId,
+        accepted: 99,
+        duplicates: result.duplicates,
+        rejected: result.rejected,
+      ),
+      VocabularyImportResult(
+        importId: result.importId,
+        accepted: result.accepted,
+        duplicates: 99,
+        rejected: result.rejected,
+      ),
+      VocabularyImportResult(
+        importId: result.importId,
+        accepted: result.accepted,
+        duplicates: result.duplicates,
+        rejected: const [],
+      ),
+      VocabularyImportResult(
+        importId: result.importId,
+        accepted: result.accepted,
+        duplicates: result.duplicates,
+        rejected: const [
+          VocabularyImportRowFailure(rowNumber: 1, code: 'missingMeaning'),
+        ],
+      ),
+      VocabularyImportResult(
+        importId: result.importId,
+        accepted: result.accepted,
+        duplicates: result.duplicates,
+        rejected: const [
+          VocabularyImportRowFailure(rowNumber: 2, code: 'wrong'),
+        ],
+      ),
+    ]) {
+      expect(await verify(altered), isFalse);
+    }
+  });
 }

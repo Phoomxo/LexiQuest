@@ -1,0 +1,12 @@
+{
+  "lib/features/vocabulary/application/import_vocabulary.dart": "e86c4738792f611960489edc16eea8ec6d8b8b42c5b3c75d44b1bded8d967966",
+  "lib/features/vocabulary/data/drift_vocabulary_import_repository.dart": "ce06bed9b0d0be59d4dcf3dcab16e1032da6bdc034242035116249f7e2c1ef9f",
+  "lib/features/vocabulary/domain/vocabulary_import_repository.dart": "b8882af384cb69b4c2fda06482234b359420782599ef81670fac4ac5d9cc9daa",
+  "lib/screens/add_multiple_words_screen.dart": "3f8ed955d7b55f5449bc7fd8787c36441a6d8c68801abcbb88fe3474d712ec7b",
+  "test/features/vocabulary/import_vocabulary_test.dart": "9824b0748266a9636ec5c7bbbd8632e2a341ebbb5b991a4b8fe73f8b8473e4ec",
+  "test/screens/offline_vocabulary_journey_test.dart": "23d89c9d919e1d3a9524c452ef9423cd46ff28e6e62a78be81720c9ec38fe4ce",
+  "test/screens/vocab_list_screen_test.dart": "927f5522e2e741908b71a230940b8ebe1a6c4fe0aebdc3ccbdd454c9153a5cba",
+  "tool/experiments/ari_app_server/chat_bridge.py": "5acdd13bb04284518aeb081b4149cc8b806f063f3cb55bc8c7e8f78e27db10ae",
+  "tool/experiments/ari_app_server/test_menu_channel.py": "9d6907c48cab2b9e885e216da9b8e8abe1c6b7ae89adcb3970ecd5d1b1fe5e64",
+  "tool/experiments/ari_app_server/tutor_mcp.py": "45c4101d375bde6b69bbb650c8c25f8d2031b2b7909ce19c43a0d450b460d1b1"
+}

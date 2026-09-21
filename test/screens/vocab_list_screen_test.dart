@@ -719,6 +719,13 @@ final class _CategoryStreams {
 
 final class _ImportRepository implements VocabularyImportRepository {
   @override
+  Future<VocabularyImportResult?> readResult({
+    required String importId,
+    required String ownerId,
+    required String categoryId,
+  }) => throw UnimplementedError();
+
+  @override
   Future<VocabularyImportResult> persist(
     PreparedVocabularyImport import, {
     required bool Function() isCancelled,

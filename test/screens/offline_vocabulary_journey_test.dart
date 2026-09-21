@@ -3,6 +3,7 @@ import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_reg
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
+import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -522,6 +523,128 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.runAsync(database.close);
   });
+
+  testWidgets(
+    'MCP import previews without writing and verifies mixed outcomes',
+    (tester) async {
+      final category = await tester.runAsync(
+        () => dependencies.vocabulary!.createCategory('Import fixture'),
+      );
+      final registry = MenuActionRegistry(
+        currentOwner: () => category!.ownerId,
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: AddMultipleWordsScreen(
+                categoryId: category!.id,
+                categoryName: category.name,
+              ),
+            ),
+          ),
+        ),
+      );
+      var request = 0;
+      Future<Map<String, Object?>> invoke(
+        String id, {
+        Map<String, String> values = const {},
+      }) async {
+        Map<String, Object?>? result;
+        registry
+            .execute(
+              id: id,
+              owner: category.ownerId,
+              revision: registry.snapshot()['revision'] as int,
+              requestId: 'import-${request++}',
+              values: values,
+            )
+            .then((value) => result = value);
+        for (var i = 0; i < 50 && result == null; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        expect(result, isNotNull);
+        await tester.pumpAndSettle();
+        return result!;
+      }
+
+      for (var i = 0; i < 5; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      const rows = 'book,หนังสือ,noun\nbook,หนังสือ,noun\npen,,noun';
+      expect(
+        (await invoke(
+          'vocabulary/import-fill',
+          values: {'rows': rows},
+        ))['status'],
+        'filled',
+      );
+      final preview = await invoke('vocabulary/import-preview');
+      expect(preview['status'], 'previewed');
+      expect(preview['totalRows'], 3);
+      expect(preview['validRows'], 2);
+      expect(preview['databaseChecked'], isFalse);
+      expect((preview['rejected'] as List).single, {
+        'rowNumber': 3,
+        'code': 'missingMeaning',
+      });
+      expect(
+        await tester.runAsync(
+          () => database.select(database.vocabularyWords).get(),
+        ),
+        isEmpty,
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.vocabularyImports).get(),
+        ),
+        isEmpty,
+      );
+      final result = await invoke('vocabulary/import-save');
+      expect(result['status'], 'saved');
+      final record = result['record'] as Map;
+      expect(record['accepted'], 1);
+      expect(record['duplicates'], 1);
+      expect((record['rejected'] as List).single, {
+        'rowNumber': 3,
+        'code': 'missingMeaning',
+      });
+      final stored = await tester.runAsync(
+        () => database.select(database.vocabularyWords).get(),
+      );
+      expect(stored, hasLength(1));
+      expect(stored!.single.meaning, 'หนังสือ');
+      final imports = await tester.runAsync(
+        () => database.select(database.vocabularyImports).get(),
+      );
+      expect(imports, hasLength(1));
+      expect(imports!.single.id, record['importId']);
+      expect((await invoke('vocabulary/import-save'))['status'], 'saved');
+      expect(
+        await tester.runAsync(
+          () => database.select(database.vocabularyWords).get(),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.vocabularyImports).get(),
+        ),
+        hasLength(1),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(database.close);
+    },
+  );
 
   testWidgets(
     'MCP fills Thai word, verifies persistence and does not replay a write',
