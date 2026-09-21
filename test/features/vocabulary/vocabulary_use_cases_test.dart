@@ -35,6 +35,34 @@ void main() {
   });
 
   test(
+    'category form rejects changed owner and retired mutation before write',
+    () async {
+      await expectLater(
+        useCases.createCategory('Private', expectedOwnerId: 'other-owner'),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      await expectLater(
+        useCases.createCategory('Private', mutationAllowed: () => false),
+        throwsA(isA<InvalidVocabularyFailure>()),
+      );
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      final created = await useCases.createCategory(
+        'Private',
+        expectedOwnerId: owner.id,
+        mutationAllowed: () => true,
+      );
+      final stored =
+          (await database.select(database.vocabularyCategories).get()).single;
+      expect(stored.id, created.id);
+      expect(stored.ownerId, owner.id);
+    },
+  );
+
+  test(
     'bound form cannot create or update under a different active owner',
     () async {
       final category = await useCases.createCategory('personal');

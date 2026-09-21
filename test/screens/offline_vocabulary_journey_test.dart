@@ -150,6 +150,265 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
   }
 
+  testWidgets('category draft survives late optional AI attachment', (
+    tester,
+  ) async {
+    final active = await tester.runAsync(
+      dependencies.vocabulary!.owners.getOrCreateActiveOwner,
+    );
+    String? owner;
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: AppDependenciesScope(
+          dependencies: dependencies,
+          child: const MaterialApp(home: CategoriesPage()),
+        ),
+      ),
+    );
+    await pumpUntilFound(
+      tester,
+      find.text('ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์'),
+    );
+    await tester.tap(find.byKey(const ValueKey('add-category')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('category-name-field')),
+      'ของใช้',
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+    expect(registry.snapshot()['actions'], isEmpty);
+    owner = active!.id;
+    final actions = registry.snapshot()['actions'] as List;
+    expect(
+      actions.map((entry) => (entry as Map)['id']),
+      containsAll(['vocabulary/category-fill', 'vocabulary/category-save']),
+    );
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('category-name-field')))
+          .controller!
+          .text,
+      'ของใช้',
+    );
+    owner = 'other-owner';
+    expect(registry.snapshot()['actions'], isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(database.close);
+  });
+
+  testWidgets(
+    'MCP category form persists once and manual draft survives disconnect',
+    (tester) async {
+      final vocabulary = dependencies.vocabulary!;
+      final active = await tester.runAsync(
+        vocabulary.owners.getOrCreateActiveOwner,
+      );
+      String? owner = active!.id;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: dependencies,
+            child: const MaterialApp(home: CategoriesPage()),
+          ),
+        ),
+      );
+      await pumpUntilFound(tester, find.byKey(const ValueKey('add-category')));
+      var request = 0;
+      Future<Map<String, Object?>> invoke(
+        String id, {
+        Map<String, String> values = const {},
+      }) async {
+        final result = await tester.runAsync(
+          () => registry.execute(
+            id: id,
+            owner: owner!,
+            revision: registry.snapshot()['revision'] as int,
+            requestId: 'category-${request++}',
+            values: values,
+          ),
+        );
+        await tester.pumpAndSettle();
+        return result!;
+      }
+
+      await invoke('vocabulary/add-category');
+      expect((await invoke('vocabulary/category-save'))['status'], 'invalid');
+      final revision = registry.snapshot()['revision'] as int;
+      expect(
+        (await invoke(
+          'vocabulary/category-fill',
+          values: {'name': '  ของใช้   รอบตัว  '},
+        ))['status'],
+        'filled',
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.vocabularyCategories).get(),
+        ),
+        isEmpty,
+      );
+      expect(
+        (await registry.execute(
+          id: 'vocabulary/category-save',
+          owner: owner,
+          revision: revision,
+          requestId: 'old-category-form',
+        ))['status'],
+        'stale',
+      );
+      final savedRevision = registry.snapshot()['revision'] as int;
+      final saving = registry.execute(
+        id: 'vocabulary/category-save',
+        owner: owner,
+        revision: savedRevision,
+        requestId: 'save-category-once',
+      );
+      Map<String, Object?>? saved;
+      saving.then((value) => saved = value);
+      for (var i = 0; i < 50 && saved == null; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      expect(saved, isNotNull, reason: 'Persist and read-back must finish');
+      await tester.pumpAndSettle();
+      expect(saved!['status'], 'saved');
+      expect((saved!['record'] as Map)['name'], 'ของใช้ รอบตัว');
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        await registry.execute(
+          id: 'vocabulary/category-save',
+          owner: owner,
+          revision: savedRevision,
+          requestId: 'save-category-once',
+        ),
+        saved,
+      );
+      final rows = await tester.runAsync(
+        () => database.select(database.vocabularyCategories).get(),
+      );
+      expect(rows, hasLength(1));
+      expect(rows!.single.name, 'ของใช้ รอบตัว');
+      expect(rows.single.ownerId, active.id);
+      await invoke('vocabulary/add-category');
+      await invoke(
+        'vocabulary/category-fill',
+        values: {'name': 'ของใช้ รอบตัว'},
+      );
+      expect((await invoke('vocabulary/category-save'))['status'], 'duplicate');
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const ValueKey('category-name-field')),
+        'การเดินทาง',
+      );
+      await tester.pump();
+      expect(
+        tester
+            .widget<EditableText>(
+              find.descendant(
+                of: find.byKey(const ValueKey('category-name-field')),
+                matching: find.byType(EditableText),
+              ),
+            )
+            .focusNode
+            .hasFocus,
+        isTrue,
+      );
+      tester.testTextInput.hide();
+      owner = null;
+      expect(registry.snapshot()['actions'], isEmpty);
+      await tester.tap(find.byKey(const ValueKey('save-category')));
+      await pumpUntilFound(tester, find.widgetWithText(ListTile, 'การเดินทาง'));
+      for (
+        var i = 0;
+        i < 50 && find.byType(AlertDialog).evaluate().isNotEmpty;
+        i++
+      ) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      expect(
+        find.byType(AlertDialog),
+        findsNothing,
+        reason: 'Manual save must finish verified read-back',
+      );
+      await tester.pumpAndSettle();
+      final after = await tester.runAsync(
+        () => database.select(database.vocabularyCategories).get(),
+      );
+      expect(after, hasLength(2));
+      expect(after!.every((row) => row.ownerId == active.id), isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(database.close);
+    },
+  );
+
+  testWidgets('word draft survives late optional AI attachment', (
+    tester,
+  ) async {
+    final category = await tester.runAsync(
+      () => dependencies.vocabulary!.createCategory('Late AI'),
+    );
+    String? owner;
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(home: AddWordScreen(categoryId: category!.id)),
+        ),
+      ),
+    );
+    await tester.enterText(find.byKey(const ValueKey('word-field')), 'book');
+    await tester.pump();
+    final editable = find.descendant(
+      of: find.byKey(const ValueKey('word-field')),
+      matching: find.byType(EditableText),
+    );
+    final focus = tester.widget<EditableText>(editable).focusNode;
+    for (var i = 0; i < 5; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+    expect(registry.snapshot()['actions'], isEmpty);
+    owner = category.ownerId;
+    final actions = registry.snapshot()['actions'] as List;
+    expect(
+      actions.map((entry) => (entry as Map)['id']),
+      containsAll(['vocabulary/word-fill', 'vocabulary/word-save']),
+    );
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('word-field')))
+          .controller!
+          .text,
+      'book',
+    );
+    expect(tester.widget<EditableText>(editable).focusNode, same(focus));
+    expect(focus.hasFocus, isTrue);
+    owner = 'other-owner';
+    expect(registry.snapshot()['actions'], isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(database.close);
+  });
+
   testWidgets(
     'MCP fills Thai word, verifies persistence and does not replay a write',
     (tester) async {
@@ -174,6 +433,20 @@ void main() {
         String id, {
         Map<String, String> values = const {},
       }) async {
+        bool available() => (registry.snapshot()['actions'] as List).any(
+          (entry) => (entry as Map)['id'] == id,
+        );
+        for (var i = 0; i < 50 && !available(); i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        expect(
+          available(),
+          isTrue,
+          reason: 'Local owner must admit the form tool',
+        );
         final result = await tester.runAsync(
           () => registry.execute(
             id: id,

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_USB_AUTHORIZATION_PENDING",
+  "baseCommit": "806d0e6f7f17914cf50ca4cf772e1b7e7201b40a",
+  "scope": "Typed category create and late optional AI attachment for category/word forms",
+  "host": {
+    "passed": 40,
+    "receipt": "evidence/category-mcp-007/host-verification.json",
+    "analysis": "No issues found",
+    "sourceAfterHost": "Only braces around existing if and restored line endings; no behavior change",
+    "cases": [
+      "category fill does not persist",
+      "saved receipt after exact owner/name/id/revision read-back",
+      "same-request replay does not write twice",
+      "stale draft revision rejected",
+      "duplicate normalized name rejected",
+      "manual category save works after MCP disconnect",
+      "changed owner/retired mutation rejected before write",
+      "late AI attachment preserves category and word drafts and word focus",
+      "baseline offline vocabulary reconstruction remains working"
+    ]
+  },
+  "recovery": [
+    "Stream read-back test needed frame/IO pumping and subscription cancellation before database close",
+    "Manual category save retains original completion; persisted receipt verification is MCP-only",
+    "Late-attachment tools were absent when form owner came from provider; capture local data owner and keep bindings stable",
+    "ADB streamed/push installation ended EOF; raw transfer hash mismatched so not installed; device reconnect in progress"
+  ],
+  "native": {
+    "status": "NOT_VERIFIED_NEW_APK",
+    "apk": "build/ari-category-forms.apk",
+    "sha256": "e6125854124d8bf91ab32c3ed1eefb042e12e9c49c9344c12e91d987f1666bec",
+    "prerequisite": "ADB unauthorized after per-device reconnect; physical USB authorization requested"
+  },
+  "next": [
+    "Recover device transfer and verify APK before isolated install",
+    "Live natural category create/duplicate/manual parity",
+    "Continue remaining W03 typed delete/import and other workflow/mode assistance"
+  ],
+  "wholeScopeComplete": false,
+  "cleanup": {
+    "bridgeStarted": false,
+    "stayAwakeChanged": false,
+    "remoteOwnPartialApkToRemove": "/data/local/tmp/ari-category-008.apk",
+    "originalAppModified": false
+  }
+}

@@ -341,7 +341,7 @@
     {
       "id": "S3",
       "scope": "Complete optional workflow adapters and typed operations with read-back, manual parity and recovery",
-      "status": "PENDING"
+      "status": "PARTIAL_WORD_NATIVE_PASS_CATEGORY_HOST_PASS_REMAINING_OPEN"
     },
     {
       "id": "S4",
@@ -375,6 +375,12 @@
       "id": "lesson-assistance-006",
       "receipt": "lesson-assistance-006.json",
       "scope": "Fresh native visible-feedback retest and live word creation; provider routing correction",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "category-mcp-007",
+      "receipt": "category-mcp-007.json",
+      "scope": "Category typed fill/save and late AI attachment to category/word forms",
       "wholeModeAcceptance": false
     }
   ],

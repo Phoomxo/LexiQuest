@@ -171,34 +171,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     if (!_admitted) return;
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => _AddCategoryDialog(
-        onSave: (name) => _saveCategory(dialogContext, useCases, name),
-      ),
+      builder: (dialogContext) =>
+          _AddCategoryDialog(vocabulary: useCases, admitted: () => _admitted),
     );
-  }
-
-  Future<void> _saveCategory(
-    BuildContext context,
-    VocabularyUseCases useCases,
-    String name,
-  ) async {
-    if (!_admitted) return;
-    try {
-      await useCases.createCategory(name);
-      if (context.mounted) Navigator.pop(context);
-    } on InvalidVocabularyFailure {
-      if (context.mounted) {
-        _showMessage(context, 'กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
-      }
-    } on DuplicateVocabularyFailure {
-      if (context.mounted) {
-        _showMessage(context, 'มีหมวดหมู่นี้แล้ว');
-      }
-    } catch (_) {
-      if (context.mounted) {
-        _showMessage(context, 'บันทึกหมวดหมู่ไม่สำเร็จ');
-      }
-    }
   }
 
   Future<void> _confirmDelete(
@@ -242,9 +217,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
 }
 
 class _AddCategoryDialog extends StatefulWidget {
-  const _AddCategoryDialog({required this.onSave});
-
-  final Future<void> Function(String name) onSave;
+  const _AddCategoryDialog({required this.vocabulary, required this.admitted});
+  final VocabularyUseCases vocabulary;
+  final bool Function() admitted;
 
   @override
   State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
@@ -252,6 +227,23 @@ class _AddCategoryDialog extends StatefulWidget {
 
 class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   final TextEditingController _controller = TextEditingController();
+  String? _formOwner;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindLocalOwner();
+  }
+
+  Future<void> _bindLocalOwner() async {
+    try {
+      final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
+      if (mounted) setState(() => _formOwner = owner.id);
+    } catch (_) {
+      // Optional tool admission must not block ordinary form interaction.
+    }
+  }
 
   @override
   void dispose() {
@@ -259,30 +251,129 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
     super.dispose();
   }
 
+  void _message(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<Map<String, Object?>> _save({String? expectedOwnerId}) async {
+    if (!mounted || !widget.admitted() || _saving) return {'status': 'busy'};
+    final registry = MenuActionScope.maybeOf(context);
+    final revision = registry?.snapshot()['revision'];
+    bool allowed() =>
+        mounted &&
+        widget.admitted() &&
+        (expectedOwnerId == null ||
+            registry?.currentOwner() == expectedOwnerId &&
+                registry?.snapshot()['revision'] == revision);
+    setState(() => _saving = true);
+    try {
+      final saved = await widget.vocabulary.createCategory(
+        _controller.text,
+        expectedOwnerId: expectedOwnerId,
+        mutationAllowed: allowed,
+      );
+      // The ordinary button keeps its original completion path. Only the
+      // optional MCP receipt needs a separate persisted-data verification.
+      if (expectedOwnerId == null) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          Navigator.pop(context);
+        }
+        return {'status': 'invoked'};
+      }
+      final records = await widget.vocabulary.vocabulary
+          .watchCategories(saved.ownerId)
+          .first;
+      final persisted = records
+          .where(
+            (record) =>
+                record.id == saved.id &&
+                record.ownerId == saved.ownerId &&
+                record.name == saved.name &&
+                record.normalizedName == saved.normalizedName &&
+                record.localRevision == saved.localRevision &&
+                !record.isDeleted,
+          )
+          .firstOrNull;
+      if (persisted == null) return {'status': 'verification_failed'};
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context);
+      }
+      return {
+        'status': 'saved',
+        'record': {
+          'categoryId': persisted.id,
+          'name': persisted.name,
+          'revision': persisted.localRevision,
+        },
+      };
+    } on InvalidVocabularyFailure {
+      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
+      return {'status': 'invalid'};
+    } on DuplicateVocabularyFailure {
+      _message('มีหมวดหมู่นี้แล้ว');
+      return {'status': 'duplicate'};
+    } catch (_) {
+      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
+      return {'status': 'failed'};
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('เพิ่มหมวดหมู่'),
-      scrollable: true,
-      content: TextField(
-        key: const ValueKey('category-name-field'),
-        controller: _controller,
-        autofocus: true,
-        maxLength: maxCategoryNameLength,
-        decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
-        onSubmitted: (_) => widget.onSave(_controller.text),
+    // Keep bindings mounted even before optional AI is connected, so attaching
+    // an owner does not replace the focused native form or discard its draft.
+    return MenuActionBinding(
+      id: 'vocabulary/category-fill',
+      label: 'กรอกชื่อหมวดหมู่ (ยังไม่บันทึก)',
+      ownerId: _formOwner,
+      onInvoke: null,
+      fields: const {'name': maxCategoryNameLength},
+      onForm: _formOwner == null
+          ? null
+          : (values) {
+              if (_saving || !widget.admitted()) return {'status': 'busy'};
+              setState(() => _controller.text = values['name']!);
+              return {'status': 'filled', 'values': values};
+            },
+      child: MenuActionBinding(
+        id: 'vocabulary/category-save',
+        label: 'บันทึกหมวดหมู่และตรวจผล',
+        ownerId: _formOwner,
+        revisionKey: _controller.text,
+        onInvoke: null,
+        onForm: _formOwner == null
+            ? null
+            : (_) => _save(expectedOwnerId: _formOwner),
+        child: AlertDialog(
+          title: const Text('เพิ่มหมวดหมู่'),
+          scrollable: true,
+          content: TextField(
+            key: const ValueKey('category-name-field'),
+            controller: _controller,
+            autofocus: true,
+            maxLength: maxCategoryNameLength,
+            decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _save(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              key: const ValueKey('save-category'),
+              onPressed: _saving ? null : () => _save(),
+              child: const Text('บันทึก'),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('ยกเลิก'),
-        ),
-        FilledButton(
-          key: const ValueKey('save-category'),
-          onPressed: () => widget.onSave(_controller.text),
-          child: const Text('บันทึก'),
-        ),
-      ],
     );
   }
 }

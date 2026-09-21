@@ -34,11 +34,28 @@ class _AddWordScreenState extends State<AddWordScreen> {
   String? _cefrLevel;
   bool _saving = false;
   String? _formOwner;
+  bool _ownerBindingStarted = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _formOwner ??= MenuActionScope.maybeOf(context)?.currentOwner();
+    final useCases =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    if (!_ownerBindingStarted && useCases != null) {
+      _ownerBindingStarted = true;
+      _bindLocalOwner(useCases);
+    }
+  }
+
+  Future<void> _bindLocalOwner(VocabularyUseCases useCases) async {
+    try {
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      if (mounted) {
+        setState(() => _formOwner = widget.word?.ownerId ?? owner.id);
+      }
+    } catch (_) {
+      // Preparing optional tool admission must not gate the native form.
+    }
   }
 
   static const _cefrOptions = <String>['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -151,7 +168,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
         ],
       ),
     );
-    if (_formOwner == null || useCases == null) return screen;
     return MenuActionBinding(
       id: 'vocabulary/word-fill',
       label: 'กรอกคำศัพท์ (ยังไม่บันทึก)',
@@ -163,20 +179,22 @@ class _AddWordScreenState extends State<AddWordScreen> {
         'partOfSpeech': maxPartOfSpeechLength,
         'cefrLevel': 2,
       },
-      onForm: (values) {
-        if (!_admitted || _saving) return {'status': 'busy'};
-        final level = values['cefrLevel']!;
-        if (level.isNotEmpty && !_cefrOptions.contains(level)) {
-          return {'status': 'invalid'};
-        }
-        setState(() {
-          _wordController.text = values['spelling']!;
-          _meaningController.text = values['meaning']!;
-          _partOfSpeechController.text = values['partOfSpeech']!;
-          _cefrLevel = level.isEmpty ? null : level;
-        });
-        return {'status': 'filled', 'values': values};
-      },
+      onForm: _formOwner == null || useCases == null
+          ? null
+          : (values) {
+              if (!_admitted || _saving) return {'status': 'busy'};
+              final level = values['cefrLevel']!;
+              if (level.isNotEmpty && !_cefrOptions.contains(level)) {
+                return {'status': 'invalid'};
+              }
+              setState(() {
+                _wordController.text = values['spelling']!;
+                _meaningController.text = values['meaning']!;
+                _partOfSpeechController.text = values['partOfSpeech']!;
+                _cefrLevel = level.isEmpty ? null : level;
+              });
+              return {'status': 'filled', 'values': values};
+            },
       child: MenuActionBinding(
         revisionKey: (
           _wordController.text,
@@ -188,7 +206,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
         label: 'บันทึกคำศัพท์และตรวจผล',
         ownerId: _formOwner,
         onInvoke: null,
-        onForm: (_) => _save(useCases, expectedOwnerId: _formOwner),
+        onForm: _formOwner == null || useCases == null
+            ? null
+            : (_) => _save(useCases, expectedOwnerId: _formOwner),
         child: screen,
       ),
     );

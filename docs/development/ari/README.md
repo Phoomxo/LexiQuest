@@ -60,3 +60,5 @@ Latest vocabulary continuation: [MCP submenu evidence](vocabulary-mcp-002.json) 
 Typed word forms continuation: [evidence](typed-word-mcp-003.json). Fill/save transport and real-storage create/edit checks implemented; Flutter99 + affected retest12 and Python44 passed (not additive). Native live-provider acceptance awaits Vivo unlock; writer retained, no background worker.
 
 Latest optional-assistance checkpoint: [native evidence](lesson-assistance-006.json). Visible committed feedback passed on Vivo; provider routing corrected and natural-language word create, duplicate rejection and edit/read-back passed. All14 workflow/mode acceptance remains open. Original app preserved; test fixtures and connection resources cleaned up.
+
+Category forms and late AI attachment: [checkpoint](category-mcp-007.json). Typed category fill/save and independent local-owner binding implemented; 40 host tests and analysis passed. New native APK built but USB authorization is pending; no native PASS or whole-workflow completion claimed.

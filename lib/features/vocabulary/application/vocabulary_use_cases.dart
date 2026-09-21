@@ -165,7 +165,11 @@ final class VocabularyUseCases {
     return result;
   }
 
-  Future<VocabularyCategory> createCategory(String name) async {
+  Future<VocabularyCategory> createCategory(
+    String name, {
+    String? expectedOwnerId,
+    bool Function()? mutationAllowed,
+  }) async {
     final canonicalName = _required(
       name,
       'categoryName',
@@ -173,6 +177,10 @@ final class VocabularyUseCases {
     );
     final now = _currentUtc();
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId ||
+        mutationAllowed?.call() == false) {
+      throw const InvalidVocabularyFailure('owner', 'stale operation');
+    }
     final created = await vocabulary.createCategory(
       VocabularyCategory(
         id: 'category:${_nextId()}',
