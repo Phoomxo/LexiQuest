@@ -453,3 +453,7 @@ Owner-bound final speech context distinguishes transcript similarity from acoust
 ## Native baseline026
 
 Installed source d527c531 (APK hash in native-baseline-026.json). Disconnected native quest details, reward balances, Anki selection and offline download/delete exercised. Offline voice fixture restored to not-downloaded; existing ready content and original app preserved. Shop insufficient-funds feedback and expansion accessibility labels are review candidates, not resolved defects. Live-provider checks for019–025 and all14 acceptance remain open. Whole-project SDLC/Agile review remains queued after current acceptance under post-mcp-project-review-plan.json. USB stay-awake2 retained.
+
+## Offline native027 and byte interpretation repair
+
+Live provider context read and refresh on the mounted Vivo offline screen succeeded before/after a native download. Found misleading3066/708-byte ratio: manifest payload and installed total include different files. Added explicit byte meaning and non-comparability to optional AI context; five red assertions reproduced the missing contract and the full screen suite passed after repair. Native repair retest remains required; all14 acceptance remains open. Explicit disconnect preserved native removal; temporary voice fixture removed, original content/accounts and USB stay-awake retained. Details: offline-native-027.json.

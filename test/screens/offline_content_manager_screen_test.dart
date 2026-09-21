@@ -32,7 +32,7 @@ void main() {
     testWidgets('optional offline context reports actual ${status.name}', (
       tester,
     ) async {
-      final state = _state(status);
+      final state = _state(status, bytes: 8192);
       final registry = MenuActionRegistry(currentOwner: () => 'test');
       await tester.pumpWidget(
         MenuActionScope(
@@ -52,6 +52,15 @@ void main() {
       expect(data['status'], status.name);
       expect(data['verified'], state.hasVerifiedBytes);
       expect(data['downloadedBytes'], state.downloadedBytes);
+      expect(data['manifestBytes'], 4096);
+      expect(data.containsKey('requiredBytes'), false);
+      expect(
+        data['byteCountMeaning'],
+        state.hasVerifiedBytes
+            ? 'installed-total-including-adapter-files'
+            : 'downloaded-so-far-not-verified',
+      );
+      expect(data['byteCountsComparableAsProgress'], false);
       expect(data['nativeActionsEnabled'], false);
       expect(data['revision'], state.identity.revision);
       expect(data.containsKey('path'), false);

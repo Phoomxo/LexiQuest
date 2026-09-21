@@ -148,7 +148,11 @@ final class _OfflineContentManagerScreenState
                   'status': state.status.name,
                   'verified': state.hasVerifiedBytes,
                   'downloadedBytes': state.downloadedBytes,
-                  'requiredBytes': entry.requiredBytes,
+                  'manifestBytes': entry.requiredBytes,
+                  'byteCountMeaning': state.hasVerifiedBytes
+                      ? 'installed-total-including-adapter-files'
+                      : 'downloaded-so-far-not-verified',
+                  'byteCountsComparableAsProgress': false,
                   'failureCode': state.failureCode?.name,
                   'inUse': !entry.canRemove,
                   'busy': _busy.contains(identity),
