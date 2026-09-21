@@ -1,10 +1,10 @@
 {
-  "revision": 54,
+  "revision": 55,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: settings owner fencing and truthful cloud context implemented; full settings suite passed",
+  "previousTurn": "PROGRESS: durable controller/registry disconnect regression passed across4registered adapters",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Review029/settings030 host pass; native pending",
+  "current": "Lesson031host evidence added; native029-030pending",
   "next": [
     "Batch native029-030 and remaining progress/history/weakness/camera/shadowing",
     "Complete remaining sync/transfer-probe and14mode gaps",

@@ -394,6 +394,12 @@
       "receipt": "native-context-028.json",
       "scope": "Live offline byte interpretation retest, quest progress, reward balance and Anki guidance; disconnected PDF selection",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "lesson-disconnect-031",
+      "receipt": "lesson-disconnect-031.json",
+      "scope": "Four registered adapters shared controller durable-write disconnect/replay; simulated registry loss not native input acceptance",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

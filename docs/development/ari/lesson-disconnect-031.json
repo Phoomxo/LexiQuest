@@ -1,0 +1,23 @@
+{
+  "status": "HOST_REGISTRY_DISCONNECT_DURABLE_CONTROLLER_PASS",
+  "modes": [
+    "associative-reading",
+    "meaning-quiz",
+    "flashcard",
+    "typed-recall"
+  ],
+  "execution": "One widget test loops all four actual buildLegacyLessonModeRegistry registrations. Real UnifiedLessonController, UnifiedLessonShell, LearningUseCases and Drift in-memory repository; counting wrapper blocks write completion. No live provider and no native mode screen used.",
+  "assertions": [
+    "No correctAnswer projected before blocked record completes",
+    "Committed count0 while pending",
+    "Provider-owner setnull and registry invalidation hides context",
+    "Pending native-controller submission completes after simulated provider disconnect",
+    "Replaying identical submission returns same result and leaves exactly1durable answerAttempt and1record call",
+    "Restoring provider owner projects actual committed feedback and mode",
+    "No answer/score tool exposed; original exercise child remains mounted"
+  ],
+  "receipt": "evidence/lesson-disconnect-031/verification.json",
+  "analysis": "No issues found",
+  "limits": "This tests shared controller persistence and registry disconnection, not all14 modes, actual provider interruption or each native exercise input. Production source unchanged.",
+  "next": "Native029-030 and remaining mode-specific/native acceptance; keep full14scope open."
+}

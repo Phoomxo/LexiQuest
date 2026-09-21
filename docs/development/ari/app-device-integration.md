@@ -469,3 +469,7 @@ Added optional owner-pinned queue summary and mounted-row explanation, separatin
 ## Settings assistance030
 
 Bound display context and existing AI setting actions to canonical preference owner. Cloud context now distinguishes service availability from unobserved sync completion. Full settings suite passed; wrong-owner access rejected. Corrected historical test owner prefix mismatch without weakening assertions; final analysis clean. Native030 and real cloud sync remain pending. Evidence: settings-assistance-030.json.
+
+## Lesson disconnect031
+
+Added and passed a shared-controller regression across four registered adapters (associative reading, meaning quiz, flashcard, typed recall). During a blocked durable answer write, simulated provider-owner loss hides context; completion and replay retain exactly one answer record. Reattachment exposes only committed feedback. Real controller/Drift host execution, not native mode UI or live provider interruption. No production source changed. Full14 acceptance remains open. Evidence: lesson-disconnect-031.json.

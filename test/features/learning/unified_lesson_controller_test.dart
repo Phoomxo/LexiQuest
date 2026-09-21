@@ -80,6 +80,50 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  testWidgets('MCP disconnect during durable answer does not reveal or duplicate evidence across registered adapters', (tester) async {
+    for (final registration in buildLegacyLessonModeRegistry().registrations) {
+      final fixture = await _fixture(adapter: registration.adapter, blockRecord: true);
+      String? providerOwner = fixture.startCommand.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => providerOwner);
+      await fixture.controller.start(fixture.startCommand);
+      await tester.pumpWidget(MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: UnifiedLessonShell(
+          controller: fixture.controller,
+          builder: (_) => const Text('Original exercise'),
+        )),
+      ));
+      await tester.pumpAndSettle();
+      final submission = fixture.submissionForAdapter(registration.adapter,
+        sourceEvidenceId: 'disconnect-${registration.mode.id}');
+      final pending = fixture.controller.submit(submission);
+      await fixture.repository.recordStarted.future;
+      await tester.pump();
+      final before = registry.snapshot()['context'] as List;
+      expect(before.toString(), isNot(contains('correctAnswer')));
+      expect(fixture.controller.state.committedResponseCount, 0);
+      providerOwner = null;
+      registry.invalidateSession(preserveContext: true);
+      expect(registry.snapshot()['context'], isEmpty);
+      fixture.repository.releaseRecord();
+      final committed = await pending;
+      await tester.pump();
+      final replay = await fixture.controller.submit(submission);
+      expect(replay, same(committed));
+      expect(fixture.repository.recordCalls, 1);
+      expect(await fixture.database.select(fixture.database.answerAttempts).get(), hasLength(1));
+      expect(fixture.controller.state.committedResponseCount, 1);
+      expect(find.text('Original exercise'), findsOneWidget);
+      providerOwner = fixture.startCommand.ownerId;
+      final after = registry.snapshot()['context'] as List;
+      final data = jsonDecode(after.singleWhere((dynamic x) => x['id'] == 'lesson/assistance')['value'] as String);
+      expect(data['mode'], registration.mode.id);
+      expect(data['committedResponses'], 1);
+      expect(data['lastCommittedFeedback']['correctAnswer'], fixture.controller.feedback!.canonicalCorrectAnswer);
+      expect(registry.snapshot()['actions'], isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
   testWidgets(
     'optional MCP lesson context reads committed results without adding evidence',
     (tester) async {
