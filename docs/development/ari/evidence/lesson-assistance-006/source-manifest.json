@@ -1,0 +1,8 @@
+{
+  "sourceBase": "734f6f0d8c0909ede31f1c584bf75fad2ae78d69",
+  "files": {
+    "tool/experiments/ari_app_server/chat_bridge.py": "a4c85f46b39f4dcb4dd21a961b2a8ab32e63d71dc6df2cdd7b7e2fbdd7417e3a",
+    "lib/features/ai_tutor/presentation/lesson_assistance_context.dart": "9da114184b4741253886f29ff951b78da807552512644809b774a9634c8bd52f",
+    "lib/features/learning/presentation/answer_feedback_panel.dart": "faa1859adab2477ffb5182e22ba9ec9e58ea073e93c8b08e3c20f7d0fbf7349c"
+  }
+}

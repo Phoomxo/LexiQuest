@@ -58,3 +58,5 @@ Latest 2026-09-21: [all-menu MCP debug acceptance and 64-entry matrix](all-menu-
 Latest vocabulary continuation: [MCP submenu evidence](vocabulary-mcp-002.json) and [report](app-device-integration.md#vocabulary-mcp-continuation--2026-09-21). 76 host tests passed; final descriptor retest13 passed; representative live-provider journeys passed on Vivo. Personal-owner fencing and category-type ambiguity fixed. Whole-app/typed-form/offscreen-data coverage remains open; no background worker.
 
 Typed word forms continuation: [evidence](typed-word-mcp-003.json). Fill/save transport and real-storage create/edit checks implemented; Flutter99 + affected retest12 and Python44 passed (not additive). Native live-provider acceptance awaits Vivo unlock; writer retained, no background worker.
+
+Latest optional-assistance checkpoint: [native evidence](lesson-assistance-006.json). Visible committed feedback passed on Vivo; provider routing corrected and natural-language word create, duplicate rejection and edit/read-back passed. All14 workflow/mode acceptance remains open. Original app preserved; test fixtures and connection resources cleaned up.

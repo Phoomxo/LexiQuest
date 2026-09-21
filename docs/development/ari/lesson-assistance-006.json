@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "status": "NATIVE_FEEDBACK_AND_WORD_CREATE_DUPLICATE_EDIT_PASS",
+  "sourceCommit": "734f6f0d8c0909ede31f1c584bf75fad2ae78d69",
+  "apk": "build/ari-lesson-feedback-fixed.apk",
+  "apkSha256": "0341a2045a22cdde25f07b5c8b1589eaab49c70b3e8a803db1680af4fa790ec1",
+  "supersedes": "lesson-assistance-005.json native ASSIST-01 pending retest only",
+  "native": {
+    "ASSIST-01": {
+      "status": "PASS",
+      "mode": "meaning-quiz",
+      "direction": "English to Thai",
+      "committedResponses": 1,
+      "correct": true,
+      "exactCorrectAnswer": "กระเป๋า",
+      "evidence": "evidence/lesson-assistance-006/vivo-live-feedback.png"
+    },
+    "typedWordCreate": {
+      "guidedStatus": "PASS",
+      "naturalRequestInitialStatus": "FAIL_WRONG_TOOL_SELECTION",
+      "observed": "Natural create request called read_selected_word. Guided list/fill/save returned filled then saved. Reopened native edit form confirms pencil / ดินสอ / noun / A1.",
+      "fixture": "ARI QA 006",
+      "fixtureRemoved": true,
+      "routingFix": "Provider instructions distinguish form management from selected-word practice",
+      "routingFixLiveRetest": "PASS",
+      "naturalPrompt": "Add pencil to this category with its Thai meaning, part of speech noun and CEFR A1. Save it once.",
+      "tools": [
+        "list_menu_actions: available",
+        "execute_menu_action: filled",
+        "list_menu_actions: available",
+        "execute_menu_action: saved"
+      ],
+      "duplicateRetest": {
+        "status": "PASS",
+        "modelReported": "duplicate, not saved",
+        "nativeRowsAfterAttempt": 1,
+        "evidence": "evidence/lesson-assistance-006/vivo-word-duplicate.png"
+      },
+      "editRetest": {
+        "status": "PASS",
+        "change": "CEFR A1 to A2",
+        "nativeReopen": "A2",
+        "tools": [
+          "list_menu_actions: available",
+          "execute_menu_action: filled",
+          "list_menu_actions: available",
+          "execute_menu_action: saved"
+        ],
+        "evidence": "evidence/lesson-assistance-006/vivo-word-edit-readback.png"
+      },
+      "secondFixture": "ARI QA 007",
+      "secondFixtureRemoved": true
+    }
+  },
+  "cleanupFirstRun": {
+    "ownFixtureRemoved": true,
+    "bridgeStopped": true,
+    "reverse8765Removed": true,
+    "noListener8765": true,
+    "noProviderAppServer": true,
+    "privateCapabilityAbsent": true,
+    "stayAwakeRestored": 0
+  },
+  "limitations": [
+    "All14 workflow and mode acceptance remains OPEN",
+    "This is a USB debug prototype, not standalone mobile delivery",
+    "Guided tool success is not natural-language routing acceptance"
+  ],
+  "pythonTestsAfterRoutingFix": 44,
+  "cleanupFinal": {
+    "ownFixtureRemoved": true,
+    "bridgeStopped": true,
+    "reverse8765Removed": true,
+    "noListener8765": true,
+    "noProviderAppServer": true,
+    "privateCapabilityAbsent": true,
+    "ownedTemporaryHomeRemoved": true,
+    "stayAwakeRestored": 0,
+    "originalPackageVersion": 23
+  },
+  "nextScope": [
+    "Typed category form integration with original validation, owner/revision fencing and persisted read-back",
+    "Remaining word delete/import typed operations",
+    "Remaining workflow and14 mode native baseline/connected/disconnected coverage"
+  ]
+}

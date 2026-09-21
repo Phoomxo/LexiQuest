@@ -331,12 +331,12 @@
     {
       "id": "S1",
       "scope": "Decouple baseline startup and separate optional AI section; preserve routes and drafts across AI failure",
-      "status": "PARTIAL_HOST_STARTUP_PASS_NATIVE_PENDING"
+      "status": "PARTIAL_HOST_PASS_REPRESENTATIVE_NATIVE_BASELINE_PASS"
     },
     {
       "id": "S2",
       "scope": "Bounded context assistance for each learning mode; explicit no-score assistance and stale/owner fences",
-      "status": "PARTIAL_MODE_GUIDANCE_HOST_PASS_NATIVE_FEEDBACK_RETEST_PENDING"
+      "status": "PARTIAL_MODE_GUIDANCE_HOST_PASS_NATIVE_FEEDBACK_PASS"
     },
     {
       "id": "S3",
@@ -369,6 +369,12 @@
       "id": "lesson-assistance-005",
       "receipt": "lesson-assistance-005.json",
       "scope": "14 mode descriptors, real lesson status and visible feedback; representative no-MCP/live/offline native journey",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "lesson-assistance-006",
+      "receipt": "lesson-assistance-006.json",
+      "scope": "Fresh native visible-feedback retest and live word creation; provider routing correction",
       "wholeModeAcceptance": false
     }
   ],
