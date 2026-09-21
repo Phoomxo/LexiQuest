@@ -1,18 +1,17 @@
 {
-  "revision": 65,
+  "revision": 66,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "041 optional speaking context and saved receipt privacy-clear regression repaired;50host pass;native noMatch remains pending",
+  "previousTurn": "042 shadowing premature saved flag reproduced and fixed;26tests pass;APK installed home smoke",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
   "current": "Remaining mode-specific MCP acceptance",
   "next": [
-    "Successful physical recognition and connected/disconnected speaking evidence",
-    "Other mode-specific acceptance including CEFR",
-    "Inspect shadowing premature evidenceSaved=true before record acknowledgment; not yet fixed",
-    "Complete MCP acceptance before queued whole-project SDLC/Agile review"
+    "Complete mode-specific baseline/connected/disconnected acceptance",
+    "Successful native speech/camera and remaining sync coverage",
+    "Whole-project review and SDLC/Agile repairs queued after MCP acceptance"
   ],
-  "nativeInstalledSource": "041 source pinned in evidence/speaking-assistance-041/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-041.apk",
+  "nativeInstalledSource": "042 source pinned in evidence/shadowing-save-042/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-042.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",

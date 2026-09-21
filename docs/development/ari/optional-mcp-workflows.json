@@ -458,6 +458,12 @@
       "receipt": "speaking-assistance-041.json",
       "scope": "Read-only speaking context;50host pass; native noMatch trials and final installation smoke",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "shadowing-save-042",
+      "receipt": "shadowing-save-042.json",
+      "scope": "Premature saved state red/green;26host tests; native installation/home only",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

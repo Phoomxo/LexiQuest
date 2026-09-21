@@ -33,6 +33,53 @@ import '../support/accessibility_semantics_test_support.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('shadowing saved context waits for persistence acknowledgment', (tester) async {
+    final release = Completer<void>();
+    final repository = _RetryLearningRepository(
+      failAnswerOnce: false,
+      firstAnswerRelease: release,
+    );
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(), repository: repository,
+      generateId: () => 'shadow-pending',
+      nowUtc: () => DateTime.utc(2026, 9, 14),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final gateway = _ManualSpeechGateway();
+    final voice = VoiceUseCases(provider: _FakeVoice(), disposeProvider: () async {});
+    addTearDown(voice.dispose);
+    final registry = MenuActionRegistry(currentOwner: () => 'owner-1');
+    await tester.pumpWidget(MenuActionScope(registry: registry, child: MaterialApp(
+      home: ShadowingChallengeScreen(voice: voice,
+        speechPractice: SpeechPracticeUseCases(gateway), learning: learning,
+        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning)),
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('shadowing-listen-button')));
+    await tester.pump();
+    gateway.emitFinal('Practice makes perfect');
+    await tester.pump();
+    Map<String, dynamic> context() => jsonDecode(
+      (registry.snapshot()['context'] as List).single['value'] as String) as Map<String, dynamic>;
+    try {
+      expect(repository.commands, hasLength(1));
+      expect(context()['similarityPercent'], 100);
+      expect(context()['evidenceSaved'], false,
+        reason: 'Recognition is not acknowledgment of a pending storage write');
+      expect(repository.finishCalls, isEmpty);
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pump();
+      expect(repository.commands, hasLength(1));
+    } finally {
+      release.complete();
+      await tester.pumpAndSettle();
+    }
+    expect(context()['evidenceSaved'], true);
+    expect(repository.commands, hasLength(1));
+    expect(repository.finishCalls, hasLength(1));
+    expect(registry.snapshot()['actions'], isEmpty);
+  });
+
   testWidgets('empty final shadowing remains unscored and retry records once', (
     tester,
   ) async {
@@ -1175,11 +1222,13 @@ final class _RetryLearningRepository implements LearningRepository {
     this.failAnswerOnce = true,
     this.failFinishOnce = false,
     this.firstFinishRelease,
+    this.firstAnswerRelease,
   });
 
   final bool failAnswerOnce;
   final bool failFinishOnce;
   final Completer<void>? firstFinishRelease;
+  final Completer<void>? firstAnswerRelease;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
   finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
@@ -1206,6 +1255,7 @@ final class _RetryLearningRepository implements LearningRepository {
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
+    if (commands.length == 1) await firstAnswerRelease?.future;
     if (failAnswerOnce && !_answerFailed) {
       _answerFailed = true;
       throw StateError('simulated local failure');

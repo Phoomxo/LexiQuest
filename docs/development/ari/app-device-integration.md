@@ -522,3 +522,10 @@ Bridge22745 stopped, ownedreverse/privatepairing removed, no8765listener; USBsta
 Owner-bound read-only context separates final transcript similarity from acoustic pronunciation and storage acknowledgment. Four new screen cases use repository/recognizer doubles; final 50 targeted speech tests passed. A red/green regression preserves the saved receipt when raw speech is cleared for privacy. Source and receipt pins: [evidence](speaking-assistance-041.json).
 
 Vivo intermediate build returned noMatch for PC synthetic speech and app TTS; successful native recognition remains pending. Final receipt-fix APK installed successfully and opens the baseline home; no live provider trial in041. USB stay-awake remains2. Whole14workflow/mode acceptance stays OPEN. Whole-project code review/data/root-cause analysis and sequential SDLC/Agile repairs remain queued after MCP acceptance per the user request.
+
+
+### Shadowing save acknowledgment — checkpoint042
+
+Confirmed premature saved-state defect by holding the repository acknowledgment: old context reported true while still pending. Moved saved=true after the successful await, retaining existing pending/epoch guards. New test verifies pending false, acknowledged true, single write despite duplicate final, one close and no AI actions. Full26 shadowing tests and targeted analysis passed. [Finding and evidence](shadowing-save-042.json).
+
+Final042 debug APK built/installed and baseline home smoke passed. Successful physical recognition and live-provider validation remain pending; installation is not functional acceptance. Whole-project review remains queued after current MCP scope.

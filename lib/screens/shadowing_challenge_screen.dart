@@ -354,7 +354,6 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         !_acceptsModeOperations) {
       return;
     }
-    _evidenceSaved = true;
     final pending = _pendingEvidence ??= _modeAdapter
         .capture(
           evidence: _evidenceAdapter!,
@@ -370,6 +369,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     try {
       await (_lifecycle?.runAcceptedOperation(pending.record) ??
           pending.record());
+      _evidenceSaved = true;
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
