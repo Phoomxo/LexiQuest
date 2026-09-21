@@ -1,0 +1,17 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "implementation": "Owner-pinned ReviewQueueSnapshot from canonical use case; existing load delegates to same read. Optional summary includes actual queue and dueSrs counts, including empty queue. Mounted rows expose bounded spelling/meaning and canonical reasons; no answer or scoring tools.",
+  "guards": "Data owner preserved with read; wrong current owner hides context. Loading hides previous queue. No raw provenance source IDs shared. Native practice callbacks unchanged.",
+  "tests": {
+    "screen": "20",
+    "reader": "31",
+    "analysis": "No issues found",
+    "red": "Two new context tests failed No element before implementation"
+  },
+  "receipts": [
+    "evidence/review-assistance-029/run-0.json",
+    "evidence/review-assistance-029/run-1.json"
+  ],
+  "native": "Not built or exercised for029; installed source remains64710021",
+  "limits": "Bounded mounted rows only; transfer-probe assistance and wholeW07 acceptance remain open. All14workflow/mode completion unproven."
+}

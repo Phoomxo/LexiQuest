@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import '../features/review/application/transfer_probe_use_cases.dart';
 import '../features/review/presentation/transfer_probe_screen.dart';
 
@@ -30,17 +32,17 @@ final class ReviewCenterScreen extends StatefulWidget {
 }
 
 final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
-  late Future<List<ReviewQueueItem>> _load;
+  late Future<ReviewQueueSnapshot> _load;
   String? _openingIdentity;
 
   @override
   void initState() {
     super.initState();
-    _load = widget.useCases.load();
+    _load = widget.useCases.loadSnapshot();
   }
 
   void _retry() {
-    final next = widget.useCases.load();
+    final next = widget.useCases.loadSnapshot();
     setState(() {
       _load = next;
     });
@@ -50,7 +52,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
   Widget build(BuildContext context) {
     final probes = widget.transferProbes;
     final embedded = probes?.isAvailable() == true;
-    final queue = FutureBuilder<List<ReviewQueueItem>>(
+    final queue = FutureBuilder<ReviewQueueSnapshot>(
       future: _load,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -64,7 +66,8 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
             ),
           );
         }
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState != ConnectionState.done ||
+            !snapshot.hasData) {
           return Center(
             child: Semantics(
               label: 'กำลังโหลดรายการทบทวน',
@@ -72,27 +75,71 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
             ),
           );
         }
-        final items = snapshot.data!;
+        final loaded = snapshot.data!;
+        final items = loaded.items;
+        Widget withSummary(Widget child) => MenuActionBinding(
+          id: 'review/queue-summary',
+          label: 'สรุปคิวทบทวน',
+          ownerId: loaded.ownerId,
+          onInvoke: null,
+          readValue: jsonEncode({
+            'queueCount': items.length,
+            'dueSrsCount': items
+                .where(
+                  (item) => item.reasons.contains(ReviewQueueReason.dueSrs),
+                )
+                .length,
+            'interpretation':
+                'queue-includes-saved-reported-incorrect-and-due-not-all-items-are-due',
+          }),
+          child: child,
+        );
         if (items.isEmpty) {
-          return const _ReviewMessage(
-            semanticsLabel: 'รายการทบทวนว่าง',
-            message: 'ยังไม่มีรายการที่ต้องทบทวน',
+          return withSummary(
+            const _ReviewMessage(
+              semanticsLabel: 'รายการทบทวนว่าง',
+              message: 'ยังไม่มีรายการที่ต้องทบทวน',
+            ),
           );
         }
-        return ListView.separated(
-          shrinkWrap: embedded,
-          physics: embedded ? const NeverScrollableScrollPhysics() : null,
-          padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return _ReviewItemCard(
-              item: item,
-              opening: _openingIdentity == _identityKey(item),
-              onLaunch: _openingIdentity == null ? () => _launch(item) : null,
-            );
-          },
+        return withSummary(
+          ListView.separated(
+            shrinkWrap: embedded,
+            physics: embedded ? const NeverScrollableScrollPhysics() : null,
+            padding: const EdgeInsets.all(16),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return MenuActionBinding(
+                id: 'review/queue/$index',
+                label: 'รายการทบทวน',
+                ownerId: loaded.ownerId,
+                onInvoke: null,
+                readValue: jsonEncode({
+                  'spelling': String.fromCharCodes(
+                    item.spelling.runes.take(60),
+                  ),
+                  'meaning': String.fromCharCodes(item.meaning.runes.take(60)),
+                  'textTruncated':
+                      item.spelling.runes.length > 60 ||
+                      item.meaning.runes.length > 60,
+                  'reasons': item.reasons.map((reason) => reason.name).toList(),
+                  'primaryReason': item.primaryReason.name,
+                  'opening': _openingIdentity == _identityKey(item),
+                  'interpretation':
+                      'review-reasons-not-a-language-proficiency-score',
+                }),
+                child: _ReviewItemCard(
+                  item: item,
+                  opening: _openingIdentity == _identityKey(item),
+                  onLaunch: _openingIdentity == null
+                      ? () => _launch(item)
+                      : null,
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -166,7 +213,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
         );
       }
       if (mounted) {
-        final next = widget.useCases.load();
+        final next = widget.useCases.loadSnapshot();
         // Observe immediately: an async read can fail before the next frame
         // attaches FutureBuilder. The same future still renders its error UI.
         next.ignore();

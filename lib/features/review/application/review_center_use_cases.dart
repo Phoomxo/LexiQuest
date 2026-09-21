@@ -117,6 +117,16 @@ final class ReviewLessonLaunchRequest {
   final String timezoneId;
 }
 
+/// Queue data and its verified owner captured by the same read operation.
+final class ReviewQueueSnapshot {
+  ReviewQueueSnapshot({
+    required this.ownerId,
+    required List<ReviewQueueItem> items,
+  }) : items = List.unmodifiable(items);
+  final String ownerId;
+  final List<ReviewQueueItem> items;
+}
+
 /// Read-model orchestration plus a narrow adapter into canonical learning
 /// session creation. This class never writes attempts, rewards, or evidence.
 final class ReviewCenterUseCases {
@@ -139,6 +149,12 @@ final class ReviewCenterUseCases {
   Future<List<ReviewQueueItem>> load({
     Set<ReviewQueueReason> includeReasons = ReviewQueueFilter.allReasons,
     int? limit,
+  }) async =>
+      (await loadSnapshot(includeReasons: includeReasons, limit: limit)).items;
+
+  Future<ReviewQueueSnapshot> loadSnapshot({
+    Set<ReviewQueueReason> includeReasons = ReviewQueueFilter.allReasons,
+    int? limit,
   }) async {
     final ownerId = await ownerIdentities.requireSingleActiveOwnerId();
     final items = await reader.compose(
@@ -153,7 +169,7 @@ final class ReviewCenterUseCases {
     if (await ownerIdentities.requireSingleActiveOwnerId() != ownerId) {
       throw StateError('Review owner changed while loading the queue.');
     }
-    return items;
+    return ReviewQueueSnapshot(ownerId: ownerId, items: items);
   }
 
   Future<ReviewLessonLaunchRequest> launch(ReviewQueueItem item) async {

@@ -461,3 +461,7 @@ Live provider context read and refresh on the mounted Vivo offline screen succee
 ## Native connected context028
 
 Source64710021 installed and tested with live provider. Original offline prompt now reports verified5819/3066 bytes separately; misleading ratio not repeated. Quest5/5 and conditional50XP, shop15coins/75XP/level4/next5XP, and Anki vocabulary-only idle guidance matched native UI. Tool receipts observed. Explicit disconnect retained manual PDF selection. No reward mutation or file export acceptance claimed. Bridge/reverse stopped; original content/accounts retained and temporary voice fixture removed. Full scope remains open; see native-context-028.json.
+
+## Review assistance029
+
+Added optional owner-pinned queue summary and mounted-row explanation, separating due SRS from saved/reported/incorrect reasons. Empty queue is explicit; no learner answer or scoring tools added. New context tests failed before implementation; full screen and reader suites passed afterward, targeted analysis clean. Native029 not run; installed APK remains64710021. All14 acceptance remains open. Evidence: review-assistance-029.json.

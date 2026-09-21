@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -31,6 +34,56 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/review_center_screen.dart';
 
 void main() {
+  for (final empty in [false, true]) {
+    testWidgets(
+      'optional review context preserves owner and reasons empty=$empty',
+      (tester) async {
+        String? owner = 'owner-1';
+        final registry = MenuActionRegistry(currentOwner: () => owner);
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: ReviewCenterScreen(
+                useCases: _useCases(
+                  result: empty ? [] : [_item(allReasons: true)],
+                ),
+                lessonShellBuilder: _unusedDestination,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final contexts = registry.snapshot()['context'] as List;
+        final summary = jsonDecode(
+          contexts.singleWhere(
+                (dynamic x) => x['id'] == 'review/queue-summary',
+              )['value']
+              as String,
+        );
+        expect(summary['queueCount'], empty ? 0 : 1);
+        expect(summary['dueSrsCount'], empty ? 0 : 1);
+        if (!empty) {
+          final item = jsonDecode(
+            contexts.singleWhere(
+                  (dynamic x) => x['id'] == 'review/queue/0',
+                )['value']
+                as String,
+          );
+          expect(item['spelling'], 'station');
+          expect(
+            item['reasons'],
+            containsAll(['dueSrs', 'incorrectAnswer', 'reported', 'saved']),
+          );
+          expect(item['primaryReason'], 'dueSrs');
+          expect(item.containsKey('sourceId'), false);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        owner = 'owner-2';
+        expect(registry.snapshot()['context'], isEmpty);
+      },
+    );
+  }
   testWidgets('reloads canonical review queue after returning from practice', (
     tester,
   ) async {

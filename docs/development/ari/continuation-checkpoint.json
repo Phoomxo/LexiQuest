@@ -1,14 +1,14 @@
 {
-  "revision": 52,
+  "revision": 53,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "PROGRESS: native byte interpretation retest and quest/shop/export live context passed",
+  "previousTurn": "PROGRESS: owner-pinned review queue assistance implemented and host tests passed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native028 representative pass; full14 scope remains open",
+  "current": "Review029 host pass, native pending",
   "next": [
-    "ReviewCenter has no assistance bindings: add owner-bound read projection without answer submission",
-    "Continue native progress/history/weakness/camera/shadowing checks",
-    "Complete remaining workflow/mode acceptance before whole-project review"
+    "Native029 and remaining progress/history/weakness/camera/shadowing checks",
+    "Remaining transfer-probe/sync/preferences and14mode acceptance gaps",
+    "Complete MCP acceptance then queued whole-project SDLC review"
   ],
   "nativeInstalledSource": "6471002102efd8ac46212cb1b7560224295b631a",
   "nativeInstalledApk": "build/ari-assistance-027.apk",
@@ -17,6 +17,6 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "Bridge47317 stopped; build53687/install18142 terminal; no known live workers; reverse8765 removed",
+  "liveProcesses": "No known live test/build/bridge",
   "testFixture": "Isolated app export PDF selected; AI collapsed/disconnected; voice fixture removed"
 }
