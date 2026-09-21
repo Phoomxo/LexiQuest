@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 27,
+  "revision": 29,
   "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "mcp-typed-word-host-verified-native-pending",
+  "status": "optional-ai-workflows-in-progress",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": {
     "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
@@ -85,7 +85,7 @@
     "legacyTaskProjectBindings": "projectless; sidebar grouping does not change binding",
     "externalRootIsHistorical": true,
     "sidebarSectionId": "c5d1a7a5-7ae3-4108-81a9-609218725f84",
-    "sidebarSectionName": "LexiQuest · อารี"
+    "sidebarSectionName": "LexiQuest ยท เธญเธฒเธฃเธต"
   },
   "recoveryWork": {
     "id": "V1-R1",
@@ -172,5 +172,19 @@
       "implementationPushed": true,
       "physical": "INSTALL_LAUNCH_LOGIN_PASS"
     }
-  ]
+  ],
+  "mcpCompatibilityContract": {
+    "authority": "User clarification 2026-09-21",
+    "role": "Optional enhancement; never replace or gate baseline application workflows",
+    "baselineRequiresProviderLogin": false,
+    "preserveExistingAppRequirements": true,
+    "acceptanceModes": [
+      "Never connected",
+      "Connected",
+      "Disconnected or failed during use"
+    ],
+    "acceptance": "Pending explicit baseline parity verification; no new PASS claimed",
+    "report": "app-device-integration.md#optional-mcp-compatibility-contract---user-clarification-2026-09-21"
+  },
+  "optionalMcpWorkflows": "optional-mcp-workflows.json"
 }

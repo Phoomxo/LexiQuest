@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTIVE_NOT_ACCEPTED",
+  "authorization": "User 2026-09-21: optional separate AI section across 14 workflow groups and 14 modes; baseline app fully usable without MCP",
+  "baseCommit": "817f8b5f",
+  "languageScope": [
+    "English to Thai",
+    "Thai to English"
+  ],
+  "countMeaning": "14 product workflow groups plus 14 modes nested inside them; not 28 disjoint product workflows",
+  "constraints": [
+    "Single writer; feature branch; no background agents",
+    "Manual app path independent of provider initialization, authentication and availability",
+    "Shared domain validation and storage; no duplicate scoring or persistence implementation",
+    "AI assistance must not submit learner answers or manufacture assessed evidence",
+    "No research activation, original account logout, purchase or production deployment"
+  ],
+  "workflows": [
+    {
+      "id": "W01",
+      "name": "Identity and connection",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W02",
+      "name": "Navigation and preferences",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W03",
+      "name": "Vocabulary management",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W04",
+      "name": "AI tutoring conversation",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W05",
+      "name": "Learning exercises and games",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W06",
+      "name": "Reading and CEFR",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W07",
+      "name": "SRS and weakness review",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W08",
+      "name": "Study planning",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W09",
+      "name": "Progress and history",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W10",
+      "name": "Quests rewards and shop",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W11",
+      "name": "Speech and audio",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W12",
+      "name": "Camera vocabulary",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W13",
+      "name": "Export",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    },
+    {
+      "id": "W14",
+      "name": "Offline content and sync",
+      "status": "OPEN",
+      "acceptanceModes": [
+        "neverConnected",
+        "connected",
+        "disconnectedOrFailed"
+      ]
+    }
+  ],
+  "learningModes": [
+    {
+      "id": "associative-reading",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "meaning-quiz",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "typed-recall",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "definition-quiz",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "cloze",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "matching",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "flashcard",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "handwriting-scratchpad",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "dictation",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "speaking",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "shadowing",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "cefr-reading",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "sentence-scramble",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    },
+    {
+      "id": "word-scramble",
+      "status": "OPEN",
+      "required": [
+        "Baseline session unaffected",
+        "Optional context-specific assistance",
+        "Learner-owned answers and original scoring",
+        "No-MCP and connection-loss regression"
+      ],
+      "direction": "Respect existing mode capability; do not assume all directions supported"
+    }
+  ],
+  "stages": [
+    {
+      "id": "S1",
+      "scope": "Decouple baseline startup and separate optional AI section; preserve routes and drafts across AI failure",
+      "status": "PARTIAL_HOST_STARTUP_PASS_NATIVE_PENDING"
+    },
+    {
+      "id": "S2",
+      "scope": "Bounded context assistance for each learning mode; explicit no-score assistance and stale/owner fences",
+      "status": "PENDING"
+    },
+    {
+      "id": "S3",
+      "scope": "Complete optional workflow adapters and typed operations with read-back, manual parity and recovery",
+      "status": "PENDING"
+    },
+    {
+      "id": "S4",
+      "scope": "Sequential host and native baseline/connected/disconnected acceptance, source/APK pins and remaining production prerequisites",
+      "status": "PENDING"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "optional-ai-004",
+      "scope": "Debug app baseline startup independent of optional provider pairing; opt-in panel preserves selected tab",
+      "combinedTestsPassed": 10,
+      "finalAffectedTestsPassed": 4,
+      "counts": "Overlapping runs, not additive",
+      "analysis": "No issues found",
+      "receipts": [
+        "evidence/optional-ai-004/combined.json",
+        "evidence/optional-ai-004/final.json"
+      ],
+      "sourceManifest": "evidence/optional-ai-004/source-manifest.json",
+      "native": "Not built or exercised for this change yet",
+      "remaining": "Full manual data/lesson parity and 14-mode context integration remain open"
+    }
+  ],
+  "wholeScopeComplete": false
+}

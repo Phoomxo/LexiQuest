@@ -31,22 +31,41 @@ Future<void> main() async {
     );
     return;
   }
-  runApp(const _AriTestApp());
+  runApp(const AriTestApp());
 }
 
-class _AriTestApp extends StatefulWidget {
-  const _AriTestApp();
+Future<LocalLoginBridge?> _loadLocalBridge() async {
+  final support = await getApplicationSupportDirectory();
+  final config = File('${support.path}/ari-bridge.json');
+  if (!await config.exists()) return null;
+  if (await config.length() > 1024) throw StateError('Invalid pairing');
+  final data = jsonDecode(await config.readAsString()) as Map<String, dynamic>;
+  await config.delete();
+  final token = data['token'];
+  if (token is! String || !RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(token)) {
+    throw StateError('Invalid pairing');
+  }
+  return LocalLoginBridge(token: token);
+}
+
+class AriTestApp extends StatefulWidget {
+  const AriTestApp({super.key, this.loadDependencies, this.loadBridge});
+  final Future<AppDependencies> Function()? loadDependencies;
+  final Future<LocalLoginBridge?> Function()? loadBridge;
   @override
-  State<_AriTestApp> createState() => _AriTestAppState();
+  State<AriTestApp> createState() => _AriTestAppState();
 }
 
-class _AriTestAppState extends State<_AriTestApp> {
+class _AriTestAppState extends State<AriTestApp> {
   AppDatabase? _database;
   AppDependencies? _dependencies;
   MenuActionRegistry? _menus;
   MenuRouteObserver? _menuRoutes;
   final _navigator = GlobalKey<NavigatorState>();
-  bool _showChat = true;
+  bool _showChat = false;
+  bool _aiPreparing = false;
+  String _aiMessage =
+      'ส่วนช่วยเหลือ AI เป็นตัวเลือก แอปหลักใช้งานได้โดยไม่เชื่อมบัญชี';
   ManagedTutorRuntime? _runtime;
   LocalLoginBridge? _bridge;
   String _message = 'กำลังเตรียมรุ่นทดสอบ';
@@ -58,61 +77,18 @@ class _AriTestAppState extends State<_AriTestApp> {
 
   Future<void> _prepare() async {
     try {
-      final support = await getApplicationSupportDirectory();
-      final config = File('${support.path}/ari-bridge.json');
-      if (!await config.exists()) {
-        if (mounted) {
-          setState(() {
-            _message =
-                'พร้อมทดสอบหน้าจอ — ยังไม่ได้จับคู่สะพาน USB\nให้ผู้พัฒนาเตรียมสะพานทดสอบ แล้วเปิดแอปอีกครั้ง';
-          });
-        }
-        return;
-      }
-      if (await config.length() > 1024) throw StateError('Invalid pairing');
-      final data =
-          jsonDecode(await config.readAsString()) as Map<String, dynamic>;
-      await config.delete(); // Capability is memory-only after first read.
-      final token = data['token'];
-      if (token is! String || !RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(token)) {
-        throw StateError('Invalid pairing');
-      }
-      final bridge = LocalLoginBridge(token: token);
-      final dependencies = await AppBootstrap.production().initialize();
-      _dependencies = dependencies;
-      final database = dependencies.database;
-      if (database == null) throw StateError('Local database unavailable');
-      _database = database;
-      _bridge = bridge;
-      final owners = DriftLocalOwnerRepository(
-        database,
-        generateId: const Uuid().v4,
-        nowUtc: () => DateTime.now().toUtc(),
-      );
-      await owners.getOrCreateActiveOwner();
+      final dependencies =
+          await (widget.loadDependencies ??
+              AppBootstrap.production().initialize)();
       if (!mounted) {
-        bridge.dispose();
         await dependencies.dispose();
         return;
       }
-      final runtime = ManagedTutorRuntime(
-        database: database,
-        transport: bridge,
-        network: bridge.network,
-        operationTimeout: const Duration(seconds: 110),
-        clearSession: () async {
-          // Controller cancels the active request; screen owns account cleanup
-          // so the private browser login can return without losing its session.
-        },
-      );
       final menus = MenuActionRegistry(
-        currentOwner: () => runtime.identity.value?.ownerId,
+        currentOwner: () => _runtime?.identity.value?.ownerId,
       );
-      runtime.identity.addListener(() {
-        menus.invalidateSession();
-        _menuRoutes?.refresh();
-        if (mounted) setState(() {});
-      });
+      _menus = menus;
+      _menuRoutes = MenuRouteObserver(menus);
       menus.register(
         id: 'navigation/back',
         label: 'ย้อนกลับ',
@@ -121,18 +97,76 @@ class _AriTestAppState extends State<_AriTestApp> {
           _navigator.currentState?.maybePop();
         },
       );
-      bridge.menuActions = menus;
-      _menus = menus;
-      _menuRoutes = MenuRouteObserver(menus);
+      setState(() {
+        _dependencies = dependencies;
+        _database = dependencies.database;
+      });
+    } on Object {
+      if (mounted) setState(() => _message = 'เตรียมข้อมูลแอปไม่สำเร็จ');
+    }
+  }
+
+  Future<void> _prepareAi() async {
+    if (_aiPreparing || _runtime != null) return;
+    setState(() => _aiPreparing = true);
+    LocalLoginBridge? bridge;
+    try {
+      bridge = await (widget.loadBridge ?? _loadLocalBridge)();
+      if (!mounted) {
+        bridge?.dispose();
+        return;
+      }
+      if (bridge == null) {
+        setState(
+          () => _aiMessage =
+              'ยังไม่ได้จับคู่ส่วนช่วยเหลือ AI — ใช้งานแอปหลักต่อได้ตามปกติ',
+        );
+        return;
+      }
+      final database = _database;
+      if (database == null) throw StateError('Local database unavailable');
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: const Uuid().v4,
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      await owners.getOrCreateActiveOwner();
+      if (!mounted) {
+        bridge.dispose();
+        return;
+      }
+      final activeBridge = bridge;
+      final runtime = ManagedTutorRuntime(
+        database: database,
+        transport: activeBridge,
+        network: activeBridge.network,
+        operationTimeout: const Duration(seconds: 110),
+        clearSession: () async {
+          // Controller cancels the active request; screen owns account cleanup
+          // so the private browser login can return without losing its session.
+        },
+      );
+      final menus = _menus!;
+      runtime.identity.addListener(() {
+        menus.invalidateSession();
+        _menuRoutes?.refresh();
+        if (mounted) setState(() {});
+      });
+      activeBridge.menuActions = menus;
+      _bridge = activeBridge;
       setState(() {
         _runtime = runtime;
       });
     } on Object {
+      bridge?.dispose();
       if (mounted) {
-        setState(() {
-          _message = 'เตรียมรุ่นทดสอบไม่ได้ กรุณาตรวจการจับคู่ USB';
-        });
+        setState(
+          () => _aiMessage =
+              'ส่วนช่วยเหลือ AI ยังไม่พร้อม — ใช้งานแอปหลักต่อได้ตามปกติ',
+        );
       }
+    } finally {
+      if (mounted) setState(() => _aiPreparing = false);
     }
   }
 
@@ -145,7 +179,7 @@ class _AriTestAppState extends State<_AriTestApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_runtime == null) {
+    if (_dependencies == null) {
       return MaterialApp(
         theme: M3Theme.lightTheme,
         home: Scaffold(
@@ -175,14 +209,19 @@ class _AriTestAppState extends State<_AriTestApp> {
                   Expanded(
                     child: TextButton.icon(
                       key: const ValueKey('ari-toggle-chat'),
-                      onPressed: () => setState(() => _showChat = !_showChat),
+                      onPressed: () {
+                        setState(() => _showChat = !_showChat);
+                        if (_showChat) unawaited(_prepareAi());
+                      },
                       icon: Icon(
                         _showChat
                             ? Icons.expand_more
                             : Icons.chat_bubble_outline,
                       ),
                       label: Text(
-                        _showChat ? 'ย่อห้องสนทนาอารี' : 'เปิดห้องสนทนาอารี',
+                        _showChat
+                            ? 'ย่อส่วนช่วยเหลือ AI'
+                            : 'เปิดส่วนช่วยเหลือ AI',
                       ),
                     ),
                   ),
@@ -193,41 +232,61 @@ class _AriTestAppState extends State<_AriTestApp> {
               offstage: !_showChat,
               child: SizedBox(
                 height: MediaQuery.sizeOf(context).height * .44,
-                child: ManagedTutorTestScreen(
-                  embedded: true,
-                  host: _runtime!.host,
-                  bridge: _bridge!,
-                  loadWords: () async {
-                    final owner = _runtime!.identity.value?.ownerId;
-                    if (owner == null) return [];
-                    final db = _database!;
-                    final rows =
-                        await (db.select(db.vocabularyWords)
-                              ..where(
-                                (w) =>
-                                    PackagedStarterAccess.wordsFor(db, owner) &
-                                    w.isDeleted.equals(false),
+                child: _runtime == null
+                    ? Material(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: _aiPreparing
+                                ? const Text(
+                                    'กำลังเตรียมส่วนช่วยเหลือ AI — ใช้งานแอปหลักต่อได้',
+                                  )
+                                : Text(_aiMessage),
+                          ),
+                        ),
+                      )
+                    : ManagedTutorTestScreen(
+                        embedded: true,
+                        host: _runtime!.host,
+                        bridge: _bridge!,
+                        loadWords: () async {
+                          final owner = _runtime!.identity.value?.ownerId;
+                          if (owner == null) return [];
+                          final db = _database!;
+                          final rows =
+                              await (db.select(db.vocabularyWords)
+                                    ..where(
+                                      (w) =>
+                                          PackagedStarterAccess.wordsFor(
+                                            db,
+                                            owner,
+                                          ) &
+                                          w.isDeleted.equals(false),
+                                    )
+                                    ..orderBy([
+                                      (w) => OrderingTerm.asc(w.spelling),
+                                    ])
+                                    ..limit(50))
+                                  .get();
+                          if (_runtime!.identity.value?.ownerId != owner) {
+                            return [];
+                          }
+                          return rows
+                              .map(
+                                (w) => <String, dynamic>{
+                                  'id': w.id,
+                                  'spelling': w.spelling,
+                                  'meaning': w.meaning,
+                                  'partOfSpeech': w.partOfSpeech,
+                                  'revision': w.contentRevision,
+                                },
                               )
-                              ..orderBy([(w) => OrderingTerm.asc(w.spelling)])
-                              ..limit(50))
-                            .get();
-                    if (_runtime!.identity.value?.ownerId != owner) return [];
-                    return rows
-                        .map(
-                          (w) => <String, dynamic>{
-                            'id': w.id,
-                            'spelling': w.spelling,
-                            'meaning': w.meaning,
-                            'partOfSpeech': w.partOfSpeech,
-                            'revision': w.contentRevision,
-                          },
-                        )
-                        .toList();
-                  },
-                  openLogin: (_) => const MethodChannel(
-                    'com.lexiquest.app/ari-test',
-                  ).invokeMethod<void>('openLogin'),
-                ),
+                              .toList();
+                        },
+                        openLogin: (_) => const MethodChannel(
+                          'com.lexiquest.app/ari-test',
+                        ).invokeMethod<void>('openLogin'),
+                      ),
               ),
             ),
           ],
