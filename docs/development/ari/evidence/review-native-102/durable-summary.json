@@ -1,0 +1,32 @@
+{
+  "answer_attempts": {
+    "before": 108,
+    "after": 109,
+    "added": 1,
+    "removed": 0
+  },
+  "srs_states": {
+    "before": 12,
+    "after": 12,
+    "added": 0,
+    "removed": 0
+  },
+  "points_ledger_entries": {
+    "before": 46,
+    "after": 47,
+    "added": 1,
+    "removed": 0
+  },
+  "reading_progress_entries": {
+    "before": 4,
+    "after": 4,
+    "added": 0,
+    "removed": 0
+  },
+  "reading_events": {
+    "before": 39,
+    "after": 39,
+    "added": 0,
+    "removed": 0
+  }
+}

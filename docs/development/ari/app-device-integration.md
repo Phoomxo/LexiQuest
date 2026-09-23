@@ -779,3 +779,7 @@ Targeted screen suite: **11 tests PASS**. New real-Drift case pauses owner looku
 ### Checkpoint101 — committed save, failed readback and retry
 
 Targeted screen suite: **12 tests PASS**. After real save commits, injected owner lookup failure prevents list readback. Context stays unconfirmed; database retains exactly one revision. Manual retry disconnected preserves the identical payload and revision count; reconnect returns list context. Initial fixture expected an extra owner callback and failed its injection assertion; corrected after inspecting owner-generation/coordinator code, without weakening checks. Application source unchanged; native099 retained. [Evidence](personalsets-confirmation-101.json). W08 final audit and full-goal acceptance remain open.
+
+### Checkpoint102 — native baseline review and SRS distinction
+
+Vivo isolated098: Today -> review center -> spoon -> manual correct Thai answer ->1/1 result -> return. Database adds exactly one recognition answer and one points entry; SRS unchanged. Eligibility policy explicitly denies masterySrs for recognition. Baseline answer/feedback works, but this does not prove SRS recall completion. Audit launch semantics and connected/disconnected path next. [Evidence](review-native-102.json).
