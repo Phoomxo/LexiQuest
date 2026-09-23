@@ -134,12 +134,16 @@ final class FlashcardReviewController extends ChangeNotifier {
 
   var _index = 0;
   var _phase = FlashcardReviewPhase.awaitingRecall;
+  int _committedResponseCount = 0;
   PendingCurrentActivityEvidence? _pendingEvidence;
   _FlashcardEvidenceKind? _pendingKind;
   PendingLearningSessionClose? _pendingClose;
   bool _disposed = false;
 
   QuizSession get session => _session;
+
+  /// Acknowledged evidence only; reveal/close retries never count twice.
+  int get committedResponseCount => _committedResponseCount;
   int get index => _index;
   QuizQuestion get currentQuestion => _session.questions[_index];
   FlashcardReviewPhase get phase => _phase;
@@ -266,6 +270,7 @@ final class FlashcardReviewController extends ChangeNotifier {
   }
 
   Future<void> _afterEvidenceCommitted(_FlashcardEvidenceKind kind) async {
+    _committedResponseCount = _index + 1;
     _pendingEvidence = null;
     _pendingKind = null;
     if (kind == _FlashcardEvidenceKind.exposure) {

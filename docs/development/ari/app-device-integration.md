@@ -571,3 +571,7 @@ Canonical SRS screen now publishes owner-bound read-only phase/reveal context, d
 ### Flashcard native journey — checkpoint 057
 
 Live AI correctly read revealed card1/10 and distinguished exposure from independent recall. After explicit disconnect, the ten-card session completed with exactly eight exposure and two self-rating records. Legacy numeric aggregate is not recall accuracy. Found OPEN FLASHCARD-PROGRESS-057: shared progress stayed0% while card index advanced; next work must diagnose/fix with regression coverage. [Evidence](flashcard-native-057.json). No full acceptance claim.
+
+### Flashcard progress repair — checkpoint 058
+
+FLASHCARD-PROGRESS-057 fixed: native evidence acknowledgements now update shared progress without another write. Three connection variants reproduced0 instead of1 before repair. Full26 screen tests pass, including failure/retry count invariants for both self-ratings. APK058 on Vivo shows0/50/100% for a two-card exposure review and returns home. Analysis clean. [Evidence](flashcard-progress-058.json). Remaining full-goal acceptance open.

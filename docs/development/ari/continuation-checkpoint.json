@@ -1,25 +1,24 @@
 {
-  "revision": 81,
+  "revision": 82,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "057 live flashcard revealed guidance and disconnect10-card completion passed;durable8exposure+2recall;sharedprogress0% defect found",
+  "previousTurn": "058 fixed FLASHCARD-PROGRESS-057;26host tests and native0/50/100 progress pass",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Fix FLASHCARD-PROGRESS-057;verify self-rating/retry MCP transitions",
+  "current": "Remaining native core modes and actual workflow acceptance gaps",
   "next": [
-    "FLASHCARD-PROGRESS-057 shared progress stays0% while cards advance; diagnose and fix before acceptance",
     "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
     "Definition/cloze/typedrecall/associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
     "Successful speech/camera and actual sync path prerequisites"
   ],
-  "nativeInstalledSource": "056 evidence/flashcard-assistance-056/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-056.apk",
+  "nativeInstalledSource": "058 evidence/flashcard-progress-058/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-058.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No live bridge/build/test",
-  "testFixture": "AriCEFR045 retained;new completed10-card SRS session057;device restart tohome;AI disconnected;USB2",
+  "testFixture": "AriCEFR045 retained;completed2-card exposure session058;flashcard configuration now2;devicehome;AIcollapsed/disconnected;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

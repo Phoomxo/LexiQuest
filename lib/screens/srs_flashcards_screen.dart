@@ -347,7 +347,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _isCompatibilityDeck ? _isFlipped : (_review?.isRevealed ?? false);
 
   void _onReviewChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final review = _review;
+    if (review != null) {
+      _lessonLifecycle?.reflectNativeCommittedResponses(
+        sessionId: review.session.id,
+        count: review.committedResponseCount,
+      );
+    }
+    setState(() {});
   }
 
   Future<void> _playAudio() async {

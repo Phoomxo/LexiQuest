@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/cefr_practice_examples.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
@@ -644,15 +646,23 @@ void main() {
         );
         addTearDown(voice.dispose);
 
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: const FlashcardModeAdapter(),
+        );
+        addTearDown(controller.dispose);
         await tester.pumpWidget(
           MaterialApp(
-            home: SrsFlashcardsScreen(
-              voice: voice,
-              learning: learning,
-              evidenceAdapter: CurrentActivityEvidenceAdapter(
+            home: UnifiedLessonShell(
+              controller: controller,
+              builder: (_) => SrsFlashcardsScreen(
+                voice: voice,
                 learning: learning,
+                evidenceAdapter: CurrentActivityEvidenceAdapter(
+                  learning: learning,
+                ),
+                modeAdapter: const FlashcardModeAdapter(),
               ),
-              modeAdapter: const FlashcardModeAdapter(),
             ),
           ),
         );
@@ -669,6 +679,7 @@ void main() {
         ).removeCurrentSnackBar();
         await tester.pumpAndSettle();
         expect(rating, findsNothing);
+        expect(controller.state.committedResponseCount, 0);
         final retryButton = find.byKey(
           const ValueKey<String>('current-evidence-retry'),
         );
@@ -676,6 +687,7 @@ void main() {
         await tester.tap(retryButton);
         await tester.pumpAndSettle();
 
+        expect(controller.state.committedResponseCount, 1);
         expect(repository.commands, hasLength(2));
         final first = repository.commands.first;
         final retry = repository.commands.last;
@@ -750,11 +762,21 @@ void main() {
         clock = now;
         String? aiOwner = seedSession.ownerId;
         final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: const FlashcardModeAdapter(),
+        );
+        addTearDown(controller.dispose);
         final app = MaterialApp(
-          home: SrsFlashcardsScreen(
-            learning: learning,
-            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-            modeAdapter: const FlashcardModeAdapter(),
+          home: UnifiedLessonShell(
+            controller: controller,
+            builder: (_) => SrsFlashcardsScreen(
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const FlashcardModeAdapter(),
+            ),
           ),
         );
         await tester.pumpWidget(
@@ -763,6 +785,7 @@ void main() {
               : MenuActionScope(registry: registry, child: app),
         );
         await tester.pumpAndSettle();
+        expect(controller.state.committedResponseCount, 0);
         final originalState = tester.state(find.byType(SrsFlashcardsScreen));
         Map contextData() {
           final entries = registry.snapshot()['context'] as List;
@@ -816,6 +839,8 @@ void main() {
         expect(srs.single.repetitions, before.repetitions);
         expect(srs.single.lapses, before.lapses);
         expect(srs.single.dueAtUtcMs, before.dueAtUtcMs);
+        expect(controller.state.committedResponseCount, 1);
+        expect(controller.state.progress, 1.0);
         expect(find.text('หนังสือ'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('cefr-practice-example')),

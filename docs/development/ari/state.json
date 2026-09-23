@@ -239,5 +239,6 @@
   "latestHandwritingAssistance": "handwriting-assistance-054.json",
   "latestHandwritingNative": "handwriting-native-055.json",
   "latestFlashcardAssistance": "flashcard-assistance-056.json",
-  "latestFlashcardNative": "flashcard-native-057.json"
+  "latestFlashcardNative": "flashcard-native-057.json",
+  "latestFlashcardProgress": "flashcard-progress-058.json"
 }
