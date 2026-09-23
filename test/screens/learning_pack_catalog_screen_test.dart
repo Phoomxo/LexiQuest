@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,13 +34,80 @@ import '../support/test_quest_use_cases.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
-  testWidgets('personal sets entry remains reachable from an empty catalog', (tester) async {
+  for (final empty in [true, false]) {
+    testWidgets('catalog assistance reflects filter and empty state $empty', (
+      tester,
+    ) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      String? owner = 'fixture';
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: _dependencies(database, emptyCatalog: empty),
+            child: const MaterialApp(home: LearningPackCatalogScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      Map summary() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere(
+                      (dynamic x) =>
+                          x['id'] == 'study-planning/catalog-summary',
+                    )['value']
+                    as String,
+              )
+              as Map;
+      expect(summary()['catalogCount'], empty ? 0 : 1);
+      expect(summary()['matchingCount'], empty ? 0 : 1);
+      expect(summary()['state'], empty ? 'empty-catalog' : 'matches');
+      expect(summary()['interpretation'], contains('not-learner-proficiency'));
+      expect(registry.snapshot()['actions'], isEmpty);
+      if (!empty) {
+        final entries = registry.snapshot()['context'] as List;
+        final pack = jsonDecode(
+          entries.singleWhere(
+                (dynamic x) => (x['id'] as String).startsWith(
+                  'study-planning/catalog-pack/',
+                ),
+              )['value']
+              as String,
+        );
+        expect(pack['title'], 'Travel basics');
+        expect(pack['revision'], 1);
+        await tester.enterText(find.byType(TextField), 'no-match-113');
+        await tester.pumpAndSettle();
+        expect(summary()['catalogCount'], 1);
+        expect(summary()['matchingCount'], 0);
+        expect(summary()['state'], 'no-matches');
+        expect(
+          (registry.snapshot()['context'] as List).where(
+            (dynamic x) =>
+                (x['id'] as String).startsWith('study-planning/catalog-pack/'),
+          ),
+          isEmpty,
+        );
+        expect(find.text('ไม่พบชุดบทเรียนที่ตรงกับการค้นหา'), findsOneWidget);
+      }
+      owner = null;
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
+    });
+  }
+  testWidgets('personal sets entry remains reachable from an empty catalog', (
+    tester,
+  ) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
-    await tester.pumpWidget(AppDependenciesScope(
-      dependencies: _dependencies(database, emptyCatalog: true),
-      child: const MaterialApp(home: LearningPackCatalogScreen()),
-    ));
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, emptyCatalog: true),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('ชุดคำส่วนตัว'));
     await tester.pumpAndSettle();

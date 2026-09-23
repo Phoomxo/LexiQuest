@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
@@ -50,11 +52,13 @@ final class _LearningPackCatalogScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: [IconButton(
-          tooltip: 'ชุดคำส่วนตัว',
-          onPressed: () => openPersonalSets(context),
-          icon: const Icon(Icons.collections_bookmark_outlined),
-        )],
+        actions: [
+          IconButton(
+            tooltip: 'ชุดคำส่วนตัว',
+            onPressed: () => openPersonalSets(context),
+            icon: const Icon(Icons.collections_bookmark_outlined),
+          ),
+        ],
         title: Text(
           NavigationGlossary.require('study-planning/catalog').fullThaiLabel,
         ),
@@ -75,8 +79,12 @@ final class _LearningPackCatalogScreenState
           }
           final packs = snapshot.requireData.packs;
           if (packs.isEmpty) {
-            return const Center(
-              child: Text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'),
+            return _catalogContext(
+              catalogCount: 0,
+              matchingCount: 0,
+              child: const Center(
+                child: Text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'),
+              ),
             );
           }
           final query = _search.text.trim().toLowerCase();
@@ -99,85 +107,91 @@ final class _LearningPackCatalogScreenState
                         .contains(query),
               )
               .toList();
-          return SafeArea(
-            top: false,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 960),
-                child: ListView(
-                  padding: EdgeInsets.all(
-                    MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
-                  ),
-                  children: [
-                    TextField(
-                      controller: _search,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        labelText: 'ค้นหาชุดบทเรียน',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: query.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: 'ล้างการค้นหา',
-                                constraints: const BoxConstraints(
-                                  minWidth: 48,
-                                  minHeight: 48,
+          return _catalogContext(
+            catalogCount: packs.length,
+            matchingCount: visible.length,
+            child: SafeArea(
+              top: false,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: ListView(
+                    padding: EdgeInsets.all(
+                      MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                    ),
+                    children: [
+                      TextField(
+                        controller: _search,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          labelText: 'ค้นหาชุดบทเรียน',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: query.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'ล้างการค้นหา',
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 48,
+                                  ),
+                                  onPressed: () => setState(_search.clear),
+                                  icon: const Icon(Icons.clear),
                                 ),
-                                onPressed: () => setState(_search.clear),
-                                icon: const Icon(Icons.clear),
-                              ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final level in levels)
-                          FilterChip(
-                            label: Text(level),
-                            selected: _level == level,
-                            onSelected: (selected) => setState(
-                              () => _level = selected ? level : null,
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final level in levels)
+                            FilterChip(
+                              label: Text(level),
+                              selected: _level == level,
+                              onSelected: (selected) => setState(
+                                () => _level = selected ? level : null,
+                              ),
                             ),
-                          ),
-                        for (final skill in skills)
-                          FilterChip(
-                            label: Text(skill),
-                            selected: _skill == skill,
-                            onSelected: (selected) => setState(
-                              () => _skill = selected ? skill : null,
+                          for (final skill in skills)
+                            FilterChip(
+                              label: Text(skill),
+                              selected: _skill == skill,
+                              onSelected: (selected) => setState(
+                                () => _skill = selected ? skill : null,
+                              ),
                             ),
-                          ),
-                        for (final goal in goals)
-                          FilterChip(
-                            label: Text(goal),
-                            selected: _goal == goal,
-                            onSelected: (selected) =>
-                                setState(() => _goal = selected ? goal : null),
-                          ),
-                        for (final topic in topics)
-                          FilterChip(
-                            label: Text(topic),
-                            selected: _topic == topic,
-                            onSelected: (selected) => setState(
-                              () => _topic = selected ? topic : null,
+                          for (final goal in goals)
+                            FilterChip(
+                              label: Text(goal),
+                              selected: _goal == goal,
+                              onSelected: (selected) => setState(
+                                () => _goal = selected ? goal : null,
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (visible.isEmpty)
-                      Text(
-                        query.isEmpty
-                            ? 'ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'
-                            : 'ไม่พบชุดบทเรียนที่ตรงกับการค้นหา',
-                      )
-                    else
-                      for (final pack in visible) _PackTile(pack: pack),
-                    const SizedBox(height: 16),
-                  ],
+                          for (final topic in topics)
+                            FilterChip(
+                              label: Text(topic),
+                              selected: _topic == topic,
+                              onSelected: (selected) => setState(
+                                () => _topic = selected ? topic : null,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (visible.isEmpty)
+                        Text(
+                          query.isEmpty
+                              ? 'ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'
+                              : 'ไม่พบชุดบทเรียนที่ตรงกับการค้นหา',
+                        )
+                      else
+                        for (var index = 0; index < visible.length; index++)
+                          _PackTile(pack: visible[index], contextIndex: index),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -186,12 +200,42 @@ final class _LearningPackCatalogScreenState
       ),
     );
   }
+
+  Widget _catalogContext({
+    required int catalogCount,
+    required int matchingCount,
+    required Widget child,
+  }) => MenuActionBinding(
+    id: 'study-planning/catalog-summary',
+    label: 'ชุดบทเรียนและผลการกรองที่แสดง',
+    onInvoke: null,
+    readValue: jsonEncode({
+      'catalogCount': catalogCount,
+      'matchingCount': matchingCount,
+      'state': catalogCount == 0
+          ? 'empty-catalog'
+          : matchingCount == 0
+          ? 'no-matches'
+          : 'matches',
+      'searchActive': _search.text.trim().isNotEmpty,
+      'filtersActive': [
+        _level,
+        _topic,
+        _skill,
+        _goal,
+      ].whereType<String>().length,
+      'interpretation':
+          'Catalog metadata and matching results, not-learner-proficiency. A pack level describes content, not the learner. No enrollment or learning completion is implied.',
+    }),
+    child: child,
+  );
 }
 
 final class _PackTile extends StatelessWidget {
-  const _PackTile({required this.pack});
+  const _PackTile({required this.pack, required this.contextIndex});
 
   final LearningPackSummary pack;
+  final int contextIndex;
 
   void _open(BuildContext context) {
     AppNavigator.pushPage<void>(
@@ -212,23 +256,49 @@ final class _PackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label:
-          '${pack.title}, ${pack.cefrLevel}, ${pack.topic}, รุ่น '
-          '${pack.revision}',
-      onTap: () => _open(context),
-      child: ExcludeSemantics(
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          key: ValueKey<String>(
-            'learning-pack/open/${pack.packId}/${pack.revision}',
-          ),
-          onTap: () => _open(context),
-          title: Text(pack.title),
-          subtitle: Text(
-            '${pack.cefrLevel} · ${pack.topic} · ${pack.skill} · '
-            '${pack.goal} · รุ่น ${pack.revision}',
+    // Five fields stay within the transport budget even if every rune needs
+    // six-character JSON escaping. Native labels retain the full metadata.
+    String bounded(String value) => String.fromCharCodes(value.runes.take(20));
+    final texts = [
+      pack.title,
+      pack.cefrLevel,
+      pack.topic,
+      pack.skill,
+      pack.goal,
+    ];
+    return MenuActionBinding(
+      id: 'study-planning/catalog-pack/$contextIndex',
+      label: 'ข้อมูลชุดบทเรียนที่แสดง',
+      onInvoke: null,
+      readValue: jsonEncode({
+        'title': bounded(pack.title),
+        'revision': pack.revision,
+        'level': bounded(pack.cefrLevel),
+        'topic': bounded(pack.topic),
+        'skill': bounded(pack.skill),
+        'goal': bounded(pack.goal),
+        'textTruncated': texts.any((value) => value.runes.length > 20),
+        'interpretation':
+            'Content metadata, not learner achievement. Learner opens the pack with the original control.',
+      }),
+      child: Semantics(
+        button: true,
+        label:
+            '${pack.title}, ${pack.cefrLevel}, ${pack.topic}, รุ่น '
+            '${pack.revision}',
+        onTap: () => _open(context),
+        child: ExcludeSemantics(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            key: ValueKey<String>(
+              'learning-pack/open/${pack.packId}/${pack.revision}',
+            ),
+            onTap: () => _open(context),
+            title: Text(pack.title),
+            subtitle: Text(
+              '${pack.cefrLevel} · ${pack.topic} · ${pack.skill} · '
+              '${pack.goal} · รุ่น ${pack.revision}',
+            ),
           ),
         ),
       ),

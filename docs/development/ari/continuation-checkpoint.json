@@ -1,14 +1,14 @@
 {
-  "revision": 136,
+  "revision": 137,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "112 actualAI empty weakness0to1 anddisconnectednativePASS;originalDBrestored",
+  "previousTurn": "113 W08 catalog context added;REDthen23PASS;analysisclean",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Audit W07 remaining rollout limitation and move to W08 final coverage gaps",
+  "current": "Complete catalog detail context and late-attachment coverage before native build",
   "next": [
-    "Keep transfer-probe live prerequisite explicit;no research activation or false W07 closure",
-    "Audit W08 planning/personalsets/goals/preferences coverage and address concrete remaining gaps",
-    "Continue all14workflow14mode acceptance"
+    "Inspect pack-detail data/owner lifecycle;implement optional read-only context with meaningful tests",
+    "Verify catalog late-attachment and adversarial metadata then build/nativecatalog",
+    "Continue full14workflow14mode acceptance"
   ],
   "nativeInstalledSource": "evidence/weakness-native-111/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-110.apk",

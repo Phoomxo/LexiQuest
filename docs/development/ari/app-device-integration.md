@@ -829,3 +829,8 @@ Built/installed110. Fresh disposable SQLite fixture on Vivo showed sample0 witho
 ### Empty weakness actual-provider acceptance — checkpoint112
 
 Vivo isolated110 actual replies accurately read0 then1 sample,0weak words/0due, rejecting mastery inference in both states. One correct bag answer was entered manually;10-item session exited early, not completed. After explicitdisconnect clinic stayed usable and returned to progress. Retained disposable database contains exactly that one recognition attempt. Original main/WAL/SHM restored byte-identically;bridge/reverse/config cleaned. [Evidence](weakness-live-112.json). W07 transfer-probe live prerequisite and full14workflow/14mode acceptance remain open.
+
+
+### W08 catalog context — checkpoint113
+
+Coverage audit found catalog/detail descriptive context missing. Added read-only catalog counts, no-match/empty states and bounded mounted pack metadata/revision, explicitly not learner proficiency or completion. Native controls remain unchanged. RED then23 catalog tests PASS;two-file analysis clean. [Evidence](catalog-context-113.json). Detail context,late-attachment/adversarial coverage and native actual-provider verification remain pending;installed110 unchanged.

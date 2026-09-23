@@ -163,9 +163,10 @@
         "personalsets-context-098.json",
         "personalsets-native-099.json",
         "personalsets-failure-100.json",
-        "personalsets-confirmation-101.json"
+        "personalsets-confirmation-101.json",
+        "catalog-context-113.json"
       ],
-      "remainingAcceptance": "100/101 host12PASS cover pre-write and post-commit readback owner lookup failures with disconnected retry. Final W08 coverage audit remains;099 native evidence retained."
+      "remainingAcceptance": "Audit113 found catalog/detail gap:catalog host23PASS;detail context,lateattach/adversarialmetadata andnativecatalog pending. Personalsets100/101 andnative099 evidence retained."
     },
     {
       "id": "W09",
