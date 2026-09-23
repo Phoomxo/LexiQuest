@@ -583,3 +583,8 @@ Two-item mixed route completed without provider. Blank typed submit disabled; ac
 ### Quiz feedback continuation — checkpoint 060
 
 TYPED-FEEDBACK-ACTION-059 host fix: feedback now names the actual host continuation (next question/results). Correctness, committed answer and persistence retries unchanged. New final-wrong regression cases and non-final assertions pass in the full quiz/panel suites; analysis clean. Native build/retest pending;installed APK remains058. [Evidence](feedback-action-060.json).
+
+
+### Native typed recall 061
+
+APK061 from845492e3: live provider identified typed recall and returned Thai method guidance. Explicit disconnect preserved partial `wro`; appending `ng` produced committed `wrong`. Final feedback correctly named results. Native SQLite confirmed completed session with exactly2 attempts (recognition correct, independentRecall incorrect), score50%. Current translation direction was not exposed by method context; response asked user. All14 workflow/mode acceptance remains open. See [evidence](typed-recall-native-061.json). Bridge stopped and private debug connection removed; original app/accounts preserved.

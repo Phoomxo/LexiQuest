@@ -1,0 +1,24 @@
+{
+  "checkpoint": "061",
+  "sourceCommit": "845492e3",
+  "apkSha256": "a6ffed2da3fe4976313f440708bfbd008a1834148412deb9d0cb1be7d946fa0a",
+  "status": "NATIVE_REPRESENTATIVE_PASS",
+  "verified": [
+    "Private provider login and live typed-recall method guidance in Thai",
+    "Partial answer wro retained after explicit disconnect; appending ng submitted wrong",
+    "Empty submit disabled; committed answer locked",
+    "Final wrong feedback says results, matching available button",
+    "Results 50 percent; exactly two durable attempts: recognition correct and independentRecall incorrect"
+  ],
+  "defect": "TYPED-FEEDBACK-ACTION-059 native retest passed",
+  "limitations": [
+    "AI method context did not identify active translation direction; response asked user",
+    "Representative two-item journey only; not all14 modes/workflows acceptance",
+    "Debug USB bridge still required"
+  ],
+  "evidence": [
+    "evidence/typed-recall-native-061/observations.json",
+    "evidence/typed-recall-native-061/durable-summary.json"
+  ],
+  "wholeGoalComplete": false
+}
