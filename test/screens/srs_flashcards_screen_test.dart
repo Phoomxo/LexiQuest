@@ -651,22 +651,36 @@ void main() {
           adapter: const FlashcardModeAdapter(),
         );
         addTearDown(controller.dispose);
+        String? aiOwner = 'owner-a';
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        Map assistance() =>
+            jsonDecode(
+                  (registry.snapshot()['context'] as List).singleWhere(
+                        (e) => e['id'] == 'flashcard/review-assistance',
+                      )['value']
+                      as String,
+                )
+                as Map;
         await tester.pumpWidget(
-          MaterialApp(
-            home: UnifiedLessonShell(
-              controller: controller,
-              builder: (_) => SrsFlashcardsScreen(
-                voice: voice,
-                learning: learning,
-                evidenceAdapter: CurrentActivityEvidenceAdapter(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: UnifiedLessonShell(
+                controller: controller,
+                builder: (_) => SrsFlashcardsScreen(
+                  voice: voice,
                   learning: learning,
+                  evidenceAdapter: CurrentActivityEvidenceAdapter(
+                    learning: learning,
+                  ),
+                  modeAdapter: const FlashcardModeAdapter(),
                 ),
-                modeAdapter: const FlashcardModeAdapter(),
               ),
             ),
           ),
         );
         await tester.pumpAndSettle();
+        expect(assistance()['phase'], 'awaitingRecall');
         final rating = find.byKey(
           ValueKey<String>(
             remembered ? 'flashcard-remembered' : 'flashcard-not-remembered',
@@ -680,6 +694,13 @@ void main() {
         await tester.pumpAndSettle();
         expect(rating, findsNothing);
         expect(controller.state.committedResponseCount, 0);
+        expect(assistance()['phase'], 'evidenceRetryRequired');
+        expect(
+          assistance()['evidenceMeaning'],
+          'no-recall-result-in-this-context',
+        );
+        aiOwner = null;
+        expect(registry.snapshot()['context'], isEmpty);
         final retryButton = find.byKey(
           const ValueKey<String>('current-evidence-retry'),
         );
@@ -688,6 +709,12 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(controller.state.committedResponseCount, 1);
+        expect(registry.snapshot()['context'], isEmpty);
+        aiOwner = 'owner-a';
+        // The one-card session has ended: reconnect must not expose the old card.
+        expect(registry.snapshot()['context'], isEmpty);
+        expect(repository.successfulFinishCalls, hasLength(1));
+        expect(registry.snapshot()['actions'], isEmpty);
         expect(repository.commands, hasLength(2));
         final first = repository.commands.first;
         final retry = repository.commands.last;

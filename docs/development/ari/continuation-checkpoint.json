@@ -1,7 +1,7 @@
 {
-  "revision": 127,
+  "revision": 128,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "103 native baseline SRS:Good spoon changes only spoon schedule;plate reveal exposure preserves schedule;2attempts1pointsentry",
+  "previousTurn": "104 SRS host retry/connectionchange PASS for remembered and notremembered;no stalecard aftersessionend",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
   "current": "W07 actualprovider SRS context connected/disconnected",
@@ -17,8 +17,8 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;no bridge;isolated098 restartedhome after103snapshot",
+  "liveProcesses": "None;bridge64483 stopped;USB reverse and runtime config removed",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim.",
-  "jev": "User wants Jev for development only, zero expenditure. IAB tab1 Vercel login awaiting user;no Jev call/key/purchase. Free promo ends2026-09-25;verify zero price and account eligibility before calls."
+  "jev": "API key saved Windows DPAPI under LOCALAPPDATA/LexiQuestDevSecrets/jev-gateway.dpapi; never print/commit. No model calls. Account requests card to unlock free credits;catalog API nonzero despite promo pageFree. User zero-expenditure restriction remains;await billing prerequisite and verification, do not purchase."
 }

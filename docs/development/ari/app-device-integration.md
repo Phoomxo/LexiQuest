@@ -787,3 +787,7 @@ Vivo isolated098: Today -> review center -> spoon -> manual correct Thai answer 
 ### Checkpoint103 — native SRS rating versus exposure
 
 Isolated Vivo098 without provider: simulated Good on spoon before reveal, then revealed plate and continued. Two attempts stored; only spoon schedule changed, plate remained unchanged. One points entry; reading tables unchanged. These are agent-operated QA fixtures, not measured human recall. Separate SRS route exists; review-center recognition102 correctly does not update its schedule. [Evidence](srs-native-103.json). Connected/disconnected provider acceptance remains open. Jev development-tool setup is awaiting Vercel login; no paid or live Jev call has run.
+
+### Checkpoint104 — SRS retry across optional connection changes
+
+Bounded SRS screen suite PASS. Extended both self-rating failure tests: context correctly reports retry, disconnect hides it, manual retry retains frozen evidence identity and commits once. Completed one-card session finishes once and exposes no stale card after reconnect. Initial fixture expected a card after completion; corrected to stronger empty-context/one-finish assertions. Application source unchanged. [Evidence](srs-context-104.json). Native provider journey remains open.
