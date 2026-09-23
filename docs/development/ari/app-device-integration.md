@@ -559,3 +559,7 @@ Six new cases cross correct/incorrect answers with absent/connected/disconnected
 ### Handwriting optional assistance — checkpoint 054
 
 Added owner-bound, read-only method guidance to the standalone scratchpad. Private strokes and typed text stay local; guidance cannot grade or award progress. Seven selected host tests pass, including absent/connected/disconnected variants with all-table storage invariance. APK054 built and installed on Vivo; baseline drawing, undo and both empty/populated self-check feedback observed. Native live-provider guidance/disconnect remains pending; this does not close the 14-mode goal. See [structured evidence](handwriting-assistance-054.json).
+
+### Handwriting live guidance — checkpoint 055
+
+APK054 live provider returned Thai method guidance and correctly denied private stroke/text access, grading and rewards. A connected stroke survived explicit disconnect; clear and subsequent drawing/self-check continued manually. Repeated self-check captured its transient feedback. Native DB was not re-snapshotted; host054 supplies storage invariance evidence. Bridge cleaned up. [Evidence](handwriting-native-055.json). Flashcard next; full goal open.

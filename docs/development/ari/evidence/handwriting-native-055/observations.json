@@ -1,0 +1,1108 @@
+[
+  {
+    "at": "2026-09-23T05:40:13.270352+00:00",
+    "action": [
+      "swipe",
+      "200",
+      "700",
+      "650",
+      "950",
+      "700"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2215]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กิจกรรมนี้เป็นกระดานฝึกเขียนแบบไม่ให้คะแนน: เขียนหรือพิมพ์คำ/ประโยค แล้วเทียบกับคำอ้างอิงเอง ใช้ **Undo** เพื่อลบล่าสุด, **Clear** เพื่อล้างทั้งหมด และเลือก self-check หรือฝึกต่อได้\n\nฉัน **อ่านลายเส้นหรือคำตอบที่พิมพ์ของคุณไม่ได้** จึงตรวจความถูกต้องหรือให้คะแนนไม่ได้ และกิจกรรมนี้ **ไม่บันทึกความคืบหน้าหรือรางวัล**  \n\nตัวอย่าง: เขียน `apple` แล้วเทียบกับ `apple` ด้วยตนเอง\n\nอยากให้ฉันช่วยอธิบายวิธีเขียนคำอังกฤษคำไหนไหม?",
+        "bounds": "[88,1361][992,1778]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1860][1025,2083]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,2025][981,2083]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2083][231,2215]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2083][557,2215]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2215][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:40:16.044152+00:00",
+    "action": [
+      "tap",
+      "400",
+      "2140"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เชื่อมบัญชี ChatGPT",
+        "bounds": "[55,1361][1025,1434]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,1434][1025,1566]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,1566][1025,1698]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1786][1025,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1940][1025,2072]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2072][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:40:18.885590+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:40:26.543758+00:00",
+    "action": [
+      "tap",
+      "240",
+      "2050"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:40:30.352440+00:00",
+    "action": [
+      "tap",
+      "650",
+      "1280"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "false",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:41:25.129553+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2190"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เชื่อมบัญชี ChatGPT",
+        "bounds": "[55,1361][1025,1434]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,1434][1025,1566]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,1566][1025,1698]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1786][1025,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1940][1025,2072]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2072][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:41:32.304605+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "false",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:41:35.563458+00:00",
+    "action": [
+      "swipe",
+      "200",
+      "700",
+      "650",
+      "950",
+      "700"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:41:38.334062+00:00",
+    "action": [
+      "tap",
+      "240",
+      "2050"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียน",
+        "bounds": "[198,116][559,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ",
+        "bounds": "[0,231][1080,2159]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกเขียน",
+        "bounds": "[44,275][1036,352]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ",
+        "bounds": "[44,374][1036,506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พื้นที่ฝึกเขียนในเครื่อง",
+        "bounds": "[44,539][1036,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย้อนเส้นล่าสุด",
+        "bounds": "[44,1221][441,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ล้างสิ่งที่เขียน",
+        "bounds": "[463,1221][856,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พิมพ์แทนการเขียน",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ",
+        "bounds": "[44,1474][1036,1606]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1606][1036,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้",
+        "bounds": "[88,1771][705,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,1771][992,1829]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1851][1036,1983]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตรวจด้วยตัวเองแล้ว",
+        "bounds": "[44,1983][494,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อยากฝึกเพิ่ม",
+        "bounds": "[516,1983][847,2115]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คุณตรวจด้วยตัวเองแล้ว ไม่มีการเพิ่มคะแนนหรือรางวัล",
+        "bounds": "[0,2017][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]
