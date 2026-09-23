@@ -211,9 +211,10 @@
       "acceptanceEvidence": [
         "export-assistance-020.json",
         "native-context-028.json",
-        "export-native-081.json"
+        "export-native-081.json",
+        "export-context-082.json"
       ],
-      "remainingAcceptance": "Four personal formats native local save/readback verified081;native connected/disconnected provider guidance and failure-code context audit remain."
+      "remainingAcceptance": "Baseline native four personal formats081 verified;host failure/reconnect/late-attach and owner isolation082 verified. Native live provider format/status guidance and disconnect/save onAPK082 pending."
     },
     {
       "id": "W14",

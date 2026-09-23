@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import '../features/review/domain/review_queue_item.dart';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
@@ -8,9 +10,10 @@ import '../features/identity/domain/owner_lifecycle_manifest.dart';
 import '../runtime/app_dependencies.dart';
 
 class ExportCenterScreen extends StatefulWidget {
-  const ExportCenterScreen({super.key, this.exports});
+  const ExportCenterScreen({super.key, this.exports, this.ownerIdentities});
 
   final ExportUseCases? exports;
+  final ReviewOwnerIdentityReader? ownerIdentities;
 
   @override
   State<ExportCenterScreen> createState() => _ExportCenterScreenState();
@@ -27,12 +30,29 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   String? _status;
   String _assistanceStatus = 'idle';
   String? _failureCode;
+  String? _assistanceOwnerId;
+  bool _ownerReadStarted = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _exports ??=
-        widget.exports ?? AppDependenciesScope.maybeOf(context)?.exports;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _exports ??= widget.exports ?? dependencies?.exports;
+    final owners =
+        widget.ownerIdentities ?? dependencies?.activeOwnerIdentities;
+    if (!_ownerReadStarted && owners != null) {
+      _ownerReadStarted = true;
+      unawaited(_readAssistanceOwner(owners));
+    }
+  }
+
+  Future<void> _readAssistanceOwner(ReviewOwnerIdentityReader owners) async {
+    try {
+      final ownerId = await owners.requireSingleActiveOwnerId();
+      if (mounted) setState(() => _assistanceOwnerId = ownerId);
+    } catch (_) {
+      // Optional AI context must not prevent native exports or create an owner.
+    }
   }
 
   Future<void> _export() async {
@@ -106,27 +126,31 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
     return MenuActionBinding(
       id: 'export/guidance',
       label: 'Export format and operation status',
+      ownerId: _assistanceOwnerId,
       onInvoke: null,
-      readValue: jsonEncode({
-        'format': _format.name,
-        'status': _assistanceStatus,
-        if (_failureCode != null) 'failureCode': _failureCode,
-        'researchConsentRequired': _format == ExportFormat.researchJson,
-        'scope': _format == ExportFormat.anki
-            ? 'vocabulary-only'
-            : _format == ExportFormat.ownerArchiveJson
-            ? 'owner-manifest-not-restore'
-            : 'selected-data',
-        if (_format != ExportFormat.anki &&
-            _format != ExportFormat.ownerArchiveJson)
-          'selection': {
-            'vocabulary': _vocabulary,
-            'attempts': _attempts,
-            'reading': _reading,
-          },
-        'purpose': _formatPurpose(_format),
-        'fileAccess': 'native-controls-only-no-path-or-file-content-shared',
-      }),
+      readValue: _assistanceOwnerId == null
+          ? null
+          : jsonEncode({
+              'format': _format.name,
+              'status': _assistanceStatus,
+              if (_failureCode != null) 'failureCode': _failureCode,
+              'researchConsentRequired': _format == ExportFormat.researchJson,
+              'scope': _format == ExportFormat.anki
+                  ? 'vocabulary-only'
+                  : _format == ExportFormat.ownerArchiveJson
+                  ? 'owner-manifest-not-restore'
+                  : 'selected-data',
+              if (_format != ExportFormat.anki &&
+                  _format != ExportFormat.ownerArchiveJson)
+                'selection': {
+                  'vocabulary': _vocabulary,
+                  'attempts': _attempts,
+                  'reading': _reading,
+                },
+              'purpose': _formatPurpose(_format),
+              'fileAccess':
+                  'native-controls-only-no-path-or-file-content-shared',
+            }),
       child: Scaffold(
         appBar: AppBar(title: const Text('ส่งออกข้อมูล')),
         body: ListView(

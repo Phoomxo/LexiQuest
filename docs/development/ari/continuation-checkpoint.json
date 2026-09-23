@@ -1,23 +1,23 @@
 {
-  "revision": 105,
+  "revision": 106,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "081 unpaired native export4personal formats saved/read back;CSV113 exact rows,Anki byte exact,PDF4pages,archivehash58tables;cancel no file",
+  "previousTurn": "082 fixed session-only export context;18 host tests and analysis pass;APK082 built/installed;native provider retest pending",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W13 live provider guidance and disconnect/save continuity",
+  "current": "W13 native live guidance and disconnect/save continuity on APK082",
   "next": [
-    "Fresh private bridge/login;native export current format/selection/status guidance without file paths/content",
-    "Disconnect and verify selected export still saves;failure-code context audit",
-    "Remaining workflow/mode gaps and final source audit"
+    "Start fresh private bridge/login and verify export format/selection/status guidance without paths or contents",
+    "Disconnect AI and manually save, reconnect while screen retained and verify saved guidance",
+    "Continue remaining workflow/mode gaps and final source audit"
   ],
-  "nativeInstalledSource": "evidence/associative-live-079/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-079.apk",
+  "nativeInstalledSource": "evidence/export-context-082/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-082.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; no bridge/test/build running",
-  "testFixture": "Isolated home;no active lesson;4export files remain local Downloads and ignored build/export-native-081;original accounts preserved",
+  "liveProcesses": "None; build/test finished; no bridge running",
+  "testFixture": "Isolated app launched after082install;081 exports remain local Downloads;original accounts preserved",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

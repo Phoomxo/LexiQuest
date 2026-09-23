@@ -1,0 +1,41 @@
+{
+  "checkpoint": "082",
+  "workflow": "W13",
+  "status": "HOST_OWNER_BOUND_REATTACHMENT_PASS_NATIVE_INSTALLED_PROVIDER_PENDING",
+  "defect": "Export guidance was session-bound; disconnect erased it and successful manual retry while unpaired could not register context. Reconnecting without rebuilding left no saved-state guidance.",
+  "fix": "Read existing local owner through the same identity reader used by the app; pin optional read-only export context to this owner. Suppress context until owner lookup succeeds. Native exports do not depend on lookup or AI.",
+  "host": {
+    "testsPassed": 18,
+    "files": [
+      "test/screens/export_center_flow_test.dart",
+      "test/screens/export_center_screen_test.dart"
+    ],
+    "analysis": "Three files: no issues found",
+    "coverage": [
+      "Five native-store error codes expose safe status only",
+      "Disconnect then manual retry saves exactly one real temporary artifact; reconnect exposes saved status without failure code or path",
+      "Another AI owner sees no context",
+      "First AI login after baseline save attaches without rebuilding",
+      "Optional owner lookup failure does not prevent real native-store-adapter save",
+      "Pending duplicate tap starts one attempt; cancelling and cancelled context match baseline"
+    ],
+    "red": "Five reconnect tests failed with empty context on pre-fix source. First fix verification caught fixture owner missing canonical local: prefix; corrected fixture to real repository identity, preserving assertions.",
+    "limitations": "Document picker/error conditions are injected host fixtures; file generation, SQLite and temporary byte writes are real. Not live provider acceptance."
+  },
+  "native": {
+    "build": "PASS; existing plugin Kotlin migration warnings remain",
+    "install": "Success",
+    "package": "com.lexiquest.app.ariTest",
+    "apk": "build/ari-assistance-082.apk",
+    "providerRetest": "NOT_RUN",
+    "usbStayAwake": 2,
+    "originalApp": "Untouched"
+  },
+  "evidence": "evidence/export-context-082/host-receipt.json",
+  "remaining": [
+    "Native live format/selection/status guidance on APK082",
+    "Explicit native disconnect and manual save continuity",
+    "Remaining original 14 workflow and 14 mode acceptance; full project review after acceptance"
+  ],
+  "wholeGoalComplete": false
+}

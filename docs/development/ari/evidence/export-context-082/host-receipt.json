@@ -1,0 +1,33 @@
+{
+  "areaFingerprints": {
+    "AI": "3931dc3c45c724b21cc7008dc05e974b1891f2e498ebc3213db655bdfe216198"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "65897602c7ee992693f06fb7ea09b4410ef04343",
+  "baseSha": "65897602c7ee992693f06fb7ea09b4410ef04343",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "3931dc3c45c724b21cc7008dc05e974b1891f2e498ebc3213db655bdfe216198",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T09:30:08.0705572+00:00",
+  "finishedAt": "2026-09-23T09:30:36.2043224+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "164ac433ebd5db3274de32331b61199511dc170c06b22fa3d5c3650cf94576ef",
+      "fingerprint": "3931dc3c45c724b21cc7008dc05e974b1891f2e498ebc3213db655bdfe216198",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T09:30:09.7177783+00:00",
+      "FinishedAt": "2026-09-23T09:30:30.9325077+00:00",
+      "Stdout": "build/verification/65897602c7ee992693f06fb7ea09b4410ef04343/164ac433ebd5-3931dc3c45c7-657c1018/Explicit-Flutter-tests.stdout.log",
+      "Stderr": "build/verification/65897602c7ee992693f06fb7ea09b4410ef04343/164ac433ebd5-3931dc3c45c7-657c1018/Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "3931dc3c45c724b21cc7008dc05e974b1891f2e498ebc3213db655bdfe216198",
+      "StdoutHash": "C4C2DC32D10B193FA03E51EF8DC265BB1436D1A4D2EE41AF92364E58DC9D2F92",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "3931dc3c45c724b21cc7008dc05e974b1891f2e498ebc3213db655bdfe216198"
+}

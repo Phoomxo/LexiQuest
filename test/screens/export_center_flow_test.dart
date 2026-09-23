@@ -1,3 +1,4 @@
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 // Explicitly synthetic local widget journeys. The native document picker is
@@ -7,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:vocab_learning_app/features/review/data/drift_review_center_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,7 +35,9 @@ void main() {
         if (format == ExportFormat.researchJson) {
           await tester.runAsync(fixture.consent.accept);
         }
-        final registry = MenuActionRegistry(currentOwner: () => 'test');
+        final registry = MenuActionRegistry(
+          currentOwner: () => 'local:synthetic-ui-export-owner',
+        );
         await _open(tester, fixture, registry: registry);
         await _choose(tester, format);
         await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
@@ -120,24 +124,125 @@ void main() {
     }
   });
 
-  testWidgets('write failure has no success state and real retry saves once', (
+  for (final failure in const [
+    ('PERMISSION_DENIED', 'permissionDenied', 'ไม่มีสิทธิ์'),
+    ('INSUFFICIENT_SPACE', 'insufficientSpace', 'พื้นที่จัดเก็บ'),
+    ('UNAVAILABLE', 'unavailable', 'ไม่พร้อมใช้งาน'),
+    ('CLEANUP_FAILED', 'cleanupFailed', 'อาจมีไฟล์ค้าง'),
+    ('WRITE_FAILED', 'writeFailed', 'ยังยืนยัน'),
+  ]) {
+    testWidgets(
+      'export ${failure.$1} context and disconnected retry save once',
+      (tester) async {
+        final fixture = (await tester.runAsync(_ExportFixture.create))!;
+        fixture.saver = (_) async => throw PlatformException(
+          code: failure.$1,
+          message: 'synthetic-private-detail-do-not-display',
+        );
+        String? aiOwner = 'local:synthetic-ui-export-owner';
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        try {
+          await _open(tester, fixture, registry: registry);
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _status(tester).contains(failure.$3));
+          expect(_status(tester), isNot(contains('บันทึกแล้ว')));
+          expect(_status(tester), isNot(contains('synthetic-private-detail')));
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            0,
+          );
+          final failed = _guidance(registry);
+          expect(failed['status'], 'failed');
+          expect(failed['failureCode'], failure.$2);
+          expect(
+            failed.toString(),
+            isNot(contains('synthetic-private-detail')),
+          );
+          expect(registry.snapshot()['actions'], isEmpty);
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          expect(registry.snapshot()['context'], isEmpty);
+          fixture.saver = null;
+          await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+          await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            1,
+          );
+          expect(registry.snapshot()['context'], isEmpty);
+          aiOwner = 'local:synthetic-ui-export-owner';
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          final saved = _guidance(registry);
+          expect(saved['status'], 'saved');
+          expect(saved.containsKey('failureCode'), isFalse);
+          expect(saved.toString(), isNot(contains(fixture.directory.path)));
+          aiOwner = 'another-owner';
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          expect(registry.snapshot()['context'], isEmpty);
+          expect(_status(tester), startsWith('บันทึกแล้ว'));
+          expect(
+            await tester.runAsync(() => fixture.directory.list().length),
+            1,
+          );
+        } finally {
+          await _close(tester, fixture);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'export saved before first AI login attaches without rebuilding',
+    (tester) async {
+      final fixture = (await tester.runAsync(_ExportFixture.create))!;
+      String? aiOwner;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      try {
+        await _open(tester, fixture, registry: registry);
+        expect(registry.snapshot()['context'], isEmpty);
+        await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
+        await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+        expect(registry.snapshot()['context'], isEmpty);
+        aiOwner = 'local:synthetic-ui-export-owner';
+        registry.invalidateSession(preserveContext: true);
+        await tester.pump();
+        expect(_guidance(registry)['status'], 'saved');
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(await tester.runAsync(() => fixture.directory.list().length), 1);
+      } finally {
+        await _close(tester, fixture);
+      }
+    },
+  );
+
+  testWidgets('optional owner lookup failure leaves native saving available', (
     tester,
   ) async {
     final fixture = (await tester.runAsync(_ExportFixture.create))!;
-    fixture.saver = (_) async => throw PlatformException(
-      code: 'PERMISSION_DENIED',
-      message: 'synthetic-private-detail-do-not-display',
+    final registry = MenuActionRegistry(
+      currentOwner: () => 'local:synthetic-ui-export-owner',
     );
     try {
-      await _open(tester, fixture);
-      await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
-      await _until(tester, () => _status(tester).contains('ไม่มีสิทธิ์'));
-      expect(_status(tester), isNot(contains('บันทึกแล้ว')));
-      expect(_status(tester), isNot(contains('synthetic-private-detail')));
-      expect(await tester.runAsync(() => fixture.directory.list().length), 0);
-      fixture.saver = null;
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: ExportCenterScreen(
+              exports: fixture.exports,
+              ownerIdentities: _UnavailableOwner(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(registry.snapshot()['context'], isEmpty);
       await _tap(tester, find.text('สร้างและบันทึกไฟล์'));
       await _until(tester, () => _status(tester).startsWith('บันทึกแล้ว'));
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(registry.snapshot()['actions'], isEmpty);
       expect(await tester.runAsync(() => fixture.directory.list().length), 1);
     } finally {
       await _close(tester, fixture);
@@ -150,8 +255,11 @@ void main() {
     final fixture = (await tester.runAsync(_ExportFixture.create))!;
     final picker = Completer<String?>();
     fixture.saver = (_) => picker.future;
+    final registry = MenuActionRegistry(
+      currentOwner: () => 'local:synthetic-ui-export-owner',
+    );
     try {
-      await _open(tester, fixture);
+      await _open(tester, fixture, registry: registry);
       final start = find.text('สร้างและบันทึกไฟล์');
       await _reveal(tester, start);
       await tester.pump();
@@ -162,6 +270,7 @@ void main() {
       await _until(tester, () => fixture.artifacts.isNotEmpty);
       await _reveal(tester, find.byKey(const ValueKey(ExportFormat.csv)), -200);
       expect(fixture.artifacts, hasLength(1));
+      expect(_guidance(registry)['status'], 'running');
       expect(find.text('สร้างและบันทึกไฟล์'), findsNothing);
       expect(find.byType(RadioListTile<ExportFormat>), findsNWidgets(5));
       for (final radio in tester.widgetList<RadioListTile<ExportFormat>>(
@@ -171,8 +280,11 @@ void main() {
       }
       await _tap(tester, find.text('ยกเลิก'));
       await _until(tester, () => _status(tester).contains('กำลังยกเลิก'));
+      expect(_guidance(registry)['status'], 'cancelling');
       picker.complete(null);
       await _until(tester, () => _status(tester).contains('ยกเลิกการส่งออก'));
+      expect(_guidance(registry)['status'], 'failed');
+      expect(_guidance(registry)['failureCode'], 'cancelled');
       expect(fixture.artifacts, hasLength(1));
       expect(await tester.runAsync(() => fixture.directory.list().length), 0);
     } finally {
@@ -189,9 +301,26 @@ Future<void> _open(
 }) async {
   await tester.pumpWidget(
     MenuActionScope(
-      registry: registry ?? MenuActionRegistry(currentOwner: () => 'test'),
-      child: MaterialApp(home: ExportCenterScreen(exports: fixture.exports)),
+      registry:
+          registry ??
+          MenuActionRegistry(
+            currentOwner: () => 'local:synthetic-ui-export-owner',
+          ),
+      child: MaterialApp(
+        home: ExportCenterScreen(
+          exports: fixture.exports,
+          ownerIdentities: DriftReviewOwnerIdentityReader(fixture.database),
+        ),
+      ),
     ),
+  );
+  await _until(
+    tester,
+    () =>
+        tester
+            .widget<MenuActionBinding>(find.byType(MenuActionBinding))
+            .ownerId !=
+        null,
   );
   await tester.pumpAndSettle();
 }
@@ -343,4 +472,16 @@ final class _ExportFixture {
     );
     return fixture;
   }
+}
+
+Map<String, dynamic> _guidance(MenuActionRegistry registry) =>
+    jsonDecode(
+          (registry.snapshot()['context'] as List).single['value'] as String,
+        )
+        as Map<String, dynamic>;
+
+final class _UnavailableOwner implements ReviewOwnerIdentityReader {
+  @override
+  Future<String> requireSingleActiveOwnerId() async =>
+      throw StateError('synthetic owner lookup failure');
 }

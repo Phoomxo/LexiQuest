@@ -1,3 +1,4 @@
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'dart:convert';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
@@ -14,7 +15,7 @@ void main() {
     await tester.pumpWidget(
       MenuActionScope(
         registry: registry,
-        child: const MaterialApp(home: ExportCenterScreen()),
+        child: MaterialApp(home: ExportCenterScreen(ownerIdentities: _Owner())),
       ),
     );
     await tester.pumpAndSettle();
@@ -97,4 +98,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+}
+
+final class _Owner implements ReviewOwnerIdentityReader {
+  @override
+  Future<String> requireSingleActiveOwnerId() async => 'test';
 }
