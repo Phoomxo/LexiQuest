@@ -1,0 +1,26 @@
+{
+  "checkpoint": "101",
+  "workflow": "W08",
+  "status": "HOST_POSTCOMMIT_READBACK_FAILURE_RETRY_PASS",
+  "host": {
+    "testsPassed": 12,
+    "newCase": "committed save confirmation failure retries without duplicate revision",
+    "failureLocation": "Active owner lookup for list operation after save committed and returned",
+    "assertions": [
+      "Fault injection actually occurred",
+      "AI summary unconfirmed without lastConfirmed or private error",
+      "Real database contains one committed revision despite UI error",
+      "Manual retry with AI disconnected preserves one revision and identical payload hash",
+      "Reconnect reports list and no AI mutation actions"
+    ]
+  },
+  "fixtureCorrection": "Initial test wrongly expected two active-owner callbacks with stored rows; inspection proved generation checks do not call activeOwnerId. Initial injected assertion failed. Corrected injection to first owner lookup with persisted row. All original assertions retained.",
+  "evidence": "evidence/personalsets-confirmation-101",
+  "native": "No application source change;098 installed and099 native evidence retained. No native fault injection claimed.",
+  "remaining": [
+    "Final W08 coverage audit",
+    "W07 native review through connection change",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

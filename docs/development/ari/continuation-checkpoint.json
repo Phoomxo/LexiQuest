@@ -1,12 +1,12 @@
 {
-  "revision": 124,
+  "revision": 125,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "100 host11PASS: pending pre-write owner lookup failure, disconnect, manual retry saves exactly one revision",
+  "previousTurn": "101 host12PASS: committed save then list owner lookup failure; disconnected retry retains exact single revision",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 post-commit/readback failure audit then W07 native review connection change",
+  "current": "W07 native review answer/feedback connection change; W08 final coverage audit remains",
   "next": [
-    "Audit post-commit/readback failure lifecycle;100 only covers pre-write owner lookup failure; reuse098/099 native evidence",
+    "Inspect review_center_screen.dart route into review activity and run W07 native baseline/connected/disconnected evidence; host personalset100/101 accepted",
     "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
     "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
   ],

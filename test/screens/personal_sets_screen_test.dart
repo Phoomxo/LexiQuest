@@ -268,6 +268,75 @@ void main() {
   );
 
   screenTest(
+    'committed save confirmation failure retries without duplicate revision',
+    (tester) async {
+      String? aiOwner = 'a';
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      Map<String, dynamic> summary() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere(
+                      (e) => e['id'] == 'study-planning/personal-sets/context',
+                    )['value']
+                    as String,
+              )
+              as Map<String, dynamic>;
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(home: PersonalSetsScreen(useCases: app)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('สร้างชุดคำ'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('set-title')),
+        'Retry private set',
+      );
+      await tester.tap(find.byType(CheckboxListTile).first);
+      await tester.tap(find.text('ดูตัวอย่าง'));
+      await tester.pumpAndSettle();
+      var injected = false;
+      beforeOwnerRead = () async {
+        final rows = await db.select(db.personalSetRevisions).get();
+        if (rows.isNotEmpty && !injected) {
+          // Active-owner lookup runs when the list operation acquires its
+          // lease, after the save operation has committed and returned.
+          injected = true;
+          throw StateError('PRIVATE_CONFIRMATION_FAILURE');
+        }
+      };
+      await tester.tap(find.text('บันทึกชุดคำ'));
+      await tester.pumpAndSettle();
+      expect(injected, true);
+      aiOwner = 'a';
+      expect(summary()['state'], 'unconfirmed');
+      expect(summary().containsKey('lastConfirmed'), false);
+      expect(
+        jsonEncode(registry.snapshot()),
+        isNot(contains('PRIVATE_CONFIRMATION_FAILURE')),
+      );
+      beforeOwnerRead = null;
+      final committed = await db.select(db.personalSetRevisions).get();
+      expect(committed, hasLength(1));
+      final committedPayload = committed.single.payloadHash;
+      aiOwner = null;
+      await tester.tap(find.text('บันทึกชุดคำ'));
+      await tester.pumpAndSettle();
+      aiOwner = 'a';
+      expect(summary()['state'], 'list');
+      final revisions = await db.select(db.personalSetRevisions).get();
+      expect(revisions, hasLength(1));
+      expect(revisions.single.payloadHash, committedPayload);
+      expect(
+        (await app.list(await app.begin())).single.title,
+        'Retry private set',
+      );
+      expect(registry.snapshot()['actions'], isEmpty);
+    },
+  );
+
+  screenTest(
     'create preview save reopen edit and archive retain immutable history',
     (tester) async {
       await tester.pumpWidget(

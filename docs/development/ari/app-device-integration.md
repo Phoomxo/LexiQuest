@@ -775,3 +775,7 @@ Actualprovider on098 correctly read savedtitle/revision1/membercount1, distingui
 ### Checkpoint100 — personal-set pending failure and retry
 
 Targeted screen suite: **11 tests PASS**. New real-Drift case pauses owner lookup before save, disconnects AI, injects failure, verifies unconfirmed context without private error, then manually retries disconnected and verifies exactly one stored revision. This proves pre-write failure recovery only; post-commit/readback failures remain to audit. No application source or installed APK changed. Native099 evidence retained. [Evidence](personalsets-failure-100.json). Whole-goal acceptance remains open.
+
+### Checkpoint101 — committed save, failed readback and retry
+
+Targeted screen suite: **12 tests PASS**. After real save commits, injected owner lookup failure prevents list readback. Context stays unconfirmed; database retains exactly one revision. Manual retry disconnected preserves the identical payload and revision count; reconnect returns list context. Initial fixture expected an extra owner callback and failed its injection assertion; corrected after inspecting owner-generation/coordinator code, without weakening checks. Application source unchanged; native099 retained. [Evidence](personalsets-confirmation-101.json). W08 final audit and full-goal acceptance remain open.
