@@ -1,0 +1,34 @@
+{
+  "checkpoint": "057",
+  "sourceCommit": "7b7561b2",
+  "apkPins": "evidence/flashcard-assistance-056/source-pins.json",
+  "status": "LIVE_GUIDANCE_DISCONNECT_COMPLETION_PASS_PROGRESS_DEFECT_OPEN",
+  "native": [
+    "Canonical SRS 10 due cards; first spoon revealed without AI",
+    "Target-free prompt live provider correctly reported flashcard1/10 revealed and exposure not independent recall, no SRS improvement",
+    "Explicit disconnect preserved revealed first card",
+    "Continue then self-rate Again on door and Good on key",
+    "Cards4-10 manually revealed/continued; returned home",
+    "Durable session completed: exactly8 exposure rows and2 independentRecall self-rating rows"
+  ],
+  "evidence": [
+    "evidence/flashcard-native-057/observations.json",
+    "evidence/flashcard-native-057/durable-summary.json"
+  ],
+  "dataCaveat": "Legacy session score10/wrong9 includes exposure numeric flags; not a valid independent recall accuracy. Evidence classes distinguish8 exposures from2 self-ratings.",
+  "defects": [
+    {
+      "id": "FLASHCARD-PROGRESS-057",
+      "status": "OPEN",
+      "observed": "Shared lesson semantic progress remains0% while card index advances1 through10; specific flashcard context is separate",
+      "next": "Inspect controller lifecycle progress bridge and add regression tests; do not weaken evidence meaning"
+    }
+  ],
+  "limits": [
+    "Pre-reveal live AI guidance not queried",
+    "Native before/after SRS schedule not snapshotted; host056 verifies exposure schedule invariant",
+    "Self-rating/retry MCP host transition coverage still pending"
+  ],
+  "cleanup": "Bridge26192 terminal;ownedreverse8765/privateconfigremoved;isolated app restarted;USB2 kept",
+  "wholeGoalComplete": false
+}

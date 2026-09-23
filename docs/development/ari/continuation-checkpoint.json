@@ -1,11 +1,12 @@
 {
-  "revision": 80,
+  "revision": 81,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "056 added canonical flashcard context;full screen suite passed;analysis clean;APK056 installed home ready",
+  "previousTurn": "057 live flashcard revealed guidance and disconnect10-card completion passed;durable8exposure+2recall;sharedprogress0% defect found",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Flashcard native/live/disconnect and self-rating/retry context coverage",
+  "current": "Fix FLASHCARD-PROGRESS-057;verify self-rating/retry MCP transitions",
   "next": [
+    "FLASHCARD-PROGRESS-057 shared progress stays0% while cards advance; diagnose and fix before acceptance",
     "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
     "Definition/cloze/typedrecall/associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
@@ -19,6 +20,6 @@
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No live bridge/build/test",
-  "testFixture": "AriCEFR045 retained;device home;AI collapsed/disconnected;USB2",
+  "testFixture": "AriCEFR045 retained;new completed10-card SRS session057;device restart tohome;AI disconnected;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

@@ -567,3 +567,7 @@ APK054 live provider returned Thai method guidance and correctly denied private 
 ### Flashcard method/state context — checkpoint 056
 
 Canonical SRS screen now publishes owner-bound read-only phase/reveal context, distinguishing exposure from independent recall. Full screen suite passed with three connection variants preserving state, exposure rows and unchanged SRS schedule. Owner fixture and asynchronous example-load synchronization corrected without removing assertions. Analysis clean; APK056 installed and home ready. Native mode/live/disconnect and independent-rating/retry context coverage remain open. [Evidence](flashcard-assistance-056.json).
+
+### Flashcard native journey — checkpoint 057
+
+Live AI correctly read revealed card1/10 and distinguished exposure from independent recall. After explicit disconnect, the ten-card session completed with exactly eight exposure and two self-rating records. Legacy numeric aggregate is not recall accuracy. Found OPEN FLASHCARD-PROGRESS-057: shared progress stayed0% while card index advanced; next work must diagnose/fix with regression coverage. [Evidence](flashcard-native-057.json). No full acceptance claim.

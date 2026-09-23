@@ -238,5 +238,6 @@
   "latestAcceptanceAudit": "acceptance-audit-053.json",
   "latestHandwritingAssistance": "handwriting-assistance-054.json",
   "latestHandwritingNative": "handwriting-native-055.json",
-  "latestFlashcardAssistance": "flashcard-assistance-056.json"
+  "latestFlashcardAssistance": "flashcard-assistance-056.json",
+  "latestFlashcardNative": "flashcard-native-057.json"
 }

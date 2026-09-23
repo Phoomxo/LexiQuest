@@ -1,0 +1,72 @@
+{
+  "session": {
+    "activity_type": "srsReview",
+    "state": "completed",
+    "correct_count": 1,
+    "wrong_count": 9,
+    "score": 10
+  },
+  "attempts": [
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 1
+    },
+    {
+      "prompt_mode": "srsRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 0,
+      "attempt_number": 2
+    },
+    {
+      "prompt_mode": "srsRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 1,
+      "attempt_number": 3
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 4
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 5
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 6
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 7
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 8
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 9
+    },
+    {
+      "prompt_mode": "flashcardExposure",
+      "evidence_class": "exposure",
+      "is_correct": 0,
+      "attempt_number": 10
+    }
+  ],
+  "attemptCount": 10
+}
