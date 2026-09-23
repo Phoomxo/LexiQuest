@@ -132,9 +132,10 @@
         "srs-guidance-106.json",
         "srs-native-107.json",
         "review-context-108.json",
-        "review-native-109.json"
+        "review-native-109.json",
+        "weakness-empty-110.json"
       ],
-      "remainingAcceptance": "Final W07 requirement/evidence audit. Review-center connected incorrect feedback and disconnected next correct answer verified109 with exact recognition/SRS delta;host route/context transitions108;SRS102-107. No blanket workflow acceptance."
+      "remainingAcceptance": "Empty weakness native retest110;transfer-probe actual provider unverified behind implementedOff038 (no research activation). Review102/108/109 andSRS103-107 representative evidence retained."
     },
     {
       "id": "W08",

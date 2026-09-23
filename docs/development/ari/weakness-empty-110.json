@@ -1,0 +1,16 @@
+{
+  "checkpoint": "110",
+  "workflow": "W07",
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "cause": "Early returns for zero samples and no incorrect words bypassed optional summary",
+  "change": "Preserve native messages and attach owner-bound read-only summary, independent due count, explicit no mastery proof",
+  "red": "Two owned empty-state tests failed No element before source edit",
+  "recovery": "Test initially expected context resurrection after account switch. Inspected registry purge contract; now assert same-owner reconnect before switch plus permanent retirement after cross-account switch. Assertions not weakened. Log encoding recovered by BOM detection.",
+  "verification": "9 tests PASS;two-file Dart analysis no issues",
+  "remaining": [
+    "Native empty-state retest;installed106 predates110;preserve existing fixture/accounts",
+    "Transfer-probe actual-provider path remains behind implementedOff rollout038;no research activation",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

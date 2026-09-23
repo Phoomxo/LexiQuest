@@ -58,17 +58,18 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final progress = snapshot.data!;
+          final Widget body;
           if (progress.sampleSize == 0) {
-            return const _WeaknessMessage(
+            body = const _WeaknessMessage(
               'ยังไม่มีคำตอบสำหรับวิเคราะห์\nจำนวนตัวอย่าง: 0',
             );
-          }
-          if (progress.weaknesses.isEmpty) {
-            return _WeaknessMessage(
+          } else if (progress.weaknesses.isEmpty) {
+            body = _WeaknessMessage(
               'ยังไม่พบคำที่ตอบผิด\nจำนวนตัวอย่าง: ${progress.sampleSize}',
             );
+          } else {
+            body = _WeaknessBody(progress, onReviewDue: _openConfiguredSrs);
           }
-          final body = _WeaknessBody(progress, onReviewDue: _openConfiguredSrs);
           if (progress.ownerId == null) return body;
           return MenuActionBinding(
             id: 'review/weakness-summary',
@@ -79,7 +80,14 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
               'sampleSize': progress.sampleSize,
               'dueReviewCount': progress.dueReviewCount,
               'weaknessWordCount': progress.weaknesses.length,
-              'interpretation': 'incorrect-history-not-necessarily-due',
+              'state': progress.sampleSize == 0
+                  ? 'no-answer-evidence'
+                  : progress.weaknesses.isEmpty
+                  ? 'no-recorded-incorrect-words'
+                  : 'recorded-incorrect-words',
+              'interpretation': progress.weaknesses.isEmpty
+                  ? 'no-recorded-incorrect-words-is-not-proof-of-mastery; due-count-is-independent'
+                  : 'incorrect-history-not-necessarily-due',
             }),
             child: body,
           );

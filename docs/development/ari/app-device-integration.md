@@ -814,3 +814,8 @@ Added three host tests using real Drift storage and the controller attached by R
 ### Review native connected/disconnected — checkpoint109
 
 On Vivo isolated106, manually answered plate incorrectly while AI connected. Actual provider identified the saved incorrect result and correct Thai answer, explicitly avoiding mastery claims. Disconnected AI, opened the0/1 summary, returned to review center, then answered cup correctly and opened the1/1 summary. Exact snapshot delta: two recognition attempts, all12 SRS rows unchanged, one points entry, reading unchanged. [Evidence](review-native-109.json). QA selections are not human proficiency measurements. Bridge stopped and temporary resources removed; final W07 audit and full14workflow/14mode acceptance remain open.
+
+
+### Empty weakness audit — checkpoint110
+
+Fixed early returns bypassing optional summary for zero samples/no incorrect words, preserving native messages and owner isolation. New context separates due count from weakness and rejects mastery inference. RED then9 tests PASS;two-file analysis clean. Same-owner reconnect and cross-account retirement separately asserted. [Evidence](weakness-empty-110.json). Installed106 predates fix;native empty-state verification and transfer-probe live path behind disabled rollout remain open.

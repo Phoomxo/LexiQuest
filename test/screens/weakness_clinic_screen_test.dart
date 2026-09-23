@@ -30,6 +30,74 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  for (final samples in [0, 3]) {
+    for (final dataOwner in ['owner', null]) {
+      testWidgets('empty weakness context samples=$samples owner=$dataOwner', (
+        tester,
+      ) async {
+        String? aiOwner = 'owner';
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final progress = ProgressSnapshot(
+          ownerId: dataOwner,
+          sampleSize: samples,
+          correctCount: samples,
+          wrongCount: 0,
+          accuracy: samples == 0 ? null : 1,
+          totalXp: 0,
+          completedSessions: 0,
+          streakDays: 0,
+          dueReviewCount: 2,
+          masteredWordCount: 0,
+          achievementCount: 0,
+          gameLevel: 1,
+          skills: [],
+          weaknesses: [],
+          recommendations: [],
+        );
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: WeaknessClinicScreen(loader: () async => progress),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('จำนวนตัวอย่าง: $samples'), findsOneWidget);
+        expect(registry.snapshot()['actions'], isEmpty);
+        if (dataOwner == null) {
+          expect(registry.snapshot()['context'], isEmpty);
+        } else {
+          final rows = registry.snapshot()['context'] as List;
+          final summary = jsonDecode(rows.single['value'] as String);
+          expect(summary['sampleSize'], samples);
+          expect(summary['weaknessWordCount'], 0);
+          expect(summary['dueReviewCount'], 2);
+          expect(
+            summary['state'],
+            samples == 0 ? 'no-answer-evidence' : 'no-recorded-incorrect-words',
+          );
+          expect(summary['interpretation'], contains('not-proof-of-mastery'));
+          aiOwner = null;
+          expect(registry.snapshot()['context'], isEmpty);
+          expect(
+            find.textContaining('จำนวนตัวอย่าง: $samples'),
+            findsOneWidget,
+          );
+          aiOwner = 'owner';
+          expect(registry.snapshot()['context'], hasLength(1));
+          aiOwner = 'other';
+          expect(registry.snapshot()['context'], isEmpty);
+          aiOwner = 'owner';
+          expect(
+            registry.snapshot()['context'],
+            isEmpty,
+            reason: 'An account switch retires the old registration',
+          );
+        }
+      });
+    }
+  }
   testWidgets(
     'optional weakness evidence is owner-bound and distinguishes due',
     (tester) async {
