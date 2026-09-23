@@ -1,0 +1,25 @@
+{
+  "checkpoint": "090",
+  "workflows": [
+    "W08"
+  ],
+  "status": "GOALS_REPRESENTATIVE_NATIVE_BASELINE_CONNECTED_DISCONNECTED_VERIFIED",
+  "sourceChanged": false,
+  "apk": "089",
+  "baseline": "Reuse089nativecreateandreadback",
+  "connected": "ActualAIreadinitialtitle,active,deadline2026-09-25 17:45AsiaBangkok;nativeeditappendedrevised,manualstatuscompleted;actualAIreadnewtitle/completedandexplicitlynotproficiencyproof",
+  "disconnected": "ExplicitAIdisconnect;nativechangedcompletedtocancelled;leave/reopenretained;nativedelete;leave/reopenempty",
+  "durable": "SQLiteconfirmsrevisedgoalstatuscancelled/deleted;exactanswer,SRS,points,readingrowsunchangedsince085",
+  "evidence": [
+    "evidence/goals-native-090/provider-replies.json",
+    "evidence/goals-native-090/durable-summary.json"
+  ],
+  "cleanup": "bridge26797stopped;reverse/configremoved;isolatedapprestartedhomeafterDBsnapshot;originalaccountsuntouched",
+  "remaining": [
+    "Goaleditingdialogassistanceaudit;onlyunderlyinglistcontextcurrentlyhidden",
+    "Native nonemptynew-itemplan",
+    "W10nativeacceptance",
+    "Allremaining14workflow14modefinalaudits"
+  ],
+  "wholeGoalComplete": false
+}

@@ -1,14 +1,14 @@
 {
-  "revision": 113,
+  "revision": 114,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "089implementedoptionalownerboundgoallistcontext;19hosttestsPASS;APK089installed;nativebaselinecreatedgoal/leave/reopenPASS",
+  "previousTurn": "090actualAIreadgoaldeadlineandupdatedtitle/completedcorrectly;disconnectcancel/delete/readback;SQLitelearningtablesexactunchangedsince085",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 goals actualprovider/native state transitions on089",
+  "current": "W08 goal dialog assistance audit and nonemptynew-itemplan",
   "next": [
-    "Startfreshbridge/restartisolated089/login;goalslist hasPractice English089 deadlineSep25 17:45AsiaBangkok active;verifyactualAIread",
-    "Nativegoaledit/status/disconnect/delete anddurablereadback;goal dialog assistanceaudit",
-    "Continue nonemptynew-itemplan,W10andremaining14workflow14modeacceptance"
+    "Audit optionalAIavailability/contextwhile goalcreate/editdialogopen;addsafeownerboundguidanceifmissingwithoutnativeCRUDdependency",
+    "Native nonemptynew-itemplan via personalsets",
+    "Continue W10andremaining14workflow14modeacceptance"
   ],
   "nativeInstalledSource": "evidence/goals-context-089/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-089.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;no bridge/reverse/config;tests/build/installterminal",
-  "testFixture": "Isolated089goalslist;Practice English089 languageTest active deadline2026-09-25T10:45Z;preferences40minutes;originalaccountsuntouched",
+  "liveProcesses": "None;bridge26797stopped;reverse/configremoved;isolatedapprestartedhome",
+  "testFixture": "APK089home;goalslistempty;testgoalrevised/cancelled/deletedtombstone;preferences40minutes;planr3due5carry2;learningrowsunchanged",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
