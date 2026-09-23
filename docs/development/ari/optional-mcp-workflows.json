@@ -210,9 +210,10 @@
       ],
       "acceptanceEvidence": [
         "export-assistance-020.json",
-        "native-context-028.json"
+        "native-context-028.json",
+        "export-native-081.json"
       ],
-      "remainingAcceptance": "Native export/save/cancel with file bytes and live saved-status readback"
+      "remainingAcceptance": "Four personal formats native local save/readback verified081;native connected/disconnected provider guidance and failure-code context audit remain."
     },
     {
       "id": "W14",
