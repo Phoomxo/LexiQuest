@@ -819,3 +819,8 @@ On Vivo isolated106, manually answered plate incorrectly while AI connected. Act
 ### Empty weakness audit — checkpoint110
 
 Fixed early returns bypassing optional summary for zero samples/no incorrect words, preserving native messages and owner isolation. New context separates due count from weakness and rejects mastery inference. RED then9 tests PASS;two-file analysis clean. Same-owner reconnect and cross-account retirement separately asserted. [Evidence](weakness-empty-110.json). Installed106 predates fix;native empty-state verification and transfer-probe live path behind disabled rollout remain open.
+
+
+### Weakness empty native baseline — checkpoint111
+
+Built/installed110. Fresh disposable SQLite fixture on Vivo showed sample0 without provider, remained usable with unpaired AI, then showed no incorrect words/sample1 after a manual correct bag answer and confirmed early exit. This was not completion of the10-item quiz. Original isolated database/main/WAL/SHM restored byte-identically and app restarted; original app/accounts untouched. [Evidence](weakness-native-111.json). Actual-provider empty-state replies remain pending; no whole-workflow acceptance claim.
