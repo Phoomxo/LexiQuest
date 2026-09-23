@@ -1,11 +1,12 @@
 {
-  "revision": 82,
+  "revision": 83,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "058 fixed FLASHCARD-PROGRESS-057;26host tests and native0/50/100 progress pass",
+  "previousTurn": "059 actual mixed typedRecall baseline completed;2DBrows verified;found misleading retry feedback on final committed answer",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Remaining native core modes and actual workflow acceptance gaps",
+  "current": "Fix TYPED-FEEDBACK-ACTION-059 then typedRecall live/disconnect",
   "next": [
+    "Diagnose/fix TYPED-FEEDBACK-ACTION-059: wrong committed final feedback says retry but only results is actionable",
     "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
     "Definition/cloze/typedrecall/associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
@@ -19,6 +20,6 @@
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No live bridge/build/test",
-  "testFixture": "AriCEFR045 retained;completed2-card exposure session058;flashcard configuration now2;devicehome;AIcollapsed/disconnected;USB2",
+  "testFixture": "AriCEFR045 retained;typedRecall2-item correct recognition/wrong recall session059 completed;device restartedhome;AIcollapsed/disconnected;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

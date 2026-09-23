@@ -575,3 +575,7 @@ Live AI correctly read revealed card1/10 and distinguished exposure from indepen
 ### Flashcard progress repair — checkpoint 058
 
 FLASHCARD-PROGRESS-057 fixed: native evidence acknowledgements now update shared progress without another write. Three connection variants reproduced0 instead of1 before repair. Full26 screen tests pass, including failure/retry count invariants for both self-ratings. APK058 on Vivo shows0/50/100% for a two-card exposure review and returns home. Analysis clean. [Evidence](flashcard-progress-058.json). Remaining full-goal acceptance open.
+
+### Typed recall native baseline — checkpoint 059
+
+Two-item mixed route completed without provider. Blank typed submit disabled; actual result1 correct/1 wrong agrees with two durable rows classified recognition and independentRecall. Found OPEN TYPED-FEEDBACK-ACTION-059: final wrong feedback says try again but only results is available. Fix before acceptance; live/disconnect partial-input coverage remains pending. [Evidence](typed-recall-native-059.json).
