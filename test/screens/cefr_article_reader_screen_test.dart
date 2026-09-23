@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -32,6 +35,50 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  for (final identified in [true, false]) {
+    testWidgets(
+      'CEFR context bounds text and hides unknown owner identified=$identified',
+      (tester) async {
+        final registry = MenuActionRegistry(currentOwner: () => 'owner-1');
+        final content = List.filled(80, 'a"\\\n🧠').join(' ');
+        await tester.pumpWidget(
+          MenuActionScope(
+            registry: registry,
+            child: MaterialApp(
+              home: CefrArticleReaderScreen(
+                title: 'Bounded text',
+                content: content,
+                cefrLevel: 'B1',
+                ownerId: identified ? 'owner-1' : null,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('cefr-reading-complete')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('อ่านจบแล้ว'), findsOneWidget);
+        final entries = registry.snapshot()['context'] as List;
+        if (identified) {
+          final encoded = entries.single['value'] as String;
+          expect(encoded.length, lessThan(1000));
+          final data = jsonDecode(encoded) as Map;
+          expect(data['textTruncated'], true);
+          expect(data['completed'], true);
+          expect(data['evidenceSaved'], false);
+          expect(data['completionScope'], 'screen-only');
+          expect(data.containsKey('isCorrect'), false);
+        } else {
+          expect(entries, isEmpty);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   test('f13 CEFR reading declares exposure through its typed adapter', () {
     final source = File(
       'lib/screens/cefr_article_reader_screen.dart',

@@ -1,4 +1,9 @@
+import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/review/data/drift_review_center_reader.dart';
 import 'dart:async';
+import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
 import 'dart:convert';
 import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
@@ -82,6 +87,146 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets('CEFR library MCP $connection stays screen-only with local owner', (tester) async {
+      final fixture = await _fixture(adapter: const CefrReadingModeAdapter());
+      String? providerOwner = fixture.startCommand.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => providerOwner);
+      final app = AppDependenciesScope(
+        dependencies: _bookmarkDependencies(fixture.database,
+          includeReading: true, learning: fixture.learning),
+        child: const MaterialApp(home: CefrArticleReaderScreen(
+          title: 'A short lesson', content: 'A lesson helps us learn.', cefrLevel: 'A1',
+        )),
+      );
+      await tester.pumpWidget(connection == 'absent' ? app : MenuActionScope(registry: registry, child: app));
+      await tester.pumpAndSettle();
+      Map<String, dynamic> context() => jsonDecode(
+        (registry.snapshot()['context'] as List).single['value'] as String,
+      ) as Map<String, dynamic>;
+      if (connection != 'absent') {
+        expect(context()['completionScope'], 'screen-only');
+        expect(context()['completed'], false);
+      }
+      await tester.tap(find.text('lesson'));
+      await tester.pumpAndSettle();
+      if (connection == 'disconnected') {
+        providerOwner = null;
+        registry.invalidateSession(preserveContext: true);
+      }
+      await tester.tap(find.byKey(const ValueKey<String>('cefr-reading-complete')));
+      await tester.pumpAndSettle();
+      expect(find.text('อ่านจบแล้ว'), findsOneWidget);
+      expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+      expect(fixture.repository.recordCalls, 0);
+      expect(fixture.repository.finishCalls, 0);
+      if (connection == 'connected') {
+        expect(context()['completed'], true);
+        expect(context()['evidenceSaved'], false);
+        expect(context()['selectedWord'], 'lesson');
+        providerOwner = 'different-owner';
+      }
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(registry.snapshot()['actions'], isEmpty);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  }
+
+  for (final connection in ['absent', 'connected', 'disconnected', 'retry']) {
+    testWidgets('CEFR reading MCP $connection preserves exposure and learner completion', (tester) async {
+      const adapter = CefrReadingModeAdapter();
+      final fixture = await _fixture(adapter: adapter, blockRecord: true,
+        failFirstRecordBeforeWrite: connection == 'retry');
+      String? providerOwner = fixture.startCommand.ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => providerOwner);
+      tester.view.physicalSize = const Size(1200, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final evidence = CurrentActivityEvidenceAdapter(learning: fixture.learning);
+      final features = RuntimeFeatureRegistry(const BuildFeatureRegistry.allEnabled());
+      final app = AppDependenciesScope(
+        dependencies: _bookmarkDependencies(fixture.database, features: features,
+          includeReading: true, learning: fixture.learning, currentActivityEvidence: evidence),
+        child: MaterialApp(home: UnifiedLessonModeHost(
+          adapter: adapter, createController: (_) => fixture.controller,
+          feature: Feature.reading, featureRegistry: features,
+          learning: fixture.learning, nowUtc: () => DateTime.now().toUtc(),
+          builder: (_) => NativeVocabularyLessonModeLoader(
+            builder: (_, session, question) => CefrArticleReaderScreen(
+              title: 'A short lesson', content: 'A lesson helps us learn.', cefrLevel: 'A1',
+              ownerId: session.ownerId, sessionId: session.id, wordId: question.word.id,
+              evidenceAdapter: evidence,
+            ),
+          ),
+        )),
+      );
+      await tester.pumpWidget(connection == 'absent' ? app : MenuActionScope(registry: registry, child: app));
+      await tester.pumpAndSettle();
+      Map<String, dynamic> context() => jsonDecode(
+        (registry.snapshot()['context'] as List).singleWhere((dynamic e) => e['id'] == 'reading/article-assistance')['value'] as String,
+      ) as Map<String, dynamic>;
+      final mode = find.byType(CefrArticleReaderScreen);
+      final originalState = tester.state(mode);
+      if (connection != 'absent') {
+        expect(context()['interpretation'], 'reading-exposure-not-comprehension-or-cefr-assessment');
+        expect(context()['evidenceSaved'], false);
+        expect(context()['completed'], false);
+        expect(context()['excerpt'], 'A lesson helps us learn.');
+        await tester.tap(find.text('lesson'));
+        await tester.pumpAndSettle();
+        expect(context()['selectedWord'], 'lesson');
+      }
+      final finish = find.byKey(const ValueKey<String>('cefr-reading-complete'));
+      await tester.ensureVisible(finish);
+      await tester.tap(finish);
+      await fixture.repository.recordStarted.future;
+      await tester.pump();
+      if (connection != 'absent') {
+        expect(context()['evidenceSaved'], false);
+        expect(context()['completed'], false);
+        expect(context()['persistencePending'], true);
+      }
+      expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+      if (connection == 'disconnected') {
+        providerOwner = null;
+        registry.invalidateSession(preserveContext: true);
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      fixture.repository.releaseRecord();
+      await tester.pumpAndSettle();
+      if (connection == 'retry') {
+        expect(context()['evidenceSaved'], false);
+        expect(context()['retryRequired'], true);
+        expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+        await tester.tap(find.text('ลองบันทึกผลอีกครั้ง'));
+        await tester.pumpAndSettle();
+      }
+      expect(await fixture.database.select(fixture.database.answerAttempts).get(), hasLength(1));
+      expect(fixture.repository.lastRecordCommand!.evidenceContext.evidenceClass, EvidenceClass.exposure);
+      expect(fixture.repository.recordCalls, connection == 'retry' ? 2 : 1);
+      expect(fixture.controller.feedback, isNull, reason: 'Reading exposure must not become correct/incorrect feedback');
+      expect(find.text('อ่านจบแล้ว'), findsOneWidget);
+      expect(tester.state(mode), same(originalState));
+      if (connection == 'connected' || connection == 'retry') {
+        expect(context()['evidenceSaved'], true);
+        expect(context()['completed'], true);
+        expect(context()['persistencePending'], false);
+        expect(context()['retryRequired'], false);
+        expect(context().containsKey('isCorrect'), false);
+        providerOwner = 'another-owner';
+        expect(registry.snapshot()['context'], isEmpty);
+      } else {
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    });
+  }
+
 
   for (final connection in ['absent', 'connected', 'disconnected']) {
     for (final wordMode in [true, false]) {
@@ -5091,6 +5236,7 @@ void main() {
 
 AppDependencies _bookmarkDependencies(
   AppDatabase database, {
+  bool includeReading = false,
   FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   LearningUseCases? learning,
   CurrentActivityEvidenceAdapter? currentActivityEvidence,
@@ -5110,6 +5256,12 @@ AppDependencies _bookmarkDependencies(
     ),
     config: null,
     guestSessionService: _GuestSession(),
+    vocabulary: includeReading ? VocabularyUseCases(
+      owners: DriftLocalOwnerRepository(database, generateId: () => 'reading-owner', nowUtc: () => DateTime.utc(2026, 9, 21)), vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'reading-vocabulary', nowUtc: () => DateTime.utc(2026, 9, 21),
+    ) : null,
+    associativeLearning: includeReading ? InMemoryAssociativeLearningAdapter() : null,
+    activeOwnerIdentities: includeReading ? DriftReviewOwnerIdentityReader(database) : null,
     features: features,
     learning: learning,
     currentActivityEvidence:

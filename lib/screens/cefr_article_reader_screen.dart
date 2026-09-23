@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
+import '../features/review/domain/review_queue_item.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,6 +64,9 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
   PendingLearningSessionClose? _pendingSessionClose;
   UnifiedLessonSessionLifecycle? _lifecycle;
   bool _completed = false;
+  bool _evidenceSaved = false;
+  String? _assistanceOwnerId;
+  bool _ownerReadStarted = false;
 
   CefrReadingModeAdapter get _modeAdapter => widget.modeAdapter;
   bool get _acceptsModeOperations =>
@@ -73,6 +79,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
   void initState() {
     super.initState();
     _startedAtUtc = DateTime.now().toUtc();
+    _assistanceOwnerId = widget.ownerId;
   }
 
   @override
@@ -88,6 +95,22 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
         widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     _lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     refreshRouteVoiceSession();
+    // Library reading has no learning session. Pin its optional context to the
+    // existing local owner without creating an owner or requiring AI login.
+    final owners = dependencies?.activeOwnerIdentities;
+    if (!_ownerReadStarted && _assistanceOwnerId == null && owners != null) {
+      _ownerReadStarted = true;
+      unawaited(_readAssistanceOwner(owners));
+    }
+  }
+
+  Future<void> _readAssistanceOwner(ReviewOwnerIdentityReader owners) async {
+    try {
+      final ownerId = await owners.requireSingleActiveOwnerId();
+      if (mounted) setState(() => _assistanceOwnerId = ownerId);
+    } catch (_) {
+      // Missing optional context must not prevent ordinary reading.
+    }
   }
 
   Future<void> _speakWord(String word) async {
@@ -146,6 +169,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
     try {
       await (_lifecycle?.runAcceptedOperation(pending.record) ??
           pending.record());
+      _evidenceSaved = true;
     } catch (_) {
       if (mounted) setState(() {});
       return;
@@ -181,6 +205,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
       try {
         await (_lifecycle?.runAcceptedOperation(evidence.retry) ??
             evidence.retry());
+        _evidenceSaved = true;
       } catch (_) {
         if (mounted) setState(() {});
         return;
@@ -205,7 +230,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
   Widget build(BuildContext context) {
     final words = widget.content.split(RegExp(r'\s+'));
 
-    return PopScope(
+    final surface = PopScope(
       canPop: _pendingEvidence == null && _pendingSessionClose == null,
       child: AccessibilityModeScaffold(
         appBar: AppBar(
@@ -375,5 +400,64 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
         ),
       ),
     );
+    return MenuActionBinding(
+      id: 'reading/article-assistance',
+      label: 'บทอ่านและสถานะการอ่าน',
+      ownerId: _assistanceOwnerId,
+      onInvoke: null,
+      readValue: _assistanceOwnerId == null ? null : _assistanceContext(),
+      child: surface,
+    );
+  }
+
+  String _assistanceContext() {
+    final data = <String, Object?>{
+      'interpretation': 'reading-exposure-not-comprehension-or-cefr-assessment',
+      'languages': ['en', 'th'],
+      'articleLevel': widget.cefrLevel,
+      'title': widget.title,
+      'excerpt': widget.content,
+      'selectedWord': _selectedWord,
+      'completed': _completed,
+      'evidenceSaved': _evidenceSaved,
+      'completionScope': widget.sessionId == null
+          ? 'screen-only'
+          : 'reading-exposure-record',
+      'persistencePending':
+          (_pendingEvidence != null && !_pendingEvidence!.requiresRetry) ||
+          (_pendingSessionClose != null && !_sessionCloseRetryRequired),
+      'retryRequired':
+          (_pendingEvidence?.requiresRetry ?? false) ||
+          _sessionCloseRetryRequired,
+      'guidance':
+          'Explain the English excerpt or selected word in Thai. Reading completion does not assess comprehension or certify CEFR level.',
+      'textTruncated': false,
+    };
+    for (final entry in {
+      'title': 60,
+      'excerpt': 180,
+      'selectedWord': 40,
+      'articleLevel': 8,
+    }.entries) {
+      final text = data[entry.key] as String?;
+      if (text != null && text.runes.length > entry.value) {
+        data[entry.key] = String.fromCharCodes(text.runes.take(entry.value));
+        data['textTruncated'] = true;
+      }
+    }
+    var encoded = jsonEncode(data);
+    while (encoded.length > 980) {
+      for (final key in ['title', 'excerpt', 'selectedWord']) {
+        final text = data[key] as String?;
+        if (text != null) {
+          data[key] = String.fromCharCodes(
+            text.runes.take(text.runes.length ~/ 2),
+          );
+        }
+      }
+      data['textTruncated'] = true;
+      encoded = jsonEncode(data);
+    }
+    return encoded;
   }
 }

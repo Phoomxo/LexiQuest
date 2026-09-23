@@ -1,0 +1,50 @@
+{
+  "status": "HOST_PASS_NATIVE_BASELINE_PASS_LIVE_PROVIDER_PENDING",
+  "sourceBase": "34aeb5c6",
+  "changes": [
+    "Read-only owner-bound article context with excerpt and selected word",
+    "Reading completion explicitly not comprehension or CEFR assessment",
+    "Separate screen-only completion, acknowledged evidence, pending persistence and retry",
+    "Library context resolves existing local owner independently of provider login; baseline does not wait on optional context"
+  ],
+  "host": {
+    "productionLoaderCases": 7,
+    "readerCases": 6,
+    "database": "Real Drift in-memory for 7 production-loader/library cases; connected/disconnected are registry owner-state tests, not live provider",
+    "coverage": [
+      "Absent optional scope preserves completion",
+      "Registry connected exposes current article and selected word",
+      "Disconnect during pending write retains learner completion",
+      "Failed write retry stores one exposure attempt",
+      "Library completion creates no attempt or session-close write",
+      "Unknown owner hidden; different owner hides context",
+      "Long escaped text bounded to valid JSON"
+    ],
+    "analysis": "3 changed Dart files: no issues",
+    "evidence": [
+      "evidence/cefr-assistance-043/host-production-loader.json",
+      "evidence/cefr-assistance-043/host-reader-screen.json"
+    ]
+  },
+  "native": {
+    "apk": "build/ari-assistance-043.apk",
+    "sha256": "1e76bd53355335778dadfe33ce6e8b062422f5f185a8792657e4c8c59d970b2e",
+    "build": "Passed",
+    "install": "Success",
+    "baseline": "A1 A book for May opened, selected book, completed via native button; completion disabled button and retained selection",
+    "audio": "Word replay control invoked; audible playback not verified",
+    "provider": "No bridge or login this checkpoint; live CEFR context not tested",
+    "usbStayAwake": 2
+  },
+  "recovery": [
+    "Initial test fixture lacked composed reading dependencies; repaired fixture without weakening production gate",
+    "TestName uses literal matching; regex selected no tests; corrected bounded selection CEFR",
+    "Initial missing-context red: absent passed, other3 failed; implementation then passed"
+  ],
+  "remaining": [
+    "Live CEFR guidance and screen-only completed interpretation",
+    "Native CEFR session reading-exposure and connected/disconnected paths",
+    "Other14workflow/mode acceptance and successful native speech/camera/sync",
+    "Whole-project code review queued after MCP acceptance"
+  ]
+}

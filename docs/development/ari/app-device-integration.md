@@ -529,3 +529,10 @@ Vivo intermediate build returned noMatch for PC synthetic speech and app TTS; su
 Confirmed premature saved-state defect by holding the repository acknowledgment: old context reported true while still pending. Moved saved=true after the successful await, retaining existing pending/epoch guards. New test verifies pending false, acknowledged true, single write despite duplicate final, one close and no AI actions. Full26 shadowing tests and targeted analysis passed. [Finding and evidence](shadowing-save-042.json).
 
 Final042 debug APK built/installed and baseline home smoke passed. Successful physical recognition and live-provider validation remain pending; installation is not functional acceptance. Whole-project review remains queued after current MCP scope.
+
+
+### CEFR optional article context — checkpoint043
+
+Added bounded owner-bound excerpt/selected word and explicit reading-exposure interpretation. Screen-only completion remains distinct from acknowledged evidence and does not claim comprehension or CEFR certification. Seven production-loader/library tests use real Drift in-memory; six reader tests passed. Connection cases here are registry-state tests, not live-provider proof. Targeted analysis clean. [Evidence](cefr-assistance-043.json).
+
+Final043 APK built/installed on Vivo. Without provider connection, A1 article opens, word book selects and native completion works. Audible playback and live CEFR assistance remain pending. Original app/accounts preserved; USB stay-awake2 retained. Whole14workflow/mode goal remains active and unaccepted.

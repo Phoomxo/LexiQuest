@@ -300,7 +300,8 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "hostEvidence": "cefr-assistance-043.json"
     },
     {
       "id": "sentence-scramble",
@@ -463,6 +464,12 @@
       "id": "shadowing-save-042",
       "receipt": "shadowing-save-042.json",
       "scope": "Premature saved state red/green;26host tests; native installation/home only",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "cefr-assistance-043",
+      "receipt": "cefr-assistance-043.json",
+      "scope": "7production-loader/Drift and6reader cases; native library baseline;live provider pending",
       "wholeModeAcceptance": false
     }
   ],

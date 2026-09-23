@@ -1,23 +1,24 @@
 {
-  "revision": 66,
+  "revision": 67,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "042 shadowing premature saved flag reproduced and fixed;26tests pass;APK installed home smoke",
+  "previousTurn": "043 CEFR optional context:7production-loader/Drift+6reader checks pass; native library baseline complete",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Remaining mode-specific MCP acceptance",
+  "current": "CEFR live provider and remaining14workflow/mode acceptance",
   "next": [
-    "Complete mode-specific baseline/connected/disconnected acceptance",
-    "Successful native speech/camera and remaining sync coverage",
-    "Whole-project review and SDLC/Agile repairs queued after MCP acceptance"
+    "Live CEFR guidance and screen-only completed interpretation",
+    "Native CEFR session reading-exposure and connected/disconnected paths",
+    "Other14workflow/mode acceptance and successful native speech/camera/sync",
+    "Whole-project code review queued after MCP acceptance"
   ],
-  "nativeInstalledSource": "042 source pinned in evidence/shadowing-save-042/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-042.apk",
+  "nativeInstalledSource": "043 source pinned in evidence/cefr-assistance-043/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-043.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test live",
-  "testFixture": "Dashboard28/42,34m00s,0due;AIcollapsed/disconnected;USBstayawake2",
+  "liveProcesses": "No bridge/build/test live;70273 and83985 terminal pass",
+  "testFixture": "Native A1 library article completed, book selected, AIcollapsed/disconnected;USBstayawake2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
