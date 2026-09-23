@@ -1,12 +1,12 @@
 {
-  "revision": 131,
+  "revision": 132,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "107 actualprovider SRS wording regression and disconnected manual completion verified on isolated106",
+  "previousTurn": "108 three durable review connection/route tests;23PASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W07 coverage audit: review-center answer/feedback across AI connection changes",
+  "current": "Native review-center answer/feedback across AI connection change on106",
   "next": [
-    "Audit W07 remaining review-center answer/feedback across AI connection change and execute missing native path",
+    "Actual-provider review-center answer/feedback and disconnect path on installed106;host108 alreadyPASS",
     "Update workflow evidence coverage using accepted pins; do not rerun unchanged gates",
     "Continue all14workflow14mode acceptance; whole-project review follows MCP acceptance"
   ],

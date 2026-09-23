@@ -1,0 +1,6 @@
+{
+  "test/screens/review_center_screen_test.dart": "109cbaae152b7f409fa923ba5d2e840950ae5274784a7c7003a16878b7a8f974",
+  "lib/screens/review_center_screen.dart": "6ab4ec3dddc06cefc666d53b1ccfed57130d898cb0508962286742a2bd551c22",
+  "lib/features/learning/presentation/unified_lesson_shell.dart": "ebf614a9c7cd2b3e2c4666e9425f15cd4c99d013e3692febd7d18826ca834bed",
+  "lib/features/ai_tutor/presentation/lesson_assistance_context.dart": "9da114184b4741253886f29ff951b78da807552512644809b774a9634c8bd52f"
+}

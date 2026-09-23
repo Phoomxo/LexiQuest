@@ -17,6 +17,7 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
@@ -34,6 +35,124 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/review_center_screen.dart';
 
 void main() {
+  for (final connection in ['absent', 'connected', 'disconnectBeforeAnswer']) {
+    testWidgets('review durable answer and route context $connection', (
+      tester,
+    ) async {
+      final fixture = await _durableFixture();
+      addTearDown(fixture.database.close);
+      String? aiOwner = 'owner-1';
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      final controllers = <UnifiedLessonController>[];
+      final app = MaterialApp(
+        home: ReviewCenterScreen(
+          useCases: fixture.useCases,
+          lessonShellBuilder: (_) => _lessonDestination(
+            learning: fixture.learning,
+            controllers: controllers,
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        connection == 'absent'
+            ? app
+            : MenuActionScope(registry: registry, child: app),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เริ่มทบทวน'));
+      await tester.pumpAndSettle();
+      final controller = controllers.single;
+      if (connection != 'absent') {
+        final contexts = registry.snapshot()['context'] as List;
+        expect(
+          contexts.where(
+            (dynamic row) => (row['id'] as String).startsWith('review/queue'),
+          ),
+          isEmpty,
+        );
+        expect(
+          contexts.any((dynamic row) => row['id'] == 'lesson/assistance'),
+          isTrue,
+        );
+      }
+      if (connection == 'disconnectBeforeAnswer') {
+        aiOwner = null;
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      final result = await controller.submit(
+        LessonSubmission(
+          response: LessonResponse(
+            sourceEvidenceId: 'review-connection-answer',
+            occurredAtUtc: _now.add(const Duration(seconds: 1)),
+            sessionId: controller.state.sessionId!,
+            wordId: 'word-1',
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: 1000,
+            attemptNumber: 1,
+            feedbackContext: const AnswerFeedbackContext(
+              canonicalCorrectAnswer: 'สถานี',
+            ),
+          ),
+          support: LessonSupport(
+            evidenceContext: EvidenceContext.legacyCompatibility(
+              evidenceClass: EvidenceClass.recognition,
+              skillId: 'meaningRecognition',
+              hintLevel: 0,
+              contentRevision: '1',
+              engagementAllowed: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(result.inserted, isTrue);
+      expect(controller.state.committedResponseCount, 1);
+      final attempts = await fixture.database
+          .select(fixture.database.answerAttempts)
+          .get();
+      expect(attempts, hasLength(1));
+      expect(attempts.single.isCorrect, isTrue);
+      expect(
+        await fixture.database.select(fixture.database.srsStates).get(),
+        isEmpty,
+      );
+      if (connection != 'absent') {
+        aiOwner = 'owner-1';
+        final contexts = registry.snapshot()['context'] as List;
+        final context = jsonDecode(
+          contexts.singleWhere(
+                (dynamic row) => row['id'] == 'lesson/assistance',
+              )['value']
+              as String,
+        );
+        expect(context['committedResponses'], 1);
+        expect(context['lastCommittedFeedback']['correctAnswer'], 'สถานี');
+        expect(context['lastCommittedFeedback']['isCorrect'], isTrue);
+        expect(registry.snapshot()['actions'], isEmpty);
+      }
+      Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
+      await tester.pumpAndSettle();
+      expect(find.text('เริ่มทบทวน'), findsOneWidget);
+      final contexts = registry.snapshot()['context'] as List;
+      expect(
+        contexts.where(
+          (dynamic row) => (row['id'] as String).startsWith('lesson/'),
+        ),
+        isEmpty,
+      );
+      if (connection != 'absent') {
+        expect(
+          contexts.any((dynamic row) => row['id'] == 'review/queue-summary'),
+          isTrue,
+        );
+      }
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        hasLength(1),
+      );
+    });
+  }
   for (final empty in [false, true]) {
     testWidgets(
       'optional review context preserves owner and reasons empty=$empty',

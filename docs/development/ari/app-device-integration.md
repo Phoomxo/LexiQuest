@@ -804,3 +804,8 @@ Added phase/action-lock-bound selfRatingAvailable and nextManualStep to read-onl
 ### SRS native guidance regression — checkpoint107
 
 Built and installed isolated106 from ae04ee7f on Vivo. Two actual-provider replies now distinguish pre-reveal self-rating from revealed exposure, reject retrospective rating and direct Continue. Explicit AI disconnect did not prevent Continue or manual Good on the next chair card; the session returned home. Snapshot comparison against105 finds exactly plate exposure plus chair correct recall, only chair SRS changed, one points-ledger entry, and unchanged reading data. These are simulated QA inputs, not human proficiency results. [Evidence](srs-native-107.json). USB stay-awake remains2; bridge stopped and temporary reverse/config removed. W07 final audit and all14workflow/14mode acceptance remain open.
+
+
+### Review-center connection transitions — checkpoint108
+
+Added three host tests using real Drift storage and the controller attached by ReviewCenterScreen: AI absent, connected, and disconnect-before-answer. All23 review-center tests pass. Each answer persists once with recognition evidence and no SRS change; route visibility fences queue/lesson contexts and reconnect exposes committed feedback. The initial test fixture used the wrong revision type and was corrected without weakening assertions. [Evidence](review-context-108.json). Native button/provider acceptance remains pending; installed106 is unchanged.
