@@ -716,3 +716,8 @@ On APK086, actual provider correctly separated draft55minutes from lastConfirmed
 ## Native chat focus retest — checkpoint088
 
 APK087 actual-provider retest closes CHAT-FOCUS-087. After focusing the underlying40-minute preference field then sending chat, the field remained unfocused and Android inputShown=false; screenshot confirmed no keyboard. Actual AI replied with correct preferences. Explicitly tapping the form still focused it and opened the keyboard. Repeated the prior-form → chat → disconnect sequence: field stayed unfocused/inputShown=false. Reused unchanged six-test087host evidence. No source changes. Bridge stopped, reverse/configremoved, original accounts untouched. [Evidence](focus-native-088.json). Next: W08 goals optional context and nonemptynew-itemplan; full14workflow14modeacceptance remainsopen.
+
+
+## Optional learning-goal list context — checkpoint089
+
+Added owner-bound read-only goal summary and loaded-row details; owner checked before/after list reads. Identity lookup failure suppresses optional personal context while baseline remains usable. Loading/read-error states omit entries and private exceptions. Context hides across foreign owners and beneath the edit dialog; late prior reads cannot rebind replacement context. Two regressions reproduced missing context; final19tests across new assistance and existing goal screen pass, Dart analysis clean. APK089 built/installed. Native no-AI emptylist → create Practice English089, languageTest, deadline25September2026 17:45Bangkok → leave/reopen retained active/due2days. Actualprovider/nativeedit/status/disconnecteddelete and dialogassistanceaudit remain. [Evidence](goals-context-089.json). No originalaccount changes;all14workflow14modeacceptance remainsopen.

@@ -1,23 +1,23 @@
 {
-  "revision": 112,
+  "revision": 113,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "088 actualprovider native retest closesCHAT-FOCUS-087: send/disconnect no restoredformfocus or keyboard;manualformfocusstillworks",
+  "previousTurn": "089implementedoptionalownerboundgoallistcontext;19hosttestsPASS;APK089installed;nativebaselinecreatedgoal/leave/reopenPASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 goals optionalcontext implementation then nonemptynew-itemplan",
+  "current": "W08 goals actualprovider/native state transitions on089",
   "next": [
-    "Add owner-bound optional goals assistance including empty/loading/failure/list and current data;preservemanual CRUD/reminders and noAIbaseline",
-    "Meaningful owner/connection-statehost tests then actualprovider/native acceptance",
-    "Continue nonemptynew-itemplan,W10 and allremaining14workflow14modeacceptance"
+    "Startfreshbridge/restartisolated089/login;goalslist hasPractice English089 deadlineSep25 17:45AsiaBangkok active;verifyactualAIread",
+    "Nativegoaledit/status/disconnect/delete anddurablereadback;goal dialog assistanceaudit",
+    "Continue nonemptynew-itemplan,W10andremaining14workflow14modeacceptance"
   ],
-  "nativeInstalledSource": "evidence/preferences-native-087/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-087.apk",
+  "nativeInstalledSource": "evidence/goals-context-089/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-089.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge87830stopped;reverse/configremoved;no build/test",
-  "testFixture": "Isolated087preferences40minutes,AIcollapsed/disconnected;originalaccounts untouched",
+  "liveProcesses": "None;no bridge/reverse/config;tests/build/installterminal",
+  "testFixture": "Isolated089goalslist;Practice English089 languageTest active deadline2026-09-25T10:45Z;preferences40minutes;originalaccountsuntouched",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import '../features/review/domain/review_queue_item.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/goals/domain/learning_goal.dart';
@@ -31,11 +35,13 @@ final class LearningGoalsScreen extends StatefulWidget {
     this.useCases,
     this.reminderUseCases,
     this.reminderRuntimeEnabled,
+    this.ownerIdentities,
   });
 
   final LearningGoalUseCases? useCases;
   final StudyReminderUseCases? reminderUseCases;
   final bool? reminderRuntimeEnabled;
+  final ReviewOwnerIdentityReader? ownerIdentities;
 
   @override
   State<LearningGoalsScreen> createState() => _LearningGoalsScreenState();
@@ -43,6 +49,9 @@ final class LearningGoalsScreen extends StatefulWidget {
 
 final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   Future<List<LearningGoal>>? _goals;
+  ReviewOwnerIdentityReader? _loadedOwnerReader;
+  String? _assistanceOwnerId;
+  int _readGeneration = 0;
   LearningGoalUseCases? _loadedUseCases;
   Future<bool>? _reminderEntryAvailable;
   Listenable? _registryChanges;
@@ -87,11 +96,68 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
 
   void _refreshGoalSource() {
     final useCases = _resolveUseCases();
-    if (!identical(useCases, _loadedUseCases) || _goals == null) {
+    final owners =
+        widget.ownerIdentities ??
+        AppDependenciesScope.maybeOf(context)?.activeOwnerIdentities;
+    if (!identical(useCases, _loadedUseCases) ||
+        !identical(owners, _loadedOwnerReader) ||
+        _goals == null) {
       _loadedUseCases = useCases;
-      _goals = useCases?.list();
+      _loadedOwnerReader = owners;
+      _assistanceOwnerId = null;
+      _goals = useCases == null ? null : _readGoals(useCases, owners);
     }
   }
+
+  Future<String?> _optionalOwner(ReviewOwnerIdentityReader? owners) async {
+    try {
+      return await owners?.requireSingleActiveOwnerId();
+    } catch (_) {
+      // Identity lookup is for optional context; native goals remain available.
+      return null;
+    }
+  }
+
+  Future<List<LearningGoal>> _readGoals(
+    LearningGoalUseCases useCases,
+    ReviewOwnerIdentityReader? owners,
+  ) async {
+    final generation = ++_readGeneration;
+    _assistanceOwnerId = null;
+    final before = await _optionalOwner(owners);
+    final goals = await useCases.list();
+    final after = before == null ? null : await _optionalOwner(owners);
+    if (mounted &&
+        generation == _readGeneration &&
+        identical(useCases, _loadedUseCases) &&
+        before != null &&
+        before == after) {
+      _assistanceOwnerId = before;
+    }
+    return goals;
+  }
+
+  Widget _guidance(
+    String status,
+    Widget child, {
+    int? count,
+  }) => MenuActionBinding(
+    id: 'study-planning/goals/context',
+    label: 'Learning goals currently displayed',
+    ownerId: _assistanceOwnerId,
+    onInvoke: null,
+    readValue: status == 'ready' && _assistanceOwnerId == null
+        ? null
+        : jsonEncode({
+            'screen': 'learning-goals',
+            'status': status,
+            'count': ?count,
+            'purpose':
+                'User planning goals; completion is not assessed language proficiency.',
+            'manualChangesRequired': true,
+          }),
+    child: child,
+  );
 
   void _onRegistryChanged() {
     if (!mounted) return;
@@ -112,7 +178,7 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
 
   void _reload(LearningGoalUseCases useCases) {
     setState(() {
-      _goals = useCases.list();
+      _goals = _readGoals(useCases, _loadedOwnerReader);
     });
   }
 
@@ -241,123 +307,157 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
               label: const Text('เพิ่มเป้าหมาย'),
             ),
       body: useCases == null
-          ? const Center(child: Text('เป้าหมายการเรียนไม่พร้อมใช้งาน'))
+          ? _guidance(
+              'unavailable',
+              const Center(child: Text('เป้าหมายการเรียนไม่พร้อมใช้งาน')),
+            )
           : FutureBuilder<List<LearningGoal>>(
               future: _goals,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _guidance(
+                    'loading',
+                    const Center(child: CircularProgressIndicator()),
+                  );
                 }
                 if (snapshot.hasError) {
-                  return const Center(
-                    child: Text('โหลดเป้าหมายการเรียนไม่ได้'),
+                  return _guidance(
+                    'unavailable',
+                    const Center(child: Text('โหลดเป้าหมายการเรียนไม่ได้')),
                   );
                 }
                 final goals = snapshot.data ?? const <LearningGoal>[];
                 if (goals.isEmpty) {
-                  return const Center(
-                    child: Text('ยังไม่ได้กำหนดเป้าหมายการเรียน'),
+                  return _guidance(
+                    'ready',
+                    const Center(child: Text('ยังไม่ได้กำหนดเป้าหมายการเรียน')),
+                    count: 0,
                   );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                  itemCount: goals.length,
-                  itemBuilder: (context, index) {
-                    final goal = goals[index];
-                    final countdown = useCases.countdown(goal);
-                    final label = switch (countdown.state) {
-                      LearningGoalDeadlineState.future =>
-                        'เหลือ ${countdown.days} วัน',
-                      LearningGoalDeadlineState.today => 'ครบกำหนดวันนี้',
-                      LearningGoalDeadlineState.past =>
-                        'เลยกำหนด ${countdown.days} วัน',
-                    };
-                    return Card(
-                      key: ValueKey<String>('learning-goal/${goal.id}'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              goal.title,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${_goalKindLabel(goal.kind)} · $label',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              alignment: WrapAlignment.end,
-                              spacing: 8,
-                              runSpacing: 8,
+                return _guidance(
+                  'ready',
+                  ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                    itemCount: goals.length,
+                    itemBuilder: (context, index) {
+                      final goal = goals[index];
+                      final countdown = useCases.countdown(goal);
+                      final label = switch (countdown.state) {
+                        LearningGoalDeadlineState.future =>
+                          'เหลือ ${countdown.days} วัน',
+                        LearningGoalDeadlineState.today => 'ครบกำหนดวันนี้',
+                        LearningGoalDeadlineState.past =>
+                          'เลยกำหนด ${countdown.days} วัน',
+                      };
+                      return MenuActionBinding(
+                        id: 'study-planning/goals/item/${goal.id}',
+                        label: 'Learning goal in the current list',
+                        ownerId: _assistanceOwnerId,
+                        onInvoke: null,
+                        readValue: _assistanceOwnerId == null
+                            ? null
+                            : jsonEncode({
+                                'title': goal.title,
+                                'kind': goal.kind.name,
+                                'status': goal.status.name,
+                                'deadlineUtc': goal.deadlineAtUtc
+                                    .toIso8601String(),
+                                'timezone': goal.timezone.timezoneId,
+                                'deadlineState': countdown.state.name,
+                                'days': countdown.days,
+                                'deleting': _deleting.contains(goal.id),
+                              }),
+                        child: Card(
+                          key: ValueKey<String>('learning-goal/${goal.id}'),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                IconButton(
-                                  key: ValueKey(
-                                    'learning-goal/${goal.id}/edit',
-                                  ),
-                                  tooltip: 'แก้ไขเป้าหมาย',
-                                  onPressed: _deleting.contains(goal.id)
-                                      ? null
-                                      : () => _createGoal(
-                                          useCases,
-                                          registry,
-                                          mutationAllowed,
-                                          goal: goal,
-                                        ),
-                                  icon: const Icon(Icons.edit_outlined),
+                                Text(
+                                  goal.title,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
-                                IconButton(
-                                  key: ValueKey(
-                                    'learning-goal/${goal.id}/delete',
-                                  ),
-                                  tooltip: 'ลบเป้าหมายและการเตือนที่ผูกไว้',
-                                  onPressed: _deleting.contains(goal.id)
-                                      ? null
-                                      : () => _deleteGoal(
-                                          goal,
-                                          useCases,
-                                          mutationAllowed,
-                                        ),
-                                  icon: const Icon(Icons.delete_outline),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${_goalKindLabel(goal.kind)} · $label',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                                if (reminders != null)
-                                  FutureBuilder<bool>(
-                                    future: _reminderEntryAvailable,
-                                    builder: (context, snapshot) =>
-                                        snapshot.data == true
-                                        ? IconButton(
-                                            key: ValueKey<String>(
-                                              'learning-goal/${goal.id}/reminder',
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  alignment: WrapAlignment.end,
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    IconButton(
+                                      key: ValueKey(
+                                        'learning-goal/${goal.id}/edit',
+                                      ),
+                                      tooltip: 'แก้ไขเป้าหมาย',
+                                      onPressed: _deleting.contains(goal.id)
+                                          ? null
+                                          : () => _createGoal(
+                                              useCases,
+                                              registry,
+                                              mutationAllowed,
+                                              goal: goal,
                                             ),
-                                            tooltip: 'ตั้งเวลาเตือนเรียน',
-                                            onPressed: () => _openReminder(
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                    IconButton(
+                                      key: ValueKey(
+                                        'learning-goal/${goal.id}/delete',
+                                      ),
+                                      tooltip: 'ลบเป้าหมายและการเตือนที่ผูกไว้',
+                                      onPressed: _deleting.contains(goal.id)
+                                          ? null
+                                          : () => _deleteGoal(
                                               goal,
-                                              reminders,
+                                              useCases,
                                               mutationAllowed,
                                             ),
-                                            icon: const Icon(
-                                              Icons.notifications_outlined,
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                _LearningGoalStatusMenu(
-                                  goal: goal,
-                                  useCases: useCases,
-                                  registry: registry,
-                                  mutationAllowed: mutationAllowed,
-                                  onChanged: () => _reload(useCases),
+                                      icon: const Icon(Icons.delete_outline),
+                                    ),
+                                    if (reminders != null)
+                                      FutureBuilder<bool>(
+                                        future: _reminderEntryAvailable,
+                                        builder: (context, snapshot) =>
+                                            snapshot.data == true
+                                            ? IconButton(
+                                                key: ValueKey<String>(
+                                                  'learning-goal/${goal.id}/reminder',
+                                                ),
+                                                tooltip: 'ตั้งเวลาเตือนเรียน',
+                                                onPressed: () => _openReminder(
+                                                  goal,
+                                                  reminders,
+                                                  mutationAllowed,
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.notifications_outlined,
+                                                ),
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
+                                    _LearningGoalStatusMenu(
+                                      goal: goal,
+                                      useCases: useCases,
+                                      registry: registry,
+                                      mutationAllowed: mutationAllowed,
+                                      onChanged: () => _reload(useCases),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+                  count: goals.length,
                 );
               },
             ),

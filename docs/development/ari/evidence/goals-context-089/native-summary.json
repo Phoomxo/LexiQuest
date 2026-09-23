@@ -1,0 +1,176 @@
+{
+  "apk": "089",
+  "apkSha256": "daf639c55b1d203662f9666780a79be97715686f6221b802927b7727b82c2f4d",
+  "baseline": "WithoutAI,emptygoalslist then native create Practice English 089/languageTest/deadline2026-09-25 17:45AsiaBangkok;listactive/due2days;leave/reopen retained",
+  "observations": [
+    {
+      "at": "2026-09-23T10:45:32.701436+00:00",
+      "action": [
+        "tap",
+        "500",
+        "945"
+      ],
+      "package": "com.lexiquest.app.ariTest",
+      "observations": [
+        {
+          "text": "กลับ",
+          "bounds": "[11,88][143,220]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เป้าหมายการเรียน",
+          "bounds": "[198,116][597,193]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "ยังไม่ได้กำหนดเป้าหมายการเรียน",
+          "bounds": "[259,1163][821,1229]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เพิ่มเป้าหมาย",
+          "bounds": "[646,1962][1036,2116]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เปิดส่วนช่วยเหลือ AI",
+          "bounds": "[0,2160][1080,2226]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-23T10:46:57.817440+00:00",
+      "action": [
+        "tap",
+        "800",
+        "1220"
+      ],
+      "package": "com.lexiquest.app.ariTest",
+      "observations": [
+        {
+          "text": "กลับ",
+          "bounds": "[11,88][143,220]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เป้าหมายการเรียน",
+          "bounds": "[198,116][597,193]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "Practice English 089\nสอบภาษา · เหลือ 2 วัน\nกำลังทำ",
+          "bounds": "[44,275][1036,696]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "แก้ไขเป้าหมาย",
+          "bounds": "[524,487][656,619]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "ลบเป้าหมายและการเตือนที่ผูกไว้",
+          "bounds": "[678,487][810,619]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เพิ่มเป้าหมาย",
+          "bounds": "[646,1962][1036,2116]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เปิดส่วนช่วยเหลือ AI",
+          "bounds": "[0,2160][1080,2226]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        }
+      ]
+    },
+    {
+      "at": "2026-09-23T10:47:07.755113+00:00",
+      "action": [
+        "tap",
+        "500",
+        "945"
+      ],
+      "package": "com.lexiquest.app.ariTest",
+      "observations": [
+        {
+          "text": "กลับ",
+          "bounds": "[11,88][143,220]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เป้าหมายการเรียน",
+          "bounds": "[198,116][597,193]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "Practice English 089\nสอบภาษา · เหลือ 2 วัน\nกำลังทำ",
+          "bounds": "[44,275][1036,696]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "แก้ไขเป้าหมาย",
+          "bounds": "[524,487][656,619]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "ลบเป้าหมายและการเตือนที่ผูกไว้",
+          "bounds": "[678,487][810,619]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เพิ่มเป้าหมาย",
+          "bounds": "[646,1962][1036,2116]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        },
+        {
+          "text": "เปิดส่วนช่วยเหลือ AI",
+          "bounds": "[0,2160][1080,2226]",
+          "enabled": "true",
+          "checked": "false",
+          "selected": "false"
+        }
+      ]
+    }
+  ],
+  "connected": "NOT_RUN",
+  "disconnected": "NOT_RUN",
+  "originalAccounts": "untouched"
+}
