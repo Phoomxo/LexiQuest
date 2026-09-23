@@ -1,14 +1,14 @@
 {
-  "revision": 111,
+  "revision": 112,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "087 verified actual provider preference draft55vsconfirmed35,save55readback;disconnectsave40/reopen40. Reproduced/fixed chat focus defect;6hosttestsPASS;APK087installed;nativefocusretestpending",
+  "previousTurn": "088 actualprovider native retest closesCHAT-FOCUS-087: send/disconnect no restoredformfocus or keyboard;manualformfocusstillworks",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Retest CHAT-FOCUS-087 onVivo before further workflow implementation",
+  "current": "W08 goals optionalcontext implementation then nonemptynew-itemplan",
   "next": [
-    "Start freshbridge/restartisolated087/login;focus preference field then chat send/disconnect;verify underlying keyboard does not reactivate",
-    "After focus native acceptance,implement/audit goals context",
-    "Continue new-itemplan,W10 and remaining14workflow14modeacceptance"
+    "Add owner-bound optional goals assistance including empty/loading/failure/list and current data;preservemanual CRUD/reminders and noAIbaseline",
+    "Meaningful owner/connection-statehost tests then actualprovider/native acceptance",
+    "Continue nonemptynew-itemplan,W10 and allremaining14workflow14modeacceptance"
   ],
   "nativeInstalledSource": "evidence/preferences-native-087/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-087.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge19848 stopped;reverse/configremoved;build/installterminal",
-  "testFixture": "Isolated087 launched home;preferences40minutes persisted;balancedGrowth/mixedPractice;originalaccounts untouched",
+  "liveProcesses": "None;bridge87830stopped;reverse/configremoved;no build/test",
+  "testFixture": "Isolated087preferences40minutes,AIcollapsed/disconnected;originalaccounts untouched",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

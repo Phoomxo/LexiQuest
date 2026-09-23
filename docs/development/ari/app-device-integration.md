@@ -711,3 +711,8 @@ Added owner-bound read-only assistance separating draft from last-confirmed valu
 ## Preferences live provider and keyboard recovery — checkpoint087
 
 On APK086, actual provider correctly separated draft55minutes from lastConfirmed35 and unsaved status, then reported saved55 after native manual save. Explicitdisconnect followed by native40minute save and leave/reopen readback passed. This complements086 baseline. Found CHAT-FOCUS-087: removing chat input restored prior numeric form focus and obscured reply. Both send/disconnect regressions reproduced it; clearing focus before these transitions fixes both in6passing panel tests with clean Dart analysis. APK087 built/installed; physical focus retest remains required before next workflow work. Bridge stopped and reverse/configremoved;originalaccounts preserved. [Evidence](preferences-native-087.json).
+
+
+## Native chat focus retest — checkpoint088
+
+APK087 actual-provider retest closes CHAT-FOCUS-087. After focusing the underlying40-minute preference field then sending chat, the field remained unfocused and Android inputShown=false; screenshot confirmed no keyboard. Actual AI replied with correct preferences. Explicitly tapping the form still focused it and opened the keyboard. Repeated the prior-form → chat → disconnect sequence: field stayed unfocused/inputShown=false. Reused unchanged six-test087host evidence. No source changes. Bridge stopped, reverse/configremoved, original accounts untouched. [Evidence](focus-native-088.json). Next: W08 goals optional context and nonemptynew-itemplan; full14workflow14modeacceptance remainsopen.

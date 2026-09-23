@@ -1,0 +1,12 @@
+{
+  "stage": "after-send",
+  "numericFields": [
+    {
+      "minutes": 40,
+      "focused": "false"
+    }
+  ],
+  "inputShown": [
+    "false"
+  ]
+}
