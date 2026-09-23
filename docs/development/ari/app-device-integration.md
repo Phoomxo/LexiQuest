@@ -628,3 +628,7 @@ Added readonly owner-bound active cloze input-mode/phase/index/skip metadata wit
 ### Cloze skip069
 
 Focused real-storage regression verifies skip context reason/phase,transition to choose-input-mode,0committed until actual typed answer then1at index2. Initial test submit lookup required a pump for rebuild;enabled assertion preserved. Prior22tests reused unchanged production. APK069 built/installed;native skip-only without AI completes with no-answer UI and0database attempts/0wrong. [Evidence](cloze-skip-069.json). Native reviewed typed/selected/live journeys pending;set itemCount3 next.
+
+## Cloze baseline native — checkpoint070
+
+APK069 on Vivo, provider disconnected: typed bag correct and selected bag for book incorrect, both locked after submission. Empty typed/unchosen selection guarded. Shared progress 0→33→67 for two answers/three configured items; optional unscored speech does not block next/results. Results50%,1correct/1wrong; real SQLite confirms exactly clozeTyped/independentRecall true at2 and clozeSelected/recognition false at3, no skip attempt. Isolated app restarted; original accounts preserved. [Evidence](cloze-native-070.json). Native live context/disconnect remains next; physical speech and whole-goal acceptance remain open.

@@ -1,0 +1,21 @@
+{
+  "state": "completed",
+  "activity_type": "quiz",
+  "correct_count": 1,
+  "wrong_count": 1,
+  "score": 50,
+  "attempts": [
+    {
+      "prompt_mode": "clozeTyped",
+      "evidence_class": "independentRecall",
+      "is_correct": 1,
+      "attempt_number": 2
+    },
+    {
+      "prompt_mode": "clozeSelected",
+      "evidence_class": "recognition",
+      "is_correct": 0,
+      "attempt_number": 3
+    }
+  ]
+}
