@@ -1,14 +1,14 @@
 {
-  "revision": 115,
+  "revision": 116,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "091addedownerboundgoaleditorcontext,draft/confirmed/pendingstatus;fixedpreparationerrormislabel;23hosttestsPASS;APK091installed,nativepending",
+  "previousTurn": "092 actual provider verified goal editor draft/confirmed separation and invalid draft; disconnected manual save persisted; SQLite learning evidence unchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 goal editor actualprovider/native verification on091",
+  "current": "W08 nonempty new-item study-plan native acceptance",
   "next": [
-    "Freshbridge/loginon091;opennewgoalform and verifyAIreadingdraftwithoutsave;validation and cancel preserveemptylist",
-    "Createoruseeditfixture toverifylastConfirmedvsdraft;manualsave anddisconnectbaseline;noAI mutation",
-    "Continue nonemptynew-itemplan,W10 andremaining14workflow14modeacceptance"
+    "Inspect personal-set selection and study-plan new-item source; create/select supported native fixture",
+    "Verify baseline plan with nonempty new items; connected read and disconnected manual acceptance/rejection",
+    "Continue W10 and remaining14workflow14mode acceptance"
   ],
   "nativeInstalledSource": "evidence/goal-editor-091/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-091.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;tests/build/installterminal;no bridge/reverse/config",
-  "testFixture": "Isolated091launchedhome;goalslistemptyafter090deletedtestgoal;preferences40minutes;planr3due5carry2;originalaccounts untouched",
+  "liveProcesses": "None; bridge60185 stopped, reverse/config removed",
+  "testFixture": "Isolated091 restarted; Saved goal092 revised active deadline2026-09-25T11:10Z; preferences40minutes; planr3due5carry2; original accounts untouched",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

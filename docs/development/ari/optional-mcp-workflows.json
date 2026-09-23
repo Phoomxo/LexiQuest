@@ -145,7 +145,8 @@
         "focus-native-088.json",
         "goals-context-089.json",
         "goals-native-090.json",
-        "goal-editor-091.json"
+        "goal-editor-091.json",
+        "goals-editor-native-092.json"
       ],
       "remainingAcceptance": "Goaleditor091ownerboundcontextimplemented23hosttestsPASS;actualprovider/nativeeditoracceptancepending. Goalslistrepresentative089-090PASS. New-itemnonemptyplan andfinalowner/lifecycleaudit remain."
     },
