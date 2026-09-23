@@ -1,14 +1,14 @@
 {
-  "revision": 95,
+  "revision": 96,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "071 live cloze continuity/persistence PASS;manual-guidance defect host-fixed;APK071 installed",
+  "previousTurn": "072 native live skip/typed/selected guidance PASS;071 defect fixed for reproduced cases;exact2answers",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native retest CLOZE-MANUAL-GUIDANCE-071 before further scope",
+  "current": "Definition native live skip-state guidance, then associative context",
   "next": [
-    "Reconnect/login then live cloze skip and typed manualNextStep guidance;defect still open",
     "Definition native live skip-state guidance",
     "Associative native context gaps",
+    "Refresh remaining workflow/mode audit without inheriting narrow PASS",
     "Export/rewards/speech/camera/sync original gaps"
   ],
   "nativeInstalledSource": "evidence/cloze-live-071/source-pins.json",
@@ -18,7 +18,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge33492 stopped;reverse and private config removed",
-  "testFixture": "Cloze3;live journey completed;APK071 installed/started",
+  "liveProcesses": "None;bridge51875 stopped;reverse/private config removed",
+  "testFixture": "Cloze3 completed100%;isolated restarted home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

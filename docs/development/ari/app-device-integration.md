@@ -636,3 +636,7 @@ APK069 on Vivo, provider disconnected: typed bag correct and selected bag for bo
 ## Cloze live continuity and guidance defect — checkpoint071
 
 APK069 provider recognized skipped1/3 and typed2/3 English context, but incorrectly described only Back/no next control while controls were below AI panel. CLOZE-MANUAL-GUIDANCE-071 remains open pending native retest. Partial ba survived chat/disconnect;appending g gave correct bag;selected book completed100% with exact2attempts/no skip row. Added read-only phase-specific manualNextStep with collapse/scroll and editorial skip meaning. Red missing-context assertion reproduced;full cloze screen+adapter tests PASS;2file analysis clean. APK071 built/installed;fresh live retest next. Bridge stopped/config removed;original app preserved. [Report](cloze-live-071.json).
+
+## Cloze native guidance retest — checkpoint072
+
+APK071 fresh live provider correctly described skip1/3→ดำเนินต่อ,typed2/3→ตรวจคำตอบ,and selected3/3→choose/check in one conversation,each with collapse-AI/scroll instruction. CLOZE-MANUAL-GUIDANCE-071 verified fixed for these reproduced cases. Explicit disconnect before last manual answer retained baseline;100%2correct0wrong with exact2durable attempts at2/3,no skip or AI answers. Source pins match071;23host tests reused. Updated cloze evidence index;whole scope remains OPEN. Bridge/config cleaned,USB stayawake2 preserved. [Evidence](cloze-guidance-072.json). Next:definition live skip and associative context.

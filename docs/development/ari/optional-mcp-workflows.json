@@ -307,11 +307,15 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "assistanceProjection": "HOST_AND_NATIVE_SKIP_TYPED_SELECTED_GUIDANCE_VERIFIED",
       "acceptanceEvidence": [
-        "lesson-assistance-006.json"
+        "cloze-context-068.json",
+        "cloze-skip-069.json",
+        "cloze-native-070.json",
+        "cloze-live-071.json",
+        "cloze-guidance-072.json"
       ],
-      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS"
+      "remainingAcceptance": "Final source-closure/mode acceptance audit;physical optional speech not exercised and not implied by cloze scoring/AI results. Latest live replies tested English sentence/input capability;no unsupported language direction claim."
     },
     {
       "id": "matching",
