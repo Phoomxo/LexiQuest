@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:drift/drift.dart'
@@ -392,6 +394,105 @@ PairMatchingExperienceRuntime _runtime(
 }
 
 void main() {
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    for (final readFault in [false, true]) {
+      testWidgets('Pair MCP result $connection readFault=$readFault', (
+        tester,
+      ) async {
+        final h = PairHarness();
+        addTearDown(h.db.close);
+        await h.initialize(measured: true);
+        String? aiOwner = h.owner;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final runtime = _runtime(
+          h,
+          resultReader: readFault ? _FailResultRead(h.real) : null,
+        );
+        final app = MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: PairMatchingExperienceHost.recover(
+            runtime: runtime,
+            operation: h.operation,
+            onExit: () {},
+          ),
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        await tester.pumpAndSettle();
+        final originalController = tester
+            .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+            .controller;
+        expect(
+          registry.snapshot()['context'].toString(),
+          isNot(contains('matching/result-assistance')),
+        );
+        for (var i = 0; i < 4; i++) {
+          await tester.tap(
+            find.byKey(ValueKey('pair-tile:prompt:synthetic-$i')),
+          );
+          await tester.pumpAndSettle();
+          if (i == 1 && connection == 'disconnected') {
+            aiOwner = null;
+            registry.invalidateSession(preserveContext: true);
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+          await tester.tap(
+            find.byKey(ValueKey('pair-tile:target:synthetic-$i')),
+          );
+          await tester.pumpAndSettle();
+        }
+        if (readFault) {
+          expect(find.byKey(const ValueKey('pair-result')), findsNothing);
+          expect(
+            registry.snapshot()['context'].toString(),
+            isNot(contains('matching/result-assistance')),
+          );
+          await tester.tap(find.byKey(const ValueKey('pair-retry')));
+          await tester.pumpAndSettle();
+        }
+        expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
+        expect(
+          tester
+              .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+              .controller,
+          same(originalController),
+        );
+        final stored = await h.real.read(
+          ownerId: h.owner,
+          sessionId: h.operation.plan.learningSessionId,
+        );
+        expect(stored.snapshot!.terminal!.acknowledged, true);
+        expect(await h.db.select(h.db.answerAttempts).get(), hasLength(4));
+        if (connection == 'disconnected') aiOwner = h.owner;
+        if (connection != 'absent') {
+          final entries = registry.snapshot()['context'] as List;
+          final selected = entries
+              .where((dynamic e) => e['id'] == 'matching/result-assistance')
+              .toList();
+          expect(selected, hasLength(1));
+          final data = jsonDecode(selected.single['value'] as String) as Map;
+          expect(data['purpose'], 'learning');
+          expect(data['firstAnswers'], {'correct': 4, 'total': 4});
+          expect(data['matched'], 4);
+          expect(data['stars'], 3);
+          expect(data['replayAddsProgressOrRewards'], false);
+          aiOwner = 'different-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      });
+    }
+  }
+
   for (final interruption in ['dispose', 'owner']) {
     testWidgets(
       'R15 feedback rejects duplicate input and cleans up on $interruption',

@@ -1,24 +1,24 @@
 {
-  "revision": 71,
+  "revision": 72,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "047 six actual legacy matching screen MCP cases; full matching test file pass; production unchanged",
+  "previousTurn": "048 canonical Pair result MCP binding added;6newcases and55hosttests PASS;analysis clean;APK048 installed and home smoke passed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Canonical Pair matching context/native coverage remains open",
+  "current": "Canonical Pair active board and nativeprovider result/replay coverage pending",
   "next": [
-    "Canonical Pair experience active/result MCP coverage and native acceptance",
+    "Assess active canonical Pair board context and replay-specific result tests",
+    "Native Pair MCP result acceptance on APK048",
     "CEFR connected/disconnected session with retained AriCEFR045 fixture",
-    "Native dictation/audio and remaining14workflow/mode acceptance",
-    "Whole-project SDLC/Agile review after MCP acceptance"
+    "Native dictation/audio and remaining14workflow/mode acceptance;whole-project review after MCP acceptance"
   ],
-  "nativeInstalledSource": "045 source pinned in evidence/cefr-session-045/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-045.apk",
+  "nativeInstalledSource": "048 source pinned in evidence/pair-result-048/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-048.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No live test/build/bridge; targeted6 and full matching file terminal PASS; analysis terminal clean",
-  "testFixture": "Retain isolated AriCEFR045 category and catalog a/A1 for next native sessions;one18sec exposure persisted;endhistory;AIcollapsed/disconnected;USB2",
+  "liveProcesses": "No live bridge/build/test; all terminal",
+  "testFixture": "AriCEFR045 retained; device at home;AIcollapsed;USB2; original app preserved",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

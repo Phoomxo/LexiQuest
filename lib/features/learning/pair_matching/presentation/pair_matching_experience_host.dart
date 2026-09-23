@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import '../../../../config/m3_theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
@@ -1582,37 +1584,69 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
           }
         });
       }
-      return Scaffold(
-        key: const ValueKey('pair-result'),
-        appBar: AppBar(title: Text(copy('จับคู่ครบแล้ว', 'Matching complete'))),
-        body: Column(
-          children: [
-            if (_error || widget.replayError)
-              Text(
-                copy(
-                  'ยังบันทึกไม่ได้ คำตอบของคุณยังอยู่',
-                  'Unable to save. Your answers are retained.',
+      // Project only the canonical result already accepted by the result reader.
+      // No answer submission, reward or navigation authority is exposed here.
+      return MenuActionBinding(
+        id: 'matching/result-assistance',
+        label: 'ผลจับคู่ที่ยืนยันแล้ว',
+        ownerId: _liveOwner,
+        onInvoke: null,
+        readValue: _liveOwner == null
+            ? null
+            : jsonEncode({
+                'scope': 'one-displayed-session-not-overall-proficiency',
+                'mode': 'matching',
+                'resultAvailable': true,
+                'purpose': result.purpose.name,
+                'firstAnswers': {
+                  'correct': result.firstAnswers.correct,
+                  'total': result.firstAnswers.total,
+                },
+                'repairAnswers': {
+                  'correct': result.repairAnswers.correct,
+                  'total': result.repairAnswers.total,
+                },
+                'matched': result.result.matched,
+                'independent': result.result.independent,
+                'assisted': result.result.assisted,
+                'stars': result.result.stars,
+                'interactiveElapsedMs': result.timer.interactiveElapsedMs,
+                'replayAddsProgressOrRewards': false,
+              }),
+        child: Scaffold(
+          key: const ValueKey('pair-result'),
+          appBar: AppBar(
+            title: Text(copy('จับคู่ครบแล้ว', 'Matching complete')),
+          ),
+          body: Column(
+            children: [
+              if (_error || widget.replayError)
+                Text(
+                  copy(
+                    'ยังบันทึกไม่ได้ คำตอบของคุณยังอยู่',
+                    'Unable to save. Your answers are retained.',
+                  ),
+                ),
+              if (_error)
+                TextButton(
+                  onPressed: _acknowledgeResult,
+                  child: Text(copy('ลองอีกครั้ง', 'Retry')),
+                ),
+              Expanded(
+                child: PairMatchingResultView(
+                  result: result,
+                  locale: Localizations.localeOf(context),
+                  onReturn: widget.onExit,
+                  onPracticeReplay: widget.onReplay,
+                  onReview:
+                      widget.onReview == null ||
+                          widget.runtime.reviewDeferral == null
+                      ? null
+                      : _review,
                 ),
               ),
-            if (_error)
-              TextButton(
-                onPressed: _acknowledgeResult,
-                child: Text(copy('ลองอีกครั้ง', 'Retry')),
-              ),
-            Expanded(
-              child: PairMatchingResultView(
-                result: result,
-                locale: Localizations.localeOf(context),
-                onReturn: widget.onExit,
-                onPracticeReplay: widget.onReplay,
-                onReview:
-                    widget.onReview == null ||
-                        widget.runtime.reviewDeferral == null
-                    ? null
-                    : _review,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }

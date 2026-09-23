@@ -497,6 +497,12 @@
       "receipt": "matching-disconnect-047.json",
       "scope": "Actual legacy matching screen plus real Drift;6 connection/answer variants;notcanonicalPair/nativeprovider",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "pair-result-048",
+      "receipt": "pair-result-048.json",
+      "scope": "Canonical Pair acknowledged result projection;6registry/fault tests plus full55hosttests;APK048home smoke only",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false
