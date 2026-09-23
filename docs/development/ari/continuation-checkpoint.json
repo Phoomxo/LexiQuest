@@ -1,12 +1,12 @@
 {
-  "revision": 128,
+  "revision": 129,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "104 SRS host retry/connectionchange PASS for remembered and notremembered;no stalecard aftersessionend",
+  "previousTurn": "105 native actualAI prereveal/revealed correct;disconnect Continue/Again completes;2attempts onlyclockSRSchange",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W07 actualprovider SRS context connected/disconnected",
+  "current": "Final W07 coverage/AI wording audit then next uncovered workflow",
   "next": [
-    "Start bridge/login and inspect SRS current card/reveal AI explanation; disconnect and finish manually;compare103 DB. Baseline102/103 accepted;do not repeat.",
+    "Audit105 response quality:initial closing question suggests self-assessment afterreveal;followup correct Continue. Keep no-false-recall policy;continue fullmatrix gaps.",
     "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
     "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
   ],
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge64483 stopped;USB reverse and runtime config removed",
+  "liveProcesses": "None;bridge39515 stopped;reverse/config removed;isolated098 restartedhome",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim.",
   "jev": "API key saved Windows DPAPI under LOCALAPPDATA/LexiQuestDevSecrets/jev-gateway.dpapi; never print/commit. No model calls. Account requests card to unlock free credits;catalog API nonzero despite promo pageFree. User zero-expenditure restriction remains;await billing prerequisite and verification, do not purchase."

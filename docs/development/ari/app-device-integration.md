@@ -791,3 +791,7 @@ Isolated Vivo098 without provider: simulated Good on spoon before reveal, then r
 ### Checkpoint104 — SRS retry across optional connection changes
 
 Bounded SRS screen suite PASS. Extended both self-rating failure tests: context correctly reports retry, disconnect hides it, manual retry retains frozen evidence identity and commits once. Completed one-card session finishes once and exposes no stale card after reconnect. Initial fixture expected a card after completion; corrected to stronger empty-context/one-finish assertions. Application source unchanged. [Evidence](srs-context-104.json). Native provider journey remains open.
+
+### Checkpoint105 — actual provider SRS and disconnected completion
+
+Actual provider correctly described awaitingRecall1/2, exposure semantics, then revealed state and Continue after manual reveal. Disconnect followed by Continue and simulated Again on clock completed baseline session. Database adds plate exposure and clock incorrect recall only; only clock SRS changes;points/reading unchanged. Initial AI closing question about post-reveal self-assessment remains a wording audit item. One missed input tap exited an ungraded session; corrected after screenshot, no extra attempts. [Evidence](srs-native-105.json). Full acceptance remains open.
