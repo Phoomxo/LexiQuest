@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
+import 'package:vocab_learning_app/features/learning/presentation/legacy_matching_mode_screen.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -38,6 +41,7 @@ void main() {
   late DriftLocalOwnerRepository owners;
   late LearningUseCases learning;
   var generatedId = 0;
+  late String localOwnerId;
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
@@ -47,6 +51,7 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 8, 25, 9),
     );
     final owner = await owners.getOrCreateActiveOwner();
+    localOwnerId = owner.id;
     await database.customStatement(
       'INSERT INTO vocabulary_categories '
       '(id, owner_id, name, normalized_name, created_at_utc_ms, updated_at_utc_ms) '
@@ -76,6 +81,108 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    for (final correct in [true, false]) {
+      testWidgets('matching MCP $connection answer correct=$correct', (
+        tester,
+      ) async {
+        String? aiOwner = localOwnerId;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        const adapter = MatchingModeAdapter();
+        final app = MaterialApp(
+          home: UnifiedLessonModeHost(
+            adapter: adapter,
+            learning: learning,
+            createController: (modeAdapter) => UnifiedLessonController(
+              learning: learning,
+              adapter: modeAdapter,
+            ),
+            builder: (_) => _screen(learning, adapter: adapter),
+          ),
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        final word = find.byKey(
+          const ValueKey<String>('matching-word-word:airport'),
+        );
+        await _pumpUntilFound(tester, word);
+        final originalState = tester.state(
+          find.byType(LegacyMatchingModeScreen),
+        );
+        expect(
+          registry.snapshot()['context'].toString(),
+          isNot(contains('correctAnswer')),
+        );
+        await tester.ensureVisible(word);
+        await tester.tap(word);
+        await tester.pump();
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        final meaning = find.byKey(
+          ValueKey<String>(
+            'matching-meaning-word:${correct ? 'airport' : 'station'}',
+          ),
+        );
+        await tester.ensureVisible(meaning);
+        await tester.tap(meaning);
+        await _pumpUntilFound(
+          tester,
+          find.text('คำตอบที่ถูก: place for flights'),
+        );
+        final rows = await database.select(database.answerAttempts).get();
+        expect(rows, hasLength(1));
+        expect(rows.single.isCorrect, correct);
+        expect(rows.single.promptMode, 'matchingPair');
+        expect(
+          _context(rows.single.evidenceContextJson).evidenceClass,
+          EvidenceClass.recognition,
+        );
+        expect(
+          tester.state(find.byType(LegacyMatchingModeScreen)),
+          same(originalState),
+        );
+        if (connection == 'disconnected') aiOwner = localOwnerId;
+        if (connection != 'absent') {
+          final entries = registry.snapshot()['context'] as List;
+          final lesson =
+              jsonDecode(
+                    entries.singleWhere(
+                          (dynamic e) => e['id'] == 'lesson/assistance',
+                        )['value']
+                        as String,
+                  )
+                  as Map;
+          expect(lesson['mode'], 'matching');
+          final feedback =
+              jsonDecode(
+                    entries.singleWhere(
+                          (dynamic e) => e['id'] == 'lesson/committed-feedback',
+                        )['value']
+                        as String,
+                  )
+                  as Map;
+          expect(feedback['lastCommittedFeedback']['isCorrect'], correct);
+          expect(
+            feedback['lastCommittedFeedback']['correctAnswer'],
+            'place for flights',
+          );
+          aiOwner = 'other-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      });
+    }
+  }
 
   testWidgets(
     'f38 ultra review: matching feedback follows response semantics',

@@ -1,14 +1,15 @@
 {
-  "revision": 70,
+  "revision": 71,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "046 six dictation MCP host parity cases;10targeted tests pass;production unchanged",
+  "previousTurn": "047 six actual legacy matching screen MCP cases; full matching test file pass; production unchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Remaining nativeprovider/device acceptance;production045installed",
+  "current": "Canonical Pair matching context/native coverage remains open",
   "next": [
-    "Dictation liveprovider/no-provider/disconnected physical audio and answer interactions",
-    "Native CEFR connected/disconnected session tests with retained AriCEFR045 fixture",
-    "Remaining14workflow/mode acceptance including speech/camera/sync;whole-project review queued"
+    "Canonical Pair experience active/result MCP coverage and native acceptance",
+    "CEFR connected/disconnected session with retained AriCEFR045 fixture",
+    "Native dictation/audio and remaining14workflow/mode acceptance",
+    "Whole-project SDLC/Agile review after MCP acceptance"
   ],
   "nativeInstalledSource": "045 source pinned in evidence/cefr-session-045/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-045.apk",
@@ -17,7 +18,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No live bridge/build/test;96292and78707terminal pass",
+  "liveProcesses": "No live test/build/bridge; targeted6 and full matching file terminal PASS; analysis terminal clean",
   "testFixture": "Retain isolated AriCEFR045 category and catalog a/A1 for next native sessions;one18sec exposure persisted;endhistory;AIcollapsed/disconnected;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
