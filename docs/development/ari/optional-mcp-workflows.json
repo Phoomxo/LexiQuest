@@ -503,6 +503,12 @@
       "receipt": "pair-result-048.json",
       "scope": "Canonical Pair acknowledged result projection;6registry/fault tests plus full55hosttests;APK048home smoke only",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "pair-native-049",
+      "receipt": "pair-native-049.json",
+      "scope": "Vivo normal no-provider completion,authenticatedAIexactresult,explicitdisconnect then replaycompletion;notalladversarialcases",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false
