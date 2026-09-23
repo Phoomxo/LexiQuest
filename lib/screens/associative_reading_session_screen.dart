@@ -628,6 +628,20 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _nextStage() async {
     if (_actionLocked) return;
+    if (_currentStage == 3 &&
+        !_recallBatchFrozen &&
+        _recallControllers.any((controller) {
+          final value = controller.value;
+          return value.text.trim().isEmpty ||
+              (value.composing.isValid && !value.composing.isCollapsed);
+        })) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('กรุณาพิมพ์คำตอบทุกช่องให้เสร็จก่อนดำเนินต่อ'),
+        ),
+      );
+      return;
+    }
     _lessonLifecycle?.recordInteraction();
     setState(() => _saving = true);
 

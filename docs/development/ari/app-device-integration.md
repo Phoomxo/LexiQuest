@@ -644,3 +644,7 @@ APK071 fresh live provider correctly described skip1/3→ดำเนินต�
 ## Definition live skip — checkpoint073
 
 APK071 provider correctly describes skipped definition1/3 English→English,no answer to grade,and Continue. Reply uses English Continue rather than Thai button label;no exact-label claim. Explicit disconnect at skip retains manual advance;bag/book answers complete100%2correct0wrong. Exact2recognition attempts at2/3,no skipped or AI response row. [Evidence](definition-skip-live-073.json). Updated mode ledger;overall acceptance remains OPEN. Bridge/config removed,isolated home restored. Next:associative native context.
+
+## Associative blank recall guard — checkpoint074
+
+Native baseline exposed ASSOCiATIVE-BLANK-074:empty Stage3 submit persisted one wrong independentRecall and froze input. Corrected screen guard before capture for blank/whitespace and composing text,leaving frozen retry semantics intact. New regression red before fix;26full screen tests PASS after updating four later-stage fixtures to enter answers;2file analysis clean. APK074 built/installed;native blank stays editable atStage3 with validation message,real SQLite0attempts0wrong. Current bottle session remains active atStage3 after snapshot/restart. [Evidence](associative-blank-074.json). Six-stage valid continuation and owner-bound actual-stage AI context remain required;no whole-mode PASS.

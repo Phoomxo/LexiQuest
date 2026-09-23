@@ -322,6 +322,19 @@ void main() {
       },
     );
 
+    Future<void> fillRecallForLaterStageFixture(WidgetTester tester) async {
+      if (find.text('ขั้นที่ 3: นึกคำจากความจำ').evaluate().isEmpty) return;
+      final screen = tester.widget<AssociativeReadingSessionScreen>(
+        find.byType(AssociativeReadingSessionScreen),
+      );
+      for (var index = 0; index < screen.targetWords.length; index++) {
+        await tester.enterText(
+          find.byType(TextField).at(index),
+          screen.targetWords[index],
+        );
+      }
+    }
+
     testWidgets('Renders stages and progresses through 6 stages', (
       WidgetTester tester,
     ) async {
@@ -341,6 +354,7 @@ void main() {
             );
           }
         }
+        await fillRecallForLaterStageFixture(tester);
         await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         final title = 'ขั้นที่ $stage: ${_stageName(stage)}';
         await pumpUntilFound(tester, find.text(title));
@@ -449,6 +463,7 @@ void main() {
         await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
         for (var i = 0; i < 3; i++) {
+          await fillRecallForLaterStageFixture(tester);
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
@@ -997,6 +1012,82 @@ void main() {
         ))!;
         expect(srs.map((row) => row.wordId), <String>['word-beacon']);
         expect(controller.hintState!.hintLevel, 0);
+      },
+    );
+
+    testWidgets(
+      'Stage 3 rejects blank and composing input before any evidence',
+      (tester) async {
+        final repository = _OrderedCompletionLearningRepository();
+        final contractLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'over-limit-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 13, 0, id),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-limit'),
+        );
+        await tester.pumpWidget(
+          session(
+            targetWords: const <String>['anchor'],
+            targetWordIds: const <String, String>{'anchor': 'word-anchor'},
+            learningUseCases: contractLearning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(
+              learning: contractLearning,
+            ),
+            modeAdapter: const TypedRecallModeAdapter(),
+            sessionId: 'over-limit-session',
+          ),
+        );
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
+        for (var stage = 2; stage <= 3; stage++) {
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+              )
+              .onPressed!();
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
+          );
+        }
+        final field = tester.widget<TextField>(find.byType(TextField));
+        expect(field.maxLength, TypedRecallModeAdapter.maxAnswerScalars);
+        for (final value in <TextEditingValue>[
+          const TextEditingValue(),
+          const TextEditingValue(text: '   '),
+          const TextEditingValue(
+            text: 'anchor',
+            composing: TextRange(start: 0, end: 6),
+          ),
+        ]) {
+          field.controller!.value = value;
+
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+              )
+              .onPressed!();
+          await tester.pump();
+          expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
+          expect(repository.answerCommands, isEmpty);
+          expect(
+            tester.widget<TextField>(find.byType(TextField)).enabled,
+            isTrue,
+          );
+        }
+
+        field.controller!.text = 'anchor';
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+            )
+            .onPressed!();
+        await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
+        expect(repository.answerCommands, hasLength(1));
+        expect(
+          repository.answerCommands.single.providerProvenance,
+          isNot(contains('x' * 121)),
+        );
       },
     );
 
@@ -1561,6 +1652,7 @@ void main() {
         );
         await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 4; stage++) {
+          await fillRecallForLaterStageFixture(tester);
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
@@ -1660,6 +1752,7 @@ void main() {
         );
         await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 4; stage++) {
+          await fillRecallForLaterStageFixture(tester);
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,

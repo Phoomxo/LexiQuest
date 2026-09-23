@@ -1,0 +1,27 @@
+{
+  "checkpoint": "074",
+  "status": "ASSOCIATIVE_BLANK_DEFECT_HOST_AND_NATIVE_RETEST_PASS",
+  "defect": {
+    "id": "ASSOCIATIVE-BLANK-074",
+    "before": "Native Stage3 empty submit persisted one wrong independentRecall and froze input;subsequent probe Back abandoned session",
+    "cause": "Screen forwarded blank recall batch;typed adapter validates shape/length but permits empty response",
+    "fix": "Screen rejects blank/whitespace or active composing range before capture/save;frozen retry batches retain original retry path",
+    "nativeAfter": "Stage3 remains editable with fill-all-fields message;real SQLite active session0attempts0wrong"
+  },
+  "host": {
+    "red": "New blank/composing test advanced beyondStage3 before fix",
+    "green": "26full screen tests PASS;2file analysis clean",
+    "fixtures": "Four later-stage tests previously skipped blank recall;now enter target words before progression;original assertions retained",
+    "harnessRecovery": "Initial Python encoding failure produced no test;UTF8 read corrected. Fullsuite stopped after fixture failures then corrected and fully rerun."
+  },
+  "installedApk": "build/ari-assistance-074.apk",
+  "apkSha256": "83cc583f6a4d0758513c058df929f2df35db64dc20dd5bdb08c886e52c5bdc3e",
+  "evidence": "evidence/associative-blank-074/",
+  "remaining": [
+    "Native valid answer continuation across stages4-6",
+    "Implement actual associative stage context;current screen lacks mode-specific binding",
+    "Native connected/disconnected assistance for associative mode",
+    "Original14workflow/14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}
