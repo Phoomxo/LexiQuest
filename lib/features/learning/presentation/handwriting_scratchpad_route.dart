@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../../ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 
@@ -40,25 +42,31 @@ final class _HandwritingScratchpadRouteState
     _featureChanges = features is Listenable ? features as Listenable : null;
     _featureChanges?.addListener(_onFeatureChanged);
     final database = dependencies?.database;
-    if (_retired || database == null || !_deliverable ||
+    if (_retired ||
+        database == null ||
+        !_deliverable ||
         features?.isEnabled(Feature.quiz) != true) {
       _retire();
       return;
     }
-    _owners = (database.select(database.localOwners)
-          ..where((row) => row.isActive.equals(true)))
-        .watch()
-        .map((rows) => rows.map((row) => row.id).toList())
-        .listen((ids) {
-          if (!mounted || _retired) return;
-          if (ids.length != 1 || ids.single != widget.ownerId) {
-            setState(_retire);
-          } else {
-            setState(() => _ready = true);
-          }
-        }, onError: (Object _, StackTrace _) {
-          if (mounted) setState(_retire);
-        });
+    _owners =
+        (database.select(database.localOwners)
+              ..where((row) => row.isActive.equals(true)))
+            .watch()
+            .map((rows) => rows.map((row) => row.id).toList())
+            .listen(
+              (ids) {
+                if (!mounted || _retired) return;
+                if (ids.length != 1 || ids.single != widget.ownerId) {
+                  setState(_retire);
+                } else {
+                  setState(() => _ready = true);
+                }
+              },
+              onError: (Object _, StackTrace _) {
+                if (mounted) setState(_retire);
+              },
+            );
   }
 
   bool get _deliverable =>
@@ -97,7 +105,23 @@ final class _HandwritingScratchpadRouteState
       builder: (_) => Scaffold(
         appBar: AppBar(title: const Text('กระดานฝึกเขียน')),
         body: _ready
-            ? HandwritingScratchpad(controller: _controller)
+            ? MenuActionBinding(
+                id: 'writing/scratchpad-assistance',
+                label: 'คำแนะนำกระดานฝึกเขียนในเครื่อง',
+                ownerId: widget.ownerId,
+                onInvoke: null,
+                readValue: jsonEncode({
+                  'mode': 'handwriting-scratchpad',
+                  'languages': ['en', 'th'],
+                  'purpose': 'local-unscored-self-check',
+                  'automaticHandwritingAssessment': false,
+                  'writesProgressOrRewards': false,
+                  'scratchContentShared': false,
+                  'guidance':
+                      'Explain how to write or type, compare with a reference, undo or clear, and choose self-check or more practice. The learner controls these actions. No strokes, typed answer or self-check result are available to AI. Do not grade handwriting, infer correctness, or claim saved evidence.',
+                }),
+                child: HandwritingScratchpad(controller: _controller),
+              )
             : const Center(child: CircularProgressIndicator()),
       ),
     );

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' show TableUpdate;
@@ -257,6 +259,90 @@ Future<void> _openConfiguredMode(
 }
 
 void main() {
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets('scratchpad MCP $connection preserves local-only input', (
+      tester,
+    ) async {
+      final harness = await _SrsGateHarness.create(enableHandwriting: true);
+      addTearDown(harness.close);
+      final owner = await harness.dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      String? aiOwner = owner.id;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      Future<String> snapshot() async => jsonEncode({
+        for (final table in harness.database.allTables)
+          table.actualTableName: [
+            for (final row
+                in await harness.database
+                    .customSelect('SELECT * FROM "${table.actualTableName}"')
+                    .get())
+              row.data,
+          ],
+      });
+      final before = await snapshot();
+      final app = AppDependenciesScope(
+        dependencies: harness.dependencies,
+        child: MaterialApp(home: HandwritingScratchpadRoute(ownerId: owner.id)),
+      );
+      await tester.pumpWidget(
+        connection == 'absent'
+            ? app
+            : MenuActionScope(registry: registry, child: app),
+      );
+      await tester.pumpAndSettle();
+      final originalState = tester.state(find.byType(HandwritingScratchpad));
+      final field = find.byType(TextField);
+      await tester.ensureVisible(field);
+      await tester.enterText(field, 'private scratch answer');
+      final controller = tester
+          .widget<HandwritingScratchpad>(find.byType(HandwritingScratchpad))
+          .controller!;
+      controller.beginStroke(const Offset(10, 10));
+      controller.appendPoint(const Offset(20, 20));
+      await tester.pump();
+      if (connection == 'disconnected') {
+        aiOwner = null;
+        registry.invalidateSession(preserveContext: true);
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      await tester.ensureVisible(find.text('ตรวจด้วยตัวเองแล้ว'));
+      await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.state(find.byType(HandwritingScratchpad)),
+        same(originalState),
+      );
+      expect(
+        tester.widget<TextField>(field).controller!.text,
+        'private scratch answer',
+      );
+      expect(controller.strokeCount, 1);
+      expect(await snapshot(), before);
+      if (connection == 'disconnected') aiOwner = owner.id;
+      if (connection != 'absent') {
+        final entries = registry.snapshot()['context'] as List;
+        final selected = entries
+            .where((dynamic e) => e['id'] == 'writing/scratchpad-assistance')
+            .toList();
+        expect(selected, hasLength(1));
+        final data = jsonDecode(selected.single['value'] as String) as Map;
+        expect(data['mode'], 'handwriting-scratchpad');
+        expect(data['automaticHandwritingAssessment'], false);
+        expect(data['writesProgressOrRewards'], false);
+        expect(
+          registry.snapshot().toString(),
+          isNot(contains('private scratch answer')),
+        );
+        aiOwner = 'other-owner';
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      expect(registry.snapshot()['actions'], isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(controller.strokeCount, 0);
+    });
+  }
+
   testWidgets('A-UI-08 Choose bounds and bottom system inset', (tester) async {
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;

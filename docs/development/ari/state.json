@@ -235,5 +235,6 @@
   "latestPairAdversarial": "pair-adversarial-050.json",
   "latestCefrSessionNative": "cefr-session-native-051.json",
   "latestDictationNative": "dictation-native-052.json",
-  "latestAcceptanceAudit": "acceptance-audit-053.json"
+  "latestAcceptanceAudit": "acceptance-audit-053.json",
+  "latestHandwritingAssistance": "handwriting-assistance-054.json"
 }

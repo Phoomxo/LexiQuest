@@ -555,3 +555,7 @@ Added CEFR to shared visible/AI reading-exposure interpretation. Regression fail
 ### Dictation registry parity on native screen — checkpoint046
 
 Six new cases cross correct/incorrect answers with absent/connected/disconnected registry. Actual production screen/loader/controller and Drift in-memory preserve typed input, one durable write and committed feedback; target answer stays hidden until commit and owner changes hide old context. Voice is a test double and registry state is not live-provider evidence. Ten targeted dictation cases and analysis pass. [Evidence](dictation-disconnect-046.json). Production unchanged; APK045 remains installed, native audio/provider coverage pending.
+
+### Handwriting optional assistance — checkpoint 054
+
+Added owner-bound, read-only method guidance to the standalone scratchpad. Private strokes and typed text stay local; guidance cannot grade or award progress. Seven selected host tests pass, including absent/connected/disconnected variants with all-table storage invariance. APK054 built and installed on Vivo; baseline drawing, undo and both empty/populated self-check feedback observed. Native live-provider guidance/disconnect remains pending; this does not close the 14-mode goal. See [structured evidence](handwriting-assistance-054.json).

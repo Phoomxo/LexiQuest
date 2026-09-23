@@ -1,24 +1,24 @@
 {
-  "revision": 77,
+  "revision": 78,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "053 audited reports/current requirements;28rowevidencegapcrosswalk created;no tests/build/devicechanges",
+  "previousTurn": "054 implemented handwriting method context;7 host tests green;APK054 installed;native baseline drawing/undo/empty and populated self-check observed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Flashcard/handwriting actualscreen MCP coverage",
+  "current": "Handwriting live provider/disconnect then flashcard actualscreen coverage",
   "next": [
     "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
     "Definition/cloze/typedrecall/associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
     "Successful speech/camera and actual sync path prerequisites"
   ],
-  "nativeInstalledSource": "048 source pinned in evidence/pair-result-048/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-048.apk",
+  "nativeInstalledSource": "054 evidence/handwriting-assistance-054/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-054.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No live bridge/build/test",
-  "testFixture": "AriCEFR045 retained;oneadditionaldictationsessioncompleted052with2guidedattempts;devicehome;AIcollapsed;USB2",
+  "testFixture": "AriCEFR045 retained; device on scratchpad;one ephemeral stroke;AI collapsed;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
