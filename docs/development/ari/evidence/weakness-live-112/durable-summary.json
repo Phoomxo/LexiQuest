@@ -1,0 +1,12 @@
+{
+  "attempts": [
+    [
+      "word:starter-bag",
+      "meaningChoice",
+      1,
+      "recognition"
+    ]
+  ],
+  "count": 1,
+  "qaSimulation": true
+}

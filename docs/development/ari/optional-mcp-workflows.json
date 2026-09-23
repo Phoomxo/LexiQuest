@@ -133,9 +133,11 @@
         "srs-native-107.json",
         "review-context-108.json",
         "review-native-109.json",
-        "weakness-empty-110.json"
+        "weakness-empty-110.json",
+        "weakness-native-111.json",
+        "weakness-live-112.json"
       ],
-      "remainingAcceptance": "Empty weakness native retest110;transfer-probe actual provider unverified behind implementedOff038 (no research activation). Review102/108/109 andSRS103-107 representative evidence retained."
+      "remainingAcceptance": "Empty weakness baseline111 andactualprovider112 verified;transfer-probe live remains unverified behind implementedOff038 without research activation. Final source-specific coverage audit retained;no full W07 claim."
     },
     {
       "id": "W08",

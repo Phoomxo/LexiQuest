@@ -824,3 +824,8 @@ Fixed early returns bypassing optional summary for zero samples/no incorrect wor
 ### Weakness empty native baseline — checkpoint111
 
 Built/installed110. Fresh disposable SQLite fixture on Vivo showed sample0 without provider, remained usable with unpaired AI, then showed no incorrect words/sample1 after a manual correct bag answer and confirmed early exit. This was not completion of the10-item quiz. Original isolated database/main/WAL/SHM restored byte-identically and app restarted; original app/accounts untouched. [Evidence](weakness-native-111.json). Actual-provider empty-state replies remain pending; no whole-workflow acceptance claim.
+
+
+### Empty weakness actual-provider acceptance — checkpoint112
+
+Vivo isolated110 actual replies accurately read0 then1 sample,0weak words/0due, rejecting mastery inference in both states. One correct bag answer was entered manually;10-item session exited early, not completed. After explicitdisconnect clinic stayed usable and returned to progress. Retained disposable database contains exactly that one recognition attempt. Original main/WAL/SHM restored byte-identically;bridge/reverse/config cleaned. [Evidence](weakness-live-112.json). W07 transfer-probe live prerequisite and full14workflow/14mode acceptance remain open.
