@@ -24,7 +24,12 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "chat-mcp-001.json",
+        "process-recovery-037.json"
+      ],
+      "remainingAcceptance": "Verify current source owner/logout/error coverage against acceptance; standalone delivery remains unproven"
     },
     {
       "id": "W02",
@@ -34,7 +39,11 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "settings-review-progress-native-033.json"
+      ],
+      "remainingAcceptance": "Map remaining preference controls to host/native acceptance"
     },
     {
       "id": "W03",
@@ -44,7 +53,12 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "lesson-assistance-006.json",
+        "vocabulary-native-010.json"
+      ],
+      "remainingAcceptance": "Late attachment and mutation failure/readback coverage audit"
     },
     {
       "id": "W04",
@@ -54,7 +68,12 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "chat-mcp-001.json",
+        "dictation-native-052.json"
+      ],
+      "remainingAcceptance": "Native Thai text-entry and current source protocol error coverage"
     },
     {
       "id": "W05",
@@ -64,7 +83,14 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "pair-native-049.json",
+        "pair-adversarial-050.json",
+        "scramble-native-040.json",
+        "dictation-native-052.json"
+      ],
+      "remainingAcceptance": "See all14mode rows; core native modes still lack live evidence"
     },
     {
       "id": "W06",
@@ -74,7 +100,13 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "cefr-assistance-043.json",
+        "cefr-session-045.json",
+        "cefr-session-native-051.json"
+      ],
+      "remainingAcceptance": "Associative-reading live context and mode-specific native parity"
     },
     {
       "id": "W07",
@@ -84,7 +116,12 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "lesson-disconnect-031.json",
+        "settings-review-progress-native-033.json"
+      ],
+      "remainingAcceptance": "Native review answer/feedback through provider connection change"
     },
     {
       "id": "W08",
@@ -94,7 +131,11 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "study-plan-native-018.json"
+      ],
+      "remainingAcceptance": "Nonempty plan; goals/preferences context; pure late-attach reload behavior"
     },
     {
       "id": "W09",
@@ -104,7 +145,13 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "settings-review-progress-native-033.json",
+        "camera-result-036.json",
+        "pair-native-049.json"
+      ],
+      "remainingAcceptance": "Verify current full history/progress effect coverage,mode-specific remaining sources"
     },
     {
       "id": "W10",
@@ -114,7 +161,13 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "quest-assistance-022.json",
+        "rewards-assistance-023.json",
+        "native-context-028.json"
+      ],
+      "remainingAcceptance": "Native mutation state/preview/equip/readback and insufficient-coins behavior"
     },
     {
       "id": "W11",
@@ -124,7 +177,13 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "speaking-assistance-041.json",
+        "shadowing-save-042.json",
+        "dictation-native-052.json"
+      ],
+      "remainingAcceptance": "Successful physical recognized transcript and connected/disconnected result; audio quality unverified"
     },
     {
       "id": "W12",
@@ -134,7 +193,11 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "camera-result-036.json"
+      ],
+      "remainingAcceptance": "Known object successful mapped vocabulary/save and connection-loss path"
     },
     {
       "id": "W13",
@@ -144,7 +207,12 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "export-assistance-020.json",
+        "native-context-028.json"
+      ],
+      "remainingAcceptance": "Native export/save/cancel with file bytes and live saved-status readback"
     },
     {
       "id": "W14",
@@ -154,7 +222,13 @@
         "neverConnected",
         "connected",
         "disconnectedOrFailed"
-      ]
+      ],
+      "acceptanceEvidence": [
+        "offline-native-027.json",
+        "native-context-028.json",
+        "settings-review-progress-native-033.json"
+      ],
+      "remainingAcceptance": "Actual cloud sync unavailable in isolated build; inspect supported authorized path and concrete prerequisites"
     }
   ],
   "learningModes": [
@@ -168,7 +242,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback"
     },
     {
       "id": "meaning-quiz",
@@ -180,7 +258,12 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-disconnect-031.json",
+        "lesson-assistance-006.json"
+      ],
+      "remainingAcceptance": "Actual native input retained acrossdisconnect; reverse-direction supported path"
     },
     {
       "id": "typed-recall",
@@ -192,7 +275,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback"
     },
     {
       "id": "definition-quiz",
@@ -204,7 +291,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-assistance-006.json"
+      ],
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS"
     },
     {
       "id": "cloze",
@@ -216,7 +307,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-assistance-006.json"
+      ],
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS"
     },
     {
       "id": "matching",
@@ -228,7 +323,14 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "matching-disconnect-047.json",
+        "pair-result-048.json",
+        "pair-native-049.json",
+        "pair-adversarial-050.json"
+      ],
+      "remainingAcceptance": "Native wrong/repair/support and activeboard assistance"
     },
     {
       "id": "flashcard",
@@ -240,7 +342,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback"
     },
     {
       "id": "handwriting-scratchpad",
@@ -252,7 +358,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "lesson-assistance-006.json"
+      ],
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS"
     },
     {
       "id": "dictation",
@@ -265,7 +375,12 @@
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
       "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
-      "hostEvidence": "dictation-disconnect-046.json"
+      "hostEvidence": "dictation-disconnect-046.json",
+      "acceptanceEvidence": [
+        "dictation-disconnect-046.json",
+        "dictation-native-052.json"
+      ],
+      "remainingAcceptance": "Physical audio intelligibility/speed unverified;do not equate UIreadywithsound"
     },
     {
       "id": "speaking",
@@ -277,7 +392,11 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "speaking-assistance-041.json"
+      ],
+      "remainingAcceptance": "Successful native recognition/live result plus disconnect and real persistence"
     },
     {
       "id": "shadowing",
@@ -289,7 +408,12 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "acceptanceEvidence": [
+        "camera-result-036.json",
+        "shadowing-save-042.json"
+      ],
+      "remainingAcceptance": "Successful native speech/live result and disconnected completion"
     },
     {
       "id": "cefr-reading",
@@ -303,7 +427,13 @@
       "direction": "Respect existing mode capability; do not assume all directions supported",
       "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
       "hostEvidence": "cefr-assistance-043.json",
-      "nativeEvidence": "cefr-native-044.json"
+      "nativeEvidence": "cefr-native-044.json",
+      "acceptanceEvidence": [
+        "cefr-assistance-043.json",
+        "cefr-session-045.json",
+        "cefr-session-native-051.json"
+      ],
+      "remainingAcceptance": "Fault-inflight native not run;final source-specific acceptance review"
     },
     {
       "id": "sentence-scramble",
@@ -317,7 +447,12 @@
       "direction": "Respect existing mode capability; do not assume all directions supported",
       "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
       "nativeAssistanceEvidence": "scramble-native-040.json",
-      "hostPersistenceEvidence": "scramble-feedback-039.json"
+      "hostPersistenceEvidence": "scramble-feedback-039.json",
+      "acceptanceEvidence": [
+        "scramble-feedback-039.json",
+        "scramble-native-040.json"
+      ],
+      "remainingAcceptance": "Final source-specific acceptance review;do not rerununchangedgates"
     },
     {
       "id": "word-scramble",
@@ -331,7 +466,12 @@
       "direction": "Respect existing mode capability; do not assume all directions supported",
       "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
       "nativeAssistanceEvidence": "scramble-native-040.json",
-      "hostPersistenceEvidence": "scramble-feedback-039.json"
+      "hostPersistenceEvidence": "scramble-feedback-039.json",
+      "acceptanceEvidence": [
+        "scramble-feedback-039.json",
+        "scramble-native-040.json"
+      ],
+      "remainingAcceptance": "Native disconnect during unfinished word not separately demonstrated040"
     }
   ],
   "stages": [
@@ -353,7 +493,7 @@
     {
       "id": "S4",
       "scope": "Sequential host and native baseline/connected/disconnected acceptance, source/APK pins and remaining production prerequisites",
-      "status": "PENDING"
+      "status": "PARTIAL_HOST_AND_NATIVE_EVIDENCE_ACCEPTANCE_AUDIT_OPEN"
     }
   ],
   "evidence": [
@@ -529,5 +669,6 @@
       "wholeModeAcceptance": false
     }
   ],
-  "wholeScopeComplete": false
+  "wholeScopeComplete": false,
+  "acceptanceAudit": "acceptance-audit-053.json"
 }

@@ -1,0 +1,299 @@
+{
+  "status": "EVIDENCE_SCOPE_AUDIT_NOT_COMPLETION",
+  "sourceHead": "26d79174",
+  "basis": "Current goal,optional-mcp-workflows requirements and inspected source/evidence reports. Report-level crosswalk; not a fresh complete source fingerprint audit.",
+  "interpretation": "Host tests,live native journeys and unverified capability separated. Representative evidence is not all-state acceptance. ExistingOPENstatusdoesnotmeanfeatureabsent. Preserve all original gates.",
+  "workflowCount": 14,
+  "modeCount": 14,
+  "workflows": [
+    {
+      "id": "W01",
+      "evidence": [
+        "chat-mcp-001.json",
+        "process-recovery-037.json"
+      ],
+      "observedScope": "Private existing-account login,explicit disconnect/reconnect;process-death needs fresh login",
+      "remainingAcceptance": "Verify current source owner/logout/error coverage against acceptance; standalone delivery remains unproven",
+      "accepted": false
+    },
+    {
+      "id": "W02",
+      "evidence": [
+        "settings-review-progress-native-033.json"
+      ],
+      "observedScope": "Live theme read/change/readback; native navigation preserved",
+      "remainingAcceptance": "Map remaining preference controls to host/native acceptance",
+      "accepted": false
+    },
+    {
+      "id": "W03",
+      "evidence": [
+        "lesson-assistance-006.json",
+        "vocabulary-native-010.json"
+      ],
+      "observedScope": "Live create/edit/duplicate/import/delete and disconnected manual import",
+      "remainingAcceptance": "Late attachment and mutation failure/readback coverage audit",
+      "accepted": false
+    },
+    {
+      "id": "W04",
+      "evidence": [
+        "chat-mcp-001.json",
+        "dictation-native-052.json"
+      ],
+      "observedScope": "Actual Thai conversation,tool invocation,cancellation and explicit disconnect",
+      "remainingAcceptance": "Native Thai text-entry and current source protocol error coverage",
+      "accepted": false
+    },
+    {
+      "id": "W05",
+      "evidence": [
+        "pair-native-049.json",
+        "pair-adversarial-050.json",
+        "scramble-native-040.json",
+        "dictation-native-052.json"
+      ],
+      "observedScope": "Representative mode-specific real UI/MCP with host persistence",
+      "remainingAcceptance": "See all14mode rows; core native modes still lack live evidence",
+      "accepted": false
+    },
+    {
+      "id": "W06",
+      "evidence": [
+        "cefr-assistance-043.json",
+        "cefr-session-045.json",
+        "cefr-session-native-051.json"
+      ],
+      "observedScope": "Library/session baseline,livebefore-after,disconnect,durableexposure",
+      "remainingAcceptance": "Associative-reading live context and mode-specific native parity",
+      "accepted": false
+    },
+    {
+      "id": "W07",
+      "evidence": [
+        "lesson-disconnect-031.json",
+        "settings-review-progress-native-033.json"
+      ],
+      "observedScope": "Live queue/weakness reads distinguish due vs wrong history",
+      "remainingAcceptance": "Native review answer/feedback through provider connection change",
+      "accepted": false
+    },
+    {
+      "id": "W08",
+      "evidence": [
+        "study-plan-native-018.json"
+      ],
+      "observedScope": "Accepted empty r1,live read,disconnect reject r2 preservesr1",
+      "remainingAcceptance": "Nonempty plan; goals/preferences context; pure late-attach reload behavior",
+      "accepted": false
+    },
+    {
+      "id": "W09",
+      "evidence": [
+        "settings-review-progress-native-033.json",
+        "camera-result-036.json",
+        "pair-native-049.json"
+      ],
+      "observedScope": "Live progress/history/canonicalPair result",
+      "remainingAcceptance": "Verify current full history/progress effect coverage,mode-specific remaining sources",
+      "accepted": false
+    },
+    {
+      "id": "W10",
+      "evidence": [
+        "quest-assistance-022.json",
+        "rewards-assistance-023.json",
+        "native-context-028.json"
+      ],
+      "observedScope": "Host owner-bound context;live quest/shop exact read",
+      "remainingAcceptance": "Native mutation state/preview/equip/readback and insufficient-coins behavior",
+      "accepted": false
+    },
+    {
+      "id": "W11",
+      "evidence": [
+        "speaking-assistance-041.json",
+        "shadowing-save-042.json",
+        "dictation-native-052.json"
+      ],
+      "observedScope": "Host saved-ack fences;live dictation feedback;native speech noMatch",
+      "remainingAcceptance": "Successful physical recognized transcript and connected/disconnected result; audio quality unverified",
+      "accepted": false
+    },
+    {
+      "id": "W12",
+      "evidence": [
+        "camera-result-036.json"
+      ],
+      "observedScope": "Live camera ready-vs-result failure fixed/retested;native scan returned label",
+      "remainingAcceptance": "Known object successful mapped vocabulary/save and connection-loss path",
+      "accepted": false
+    },
+    {
+      "id": "W13",
+      "evidence": [
+        "export-assistance-020.json",
+        "native-context-028.json"
+      ],
+      "observedScope": "Real host bytes/picker doubles;live Anki config;disconnectPDFselection",
+      "remainingAcceptance": "Native export/save/cancel with file bytes and live saved-status readback",
+      "accepted": false
+    },
+    {
+      "id": "W14",
+      "evidence": [
+        "offline-native-027.json",
+        "native-context-028.json",
+        "settings-review-progress-native-033.json"
+      ],
+      "observedScope": "Live offline install/read/delete;byte semantics fixed;sync readiness distinguished",
+      "remainingAcceptance": "Actual cloud sync unavailable in isolated build; inspect supported authorized path and concrete prerequisites",
+      "accepted": false
+    }
+  ],
+  "learningModes": [
+    {
+      "id": "associative-reading",
+      "evidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "observedScope": "Shared controller/Drift registry-disconnect persistence; no actual native screen in031",
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback",
+      "accepted": false
+    },
+    {
+      "id": "typed-recall",
+      "evidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "observedScope": "Shared controller/Drift registry-disconnect persistence; no actual native screen in031",
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback",
+      "accepted": false
+    },
+    {
+      "id": "flashcard",
+      "evidence": [
+        "lesson-disconnect-031.json"
+      ],
+      "observedScope": "Shared controller/Drift registry-disconnect persistence; no actual native screen in031",
+      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback",
+      "accepted": false
+    },
+    {
+      "id": "meaning-quiz",
+      "evidence": [
+        "lesson-disconnect-031.json",
+        "lesson-assistance-006.json"
+      ],
+      "observedScope": "Sharedcontrollerdisconnect and live correctfeedback",
+      "remainingAcceptance": "Actual native input retained acrossdisconnect; reverse-direction supported path",
+      "accepted": false
+    },
+    {
+      "id": "definition-quiz",
+      "evidence": [
+        "lesson-assistance-006.json"
+      ],
+      "observedScope": "Shared guidance exists;006native feedback evidence only applies meaning-quiz",
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS",
+      "accepted": false
+    },
+    {
+      "id": "cloze",
+      "evidence": [
+        "lesson-assistance-006.json"
+      ],
+      "observedScope": "Shared guidance exists;006native feedback evidence only applies meaning-quiz",
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS",
+      "accepted": false
+    },
+    {
+      "id": "handwriting-scratchpad",
+      "evidence": [
+        "lesson-assistance-006.json"
+      ],
+      "observedScope": "Shared guidance exists;006native feedback evidence only applies meaning-quiz",
+      "remainingAcceptance": "Mode-specific host binding and native connected/disconnected result; do not inherit006PASS",
+      "accepted": false
+    },
+    {
+      "id": "matching",
+      "evidence": [
+        "matching-disconnect-047.json",
+        "pair-result-048.json",
+        "pair-native-049.json",
+        "pair-adversarial-050.json"
+      ],
+      "observedScope": "Actual host variants,guidedrepair/replay and live canonicalresult/disconnected replay",
+      "remainingAcceptance": "Native wrong/repair/support and activeboard assistance",
+      "accepted": false
+    },
+    {
+      "id": "dictation",
+      "evidence": [
+        "dictation-disconnect-046.json",
+        "dictation-native-052.json"
+      ],
+      "observedScope": "Actual host6variants;nativewrong/livefeedback/disconnectedcorrect,durable2attempts",
+      "remainingAcceptance": "Physical audio intelligibility/speed unverified;do not equate UIreadywithsound",
+      "accepted": false
+    },
+    {
+      "id": "speaking",
+      "evidence": [
+        "speaking-assistance-041.json"
+      ],
+      "observedScope": "50hosttests;native noMatch",
+      "remainingAcceptance": "Successful native recognition/live result plus disconnect and real persistence",
+      "accepted": false
+    },
+    {
+      "id": "shadowing",
+      "evidence": [
+        "camera-result-036.json",
+        "shadowing-save-042.json"
+      ],
+      "observedScope": "Live referenceguidance/no-record;hostackfix26tests",
+      "remainingAcceptance": "Successful native speech/live result and disconnected completion",
+      "accepted": false
+    },
+    {
+      "id": "cefr-reading",
+      "evidence": [
+        "cefr-assistance-043.json",
+        "cefr-session-045.json",
+        "cefr-session-native-051.json"
+      ],
+      "observedScope": "Actualhostpersistence,libraryandnative session livebeforeafter/disconnectdurability",
+      "remainingAcceptance": "Fault-inflight native not run;final source-specific acceptance review",
+      "accepted": false
+    },
+    {
+      "id": "sentence-scramble",
+      "evidence": [
+        "scramble-feedback-039.json",
+        "scramble-native-040.json"
+      ],
+      "observedScope": "Actualhost/Drift,live guidance/feedback,native mid-selectiondisconnect completes",
+      "remainingAcceptance": "Final source-specific acceptance review;do not rerununchangedgates",
+      "accepted": false
+    },
+    {
+      "id": "word-scramble",
+      "evidence": [
+        "scramble-feedback-039.json",
+        "scramble-native-040.json"
+      ],
+      "observedScope": "Actualhost/Drift/live wordfeedback",
+      "remainingAcceptance": "Native disconnect during unfinished word not separately demonstrated040",
+      "accepted": false
+    }
+  ],
+  "nextBatch": [
+    "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
+    "Definition/cloze/typedrecall/associative native mode-specific gaps",
+    "Export physical artifact/readback and rewards mutation contexts",
+    "Successful speech/camera and actual sync path prerequisites"
+  ],
+  "noScopeReduction": "Audio quality/native successful speech and sync remain explicit gaps; no mock/native substitution; no full-goal completion claimed."
+}

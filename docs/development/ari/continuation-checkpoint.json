@@ -1,14 +1,15 @@
 {
-  "revision": 76,
+  "revision": 77,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "052 native dictation baselinewrong/liveAIfeedback/disconnectedcorrect,2durablerows;APK048unchanged",
+  "previousTurn": "053 audited reports/current requirements;28rowevidencegapcrosswalk created;no tests/build/devicechanges",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Cross-workflow acceptance audit next; separate MCP acceptance from unverified acoustic quality",
+  "current": "Flashcard/handwriting actualscreen MCP coverage",
   "next": [
-    "Cross-mode/workflow evidence audit and remaining concrete acceptance gaps",
-    "Physical successful speech/audio quality and camera/sync",
-    "Whole-project review after full MCP acceptance"
+    "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",
+    "Definition/cloze/typedrecall/associative native mode-specific gaps",
+    "Export physical artifact/readback and rewards mutation contexts",
+    "Successful speech/camera and actual sync path prerequisites"
   ],
   "nativeInstalledSource": "048 source pinned in evidence/pair-result-048/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-048.apk",
@@ -17,7 +18,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No live bridge/build/test;46835terminal1;ownedreverse/configremoved",
+  "liveProcesses": "No live bridge/build/test",
   "testFixture": "AriCEFR045 retained;oneadditionaldictationsessioncompleted052with2guidedattempts;devicehome;AIcollapsed;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
