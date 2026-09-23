@@ -1,24 +1,24 @@
 {
-  "revision": 92,
+  "revision": 93,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "068 cloze readonly input-mode context/progress/continuation fixed;22 full tests pass;analysis clean",
+  "previousTurn": "069 focused skip regression pass;APK069 installed;native skip-only0attempts verified",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Expand cloze skip assertion then build/native cloze baseline/live/disconnect",
+  "current": "Cloze native3items baseline/connected/disconnected typed and selected",
   "next": [
-    "Cloze skip context/progress regression then build/native current-context acceptance",
+    "Set cloze3items;native typed/selected/progress/live context and disconnect",
     "Definition native live skip-state guidance",
     "Associative native context gaps",
     "Export/rewards/speech/camera/sync original gaps"
   ],
-  "nativeInstalledSource": "80cac176",
-  "nativeInstalledApk": "build/ari-assistance-067.apk",
+  "nativeInstalledSource": "evidence/cloze-skip-069/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-069.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No bridge/build/test",
-  "testFixture": "Definition3items completed;skip a,correct bag/book;AI disconnected;bridge cleaned;restart home",
+  "testFixture": "Cloze saved1 item;skip-only completed;restart home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

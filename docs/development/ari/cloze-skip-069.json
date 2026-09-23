@@ -1,0 +1,15 @@
+{
+  "checkpoint": "069",
+  "status": "HOST_SKIP_AND_NATIVE_SKIP_BASELINE_PASS",
+  "host": "New focused real-Drift skip-context test passes:unreviewedContent/skipped -> choose-input-mode -> typed answer;0committed after skip then1after answer;exact1attempt at index2. Existing22tests from068 reused unchanged production source.",
+  "fixtureRecovery": "Initial new test read disabled submit before next frame;explicit pump and enabled assertion added;no behavior assertion removed.",
+  "analysis": "Changed test file clean",
+  "native": "APK069 built/installed;cloze1unreviewed item skipped without provider;completed session with0attempts/0wrong and no-answer UI",
+  "apkSha256": "ae1b923fa4b044ef1d3ea83ab5d628757409c0fcd685af8a65fba8b00a048fa4",
+  "remaining": [
+    "Set cloze itemCount3 for skip a then reviewed bag/book;native typed/selected and progress",
+    "Native live cloze guidance/disconnect",
+    "Definition live skip and other original gaps"
+  ],
+  "wholeGoalComplete": false
+}

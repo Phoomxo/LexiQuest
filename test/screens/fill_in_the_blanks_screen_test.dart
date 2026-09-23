@@ -267,6 +267,94 @@ void main() {
     );
   }
 
+  testWidgets('cloze skip assistance advances without fabricated progress', (
+    tester,
+  ) async {
+    late String owner;
+    await tester.runAsync(() async {
+      owner = (await owners.getOrCreateActiveOwner()).id;
+    });
+    final registry = MenuActionRegistry(currentOwner: () => owner);
+    final controller = UnifiedLessonController(
+      learning: learning,
+      adapter: const ClozeModeAdapter(),
+    );
+    addTearDown(controller.dispose);
+    final words = _reviewedWords();
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: UnifiedLessonShell(
+            controller: controller,
+            builder: (_) => FillInTheBlanksScreen(
+              categoryId: 'category:travel',
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const ClozeModeAdapter(),
+              loadLexicalWords: (_) async => [
+                words.first.copyWith(
+                  contentReviewState: ContentReviewState.unreviewed,
+                ),
+                words.last,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final skip = find.byKey(const ValueKey('cloze-skip'));
+    await _pumpUntilFound(tester, skip);
+    Map data() {
+      final e = (registry.snapshot()['context'] as List).singleWhere(
+        (dynamic x) => x['id'] == 'cloze/current-item-assistance',
+      );
+      return jsonDecode(e['value'] as String) as Map;
+    }
+
+    expect(data()['responseKind'], 'skip');
+    expect(data()['skipReason'], 'unreviewedContent');
+    expect(data()['phase'], 'skipped');
+    expect(controller.state.committedResponseCount, 0);
+    tester.widget<FilledButton>(skip).onPressed!();
+    await _pumpUntilFound(tester, find.text('The _____ closes.'));
+    expect(data()['questionNumber'], 2);
+    expect(data()['responseKind'], 'choose-input-mode');
+    expect(data()['skipReason'], isNull);
+    expect(controller.skippedItemCount, 1);
+    expect(controller.state.committedResponseCount, 0);
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+    tester
+        .widget<FilledButton>(find.byKey(const ValueKey('cloze-mode-typed')))
+        .onPressed!();
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const ValueKey('cloze-typed-answer')),
+      'station',
+    );
+    await tester.pump();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('cloze-submit-typed')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    tester
+        .widget<FilledButton>(find.byKey(const ValueKey('cloze-submit-typed')))
+        .onPressed!();
+    await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
+    expect(controller.state.committedResponseCount, 1);
+    expect(data()['phase'], 'answered');
+    final rows = await database.select(database.answerAttempts).get();
+    expect(rows, hasLength(1));
+    expect(rows.single.attemptNumber, 2);
+    expect(rows.single.isCorrect, isTrue);
+  });
+
   testWidgets('B05 cloze blank and composing input never writes evidence', (
     tester,
   ) async {

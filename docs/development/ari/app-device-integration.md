@@ -623,3 +623,8 @@ APK067 verifies DEFINITION-PROGRESS-065 repaired: after skip, committed answers 
 ### Cloze context/progress068
 
 Added readonly owner-bound active cloze input-mode/phase/index/skip metadata without draft or answer. Fixed acknowledged count reflection and feedback next/results label. Red: absent progress0 vs1,connected/disconnected no context. Full22 screen/adapter tests pass;3 real-storage variants preserve draft,owner fencing,typed correct plus selected wrong through completion with exactly2 evidence rows. Ack failure remains0 until exact retry1.4-file analysis clean. [Evidence](cloze-context-068.json). Native067 unchanged;cloze skip assertions and native acceptance pending.
+
+
+### Cloze skip069
+
+Focused real-storage regression verifies skip context reason/phase,transition to choose-input-mode,0committed until actual typed answer then1at index2. Initial test submit lookup required a pump for rebuild;enabled assertion preserved. Prior22tests reused unchanged production. APK069 built/installed;native skip-only without AI completes with no-answer UI and0database attempts/0wrong. [Evidence](cloze-skip-069.json). Native reviewed typed/selected/live journeys pending;set itemCount3 next.
