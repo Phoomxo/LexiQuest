@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:vocab_learning_app/features/vocabulary/application/cefr_practice_examples.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -66,6 +70,11 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  // Resolve the shared asset future outside individual fake-async test zones.
+  setUpAll(() async {
+    await CefrPracticeExamples.load();
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
@@ -682,124 +691,175 @@ void main() {
     );
   }
 
-  testWidgets(
-    'assisted reveal stays exposure and survives an offline restart without changing SRS',
-    (tester) async {
-      final database = AppDatabase(NativeDatabase.memory());
-      addTearDown(database.close);
-      final now = DateTime.utc(2026, 8, 25, 9);
-      final owners = DriftLocalOwnerRepository(
-        database,
-        generateId: () => 'flashcard-owner',
-        nowUtc: () => now,
-      );
-      final vocabulary = VocabularyUseCases(
-        owners: owners,
-        vocabulary: DriftVocabularyRepository(database),
-        generateId: () => 'flashcard-vocabulary-id',
-        nowUtc: () => now,
-      );
-      final category = await vocabulary.createCategory('Flashcards');
-      final word = await vocabulary.createWord(
-        CreateWordCommand(
-          categoryId: category.id,
-          spelling: 'book',
-          meaning: 'หนังสือ',
-          partOfSpeech: 'noun',
-          cefrLevel: 'A1',
-        ),
-      );
-      var nextId = 0;
-      var clock = now.subtract(const Duration(days: 2));
-      final learning = LearningUseCases(
-        owners: owners,
-        repository: DriftLearningRepository(database),
-        generateId: () => 'flashcard-${++nextId}',
-        nowUtc: () => clock.add(Duration(milliseconds: nextId)),
-        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-test'),
-      );
-      final seedSession = await learning.startQuiz();
-      await learning.recordEvidence(
-        sourceEvidenceId: 'attempt:flashcard-seed',
-        occurredAtUtc: clock,
-        sessionId: seedSession.id,
-        wordId: word.id,
-        promptMode: 'srsRecall',
-        isCorrect: true,
-        responseTimeMs: 200,
-        attemptNumber: 1,
-        evidenceContext: EvidenceContext.legacyCompatibility(
-          evidenceClass: EvidenceClass.independentRecall,
-          skillId: 'srs-recall',
-          hintLevel: 0,
-          contentRevision: 'built-in-v1',
-          engagementAllowed: true,
-        ),
-      );
-      final before = (await database.select(database.srsStates).get()).single;
-      clock = now;
-      await tester.pumpWidget(
-        MaterialApp(
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets(
+      'flashcard MCP $connection assisted reveal stays exposure and survives offline restart',
+      (tester) async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final now = DateTime.utc(2026, 8, 25, 9);
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'flashcard-owner',
+          nowUtc: () => now,
+        );
+        final vocabulary = VocabularyUseCases(
+          owners: owners,
+          vocabulary: DriftVocabularyRepository(database),
+          generateId: () => 'flashcard-vocabulary-id',
+          nowUtc: () => now,
+        );
+        final category = await vocabulary.createCategory('Flashcards');
+        final word = await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: 'book',
+            meaning: 'หนังสือ',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A1',
+          ),
+        );
+        var nextId = 0;
+        var clock = now.subtract(const Duration(days: 2));
+        final learning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'flashcard-${++nextId}',
+          nowUtc: () => clock.add(Duration(milliseconds: nextId)),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-test'),
+        );
+        final seedSession = await learning.startQuiz();
+        await learning.recordEvidence(
+          sourceEvidenceId: 'attempt:flashcard-seed',
+          occurredAtUtc: clock,
+          sessionId: seedSession.id,
+          wordId: word.id,
+          promptMode: 'srsRecall',
+          isCorrect: true,
+          responseTimeMs: 200,
+          attemptNumber: 1,
+          evidenceContext: EvidenceContext.legacyCompatibility(
+            evidenceClass: EvidenceClass.independentRecall,
+            skillId: 'srs-recall',
+            hintLevel: 0,
+            contentRevision: 'built-in-v1',
+            engagementAllowed: true,
+          ),
+        );
+        final before = (await database.select(database.srsStates).get()).single;
+        clock = now;
+        String? aiOwner = seedSession.ownerId;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final app = MaterialApp(
           home: SrsFlashcardsScreen(
             learning: learning,
             evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
             modeAdapter: const FlashcardModeAdapter(),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        await tester.pumpAndSettle();
+        final originalState = tester.state(find.byType(SrsFlashcardsScreen));
+        Map contextData() {
+          final entries = registry.snapshot()['context'] as List;
+          final entry = entries.singleWhere(
+            (dynamic e) => e['id'] == 'flashcard/review-assistance',
+          );
+          return jsonDecode(entry['value'] as String) as Map;
+        }
 
-      expect(find.byKey(const ValueKey('cefr-practice-example')), findsNothing);
-      await tester.tap(find.text('book'));
-      for (
-        var pump = 0;
-        pump < 50 && find.text('หนังสือ').evaluate().isEmpty;
-        pump++
-      ) {
-        await tester.pump(const Duration(milliseconds: 1));
-      }
-      await tester.pumpAndSettle();
+        if (connection != 'absent') {
+          expect(contextData()['answerRevealed'], false);
+          expect(contextData()['phase'], 'awaitingRecall');
+        }
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          expect(registry.snapshot()['context'], isEmpty);
+        }
 
-      final attempts = await database.select(database.answerAttempts).get();
-      final srs = await database.select(database.srsStates).get();
-      expect(attempts, hasLength(2));
-      final exposure = attempts.singleWhere(
-        (attempt) => attempt.promptMode == 'flashcardExposure',
-      );
-      expect(exposure.evidenceClass, EvidenceClass.exposure.name);
-      expect(srs, hasLength(1));
-      expect(srs.single.id, before.id);
-      expect(srs.single.intervalDays, before.intervalDays);
-      expect(srs.single.repetitions, before.repetitions);
-      expect(srs.single.lapses, before.lapses);
-      expect(srs.single.dueAtUtcMs, before.dueAtUtcMs);
-      expect(find.text('หนังสือ'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('cefr-practice-example')),
-        findsOneWidget,
-      );
-      await tester.pump(const Duration(seconds: 1));
-      expect(
-        await database.select(database.answerAttempts).get(),
-        hasLength(2),
-      );
-      expect(find.text('จำได้แล้ว (Good)'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('cefr-practice-example')),
+          findsNothing,
+        );
+        await tester.tap(find.text('book'));
+        for (
+          var pump = 0;
+          pump < 100 &&
+              find
+                  .byKey(const ValueKey('cefr-practice-example'))
+                  .evaluate()
+                  .isEmpty;
+          pump++
+        ) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        await tester.pumpAndSettle();
 
-      var restartId = 0;
-      final restartedLearning = LearningUseCases(
-        owners: owners,
-        repository: DriftLearningRepository(database),
-        generateId: () => 'flashcard-restart-${++restartId}',
-        nowUtc: () => now.add(Duration(seconds: restartId)),
-        buildInfo: const AppBuildInfo(
-          version: 'test',
-          buildId: 'f06-restart-test',
-        ),
-      );
-      final dueAfterRestart = await restartedLearning.startDueReview();
-      expect(dueAfterRestart.questions.single.word.id, word.id);
-    },
-  );
+        final attempts = await database.select(database.answerAttempts).get();
+        final srs = await database.select(database.srsStates).get();
+        expect(attempts, hasLength(2));
+        final exposure = attempts.singleWhere(
+          (attempt) => attempt.promptMode == 'flashcardExposure',
+        );
+        expect(exposure.evidenceClass, EvidenceClass.exposure.name);
+        expect(srs, hasLength(1));
+        expect(srs.single.id, before.id);
+        expect(srs.single.intervalDays, before.intervalDays);
+        expect(srs.single.repetitions, before.repetitions);
+        expect(srs.single.lapses, before.lapses);
+        expect(srs.single.dueAtUtcMs, before.dueAtUtcMs);
+        expect(find.text('หนังสือ'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('cefr-practice-example')),
+          findsOneWidget,
+        );
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(2),
+        );
+        expect(find.text('จำได้แล้ว (Good)'), findsNothing);
+        expect(
+          tester.state(find.byType(SrsFlashcardsScreen)),
+          same(originalState),
+        );
+        if (connection == 'disconnected') aiOwner = seedSession.ownerId;
+        if (connection != 'absent') {
+          expect(contextData()['answerRevealed'], true);
+          expect(contextData()['phase'], 'revealed');
+          expect(
+            contextData()['evidenceMeaning'],
+            'exposure-not-independent-recall',
+          );
+          aiOwner = 'other-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+
+        var restartId = 0;
+        final restartedLearning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'flashcard-restart-${++restartId}',
+          nowUtc: () => now.add(Duration(seconds: restartId)),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'f06-restart-test',
+          ),
+        );
+        final dueAfterRestart = await restartedLearning.startDueReview();
+        expect(dueAfterRestart.questions.single.word.id, word.id);
+      },
+    );
+  }
 
   for (final locale in const [Locale('th'), Locale('en')]) {
     testWidgets(

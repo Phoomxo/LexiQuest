@@ -563,3 +563,7 @@ Added owner-bound, read-only method guidance to the standalone scratchpad. Priva
 ### Handwriting live guidance — checkpoint 055
 
 APK054 live provider returned Thai method guidance and correctly denied private stroke/text access, grading and rewards. A connected stroke survived explicit disconnect; clear and subsequent drawing/self-check continued manually. Repeated self-check captured its transient feedback. Native DB was not re-snapshotted; host054 supplies storage invariance evidence. Bridge cleaned up. [Evidence](handwriting-native-055.json). Flashcard next; full goal open.
+
+### Flashcard method/state context — checkpoint 056
+
+Canonical SRS screen now publishes owner-bound read-only phase/reveal context, distinguishing exposure from independent recall. Full screen suite passed with three connection variants preserving state, exposure rows and unchanged SRS schedule. Owner fixture and asynchronous example-load synchronization corrected without removing assertions. Analysis clean; APK056 installed and home ready. Native mode/live/disconnect and independent-rating/retry context coverage remain open. [Evidence](flashcard-assistance-056.json).

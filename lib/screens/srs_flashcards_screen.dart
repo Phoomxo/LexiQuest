@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -587,7 +589,30 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     if (mounted) Navigator.of(context).pop();
   }
 
-  Widget _buildCard() {
+  Widget _buildCard() => MenuActionBinding(
+    id: 'flashcard/review-assistance',
+    label: 'สถานะการทบทวนบัตรคำ',
+    ownerId: _isCompatibilityDeck ? null : _session?.ownerId,
+    onInvoke: null,
+    readValue: _isCompatibilityDeck || _review == null
+        ? null
+        : jsonEncode({
+            'mode': 'flashcard',
+            'languages': ['en', 'th'],
+            'phase': _review!.phase.name,
+            'cardNumber': _review!.index + 1,
+            'cardCount': _session!.questions.length,
+            'answerRevealed': _visibleFlipped,
+            'evidenceMeaning': _review!.isRevealed
+                ? 'exposure-not-independent-recall'
+                : 'no-recall-result-in-this-context',
+            'guidance':
+                'Before revealing, the learner self-rates remembered or not remembered. Revealing records exposure only and does not prove recall or improve the SRS schedule. After reveal use Continue. Saving or retry states are not confirmed success. This context cannot rate, reveal, save or change the schedule; no self-rating result is provided.',
+          }),
+    child: _buildCardContent(),
+  );
+
+  Widget _buildCardContent() {
     final word = _currentQuestion.word;
     final actionLocked = _actionLocked;
     final canReveal = !actionLocked && !_visibleFlipped;

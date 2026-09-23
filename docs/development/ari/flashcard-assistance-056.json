@@ -1,0 +1,37 @@
+{
+  "checkpoint": "056",
+  "status": "HOST_PASS_NATIVE_INSTALL_PASS_MODE_LIVE_PENDING",
+  "change": "Read-only owner-bound flashcard/review-assistance on canonical SRS screen. Reports actual controller phase and revealed state; exposure is not independent recall. No executable controls or hidden answer shared. Legacy transient compatibility deck does not publish personal context.",
+  "host": {
+    "receipt": "evidence/flashcard-assistance-056/host-receipt.json",
+    "selection": "Full srs_flashcards_screen_test.dart",
+    "variants": [
+      "absent",
+      "connected",
+      "disconnected before reveal"
+    ],
+    "assertions": [
+      "same screen state survives disconnect",
+      "before reveal context awaits recall",
+      "after committed reveal context marks exposure",
+      "exactly one added flashcardExposure row",
+      "SRS interval/repetitions/lapses/due date unchanged",
+      "due item survives offline restart",
+      "wrong owner hides context; no actions"
+    ]
+  },
+  "diagnostics": [
+    "Initial red tests lacked binding",
+    "Fixture incorrectly assumed owner ID without local prefix; corrected to actual seedSession.ownerId",
+    "Shared cached asset Future required setup outside individual fake-async zones and bounded wait for visible example; original example assertion preserved"
+  ],
+  "analysis": "No issues found for both changed Dart files",
+  "native": "APK056 build/install success; home reports local data ready; flashcard live and disconnect pending",
+  "pins": "evidence/flashcard-assistance-056/source-pins.json",
+  "remaining": [
+    "Native actual flashcard route prestart/due conditions, live guidance and disconnect",
+    "Host independent self-rating and persistence retry MCP transitions",
+    "Other acceptance-audit-053 gaps"
+  ],
+  "wholeGoalComplete": false
+}
