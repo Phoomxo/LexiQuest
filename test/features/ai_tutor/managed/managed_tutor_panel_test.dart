@@ -5,6 +5,62 @@ import 'package:vocab_learning_app/features/ai_tutor/presentation/managed_tutor_
 import 'support.dart';
 
 void main() {
+  for (final action in ['ส่ง', 'ตัดการเชื่อมต่อ']) {
+    testWidgets('$action does not restore focus to the underlying form', (
+      tester,
+    ) async {
+      final h = Harness();
+      final formFocus = FocusNode();
+      addTearDown(h.controller.dispose);
+      addTearDown(formFocus.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
+                    key: const ValueKey('baseline-form'),
+                    focusNode: formFocus,
+                  ),
+                  ManagedTutorPanel(controller: h.controller),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      final connect = h.controller.connect(ownerId: h.owner, accountId: 'a');
+      await tester.pump();
+      h.transport.connections.last.complete();
+      await tester.pump();
+      await connect;
+      await tester.tap(find.byKey(const ValueKey('baseline-form')));
+      await tester.pump();
+      expect(formFocus.hasFocus, isTrue);
+      await tester.enterText(
+        find.byType(TextField).last,
+        'Explain my preferences',
+      );
+      await tester.tap(find.text(action));
+      await tester.pump();
+      expect(
+        formFocus.hasFocus,
+        isFalse,
+        reason: 'Removing chat input must not reactivate another form keyboard',
+      );
+      if (action == 'ส่ง') {
+        h.transport.replies.single.complete(
+          const AiGatewayReply(text: 'Confirmed settings.'),
+        );
+      }
+      await tester.pump();
+      expect(formFocus.hasFocus, isFalse);
+      await tester.tap(find.byKey(const ValueKey('baseline-form')));
+      await tester.pump();
+      expect(formFocus.hasFocus, isTrue, reason: 'Manual form remains usable');
+    });
+  }
   testWidgets('offline retains unsent draft until owner disconnect', (
     tester,
   ) async {

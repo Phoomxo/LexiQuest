@@ -111,7 +111,12 @@ class _ManagedTutorPanelState extends State<ManagedTutorPanel> {
           children: [
             if (ready)
               FilledButton(
-                onPressed: () => controller.send(_draft.text),
+                onPressed: () {
+                  // The chat field is removed while sending. Clear focus history
+                  // before that removal so a background form is not reactivated.
+                  FocusScope.of(context).unfocus();
+                  controller.send(_draft.text);
+                },
                 child: const Text('ส่ง'),
               ),
             if (busy)
@@ -121,7 +126,10 @@ class _ManagedTutorPanelState extends State<ManagedTutorPanel> {
               ),
             if (ready || busy)
               TextButton(
-                onPressed: controller.disconnect,
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  controller.disconnect();
+                },
                 child: const Text('ตัดการเชื่อมต่อ'),
               ),
           ],

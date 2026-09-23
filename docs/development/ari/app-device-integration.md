@@ -706,3 +706,8 @@ Unchanged APK084:baseline native accepts/reopensr2(10min,7due);connected AI dist
 ## Learner preferences optional context — checkpoint086
 
 Added owner-bound read-only assistance separating draft from last-confirmed values and ready/editing/saving/saved/invalidDraft/saveFailed. Native controls and existing use-case validation remain authoritative; no AI save action. Two new tests reproduced missing context before implementation. Final11 screen tests pass, including disconnect during pending manual save, same-owner reconnect, foreign-owner hiding and invalid/failed-save disclosure checks; Dart analysis clean. Repository fixtures are host evidence only. APK086 built and installed on isolated Vivo; native no-AI35-minute save, leave and reopen verified. Actual provider connected/disconnected acceptance is pending. [Evidence](preferences-context-086.json). All14 workflows/modes remain open; no Jev integration or original account changes.
+
+
+## Preferences live provider and keyboard recovery — checkpoint087
+
+On APK086, actual provider correctly separated draft55minutes from lastConfirmed35 and unsaved status, then reported saved55 after native manual save. Explicitdisconnect followed by native40minute save and leave/reopen readback passed. This complements086 baseline. Found CHAT-FOCUS-087: removing chat input restored prior numeric form focus and obscured reply. Both send/disconnect regressions reproduced it; clearing focus before these transitions fixes both in6passing panel tests with clean Dart analysis. APK087 built/installed; physical focus retest remains required before next workflow work. Bridge stopped and reverse/configremoved;originalaccounts preserved. [Evidence](preferences-native-087.json).

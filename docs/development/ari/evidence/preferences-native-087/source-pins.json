@@ -1,0 +1,5 @@
+{
+  "lib/features/ai_tutor/presentation/managed_tutor_panel.dart": "195b312692026824f8f0ce3e8c6ae747ffa97d20c1d88b608e5e4057349a5f36",
+  "test/features/ai_tutor/managed/managed_tutor_panel_test.dart": "ad532a123470a134f3fe662c6e602ee082117d19025504103ff1fb2a75069801",
+  "lib/screens/learning_preference_quiz_screen.dart": "ca34f94e45672d06c3d9b23224c911c1fb6bdf1f6a1077d4760b200be941aec1"
+}

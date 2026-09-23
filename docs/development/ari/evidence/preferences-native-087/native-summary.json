@@ -1,0 +1,13 @@
+{
+  "apk": "086",
+  "baseline": "086 manual35minute save/reopen",
+  "connected": "Actual provider distinguishes draft55/confirmed35;manualsave then actual reply confirms55saved",
+  "providerReplies": [
+    "ตอนนี้ร่างตั้งเวลาไว้ **55 นาที** แต่ค่าที่ยืนยันล่าสุดคือ **35 นาที** — ต่างกัน **20 นาที**  \n\nร่างนี้ **ยังไม่ได้บันทึก** เพราะยังอยู่ระหว่างแก้ไขและต้องกดบันทึกเองค่ะ  \n\nต้องการให้ช่วยอธิบายว่าการตั้งเวลาแบบนี้ใช้วางแผนเรียนอย่างไรไหม?",
+    "สถานะตอนนี้คือ **บันทึกแล้ว** ค่าที่ยืนยันล่าสุดคือ **55 นาที** และตรงกับร่างปัจจุบันค่ะ  \n\nอยากให้ช่วยดูเป้าหมายหรือรูปแบบกิจกรรมที่ตั้งไว้ด้วยไหม?"
+  ],
+  "disconnected": "Explicitdisconnect;native40minute save/successmessage;leave/reopen readback40",
+  "reopenedMinutes": 40,
+  "focusDefect": "Initialsend removed chatfield and restored underlying numeric field focus;keyboard obscured reply;back dismissed it;investigating host regression",
+  "cleanup": "bridge19848 terminal;reverse/config removed;original package untouched"
+}

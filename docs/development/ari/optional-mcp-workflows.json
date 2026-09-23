@@ -29,7 +29,8 @@
         "chat-mcp-001.json",
         "process-recovery-037.json",
         "export-live-083.json",
-        "export-reconnect-084.json"
+        "export-reconnect-084.json",
+        "preferences-native-087.json"
       ],
       "remainingAcceptance": "Same-process explicit provider re-login/new room after native picker verified084 with actual reply. Background/picker still requires explicit re-login;standalone delivery and final owner/error audit remain."
     },
@@ -138,9 +139,10 @@
       "acceptanceEvidence": [
         "study-plan-native-018.json",
         "study-plan-native-085.json",
-        "preferences-context-086.json"
+        "preferences-context-086.json",
+        "preferences-native-087.json"
       ],
-      "remainingAcceptance": "Preferences086 host11 and native baseline save/reopen verified;actual provider connected/disconnected preferences pending. Goals optional context,new-item nonempty native plan and final owner/lifecycle audit remain."
+      "remainingAcceptance": "Preferences representative native baseline/connected/disconnected save/readback verified086-087. CHAT-FOCUS-087hostfix requires native retest. Goals context,new-itemplan and finalowner/lifecycleaudit remain."
     },
     {
       "id": "W09",
