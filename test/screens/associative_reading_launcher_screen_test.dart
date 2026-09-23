@@ -509,6 +509,13 @@ BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
           final recovered = tester.widget<AssociativeReadingSessionScreen>(
             find.byType(AssociativeReadingSessionScreen),
           );
+          final recoveredController = tester
+              .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+              .controller!;
+          expect(
+            recoveredController.state.committedResponseCount,
+            partial ? 1 : 2,
+          );
           expect(recovered.sessionId, original.sessionId);
           expect(recovered.ownerId, original.ownerId);
           expect(recovered.sessionStartedAtUtc, original.sessionStartedAtUtc);
@@ -569,6 +576,7 @@ BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
               tester,
               find.text('ขั้นที่ 4: เชื่อมโยงความจำ'),
             );
+            expect(recoveredController.state.committedResponseCount, 2);
             await tester.runAsync(() async {
               final attempts = await database
                   .select(database.answerAttempts)

@@ -473,6 +473,10 @@ class _AssociativeReadingSessionScreenState
           );
           if (!_canContinueInitialization) return progress;
           await learning.revalidateReadingSessionOwner(widget.ownerId!);
+          lifecycle.reflectNativeCommittedResponses(
+            sessionId: sessionId,
+            count: _restoredRecallOccurrences.length,
+          );
         }
         return ReadingProgressSnapshot(
           documentId: state.documentId,
@@ -631,8 +635,10 @@ class _AssociativeReadingSessionScreenState
     if (_actionLocked) return;
     if (_currentStage == 3 &&
         !_recallBatchFrozen &&
-        _recallControllers.any((controller) {
-          final value = controller.value;
+        _recallControllers.asMap().entries.any((entry) {
+          // Restored answers are already durable and their fields are locked.
+          if (_restoredRecallOccurrences.contains(entry.key)) return false;
+          final value = entry.value.value;
           return value.text.trim().isEmpty ||
               (value.composing.isValid && !value.composing.isCollapsed);
         })) {

@@ -656,3 +656,8 @@ APK074 resumes Stage3 after restart;valid bottle answer reaches stages4–6 and 
 ## Associative actual-stage context — checkpoint076
 
 APK075 fresh native recall updates shared0→100;SQLite confirms1correct independentRecall. Round left active atStage4. Added owner-bound readonly six-stage context with method/nextstep and honest Stage5 ephemeral/ungraded policy;no answer/draft/passages exposed. New absent/connected/disconnected flows cover6stages,retained draft/manual submit while disconnected,owner fence and disposal. Recording repository count1;existing realDrift tests retained. Red missing context;29fullscreen tests PASS and2file analysis clean. APK076 installed;live stage guidance and restored shared-progress check next. [Report](associative-context-076.json). Whole-goal acceptance open.
+
+
+## Associative restoration — checkpoint077
+
+Restored shared count now reflects acknowledged occurrences after owner revalidation. Broader tests exposed a second bug: blank validation included locked restored fields, blocking partial recovery; validation now covers only uncommitted occurrences. Updated later-stage fixtures to submit actual recall input, preserving exact durable-pair assertions. All61 tests across session/launcher/restart pass; three-file analysis clean. APK077 installed; Vivo restores Stage4 at100%, SQLite retains exactly1correct independentRecall and0wrong. Continuation is capped by durable600-second effort matching configuration; no timer reset or duplicate write. Live AI stage guidance still pending in a fresh round. [Evidence](associative-restoration-077.json). Whole-goal acceptance remains OPEN.

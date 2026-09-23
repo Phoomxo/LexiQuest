@@ -331,6 +331,9 @@ void main() {
           'ขั้นที่ 4: เชื่อมโยงความจำ',
         ];
         for (var index = 0; index < stageTitles.length; index++) {
+          if (index == 2) {
+            await tester.enterText(find.byType(TextField).first, 'resilient');
+          }
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(stageTitles[index]));
         }
@@ -502,6 +505,9 @@ void main() {
           'ขั้นที่ 3: นึกคำจากความจำ',
           'ขั้นที่ 4: เชื่อมโยงความจำ',
         ]) {
+          if (title == 'ขั้นที่ 4: เชื่อมโยงความจำ') {
+            await tester.enterText(find.byType(TextField).first, 'anchor');
+          }
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(title));
         }
@@ -675,6 +681,12 @@ END
           'ขั้นที่ 3: นึกคำจากความจำ',
           'ขั้นที่ 4: เชื่อมโยงความจำ',
         ]) {
+          if (title == 'ขั้นที่ 4: เชื่อมโยงความจำ') {
+            await tester.enterText(find.byType(TextField).at(0), 'anchor');
+            await tester.enterText(find.byType(TextField).at(1), 'beacon');
+            tester.testTextInput.hide();
+            await tester.pump();
+          }
           await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(title));
         }

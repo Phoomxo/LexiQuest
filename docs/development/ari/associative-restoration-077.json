@@ -1,0 +1,37 @@
+{
+  "checkpoint": "077",
+  "status": "RESTORED_PROGRESS_HOST_AND_NATIVE_PASS",
+  "implementation": [
+    "Restore shared count from acknowledged recovery occurrences after owner revalidation",
+    "Blank/composing guard excludes already durable locked occurrences; remaining fields remain required"
+  ],
+  "host": {
+    "result": "61 tests across session, launcher, restart files PASS; three-file analyzer clean",
+    "red": "Restored count expected1/2 actual0; broader run exposed partial recovery blocked by locked blank field and a stale blank-skipping fixture",
+    "coverage": "Real DB reopen retains answer IDs and event/SRS/reward counts; partial continuation reaches2; multi-target retry preserves exact durable pairs",
+    "fixtureCorrection": "Enter actual recall words before later-stage association scenarios; no downstream assertions removed"
+  },
+  "native": {
+    "apk": "077",
+    "restoredStage": 4,
+    "sharedProgressPercent": 100,
+    "durableCorrect": 1,
+    "durableWrong": 0,
+    "attempts": [
+      {
+        "mode": "associativeRecall",
+        "evidence": "independentRecall",
+        "correct": true
+      }
+    ],
+    "limit": "Native stage continuation disabled because durable active effort600000000us equals configured600seconds; no timer reset or evidence modification",
+    "liveAi": "NOT_RUN this checkpoint"
+  },
+  "apkSha256": "a802ff0fdf7806d701c0f4886f0a17e2b795307d7b76c32fe1e5cd519cc08fe5",
+  "remaining": [
+    "Fresh associative live context/disconnect across stages",
+    "Audit expired-session guidance/restart and feature-off context",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}
