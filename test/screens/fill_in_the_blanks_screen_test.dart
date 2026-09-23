@@ -212,6 +212,8 @@ void main() {
         final state = tester.state(find.byType(FillInTheBlanksScreen));
         if (connection != 'absent') {
           expect(data()['responseKind'], 'typed');
+          expect(data()['manualNextStep'], contains('ตรวจคำตอบ'));
+          expect(data()['manualNextStep'], contains('ย่อส่วนช่วยเหลือ AI'));
           expect(data().values, isNot(contains('air')));
           expect(data().toString(), isNot(contains('airport')));
           aiOwner = 'other';
@@ -244,6 +246,8 @@ void main() {
         if (connection == 'connected') {
           expect(data()['questionNumber'], 2);
           expect(data()['responseKind'], 'selected');
+          expect(data()['manualNextStep'], contains('ตรวจคำตอบ'));
+          expect(data()['manualNextStep'], contains('ย่อส่วนช่วยเหลือ AI'));
         }
         press('cloze-submit-selected');
         await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
@@ -317,6 +321,9 @@ void main() {
     expect(data()['responseKind'], 'skip');
     expect(data()['skipReason'], 'unreviewedContent');
     expect(data()['phase'], 'skipped');
+    expect(data()['manualNextStep'], contains('ดำเนินต่อ'));
+    expect(data()['manualNextStep'], contains('ย่อส่วนช่วยเหลือ AI'));
+    expect(data()['skipMeaning'], contains('content review'));
     expect(controller.state.committedResponseCount, 0);
     tester.widget<FilledButton>(skip).onPressed!();
     await _pumpUntilFound(tester, find.text('The _____ closes.'));
@@ -349,6 +356,7 @@ void main() {
     await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
     expect(controller.state.committedResponseCount, 1);
     expect(data()['phase'], 'answered');
+    expect(data()['manualNextStep'], contains('ดูผลการเรียน'));
     final rows = await database.select(database.answerAttempts).get();
     expect(rows, hasLength(1));
     expect(rows.single.attemptNumber, 2);

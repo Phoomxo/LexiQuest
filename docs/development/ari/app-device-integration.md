@@ -632,3 +632,7 @@ Focused real-storage regression verifies skip context reason/phase,transition to
 ## Cloze baseline native — checkpoint070
 
 APK069 on Vivo, provider disconnected: typed bag correct and selected bag for book incorrect, both locked after submission. Empty typed/unchosen selection guarded. Shared progress 0→33→67 for two answers/three configured items; optional unscored speech does not block next/results. Results50%,1correct/1wrong; real SQLite confirms exactly clozeTyped/independentRecall true at2 and clozeSelected/recognition false at3, no skip attempt. Isolated app restarted; original accounts preserved. [Evidence](cloze-native-070.json). Native live context/disconnect remains next; physical speech and whole-goal acceptance remain open.
+
+## Cloze live continuity and guidance defect — checkpoint071
+
+APK069 provider recognized skipped1/3 and typed2/3 English context, but incorrectly described only Back/no next control while controls were below AI panel. CLOZE-MANUAL-GUIDANCE-071 remains open pending native retest. Partial ba survived chat/disconnect;appending g gave correct bag;selected book completed100% with exact2attempts/no skip row. Added read-only phase-specific manualNextStep with collapse/scroll and editorial skip meaning. Red missing-context assertion reproduced;full cloze screen+adapter tests PASS;2file analysis clean. APK071 built/installed;fresh live retest next. Bridge stopped/config removed;original app preserved. [Report](cloze-live-071.json).

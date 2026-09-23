@@ -296,11 +296,37 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 : (_inputMode?.name ?? 'choose-input-mode'),
             'phase': review.phase.name,
             'skipReason': review.currentItem.skipReason?.name,
+            'skipMeaning':
+                'A content review/availability issue, not a learner failure or a request to review vocabulary.',
+            'manualNextStep': _manualNextStep(review),
             'guidance':
                 'Read the English sentence and fill the blank manually. Choose typed or selected input when not yet chosen. Selected input requires choosing then checking. Skips have no answer to grade. Saving/retry is not confirmed success. No draft, hidden answer or mutation is exposed.',
           }),
     child: _buildItemContent(review),
   );
+
+  String _manualNextStep(ClozeReviewController review) {
+    final step = switch (review.phase) {
+      ClozeReviewPhase.skipped =>
+        'Tap ดำเนินต่อ to advance past this ungraded skipped item.',
+      ClozeReviewPhase.awaitingAnswer =>
+        _inputMode == null
+            ? 'Choose เลือกคำตอบ or พิมพ์คำตอบ first.'
+            : 'Enter or select your own English answer, then tap ตรวจคำตอบ. Empty input cannot be submitted.',
+      ClozeReviewPhase.answered =>
+        review.index + 1 >= review.items.length
+            ? 'Tap ดูผลการเรียน. Optional speech practice can be skipped.'
+            : 'Tap ข้อถัดไป. Optional speech practice can be skipped.',
+      ClozeReviewPhase.evidenceRetryRequired ||
+      ClozeReviewPhase.completionRetryRequired =>
+        'Use the visible retry control; saving has not been confirmed. Do not claim completion.',
+      ClozeReviewPhase.savingEvidence || ClozeReviewPhase.completing =>
+        'Wait for saving to finish; do not submit again or claim completion.',
+      ClozeReviewPhase.completed => 'Read the completed results.',
+    };
+    return 'If lesson controls are outside the visible area, tap ย่อส่วนช่วยเหลือ AI and scroll the lesson. '
+        'An offscreen control is not a missing control. $step';
+  }
 
   Widget _buildItemContent(ClozeReviewController review) {
     final item = review.currentItem;

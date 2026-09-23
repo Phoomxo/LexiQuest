@@ -1,24 +1,24 @@
 {
-  "revision": 94,
+  "revision": 95,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "070 native cloze baseline typed/selected/skip results and exact durable evidence PASS",
+  "previousTurn": "071 live cloze continuity/persistence PASS;manual-guidance defect host-fixed;APK071 installed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Cloze native live guidance and disconnected draft continuity",
+  "current": "Native retest CLOZE-MANUAL-GUIDANCE-071 before further scope",
   "next": [
-    "Connect bridge/login before cloze partial draft;verify live input-mode context and disconnect continuity",
+    "Reconnect/login then live cloze skip and typed manualNextStep guidance;defect still open",
     "Definition native live skip-state guidance",
     "Associative native context gaps",
     "Export/rewards/speech/camera/sync original gaps"
   ],
-  "nativeInstalledSource": "evidence/cloze-skip-069/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-069.apk",
+  "nativeInstalledSource": "evidence/cloze-live-071/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-071.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No bridge/build/test",
-  "testFixture": "Cloze saved3 items;baseline completed;isolated app restarted to home",
+  "liveProcesses": "None;bridge33492 stopped;reverse and private config removed",
+  "testFixture": "Cloze3;live journey completed;APK071 installed/started",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
