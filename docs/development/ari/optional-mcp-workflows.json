@@ -244,9 +244,15 @@
       "direction": "Respect existing mode capability; do not assume all directions supported",
       "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
       "acceptanceEvidence": [
-        "lesson-disconnect-031.json"
+        "lesson-disconnect-031.json",
+        "associative-blank-074.json",
+        "associative-baseline-075.json",
+        "associative-context-076.json",
+        "associative-restoration-077.json",
+        "associative-availability-078.json",
+        "associative-live-079.json"
       ],
-      "remainingAcceptance": "Actual native screen baseline/connected/disconnected guidance or feedback"
+      "remainingAcceptance": "Live provider stage2-6 guidance and expired response pending; baseline completion/disconnect exact1durable answer verified;compact sixstage host and Stage1 native retest passed. Final audit remains open."
     },
     {
       "id": "meaning-quiz",

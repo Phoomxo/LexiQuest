@@ -1,0 +1,1270 @@
+[
+  {
+    "at": "2026-09-23T08:10:58.478618+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 2: อ่านโดยลดตัวช่วย",
+        "bounds": "[44,1100][621,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:01.906939+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:13.160740+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1500"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,858][609,882]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,882][1036,1014]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:16.213393+00:00",
+    "action": [
+      "text",
+      "bottle"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,858][609,881]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,881][1036,1013]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:18.718561+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:21.389356+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "1/1 คำถูกต้อง",
+        "bounds": "[412,1719][668,1785]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:11:28.350067+00:00",
+    "action": [],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1100][592,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:19:16.556356+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2020"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1100][592,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:19:25.595789+00:00",
+    "action": [],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1100][592,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:30:06.173018+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2020"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: หยุดพัก ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ถึงขีดจำกัดของกิจกรรมแล้ว\nถึงขีดจำกัดของกิจกรรมแล้ว",
+        "bounds": "[253,726][827,880]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1122][592,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:41:15.817081+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "observations": [
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2077][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:19.838465+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2020"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: หยุดพัก ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ถึงขีดจำกัดของกิจกรรมแล้ว\nถึงขีดจำกัดของกิจกรรมแล้ว",
+        "bounds": "[253,726][827,880]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1122][592,1199]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:23.142544+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2190"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: หยุดพัก ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ถึงขีดจำกัดของกิจกรรมแล้ว\nถึงขีดจำกัดของกิจกรรมแล้ว",
+        "bounds": "[253,726][827,880]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1122][592,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:33.392376+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1960"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: หยุดพัก ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ถึงขีดจำกัดของกิจกรรมแล้ว\nถึงขีดจำกัดของกิจกรรมแล้ว",
+        "bounds": "[253,726][827,880]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1122][592,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:37.885303+00:00",
+    "action": [
+      "text",
+      "Explain%sthe%scurrent%sstage%sand%swhether%sI%scan%scontinue.%sUse%slive%scontext.%sThai%sonly."
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: หยุดพัก ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ถึงขีดจำกัดของกิจกรรมแล้ว\nถึงขีดจำกัดของกิจกรรมแล้ว",
+        "bounds": "[253,726][827,880]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1122][592,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:40.964060+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "เริ่มรอบใหม่",
+        "bounds": "[66,954][314,1086]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:42:50.392814+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "observations": [
+      {
+        "text": "เริ่มรอบใหม่",
+        "bounds": "[66,954][314,1086]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:02.855122+00:00",
+    "action": [
+      "tap",
+      "190",
+      "1010"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:09.696481+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1840"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:31.342629+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1950"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:45.002176+00:00",
+    "action": [
+      "text",
+      "Explain%sthis%sstage%sand%snext%smanual%sstep.%sUse%slive%scontext.%sThai%sonly."
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:47.421517+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:43:56.647637+00:00",
+    "action": [
+      "tap",
+      "140",
+      "2155"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:10.197331+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตอนนี้อยู่ขั้นที่ 1 จาก 6: **อ่านพร้อมตัวช่วย** ระดับ A2  \nให้อ่านบทความและดูคำใบ้ที่แสดงเพื่อเชื่อมคำกับบริบท ยังไม่ใช่การตอบทบทวนแบบให้คะแนน\n\nขั้นต่อไป: อ่านขั้นนี้ให้จบด้วยตนเอง แล้วกด **“เสร็จแล้ว ไปขั้นถัดไป”**  \nถ้าปุ่มไม่เห็น ให้ย่อส่วนช่วยเหลือ AI แล้วเลื่อนดูในบทเรียน\n\nอยากให้ช่วยแนะนำวิธีเชื่อมคำกับบริบทขณะอ่านไหม?",
+        "bounds": "[88,2188][992,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:28.784492+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตอนนี้อยู่ขั้นที่ 1 จาก 6: **อ่านพร้อมตัวช่วย** ระดับ A2  \nให้อ่านบทความและดูคำใบ้ที่แสดงเพื่อเชื่อมคำกับบริบท ยังไม่ใช่การตอบทบทวนแบบให้คะแนน\n\nขั้นต่อไป: อ่านขั้นนี้ให้จบด้วยตนเอง แล้วกด **“เสร็จแล้ว ไปขั้นถัดไป”**  \nถ้าปุ่มไม่เห็น ให้ย่อส่วนช่วยเหลือ AI แล้วเลื่อนดูในบทเรียน\n\nอยากให้ช่วยแนะนำวิธีเชื่อมคำกับบริบทขณะอ่านไหม?",
+        "bounds": "[88,1407][992,2133]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:37.354074+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตอนนี้อยู่ขั้นที่ 1 จาก 6: **อ่านพร้อมตัวช่วย** ระดับ A2  \nให้อ่านบทความและดูคำใบ้ที่แสดงเพื่อเชื่อมคำกับบริบท ยังไม่ใช่การตอบทบทวนแบบให้คะแนน\n\nขั้นต่อไป: อ่านขั้นนี้ให้จบด้วยตนเอง แล้วกด **“เสร็จแล้ว ไปขั้นถัดไป”**  \nถ้าปุ่มไม่เห็น ให้ย่อส่วนช่วยเหลือ AI แล้วเลื่อนดูในบทเรียน\n\nอยากให้ช่วยแนะนำวิธีเชื่อมคำกับบริบทขณะอ่านไหม?",
+        "bounds": "[88,1361][992,1734]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:45.303425+00:00",
+    "action": [
+      "tap",
+      "400",
+      "2100"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2072][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:47.829400+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:44:56.111914+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 2: อ่านโดยลดตัวช่วย",
+        "bounds": "[44,1100][621,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:03.811753+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:12.628114+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1400"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,936][609,1013]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:15.917968+00:00",
+    "action": [
+      "text",
+      "door"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,936][609,1013]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:18.401610+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:20.912297+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 3: นึกคำจากความจำ",
+        "bounds": "[44,1100][609,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "1/1 คำถูกต้อง",
+        "bounds": "[412,1587][668,1653]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:38.544899+00:00",
+    "action": [],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1100][592,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:47.589118+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1500"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,858][592,931]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:50.199067+00:00",
+    "action": [
+      "text",
+      "entrance"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,858][592,931]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:52.813639+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 4: เชื่อมโยงความจำ",
+        "bounds": "[44,1100][592,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:45:55.390888+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 5: ใช้คำในบริบทใหม่",
+        "bounds": "[44,1100][596,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:04.741898+00:00",
+    "action": [],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 5: ใช้คำในบริบทใหม่",
+        "bounds": "[44,1100][596,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:16.615701+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1400"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 5: ใช้คำในบริบทใหม่",
+        "bounds": "[44,937][596,1014]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:19.874263+00:00",
+    "action": [
+      "text",
+      "Open%sthe%sdoor."
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 5: ใช้คำในบริบทใหม่",
+        "bounds": "[44,936][596,1013]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:22.667954+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 5: ใช้คำในบริบทใหม่",
+        "bounds": "[44,1100][596,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:25.137455+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 6: จบกิจกรรม",
+        "bounds": "[44,1100][474,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "พร้อมจบกิจกรรม",
+        "bounds": "[44,1386][359,1452]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จบกิจกรรม",
+        "bounds": "[44,1973][1036,2116]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:46:35.444011+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2050"
+    ],
+    "observations": [
+      {
+        "text": "เริ่มรอบใหม่",
+        "bounds": "[66,1962][314,2094]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:51:17.920480+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1880"
+    ],
+    "observations": [
+      {
+        "text": "เริ่มรอบใหม่",
+        "bounds": "[66,1962][314,2094]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:51:27.135978+00:00",
+    "action": [
+      "tap",
+      "190",
+      "2030"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:51:29.726084+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2190"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T08:51:45.626827+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ขั้นที่ 1: อ่านพร้อมตัวช่วย",
+        "bounds": "[44,1100][602,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้",
+        "bounds": "[44,1177][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]

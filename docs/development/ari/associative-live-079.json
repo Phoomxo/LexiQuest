@@ -1,0 +1,27 @@
+{
+  "checkpoint": "079",
+  "status": "LIVE_STAGE1_AND_DISCONNECTED_COMPLETION_PASS_LAYOUT_FIXED",
+  "native078": {
+    "liveReply": "Thai Stage1/6 A2,read with cues,no graded recall,manual next and collapse/scroll guidance matched actual screen",
+    "disconnect": "Explicit disconnect atStage1;manual stages2-6 completed door correct1/1",
+    "database": "Completed associativeReading;exact1associativeRecall independentRecall true,wrong0",
+    "expiredProvider": "NOT_RUN:initial tap did not focus input;Back left capped round before any prompt was sent. Old capped round abandoned through supported UI; no durable timer reset.",
+    "inputRecovery": "Inspected actual screenshot;semantic EditText bounds included header; tapped actual input, verified character count before send"
+  },
+  "defect": {
+    "id": "ASSOCIATIVE-COMPACT-079",
+    "native": "Opening AI left short lesson viewport;RenderFlex bottom overflow105pixels",
+    "hostRed": "Compact390x220 viewport reproduced overflow20pixels atStage1",
+    "fix": "Short viewport scrolls entire mode content including controls; larger viewport retains content scrolling and footer",
+    "host": "29full screen tests PASS, then focused six-stage reachability test PASS after stronger assertions;2file analysis clean",
+    "native079": "Installed;expanded unpaired AI recreates same split-height area with no overflow stripe;collapse shows content and enabled next",
+    "limitation": "Native visual retest atStage1;all6stages compact reachability covered by host test"
+  },
+  "installedApk": "build/ari-assistance-079.apk",
+  "apkSha256": "581d3bd796db28c9b5d580eeaac23c048da457fb9a1992e919334ea55dce6c72",
+  "remaining": [
+    "Live provider stages2-6 and expired-state response",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

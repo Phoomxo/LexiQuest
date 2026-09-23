@@ -1296,95 +1296,114 @@ class _AssociativeReadingSessionScreenState
           ),
           body: _loading
               ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      LinearProgressIndicator(value: _currentStage / 6),
-                      const SizedBox(height: 12),
-                      Text(
-                        _stageTitles[_currentStage - 1],
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      if (_legacyProgressNotice)
-                        const Text(
-                          'ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้',
-                        ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: _buildStageContent(),
-                        ),
-                      ),
-                      if (_saving) const LinearProgressIndicator(),
-                      const SizedBox(height: 12),
-                      AccessibilitySemanticRegion(
-                        role: AccessibilitySemanticRole.responseAndInput,
-                        child: FilledButton(
-                          key: closeRetry
-                              ? const ValueKey<String>(
-                                  'current-session-close-retry',
-                                )
-                              : progressRetry
-                              ? const ValueKey<String>(
-                                  'current-reading-progress-retry',
-                                )
-                              : checkpointRetry
-                              ? const ValueKey<String>(
-                                  'current-reading-checkpoint-retry',
-                                )
-                              : associationRetry
-                              ? const ValueKey<String>(
-                                  'current-association-retry',
-                                )
-                              : recallRetry
-                              ? const ValueKey<String>('current-evidence-retry')
-                              : null,
-                          onPressed:
-                              _saving ||
-                                  _completed ||
-                                  !(_lessonLifecycle?.acceptsOperations ??
-                                      true) ||
-                                  (_currentStage == 3 && !_typedRecallEnabled)
-                              ? null
-                              : closeRetry
-                              ? _retrySessionClose
-                              : progressRetry
-                              ? _retryCompletionProgress
-                              : checkpointRetry
-                              ? _retryCheckpoint
-                              : associationRetry
-                              ? _retryAssociationBatch
-                              : _completionLocked
-                              ? null
-                              : _checkpointLocked
-                              ? null
-                              : _associationLocked
-                              ? null
-                              : _nextStage,
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact =
+                        constraints.maxHeight <
+                        MediaQuery.textScalerOf(context).scale(320);
+                    final content = Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: compact
+                            ? MainAxisSize.min
+                            : MainAxisSize.max,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          LinearProgressIndicator(value: _currentStage / 6),
+                          const SizedBox(height: 12),
+                          Text(
+                            _stageTitles[_currentStage - 1],
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          child: Text(
-                            closeRetry
-                                ? 'ลองจบกิจกรรมอีกครั้ง'
-                                : progressRetry
-                                ? 'ลองบันทึกการอ่านเสร็จอีกครั้ง'
-                                : checkpointRetry
-                                ? 'ลองบันทึกตำแหน่งอ่านอีกครั้ง'
-                                : associationRetry
-                                ? 'ลองบันทึกการเชื่อมโยงเดิมอีกครั้ง'
-                                : recallRetry
-                                ? 'ลองบันทึกผลเดิมอีกครั้ง'
-                                : _currentStage < 6
-                                ? 'เสร็จแล้ว ไปขั้นถัดไป'
-                                : 'จบกิจกรรม',
+                          if (_legacyProgressNotice)
+                            const Text(
+                              'ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อนกับกิจกรรมนี้ได้ รอบใหม่เริ่มจากขั้นที่ 1 โดยเก็บประวัติเดิมไว้',
+                            ),
+                          const SizedBox(height: 16),
+                          if (compact)
+                            _buildStageContent()
+                          else
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: _buildStageContent(),
+                              ),
+                            ),
+                          if (_saving) const LinearProgressIndicator(),
+                          const SizedBox(height: 12),
+                          AccessibilitySemanticRegion(
+                            role: AccessibilitySemanticRole.responseAndInput,
+                            child: FilledButton(
+                              key: closeRetry
+                                  ? const ValueKey<String>(
+                                      'current-session-close-retry',
+                                    )
+                                  : progressRetry
+                                  ? const ValueKey<String>(
+                                      'current-reading-progress-retry',
+                                    )
+                                  : checkpointRetry
+                                  ? const ValueKey<String>(
+                                      'current-reading-checkpoint-retry',
+                                    )
+                                  : associationRetry
+                                  ? const ValueKey<String>(
+                                      'current-association-retry',
+                                    )
+                                  : recallRetry
+                                  ? const ValueKey<String>(
+                                      'current-evidence-retry',
+                                    )
+                                  : null,
+                              onPressed:
+                                  _saving ||
+                                      _completed ||
+                                      !(_lessonLifecycle?.acceptsOperations ??
+                                          true) ||
+                                      (_currentStage == 3 &&
+                                          !_typedRecallEnabled)
+                                  ? null
+                                  : closeRetry
+                                  ? _retrySessionClose
+                                  : progressRetry
+                                  ? _retryCompletionProgress
+                                  : checkpointRetry
+                                  ? _retryCheckpoint
+                                  : associationRetry
+                                  ? _retryAssociationBatch
+                                  : _completionLocked
+                                  ? null
+                                  : _checkpointLocked
+                                  ? null
+                                  : _associationLocked
+                                  ? null
+                                  : _nextStage,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52),
+                              ),
+                              child: Text(
+                                closeRetry
+                                    ? 'ลองจบกิจกรรมอีกครั้ง'
+                                    : progressRetry
+                                    ? 'ลองบันทึกการอ่านเสร็จอีกครั้ง'
+                                    : checkpointRetry
+                                    ? 'ลองบันทึกตำแหน่งอ่านอีกครั้ง'
+                                    : associationRetry
+                                    ? 'ลองบันทึกการเชื่อมโยงเดิมอีกครั้ง'
+                                    : recallRetry
+                                    ? 'ลองบันทึกผลเดิมอีกครั้ง'
+                                    : _currentStage < 6
+                                    ? 'เสร็จแล้ว ไปขั้นถัดไป'
+                                    : 'จบกิจกรรม',
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                    return compact
+                        ? SingleChildScrollView(child: content)
+                        : content;
+                  },
                 ),
         ),
       ),

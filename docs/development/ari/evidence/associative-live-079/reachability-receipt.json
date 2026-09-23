@@ -1,0 +1,49 @@
+{
+  "areaFingerprints": {
+    "AI": "86e1f847a826c8740350e5ca62f383f8c518d39f2984e26c8a8363c65b5c986f"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "3a0394c0f54bfa9d9ab81d6308559bbb54e12e28",
+  "baseSha": "3a0394c0f54bfa9d9ab81d6308559bbb54e12e28",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "86e1f847a826c8740350e5ca62f383f8c518d39f2984e26c8a8363c65b5c986f",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "selection": [
+    {
+      "Name": "Explicit Flutter tests",
+      "FilePath": "flutter",
+      "Arguments": [
+        "test",
+        "test/screens/associative_reading_session_screen_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "associative stage assistance connected"
+      ],
+      "SourceArea": "AI",
+      "commandKey": "0f2fbe674303ddd88284eb1c88fcc7d36dae71d0d832660b44bd1949295a9370"
+    }
+  ],
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T08:48:55.6447228+00:00",
+  "finishedAt": "2026-09-23T08:49:12.2240359+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "0f2fbe674303ddd88284eb1c88fcc7d36dae71d0d832660b44bd1949295a9370",
+      "fingerprint": "86e1f847a826c8740350e5ca62f383f8c518d39f2984e26c8a8363c65b5c986f",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T08:48:57.2834857+00:00",
+      "FinishedAt": "2026-09-23T08:49:06.2165947+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\3a0394c0f54bfa9d9ab81d6308559bbb54e12e28\\0f2fbe674303-86e1f847a826-207c6fc0\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\3a0394c0f54bfa9d9ab81d6308559bbb54e12e28\\0f2fbe674303-86e1f847a826-207c6fc0\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "86e1f847a826c8740350e5ca62f383f8c518d39f2984e26c8a8363c65b5c986f",
+      "StdoutHash": "6879AB4A1AE452110C16E33B61AD2CDB79D0F380655AC04B2E5BF1B73E4A8C3A",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "86e1f847a826c8740350e5ca62f383f8c518d39f2984e26c8a8363c65b5c986f"
+}

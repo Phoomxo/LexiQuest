@@ -377,7 +377,34 @@ void main() {
             tester,
             find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
           );
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
           for (var stage = 1; stage <= 6; stage++) {
+            if (connection == 'connected') {
+              // Expanded AI plus the lesson shell can leave a very short mode viewport.
+              tester.view.devicePixelRatio = 1;
+              tester.view.physicalSize = const Size(390, 220);
+              await tester.pump();
+              expect(
+                tester.takeException(),
+                isNull,
+                reason: 'stage $stage compact viewport',
+              );
+              final compactNext = find.widgetWithText(
+                FilledButton,
+                stage < 6 ? 'เสร็จแล้ว ไปขั้นถัดไป' : 'จบกิจกรรม',
+              );
+              await tester.ensureVisible(compactNext);
+              await tester.pump();
+              expect(
+                tester.getRect(compactNext).bottom,
+                lessThanOrEqualTo(220),
+              );
+              expect(tester.getRect(compactNext).top, greaterThanOrEqualTo(0));
+              tester.view.resetPhysicalSize();
+              tester.view.resetDevicePixelRatio();
+              await tester.pump();
+            }
             if (stage == 4 && connection == 'disconnected') {
               expect(repository.answerCommands, hasLength(1));
               expect(registry.snapshot()['context'], isEmpty);
