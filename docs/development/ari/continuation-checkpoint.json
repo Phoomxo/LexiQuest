@@ -1,15 +1,14 @@
 {
-  "revision": 96,
+  "revision": 97,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "072 native live skip/typed/selected guidance PASS;071 defect fixed for reproduced cases;exact2answers",
+  "previousTurn": "073 native definition live skipped1of3 guidance and disconnected completion PASS;exact2recognition attempts",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Definition native live skip-state guidance, then associative context",
+  "current": "Associative reading native baseline/connected/disconnected context and feedback",
   "next": [
-    "Definition native live skip-state guidance",
-    "Associative native context gaps",
-    "Refresh remaining workflow/mode audit without inheriting narrow PASS",
-    "Export/rewards/speech/camera/sync original gaps"
+    "Associative reading actual native baseline/connected/disconnected context/feedback",
+    "Refresh remaining workflow/mode acceptance audit",
+    "Exports/rewards/speech/camera/sync remaining requirements"
   ],
   "nativeInstalledSource": "evidence/cloze-live-071/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-071.apk",
@@ -18,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge51875 stopped;reverse/private config removed",
-  "testFixture": "Cloze3 completed100%;isolated restarted home",
+  "liveProcesses": "None;bridge81652 stopped;reverse/private config removed",
+  "testFixture": "Definition3completed100%;isolated app restarted home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

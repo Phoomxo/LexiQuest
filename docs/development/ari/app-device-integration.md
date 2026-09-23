@@ -640,3 +640,7 @@ APK069 provider recognized skipped1/3 and typed2/3 English context, but incorrec
 ## Cloze native guidance retest — checkpoint072
 
 APK071 fresh live provider correctly described skip1/3→ดำเนินต่อ,typed2/3→ตรวจคำตอบ,and selected3/3→choose/check in one conversation,each with collapse-AI/scroll instruction. CLOZE-MANUAL-GUIDANCE-071 verified fixed for these reproduced cases. Explicit disconnect before last manual answer retained baseline;100%2correct0wrong with exact2durable attempts at2/3,no skip or AI answers. Source pins match071;23host tests reused. Updated cloze evidence index;whole scope remains OPEN. Bridge/config cleaned,USB stayawake2 preserved. [Evidence](cloze-guidance-072.json). Next:definition live skip and associative context.
+
+## Definition live skip — checkpoint073
+
+APK071 provider correctly describes skipped definition1/3 English→English,no answer to grade,and Continue. Reply uses English Continue rather than Thai button label;no exact-label claim. Explicit disconnect at skip retains manual advance;bag/book answers complete100%2correct0wrong. Exact2recognition attempts at2/3,no skipped or AI response row. [Evidence](definition-skip-live-073.json). Updated mode ledger;overall acceptance remains OPEN. Bridge/config removed,isolated home restored. Next:associative native context.
