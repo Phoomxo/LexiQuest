@@ -1,0 +1,17 @@
+{
+  "checkpoint": "093",
+  "workflow": "W08",
+  "status": "NATIVE_BASELINE_NONEMPTY_NEW_ITEM_PLAN_VERIFIED_CONNECTED_PENDING",
+  "apk": "091",
+  "sourceChanged": false,
+  "baseline": "No bridge or provider session: native personal-set create selecting pencil; preview10minute planr4 due7/new1/carry0; manualaccept; leave/reopen retainedr4",
+  "fixture": "New pencil test%093 (literal percent from test typing; no functional impact)",
+  "durable": "Accepted plan newItems exactly word:starter-pencil; no pencil SRS row; five learning tables unchanged since092",
+  "evidence": "evidence/new-item-plan-093",
+  "remaining": [
+    "Actual provider reads nonempty new-item accepted/pending plan correctly",
+    "Disconnected proposal rejection preserves accepted new-item plan",
+    "W10 and full14workflow14mode finalacceptance"
+  ],
+  "wholeGoalComplete": false
+}

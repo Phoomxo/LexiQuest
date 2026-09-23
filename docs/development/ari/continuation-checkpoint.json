@@ -1,13 +1,13 @@
 {
-  "revision": 116,
+  "revision": 117,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "092 actual provider verified goal editor draft/confirmed separation and invalid draft; disconnected manual save persisted; SQLite learning evidence unchanged",
+  "previousTurn": "093 native no-provider personalset pencil -> nonemptynewplanr4 accepted/reopened; exact learning rows unchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 nonempty new-item study-plan native acceptance",
+  "current": "W08 nonempty new-item plan connected/disconnected acceptance",
   "next": [
-    "Inspect personal-set selection and study-plan new-item source; create/select supported native fixture",
-    "Verify baseline plan with nonempty new items; connected read and disconnected manual acceptance/rejection",
+    "Fresh bridge/login on091, open studyplan and reload after browser; actualAIread acceptedr4 due7/new1/carry0",
+    "Propose shorterplan; actualAI distinguish proposed fromaccepted; disconnect thenreject and verifyr4 persists",
     "Continue W10 and remaining14workflow14mode acceptance"
   ],
   "nativeInstalledSource": "evidence/goal-editor-091/source-pins.json",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; bridge60185 stopped, reverse/config removed",
-  "testFixture": "Isolated091 restarted; Saved goal092 revised active deadline2026-09-25T11:10Z; preferences40minutes; planr3due5carry2; original accounts untouched",
+  "liveProcesses": "None; no bridge/reverse/config; app restartedhome after snapshot",
+  "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

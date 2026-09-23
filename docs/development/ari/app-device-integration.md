@@ -736,3 +736,8 @@ Added owner-bound read-only editor context separating current draft from initial
 ## Native goal editor acceptance — checkpoint092
 
 On unchanged APK091, actual provider distinguished an unsaved new draft, missing deadline after invalid manual submission, and revised draft title versus last-confirmed title. Cancelled draft was absent from storage. Explicit AI disconnect while editing preserved the native save path; leaving/reopening retained the revised goal. SQLite confirms the expected active goal/deadline and exact unchanged answer/SRS/points/reading rows since090. Source fingerprints match091; reuse its23host tests. Bridge stopped and config/reverse removed; original app/accounts untouched. [Evidence](goals-editor-native-092.json). Pending-save fault/foreign-owner checks remain host-only; nonempty new-item plan and full14workflow14mode acceptance remain open.
+
+
+## Native nonempty new-item plan — checkpoint093
+
+Without bridge/provider, created a personal set selecting pencil through native UI. Pencil had no SRS state, unlike the previously reviewed starter words. Proposed10minutes: due7/new1/carry0; manually acceptedr4 and reopened with unchanged counts. SQLite confirms newItems exactly word:starter-pencil; five learning evidence tables unchanged since092. Literal fixture title New pencil test%093 retains a typing percent; no application defect inferred. [Evidence](new-item-plan-093.json). Actual provider read of the nonempty plan and disconnected rejection still pending; no whole-workflow completion claim.
