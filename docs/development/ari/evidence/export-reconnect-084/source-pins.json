@@ -1,0 +1,14 @@
+{
+  "headBefore": "58cfb96712839909b4a9e0c124d3c8cc6c575054",
+  "sha256": {
+    "lib/screens/export_center_screen.dart": "d51f2dc93e21ec3885757bf35dc550e39467e6bd3875d9e3ba8d905309ff1cb8",
+    "test/screens/export_center_flow_test.dart": "3e43c4935be471a06a668647c39c69fff5bc174bdf1b1b3ee84246f35398b604",
+    "test/screens/export_center_screen_test.dart": "05126b1c7d92b02330575beb24aad00032003f1aca396fb19c819adbef99b267"
+  },
+  "bridgeLiveSource": "../export-live-083/source-pins.json",
+  "liveAndroidBeforeFix": "../export-context-082/source-pins.json",
+  "installedApk": {
+    "path": "build/ari-assistance-084.apk",
+    "sha256": "400d904c5300bfada004ac82ebc6e9129b17a3232a71cf5b8f2fcd070782af7f"
+  }
+}

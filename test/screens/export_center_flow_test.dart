@@ -58,6 +58,20 @@ void main() {
         expect(data['status'], 'saved');
         expect(data.containsKey('path'), false);
         expect(data.toString(), isNot(contains(saved.path)));
+        if (format == ExportFormat.anki) {
+          expect(data['columns'], ['word', 'meaning', 'category', 'recordId']);
+          final rows = const LineSplitter()
+              .convert(utf8.decode(bytes))
+              .where((line) => !line.startsWith('#'))
+              .toList();
+          expect(rows, hasLength(1));
+          expect(
+            rows.single.split('\t'),
+            hasLength((data['columns'] as List).length),
+          );
+          expect(data['purpose'], contains('หมวดหมู่'));
+          expect(data['purpose'], contains('รหัสรายการ'));
+        }
         if (format == ExportFormat.csv) {
           await _tap(tester, find.text('คลังคำศัพท์'));
           final changed = jsonDecode(

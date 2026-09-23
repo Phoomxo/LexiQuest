@@ -148,6 +148,8 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                   'reading': _reading,
                 },
               'purpose': _formatPurpose(_format),
+              if (_format == ExportFormat.anki)
+                'columns': ['word', 'meaning', 'category', 'recordId'],
               'fileAccess':
                   'native-controls-only-no-path-or-file-content-shared',
             }),
@@ -295,7 +297,8 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   String _formatPurpose(ExportFormat format) => switch (format) {
     ExportFormat.csv => 'เปิดและจัดการข้อมูลที่เลือกในแอปตารางคำนวณ',
     ExportFormat.pdf => 'อ่านหรือพิมพ์รายงานข้อมูลที่เลือก',
-    ExportFormat.anki => 'นำเข้าเป็นบัตรคำใน Anki ใช้เฉพาะคำศัพท์และความหมาย',
+    ExportFormat.anki =>
+      'นำเข้าเป็นบัตรคำใน Anki มีคำศัพท์ ความหมาย หมวดหมู่ และรหัสรายการ ไม่รวมประวัติคำตอบหรือการอ่าน',
     ExportFormat.researchJson =>
       'สำหรับวิเคราะห์งานวิจัย ต้องมีความยินยอมวิจัยตามรุ่นที่กำหนด แยกจากการส่งออกส่วนตัว',
     ExportFormat.ownerArchiveJson =>

@@ -28,9 +28,10 @@
       "acceptanceEvidence": [
         "chat-mcp-001.json",
         "process-recovery-037.json",
-        "export-live-083.json"
+        "export-live-083.json",
+        "export-reconnect-084.json"
       ],
-      "remainingAcceptance": "Live retry after bridge mailbox cleanup fix pending083. Native picker/background forces explicit provider re-login;standalone delivery remains unproven;owner/error final audit pending."
+      "remainingAcceptance": "Same-process explicit provider re-login/new room after native picker verified084 with actual reply. Background/picker still requires explicit re-login;standalone delivery and final owner/error audit remain."
     },
     {
       "id": "W02",
@@ -105,9 +106,10 @@
       "acceptanceEvidence": [
         "cefr-assistance-043.json",
         "cefr-session-045.json",
-        "cefr-session-native-051.json"
+        "cefr-session-native-051.json",
+        "associative-stages-080.json"
       ],
-      "remainingAcceptance": "Associative-reading live context and mode-specific native parity"
+      "remainingAcceptance": "Representative associative all six stages/expiry and baseline-connected-disconnected evidence verified080;CEFR evidence043/045/051 retained. Final current-source acceptance audit remains;do not repeat unchanged associative journeys."
     },
     {
       "id": "W07",
@@ -214,9 +216,10 @@
         "native-context-028.json",
         "export-native-081.json",
         "export-context-082.json",
-        "export-live-083.json"
+        "export-live-083.json",
+        "export-reconnect-084.json"
       ],
-      "remainingAcceptance": "Native CSV current format/all selections/idle guidance and disconnected Anki save verified083. Reconnect provider room failed;stale mailbox fixed with26host tests;live reconnect/saved guidance pending. Additional format/selection live variants remain."
+      "remainingAcceptance": "Live reconnect/saved reading-only CSV,owner archive and PDF guidance verified084. Anki exclusion of reading correct but metadata omission corrected after live finding;brief084 Anki retest and final source audit remain. Native personal export bytes081/083/084 verified."
     },
     {
       "id": "W14",

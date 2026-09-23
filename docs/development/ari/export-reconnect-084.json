@@ -1,0 +1,30 @@
+{
+  "checkpoint": "084",
+  "workflow": "W01/W13",
+  "status": "NATIVE_RECONNECT_AND_SAVED_CONTEXT_PASS_ANKI_METADATA_CORRECTED_HOST",
+  "native": {
+    "liveApk": "082",
+    "bridgeFix": "083 in same bridge process across two private logins",
+    "reconnect": "Initial room ready,Android document picker disconnected session,explicit private re-login reopened room successfully and actual provider replied",
+    "csv": "Reading-only saved1214bytes;4rows exactly match reconciled081;AI correctly reports onlyreading,saved,no path/content access",
+    "ownerArchive": "AI correctly reports JSON allowlisted/redacted owner data,not restore,not yet saved after format change",
+    "pdf": "AI correctly reports PDF reading-only,for reading/printing,not saved",
+    "anki": "AI correctly excludes reading history but incorrectly says only word/meaning,omitting category/recordId metadata;tracked and corrected in source",
+    "cleanup": "Explicit AI disconnect;bridge34991 stopped;ADB reverse/configremoved;original accounts preserved"
+  },
+  "correction": {
+    "cause": "Native formatPurpose itself said only word/meaning despite four physical TSV columns",
+    "change": "Purpose now names all four columns and excluded histories;AI context adds ordered column descriptors without exposing values",
+    "red": "Actual generated Anki file test expected four context columns,got null",
+    "green": "18 export screen/flow tests pass;two-file analysis clean",
+    "newApk": "084 built/installed",
+    "nativeProviderAfterTextFix": "NOT_RUN"
+  },
+  "remaining": [
+    "Brief live Anki metadata retest on084",
+    "Final W13 acceptance/source audit without rerunning unchanged verified exports",
+    "W08 nonempty plan/goals and W10 native reward state gaps",
+    "Standalone/background re-login UX and full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}
