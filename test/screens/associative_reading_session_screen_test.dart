@@ -30,6 +30,8 @@ import 'package:vocab_learning_app/features/learning/presentation/unified_lesson
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import '../support/accessibility_semantics_test_support.dart';
 
@@ -87,6 +89,7 @@ void main() {
       String? sessionId,
       String? passageText,
       String? documentId,
+      String? ownerId,
     }) {
       final resolvedLearning = learningUseCases ?? learning;
       final resolvedPrompts =
@@ -124,6 +127,7 @@ void main() {
           featureRegistry: featureRegistry,
           associativeLearning: port ?? associativeLearning,
           sessionId: sessionId,
+          ownerId: ownerId,
         ),
       );
     }
@@ -333,6 +337,123 @@ void main() {
           screen.targetWords[index],
         );
       }
+    }
+
+    for (final connection in ['absent', 'connected', 'disconnected']) {
+      testWidgets(
+        'associative stage assistance $connection preserves manual flow',
+        (tester) async {
+          final repository = _OrderedCompletionLearningRepository();
+          final contractLearning = LearningUseCases(
+            owners: owners,
+            repository: repository,
+            generateId: () => 'ai-stage-${++id}',
+            nowUtc: () => DateTime.utc(2026, 9, 23, 10, 0, id),
+            buildInfo: const AppBuildInfo(version: 'test', buildId: 'ai-stage'),
+          );
+          String? aiOwner = 'local:reading-owner';
+          final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+          final app = session(
+            targetWords: const ['anchor'],
+            targetWordIds: const {'anchor': 'word-anchor'},
+            ownerId: 'local:reading-owner',
+            sessionId: 'ai-stage-session',
+            learningUseCases: contractLearning,
+            modeAdapter: const TypedRecallModeAdapter(),
+          );
+          await tester.pumpWidget(
+            connection == 'absent'
+                ? app
+                : MenuActionScope(registry: registry, child: app),
+          );
+          Map data() {
+            final row = (registry.snapshot()['context'] as List).singleWhere(
+              (dynamic r) => r['id'] == 'associative/current-stage-assistance',
+            );
+            return jsonDecode(row['value'] as String) as Map;
+          }
+
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
+          );
+          for (var stage = 1; stage <= 6; stage++) {
+            if (stage == 4 && connection == 'disconnected') {
+              expect(repository.answerCommands, hasLength(1));
+              expect(registry.snapshot()['context'], isEmpty);
+              aiOwner = 'local:reading-owner';
+              registry.invalidateSession(preserveContext: true);
+              await tester.pump();
+            }
+            if (connection != 'absent') {
+              expect(data()['stage'], stage);
+              expect(data()['stageCount'], 6);
+              expect(data()['cefrLevel'], 'B2');
+              expect(data()['targetWordCount'], 1);
+              expect(data()['guidance'], isNotEmpty);
+              expect(data().toString(), isNot(contains('anchor')));
+              expect(registry.snapshot()['actions'], isEmpty);
+            }
+            if (stage == 3) {
+              await tester.enterText(find.byType(TextField), 'anc');
+              final state = tester.state(
+                find.byType(AssociativeReadingSessionScreen),
+              );
+              if (connection != 'absent') {
+                expect(data().values, isNot(contains('anc')));
+              }
+              if (connection == 'disconnected') {
+                aiOwner = null;
+                registry.invalidateSession(preserveContext: true);
+                await tester.pump();
+                expect(registry.snapshot()['context'], isEmpty);
+                expect(
+                  tester.state(find.byType(AssociativeReadingSessionScreen)),
+                  same(state),
+                );
+                expect(
+                  tester
+                      .widget<TextField>(find.byType(TextField))
+                      .controller!
+                      .text,
+                  'anc',
+                );
+              }
+              await tester.enterText(find.byType(TextField), 'anchor');
+            }
+            if (stage == 4) {
+              expect(repository.answerCommands, hasLength(1));
+              await tester.enterText(find.byType(TextField), 'private cue');
+            }
+            if (stage == 5) {
+              await tester.enterText(
+                find.byType(TextField),
+                'private sentence',
+              );
+            }
+            if (connection != 'absent' && aiOwner != null) {
+              expect(data().toString(), isNot(contains('private')));
+            }
+            if (stage == 6) break;
+            tester
+                .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+                )
+                .onPressed!();
+            await pumpUntilFound(
+              tester,
+              find.text('ขั้นที่ ${stage + 1}: ${_stageName(stage + 1)}'),
+            );
+          }
+          expect(repository.answerCommands, hasLength(1));
+          if (connection != 'absent') {
+            aiOwner = 'different-owner';
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+          await tester.pumpWidget(const SizedBox.shrink());
+          expect(registry.snapshot()['context'], isEmpty);
+        },
+      );
     }
 
     testWidgets('Renders stages and progresses through 6 stages', (

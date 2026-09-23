@@ -1,0 +1,13 @@
+{
+  "state": "active",
+  "correct_count": 1,
+  "wrong_count": 0,
+  "attempts": [
+    {
+      "prompt_mode": "associativeRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 1,
+      "attempt_number": 1
+    }
+  ]
+}

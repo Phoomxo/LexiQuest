@@ -652,3 +652,7 @@ Native baseline exposed ASSOCiATIVE-BLANK-074:empty Stage3 submit persisted one 
 ## Associative baseline completion and progress — checkpoint075
 
 APK074 resumes Stage3 after restart;valid bottle answer reaches stages4–6 and completes. SQLite confirms1correct independentRecall,water-container keyword,and reading progress completed at6. Stage5 sentence is ephemeral/ungraded,not persisted. Shared header remains0after answer:ASSOCIATIVE-PROGRESS-075 reproduced in host expected2actual0. Reflect acknowledged native count using union of restored/committed indices;26screen tests and2file analysis pass. APK075 built/installed;native progress retest pending. [Evidence](associative-baseline-075.json). Actual-stage AI binding and fullscope acceptance remain open.
+
+## Associative actual-stage context — checkpoint076
+
+APK075 fresh native recall updates shared0→100;SQLite confirms1correct independentRecall. Round left active atStage4. Added owner-bound readonly six-stage context with method/nextstep and honest Stage5 ephemeral/ungraded policy;no answer/draft/passages exposed. New absent/connected/disconnected flows cover6stages,retained draft/manual submit while disconnected,owner fence and disposal. Recording repository count1;existing realDrift tests retained. Red missing context;29fullscreen tests PASS and2file analysis clean. APK076 installed;live stage guidance and restored shared-progress check next. [Report](associative-context-076.json). Whole-goal acceptance open.

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import '../features/accessibility/domain/accessibility_policy.dart';
 import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -1199,8 +1200,56 @@ class _AssociativeReadingSessionScreenState
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
+  static const _stageGuidance = <String>[
+    'Read the passage with its visible cues. Reading is not a graded recall answer.',
+    'Read again with reduced cues. Do not reveal target words or reconstruct hidden translations.',
+    'Type every target word from memory yourself. Finish composing and fill all fields before continuing. Only acknowledged recall answers count; do not supply answers.',
+    'Create your own keyword or memory story for each target word. These associations are saved separately and are not additional graded recall answers.',
+    'Write your own new sentence using a target word. This is ephemeral ungraded practice; the sentence is not persisted or assessed.',
+    'Review the recall summary. Tap จบกิจกรรม to complete; being on stage six alone does not confirm completion.',
+  ];
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => MenuActionBinding(
+    id: 'associative/current-stage-assistance',
+    label: 'สถานะขั้นอ่านเชื่อมโยงความจำ',
+    ownerId: widget.ownerId,
+    onInvoke: null,
+    readValue:
+        widget.ownerId == null ||
+            _loading ||
+            _unavailableReason != null ||
+            _initializationFailure != null
+        ? null
+        : jsonEncode({
+            'mode': 'associative-reading',
+            'stage': _currentStage,
+            'stageCount': 6,
+            'stageTitle': _stageTitles[_currentStage - 1],
+            'cefrLevel': widget.cefrLevel,
+            'targetWordCount': widget.targetWords.length,
+            'phase': _completed
+                ? 'completed'
+                : _saving
+                ? 'saving'
+                : _persistenceLocked
+                ? 'retry-or-locked'
+                : 'ready',
+            'guidance': _stageGuidance[_currentStage - 1],
+            'manualNextStep': _completed
+                ? 'Activity already completed. Do not submit again.'
+                : _persistenceLocked
+                ? 'Wait while saving or use the displayed retry control. Do not claim success before persistence is acknowledged.'
+                : 'Finish the current stage yourself, then tap ${_currentStage < 6 ? 'เสร็จแล้ว ไปขั้นถัดไป' : 'จบกิจกรรม'}.',
+            'visibility':
+                'If controls are hidden, tap ย่อส่วนช่วยเหลือ AI and scroll the lesson; offscreen does not mean unavailable.',
+            'privacy':
+                'No passage, target answers, personal cues, input drafts or score-changing actions are exposed.',
+          }),
+    child: _buildScreen(context),
+  );
+
+  Widget _buildScreen(BuildContext context) {
     final unavailableReason = _unavailableReason;
     if (unavailableReason != null) {
       return AssociativeReadingUnavailable(reason: unavailableReason);
