@@ -1,0 +1,44 @@
+{
+  "status": "LIVE_CEFR_LIBRARY_CONTEXT_FIX_RETEST_PASS_FULL_SCOPE_OPEN",
+  "finding": {
+    "id": "CEFR-PICKER-CONFLATION-044",
+    "before": "AI explained book and correct completion/saved states, then incorrectly said selected word unavailable; receipts showed list_menu_actions available and read_selected_word failed",
+    "cause": "Global selected vocabulary instruction also applied to word tapped inside article",
+    "fix": "Bridge instructions distinguish article selectedWord/excerpt from vocabulary picker; screen-only completion is not failed persistence",
+    "after": "Fresh authenticated bridge replied to same question with selected bag, title A book for May, completed screen-only and no saved evidence; no invalid-selection claim or raw field names",
+    "evidenceStrength": "One live before/after scenario; not exhaustive model reliability"
+  },
+  "host": {
+    "command": "python -m unittest discover -s tool/experiments/ari_app_server -p test_chat_bridge.py",
+    "passed": 7,
+    "scope": "Existing bridge transport tests; not proof of semantic prompt adherence"
+  },
+  "native": {
+    "prompt": "Read current article tools. In Thai explain selected word and title. Is reading complete and is evidence saved? Do not infer CEFR proficiency or submit anything.",
+    "targetNotIncludedInPrompt": true,
+    "beforeWord": "book",
+    "afterWord": "bag",
+    "connectedCompletion": "Reopened A1 and completed via native control while provider connected",
+    "disconnected": "Explicit disconnect; changed selected word to bag, later after corrected run to blue; native reading completion retained",
+    "audio": "No audible playback claim",
+    "testData": "Library screen-only; no scored learner answers submitted"
+  },
+  "cleanup": {
+    "bridgeHandles": [
+      52252,
+      17779
+    ],
+    "terminal": "Both CtrlC exit1",
+    "reverse": "Owned8765 removed; reverse empty",
+    "privateConfig": "Exact isolated files/ari-bridge.json removed",
+    "listener": "No8765listener",
+    "usbStayAwake": 2,
+    "endScreen": "A1 article completed,blue selected,AIcollapsed/disconnected"
+  },
+  "remaining": [
+    "Native CEFR session-based exposure completion and remaining mode-specific cases",
+    "Successful physical speech, camera mapping and sync acceptance",
+    "Whole14workflow/mode acceptance remains OPEN",
+    "Whole-project review queued after MCP acceptance"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "base": "4b92aab3",
+  "files": {
+    "tool/experiments/ari_app_server/chat_bridge.py": "472874b81b2891f70d49099bbe5484809cba0b696d4f8dbd28a29b33037eeeee"
+  },
+  "apk": "build/ari-assistance-043.apk",
+  "apkSha256": "1e76bd53355335778dadfe33ce6e8b062422f5f185a8792657e4c8c59d970b2e"
+}

@@ -536,3 +536,10 @@ Final042 debug APK built/installed and baseline home smoke passed. Successful ph
 Added bounded owner-bound excerpt/selected word and explicit reading-exposure interpretation. Screen-only completion remains distinct from acknowledged evidence and does not claim comprehension or CEFR certification. Seven production-loader/library tests use real Drift in-memory; six reader tests passed. Connection cases here are registry-state tests, not live-provider proof. Targeted analysis clean. [Evidence](cefr-assistance-043.json).
 
 Final043 APK built/installed on Vivo. Without provider connection, A1 article opens, word book selects and native completion works. Audible playback and live CEFR assistance remain pending. Original app/accounts preserved; USB stay-awake2 retained. Whole14workflow/mode goal remains active and unaccepted.
+
+
+### CEFR live context and picker separation — checkpoint044
+
+Live provider exposed a prompt defect: article-selected book was explained but then rejected because the independent vocabulary picker was empty. Clarified bridge instructions to use reading/article-assistance directly. Existing7 bridge tests pass; semantic acceptance comes from the fresh live retest: same target-free question returned current selected bag, correct title and screen-only completion without an invalid-selection claim. [Evidence](cefr-native-044.json).
+
+Native completion worked while connected; after explicit disconnect the article retained completion and selected word changed to blue. No scored answer submitted, acoustic playback not certified. Both bridge processes terminal; owned reverse/private pairing removed; USBstayawake2 preserved. Full scope remains OPEN.
