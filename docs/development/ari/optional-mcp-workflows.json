@@ -515,6 +515,12 @@
       "receipt": "pair-adversarial-050.json",
       "scope": "Host guided repair projection and disconnected replay reconnect;16effect tables unchanged;10targetedtests",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "cefr-session-native-051",
+      "receipt": "cefr-session-native-051.json",
+      "scope": "Vivo liveAIbefore/aftercompletion;disconnectselection;restartdurableoneexposure",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false
