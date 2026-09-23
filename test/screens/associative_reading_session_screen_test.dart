@@ -989,6 +989,8 @@ void main() {
             .onPressed!();
         await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
 
+        expect(controller.state.committedResponseCount, 2);
+
         final attempts = (await tester.runAsync(
           () => database.select(database.answerAttempts).get(),
         ))!;

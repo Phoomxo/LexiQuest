@@ -1,24 +1,24 @@
 {
-  "revision": 98,
+  "revision": 99,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "074 associative empty answer wrong-score defect fixed;26host tests/native0attempts PASS",
+  "previousTurn": "075 associative baseline resumed/finished;exact1recall+association+reading completion;progress defect host-fixed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Associative valid continuation and stage-specific AI context",
+  "current": "Native progress retest and associative stage-specific AI context",
   "next": [
-    "Resume associative Stage3;valid bottle answer and stages4-6 baseline/persistence",
-    "Implement owner-bound readonly associative stage context with host absent/connected/disconnected tests",
-    "Native live associative context and disconnect",
-    "Remaining fullscope audit and workflow gaps"
+    "Native progress retest: fresh associative round,valid recall,shared count reflects acknowledged evidence",
+    "Implement owner-bound read-only associative stage context and host absent/connected/disconnected tests",
+    "Native live stage guidance/disconnect",
+    "Original workflow/mode audit gaps"
   ],
-  "nativeInstalledSource": "evidence/associative-blank-074/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-074.apk",
+  "nativeInstalledSource": "evidence/associative-baseline-075/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-075.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;no bridge/build/test",
-  "testFixture": "One-word bottle associative session ACTIVE atStage3 after blank guard;force-stop snapshot then restarted isolated home;can resume from launcher",
+  "liveProcesses": "None;build/install finished;no bridge",
+  "testFixture": "Bottle one-word reading completed;APK075 installed,isolated home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

@@ -1,0 +1,22 @@
+{
+  "state": "completed",
+  "activity_type": "associativeReading",
+  "correct_count": 1,
+  "wrong_count": 0,
+  "score": 100,
+  "attempts": [
+    {
+      "prompt_mode": "associativeRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 1,
+      "attempt_number": 1
+    }
+  ],
+  "associationFixturePersisted": true,
+  "latestReadingProgress": {
+    "document_revision": 1976021565209911,
+    "last_position": 6,
+    "is_completed": 1
+  },
+  "transferSentence": "Native input exercised;screen uses ephemeral TextField and does not persist or grade sentence"
+}

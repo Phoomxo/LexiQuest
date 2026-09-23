@@ -875,6 +875,19 @@ class _AssociativeReadingSessionScreenState
         } else {
           await (lifecycle?.runAcceptedOperation(operation) ?? operation());
         }
+        lifecycle?.reflectNativeCommittedResponses(
+          sessionId: sessionId,
+          count: <int>{
+            ..._restoredRecallOccurrences,
+            for (
+              var committedIndex = 0;
+              committedIndex < _pendingRecallEvidence.length;
+              committedIndex++
+            )
+              if (_pendingRecallEvidence[committedIndex]?.isCommitted == true)
+                committedIndex,
+          }.length,
+        );
         lifecycle?.resetHintsAfterCommittedEvidence();
       } catch (_) {
         return false;

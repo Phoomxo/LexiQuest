@@ -648,3 +648,7 @@ APK071 provider correctly describes skipped definition1/3 English→English,no a
 ## Associative blank recall guard — checkpoint074
 
 Native baseline exposed ASSOCiATIVE-BLANK-074:empty Stage3 submit persisted one wrong independentRecall and froze input. Corrected screen guard before capture for blank/whitespace and composing text,leaving frozen retry semantics intact. New regression red before fix;26full screen tests PASS after updating four later-stage fixtures to enter answers;2file analysis clean. APK074 built/installed;native blank stays editable atStage3 with validation message,real SQLite0attempts0wrong. Current bottle session remains active atStage3 after snapshot/restart. [Evidence](associative-blank-074.json). Six-stage valid continuation and owner-bound actual-stage AI context remain required;no whole-mode PASS.
+
+## Associative baseline completion and progress — checkpoint075
+
+APK074 resumes Stage3 after restart;valid bottle answer reaches stages4–6 and completes. SQLite confirms1correct independentRecall,water-container keyword,and reading progress completed at6. Stage5 sentence is ephemeral/ungraded,not persisted. Shared header remains0after answer:ASSOCIATIVE-PROGRESS-075 reproduced in host expected2actual0. Reflect acknowledged native count using union of restored/committed indices;26screen tests and2file analysis pass. APK075 built/installed;native progress retest pending. [Evidence](associative-baseline-075.json). Actual-stage AI binding and fullscope acceptance remain open.
