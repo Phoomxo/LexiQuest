@@ -603,3 +603,8 @@ APK062 live provider correctly identified first question English-to-Thai choice,
 ### Definition context 064
 
 Added owner-bound readonly current-item metadata (choice/skip, reason, phase, English definition-to-English word) and corrected wrong-feedback continuation to actual next/results.10 full definition screen tests pass, including absence/connected/disconnected exact2 incorrect recognition attempts and no SRS, plus skip-to-question with no answer evidence. Initial new-test fixture hang resolved with runAsync owner read; acceptance unchanged. Analysis clean. [Evidence](definition-context-064.json). Build/native pending; installed device remains062. All14 acceptance open.
+
+
+### Definition baseline native065
+
+APK065 built/installed. Without AI, skip-only completed with0 attempts and0 wrong. Three-item route skipped unreviewed a then manually answered bag/book incorrectly; exact2 incorrect recognition attempts, final0correct/2wrong. Continuation labels now match next/results. New defect DEFINITION-PROGRESS-065: shared header stays0% after committed responses; item index advances. Fix before live acceptance. [Evidence](definition-native-065.json). No provider test this checkpoint.

@@ -1,24 +1,24 @@
 {
-  "revision": 88,
+  "revision": 89,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "064 definition context/continuation repaired;10 full screen tests pass and analysis clean",
+  "previousTurn": "065 native baseline skip and two wrong choices verified;found shared progress0 defect",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Build/install064; native definition baseline/live/disconnect and skip context",
+  "current": "Fix DEFINITION-PROGRESS-065 then native live/disconnect",
   "next": [
-    "Build/install064 and native definition guidance/skip/disconnect",
-    "Cloze and associative native mode-specific gaps",
-    "Export physical artifact/readback and rewards mutation contexts",
-    "Successful speech/camera and actual sync prerequisites"
+    "Fix DEFINITION-PROGRESS-065 with host/native evidence",
+    "Native definition live skip/choice context and disconnect",
+    "Cloze and associative native gaps",
+    "Export/rewards/speech/camera/sync original gaps"
   ],
-  "nativeInstalledSource": "evidence/quiz-context-062/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-062.apk",
+  "nativeInstalledSource": "2702643c",
+  "nativeInstalledApk": "build/ari-assistance-065.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No bridge/build/test",
-  "testFixture": "063 completed100%; AI disconnected; bridge cleaned; app restarting home",
+  "testFixture": "Definition saved itemCount3; completed skipped a,wrong bag/book;restart home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

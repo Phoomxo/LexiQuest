@@ -1,0 +1,24 @@
+{
+  "checkpoint": "065",
+  "source": "2702643c",
+  "status": "BASELINE_NATIVE_PASS_WITH_PROGRESS_DEFECT",
+  "apkSha256": "458b75b9274d074c9653b531e5361e334dc520a22ab48ba5aa1a33e6bd46f93c",
+  "verified": [
+    "No AI skip-only completes with0 attempts and0 wrong",
+    "Three-item session: first unreviewed skipped;bag and book wrong manual choices;exact2 incorrect recognition attempts",
+    "Wrong feedback next/results matches actual buttons"
+  ],
+  "defects": [
+    {
+      "id": "DEFINITION-PROGRESS-065",
+      "status": "OPEN",
+      "observed": "Shared header remains0percent after committed choices;item index advances",
+      "next": "Inspect native review-to-unified lifecycle reflection;add failing real-storage regression and repair without extra writes"
+    }
+  ],
+  "pending": [
+    "Live provider definition context and explicit disconnect",
+    "Full14 modes/workflows acceptance"
+  ],
+  "wholeGoalComplete": false
+}
