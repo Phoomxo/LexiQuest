@@ -1,12 +1,11 @@
 {
-  "revision": 86,
+  "revision": 87,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "062 fixed active quiz direction context;36 host tests and analysis pass;APK062 installed",
+  "previousTurn": "063 live provider verified changing question direction and response kind;disconnect draft preserved;exact2 durable correct attempts",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Native live provider retest active question direction/choice-vs-typed on APK062",
+  "current": "Definition/cloze/associative native mode-specific coverage",
   "next": [
-    "Start private bridge; native quiz current-direction guidance baseline/connected/disconnected",
     "Definition/cloze/associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
     "Successful speech/camera and actual sync prerequisites"
@@ -19,6 +18,6 @@
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
   "liveProcesses": "No bridge/build/test",
-  "testFixture": "061 completed; app062 newly installed; original app preserved",
+  "testFixture": "063 completed100%; AI disconnected; bridge cleaned; app restarting home",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

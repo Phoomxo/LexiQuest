@@ -1,0 +1,23 @@
+{
+  "checkpoint": "063",
+  "source": "b0388e3d",
+  "apk": "build/ari-assistance-062.apk",
+  "status": "NATIVE_REPRESENTATIVE_PASS",
+  "verified": [
+    "Live provider reports question1of2 English to Thai choice",
+    "Same conversation after advancing reports question2of2 Thai to English typed",
+    "Partial ba survives explicit disconnect; appending g submits bag",
+    "Completed100 percent with exactly2 durable correct attempts;recognition then independentRecall"
+  ],
+  "recovery": "First probe inadvertently opened exit modal via Back; provider correctly lacked underlying quiz context. Dismissed modal and repeated request; no completion claimed from modal probe.",
+  "limitations": [
+    "Representative mixed typed route only",
+    "Other14-mode/workflow acceptance remains open",
+    "USB debug bridge required"
+  ],
+  "evidence": [
+    "evidence/quiz-context-native-063/observations.json",
+    "evidence/quiz-context-native-063/durable-summary.json"
+  ],
+  "wholeGoalComplete": false
+}

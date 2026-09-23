@@ -593,3 +593,8 @@ APK061 from845492e3: live provider identified typed recall and returned Thai met
 ### Quiz current question context 062
 
 061 revealed session mixed direction was insufficient for active-question guidance. Added owner-bound readonly metadata from actual quiz controller: prompt/answer languages, choice/typed response, index and phase; no draft or hidden answer. Red reproduced missing binding in2 connected variants, absent baseline passed. Full36 quiz screen tests pass, including3 new real-storage absence/connected/disconnected journeys, owner fencing and retained draft; analysis clean. APK062 built and installed. Live provider retest remains pending, all14 acceptance remains open. [Evidence](quiz-context-062.json).
+
+
+### Quiz current question native 063
+
+APK062 live provider correctly identified first question English-to-Thai choice, then second Thai-to-English typed in same conversation. Partial ba retained after explicit disconnect; appending g committed bag. Results100%;SQLite exactly2 correct attempts (recognition and independentRecall). First request occurred with an accidentally opened exit dialog; provider withheld underlying quiz context, then fresh request after dismissing dialog passed. [Evidence](quiz-context-native-063.json). Bridge cleaned; original app preserved; all14 acceptance remains open.
