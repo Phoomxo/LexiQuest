@@ -136,9 +136,10 @@
         "disconnectedOrFailed"
       ],
       "acceptanceEvidence": [
-        "study-plan-native-018.json"
+        "study-plan-native-018.json",
+        "study-plan-native-085.json"
       ],
-      "remainingAcceptance": "Nonempty plan; goals/preferences context; pure late-attach reload behavior"
+      "remainingAcceptance": "Due7 baseline accept/reopen,live accepted-vs-proposed5due/2carryover and manual acceptance,disconnectedreject,exact SQLitelearning-preservation verified085. Nonempty new-item plans,goals/preferences context and final owner/lifecycle audit remain;explicit background reload retained."
     },
     {
       "id": "W09",
@@ -217,9 +218,10 @@
         "export-native-081.json",
         "export-context-082.json",
         "export-live-083.json",
-        "export-reconnect-084.json"
+        "export-reconnect-084.json",
+        "study-plan-native-085.json"
       ],
-      "remainingAcceptance": "Live reconnect/saved reading-only CSV,owner archive and PDF guidance verified084. Anki exclusion of reading correct but metadata omission corrected after live finding;brief084 Anki retest and final source audit remain. Native personal export bytes081/083/084 verified."
+      "remainingAcceptance": "084 Anki metadata live retest passed085. Representative native baseline/connected/disconnected personal formats and failure/reconnect host evidence081-085 available;final current-source acceptance audit remains. No research activation."
     },
     {
       "id": "W14",

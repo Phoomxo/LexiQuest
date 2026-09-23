@@ -1,0 +1,27 @@
+{
+  "checkpoint": "085",
+  "workflows": [
+    "W08",
+    "W13"
+  ],
+  "status": "NONEMPTY_DUE_CARRYOVER_NATIVE_THREE_CONNECTION_STATES_VERIFIED_ANKI_RETEST_PASS",
+  "sourceChanged": false,
+  "apk": "084",
+  "native": {
+    "baseline": "Without AI,proposed and accepted r2:10min,due7,new0,carry0;leave/reopen retained it",
+    "connected": "Browser handoff required explicit plan reload;proposed r3:5min,due5,new0,carry2 while r2 remained saved. Actual AI accurately distinguished both and planning-not-score. Native manual acceptance then AI accurately reported accepted revision3 and no pending proposal.",
+    "disconnected": "Explicit AI disconnect;native proposed r4:10min,due7,carry0;reject and leave/reopen retainedr3.",
+    "ankiRetest": "Actual AI on084 names word,meaning,category,recordId in order and excludes reading/answer history. Closes084 metadata retest."
+  },
+  "durable": "evidence/study-plan-native-085/durable-summary.json",
+  "host": "No rerun;source unchanged. Prior012 plan and084 export host evidence retained as recorded.",
+  "cleanup": "Bridge97359 stopped;reverse/configremoved;isolated app force-stopped forSQLite snapshot then restarted home;original app/accounts untouched;USBstayawake2 retained",
+  "remaining": [
+    "Native nonempty new-item selection/plan",
+    "Goals and learner-preference optional context implementation/audit",
+    "Plan reload after background remains explicit;pure no-rebuild late-attach after browser is not claimed",
+    "W10 native preview/equip/readback and full remaining workflow/mode acceptance",
+    "Final W13 current-source acceptance audit"
+  ],
+  "wholeGoalComplete": false
+}
