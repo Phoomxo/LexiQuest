@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -81,6 +83,172 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets(
+      'definition assistance preserves manual wrong answers $connection',
+      (tester) async {
+        late String owner;
+        await tester.runAsync(() async {
+          owner = (await owners.getOrCreateActiveOwner()).id;
+        });
+        String? aiOwner = owner;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final app = MaterialApp(
+          home: DefinitionQuizScreen(
+            categoryId: 'category:travel',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const DefinitionQuizModeAdapter(),
+            loadLexicalWords: (_) async => _reviewedWords(),
+          ),
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('definition-quiz-prompt')),
+        );
+        Map data() {
+          final e = (registry.snapshot()['context'] as List).singleWhere(
+            (dynamic x) => x['id'] == 'definition/current-item-assistance',
+          );
+          return jsonDecode(e['value'] as String) as Map;
+        }
+
+        if (connection != 'absent') {
+          expect(data()['questionNumber'], 1);
+          expect(data()['responseKind'], 'choice');
+          expect(data()['phase'], 'awaitingAnswer');
+          expect(data()['promptLanguage'], 'en');
+          expect(data()['answerLanguage'], 'en');
+          expect(data().toString(), isNot(contains('airport')));
+          expect(registry.snapshot()['actions'], isEmpty);
+          aiOwner = 'other-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+          aiOwner = owner;
+        }
+        final state = tester.state(find.byType(DefinitionQuizScreen));
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(tester.state(find.byType(DefinitionQuizScreen)), same(state));
+        tester
+            .widget<FilledButton>(
+              find.byKey(
+                const ValueKey('definition-quiz-option-word:airport-station'),
+              ),
+            )
+            .onPressed!();
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+        expect(find.text('ทำต่อ: ข้อถัดไป'), findsOneWidget);
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('definition-quiz-next')),
+            )
+            .onPressed!();
+        await _pumpUntilFound(
+          tester,
+          find.text('A place where trains stop for passengers.'),
+        );
+        if (connection == 'connected') expect(data()['questionNumber'], 2);
+        tester
+            .widget<FilledButton>(
+              find.byKey(
+                const ValueKey('definition-quiz-option-word:station-airport'),
+              ),
+            )
+            .onPressed!();
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
+        expect(find.text('ทำต่อ: ดูผลการเรียน'), findsOneWidget);
+        expect(find.text('ทำต่อ: ลองอีกครั้ง'), findsNothing);
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('definition-quiz-next')),
+            )
+            .onPressed!();
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(2));
+        expect(
+          attempts.every(
+            (a) =>
+                !a.isCorrect &&
+                a.evidenceClass == EvidenceClass.recognition.name,
+          ),
+          isTrue,
+        );
+        expect(await database.select(database.srsStates).get(), isEmpty);
+        expect(
+          (await database.select(database.learningSessions).getSingle()).state,
+          'completed',
+        );
+        expect(registry.snapshot()['context'], isEmpty);
+      },
+    );
+  }
+
+  testWidgets(
+    'definition assistance reports unreviewed skip without evidence',
+    (tester) async {
+      late String owner;
+      await tester.runAsync(() async {
+        owner = (await owners.getOrCreateActiveOwner()).id;
+      });
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      final words = _reviewedWords();
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: DefinitionQuizScreen(
+              categoryId: 'category:travel',
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const DefinitionQuizModeAdapter(),
+              loadLexicalWords: (_) async => [
+                words.first.copyWith(
+                  contentReviewState: ContentReviewState.unreviewed,
+                ),
+                words.last,
+              ],
+            ),
+          ),
+        ),
+      );
+      final skip = find.byKey(const ValueKey('definition-quiz-skip'));
+      await _pumpUntilFound(tester, skip);
+      Map data() {
+        final e = (registry.snapshot()['context'] as List).singleWhere(
+          (dynamic x) => x['id'] == 'definition/current-item-assistance',
+        );
+        return jsonDecode(e['value'] as String) as Map;
+      }
+
+      expect(data()['phase'], 'skipped');
+      expect(data()['responseKind'], 'skip');
+      expect(data()['skipReason'], 'unreviewedDefinition');
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      tester.widget<FilledButton>(skip).onPressed!();
+      await _pumpUntilFound(
+        tester,
+        find.text('A place where trains stop for passengers.'),
+      );
+      expect(data()['questionNumber'], 2);
+      expect(data()['phase'], 'awaitingAnswer');
+      expect(data()['responseKind'], 'choice');
+      expect(data()['skipReason'], isNull);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    },
+  );
 
   testWidgets('F03 last skipped item retains exact completion retry', (
     tester,

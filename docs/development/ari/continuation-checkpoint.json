@@ -1,12 +1,13 @@
 {
-  "revision": 87,
+  "revision": 88,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "063 live provider verified changing question direction and response kind;disconnect draft preserved;exact2 durable correct attempts",
+  "previousTurn": "064 definition context/continuation repaired;10 full screen tests pass and analysis clean",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Definition/cloze/associative native mode-specific coverage",
+  "current": "Build/install064; native definition baseline/live/disconnect and skip context",
   "next": [
-    "Definition/cloze/associative native mode-specific gaps",
+    "Build/install064 and native definition guidance/skip/disconnect",
+    "Cloze and associative native mode-specific gaps",
     "Export physical artifact/readback and rewards mutation contexts",
     "Successful speech/camera and actual sync prerequisites"
   ],

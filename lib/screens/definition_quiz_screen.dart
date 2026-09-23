@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 
@@ -224,7 +226,31 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     );
   }
 
-  Widget _buildItem(DefinitionQuizReviewController review) {
+  Widget _buildItem(DefinitionQuizReviewController review) => MenuActionBinding(
+    id: 'definition/current-item-assistance',
+    label: 'สถานะข้อคำจำกัดความปัจจุบัน',
+    ownerId: _session?.ownerId,
+    onInvoke: null,
+    readValue: _session?.ownerId == null
+        ? null
+        : jsonEncode({
+            'mode': 'definition-quiz',
+            'questionNumber': review.index + 1,
+            'questionCount': review.items.length,
+            'promptLanguage': 'en',
+            'answerLanguage': 'en',
+            'responseKind': review.currentItem.question == null
+                ? 'skip'
+                : 'choice',
+            'phase': review.phase.name,
+            'skipReason': review.currentItem.skipReason?.name,
+            'guidance':
+                'Read the reviewed English definition and choose the English word manually. A skipped item has no answer to grade; use Continue. Saving/retry is not confirmed success. No hidden answer or mutation is exposed.',
+          }),
+    child: _buildItemContent(review),
+  );
+
+  Widget _buildItemContent(DefinitionQuizReviewController review) {
     final item = review.currentItem;
     final question = item.question;
     return SafeArea(
@@ -318,7 +344,12 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 const SizedBox(height: 12),
                 AccessibilitySemanticRegion(
                   role: AccessibilitySemanticRole.feedback,
-                  child: AnswerFeedbackPanel(feedback: feedback),
+                  child: AnswerFeedbackPanel(
+                    feedback: feedback,
+                    continuationLabel: review.index == review.items.length - 1
+                        ? 'ดูผลการเรียน'
+                        : 'ข้อถัดไป',
+                  ),
                 ),
               ],
               if (review.isAnswered) ...<Widget>[

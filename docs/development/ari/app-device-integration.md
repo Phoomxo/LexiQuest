@@ -598,3 +598,8 @@ APK061 from845492e3: live provider identified typed recall and returned Thai met
 ### Quiz current question native 063
 
 APK062 live provider correctly identified first question English-to-Thai choice, then second Thai-to-English typed in same conversation. Partial ba retained after explicit disconnect; appending g committed bag. Results100%;SQLite exactly2 correct attempts (recognition and independentRecall). First request occurred with an accidentally opened exit dialog; provider withheld underlying quiz context, then fresh request after dismissing dialog passed. [Evidence](quiz-context-native-063.json). Bridge cleaned; original app preserved; all14 acceptance remains open.
+
+
+### Definition context 064
+
+Added owner-bound readonly current-item metadata (choice/skip, reason, phase, English definition-to-English word) and corrected wrong-feedback continuation to actual next/results.10 full definition screen tests pass, including absence/connected/disconnected exact2 incorrect recognition attempts and no SRS, plus skip-to-question with no answer evidence. Initial new-test fixture hang resolved with runAsync owner read; acceptance unchanged. Analysis clean. [Evidence](definition-context-064.json). Build/native pending; installed device remains062. All14 acceptance open.
