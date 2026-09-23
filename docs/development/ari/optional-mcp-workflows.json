@@ -521,6 +521,12 @@
       "receipt": "cefr-session-native-051.json",
       "scope": "Vivo liveAIbefore/aftercompletion;disconnectselection;restartdurableoneexposure",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "dictation-native-052",
+      "receipt": "dictation-native-052.json",
+      "scope": "Vivo wrong answer/liveAIexactfeedback/disconnectedcorrection;2durableguidedattempts;audioqualityunverified",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

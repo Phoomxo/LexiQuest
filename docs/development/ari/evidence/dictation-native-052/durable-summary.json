@@ -1,0 +1,26 @@
+{
+  "attempts": [
+    {
+      "prompt_mode": "dictation",
+      "is_correct": 1,
+      "attempt_number": 2,
+      "evidence_class": "guidedPractice",
+      "provider_provenance": "native-dictation:v1:exact"
+    },
+    {
+      "prompt_mode": "dictation",
+      "is_correct": 0,
+      "attempt_number": 1,
+      "evidence_class": "guidedPractice",
+      "provider_provenance": "native-dictation:v1:incorrect"
+    }
+  ],
+  "session": {
+    "activity_type": "quiz",
+    "state": "completed",
+    "correct_count": 1,
+    "wrong_count": 1,
+    "score": 50
+  },
+  "sessionAttemptCount": 2
+}
