@@ -1,23 +1,23 @@
 {
-  "revision": 130,
+  "revision": 131,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "106 explicit SRS ratingavailability/nextstep context;REDthen26PASS and2fileanalysisclean",
+  "previousTurn": "107 actualprovider SRS wording regression and disconnected manual completion verified on isolated106",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Build/install106 and actualprovider SRS wording retest",
+  "current": "W07 coverage audit: review-center answer/feedback across AI connection changes",
   "next": [
-    "Build isolated106,install;retake actualprovider prereveal/reveal guidance. No broadclaim wording fixed until actualretest. Preserve105 DB fixture.",
-    "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
-    "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
+    "Audit W07 remaining review-center answer/feedback across AI connection change and execute missing native path",
+    "Update workflow evidence coverage using accepted pins; do not rerun unchanged gates",
+    "Continue all14workflow14mode acceptance; whole-project review follows MCP acceptance"
   ],
-  "nativeInstalledSource": "evidence/personalsets-context-098/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-098.apk",
+  "nativeInstalledSource": "evidence/srs-native-107/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-106.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;bridge39515 stopped;reverse/config removed;isolated098 restartedhome",
+  "liveProcesses": "None;bridge19002 stopped;reverse/config removed;isolated106 restartedhome",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim.",
   "jev": "API key saved Windows DPAPI under LOCALAPPDATA/LexiQuestDevSecrets/jev-gateway.dpapi; never print/commit. No model calls. Account requests card to unlock free credits;catalog API nonzero despite promo pageFree. User zero-expenditure restriction remains;await billing prerequisite and verification, do not purchase."

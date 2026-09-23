@@ -799,3 +799,8 @@ Actual provider correctly described awaitingRecall1/2, exposure semantics, then 
 ### Checkpoint106 — explicit SRS manual-step guidance
 
 Added phase/action-lock-bound selfRatingAvailable and nextManualStep to read-only context; guidance disallows retrospective rating after reveal. New assertions RED on missing fields, then26screen tests PASS and two-file Dart analysis clean. Installed098 predates this change: new APK/live-provider retest remains required. [Evidence](srs-guidance-106.json). No native behavior/scoring changes.
+
+
+### SRS native guidance regression — checkpoint107
+
+Built and installed isolated106 from ae04ee7f on Vivo. Two actual-provider replies now distinguish pre-reveal self-rating from revealed exposure, reject retrospective rating and direct Continue. Explicit AI disconnect did not prevent Continue or manual Good on the next chair card; the session returned home. Snapshot comparison against105 finds exactly plate exposure plus chair correct recall, only chair SRS changed, one points-ledger entry, and unchanged reading data. These are simulated QA inputs, not human proficiency results. [Evidence](srs-native-107.json). USB stay-awake remains2; bridge stopped and temporary reverse/config removed. W07 final audit and all14workflow/14mode acceptance remain open.
