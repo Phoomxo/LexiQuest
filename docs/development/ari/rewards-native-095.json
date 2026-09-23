@@ -1,0 +1,20 @@
+{
+  "checkpoint": "095",
+  "workflow": "W10",
+  "status": "NATIVE_NO_PROVIDER_PREVIEW_EQUIP_INSUFFICIENT_BALANCE_VERIFIED",
+  "apk": "091",
+  "sourceChanged": false,
+  "baseline": [
+    "IPA hat preview explicitly temporary; leaving/reopening clears hat",
+    "Equip already-owned default theme; leave/reopen shows equipped",
+    "84coins versus100coin IPA hat: attempted purchase rejected as insufficient; no charge or new ownership"
+  ],
+  "durable": "Exactly one zero-amount equip transaction added; ownership and five learning tables unchanged; theme_default equipped, no headgear",
+  "evidence": "evidence/rewards-native-095",
+  "remaining": [
+    "Actual AI preview versus equipped/owned interpretation",
+    "Connected and disconnected native interaction",
+    "WholeW10 and all14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

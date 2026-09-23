@@ -746,3 +746,8 @@ Without bridge/provider, created a personal set selecting pencil through native 
 ## Connected nonempty plan and disconnected rejection — checkpoint094
 
 Actual provider read acceptedr4 correctly (10minutes,due7,new1,carry0) and did not treat planning as learning completion. Native5minute proposalr5 was accurately distinguished (due5,new0,carry2; unaccepted). Explicit AI disconnect followed by manual rejection and reopening retainedr4. Snapshot shows all plan/pointer/personalset and five learning tables exactly unchanged since093; no rejectedr5 persisted. Source fingerprints unchanged since085; no redundant host rerun. [Evidence](new-item-plan-native-094.json). Bridge/reverse/config cleaned; originalaccounts untouched. W10 native acceptance next; full14workflow14mode acceptance remains open.
+
+
+## Native rewards baseline — checkpoint095
+
+Without provider/bridge, previewed unowned IPAhat; UI marked temporary and reopening cleared it. Equipped already-owned defaulttheme and reopened successfully. Attempting100coinhat with84coins returned insufficientbalance. SQLite adds exactly onezeroamount defaulttheme equip transaction, no purchase/ownership changes; five learningtables unchanged since094. Focuswallpaper retained and noheadgear equipped. [Evidence](rewards-native-095.json). Actualprovider preview/owned/equipped interpretation and connected/disconnected coverage remain pending; wholegoal remainsopen.

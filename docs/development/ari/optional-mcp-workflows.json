@@ -180,7 +180,8 @@
       "acceptanceEvidence": [
         "quest-assistance-022.json",
         "rewards-assistance-023.json",
-        "native-context-028.json"
+        "native-context-028.json",
+        "rewards-native-095.json"
       ],
       "remainingAcceptance": "Native mutation state/preview/equip/readback and insufficient-coins behavior"
     },
