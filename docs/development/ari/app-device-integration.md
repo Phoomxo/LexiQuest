@@ -543,3 +543,10 @@ Final043 APK built/installed on Vivo. Without provider connection, A1 article op
 Live provider exposed a prompt defect: article-selected book was explained but then rejected because the independent vocabulary picker was empty. Clarified bridge instructions to use reading/article-assistance directly. Existing7 bridge tests pass; semantic acceptance comes from the fresh live retest: same target-free question returned current selected bag, correct title and screen-only completion without an invalid-selection claim. [Evidence](cefr-native-044.json).
 
 Native completion worked while connected; after explicit disconnect the article retained completion and selected word changed to blue. No scored answer submitted, acoustic playback not certified. Both bridge processes terminal; owned reverse/private pairing removed; USBstayawake2 preserved. Full scope remains OPEN.
+
+
+### CEFR session durability and history — checkpoint045
+
+Native no-provider session was initially unavailable without leveled personal vocabulary. Created isolated AriCEFR045 category and added catalog a/A1 through native controls, then completed one CEFR reading session. Read-only SQLite/WAL copy after force-stop proves exposure attempt and completed session; history survives restart. Legacy wrong_count1 remains internal and is excluded from first-answer accuracy by existing history projection. [Evidence](cefr-session-045.json).
+
+Added CEFR to shared visible/AI reading-exposure interpretation. Regression failed before fix;21history screen tests and two-file analysis pass. Final045 built/installed; native history explicitly says reading exposure is not correctness. Retain named test fixture for connected/disconnected session tests. All broader acceptance stays OPEN.

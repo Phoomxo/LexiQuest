@@ -478,6 +478,12 @@
       "receipt": "cefr-native-044.json",
       "scope": "Live library context before/after bridge prompt defect;connected completion and disconnected selection",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "cefr-session-045",
+      "receipt": "cefr-session-045.json",
+      "scope": "Native no-provider session exposure survives restart;history interpretation21hosttests/native retest",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

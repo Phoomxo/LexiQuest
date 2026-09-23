@@ -561,7 +561,7 @@ String? _historyInterpretation(LessonMode? mode) => switch (mode) {
   LessonMode.meaningQuiz ||
   LessonMode.definitionQuiz => 'กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก',
   LessonMode.cloze => 'กิจกรรมตอบคำถามจากบริบทของประโยค',
-  LessonMode.associativeReading =>
+  LessonMode.associativeReading || LessonMode.cefrReading =>
     'การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง',
   _ => null,
 };

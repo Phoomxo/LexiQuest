@@ -1,0 +1,15 @@
+{
+  "source": "Read-only copy of isolated Vivo database after force-stop",
+  "rows": [
+    {
+      "prompt_mode": "readingExposure",
+      "is_correct": 0,
+      "evidence_class": "exposure",
+      "provider_provenance": "native-cefr-reading:v1:exposure",
+      "state": "completed",
+      "correct_count": 0,
+      "wrong_count": 1,
+      "score": 0
+    }
+  ]
+}

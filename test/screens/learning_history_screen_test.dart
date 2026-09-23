@@ -45,6 +45,10 @@ void main() {
       LessonMode.associativeReading,
       'การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง',
     ),
+    (
+      LessonMode.cefrReading,
+      'การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง',
+    ),
   ]) {
     testWidgets('R15 history explains ${sample.$1.name} evidence', (
       tester,
