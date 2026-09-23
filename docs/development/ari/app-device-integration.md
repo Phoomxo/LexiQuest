@@ -795,3 +795,7 @@ Bounded SRS screen suite PASS. Extended both self-rating failure tests: context 
 ### Checkpoint105 — actual provider SRS and disconnected completion
 
 Actual provider correctly described awaitingRecall1/2, exposure semantics, then revealed state and Continue after manual reveal. Disconnect followed by Continue and simulated Again on clock completed baseline session. Database adds plate exposure and clock incorrect recall only; only clock SRS changes;points/reading unchanged. Initial AI closing question about post-reveal self-assessment remains a wording audit item. One missed input tap exited an ungraded session; corrected after screenshot, no extra attempts. [Evidence](srs-native-105.json). Full acceptance remains open.
+
+### Checkpoint106 — explicit SRS manual-step guidance
+
+Added phase/action-lock-bound selfRatingAvailable and nextManualStep to read-only context; guidance disallows retrospective rating after reveal. New assertions RED on missing fields, then26screen tests PASS and two-file Dart analysis clean. Installed098 predates this change: new APK/live-provider retest remains required. [Evidence](srs-guidance-106.json). No native behavior/scoring changes.

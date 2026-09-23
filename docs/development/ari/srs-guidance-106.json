@@ -1,0 +1,18 @@
+{
+  "checkpoint": "106",
+  "workflow": "W07",
+  "status": "CONTEXT_GUIDANCE_HOST_PASS_NATIVE_RETEST_PENDING",
+  "cause": "105 actualprovider closing question ambiguously suggested retrospective rating; context lacked explicit rating availability and next step",
+  "change": [
+    "selfRatingAvailable guarded by actual phase and action lock",
+    "nextManualStep is continue after reveal; wait/recovery during lock",
+    "Explicit prohibition on retrospective rating or converting exposure to recall"
+  ],
+  "verification": {
+    "red": "Expected selfRatingAvailable true but actual null in connected/disconnected cases",
+    "green": "26 SRS screen tests PASS",
+    "analysis": "Twofile Dart analysis no issues"
+  },
+  "native": "Installed098 still predates106; rebuild/install and actualprovider retest required",
+  "wholeGoalComplete": false
+}

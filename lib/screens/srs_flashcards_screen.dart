@@ -611,11 +611,20 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
             'cardNumber': _review!.index + 1,
             'cardCount': _session!.questions.length,
             'answerRevealed': _visibleFlipped,
+            'selfRatingAvailable':
+                !_actionLocked &&
+                !_visibleFlipped &&
+                _review!.phase == FlashcardReviewPhase.awaitingRecall,
+            'nextManualStep': _actionLocked
+                ? 'wait-or-use-visible-recovery'
+                : _review!.isRevealed
+                ? 'continue'
+                : 'rate-before-reveal-or-reveal-as-exposure',
             'evidenceMeaning': _review!.isRevealed
                 ? 'exposure-not-independent-recall'
                 : 'no-recall-result-in-this-context',
             'guidance':
-                'Before revealing, the learner self-rates remembered or not remembered. Revealing records exposure only and does not prove recall or improve the SRS schedule. After reveal use Continue. Saving or retry states are not confirmed success. This context cannot rate, reveal, save or change the schedule; no self-rating result is provided.',
+                'Self-rate only before reveal. Reveal records exposure, not recall, and does not improve SRS. After reveal use Continue. Do not ask for retrospective self-rating or imply it can change this card to recall. Saving/retry is not success. Read-only context: no rating result or authority to save/change SRS.',
           }),
     child: _buildCardContent(),
   );

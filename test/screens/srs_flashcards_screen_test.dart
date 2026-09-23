@@ -825,6 +825,11 @@ void main() {
         if (connection != 'absent') {
           expect(contextData()['answerRevealed'], false);
           expect(contextData()['phase'], 'awaitingRecall');
+          expect(contextData()['selfRatingAvailable'], true);
+          expect(
+            contextData()['nextManualStep'],
+            'rate-before-reveal-or-reveal-as-exposure',
+          );
         }
         if (connection == 'disconnected') {
           aiOwner = null;
@@ -887,6 +892,12 @@ void main() {
         if (connection != 'absent') {
           expect(contextData()['answerRevealed'], true);
           expect(contextData()['phase'], 'revealed');
+          expect(contextData()['selfRatingAvailable'], false);
+          expect(contextData()['nextManualStep'], 'continue');
+          expect(
+            contextData()['guidance'],
+            contains('Do not ask for retrospective self-rating'),
+          );
           expect(
             contextData()['evidenceMeaning'],
             'exposure-not-independent-recall',

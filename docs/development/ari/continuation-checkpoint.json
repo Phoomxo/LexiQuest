@@ -1,12 +1,12 @@
 {
-  "revision": 129,
+  "revision": 130,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "105 native actualAI prereveal/revealed correct;disconnect Continue/Again completes;2attempts onlyclockSRSchange",
+  "previousTurn": "106 explicit SRS ratingavailability/nextstep context;REDthen26PASS and2fileanalysisclean",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Final W07 coverage/AI wording audit then next uncovered workflow",
+  "current": "Build/install106 and actualprovider SRS wording retest",
   "next": [
-    "Audit105 response quality:initial closing question suggests self-assessment afterreveal;followup correct Continue. Keep no-false-recall policy;continue fullmatrix gaps.",
+    "Build isolated106,install;retake actualprovider prereveal/reveal guidance. No broadclaim wording fixed until actualretest. Preserve105 DB fixture.",
     "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
     "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
   ],
