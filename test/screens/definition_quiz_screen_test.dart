@@ -94,13 +94,23 @@ void main() {
         });
         String? aiOwner = owner;
         final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: const DefinitionQuizModeAdapter(),
+        );
+        addTearDown(controller.dispose);
         final app = MaterialApp(
-          home: DefinitionQuizScreen(
-            categoryId: 'category:travel',
-            learning: learning,
-            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-            modeAdapter: const DefinitionQuizModeAdapter(),
-            loadLexicalWords: (_) async => _reviewedWords(),
+          home: UnifiedLessonShell(
+            controller: controller,
+            builder: (_) => DefinitionQuizScreen(
+              categoryId: 'category:travel',
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const DefinitionQuizModeAdapter(),
+              loadLexicalWords: (_) async => _reviewedWords(),
+            ),
           ),
         );
         await tester.pumpWidget(
@@ -148,6 +158,7 @@ void main() {
             .onPressed!();
         await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
         expect(find.text('ทำต่อ: ข้อถัดไป'), findsOneWidget);
+        expect(controller.state.committedResponseCount, 1);
         tester
             .widget<FilledButton>(
               find.byKey(const ValueKey('definition-quiz-next')),
@@ -167,6 +178,7 @@ void main() {
             .onPressed!();
         await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
         expect(find.text('ทำต่อ: ดูผลการเรียน'), findsOneWidget);
+        expect(controller.state.committedResponseCount, 2);
         expect(find.text('ทำต่อ: ลองอีกครั้ง'), findsNothing);
         tester
             .widget<FilledButton>(
@@ -203,23 +215,31 @@ void main() {
       });
       final registry = MenuActionRegistry(currentOwner: () => owner);
       final words = _reviewedWords();
+      final controller = UnifiedLessonController(
+        learning: learning,
+        adapter: const DefinitionQuizModeAdapter(),
+      );
+      addTearDown(controller.dispose);
       await tester.pumpWidget(
         MenuActionScope(
           registry: registry,
           child: MaterialApp(
-            home: DefinitionQuizScreen(
-              categoryId: 'category:travel',
-              learning: learning,
-              evidenceAdapter: CurrentActivityEvidenceAdapter(
+            home: UnifiedLessonShell(
+              controller: controller,
+              builder: (_) => DefinitionQuizScreen(
+                categoryId: 'category:travel',
                 learning: learning,
-              ),
-              modeAdapter: const DefinitionQuizModeAdapter(),
-              loadLexicalWords: (_) async => [
-                words.first.copyWith(
-                  contentReviewState: ContentReviewState.unreviewed,
+                evidenceAdapter: CurrentActivityEvidenceAdapter(
+                  learning: learning,
                 ),
-                words.last,
-              ],
+                modeAdapter: const DefinitionQuizModeAdapter(),
+                loadLexicalWords: (_) async => [
+                  words.first.copyWith(
+                    contentReviewState: ContentReviewState.unreviewed,
+                  ),
+                  words.last,
+                ],
+              ),
             ),
           ),
         ),
@@ -247,6 +267,21 @@ void main() {
       expect(data()['responseKind'], 'choice');
       expect(data()['skipReason'], isNull);
       expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(controller.state.committedResponseCount, 0);
+      expect(controller.skippedItemCount, 1);
+      tester
+          .widget<FilledButton>(
+            find.byKey(
+              const ValueKey('definition-quiz-option-word:station-station'),
+            ),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
+      expect(controller.state.committedResponseCount, 1);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
     },
   );
 

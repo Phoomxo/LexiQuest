@@ -416,6 +416,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
   _classifyHintUsage;
 
   var _index = 0;
+  final Set<int> _committedIndices = <int>{};
   DefinitionQuizReviewPhase _phase;
   PendingCurrentActivityEvidence? _pendingEvidence;
   FrozenAnswerFeedbackContext? _pendingFeedbackContext;
@@ -425,6 +426,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
   bool _disposed = false;
 
   int get index => _index;
+  int get committedResponseCount => _committedIndices.length;
   DefinitionQuizItem get currentItem => items[_index];
   DefinitionQuizReviewPhase get phase => _phase;
   AnswerFeedback? get feedback => _feedback;
@@ -540,6 +542,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
         result: result,
         context: feedbackContext,
       );
+      _committedIndices.add(_index);
       _feedback = feedback;
       _pendingEvidence = null;
       _pendingFeedbackContext = null;

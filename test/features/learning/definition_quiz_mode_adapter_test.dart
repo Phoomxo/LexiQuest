@@ -468,12 +468,14 @@ void main() {
           throwsStateError,
         );
         expect(review.phase, DefinitionQuizReviewPhase.evidenceRetryRequired);
+        expect(review.committedResponseCount, 0);
         expect(
           await database.select(database.answerAttempts).get(),
           hasLength(1),
         );
 
         await review.retryEvidence();
+        expect(review.committedResponseCount, 1);
 
         expect(repository.commands, hasLength(2));
         final first = repository.commands.first;

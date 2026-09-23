@@ -608,3 +608,8 @@ Added owner-bound readonly current-item metadata (choice/skip, reason, phase, En
 ### Definition baseline native065
 
 APK065 built/installed. Without AI, skip-only completed with0 attempts and0 wrong. Three-item route skipped unreviewed a then manually answered bag/book incorrectly; exact2 incorrect recognition attempts, final0correct/2wrong. Continuation labels now match next/results. New defect DEFINITION-PROGRESS-065: shared header stays0% after committed responses; item index advances. Fix before live acceptance. [Evidence](definition-native-065.json). No provider test this checkpoint.
+
+
+### Definition progress066
+
+Fixed DEFINITION-PROGRESS-065: native review now tracks acknowledged unique response indices and reflects count through existing session-fenced read-only lifecycle. Skips do not inflate answers. Red3 screen variants reproduced0 instead of1. Full17 definition screen/adapter tests pass, including skip/acknowledgment-failure/exact-retry invariants;4-file analysis clean. Native build/retest pending;device still065. [Evidence](definition-progress-066.json).

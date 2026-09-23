@@ -1,12 +1,12 @@
 {
-  "revision": 89,
+  "revision": 90,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "065 native baseline skip and two wrong choices verified;found shared progress0 defect",
+  "previousTurn": "066 repaired definition progress reflection;17 host tests and4file analysis pass",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Fix DEFINITION-PROGRESS-065 then native live/disconnect",
+  "current": "Build066 then native progress and live definition context",
   "next": [
-    "Fix DEFINITION-PROGRESS-065 with host/native evidence",
+    "Build066 and native DEFINITION-PROGRESS-065 retest",
     "Native definition live skip/choice context and disconnect",
     "Cloze and associative native gaps",
     "Export/rewards/speech/camera/sync original gaps"

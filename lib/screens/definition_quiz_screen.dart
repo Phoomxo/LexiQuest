@@ -180,7 +180,15 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
   }
 
   void _onReviewChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final review = _review;
+    if (review != null) {
+      _lifecycle?.reflectNativeCommittedResponses(
+        sessionId: review.session.id,
+        count: review.committedResponseCount,
+      );
+    }
+    setState(() {});
   }
 
   @override

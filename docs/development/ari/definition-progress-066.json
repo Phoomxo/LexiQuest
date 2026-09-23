@@ -1,0 +1,12 @@
+{
+  "checkpoint": "066",
+  "defect": "DEFINITION-PROGRESS-065",
+  "status": "HOST_FIXED_NATIVE_RETEST_PENDING",
+  "rootCause": "Definition native review persisted responses without reflecting acknowledged count to shared lesson controller.",
+  "fix": "Review tracks distinct acknowledged indices;screen reflects count through existing read-only session-fenced lifecycle method. Skips excluded; no new writes.",
+  "red": "All3 absence/connected/disconnected screen variants expected1 committed response but saw0.",
+  "green": "17 full definition screen/adapter tests passed. Includes two wrong answers with0->1->2 progress;skip then answer yields1 committed plus1 skipped and1 durable row;commit-ack failure stays0 then exact retry yields1 without duplicate evidence.",
+  "analysis": "All4 changed files no issues",
+  "native": "Installed065 remains previous source; build/retest required",
+  "wholeGoalComplete": false
+}

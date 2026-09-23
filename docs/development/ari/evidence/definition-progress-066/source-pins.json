@@ -1,0 +1,6 @@
+{
+  "lib/features/learning/application/definition_quiz_mode_adapter.dart": "9492e8ed4664df25679b02f8a51091e37251a087694024006f498f166823ea14",
+  "lib/screens/definition_quiz_screen.dart": "822214c14f73453dca5a549a35d622b49825db51e086b906268ee41a2b6f7cd1",
+  "test/screens/definition_quiz_screen_test.dart": "7cdd3ed59440f8018b07cff499f471d8f3b29bd5d2d709b841b82c5fe3cc2ad3",
+  "test/features/learning/definition_quiz_mode_adapter_test.dart": "9d256eb6c55ba897a86cd18c76759fda9dc09ca5a95e349e71f9e6397fa4b53a"
+}
