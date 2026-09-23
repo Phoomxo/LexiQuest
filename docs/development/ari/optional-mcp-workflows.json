@@ -264,7 +264,8 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE"
+      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "hostEvidence": "dictation-disconnect-046.json"
     },
     {
       "id": "speaking",
@@ -483,6 +484,12 @@
       "id": "cefr-session-045",
       "receipt": "cefr-session-045.json",
       "scope": "Native no-provider session exposure survives restart;history interpretation21hosttests/native retest",
+      "wholeModeAcceptance": false
+    },
+    {
+      "id": "dictation-disconnect-046",
+      "receipt": "dictation-disconnect-046.json",
+      "scope": "Actual dictation screen/loader with real Drift;6newregistryvariants+4existing tests;notphysicalaudio/provider",
       "wholeModeAcceptance": false
     }
   ],

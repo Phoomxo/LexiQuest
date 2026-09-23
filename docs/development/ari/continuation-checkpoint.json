@@ -1,14 +1,14 @@
 {
-  "revision": 69,
+  "revision": 70,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "045 native CEFR session completes and persists exposure;history semantics extended with21tests and native retest",
+  "previousTurn": "046 six dictation MCP host parity cases;10targeted tests pass;production unchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Remaining connected/disconnected session coverage and14workflow/mode gaps",
+  "current": "Remaining nativeprovider/device acceptance;production045installed",
   "next": [
-    "Connected/disconnected native CEFR session evidence; use retained AriCEFR045 fixture",
-    "Remaining14workflow/mode native gaps including successful speech,camera,sync",
-    "Whole-project review queued after MCP acceptance"
+    "Dictation liveprovider/no-provider/disconnected physical audio and answer interactions",
+    "Native CEFR connected/disconnected session tests with retained AriCEFR045 fixture",
+    "Remaining14workflow/mode acceptance including speech/camera/sync;whole-project review queued"
   ],
   "nativeInstalledSource": "045 source pinned in evidence/cefr-session-045/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-045.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "No live bridge/build/test;all handles terminal",
+  "liveProcesses": "No live bridge/build/test;96292and78707terminal pass",
   "testFixture": "Retain isolated AriCEFR045 category and catalog a/A1 for next native sessions;one18sec exposure persisted;endhistory;AIcollapsed/disconnected;USB2",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

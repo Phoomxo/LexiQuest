@@ -550,3 +550,8 @@ Native completion worked while connected; after explicit disconnect the article 
 Native no-provider session was initially unavailable without leveled personal vocabulary. Created isolated AriCEFR045 category and added catalog a/A1 through native controls, then completed one CEFR reading session. Read-only SQLite/WAL copy after force-stop proves exposure attempt and completed session; history survives restart. Legacy wrong_count1 remains internal and is excluded from first-answer accuracy by existing history projection. [Evidence](cefr-session-045.json).
 
 Added CEFR to shared visible/AI reading-exposure interpretation. Regression failed before fix;21history screen tests and two-file analysis pass. Final045 built/installed; native history explicitly says reading exposure is not correctness. Retain named test fixture for connected/disconnected session tests. All broader acceptance stays OPEN.
+
+
+### Dictation registry parity on native screen — checkpoint046
+
+Six new cases cross correct/incorrect answers with absent/connected/disconnected registry. Actual production screen/loader/controller and Drift in-memory preserve typed input, one durable write and committed feedback; target answer stays hidden until commit and owner changes hide old context. Voice is a test double and registry state is not live-provider evidence. Ten targeted dictation cases and analysis pass. [Evidence](dictation-disconnect-046.json). Production unchanged; APK045 remains installed, native audio/provider coverage pending.

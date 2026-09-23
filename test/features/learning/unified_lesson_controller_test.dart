@@ -88,6 +88,62 @@ const _companionUseCases = CompanionReactionUseCases(
 
 void main() {
   for (final connection in ['absent', 'connected', 'disconnected']) {
+    for (final correct in [true, false]) {
+      testWidgets('dictation MCP $connection committed answer correct=$correct', (tester) async {
+        const adapter = DictationModeAdapter();
+        final fixture = await _fixture(adapter: adapter, blockRecord: true);
+        String? aiOwner = fixture.startCommand.ownerId;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final voice = VoiceUseCases(provider: _AccessibilityVoiceProvider(), disposeProvider: () async {});
+        addTearDown(voice.dispose);
+        await _pumpProductionDictationHost(tester, fixture: fixture,
+          adapter: adapter, voice: voice, registry: connection == 'absent' ? null : registry);
+        final originalState = tester.state(find.byType(DictationQuizScreen));
+        expect(registry.snapshot()['context'].toString(), isNot(contains('correctAnswer')));
+        await tester.enterText(find.byType(TextField), correct ? 'lesson' : 'wrong');
+        await tester.pump();
+        await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
+        await fixture.repository.recordStarted.future;
+        await tester.pump();
+        expect(fixture.controller.state.committedResponseCount, 0);
+        expect(fixture.controller.feedback, isNull);
+        expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+        expect(registry.snapshot()['context'].toString(), isNot(contains('correctAnswer')));
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        fixture.repository.releaseRecord();
+        await tester.pumpAndSettle();
+        final rows = await fixture.database.select(fixture.database.answerAttempts).get();
+        expect(rows, hasLength(1));
+        expect(rows.single.isCorrect, correct);
+        expect(fixture.repository.recordCalls, 1);
+        expect(fixture.controller.feedback!.isCorrect, correct);
+        expect(fixture.controller.state.committedResponseCount, 1);
+        expect(tester.state(find.byType(DictationQuizScreen)), same(originalState));
+        expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, correct ? 'lesson' : 'wrong');
+        if (connection == 'disconnected') aiOwner = fixture.startCommand.ownerId;
+        if (connection != 'absent') {
+          final entries = registry.snapshot()['context'] as List;
+          final data = jsonDecode(entries.singleWhere((dynamic e) => e['id'] == 'lesson/assistance')['value'] as String) as Map;
+          expect(data['mode'], 'dictation');
+          expect(data['lastCommittedFeedback']['correctAnswer'], 'lesson');
+          expect(data['lastCommittedFeedback']['isCorrect'], correct);
+          expect(data['committedResponses'], 1);
+          aiOwner = 'other-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(registry.snapshot()['actions'], isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      });
+    }
+  }
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
     testWidgets('CEFR library MCP $connection stays screen-only with local owner', (tester) async {
       final fixture = await _fixture(adapter: const CefrReadingModeAdapter());
       String? providerOwner = fixture.startCommand.ownerId;
@@ -5419,12 +5475,12 @@ Future<void> _pumpProductionDictationHost(
   required DictationModeAdapter adapter,
   required VoiceUseCases voice,
   CurrentActivityEvidenceAdapter? currentActivityEvidence,
+  MenuActionRegistry? registry,
 }) async {
   final features = RuntimeFeatureRegistry(
     const BuildFeatureRegistry.allEnabled(),
   );
-  await tester.pumpWidget(
-    AppDependenciesScope(
+  final app = AppDependenciesScope(
       dependencies: _bookmarkDependencies(
         fixture.database,
         features: features,
@@ -5451,8 +5507,8 @@ Future<void> _pumpProductionDictationHost(
           ),
         ),
       ),
-    ),
-  );
+    );
+  await tester.pumpWidget(registry == null ? app : MenuActionScope(registry: registry, child: app));
   await tester.pumpAndSettle();
   expect(find.byType(NativeVocabularyLessonModeLoader), findsOneWidget);
   expect(find.byType(DictationQuizScreen), findsOneWidget);

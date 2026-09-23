@@ -1,0 +1,37 @@
+{
+  "status": "HOST_NATIVE_DICTATION_SCREEN_REGISTRY_PARITY_PASS_NATIVE_PROVIDER_PENDING",
+  "sourceChanges": "Tests only; production APK045 unchanged",
+  "cases": {
+    "new": 6,
+    "totalTargetedDictation": 10,
+    "variants": [
+      "No MenuActionScope",
+      "Registry connected",
+      "Registry owner null/invalidation while storage pending"
+    ],
+    "answers": [
+      "correct lesson",
+      "incorrect wrong"
+    ]
+  },
+  "execution": "Actual DictationQuizScreen, NativeVocabularyLessonModeLoader, UnifiedLessonModeHost, production controller and LearningUseCases; real Drift in-memory repository with delayed acknowledgment wrapper. Voice provider is a test double. Connection variants are registry-state tests, not authenticated provider or physical microphone/audio.",
+  "assertions": [
+    "No correctAnswer before commit; no durable row or committed feedback while pending",
+    "One answerAttempts row and one record call after pending write settles",
+    "Correct and incorrect feedback matches stored answer",
+    "Same native State instance and typed text retained",
+    "After registry reconnect, actual mode and committed feedback projected",
+    "Different owner cannot read previous context",
+    "No answer/score actions advertised"
+  ],
+  "verification": {
+    "command": "verify-scope Targeted AI unified_lesson_controller_test.dart TestName dictation",
+    "tests": 10,
+    "analysis": "No issues found"
+  },
+  "remaining": [
+    "Dictation liveprovider/no-provider/disconnected physical audio and answer interactions",
+    "Native CEFR connected/disconnected session tests with retained AriCEFR045 fixture",
+    "Remaining14workflow/mode acceptance including speech/camera/sync;whole-project review queued"
+  ]
+}
