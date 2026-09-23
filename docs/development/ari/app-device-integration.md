@@ -613,3 +613,8 @@ APK065 built/installed. Without AI, skip-only completed with0 attempts and0 wron
 ### Definition progress066
 
 Fixed DEFINITION-PROGRESS-065: native review now tracks acknowledged unique response indices and reflects count through existing session-fenced read-only lifecycle. Skips do not inflate answers. Red3 screen variants reproduced0 instead of1. Full17 definition screen/adapter tests pass, including skip/acknowledgment-failure/exact-retry invariants;4-file analysis clean. Native build/retest pending;device still065. [Evidence](definition-progress-066.json).
+
+
+### Definition native live067
+
+APK067 verifies DEFINITION-PROGRESS-065 repaired: after skip, committed answers update shared header33 then67percent (2/3 configured;skip not counted as answer). Attached provider during third item;live Thai response correctly names mode3/3,English definition/choice and not-skipped state. Explicit disconnect retained item;manual completion100%accuracy,exact2 correct recognition attempts2/3. [Evidence](definition-live-067.json). Native live skip guidance still pending. Bridge cleaned;all14 acceptance open. Cloze inspection shows similar missing lifecycle progress reflection;test next.
