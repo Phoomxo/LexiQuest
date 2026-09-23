@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -1073,6 +1075,105 @@ void main() {
       );
     }),
   );
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets('current quiz assistance follows mixed question $connection', (
+      tester,
+    ) async {
+      late String owner;
+      await tester.runAsync(() async {
+        owner = (await owners.getOrCreateActiveOwner()).id;
+        await _insertWord(
+          database,
+          ownerId: owner,
+          id: 'word-2',
+          spelling: 'airport',
+          meaning: 'สนามบิน',
+        );
+      });
+      String? aiOwner = owner;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      final app = MaterialApp(
+        home: QuizScreen.typedRecall(
+          categoryId: 'category-1',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const TypedRecallModeAdapter(),
+        ),
+      );
+      await tester.pumpWidget(
+        connection == 'absent'
+            ? app
+            : MenuActionScope(registry: registry, child: app),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      Map data() {
+        final entries = registry.snapshot()['context'] as List;
+        final entry = entries.singleWhere(
+          (dynamic e) => e['id'] == 'quiz/current-question-assistance',
+        );
+        return jsonDecode(entry['value'] as String) as Map;
+      }
+
+      if (connection != 'absent') {
+        expect(data()['promptLanguage'], 'en');
+        expect(data()['answerLanguage'], 'th');
+        expect(data()['responseKind'], 'choice');
+        expect(data()['questionNumber'], 1);
+        expect(data().toString(), isNot(contains('station')));
+      }
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('meaning-quiz-option-word-1-สถานี')),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
+      tester
+          .widget<FilledButton>(find.byKey(const ValueKey('meaning-quiz-next')))
+          .onPressed!();
+      final input = find.byKey(const ValueKey('typed-recall-input'));
+      await _pumpUntilFound(tester, input);
+      final originalState = tester.state(find.byType(QuizScreen));
+      await tester.enterText(input, 'air');
+      if (connection != 'absent') {
+        expect(data()['promptLanguage'], 'th');
+        expect(data()['answerLanguage'], 'en');
+        expect(data()['responseKind'], 'typed');
+        expect(data()['questionNumber'], 2);
+        expect(data()['phase'], 'awaitingAnswer');
+        expect(data().toString(), isNot(contains('airport')));
+        expect(data().values, isNot(contains('air')));
+        expect(registry.snapshot()['actions'], isEmpty);
+        aiOwner = 'different-owner';
+        expect(registry.snapshot()['context'], isEmpty);
+        aiOwner = owner;
+      }
+      if (connection == 'disconnected') {
+        aiOwner = null;
+        registry.invalidateSession(preserveContext: true);
+        await tester.pump();
+        expect(registry.snapshot()['context'], isEmpty);
+      }
+      expect(tester.state(find.byType(QuizScreen)), same(originalState));
+      expect(tester.widget<TextField>(input).controller!.text, 'air');
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      await tester.enterText(input, 'airport');
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('typed-recall-submit')),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+      final attempts = await database.select(database.answerAttempts).get();
+      expect(attempts, hasLength(2));
+      expect(attempts.last.isCorrect, isTrue);
+      expect(attempts.last.evidenceClass, EvidenceClass.independentRecall.name);
+      if (connection == 'connected') expect(data()['phase'], 'answered');
+    });
+  }
 
   testWidgets('B05 typed recall waits for IME composition before evidence', (
     tester,

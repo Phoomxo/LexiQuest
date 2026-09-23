@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -522,7 +524,34 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _buildQuestion() {
+  Widget _buildQuestion() => MenuActionBinding(
+    id: 'quiz/current-question-assistance',
+    label: 'วิธีตอบข้อปัจจุบัน',
+    ownerId: _session?.ownerId,
+    onInvoke: null,
+    readValue: _session?.ownerId == null
+        ? null
+        : jsonEncode({
+            'mode': widget.typedRecall ? 'typed-recall' : 'meaning-quiz',
+            'questionNumber': _reviewIndex + 1,
+            'questionCount': _questionCount,
+            'promptLanguage':
+                _currentQuestion.direction == MeaningQuizDirection.wordToMeaning
+                ? 'en'
+                : 'th',
+            'answerLanguage':
+                _currentQuestion.direction == MeaningQuizDirection.wordToMeaning
+                ? 'th'
+                : 'en',
+            'responseKind': _expectsTypedResponse ? 'typed' : 'choice',
+            'phase': _reviewPhase.name,
+            'guidance':
+                'Current visible question metadata only. Learner chooses or types manually. No draft, hidden answer, scoring or submission is exposed. Saving/retry is not confirmed success.',
+          }),
+    child: _buildQuestionContent(),
+  );
+
+  Widget _buildQuestionContent() {
     final question = _currentQuestion;
     final actionLocked = _actionLocked;
     return SafeArea(

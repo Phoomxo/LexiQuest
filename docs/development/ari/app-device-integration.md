@@ -588,3 +588,8 @@ TYPED-FEEDBACK-ACTION-059 host fix: feedback now names the actual host continuat
 ### Native typed recall 061
 
 APK061 from845492e3: live provider identified typed recall and returned Thai method guidance. Explicit disconnect preserved partial `wro`; appending `ng` produced committed `wrong`. Final feedback correctly named results. Native SQLite confirmed completed session with exactly2 attempts (recognition correct, independentRecall incorrect), score50%. Current translation direction was not exposed by method context; response asked user. All14 workflow/mode acceptance remains open. See [evidence](typed-recall-native-061.json). Bridge stopped and private debug connection removed; original app/accounts preserved.
+
+
+### Quiz current question context 062
+
+061 revealed session mixed direction was insufficient for active-question guidance. Added owner-bound readonly metadata from actual quiz controller: prompt/answer languages, choice/typed response, index and phase; no draft or hidden answer. Red reproduced missing binding in2 connected variants, absent baseline passed. Full36 quiz screen tests pass, including3 new real-storage absence/connected/disconnected journeys, owner fencing and retained draft; analysis clean. APK062 built and installed. Live provider retest remains pending, all14 acceptance remains open. [Evidence](quiz-context-062.json).

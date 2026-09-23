@@ -1,0 +1,49 @@
+{
+  "areaFingerprints": {
+    "AI": "7170e58d8d613fefb017ef8136d17d8288c5d813a42430cecfca5f641e5a33f8"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "51993b36b25cdbc558e15602d1d1a5751bbdbb90",
+  "baseSha": "51993b36b25cdbc558e15602d1d1a5751bbdbb90",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "7170e58d8d613fefb017ef8136d17d8288c5d813a42430cecfca5f641e5a33f8",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "selection": [
+    {
+      "Name": "Explicit Flutter tests",
+      "FilePath": "flutter",
+      "Arguments": [
+        "test",
+        "test/screens/quiz_screen_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "SourceArea": "AI",
+      "commandKey": "aa6b8bf0092acaca60acb6fd568b2cffd95dfe8d4bbdb24a479e4454e7362f70"
+    }
+  ],
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T06:29:45.4734957+00:00",
+  "finishedAt": "2026-09-23T06:30:13.7341859+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "aa6b8bf0092acaca60acb6fd568b2cffd95dfe8d4bbdb24a479e4454e7362f70",
+      "fingerprint": "7170e58d8d613fefb017ef8136d17d8288c5d813a42430cecfca5f641e5a33f8",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T06:29:47.1566941+00:00",
+      "FinishedAt": "2026-09-23T06:30:06.6456304+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\51993b36b25cdbc558e15602d1d1a5751bbdbb90\\aa6b8bf0092a-7170e58d8d61-30638574\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\51993b36b25cdbc558e15602d1d1a5751bbdbb90\\aa6b8bf0092a-7170e58d8d61-30638574\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "7170e58d8d613fefb017ef8136d17d8288c5d813a42430cecfca5f641e5a33f8",
+      "StdoutHash": "063A14A47581F731D487827C0634C9756387FDBE560A729299DB0707AA063D64",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "7170e58d8d613fefb017ef8136d17d8288c5d813a42430cecfca5f641e5a33f8",
+  "originalReceipt": "build/verification/51993b36b25cdbc558e15602d1d1a5751bbdbb90/targeted-ai-e12c8b895713898dcf6849384fea1d5df0f27bb92e5158629fc1cb49c6527149.json",
+  "originalSha256": "deaead9d9066e235107ca39d943ce6018a1ef705786f2c918fb41193fe85bced"
+}

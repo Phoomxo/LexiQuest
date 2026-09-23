@@ -1,0 +1,13 @@
+{
+  "checkpoint": "062",
+  "status": "HOST_PASS_NATIVE_PROVIDER_RETEST_PENDING",
+  "rootCause": "Shared lesson direction described mixed session configuration, not active question direction/response kind.",
+  "implementation": "Read-only owner-bound quiz/current-question-assistance always wraps question subtree; direction from actual question and response kind from actual controller. No prompt, draft, hidden answer or mutation callback.",
+  "red": "Absent variant passed; connected/disconnected variants failed No element because context was absent.",
+  "green": "Full quiz screen suite36 passed; three new real-Drift variants prove active mixed direction, owner fence, state/draft preservation and exact2 attempts.",
+  "analysis": "Two changed files: no issues",
+  "build": "APK062 built and installed on Vivo; live provider retest pending",
+  "apkSha256": "e181f0be4e56d2c720b906d252dfd99dbf27119f4133a9c9563dd406a9305ee1",
+  "evidence": "evidence/quiz-context-062",
+  "wholeGoalComplete": false
+}
