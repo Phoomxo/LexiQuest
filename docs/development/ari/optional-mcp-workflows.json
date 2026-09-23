@@ -182,9 +182,10 @@
         "rewards-assistance-023.json",
         "native-context-028.json",
         "rewards-native-095.json",
-        "rewards-context-096.json"
+        "rewards-context-096.json",
+        "rewards-native-097.json"
       ],
-      "remainingAcceptance": "Native096 retest required for REWARDS-CONTEXT-096: complete ownership/equipped and previewidentity afterlazycontextfix. Connected/disconnected coverage and finalW10audit remain."
+      "remainingAcceptance": "095 baseline preview/equip/insufficientbalance and097 actualprovider ownership/preview plus disconnectedcancel verified. REWARDS-CONTEXT-096 closed. Final W10 coverage audit remains."
     },
     {
       "id": "W11",

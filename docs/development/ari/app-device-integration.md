@@ -756,3 +756,8 @@ Without provider/bridge, previewed unowned IPAhat; UI marked temporary and reope
 ## Reward offscreen context defect — checkpoint096
 
 Actualprovider on091 omitted focuswallpaper and could not identify previewedIPAhat. Rootcause: lazy catalog tiles owned their contextbindings; account had previewboolean only. Fixed by mounting finite itemmetadata wrappers outside lazy list and exposing previewItemId. New regression firstfailed missingidentity; combinedJSON approach hit1000character truncation and was replaced with separate boundedbindings. Final7testsPASS and2fileanalysisclean. APK096 built/installed; actualprovider retest pending, defect not native-closed. [Evidence](rewards-context-096.json). Bridge/config/reverse cleaned. W08personalsets also lacks dedicatedcontext; ledger corrected; fullgoal remainsopen.
+
+
+## Native reward context retest — checkpoint097
+
+On096 actualprovider now lists both defaulttheme andfocuswallpaper owned/equipped, correct84coins144XPlevel8 without proficiencyclaim. After nativeIPApreview, actualreply identifies headgear_ipa and explicitly unowned/unequipped. Disconnect thennativecancel/reopen restoresnohat. Eightreward/learningtables exactlyunchanged since095. Closes REWARDS-CONTEXT-096; reuseunchanged096host evidence. [Evidence](rewards-native-097.json). Bridge/reverse/config cleaned; originalaccounts untouched. Next missingpersonalsetsoptionalcontext; all14workflow14modeacceptance remainsopen.
