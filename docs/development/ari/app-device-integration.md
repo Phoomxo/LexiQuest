@@ -766,3 +766,8 @@ On096 actualprovider now lists both defaulttheme andfocuswallpaper owned/equippe
 ## Personal set optional context — checkpoint098
 
 Added owner/generation-bound read-only summary and mounted-list-row context. Separates draft, preview and lastconfirmed; processing/unconfirmed omit personaldetail; backup/import rawpayload excluded. Native actions remain authoritative; noAI mutation added. Newtest firstfailed missingcontext. Final10realDrift/widgettests PASS covering lateattach/disconnectedmanualsave/reconnect/draftvsconfirmed/foreignowner/cancel/invaliddraft/generationchange and baseline suite. Twofileanalysisclean; APK098builtinstalled. [Evidence](personalsets-context-098.json). Actualprovider/native newcontext verification pending; all14workflow14mode acceptance open.
+
+
+## Native personal set assistance — checkpoint099
+
+Actualprovider on098 correctly read savedtitle/revision1/membercount1, distinguished revised unsaveddraft fromlastConfirmed, and identified previewrevision2 as notsaved. Explicitdisconnect thennativebacktoedit/cancel/reopen preservedoriginalrevision1. Twelvepersonalset/plan/reward/learningtables exactlyunchanged since097; norevision2 persisted. Sourcefingerprints unchanged;reuse098host. [Evidence](personalsets-native-099.json). Bridge/config/reverse cleaned;originalaccounts untouched. Pendingfailure/lifecycleaudit and full14workflow14modeacceptance remainopen.

@@ -1,14 +1,14 @@
 {
-  "revision": 122,
+  "revision": 123,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "098 personalset optionalcontext implemented;missingcontext RED then10hosttestsPASS;analysisclean;APK098installed actualproviderpending",
+  "previousTurn": "099 actualprovider personalset saved/draft/preview distinctionPASS; disconnectedcancel/reopen originalrevision1;12DBtablesexactunchanged",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 personalset actualprovider/native acceptance",
+  "current": "W08 personalset pending/failure audit then W07 review connectionchange",
   "next": [
-    "Freshbridge/login098; personalsets existing New pencil test%093 ->detail; actualAIread title/revision/membercount",
-    "Native edit title withoutsave; actualAI distinguish draft vsconfirmed; preview notsaved; disconnectcancel andverifyoriginalsavedset retained",
-    "Audit pending-operation failure handling and remaining14workflow14mode scope"
+    "Audit personalset context pending/failure/lifecycle and close gaps with meaningfulhosttests; reuse099nativeevidence",
+    "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
+    "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
   ],
   "nativeInstalledSource": "evidence/personalsets-context-098/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-098.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; no bridge/config/reverse;isolated098startedhome",
+  "liveProcesses": "None;bridge98540 stopped;no reverse/config;isolated098 restartedhome",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

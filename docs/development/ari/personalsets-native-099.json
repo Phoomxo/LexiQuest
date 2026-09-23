@@ -1,0 +1,22 @@
+{
+  "checkpoint": "099",
+  "workflow": "W08",
+  "status": "REPRESENTATIVE_PERSONALSET_CONNECTED_DRAFT_PREVIEW_DISCONNECTED_CANCEL_VERIFIED",
+  "apk": "098",
+  "sourceChanged": false,
+  "connected": [
+    "Actual provider read saved title/revision1/membercount1 with no draft",
+    "Native unsaved edit revised title accurately distinguished from lastConfirmed",
+    "Previewrevision2 explicitly identified as unconfirmed and manually saved only"
+  ],
+  "disconnected": "ExplicitAI disconnect; nativebacktoedit/cancel; reopened original title/revision1",
+  "durable": "12 personalset/plan/reward/learning tables exactly unchanged since097; no revision2 persisted",
+  "evidence": "evidence/personalsets-native-099",
+  "cleanup": "Bridge98540 stopped;reverse/configremoved;isolated restarted;original accounts untouched",
+  "remaining": [
+    "Personalset pendingoperation/failure lifecycle audit",
+    "W07 review connection-change acceptance",
+    "Remaining14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

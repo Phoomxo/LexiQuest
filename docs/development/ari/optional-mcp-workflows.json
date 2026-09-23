@@ -149,9 +149,10 @@
         "goals-editor-native-092.json",
         "new-item-plan-093.json",
         "new-item-plan-native-094.json",
-        "personalsets-context-098.json"
+        "personalsets-context-098.json",
+        "personalsets-native-099.json"
       ],
-      "remainingAcceptance": "098 personalset summary/draft/preview/detail context implemented10hosttestsPASS; actualprovider/native and pendingfailure lifecycle audit remain. Prior goals092/newitemplan094 representative native evidence retained."
+      "remainingAcceptance": "098 host10PASS and099 actualprovider saved/draft/preview plus disconnectedcancel verified. Pendingoperation/failure lifecycle and finalW08coverage audit remain."
     },
     {
       "id": "W09",
