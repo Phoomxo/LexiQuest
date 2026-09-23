@@ -630,7 +630,12 @@ class _QuizScreenState extends State<QuizScreen> {
               const SizedBox(height: 12),
               AccessibilitySemanticRegion(
                 role: AccessibilitySemanticRole.feedback,
-                child: AnswerFeedbackPanel(feedback: feedback),
+                child: AnswerFeedbackPanel(
+                  feedback: feedback,
+                  continuationLabel: _reviewIndex == _questionCount - 1
+                      ? 'ดูผลการเรียน'
+                      : 'คำถามถัดไป',
+                ),
               ),
               CefrPracticeExample(
                 spelling: question.word.spelling,

@@ -1,0 +1,22 @@
+{
+  "checkpoint": "060",
+  "defect": "TYPED-FEEDBACK-ACTION-059",
+  "status": "HOST_FIXED_NATIVE_RETEST_PENDING",
+  "rootCause": "Feedback panel derived next action solely from correctness even when quiz allows only advancing to next item or results.",
+  "change": "Host supplies continuation label matching its actual next button. Committed scoring and retry/write behavior unchanged. Shared panel defaults preserved for other hosts.",
+  "red": "Both typed and meaning quiz final wrong feedback lacked results continuation text",
+  "green": [
+    "Full quiz_screen_test.dart and answer_feedback_panel_test.dart passed",
+    "Final wrong response in both routes displays results continuation;one durable attempt unchanged after result navigation",
+    "Non-final feedback names next question for typed and meaning variants"
+  ],
+  "analysis": "No issues found for3 changed files",
+  "receipt": "evidence/feedback-action-060/host-receipt.json",
+  "pins": "evidence/feedback-action-060/source-pins.json",
+  "remaining": [
+    "Build/install and native wrong typed feedback retest",
+    "Native live/disconnect typed input coverage",
+    "Other acceptance-audit-053 gaps"
+  ],
+  "wholeGoalComplete": false
+}

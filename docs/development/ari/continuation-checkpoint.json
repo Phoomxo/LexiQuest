@@ -1,10 +1,10 @@
 {
-  "revision": 83,
+  "revision": 84,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "059 actual mixed typedRecall baseline completed;2DBrows verified;found misleading retry feedback on final committed answer",
+  "previousTurn": "060 corrected quiz feedback continuation;full quiz/panel tests pass;analysis clean;native still058",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Fix TYPED-FEEDBACK-ACTION-059 then typedRecall live/disconnect",
+  "current": "Build060 and native feedback retest then typedRecall live/disconnect",
   "next": [
     "Diagnose/fix TYPED-FEEDBACK-ACTION-059: wrong committed final feedback says retry but only results is actionable",
     "Flashcard and handwriting: inspect actual screen context and host binding,then native live/disconnect",

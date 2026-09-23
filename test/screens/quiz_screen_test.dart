@@ -210,6 +210,7 @@ void main() {
           tester,
           find.byKey(const ValueKey('answer-feedback-panel')),
         );
+        expect(find.text('ทำต่อ: คำถามถัดไป'), findsOneWidget);
         expect(controller.state.itemCount, 4);
         expect(controller.state.committedResponseCount, 1);
         expect(controller.state.progress, .25);
@@ -1598,6 +1599,42 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  for (final typed in [false, true]) {
+    testWidgets(
+      'final wrong feedback names available results action typed=$typed',
+      (tester) async {
+        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: typed
+                ? QuizScreen.typedRecall(
+                    categoryId: 'category-1',
+                    learning: learning,
+                    evidenceAdapter: evidence,
+                  )
+                : QuizScreen(
+                    categoryId: 'category-1',
+                    learning: learning,
+                    evidenceAdapter: evidence,
+                  ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('แม่น้ำ'));
+        await tester.tap(find.text('แม่น้ำ'));
+        await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+        expect(find.text('ทำต่อ: ดูผลการเรียน'), findsOneWidget);
+        expect(find.text('ทำต่อ: ลองอีกครั้ง'), findsNothing);
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(1));
+        expect(attempts.single.isCorrect, false);
+        await tester.ensureVisible(find.text('ดูผลการเรียน'));
+        await tester.tap(find.text('ดูผลการเรียน'));
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        expect(await database.select(database.answerAttempts).get(), attempts);
+      },
+    );
+  }
 
   testWidgets('answer is durable before score screen is shown', (tester) async {
     await tester.pumpWidget(

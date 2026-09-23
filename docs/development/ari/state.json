@@ -241,5 +241,6 @@
   "latestFlashcardAssistance": "flashcard-assistance-056.json",
   "latestFlashcardNative": "flashcard-native-057.json",
   "latestFlashcardProgress": "flashcard-progress-058.json",
-  "latestTypedRecallNative": "typed-recall-native-059.json"
+  "latestTypedRecallNative": "typed-recall-native-059.json",
+  "latestFeedbackAction": "feedback-action-060.json"
 }

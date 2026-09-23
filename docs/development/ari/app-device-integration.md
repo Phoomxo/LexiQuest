@@ -579,3 +579,7 @@ FLASHCARD-PROGRESS-057 fixed: native evidence acknowledgements now update shared
 ### Typed recall native baseline — checkpoint 059
 
 Two-item mixed route completed without provider. Blank typed submit disabled; actual result1 correct/1 wrong agrees with two durable rows classified recognition and independentRecall. Found OPEN TYPED-FEEDBACK-ACTION-059: final wrong feedback says try again but only results is available. Fix before acceptance; live/disconnect partial-input coverage remains pending. [Evidence](typed-recall-native-059.json).
+
+### Quiz feedback continuation — checkpoint 060
+
+TYPED-FEEDBACK-ACTION-059 host fix: feedback now names the actual host continuation (next question/results). Correctness, committed answer and persistence retries unchanged. New final-wrong regression cases and non-final assertions pass in the full quiz/panel suites; analysis clean. Native build/retest pending;installed APK remains058. [Evidence](feedback-action-060.json).

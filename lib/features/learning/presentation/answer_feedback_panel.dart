@@ -20,6 +20,7 @@ final class AnswerFeedbackPanel extends StatelessWidget {
     this.onRetry,
     this.onOpenGuidedRepair,
     this.onNext,
+    this.continuationLabel,
     this.bookmarkIdentity,
     this.onBookmark,
     this.reportIdentity,
@@ -28,6 +29,9 @@ final class AnswerFeedbackPanel extends StatelessWidget {
     this.featureRegistry,
   });
 
+  /// Label for an external continuation control owned by the host screen.
+  /// Does not change the committed result or expose a retry operation.
+  final String? continuationLabel;
   final AnswerFeedback feedback;
   final VoidCallback? onRetry;
   final Future<GuidedRepairTicket> Function(GuidedRepairUseCases)?
@@ -44,9 +48,11 @@ final class AnswerFeedbackPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCorrect = feedback.isCorrect;
     final statusLabel = isCorrect ? 'ถูกต้อง' : 'ยังไม่ถูก';
-    final actionLabel = feedback.nextAction == AnswerFeedbackAction.next
-        ? 'ข้อถัดไป'
-        : 'ลองอีกครั้ง';
+    final actionLabel =
+        continuationLabel ??
+        (feedback.nextAction == AnswerFeedbackAction.next
+            ? 'ข้อถัดไป'
+            : 'ลองอีกครั้ง');
     final callback = isCorrect ? onNext : onRetry;
     final icon = isCorrect ? Icons.check_circle : Icons.cancel;
     final report = switch ((reportIdentity, onReport)) {
