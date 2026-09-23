@@ -783,3 +783,7 @@ Targeted screen suite: **12 tests PASS**. After real save commits, injected owne
 ### Checkpoint102 — native baseline review and SRS distinction
 
 Vivo isolated098: Today -> review center -> spoon -> manual correct Thai answer ->1/1 result -> return. Database adds exactly one recognition answer and one points entry; SRS unchanged. Eligibility policy explicitly denies masterySrs for recognition. Baseline answer/feedback works, but this does not prove SRS recall completion. Audit launch semantics and connected/disconnected path next. [Evidence](review-native-102.json).
+
+### Checkpoint103 — native SRS rating versus exposure
+
+Isolated Vivo098 without provider: simulated Good on spoon before reveal, then revealed plate and continued. Two attempts stored; only spoon schedule changed, plate remained unchanged. One points entry; reading tables unchanged. These are agent-operated QA fixtures, not measured human recall. Separate SRS route exists; review-center recognition102 correctly does not update its schedule. [Evidence](srs-native-103.json). Connected/disconnected provider acceptance remains open. Jev development-tool setup is awaiting Vercel login; no paid or live Jev call has run.

@@ -124,9 +124,11 @@
       ],
       "acceptanceEvidence": [
         "lesson-disconnect-031.json",
-        "settings-review-progress-native-033.json"
+        "settings-review-progress-native-033.json",
+        "review-native-102.json",
+        "srs-native-103.json"
       ],
-      "remainingAcceptance": "Native review answer/feedback through provider connection change"
+      "remainingAcceptance": "102 review recognition and103 SRS self-rating/exposure baseline verified with DB deltas. Actualprovider connected/disconnected currentcard/reveal semantics and finalaudit remain."
     },
     {
       "id": "W08",

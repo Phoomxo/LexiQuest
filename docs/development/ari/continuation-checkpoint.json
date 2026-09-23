@@ -1,12 +1,12 @@
 {
-  "revision": 126,
+  "revision": 127,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "102 native baseline review spoon correct:1answer1pointsentry;recognition evidence;SRS unchanged by policy",
+  "previousTurn": "103 native baseline SRS:Good spoon changes only spoon schedule;plate reveal exposure preserves schedule;2attempts1pointsentry",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W07 review launch mode/SRS semantics audit then connected/disconnected native",
+  "current": "W07 actualprovider SRS context connected/disconnected",
   "next": [
-    "Review center launches meaningChoice recognition;policy denies masterySrs;inspect whether due-SRS users have an independent-recall route before claiming W07 complete",
+    "Start bridge/login and inspect SRS current card/reveal AI explanation; disconnect and finish manually;compare103 DB. Baseline102/103 accepted;do not repeat.",
     "Inspect W07 remaining review answer/feedback acrossAI connectionchange and execute native path",
     "Audit full14workflow14mode acceptance; no broadPASS fromrepresentatives"
   ],
@@ -17,7 +17,8 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None;isolated APK098 restarted after102 snapshot;no bridge",
+  "liveProcesses": "None;no bridge;isolated098 restartedhome after103snapshot",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
-  "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
+  "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim.",
+  "jev": "User wants Jev for development only, zero expenditure. IAB tab1 Vercel login awaiting user;no Jev call/key/purchase. Free promo ends2026-09-25;verify zero price and account eligibility before calls."
 }
