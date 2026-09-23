@@ -1,0 +1,21 @@
+{
+  "checkpoint": "109",
+  "workflow": "W07",
+  "status": "REPRESENTATIVE_NATIVE_REVIEW_CONNECTED_DISCONNECTED_PASS",
+  "installed": "Isolated106 on Vivo; actual provider via development USB bridge",
+  "journey": [
+    "Today -> review center -> plate; manually choose incorrect door answer while connected",
+    "Actual AI accurately reads committed incorrect feedback and correct answer plate/jan; explicitly says no mastery proof",
+    "Explicit disconnect; native summary shows0correct1incorrect1sample;return to review center",
+    "Launch cup while disconnected; manually select correct Thai cup;native summary1correct0incorrect1sample;return"
+  ],
+  "durable": "115 to117 attempts exactly plate incorrect and cup correct meaningChoice recognition;all12SRSrows unchanged;one points entry;reading unchanged",
+  "evidence": "evidence/review-native-109",
+  "cleanup": "Bridge21340 stopped, reverse/config removed;original app/accounts preserved;USB stayawake2 retained",
+  "limitations": [
+    "QA simulated selections, not learner proficiency data",
+    "Representative same-owner native path;full W07 requirement audit still open",
+    "Standalone provider delivery and all14workflow14mode acceptance remain open"
+  ],
+  "wholeGoalComplete": false
+}

@@ -130,9 +130,11 @@
         "srs-context-104.json",
         "srs-native-105.json",
         "srs-guidance-106.json",
-        "srs-native-107.json"
+        "srs-native-107.json",
+        "review-context-108.json",
+        "review-native-109.json"
       ],
-      "remainingAcceptance": "Final W07 coverage audit; review-center answer/feedback across connection changes. Representative SRS baseline, retry fencing, actual-provider guidance and disconnected completion verified102-107; no whole-workflow acceptance claim."
+      "remainingAcceptance": "Final W07 requirement/evidence audit. Review-center connected incorrect feedback and disconnected next correct answer verified109 with exact recognition/SRS delta;host route/context transitions108;SRS102-107. No blanket workflow acceptance."
     },
     {
       "id": "W08",

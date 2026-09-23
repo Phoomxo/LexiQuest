@@ -809,3 +809,8 @@ Built and installed isolated106 from ae04ee7f on Vivo. Two actual-provider repli
 ### Review-center connection transitions — checkpoint108
 
 Added three host tests using real Drift storage and the controller attached by ReviewCenterScreen: AI absent, connected, and disconnect-before-answer. All23 review-center tests pass. Each answer persists once with recognition evidence and no SRS change; route visibility fences queue/lesson contexts and reconnect exposes committed feedback. The initial test fixture used the wrong revision type and was corrected without weakening assertions. [Evidence](review-context-108.json). Native button/provider acceptance remains pending; installed106 is unchanged.
+
+
+### Review native connected/disconnected — checkpoint109
+
+On Vivo isolated106, manually answered plate incorrectly while AI connected. Actual provider identified the saved incorrect result and correct Thai answer, explicitly avoiding mastery claims. Disconnected AI, opened the0/1 summary, returned to review center, then answered cup correctly and opened the1/1 summary. Exact snapshot delta: two recognition attempts, all12 SRS rows unchanged, one points entry, reading unchanged. [Evidence](review-native-109.json). QA selections are not human proficiency measurements. Bridge stopped and temporary resources removed; final W07 audit and full14workflow/14mode acceptance remain open.
