@@ -1,14 +1,14 @@
 {
-  "revision": 103,
+  "revision": 104,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "079 liveStage1 Thai guidance;disconnect then sixstage completion exact1correct;compact overflow fixed and native retested",
+  "previousTurn": "080 native live stages2-6 and real60second effort-limit guidance PASS;completed1correct,expired0attempts;10minute restored",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Associative remaining live stage2-6 guidance and acceptance audit",
+  "current": "Refresh acceptance coverage and native export artifact reconciliation",
   "next": [
-    "Fresh private bridge/login;native stages2-6 actual guidance while controlling timer budget",
-    "Expired-state provider response still NOT_RUN;host58 passed078",
-    "Refresh remaining mode/workflow coverage and proceed to next gap"
+    "Audit W13 native export/share artifact readback against existing host evidence020",
+    "Proceed to remaining workflow/mode gaps;do not repeat accepted associative representative journeys",
+    "Fullsource requirement audit before any whole-goal completion"
   ],
   "nativeInstalledSource": "evidence/associative-live-079/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-079.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; bridge81585 stopped;reverse/config removed;build/install finished",
-  "testFixture": "New bottle round ACTIVE Stage1,0answers,AIcollapsed,APK079;previous door round completed1correct after disconnect",
+  "liveProcesses": "None;bridge70539 stopped;reverse/config removed;no tests/build running",
+  "testFixture": "No active lesson;latest chair60second round abandoned0attempts,prior bottlecompleted1correct;isolated home;timing preference10minutes",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

@@ -242,7 +242,7 @@
         "No-MCP and connection-loss regression"
       ],
       "direction": "Respect existing mode capability; do not assume all directions supported",
-      "assistanceProjection": "MODE_GUIDANCE_HOST_VERIFIED_NOT_FULL_MODE_ACCEPTANCE",
+      "assistanceProjection": "SIX_STAGE_NATIVE_GUIDANCE_AND_BASELINE_CONNECTED_DISCONNECTED_EVIDENCE_VERIFIED",
       "acceptanceEvidence": [
         "lesson-disconnect-031.json",
         "associative-blank-074.json",
@@ -250,9 +250,10 @@
         "associative-context-076.json",
         "associative-restoration-077.json",
         "associative-availability-078.json",
-        "associative-live-079.json"
+        "associative-live-079.json",
+        "associative-stages-080.json"
       ],
-      "remainingAcceptance": "Live provider stage2-6 guidance and expired response pending; baseline completion/disconnect exact1durable answer verified;compact sixstage host and Stage1 native retest passed. Final audit remains open."
+      "remainingAcceptance": "Final requirement/source audit only: six-stage native guidance,effort limit,baseline/disconnect completion and exact evidence now recorded074-080. Do not rerun unchanged evidence."
     },
     {
       "id": "meaning-quiz",
