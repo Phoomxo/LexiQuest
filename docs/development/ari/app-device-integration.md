@@ -771,3 +771,7 @@ Added owner/generation-bound read-only summary and mounted-list-row context. Sep
 ## Native personal set assistance — checkpoint099
 
 Actualprovider on098 correctly read savedtitle/revision1/membercount1, distinguished revised unsaveddraft fromlastConfirmed, and identified previewrevision2 as notsaved. Explicitdisconnect thennativebacktoedit/cancel/reopen preservedoriginalrevision1. Twelvepersonalset/plan/reward/learningtables exactlyunchanged since097; norevision2 persisted. Sourcefingerprints unchanged;reuse098host. [Evidence](personalsets-native-099.json). Bridge/config/reverse cleaned;originalaccounts untouched. Pendingfailure/lifecycleaudit and full14workflow14modeacceptance remainopen.
+
+### Checkpoint100 — personal-set pending failure and retry
+
+Targeted screen suite: **11 tests PASS**. New real-Drift case pauses owner lookup before save, disconnects AI, injects failure, verifies unconfirmed context without private error, then manually retries disconnected and verifies exactly one stored revision. This proves pre-write failure recovery only; post-commit/readback failures remain to audit. No application source or installed APK changed. Native099 evidence retained. [Evidence](personalsets-failure-100.json). Whole-goal acceptance remains open.

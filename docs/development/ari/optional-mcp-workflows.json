@@ -150,9 +150,10 @@
         "new-item-plan-093.json",
         "new-item-plan-native-094.json",
         "personalsets-context-098.json",
-        "personalsets-native-099.json"
+        "personalsets-native-099.json",
+        "personalsets-failure-100.json"
       ],
-      "remainingAcceptance": "098 host10PASS and099 actualprovider saved/draft/preview plus disconnectedcancel verified. Pendingoperation/failure lifecycle and finalW08coverage audit remain."
+      "remainingAcceptance": "100 host11PASS adds pending/pre-write failure/disconnected manual retry. Post-commit/readback failure audit and final W08 coverage audit remain."
     },
     {
       "id": "W09",

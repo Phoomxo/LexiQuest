@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
@@ -34,6 +35,7 @@ void main() {
     });
   }
 
+  Future<void> Function()? beforeOwnerRead;
   late AppDatabase db;
   late PersonalSetsUseCases app;
   setUp(() async {
@@ -49,7 +51,12 @@ void main() {
     await manifests.provisionPackagedArtifact(
       PackagedSenseCrosswalk.verify(bytes),
     );
-    Future<String> owner() async => 'a';
+    beforeOwnerRead = null;
+    Future<String> owner() async {
+      await beforeOwnerRead?.call();
+      return 'a';
+    }
+
     app = PersonalSetsUseCases(
       repository: DriftPersonalSetRepository(
         db,
@@ -188,6 +195,75 @@ void main() {
       await tester.tap(find.text('ยกเลิก'));
       await tester.pumpAndSettle();
       expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
+
+  screenTest(
+    'pending save disconnect failure and retry preserve one revision',
+    (tester) async {
+      String? aiOwner = 'a';
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      Map<String, dynamic> summary() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere(
+                      (e) => e['id'] == 'study-planning/personal-sets/context',
+                    )['value']
+                    as String,
+              )
+              as Map<String, dynamic>;
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(home: PersonalSetsScreen(useCases: app)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('สร้างชุดคำ'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('set-title')),
+        'Retry private set',
+      );
+      await tester.tap(find.byType(CheckboxListTile).first);
+      await tester.tap(find.text('ดูตัวอย่าง'));
+      await tester.pumpAndSettle();
+      final release = Completer<void>();
+      final entered = Completer<void>();
+      beforeOwnerRead = () async {
+        if (!entered.isCompleted) entered.complete();
+        await release.future;
+        throw StateError('PRIVATE_STORAGE_FAILURE');
+      };
+      await tester.tap(find.text('บันทึกชุดคำ'));
+      await tester.pump();
+      await tester.runAsync(() => entered.future);
+      expect(summary()['state'], 'processing');
+      expect(summary().containsKey('draft'), false);
+      aiOwner = null;
+      expect(registry.snapshot()['context'], isEmpty);
+      release.complete();
+      await tester.pumpAndSettle();
+      aiOwner = 'a';
+      expect(summary()['state'], 'unconfirmed');
+      expect(summary().containsKey('lastConfirmed'), false);
+      expect(
+        jsonEncode(registry.snapshot()),
+        isNot(contains('PRIVATE_STORAGE_FAILURE')),
+      );
+      beforeOwnerRead = null;
+      expect(await app.list(await app.begin()), isEmpty);
+      aiOwner = null;
+      await tester.tap(find.text('บันทึกชุดคำ'));
+      await tester.pumpAndSettle();
+      aiOwner = 'a';
+      expect(summary()['state'], 'list');
+      final revisions = await db.select(db.personalSetRevisions).get();
+      expect(revisions, hasLength(1));
+      expect(
+        (await app.list(await app.begin())).single.title,
+        'Retry private set',
+      );
+      expect(registry.snapshot()['actions'], isEmpty);
     },
   );
 

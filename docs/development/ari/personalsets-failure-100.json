@@ -1,0 +1,27 @@
+{
+  "checkpoint": "100",
+  "workflow": "W08",
+  "status": "HOST_PREWRITE_FAILURE_RETRY_PASS",
+  "host": {
+    "testsPassed": 11,
+    "newCase": "pending save disconnect failure and retry preserve one revision",
+    "failureLocation": "Owner lookup before repository write; not a disk failure or post-commit failure",
+    "assertions": [
+      "Processing context omits draft",
+      "Disconnect hides all owner context",
+      "Failure reports unconfirmed without private error or confirmed data",
+      "Real database remains empty after failed operation",
+      "Manual retry without provider saves exactly one revision",
+      "Reconnect reads list; AI mutation actions absent"
+    ]
+  },
+  "evidence": "evidence/personalsets-failure-100",
+  "native": "No new native run; application source unchanged from098;099 evidence retained",
+  "remaining": [
+    "Post-commit/readback failure lifecycle audit",
+    "Final W08 coverage audit",
+    "W07 native review through provider connection change",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}
