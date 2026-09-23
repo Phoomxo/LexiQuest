@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import '../features/media_practice/presentation/speaking_scenario_screen.dart';
 import '../features/voice/presentation/audio_lesson_screen.dart';
 import 'dart:convert';
@@ -395,6 +396,74 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
     return 'ความหมายเดิมที่ยังไม่มีตัวแสดงผล';
   }
 
+  bool get _contextCurrent {
+    final owner = _owner;
+    final app = _app;
+    if (owner == null || app == null) return false;
+    try {
+      app.ownerGeneration.requireCurrent(owner);
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  Map<String, Object?> _setSummary(PersonalSetRevision set) => {
+    'title': set.title,
+    'revision': set.revision,
+    'memberCount': set.members.length,
+    'archived': set.archived,
+  };
+
+  Widget _contextBinding(
+    String suffix,
+    Map<String, Object?> value,
+    Widget child,
+  ) => MenuActionBinding(
+    id: 'study-planning/personal-sets/$suffix',
+    label: 'Personal set context',
+    ownerId: _owner?.ownerId,
+    readValue: _contextCurrent ? jsonEncode(value) : null,
+    onInvoke: null,
+    child: child,
+  );
+
+  Map<String, Object?> _assistanceContext() {
+    final state = _busy
+        ? 'processing'
+        : _error != null
+        ? 'unconfirmed'
+        : _backup
+        ? 'backup'
+        : _preview
+        ? 'preview'
+        : _editor
+        ? 'draft'
+        : _detail != null
+        ? 'detail'
+        : 'list';
+    final disclose = !_busy && _error == null && !_backup;
+    return {
+      'state': state,
+      'purpose': 'personal-content-organization-not-learning-completion',
+      'manualSaveRequired': true,
+      'entryScope': 'mounted-list-rows-only',
+      if (disclose) ...{
+        'savedSetCount': _sets.length,
+        'draft': _preview && _pending != null
+            ? _setSummary(_pending!)
+            : _editor
+            ? {'title': _title.text.trim(), 'memberCount': _selected.length}
+            : null,
+        'lastConfirmed': (_editor || _preview) && _editing != null
+            ? _setSummary(_editing!)
+            : _detail != null
+            ? _setSummary(_detail!)
+            : null,
+      },
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final revision = _preview ? _pending : _detail;
@@ -406,7 +475,7 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
         activities.isAvailable() &&
         dependencies?.createLessonController != null &&
         dependencies?.currentActivityEvidence != null;
-    return Scaffold(
+    final screen = Scaffold(
       appBar: AppBar(title: const Text('ชุดคำส่วนตัว')),
       body: SafeArea(
         child: _app == null
@@ -495,33 +564,71 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                       ),
                     ] else ...[
                       if (dependencies?.audioLessons?.isAvailable() == true)
-                        OutlinedButton(onPressed: () {
-                          final owner = _owner;
-                          final app = dependencies?.audioLessons;
-                          if (owner == null || app == null) return;
-                          AppNavigator.pushPage<void>(context, AppPage<void>(name: 'learning/audio-lesson', builder: (_) =>
-                            AudioLessonScreen(useCases: app, owner: owner, set: revision)));
-                        }, child: const Text('Audio lesson · บทเรียนเสียง')),
-                      if (dependencies?.speakingScenarios?.isAvailable() == true && dependencies?.speechPractice != null)
-                        OutlinedButton(onPressed: () {
-                          final owner = _owner;
-                          final app = dependencies?.speakingScenarios;
-                          final speech = dependencies?.speechPractice;
-                          if (owner == null || app == null || speech == null) return;
-                          AppNavigator.pushPage<void>(context,
-                            AppPage<void>(name: 'learning/speaking-scenario', builder: (_) =>
-                              SpeakingScenarioScreen(useCases: app, speech: speech, owner: owner, set: revision)));
-                        }, child: const Text('Speak in a scenario · ฝึกพูด')),
+                        OutlinedButton(
+                          onPressed: () {
+                            final owner = _owner;
+                            final app = dependencies?.audioLessons;
+                            if (owner == null || app == null) return;
+                            AppNavigator.pushPage<void>(
+                              context,
+                              AppPage<void>(
+                                name: 'learning/audio-lesson',
+                                builder: (_) => AudioLessonScreen(
+                                  useCases: app,
+                                  owner: owner,
+                                  set: revision,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Audio lesson · บทเรียนเสียง'),
+                        ),
+                      if (dependencies?.speakingScenarios?.isAvailable() ==
+                              true &&
+                          dependencies?.speechPractice != null)
+                        OutlinedButton(
+                          onPressed: () {
+                            final owner = _owner;
+                            final app = dependencies?.speakingScenarios;
+                            final speech = dependencies?.speechPractice;
+                            if (owner == null || app == null || speech == null) {
+                              return;
+                            }
+                            AppNavigator.pushPage<void>(
+                              context,
+                              AppPage<void>(
+                                name: 'learning/speaking-scenario',
+                                builder: (_) => SpeakingScenarioScreen(
+                                  useCases: app,
+                                  speech: speech,
+                                  owner: owner,
+                                  set: revision,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Speak in a scenario · ฝึกพูด'),
+                        ),
                       if (dependencies?.writtenPractice?.isAvailable() == true)
-                        OutlinedButton(onPressed: () {
-                          final owner = _owner;
-                          final app = dependencies?.writtenPractice;
-                          if (owner == null || app == null) return;
-                          AppNavigator.pushPage<void>(context,
-                            AppPage<void>(name: 'learning/written-practice', builder: (_) =>
-                              WrittenPracticeScreen(useCases: app, owner: owner, set: revision)));
-                        },
-                          child: const Text('Use the word · เขียนประโยค')),
+                        OutlinedButton(
+                          onPressed: () {
+                            final owner = _owner;
+                            final app = dependencies?.writtenPractice;
+                            if (owner == null || app == null) return;
+                            AppNavigator.pushPage<void>(
+                              context,
+                              AppPage<void>(
+                                name: 'learning/written-practice',
+                                builder: (_) => WrittenPracticeScreen(
+                                  useCases: app,
+                                  owner: owner,
+                                  set: revision,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Use the word · เขียนประโยค'),
+                        ),
                       FilledButton(
                         onPressed: activityReady
                             ? () => _launchActivity()
@@ -575,6 +682,7 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                     TextField(
                       key: const ValueKey('set-title'),
                       controller: _title,
+                      onChanged: (_) => setState(() {}),
                       maxLength: 120,
                       decoration: const InputDecoration(labelText: 'ชื่อชุดคำ'),
                     ),
@@ -623,25 +731,30 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                       child: const Text('สำรองและกู้คืนชุดคำ'),
                     ),
                     for (final set in _sets)
-                      ListTile(
-                        title: Text(set.title),
-                        subtitle: Text(
-                          'รุ่น ${set.revision} • ${set.members.length} ความหมาย',
+                      _contextBinding(
+                        'item/${set.setId}',
+                        _setSummary(set),
+                        ListTile(
+                          title: Text(set.title),
+                          subtitle: Text(
+                            'รุ่น ${set.revision} • ${set.members.length} ความหมาย',
+                          ),
+                          onTap: () => _work(() async {
+                            _detail = await _app!.read(
+                              _owner!,
+                              setId: set.setId,
+                              revision: set.revision,
+                            );
+                            _pending = null;
+                          }),
                         ),
-                        onTap: () => _work(() async {
-                          _detail = await _app!.read(
-                            _owner!,
-                            setId: set.setId,
-                            revision: set.revision,
-                          );
-                          _pending = null;
-                        }),
                       ),
                   ],
                 ],
               ),
       ),
     );
+    return _contextBinding('context', _assistanceContext(), screen);
   }
 }
 

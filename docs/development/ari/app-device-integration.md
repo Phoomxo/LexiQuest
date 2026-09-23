@@ -761,3 +761,8 @@ Actualprovider on091 omitted focuswallpaper and could not identify previewedIPAh
 ## Native reward context retest — checkpoint097
 
 On096 actualprovider now lists both defaulttheme andfocuswallpaper owned/equipped, correct84coins144XPlevel8 without proficiencyclaim. After nativeIPApreview, actualreply identifies headgear_ipa and explicitly unowned/unequipped. Disconnect thennativecancel/reopen restoresnohat. Eightreward/learningtables exactlyunchanged since095. Closes REWARDS-CONTEXT-096; reuseunchanged096host evidence. [Evidence](rewards-native-097.json). Bridge/reverse/config cleaned; originalaccounts untouched. Next missingpersonalsetsoptionalcontext; all14workflow14modeacceptance remainsopen.
+
+
+## Personal set optional context — checkpoint098
+
+Added owner/generation-bound read-only summary and mounted-list-row context. Separates draft, preview and lastconfirmed; processing/unconfirmed omit personaldetail; backup/import rawpayload excluded. Native actions remain authoritative; noAI mutation added. Newtest firstfailed missingcontext. Final10realDrift/widgettests PASS covering lateattach/disconnectedmanualsave/reconnect/draftvsconfirmed/foreignowner/cancel/invaliddraft/generationchange and baseline suite. Twofileanalysisclean; APK098builtinstalled. [Evidence](personalsets-context-098.json). Actualprovider/native newcontext verification pending; all14workflow14mode acceptance open.

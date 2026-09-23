@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -65,6 +67,129 @@ void main() {
     );
   });
   tearDown(() => db.close());
+
+  screenTest('optional context separates drafts previews and confirmed sets', (
+    tester,
+  ) async {
+    String? aiOwner;
+    final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+    Map<String, dynamic> summary() =>
+        jsonDecode(
+              (registry.snapshot()['context'] as List).singleWhere(
+                    (e) => e['id'] == 'study-planning/personal-sets/context',
+                  )['value']
+                  as String,
+            )
+            as Map<String, dynamic>;
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(home: PersonalSetsScreen(useCases: app)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(registry.snapshot()['context'], isEmpty);
+    aiOwner = 'a';
+    expect(summary()['state'], 'list');
+    expect(summary()['savedSetCount'], 0);
+    await tester.tap(find.text('สร้างชุดคำ'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('set-title')),
+      'Private set',
+    );
+    await tester.tap(find.byType(CheckboxListTile).first);
+    await tester.pump();
+    expect(summary()['state'], 'draft');
+    expect(summary()['draft']['title'], 'Private set');
+    expect(summary()['draft']['memberCount'], 1);
+    expect(summary()['lastConfirmed'], isNull);
+    expect(await app.list(await app.begin()), isEmpty);
+    await tester.tap(find.text('ดูตัวอย่าง'));
+    await tester.pumpAndSettle();
+    expect(summary()['state'], 'preview');
+    expect(summary()['manualSaveRequired'], true);
+    expect(summary()['draft']['revision'], 1);
+    aiOwner = null;
+    expect(registry.snapshot()['context'], isEmpty);
+    await tester.tap(find.text('บันทึกชุดคำ'));
+    await tester.pumpAndSettle();
+    expect((await app.list(await app.begin())).single.title, 'Private set');
+    aiOwner = 'a';
+    expect(summary()['state'], 'list');
+    expect(summary()['savedSetCount'], 1);
+    await tester.tap(find.text('Private set'));
+    await tester.pumpAndSettle();
+    expect(summary()['state'], 'detail');
+    expect(summary()['lastConfirmed']['title'], 'Private set');
+    await tester.tap(find.text('แก้ไข'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('set-title')),
+      'Changed draft',
+    );
+    await tester.pump();
+    expect(summary()['draft']['title'], 'Changed draft');
+    expect(summary()['lastConfirmed']['title'], 'Private set');
+    aiOwner = 'foreign';
+    expect(registry.snapshot()['context'], isEmpty);
+    aiOwner = 'a';
+    await tester.tap(find.text('ยกเลิก'));
+    await tester.pumpAndSettle();
+    expect(summary()['draft'], isNull);
+    expect(summary()['state'], 'list');
+    await tester.tap(find.text('สำรองและกู้คืนชุดคำ'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('set-import-json')),
+      'PRIVATE_RAW_IMPORT',
+    );
+    await tester.pump();
+    expect(summary()['state'], 'backup');
+    expect(
+      jsonEncode(registry.snapshot()),
+      isNot(contains('PRIVATE_RAW_IMPORT')),
+    );
+    expect(registry.snapshot()['actions'], isEmpty);
+  });
+
+  screenTest(
+    'invalid personal-set draft does not expose confirmed data and owner change retires context',
+    (tester) async {
+      final registry = MenuActionRegistry(currentOwner: () => 'a');
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(home: PersonalSetsScreen(useCases: app)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('สร้างชุดคำ'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('set-title')),
+        'Unsaved private title',
+      );
+      await tester.tap(find.text('ดูตัวอย่าง'));
+      await tester.pumpAndSettle();
+      final snapshot = registry.snapshot();
+      final summary = jsonDecode(
+        (snapshot['context'] as List).singleWhere(
+              (e) => e['id'] == 'study-planning/personal-sets/context',
+            )['value']
+            as String,
+      );
+      expect(summary['state'], 'unconfirmed');
+      expect(summary.containsKey('lastConfirmed'), false);
+      expect(jsonEncode(snapshot), isNot(contains('Unsaved private title')));
+      expect(await app.list(await app.begin()), isEmpty);
+      await app.ownerGeneration.duringTransition(() async {});
+      // Native operation revalidates the generation and clears the private view.
+      await tester.tap(find.text('ยกเลิก'));
+      await tester.pumpAndSettle();
+      expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
 
   screenTest(
     'create preview save reopen edit and archive retain immutable history',

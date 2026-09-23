@@ -1,23 +1,23 @@
 {
-  "revision": 121,
+  "revision": 122,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "097 actualprovider reward fullownership andIPApreview identity PASS; disconnectedcancel/reopen and exact8DBtables unchanged;closesREWARDS-CONTEXT-096",
+  "previousTurn": "098 personalset optionalcontext implemented;missingcontext RED then10hosttestsPASS;analysisclean;APK098installed actualproviderpending",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W08 personalsets optional assistance implementation",
+  "current": "W08 personalset actualprovider/native acceptance",
   "next": [
-    "Add owner-bound read-only personalset list/detail/draft/preview context; separate persisted from pending; exclude rawbackup/import",
-    "Use personal_sets_screen_test.dart realDrift fixtures; reproduce missingcontext; verify lateattach/disconnect/foreignowner/error and baseline noAI",
-    "Build and nativeverify newcontext then remaining14workflow14mode acceptance"
+    "Freshbridge/login098; personalsets existing New pencil test%093 ->detail; actualAIread title/revision/membercount",
+    "Native edit title withoutsave; actualAI distinguish draft vsconfirmed; preview notsaved; disconnectcancel andverifyoriginalsavedset retained",
+    "Audit pending-operation failure handling and remaining14workflow14mode scope"
   ],
-  "nativeInstalledSource": "evidence/rewards-context-096/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-096.apk",
+  "nativeInstalledSource": "evidence/personalsets-context-098/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-098.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; bridge3066 stopped;no reverse/config;isolated096 restartedhome",
+  "liveProcesses": "None; no bridge/config/reverse;isolated098startedhome",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
