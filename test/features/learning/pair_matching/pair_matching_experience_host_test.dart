@@ -1687,14 +1687,19 @@ void main() {
       final h = PairHarness();
       addTearDown(h.db.close);
       await h.initialize(measured: true);
+      String? aiOwner = h.owner;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
       List<ReviewQueueItem>? handedOff;
       await tester.pumpWidget(
-        MaterialApp(
-          home: PairMatchingExperienceHost.recover(
-            runtime: _runtime(h),
-            operation: h.operation,
-            onExit: () {},
-            onReview: (rows) => handedOff = rows,
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: PairMatchingExperienceHost.recover(
+              runtime: _runtime(h),
+              operation: h.operation,
+              onExit: () {},
+              onReview: (rows) => handedOff = rows,
+            ),
           ),
         ),
       );
@@ -1749,6 +1754,30 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
+      Map resultContext() {
+        final entries = registry.snapshot()['context'] as List;
+        return jsonDecode(
+              entries.singleWhere(
+                    (dynamic e) => e['id'] == 'matching/result-assistance',
+                  )['value']
+                  as String,
+            )
+            as Map;
+      }
+
+      final projected = resultContext();
+      expect(projected['firstAnswers'], {'correct': 3, 'total': 4});
+      expect(projected['repairAnswers'], {'correct': 1, 'total': 2});
+      expect(projected['independent'], 3);
+      expect(projected['assisted'], 1);
+      expect(projected['matched'], 4);
+      expect(projected['stars'], 2);
+      aiOwner = null;
+      registry.invalidateSession(preserveContext: true);
+      expect(registry.snapshot()['context'], isEmpty);
+      aiOwner = h.owner;
+      expect(resultContext(), projected);
+      expect(registry.snapshot()['actions'], isEmpty);
       final answersBeforeReview = await h.db.select(h.db.answerAttempts).get();
       final eventsBeforeReview = await h.db.select(h.db.eventsV2).get();
       await tester.ensureVisible(find.text('Review next'));
@@ -1781,13 +1810,18 @@ void main() {
       final h = PairHarness();
       addTearDown(h.db.close);
       await h.initialize(measured: true);
+      String? aiOwner = h.owner;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
       final runtime = _runtime(h, clock: () => micros, canStart: () => true);
       await tester.pumpWidget(
-        MaterialApp(
-          home: PairMatchingExperienceHost.recover(
-            runtime: runtime,
-            operation: h.operation,
-            onExit: () {},
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: PairMatchingExperienceHost.recover(
+              runtime: runtime,
+              operation: h.operation,
+              onExit: () {},
+            ),
           ),
         ),
       );
@@ -1850,6 +1884,19 @@ void main() {
           ],
       });
       final before = await effects();
+      final entries = registry.snapshot()['context'] as List;
+      expect(
+        jsonDecode(
+          entries.singleWhere(
+                (dynamic e) => e['id'] == 'matching/result-assistance',
+              )['value']
+              as String,
+        )['purpose'],
+        'learning',
+      );
+      aiOwner = null;
+      registry.invalidateSession(preserveContext: true);
+      expect(registry.snapshot()['context'], isEmpty);
       await tester.ensureVisible(find.text('Practice Replay'));
       await tester.tap(find.text('Practice Replay'));
       await tester.pumpAndSettle();
@@ -1875,6 +1922,22 @@ void main() {
       );
       expect(replay.snapshot!.timer!.interactiveElapsedMs, 3000);
       expect(replay.snapshot!.terminal!.presented, true);
+      expect(await effects(), before);
+      aiOwner = h.owner;
+      final replayEntries = registry.snapshot()['context'] as List;
+      final resultEntries = replayEntries
+          .where((dynamic e) => e['id'] == 'matching/result-assistance')
+          .toList();
+      expect(resultEntries, hasLength(1));
+      final data = jsonDecode(resultEntries.single['value'] as String) as Map;
+      expect(data['purpose'], 'practiceReplay');
+      expect(data['interactiveElapsedMs'], 3000);
+      expect(data['firstAnswers'], {'correct': 4, 'total': 4});
+      expect(data['repairAnswers'], {'correct': 0, 'total': 0});
+      expect(data['replayAddsProgressOrRewards'], false);
+      expect(registry.snapshot()['actions'], isEmpty);
+      aiOwner = 'other-owner';
+      expect(registry.snapshot()['context'], isEmpty);
       expect(await effects(), before);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

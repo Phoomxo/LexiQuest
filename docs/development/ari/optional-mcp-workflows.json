@@ -509,6 +509,12 @@
       "receipt": "pair-native-049.json",
       "scope": "Vivo normal no-provider completion,authenticatedAIexactresult,explicitdisconnect then replaycompletion;notalladversarialcases",
       "wholeModeAcceptance": false
+    },
+    {
+      "id": "pair-adversarial-050",
+      "receipt": "pair-adversarial-050.json",
+      "scope": "Host guided repair projection and disconnected replay reconnect;16effect tables unchanged;10targetedtests",
+      "wholeModeAcceptance": false
     }
   ],
   "wholeScopeComplete": false

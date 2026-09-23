@@ -1,0 +1,67 @@
+{
+  "status": "HOST_GUIDED_REPAIR_AND_REPLAY_CONTEXT_PASS",
+  "productionChanges": false,
+  "installedApk": "048 unchanged; native049 evidence retained",
+  "tests": {
+    "selection": "actual",
+    "passed": 10,
+    "extendedExistingTests": 2,
+    "analysis": "No issues found"
+  },
+  "execution": "Production Pair host/coordinator and real in-memory Drift harness. Registry connection state; no liveprovider/device commands050.",
+  "guidedRepair": {
+    "firstAnswers": {
+      "correct": 3,
+      "total": 4
+    },
+    "repairAnswers": {
+      "correct": 1,
+      "total": 2
+    },
+    "independent": 3,
+    "assisted": 1,
+    "matched": 4,
+    "stars": 2,
+    "disconnectReconnect": "same exact result context",
+    "review": "Existing canonical answer/event count and deferred review assertions retained"
+  },
+  "replay": {
+    "newController": true,
+    "purpose": "practiceReplay",
+    "interactiveElapsedMs": 3000,
+    "firstAnswers": {
+      "correct": 4,
+      "total": 4
+    },
+    "repairAnswers": {
+      "correct": 0,
+      "total": 0
+    },
+    "disconnect": "Before replay launch; AI absent throughout replay; owner restored for final projection",
+    "context": "One current result entry, no stale normal result; wrong owner hides it; no actions advertised",
+    "unchangedTables": [
+      "srs_states",
+      "points_ledger_entries",
+      "achievement_unlocks",
+      "reward_transactions",
+      "owned_reward_items",
+      "equipped_reward_items",
+      "quest_instances",
+      "quest_objective_progress",
+      "streak_states",
+      "learning_day_log",
+      "learning_time_segments",
+      "session_configurations",
+      "assessment_runs",
+      "motivation_measurement_runs",
+      "motivation_responses",
+      "measurement_opportunities"
+    ]
+  },
+  "remaining": [
+    "CEFR session connected/disconnected with retained AriCEFR045 fixture",
+    "Native dictation/audio; remaining mode/workflow coverage",
+    "Native Pair wrong/repair/support and active-board AI assistance",
+    "Whole-project review after full MCP acceptance"
+  ]
+}
