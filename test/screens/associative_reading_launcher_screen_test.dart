@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -339,11 +340,14 @@ void main() {
     },
   );
 
-  for (final scenario in ['full', 'partial', 'edited', 'deleted']) {
+  for (final scenario in ['full', 'partial', 'expired', 'edited', 'deleted']) {
     final partial = scenario == 'partial';
+    final expired = scenario == 'expired';
     final drift = scenario == 'edited' || scenario == 'deleted';
     testWidgets(
-      drift
+      expired
+          ? 'R06 expired restored session assistance respects operation fence'
+          : drift
           ? 'R06 explicit fresh round after $scenario completed content uses new pins and passage'
           : partial
           ? 'R06 partial recall process death disables only the committed occurrence'
@@ -364,7 +368,13 @@ void main() {
           SessionConfiguration configuration(int hints) => policy.validate(
             draft: policy
                 .defaultsFor(registration: registration, limits: limits)
-                .copyWith(itemCount: 2, hintBudget: hints),
+                .copyWith(
+                  itemCount: 2,
+                  hintBudget: hints,
+                  timing: expired
+                      ? const SessionTiming.timed(Duration(seconds: 600))
+                      : null,
+                ),
             registration: registration,
             limits: limits,
             ownerId: owner.id,
@@ -452,6 +462,12 @@ BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
             );
             // Snapshot committed storage before route disposal. Disposing a live
             // widget is an explicit stop, whereas process death runs no cleanup.
+            if (expired) {
+              await database.customStatement(
+                'UPDATE learning_sessions SET configuration_active_effort_us = 600000000 WHERE id = ?',
+                [original.sessionId],
+              );
+            }
             await database.customStatement('VACUUM INTO ?', [snapshot.path]);
             return result;
           }))!;
@@ -554,6 +570,27 @@ BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
               before.rewards,
             );
           });
+          if (expired) {
+            expect(recoveredController.configurationLimitReached, isTrue);
+            final binding = tester
+                .widgetList<MenuActionBinding>(find.byType(MenuActionBinding))
+                .singleWhere(
+                  (b) => b.id == 'associative/current-stage-assistance',
+                );
+            final assistance = jsonDecode(binding.readValue!) as Map;
+            expect(assistance['phase'], 'operations-unavailable');
+            expect(assistance['manualNextStep'], contains('unavailable'));
+            expect(assistance['manualNextStep'], isNot(contains('then tap')));
+            expect(
+              tester
+                  .widget<FilledButton>(
+                    find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+                  )
+                  .onPressed,
+              isNull,
+            );
+            return;
+          }
           if (partial) {
             expect(
               tester.widget<TextField>(find.byType(TextField).at(0)).enabled,

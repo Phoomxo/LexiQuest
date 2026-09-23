@@ -1,24 +1,23 @@
 {
-  "revision": 101,
+  "revision": 102,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "077 restored count and partial recovery guard fixed;61host tests PASS;native restored100 with exact1attempt",
+  "previousTurn": "078 fixed misleading ready guidance for emergency-off and effort-capped restored sessions;58host tests PASS;APK078 installed",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Fresh associative live stage guidance/disconnect; old round reached600second effort cap",
+  "current": "Live associative availability and six-stage context/disconnect acceptance",
   "next": [
-    "Restore isolated app after snapshot; leave capped round through supported UI and start fresh round",
-    "Live AI associative six-stage guidance and disconnect",
-    "Audit expired-session and feature-off context",
+    "Start debug bridge and private existing-account login; verify capped session context with live provider",
+    "Use supported navigation to leave capped round/start fresh; verify six stages and disconnect",
     "Remaining14workflow14mode acceptance"
   ],
-  "nativeInstalledSource": "evidence/associative-restoration-077/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-077.apk",
+  "nativeInstalledSource": "evidence/associative-availability-078/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-078.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; no bridge",
+  "liveProcesses": "None; build/install finished; no bridge",
   "testFixture": "Bottle round remains active Stage4,correct1;effort cap reached600seconds;do not reset durable timer",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

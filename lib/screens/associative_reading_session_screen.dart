@@ -1240,12 +1240,20 @@ class _AssociativeReadingSessionScreenState
                 ? 'saving'
                 : _persistenceLocked
                 ? 'retry-or-locked'
+                : !(_lessonLifecycle?.acceptsOperations ?? true)
+                ? 'operations-unavailable'
+                : _currentStage == 3 && !_typedRecallEnabled
+                ? 'feature-unavailable'
                 : 'ready',
             'guidance': _stageGuidance[_currentStage - 1],
             'manualNextStep': _completed
                 ? 'Activity already completed. Do not submit again.'
                 : _persistenceLocked
                 ? 'Wait while saving or use the displayed retry control. Do not claim success before persistence is acknowledged.'
+                : !(_lessonLifecycle?.acceptsOperations ?? true)
+                ? 'Session operations are unavailable. Respect the displayed session limit or lifecycle restriction; do not instruct the learner to submit, advance, reset the timer, or claim completion. Use the app navigation to leave this activity.'
+                : _currentStage == 3 && !_typedRecallEnabled
+                ? 'Typed recall is currently disabled. Submission and advancement are unavailable; do not instruct the learner to tap the disabled next control or claim an answer was saved.'
                 : 'Finish the current stage yourself, then tap ${_currentStage < 6 ? 'เสร็จแล้ว ไปขั้นถัดไป' : 'จบกิจกรรม'}.',
             'visibility':
                 'If controls are hidden, tap ย่อส่วนช่วยเหลือ AI and scroll the lesson; offscreen does not mean unavailable.',

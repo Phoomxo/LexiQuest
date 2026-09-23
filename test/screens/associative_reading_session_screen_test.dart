@@ -1296,17 +1296,24 @@ void main() {
         const BuildFeatureRegistry.allEnabled(),
       );
       addTearDown(features.dispose);
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:reading-owner',
+      );
       await tester.pumpWidget(
-        session(
-          targetWords: const <String>['anchor'],
-          targetWordIds: const <String, String>{'anchor': 'word-anchor'},
-          learningUseCases: contractLearning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(
-            learning: contractLearning,
+        MenuActionScope(
+          registry: registry,
+          child: session(
+            targetWords: const <String>['anchor'],
+            targetWordIds: const <String, String>{'anchor': 'word-anchor'},
+            learningUseCases: contractLearning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(
+              learning: contractLearning,
+            ),
+            modeAdapter: const TypedRecallModeAdapter(),
+            featureRegistry: features,
+            sessionId: 'live-off-session',
+            ownerId: 'local:reading-owner',
           ),
-          modeAdapter: const TypedRecallModeAdapter(),
-          featureRegistry: features,
-          sessionId: 'live-off-session',
         ),
       );
       await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
@@ -1332,6 +1339,11 @@ void main() {
       staleSubmit();
       await tester.pump();
 
+      final row = (registry.snapshot()['context'] as List).single;
+      final assistance = jsonDecode(row['value'] as String) as Map;
+      expect(assistance['phase'], 'feature-unavailable');
+      expect(assistance['manualNextStep'], contains('disabled'));
+      expect(assistance['manualNextStep'], isNot(contains('then tap')));
       expect(repository.answerCommands, isEmpty);
       expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
       expect(

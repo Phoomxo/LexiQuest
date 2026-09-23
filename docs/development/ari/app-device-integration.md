@@ -661,3 +661,8 @@ APK075 fresh native recall updates shared0→100;SQLite confirms1correct indepen
 ## Associative restoration — checkpoint077
 
 Restored shared count now reflects acknowledged occurrences after owner revalidation. Broader tests exposed a second bug: blank validation included locked restored fields, blocking partial recovery; validation now covers only uncommitted occurrences. Updated later-stage fixtures to submit actual recall input, preserving exact durable-pair assertions. All61 tests across session/launcher/restart pass; three-file analysis clean. APK077 installed; Vivo restores Stage4 at100%, SQLite retains exactly1correct independentRecall and0wrong. Continuation is capped by durable600-second effort matching configuration; no timer reset or duplicate write. Live AI stage guidance still pending in a fresh round. [Evidence](associative-restoration-077.json). Whole-goal acceptance remains OPEN.
+
+
+## Associative unavailable-state guidance — checkpoint078
+
+Both emergency-off Stage3 and restored600-second effort cap incorrectly exposed ready/tap-next context. Red tests reproduced both. Readonly context now exposes feature-unavailable or operations-unavailable and respects actual disabled controls; no change to persistence or timer gates. All58 session/launcher tests pass, including real SQLite reopen with unchanged answer IDs/event/SRS/reward counts and stale-submit no-write. Three-file analysis clean. APK078 built and installed;USB stayawake2 retained. Live provider retest and fresh six-stage/disconnect journey remain pending. [Evidence](associative-availability-078.json). Full goal remains OPEN.
