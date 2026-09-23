@@ -1,0 +1,23 @@
+{
+  "status": "Passed",
+  "fingerprint": "0a823b7da59924fa7c20ab353d345721ad6e3583876fbd58485f6cb327971808",
+  "postFingerprint": "0a823b7da59924fa7c20ab353d345721ad6e3583876fbd58485f6cb327971808",
+  "startedAt": "2026-09-23T11:40:27.2070866+00:00",
+  "finishedAt": "2026-09-23T11:40:45.5805961+00:00",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "221f103f8839aaa961b66baedcb08dd0bd63729830464296c37d84affee1aa09",
+      "fingerprint": "0a823b7da59924fa7c20ab353d345721ad6e3583876fbd58485f6cb327971808",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T11:40:28.7958102+00:00",
+      "FinishedAt": "2026-09-23T11:40:39.5152716+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\27ca7d1eae8f0b25a8f646d0af1356d92bf42b1d\\221f103f8839-0a823b7da599-f1623501\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\27ca7d1eae8f0b25a8f646d0af1356d92bf42b1d\\221f103f8839-0a823b7da599-f1623501\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "0a823b7da59924fa7c20ab353d345721ad6e3583876fbd58485f6cb327971808",
+      "StdoutHash": "51D80C81C3407B071812013733F48F487382F3E161B21F09DC73AE7C6026EABE",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ]
+}

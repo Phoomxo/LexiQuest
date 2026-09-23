@@ -137,9 +137,22 @@ void main() {
         sourceEventId: 'synthetic-preview-grant',
       );
       final before = await rewards.load();
+      String? aiOwner = owner.id;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      Map<String, dynamic> accountContext() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere(
+                      (e) => e['id'] == 'rewards/account',
+                    )['value']
+                    as String,
+              )
+              as Map<String, dynamic>;
 
       await tester.pumpWidget(
-        MaterialApp(home: AvatarEquipmentScreen(rewards: rewards)),
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(home: AvatarEquipmentScreen(rewards: rewards)),
+        ),
       );
       await tester.pumpAndSettle();
       expect(
@@ -156,6 +169,28 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('กำลังลองหมวก IPA'), findsOneWidget);
+      final context = accountContext();
+      expect(context['previewItemId'], 'headgear_ipa');
+      final entries = registry.snapshot()['context'] as List;
+      final hat = jsonDecode(
+        entries.singleWhere(
+              (item) => item['id'] == 'rewards/item/headgear_ipa',
+            )['value']
+            as String,
+      );
+      expect(hat['previewing'], true);
+      expect(hat['owned'], false);
+      expect(hat['equipped'], false);
+      expect(hat['priceCoins'], 100);
+      expect(context['catalogScope'], 'complete-current-catalog');
+      expect(
+        entries.any((item) => item['id'] == 'rewards/item/wallpaper_focus'),
+        true,
+      );
+      aiOwner = 'foreign-owner';
+      expect(registry.snapshot()['context'], isEmpty);
+      aiOwner = owner.id;
+
       expect(find.text('ลองดูเท่านั้น ยังไม่ได้ซื้อหรือสวม'), findsOneWidget);
       final afterPreview = await rewards.load();
       expect(afterPreview.coinBalance, before.coinBalance);
@@ -173,6 +208,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('กำลังลองหมวก IPA'), findsNothing);
+      expect(accountContext()['previewItemId'], isNull);
+
       final afterCancel = await rewards.load();
       expect(afterCancel.coinBalance, before.coinBalance);
       expect(afterCancel.transactionCount, before.transactionCount);

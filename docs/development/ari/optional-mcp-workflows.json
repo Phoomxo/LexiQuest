@@ -150,7 +150,7 @@
         "new-item-plan-093.json",
         "new-item-plan-native-094.json"
       ],
-      "remainingAcceptance": "Goaleditor091ownerboundcontextimplemented23hosttestsPASS;actualprovider/nativeeditoracceptancepending. Goalslistrepresentative089-090PASS. New-itemnonemptyplan andfinalowner/lifecycleaudit remain."
+      "remainingAcceptance": "Goal editor092 and nonemptynew-itemplan093-094 representative native evidence recorded. PersonalSetsScreen lacks dedicated read-only AI context; implement and verify optional owner-bound list/draft/confirmed states. Final owner/lifecycle coverage audit remains."
     },
     {
       "id": "W09",
@@ -181,9 +181,10 @@
         "quest-assistance-022.json",
         "rewards-assistance-023.json",
         "native-context-028.json",
-        "rewards-native-095.json"
+        "rewards-native-095.json",
+        "rewards-context-096.json"
       ],
-      "remainingAcceptance": "Native mutation state/preview/equip/readback and insufficient-coins behavior"
+      "remainingAcceptance": "Native096 retest required for REWARDS-CONTEXT-096: complete ownership/equipped and previewidentity afterlazycontextfix. Connected/disconnected coverage and finalW10audit remain."
     },
     {
       "id": "W11",

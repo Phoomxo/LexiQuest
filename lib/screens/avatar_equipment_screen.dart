@@ -217,6 +217,21 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
     return 'avatar:$operation:${item.id}:$now:$sequence';
   }
 
+  Map<String, Object?> _itemContext(
+    AvatarRewardState state,
+    RewardCatalogItem item,
+  ) => {
+    'itemId': item.id,
+    'priceCoins': item.price,
+    'catalogVersion': item.catalogVersion,
+    'unlocked': state.progression.isItemUnlocked(item.id),
+    'owned': item.price == 0 || state.account.ownedItemIds.contains(item.id),
+    'equipped': state.account.equippedBySlot[item.slot] == item.id,
+    'previewing': _previewItemId == item.id,
+    'busy': _busyItems.contains(item.id),
+    'interpretation': 'preview-is-not-purchase-or-equip',
+  };
+
   Widget _withItemContext(
     AvatarRewardState state,
     RewardCatalogItem item,
@@ -228,18 +243,7 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
       label: 'Reward catalog item',
       ownerId: state.ownerId,
       onInvoke: null,
-      readValue: jsonEncode({
-        'itemId': item.id,
-        'priceCoins': item.price,
-        'catalogVersion': item.catalogVersion,
-        'unlocked': state.progression.isItemUnlocked(item.id),
-        'owned':
-            item.price == 0 || state.account.ownedItemIds.contains(item.id),
-        'equipped': state.account.equippedBySlot[item.slot] == item.id,
-        'previewing': _previewItemId == item.id,
-        'busy': _busyItems.contains(item.id),
-        'interpretation': 'preview-is-not-purchase-or-equip',
-      }),
+      readValue: jsonEncode(_itemContext(state, item)),
       child: child,
     );
   }
@@ -292,7 +296,7 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
           final equippedHeadgear = account.equippedBySlot['headgear'];
           final visibleHeadgear = _previewItemId ?? equippedHeadgear;
           final isPreviewing = _previewItemId != null;
-          final body = ListView(
+          Widget body = ListView(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
             children: [
@@ -326,27 +330,22 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
               ),
               const SizedBox(height: 12),
               for (final item in RewardCatalog.items)
-                _withItemContext(
-                  state,
-                  item,
-                  _CatalogTile(
-                    item: item,
-                    unlocked: progression.isItemUnlocked(item.id),
-                    owned:
-                        item.price == 0 ||
-                        account.ownedItemIds.contains(item.id),
-                    equipped: account.equippedBySlot[item.slot] == item.id,
-                    busy: _busyItems.contains(item.id),
-                    message: _itemMessages[item.id],
-                    canPreview: RewardAvatarPreview.supports(
-                      catalogVersion: item.catalogVersion,
-                      itemId: item.id,
-                    ),
-                    previewing: _previewItemId == item.id,
-                    onPreview: () => _preview(item),
-                    onPurchase: () => _purchase(item),
-                    onEquip: () => _equip(item),
+                _CatalogTile(
+                  item: item,
+                  unlocked: progression.isItemUnlocked(item.id),
+                  owned:
+                      item.price == 0 || account.ownedItemIds.contains(item.id),
+                  equipped: account.equippedBySlot[item.slot] == item.id,
+                  busy: _busyItems.contains(item.id),
+                  message: _itemMessages[item.id],
+                  canPreview: RewardAvatarPreview.supports(
+                    catalogVersion: item.catalogVersion,
+                    itemId: item.id,
                   ),
+                  previewing: _previewItemId == item.id,
+                  onPreview: () => _preview(item),
+                  onPurchase: () => _purchase(item),
+                  onEquip: () => _equip(item),
                 ),
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
@@ -356,6 +355,10 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
             ],
           );
           if (state.ownerId == null) return body;
+          // Keep finite catalog metadata mounted independently of lazy tiles.
+          for (final item in RewardCatalog.items) {
+            body = _withItemContext(state, item, body);
+          }
           return MenuActionBinding(
             id: 'rewards/account',
             label: 'Reward account evidence',
@@ -367,6 +370,9 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
               'level': progression.level,
               'xpUntilNextLevel': progression.xpUntilNextLevel,
               'catalogVersion': account.catalogVersion,
+              // Catalog state must not depend on which lazy tiles are mounted.
+              'catalogScope': 'complete-current-catalog',
+              'previewItemId': _previewItemId,
               'previewIsEquipped': false,
               'previewing': isPreviewing,
               'mutationPending':

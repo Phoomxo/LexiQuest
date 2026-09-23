@@ -1,23 +1,23 @@
 {
-  "revision": 119,
+  "revision": 120,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "095 no-provider native hat preview/reopen, owned defaulttheme equip/readback, insufficient100coinhat rejection with84coins; durable onlyzeroamount equip added",
+  "previousTurn": "096 native rewardscontext omissions reproduced; fixed lazyitem metadata and previewidentity;7hosttestsPASS analysisclean;APK096installed native retestpending",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W10 connected preview/equipped/owned context",
+  "current": "W10 REWARDS-CONTEXT-096 actualprovider native retest",
   "next": [
-    "Freshbridge/login; open shop, ask actualAI balance/XP/equipment; previewIPAhat then verifyAI calls it preview notowned/equipped",
-    "Disconnect and stop preview; reopen confirms defaulttheme equipped/nohat; audit durable reward and learning rows",
-    "Audit remaining W08 personalset and all14workflow14mode scope"
+    "Freshbridge/login096; shop actualAI must report defaulttheme andfocuswallpaper owned/equipped;84coins144XPlevel8",
+    "PreviewIPAhat;actualAI must nameheadgear_ipa previewtrue ownedfalse equippedfalse;disconnectcancel/reopen;record durable unchanged",
+    "Then implement missing personalset optionalcontext; preserveall14workflow14mode scope"
   ],
-  "nativeInstalledSource": "evidence/goal-editor-091/source-pins.json",
-  "nativeInstalledApk": "build/ari-assistance-091.apk",
+  "nativeInstalledSource": "evidence/rewards-context-096/source-pins.json",
+  "nativeInstalledApk": "build/ari-assistance-096.apk",
   "preserve": "Original Vivo app/accounts",
   "contextPolicy": "Keep compact durable checkpoints; reuse unchanged passed evidence; context compaction is automatic, not manually controlled",
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; no bridge/config/reverse; isolated restartedhome",
+  "liveProcesses": "None; bridge17024 stopped;no reverse/config;isolated096home",
   "testFixture": "Personalset New pencil test%093 with pencil; planr4 10min due7/new1/carry0; goals092 active; preferences40minutes; original accounts untouched; defaulttheme now equipped; focuswallpaper retained;84coins144XP;IPAhat unowned",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }
