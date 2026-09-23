@@ -1,0 +1,11 @@
+{
+  "headBefore": "01bbb6c7737d6c256b65df7b6b0678742bc03875",
+  "sha256": {
+    "tool/experiments/ari_app_server/chat_bridge.py": "c30689387e9df3a56a020ea897667634399a682afd38e8d043dce66c112fcb07",
+    "tool/experiments/ari_app_server/test_chat_bridge.py": "1d939c3ccb08c6e5f2509bf73fe46bb875bdc416c1d8eed8fcb44e5bf1c793c2",
+    "tool/experiments/ari_app_server/login_bridge.py": "6d641584ed10b8387647345fd5197f5ba1dab7450f0648bd96bf11aa6f9960b1",
+    "tool/experiments/ari_app_server/menu_channel.py": "f0d7fd5676f727ef13e08820ee16f3d9b540ffd6aa742be9d4d29679093f095c"
+  },
+  "androidSource": "../export-context-082/source-pins.json",
+  "androidChanged": false
+}

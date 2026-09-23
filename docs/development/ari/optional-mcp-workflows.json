@@ -27,9 +27,10 @@
       ],
       "acceptanceEvidence": [
         "chat-mcp-001.json",
-        "process-recovery-037.json"
+        "process-recovery-037.json",
+        "export-live-083.json"
       ],
-      "remainingAcceptance": "Verify current source owner/logout/error coverage against acceptance; standalone delivery remains unproven"
+      "remainingAcceptance": "Live retry after bridge mailbox cleanup fix pending083. Native picker/background forces explicit provider re-login;standalone delivery remains unproven;owner/error final audit pending."
     },
     {
       "id": "W02",
@@ -212,9 +213,10 @@
         "export-assistance-020.json",
         "native-context-028.json",
         "export-native-081.json",
-        "export-context-082.json"
+        "export-context-082.json",
+        "export-live-083.json"
       ],
-      "remainingAcceptance": "Baseline native four personal formats081 verified;host failure/reconnect/late-attach and owner isolation082 verified. Native live provider format/status guidance and disconnect/save onAPK082 pending."
+      "remainingAcceptance": "Native CSV current format/all selections/idle guidance and disconnected Anki save verified083. Reconnect provider room failed;stale mailbox fixed with26host tests;live reconnect/saved guidance pending. Additional format/selection live variants remain."
     },
     {
       "id": "W14",

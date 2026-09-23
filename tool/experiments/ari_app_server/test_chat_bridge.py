@@ -64,6 +64,27 @@ class ChatBridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(json.loads(self.client.context_path.read_text(encoding='utf-8')), WORD)
         self.assertEqual(self.client.calls[1][1]['sandbox'], 'read-only')
 
+    async def test_reconnect_after_owned_home_cleanup_uses_new_menu_channel(self):
+        await self.session.connect(BINDING, WORD)
+        old_menu = self.session.menu
+        old_menu.begin()
+        self.session.cleanup = self.directory.cleanup
+        await self.session.close()
+        self.assertFalse(old_menu.root.exists())
+        fresh = tempfile.TemporaryDirectory(prefix='ari-chat-reconnect-')
+        self.addCleanup(fresh.cleanup)
+        self.session.client = FakeClient(Path(fresh.name) / 'selected.json')
+        connected = await self.session.connect({**BINDING, 'generation': 2}, None)
+        self.assertEqual(connected, {'ready': True})
+        self.assertIsNot(self.session.menu, old_menu)
+        self.assertEqual(self.session.menu.root.parent, Path(fresh.name))
+        self.assertIsNone(self.session.menu.next())
+        reply = await self.session.reply(
+            {**BINDING, 'generation': 2}, 'current screen', 'new-request')
+        self.assertEqual(reply['text'], 'bottle หมายถึงขวด')
+        await self.session.close()
+        await self.session.close()
+
     async def test_followup_keeps_thread_and_duplicate_request_does_not_start_turn(self):
         await self.session.connect(BINDING, WORD)
         first = await self.session.reply(BINDING, 'อธิบาย', 'request-1')

@@ -1,0 +1,28 @@
+{
+  "checkpoint": "083",
+  "workflow": "W13/W01",
+  "status": "LIVE_CSV_AND_DISCONNECTED_EXPORT_PASS_RECONNECT_DEFECT_FIXED_HOST_NATIVE_RETEST_PENDING",
+  "native": {
+    "apk": "082",
+    "provider": "Existing authorized account; first live CSV reply PASS",
+    "reply": "Correctly reported CSV, all three selections, no save yet, and no file/path access",
+    "pickerCancel": "Anki destination absent",
+    "baselineAfterAutoDisconnect": "Anki saved237bytes;exact SHA/bytes match reconciled081",
+    "reconnectBeforeFix": "Browser login succeeded;room providerUnavailable even after explicit room retry;no saved-guidance PASS",
+    "lifecycle": "Native Android picker backgrounds app; managed test screen deliberately clears provider session. User must reconnect; limitation remains",
+    "cleanup": "Bridge stopped;ADB reverse and isolated config removed;isolated app restarted;original app/accounts untouched"
+  },
+  "defect": {
+    "cause": "ChatSession retained MenuChannel pointing to removed isolated home. Fresh connect called end on the stale path. Reproduced in host after real owned-directory cleanup. Native internal exception not captured; matching source-path regression supports diagnosis.",
+    "fix": "Drop and end old mailbox before parent home cleanup;ensure parent cleanup runs even if mailbox cleanup fails",
+    "tests": "26 bridge/channel/login tests PASS;red reconnect reproduced FileNotFoundError",
+    "nativeAfterFix": "NOT_RUN"
+  },
+  "remaining": [
+    "Live reconnect and export saved-state guidance with corrected bridge",
+    "Additional format-specific live guidance and selected-data variants",
+    "W01 background/picker re-login usability and standalone delivery remain open",
+    "Remaining full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

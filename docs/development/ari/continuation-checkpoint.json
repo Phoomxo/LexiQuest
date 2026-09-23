@@ -1,14 +1,14 @@
 {
-  "revision": 106,
+  "revision": 107,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "082 fixed session-only export context;18 host tests and analysis pass;APK082 built/installed;native provider retest pending",
+  "previousTurn": "083 live CSV guidance and cancelled/disconnected native Anki verified;reconnect stale mailbox defect reproduced/fixed;26Python testsPASS",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "W13 native live guidance and disconnect/save continuity on APK082",
+  "current": "Live provider reconnect regression with fixed ChatSession bridge;W13 saved-state guidance",
   "next": [
-    "Start fresh private bridge/login and verify export format/selection/status guidance without paths or contents",
-    "Disconnect AI and manually save, reconnect while screen retained and verify saved guidance",
-    "Continue remaining workflow/mode gaps and final source audit"
+    "Start fresh corrected private bridge;login and connect onAPK082",
+    "Exercise explicit disconnect/re-login in same bridge process and verify new room works",
+    "Verify native export saved-state after picker/disconnect/reconnect;remaining formats and original scope"
   ],
   "nativeInstalledSource": "evidence/export-context-082/source-pins.json",
   "nativeInstalledApk": "build/ari-assistance-082.apk",
@@ -17,7 +17,7 @@
   "openScope": "All14 workflow/mode acceptance OPEN",
   "deviceSetting": "USB stay-awake2 explicitly requested; keep enabled; currently unlocked",
   "postCurrentScope": "Execute post-mcp-project-review-plan.json after current MCP acceptance; whole-project review/data/analysis then SDLC Agile fixes authorized",
-  "liveProcesses": "None; build/test finished; no bridge running",
-  "testFixture": "Isolated app launched after082install;081 exports remain local Downloads;original accounts preserved",
+  "liveProcesses": "None;bridge30196 stopped;tests finished;reverse/configremoved",
+  "testFixture": "Isolated home after restart;native Anki083saved237bytes;raw artifacts ignored build/export-native-081;original accounts untouched",
   "recoveryLimitation": "Process death after browser auth required explicit new login onVivo. Native recovery and host owner-generation invalidation verified037; no automatic restore claim."
 }

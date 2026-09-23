@@ -1,0 +1,16 @@
+{
+  "red": {
+    "test": "test_reconnect_after_owned_home_cleanup_uses_new_menu_channel",
+    "result": "FileNotFoundError in ChatSession.connect -> old MenuChannel.end after owned home deletion; repeated close also failed",
+    "log": "build/export-083-reconnect-red.log"
+  },
+  "green": {
+    "command": "python -m unittest test_chat_bridge test_menu_channel test_login_bridge",
+    "cwd": "tool/experiments/ari_app_server",
+    "tests": 26,
+    "exitCode": 0,
+    "log": "build/export-083-bridge-green.log",
+    "sha256": "73ce4b571c3aeecec81bf55e44e957f074bce86422ac64434732c47c6ec77794"
+  },
+  "level": "Host fake App Server protocol with actual temporary directory cleanup; not live inference after fix"
+}

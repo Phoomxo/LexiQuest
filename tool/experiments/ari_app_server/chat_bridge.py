@@ -194,7 +194,13 @@ class ChatSession(LoginSession):
     async def _close(self):
         self.thread_id = self.turn_id = self.binding = None
         self.cache.clear()
-        await super()._close()
+        menu, self.menu = self.menu, None
+        try:
+            if menu: menu.end()
+        finally:
+            # The parent removes the owned home. Never keep a mailbox pointing
+            # into that retired home across a subsequent explicit login.
+            await super()._close()
 
     async def close(self):
         await self.cancel()
