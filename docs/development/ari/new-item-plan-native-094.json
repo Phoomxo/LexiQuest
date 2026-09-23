@@ -1,0 +1,19 @@
+{
+  "checkpoint": "094",
+  "workflow": "W08",
+  "status": "REPRESENTATIVE_NEW_ITEM_PLAN_CONNECTED_DISCONNECTED_VERIFIED",
+  "sourceChanged": false,
+  "apk": "091",
+  "baseline": "Reuse093 native create/accept/reopen and durable evidence",
+  "connected": "Actual provider correctly read acceptedr4 10min due7/new1/carry0, not proof of learning; after native5minuteproposal, actualprovider comparedr4 vsr5 due5/new0/carry2 and explicitly unaccepted",
+  "disconnected": "Explicit AI disconnect; manual rejection; leave/reopen retainedr4",
+  "durable": "All studyplan/pointer/personalset and five learning tables exactly unchanged since093; rejectedr5 not persisted",
+  "evidence": "evidence/new-item-plan-native-094",
+  "cleanup": "Bridge8863 stopped; reverse/config removed; isolated app restarted; original app/accounts untouched",
+  "remaining": [
+    "W08 final coverage audit including personal-set context",
+    "W10 native preview/equip/readback/insufficient coins",
+    "Remaining14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

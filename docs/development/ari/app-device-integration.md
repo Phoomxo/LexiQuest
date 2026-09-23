@@ -741,3 +741,8 @@ On unchanged APK091, actual provider distinguished an unsaved new draft, missing
 ## Native nonempty new-item plan — checkpoint093
 
 Without bridge/provider, created a personal set selecting pencil through native UI. Pencil had no SRS state, unlike the previously reviewed starter words. Proposed10minutes: due7/new1/carry0; manually acceptedr4 and reopened with unchanged counts. SQLite confirms newItems exactly word:starter-pencil; five learning evidence tables unchanged since092. Literal fixture title New pencil test%093 retains a typing percent; no application defect inferred. [Evidence](new-item-plan-093.json). Actual provider read of the nonempty plan and disconnected rejection still pending; no whole-workflow completion claim.
+
+
+## Connected nonempty plan and disconnected rejection — checkpoint094
+
+Actual provider read acceptedr4 correctly (10minutes,due7,new1,carry0) and did not treat planning as learning completion. Native5minute proposalr5 was accurately distinguished (due5,new0,carry2; unaccepted). Explicit AI disconnect followed by manual rejection and reopening retainedr4. Snapshot shows all plan/pointer/personalset and five learning tables exactly unchanged since093; no rejectedr5 persisted. Source fingerprints unchanged since085; no redundant host rerun. [Evidence](new-item-plan-native-094.json). Bridge/reverse/config cleaned; originalaccounts untouched. W10 native acceptance next; full14workflow14mode acceptance remains open.
