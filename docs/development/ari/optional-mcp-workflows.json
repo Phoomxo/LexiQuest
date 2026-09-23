@@ -137,9 +137,10 @@
       ],
       "acceptanceEvidence": [
         "study-plan-native-018.json",
-        "study-plan-native-085.json"
+        "study-plan-native-085.json",
+        "preferences-context-086.json"
       ],
-      "remainingAcceptance": "Due7 baseline accept/reopen,live accepted-vs-proposed5due/2carryover and manual acceptance,disconnectedreject,exact SQLitelearning-preservation verified085. Nonempty new-item plans,goals/preferences context and final owner/lifecycle audit remain;explicit background reload retained."
+      "remainingAcceptance": "Preferences086 host11 and native baseline save/reopen verified;actual provider connected/disconnected preferences pending. Goals optional context,new-item nonempty native plan and final owner/lifecycle audit remain."
     },
     {
       "id": "W09",

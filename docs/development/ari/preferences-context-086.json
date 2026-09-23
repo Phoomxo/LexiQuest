@@ -1,0 +1,33 @@
+{
+  "checkpoint": "086",
+  "workflows": [
+    "W08"
+  ],
+  "status": "IMPLEMENTED_HOST_VERIFIED_NATIVE_BASELINE_ONLY",
+  "implementation": "Optional read-only owner-bound preference context;draft,lastConfirmed,status;no AI mutation;manual save and existing use cases unchanged",
+  "host": {
+    "red": "Two added tests failed: missing context;9 existing tests passed",
+    "final": "11 screen tests passed;2-file Dart analysis clean",
+    "coverage": [
+      "baseline noAI controls",
+      "late AI attachment without rebuild",
+      "draft vs confirmed",
+      "disconnect during pending manual save",
+      "sameowner reconnect",
+      "foreignowner hidden",
+      "invalid draft rawtext omitted",
+      "failed save preserves lastConfirmed and omits exception",
+      "existing owner/dependency/dispose fencing"
+    ],
+    "limitations": "Repository fixtures;not physical provider evidence"
+  },
+  "native": "evidence/preferences-context-086/native-summary.json",
+  "evidence": "evidence/preferences-context-086/host-receipt.json",
+  "remaining": [
+    "Native actual provider preferences draft/saved and disconnected acceptance",
+    "Goal-screen optional assistance",
+    "Native nonempty new-item plan",
+    "Remaining 14workflow/14mode acceptance and subsequent whole-project review"
+  ],
+  "wholeGoalComplete": false
+}

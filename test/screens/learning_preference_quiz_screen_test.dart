@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +12,125 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/screens/learning_preference_quiz_screen.dart';
 
 void main() {
+  testWidgets(
+    'optional preferences separate draft and confirmed data across reconnect',
+    (tester) async {
+      final repository = _Preferences();
+      final pending = Completer<void>();
+      repository.beforeSave = pending;
+      String? aiOwner;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: LearningPreferenceQuizScreen(
+              useCases: LearnerPreferencesUseCases(
+                repository: repository,
+                owners: _Owner(),
+                nowUtc: () => DateTime.utc(2026, 9, 23),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(registry.snapshot()['context'], isEmpty);
+      aiOwner = 'local:preferences-screen';
+      registry.invalidateSession(preserveContext: true);
+      expect(_context(registry)['lastConfirmed']['minutes'], 20);
+      await tester.enterText(find.byType(TextField), '45');
+      tester
+          .widget<DropdownButtonFormField<LearnerPreferenceGoal>>(
+            find.byKey(const ValueKey('learning-preferences/goal')),
+          )
+          .onChanged!(LearnerPreferenceGoal.examPreparation);
+      await tester.pump();
+      expect(_context(registry)['draft']['minutes'], 45);
+      expect(_context(registry)['draft']['goal'], 'examPreparation');
+      expect(_context(registry)['lastConfirmed']['minutes'], 20);
+      expect(_context(registry)['status'], 'editing');
+      expect(repository.saveCount, 0);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('learning-preferences/save')),
+      );
+      await tester.tap(find.byKey(const ValueKey('learning-preferences/save')));
+      await tester.pump();
+      expect(_context(registry)['status'], 'saving');
+      aiOwner = null;
+      registry.invalidateSession(preserveContext: true);
+      expect(registry.snapshot()['context'], isEmpty);
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(repository.saveCount, 1);
+      expect(repository.current.availableMinutesPerDay, 45);
+      expect(registry.snapshot()['context'], isEmpty);
+      aiOwner = 'local:preferences-screen';
+      registry.invalidateSession(preserveContext: true);
+      expect(_context(registry)['status'], 'saved');
+      expect(_context(registry)['lastConfirmed']['minutes'], 45);
+      expect(registry.snapshot()['actions'], isEmpty);
+      aiOwner = 'another-owner';
+      expect(registry.snapshot()['context'], isEmpty);
+    },
+  );
+
+  testWidgets(
+    'invalid and failed preference saves never claim confirmed draft',
+    (tester) async {
+      final repository = _Preferences();
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:preferences-screen',
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: LearningPreferenceQuizScreen(
+              useCases: LearnerPreferencesUseCases(
+                repository: repository,
+                owners: _Owner(),
+                nowUtc: () => DateTime.utc(2026, 9, 23),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'private-invalid-text');
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('learning-preferences/save')),
+      );
+      await tester.tap(find.byKey(const ValueKey('learning-preferences/save')));
+      await tester.pump();
+      expect(_context(registry)['status'], 'invalidDraft');
+      expect(_context(registry)['draft']['minutes'], isNull);
+      expect(
+        _context(registry).toString(),
+        isNot(contains('private-invalid-text')),
+      );
+      expect(repository.saveCount, 0);
+      final pending = Completer<void>();
+      repository.beforeSave = pending;
+      await tester.enterText(find.byType(TextField), '60');
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('learning-preferences/save')),
+      );
+      await tester.tap(find.byKey(const ValueKey('learning-preferences/save')));
+      await tester.pump();
+      pending.completeError(StateError('private failure detail'));
+      await tester.pumpAndSettle();
+      expect(_context(registry)['status'], 'saveFailed');
+      expect(_context(registry)['lastConfirmed']['minutes'], 20);
+      expect(_context(registry)['draft']['minutes'], 60);
+      expect(
+        _context(registry).toString(),
+        isNot(contains('private failure detail')),
+      );
+      expect(repository.saveCount, 0);
+    },
+  );
+
   testWidgets(
     'leaving questionnaire skips unsaved edits and reopen loads saved values',
     (tester) async {
@@ -360,3 +482,9 @@ final class _Owner implements LocalOwnerRepository {
   Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
       getOrCreateActiveOwner();
 }
+
+Map<String, dynamic> _context(MenuActionRegistry registry) =>
+    jsonDecode(
+          (registry.snapshot()['context'] as List).single['value'] as String,
+        )
+        as Map<String, dynamic>;

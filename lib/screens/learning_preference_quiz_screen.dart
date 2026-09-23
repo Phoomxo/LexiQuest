@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import '../features/preferences/application/learner_preferences_use_cases.dart';
 import '../features/preferences/domain/learner_preferences.dart';
 import '../navigation/navigation_glossary.dart';
@@ -27,6 +30,39 @@ final class _LearningPreferenceQuizScreenState
   LearnerActivityPreference _activity = LearnerActivityPreference.mixedPractice;
   bool _submitting = false;
   String? _message;
+  LearnerPreferences? _lastConfirmed;
+  String _assistanceStatus = 'ready';
+
+  void _edited() {
+    _assistanceStatus = 'editing';
+    _message = null;
+  }
+
+  Map<String, Object?> _confirmedValue(LearnerPreferences value) => {
+    'goal': value.goal.name,
+    'activity': value.activityPreference.name,
+    'minutes': value.availableMinutesPerDay,
+  };
+
+  String _assistanceContext() {
+    final minutes = int.tryParse(_minutes.text);
+    return jsonEncode({
+      'status': _assistanceStatus,
+      'purpose':
+          'Learning preferences for planning; not measured proficiency or a learning score.',
+      'manualSaveRequired': true,
+      'draft': {
+        'goal': _goal.name,
+        'activity': _activity.name,
+        'minutes': minutes != null && minutes >= 1 && minutes <= 240
+            ? minutes
+            : null,
+      },
+      'lastConfirmed': _lastConfirmed == null
+          ? null
+          : _confirmedValue(_lastConfirmed!),
+    });
+  }
 
   LearnerPreferencesUseCases? _useCases(BuildContext context) =>
       widget.useCases ??
@@ -50,11 +86,14 @@ final class _LearningPreferenceQuizScreenState
     _activeUseCases = useCases;
     final generation = ++_generation;
     _loadedOwnerId = null;
+    _lastConfirmed = null;
+    _assistanceStatus = 'ready';
     _submitting = false;
     _message = null;
     _preference = useCases?.read().then((value) {
       if (!_isCurrent(generation, useCases)) return value;
       _loadedOwnerId = value.ownerId;
+      _lastConfirmed = value;
       _goal = value.goal;
       _activity = value.activityPreference;
       _minutes.text = value.availableMinutesPerDay.toString();
@@ -82,15 +121,19 @@ final class _LearningPreferenceQuizScreenState
     if (ownerId == null) return;
     final minutes = int.tryParse(_minutes.text);
     if (minutes == null || minutes < 1 || minutes > 240) {
-      setState(() => _message = 'กรุณาระบุเวลาตั้งแต่ 1 ถึง 240 นาที');
+      setState(() {
+        _assistanceStatus = 'invalidDraft';
+        _message = 'กรุณาระบุเวลาตั้งแต่ 1 ถึง 240 นาที';
+      });
       return;
     }
     setState(() {
       _submitting = true;
+      _assistanceStatus = 'saving';
       _message = null;
     });
     try {
-      await useCases.save(
+      final confirmed = await useCases.save(
         expectedOwnerId: ownerId,
         goal: _goal,
         availableMinutesPerDay: minutes,
@@ -101,12 +144,15 @@ final class _LearningPreferenceQuizScreenState
       if (!_isCurrent(generation, useCases)) return;
       setState(() {
         _submitting = false;
+        _lastConfirmed = confirmed;
+        _assistanceStatus = 'saved';
         _message = 'บันทึกการตั้งค่าการเรียนแล้ว';
       });
     } on Object {
       if (!_isCurrent(generation, useCases)) return;
       setState(() {
         _submitting = false;
+        _assistanceStatus = 'saveFailed';
         _message = _mutationAllowed()
             ? 'บันทึกการตั้งค่าไม่สำเร็จ กรุณาลองอีกครั้ง'
             : 'ยังไม่พร้อมตั้งค่าการเรียน';
@@ -147,97 +193,118 @@ final class _LearningPreferenceQuizScreenState
             return const Center(child: Text('ยังไม่พร้อมตั้งค่าการเรียน'));
           }
           final generation = _generation;
-          return ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const Text(
-                'เลือกเป้าหมายและกิจกรรมสำหรับแผนการเรียนครั้งถัดไป คุณเปลี่ยนภายหลังได้',
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<LearnerPreferenceGoal>(
-                key: const ValueKey<String>('learning-preferences/goal'),
-                initialValue: _goal,
-                isExpanded: true,
-                itemHeight: null,
-                decoration: const InputDecoration(labelText: 'เป้าหมาย'),
-                items: LearnerPreferenceGoal.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(switch (value) {
-                          LearnerPreferenceGoal.balancedGrowth =>
-                            'พัฒนาทักษะอย่างสมดุล',
-                          LearnerPreferenceGoal.examPreparation => 'เตรียมสอบ',
-                          LearnerPreferenceGoal.conversationConfidence =>
-                            'สนทนาอย่างมั่นใจ',
-                          LearnerPreferenceGoal.vocabularyGrowth =>
-                            'เพิ่มคลังคำศัพท์',
-                        }),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: _submitting
-                    ? null
-                    : (value) {
-                        if (value != null) _goal = value;
-                      },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const ValueKey<String>(
-                  'learning-preferences/available-minutes',
+          return MenuActionBinding(
+            id: 'study-planning/learning-preferences/context',
+            label: 'Learning preference draft and last confirmed values',
+            ownerId: _loadedOwnerId,
+            onInvoke: null,
+            readValue: _loadedOwnerId == null ? null : _assistanceContext(),
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                const Text(
+                  'เลือกเป้าหมายและกิจกรรมสำหรับแผนการเรียนครั้งถัดไป คุณเปลี่ยนภายหลังได้',
                 ),
-                controller: _minutes,
-                enabled: !_submitting,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'เวลาเรียนต่อวัน (นาที)',
+                const SizedBox(height: 16),
+                DropdownButtonFormField<LearnerPreferenceGoal>(
+                  key: const ValueKey<String>('learning-preferences/goal'),
+                  initialValue: _goal,
+                  isExpanded: true,
+                  itemHeight: null,
+                  decoration: const InputDecoration(labelText: 'เป้าหมาย'),
+                  items: LearnerPreferenceGoal.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(switch (value) {
+                            LearnerPreferenceGoal.balancedGrowth =>
+                              'พัฒนาทักษะอย่างสมดุล',
+                            LearnerPreferenceGoal.examPreparation =>
+                              'เตรียมสอบ',
+                            LearnerPreferenceGoal.conversationConfidence =>
+                              'สนทนาอย่างมั่นใจ',
+                            LearnerPreferenceGoal.vocabularyGrowth =>
+                              'เพิ่มคลังคำศัพท์',
+                          }),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: _submitting
+                      ? null
+                      : (value) {
+                          if (value != null) {
+                            setState(() {
+                              _goal = value;
+                              _edited();
+                            });
+                          }
+                        },
                 ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<LearnerActivityPreference>(
-                key: const ValueKey<String>(
-                  'learning-preferences/activity-preference',
-                ),
-                initialValue: _activity,
-                isExpanded: true,
-                itemHeight: null,
-                decoration: const InputDecoration(labelText: 'กิจกรรมที่ชอบ'),
-                items: LearnerActivityPreference.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(switch (value) {
-                          LearnerActivityPreference.mixedPractice =>
-                            'ฝึกหลายรูปแบบ',
-                          LearnerActivityPreference.quiz => 'แบบทดสอบ',
-                          LearnerActivityPreference.speaking => 'ฝึกพูด',
-                          LearnerActivityPreference.reading => 'ฝึกอ่าน',
-                          LearnerActivityPreference.vocabulary =>
-                            'เรียนคำศัพท์',
-                        }),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: _submitting
-                    ? null
-                    : (value) {
-                        if (value != null) _activity = value;
-                      },
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                key: const ValueKey<String>('learning-preferences/save'),
-                onPressed: _submitting
-                    ? null
-                    : () => _save(useCases, generation),
-                child: Text(_submitting ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'),
-              ),
-              if (_message != null) ...[
                 const SizedBox(height: 12),
-                Semantics(liveRegion: true, child: Text(_message!)),
+                TextField(
+                  key: const ValueKey<String>(
+                    'learning-preferences/available-minutes',
+                  ),
+                  controller: _minutes,
+                  onChanged: (_) => setState(_edited),
+                  enabled: !_submitting,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'เวลาเรียนต่อวัน (นาที)',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<LearnerActivityPreference>(
+                  key: const ValueKey<String>(
+                    'learning-preferences/activity-preference',
+                  ),
+                  initialValue: _activity,
+                  isExpanded: true,
+                  itemHeight: null,
+                  decoration: const InputDecoration(labelText: 'กิจกรรมที่ชอบ'),
+                  items: LearnerActivityPreference.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(switch (value) {
+                            LearnerActivityPreference.mixedPractice =>
+                              'ฝึกหลายรูปแบบ',
+                            LearnerActivityPreference.quiz => 'แบบทดสอบ',
+                            LearnerActivityPreference.speaking => 'ฝึกพูด',
+                            LearnerActivityPreference.reading => 'ฝึกอ่าน',
+                            LearnerActivityPreference.vocabulary =>
+                              'เรียนคำศัพท์',
+                          }),
+                        ),
+                      )
+                      .toList(growable: false),
+                  onChanged: _submitting
+                      ? null
+                      : (value) {
+                          if (value != null) {
+                            setState(() {
+                              _activity = value;
+                              _edited();
+                            });
+                          }
+                        },
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  key: const ValueKey<String>('learning-preferences/save'),
+                  onPressed: _submitting
+                      ? null
+                      : () => _save(useCases, generation),
+                  child: Text(
+                    _submitting ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า',
+                  ),
+                ),
+                if (_message != null) ...[
+                  const SizedBox(height: 12),
+                  Semantics(liveRegion: true, child: Text(_message!)),
+                ],
               ],
-            ],
+            ),
           );
         },
       ),
