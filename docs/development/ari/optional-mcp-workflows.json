@@ -144,9 +144,10 @@
         "preferences-native-087.json",
         "focus-native-088.json",
         "goals-context-089.json",
-        "goals-native-090.json"
+        "goals-native-090.json",
+        "goal-editor-091.json"
       ],
-      "remainingAcceptance": "Goals089-090representativenativebaseline/connectededitstatus/disconnectedcanceldeletePASS;SQLitelearningdataunchanged. Goalcreate/editdialogassistanceaudit,new-itemnonemptyplan andfinalowner/lifecycleaudit remain."
+      "remainingAcceptance": "Goaleditor091ownerboundcontextimplemented23hosttestsPASS;actualprovider/nativeeditoracceptancepending. Goalslistrepresentative089-090PASS. New-itemnonemptyplan andfinalowner/lifecycleaudit remain."
     },
     {
       "id": "W09",

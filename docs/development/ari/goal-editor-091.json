@@ -1,0 +1,41 @@
+{
+  "checkpoint": "091",
+  "workflows": [
+    "W08"
+  ],
+  "status": "GOAL_EDITOR_CONTEXT_IMPLEMENTED_HOST_PASS_NATIVE_PENDING",
+  "implementation": [
+    "Owner-boundread-onlydialogcontext,draftversuslastConfirmed",
+    "Statesdraft/submitting/invalidDraft/preparationFailed/confirmationUnknown;no rawexceptions",
+    "NoAI mutation;manualretrykeepssamependingcommanddetails",
+    "SystempreparationfailureUI nolongermislabelsinvaliduserinput"
+  ],
+  "host": {
+    "red": "4missingdialogcontext failures before implementation;laterpreparationfailure regression expectedpreparationFailed actualinvalidDraft",
+    "final": "23testsPASS acrossgoalsassistanceandbaselinegoalsscreen;2fileDartanalysisclean",
+    "coverage": [
+      "draftvsconfirmed",
+      "ownerfence",
+      "disconnectduringpendingmanualsave",
+      "reconnectsuccessanduncertainfailure",
+      "pendingcommandfieldslocked/retrysamedetails",
+      "missingdeadlineinvaliddraft/cancelno save",
+      "preparationlookupfailureclassifiedseparately",
+      "existinglistandmanualbaselineCRUD/reminderchecks"
+    ],
+    "limitations": "Fixture repositories;noactualproviderdialogclaim"
+  },
+  "evidence": "evidence/goal-editor-091",
+  "apk": {
+    "path": "build/ari-assistance-091.apk",
+    "sha256": "fe75182177bf1e9e027aafc0a6ee094a3eac9287d51857280beff01c5494d033",
+    "installed": true
+  },
+  "native": "NOT_RUN fordialogcontext;089-090list evidencehistoricalunchangedfunctions",
+  "remaining": [
+    "Actualproviderdialogdraft/confirmed/save/cancel/disconnectedacceptanceon091",
+    "Nonemptynew-itemplan",
+    "W10andremaining14workflow14modeacceptance"
+  ],
+  "wholeGoalComplete": false
+}

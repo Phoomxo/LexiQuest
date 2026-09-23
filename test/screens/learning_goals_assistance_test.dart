@@ -14,6 +14,148 @@ import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 void main() {
   setUpAll(tz.initializeTimeZones);
   testWidgets(
+    'preparation lookup failure is not reported as invalid user input',
+    (tester) async {
+      final registry = MenuActionRegistry(currentOwner: () => 'local:goals');
+      final repo = _Goals()..items.add(_goal());
+      var reads = 0;
+      final cases = LearningGoalUseCases(
+        repository: repo,
+        nowUtc: () => DateTime.utc(2026, 9, 23),
+        generateId: () => 'new',
+        activeOwnerId: () async {
+          if (++reads > 2) throw StateError('private lookup failure');
+          return 'local:goals';
+        },
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: LearningGoalsScreen(
+              useCases: cases,
+              ownerIdentities: _Owners(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('learning-goal/goal:test/edit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('learning-goals/save')),
+      );
+      await tester.tap(find.byKey(const ValueKey('learning-goals/save')));
+      await tester.pumpAndSettle();
+      final context = _values(registry).single;
+      expect(context['status'], 'preparationFailed');
+      expect(context['retryUsesSameDetails'], isFalse);
+      expect(context.toString(), isNot(contains('private lookup failure')));
+      expect(repo.saves, 0);
+    },
+  );
+  for (final fails in [false, true]) {
+    testWidgets(
+      'goal editor separates draft, confirmed and pending outcome failure=$fails',
+      (tester) async {
+        String? aiOwner = 'local:goals';
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final repo = _Goals()
+          ..items.add(_goal())
+          ..beforeSave = Completer<void>();
+        await tester.pumpWidget(_view(repo, _Owners(), registry));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('learning-goal/goal:test/edit')),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('learning-goals/title')),
+          'Revised goal',
+        );
+        await tester.pump();
+        expect(_values(registry).single['draft']['title'], 'Revised goal');
+        expect(
+          _values(registry).single['lastConfirmed']['title'],
+          'Practice English',
+        );
+        expect(_values(registry).single['status'], 'draft');
+        expect(registry.snapshot()['actions'], isEmpty);
+        aiOwner = 'local:foreign';
+        expect(registry.snapshot()['context'], isEmpty);
+        aiOwner = 'local:goals';
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('learning-goals/save')),
+        );
+        await tester.tap(find.byKey(const ValueKey('learning-goals/save')));
+        await tester.pump();
+        expect(_values(registry).single['status'], 'submitting');
+        aiOwner = null;
+        registry.invalidateSession(preserveContext: true);
+        if (fails) {
+          repo.beforeSave!.completeError(StateError('private storage detail'));
+        } else {
+          repo.beforeSave!.complete();
+        }
+        await tester.pumpAndSettle();
+        expect(registry.snapshot()['context'], isEmpty);
+        aiOwner = 'local:goals';
+        registry.invalidateSession(preserveContext: true);
+        if (fails) {
+          final context = _values(registry).single;
+          expect(context['status'], 'confirmationUnknown');
+          expect(context['lastConfirmed']['title'], 'Practice English');
+          expect(context['draft']['title'], 'Revised goal');
+          expect(context['retryUsesSameDetails'], isTrue);
+          expect(context.toString(), isNot(contains('private storage detail')));
+          expect(
+            tester
+                .widget<TextField>(
+                  find.byKey(const ValueKey('learning-goals/title')),
+                )
+                .enabled,
+            isFalse,
+          );
+        } else {
+          expect(find.text('Revised goal'), findsOneWidget);
+          expect(
+            _values(registry).singleWhere((v) => v['title'] != null)['title'],
+            'Revised goal',
+          );
+          expect(repo.saves, 1);
+        }
+      },
+    );
+  }
+  testWidgets('new goal missing deadline is an invalid unsaved draft', (
+    tester,
+  ) async {
+    final registry = MenuActionRegistry(currentOwner: () => 'local:goals');
+    final repo = _Goals();
+    await tester.pumpWidget(_view(repo, _Owners(), registry));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('learning-goals/add')));
+    await tester.pumpAndSettle();
+    expect(_values(registry).single['lastConfirmed'], isNull);
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-goals/title')),
+      'Unsaved',
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('learning-goals/create')),
+    );
+    await tester.tap(find.byKey(const ValueKey('learning-goals/create')));
+    await tester.pumpAndSettle();
+    expect(_values(registry).single['status'], 'invalidDraft');
+    expect(_values(registry).single['draft']['deadlineUtc'], isNull);
+    expect(repo.saves, 0);
+    await tester.tap(find.text('ยกเลิก'));
+    await tester.pumpAndSettle();
+    expect(_summary(registry)['count'], 0);
+  });
+  testWidgets(
     'goals attach late, hide across owners and refresh after manual disconnected delete',
     (tester) async {
       String? aiOwner;
@@ -36,10 +178,10 @@ void main() {
         find.byKey(const ValueKey('learning-goal/goal:test/edit')),
       );
       await tester.pumpAndSettle();
+      expect(_values(registry).single['screen'], 'learning-goal-editor');
       expect(
-        registry.snapshot()['context'],
-        isEmpty,
-        reason: 'Underlying list is not current while editing dialog is open',
+        _values(registry).any((v) => v['screen'] == 'learning-goals'),
+        isFalse,
       );
       await tester.tap(find.text('ยกเลิก'));
       await tester.pumpAndSettle();
@@ -175,6 +317,7 @@ class _Owners implements ReviewOwnerIdentityReader {
 class _Goals implements LearningGoalRepository {
   final items = <LearningGoal>[];
   int saves = 0;
+  Completer<void>? beforeSave;
   Completer<List<LearningGoal>>? pending;
   @override
   Future<List<LearningGoal>> list() async =>
@@ -185,6 +328,7 @@ class _Goals implements LearningGoalRepository {
     LearningGoalMutationGuard? mutationAllowed,
     String? expectedOwnerId,
   }) async {
+    await beforeSave?.future;
     if (mutationAllowed?.call() == false) {
       throw const LearningGoalMutationUnavailable();
     }

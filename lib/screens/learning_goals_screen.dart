@@ -500,6 +500,40 @@ final class _CreateLearningGoalDialogState
   LearningGoalCreateCommand? _pendingCommand;
   bool _submitting = false;
   String? _validationMessage;
+  String _assistanceStatus = 'draft';
+
+  void _edited() {
+    _assistanceStatus = 'draft';
+    _validationMessage = null;
+  }
+
+  String _editorContext() {
+    final confirmed = widget.initialGoal;
+    return jsonEncode({
+      'screen': 'learning-goal-editor',
+      'operation': confirmed == null ? 'create' : 'edit',
+      'status': _assistanceStatus,
+      'manualSaveRequired': true,
+      'retryUsesSameDetails': _pendingCommand != null,
+      'purpose':
+          'Planning goal draft; not assessed proficiency. Submission outcome may be unconfirmed after an error.',
+      'draft': {
+        'title': _title.text,
+        'kind': _kind.name,
+        'deadlineUtc': _deadlineUtc?.toIso8601String(),
+        'timezone': _timezoneId,
+      },
+      'lastConfirmed': confirmed == null
+          ? null
+          : {
+              'title': confirmed.title,
+              'kind': confirmed.kind.name,
+              'deadlineUtc': confirmed.deadlineAtUtc.toIso8601String(),
+              'timezone': confirmed.timezone.timezoneId,
+              'status': confirmed.status.name,
+            },
+    });
+  }
 
   Listenable? get _registryChanges =>
       widget.registry is Listenable ? widget.registry as Listenable : null;
@@ -538,6 +572,7 @@ final class _CreateLearningGoalDialogState
     }
     setState(() {
       _submitting = true;
+      _assistanceStatus = 'submitting';
       _validationMessage = null;
     });
     try {
@@ -582,12 +617,20 @@ final class _CreateLearningGoalDialogState
       if (mounted) Navigator.of(context).pop();
     } on LearningGoalMutationUnavailable {
       if (mounted) Navigator.of(context).maybePop();
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
+        final invalid = error is FormatException || error is ArgumentError;
+        _assistanceStatus = _pendingCommand != null
+            ? 'confirmationUnknown'
+            : invalid
+            ? 'invalidDraft'
+            : 'preparationFailed';
         _validationMessage = _pendingCommand == null
-            ? 'กรุณาระบุชื่อเป้าหมาย เลือกวันที่ เวลา และเขตเวลาให้ครบ'
+            ? invalid
+                  ? 'กรุณาระบุชื่อเป้าหมาย เลือกวันที่ เวลา และเขตเวลาให้ครบ'
+                  : 'ยังเตรียมการบันทึกเป้าหมายไม่ได้ กรุณาลองอีกครั้ง'
             : 'ยังยืนยันการสร้างเป้าหมายไม่ได้ การลองอีกครั้งจะใช้รายละเอียดเดิม';
       });
     }
@@ -596,93 +639,109 @@ final class _CreateLearningGoalDialogState
   @override
   Widget build(BuildContext context) {
     final fieldsEnabled = _pendingCommand == null && !_submitting;
-    return AlertDialog(
-      scrollable: true,
-      insetPadding: const EdgeInsets.all(16),
-      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      title: Text(
-        widget.initialGoal == null
-            ? 'เพิ่มเป้าหมายการเรียน'
-            : 'แก้ไขเป้าหมายส่วนตัว',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DropdownButtonFormField<LearningGoalKind>(
-            key: const ValueKey<String>('learning-goals/kind'),
-            initialValue: _kind,
-            isExpanded: true,
-            itemHeight: null,
-            decoration: const InputDecoration(labelText: 'ประเภทเป้าหมาย'),
-            items: LearningGoalKind.values
-                .map(
-                  (value) => DropdownMenuItem(
-                    value: value,
-                    child: Text(_goalKindLabel(value)),
-                  ),
-                )
-                .toList(growable: false),
-            onChanged: fieldsEnabled
-                ? (value) {
-                    if (value != null) _kind = value;
-                  }
-                : null,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const ValueKey<String>('learning-goals/title'),
-            controller: _title,
-            enabled: fieldsEnabled,
-            maxLength: 120,
-            decoration: const InputDecoration(labelText: 'ชื่อเป้าหมาย'),
-          ),
-          const SizedBox(height: 12),
-          LocalStudyDateTimeField(
-            fieldKey: 'learning-goals/deadline',
-            referenceUtc: widget.useCases.nowUtc(),
-            enabled: fieldsEnabled,
-            initialUtc: widget.initialGoal?.deadlineAtUtc,
-            initialTimezoneId:
-                widget.initialGoal?.timezone.timezoneId ?? 'Asia/Bangkok',
-            onChanged: (instant, zone) {
-              _deadlineUtc = instant;
-              _timezoneId = zone;
-            },
-          ),
-          if (_validationMessage != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                _validationMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+    return MenuActionBinding(
+      id: 'study-planning/goals/editor',
+      label: 'Current learning goal draft and last confirmed values',
+      ownerId: widget.openingOwnerId,
+      onInvoke: null,
+      readValue: widget.mutationAllowed() ? _editorContext() : null,
+      child: AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.all(16),
+        titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Text(
+          widget.initialGoal == null
+              ? 'เพิ่มเป้าหมายการเรียน'
+              : 'แก้ไขเป้าหมายส่วนตัว',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<LearningGoalKind>(
+              key: const ValueKey<String>('learning-goals/kind'),
+              initialValue: _kind,
+              isExpanded: true,
+              itemHeight: null,
+              decoration: const InputDecoration(labelText: 'ประเภทเป้าหมาย'),
+              items: LearningGoalKind.values
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(_goalKindLabel(value)),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: fieldsEnabled
+                  ? (value) {
+                      if (value != null) {
+                        setState(() {
+                          _kind = value;
+                          _edited();
+                        });
+                      }
+                    }
+                  : null,
             ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const ValueKey<String>('learning-goals/title'),
+              controller: _title,
+              onChanged: (_) => setState(_edited),
+              enabled: fieldsEnabled,
+              maxLength: 120,
+              decoration: const InputDecoration(labelText: 'ชื่อเป้าหมาย'),
+            ),
+            const SizedBox(height: 12),
+            LocalStudyDateTimeField(
+              fieldKey: 'learning-goals/deadline',
+              referenceUtc: widget.useCases.nowUtc(),
+              enabled: fieldsEnabled,
+              initialUtc: widget.initialGoal?.deadlineAtUtc,
+              initialTimezoneId:
+                  widget.initialGoal?.timezone.timezoneId ?? 'Asia/Bangkok',
+              onChanged: (instant, zone) {
+                setState(() {
+                  _deadlineUtc = instant;
+                  _timezoneId = zone;
+                  _edited();
+                });
+              },
+            ),
+            if (_validationMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  _validationMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            key: ValueKey<String>(
+              widget.initialGoal == null
+                  ? 'learning-goals/create'
+                  : 'learning-goals/save',
+            ),
+            onPressed: _submitting ? null : _submit,
+            child: Text(
+              _pendingCommand != null
+                  ? 'ลองอีกครั้ง'
+                  : widget.initialGoal == null
+                  ? 'สร้างเป้าหมาย'
+                  : 'บันทึกเป้าหมาย',
+            ),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('ยกเลิก'),
-        ),
-        FilledButton(
-          key: ValueKey<String>(
-            widget.initialGoal == null
-                ? 'learning-goals/create'
-                : 'learning-goals/save',
-          ),
-          onPressed: _submitting ? null : _submit,
-          child: Text(
-            _pendingCommand != null
-                ? 'ลองอีกครั้ง'
-                : widget.initialGoal == null
-                ? 'สร้างเป้าหมาย'
-                : 'บันทึกเป้าหมาย',
-          ),
-        ),
-      ],
     );
   }
 }
