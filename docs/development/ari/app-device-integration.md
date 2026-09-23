@@ -618,3 +618,8 @@ Fixed DEFINITION-PROGRESS-065: native review now tracks acknowledged unique resp
 ### Definition native live067
 
 APK067 verifies DEFINITION-PROGRESS-065 repaired: after skip, committed answers update shared header33 then67percent (2/3 configured;skip not counted as answer). Attached provider during third item;live Thai response correctly names mode3/3,English definition/choice and not-skipped state. Explicit disconnect retained item;manual completion100%accuracy,exact2 correct recognition attempts2/3. [Evidence](definition-live-067.json). Native live skip guidance still pending. Bridge cleaned;all14 acceptance open. Cloze inspection shows similar missing lifecycle progress reflection;test next.
+
+
+### Cloze context/progress068
+
+Added readonly owner-bound active cloze input-mode/phase/index/skip metadata without draft or answer. Fixed acknowledged count reflection and feedback next/results label. Red: absent progress0 vs1,connected/disconnected no context. Full22 screen/adapter tests pass;3 real-storage variants preserve draft,owner fencing,typed correct plus selected wrong through completion with exactly2 evidence rows. Ack failure remains0 until exact retry1.4-file analysis clean. [Evidence](cloze-context-068.json). Native067 unchanged;cloze skip assertions and native acceptance pending.

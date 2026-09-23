@@ -505,6 +505,7 @@ final class ClozeReviewController extends ChangeNotifier {
   _classifyResponse;
 
   var _index = 0;
+  final Set<int> _committedIndices = <int>{};
   ClozeReviewPhase _phase;
   PendingCurrentActivityEvidence? _pendingEvidence;
   FrozenAnswerFeedbackContext? _pendingFeedbackContext;
@@ -515,6 +516,7 @@ final class ClozeReviewController extends ChangeNotifier {
   bool _disposed = false;
 
   int get index => _index;
+  int get committedResponseCount => _committedIndices.length;
   ClozeItem get currentItem => items[_index];
   ClozeReviewPhase get phase => _phase;
   AnswerFeedback? get feedback => _feedback;
@@ -679,6 +681,7 @@ final class ClozeReviewController extends ChangeNotifier {
         result: result,
         context: feedbackContext,
       );
+      _committedIndices.add(_index);
       _feedback = feedback;
       _pendingEvidence = null;
       _pendingFeedbackContext = null;

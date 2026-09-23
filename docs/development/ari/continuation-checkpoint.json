@@ -1,13 +1,13 @@
 {
-  "revision": 91,
+  "revision": 92,
   "goal": "Optional separate AI/MCP for14 workflow groups and14 modes; complete baseline without provider",
-  "previousTurn": "067 native definition progress fixed;live choice guidance and disconnect passed;exact2 correct attempts after skip",
+  "previousTurn": "068 cloze readonly input-mode context/progress/continuation fixed;22 full tests pass;analysis clean",
   "writer": "single; no subagents or parallel implementation",
   "recovery": "Diagnose recoverable failures, fix and retest; no weakened acceptance or repeated permission; autonomous implementation authorized",
-  "current": "Cloze context/progress diagnosis and definition live skip-state gap",
+  "current": "Expand cloze skip assertion then build/native cloze baseline/live/disconnect",
   "next": [
-    "Cloze current-context and progress regression;similar missing lifecycle reflection found by code inspection",
-    "Definition native live skip-state guidance pending",
+    "Cloze skip context/progress regression then build/native current-context acceptance",
+    "Definition native live skip-state guidance",
     "Associative native context gaps",
     "Export/rewards/speech/camera/sync original gaps"
   ],

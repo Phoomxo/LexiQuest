@@ -456,7 +456,9 @@ void main() {
           throwsStateError,
         );
         expect(review.phase, ClozeReviewPhase.evidenceRetryRequired);
+        expect(review.committedResponseCount, 0);
         await review.retryEvidence();
+        expect(review.committedResponseCount, 1);
 
         expect(repository.commands, hasLength(2));
         final first = repository.commands.first;

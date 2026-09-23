@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 
@@ -216,7 +218,15 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
   }
 
   void _onReviewChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final review = _review;
+    if (review != null) {
+      _lifecycle?.reflectNativeCommittedResponses(
+        sessionId: review.session.id,
+        count: review.committedResponseCount,
+      );
+    }
+    setState(() {});
   }
 
   @override
@@ -268,7 +278,31 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
     );
   }
 
-  Widget _buildItem(ClozeReviewController review) {
+  Widget _buildItem(ClozeReviewController review) => MenuActionBinding(
+    id: 'cloze/current-item-assistance',
+    label: 'สถานะข้อเติมคำปัจจุบัน',
+    ownerId: _session?.ownerId,
+    onInvoke: null,
+    readValue: _session?.ownerId == null
+        ? null
+        : jsonEncode({
+            'mode': 'cloze',
+            'questionNumber': review.index + 1,
+            'questionCount': review.items.length,
+            'promptLanguage': 'en',
+            'answerLanguage': 'en',
+            'responseKind': review.currentItem.question == null
+                ? 'skip'
+                : (_inputMode?.name ?? 'choose-input-mode'),
+            'phase': review.phase.name,
+            'skipReason': review.currentItem.skipReason?.name,
+            'guidance':
+                'Read the English sentence and fill the blank manually. Choose typed or selected input when not yet chosen. Selected input requires choosing then checking. Skips have no answer to grade. Saving/retry is not confirmed success. No draft, hidden answer or mutation is exposed.',
+          }),
+    child: _buildItemContent(review),
+  );
+
+  Widget _buildItemContent(ClozeReviewController review) {
     final item = review.currentItem;
     final question = item.question;
     return SafeArea(
@@ -487,6 +521,9 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                   role: AccessibilitySemanticRole.feedback,
                   child: AnswerFeedbackPanel(
                     feedback: feedback,
+                    continuationLabel: review.index == review.items.length - 1
+                        ? 'ดูผลการเรียน'
+                        : 'ข้อถัดไป',
                     contrastiveFeedback: AppDependenciesScope.maybeOf(
                       context,
                     )?.contrastiveFeedback,

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -151,6 +153,119 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets(
+      'cloze assistance preserves typed draft and selected answer $connection',
+      (tester) async {
+        late String owner;
+        await tester.runAsync(() async {
+          owner = (await owners.getOrCreateActiveOwner()).id;
+        });
+        String? aiOwner = owner;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: const ClozeModeAdapter(),
+        );
+        addTearDown(controller.dispose);
+        final app = MaterialApp(
+          home: UnifiedLessonShell(
+            controller: controller,
+            builder: (_) => _screen(learning),
+          ),
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        await _pumpUntilFound(tester, find.text('The _____ is busy.'));
+        void press(String key) =>
+            tester.widget<FilledButton>(find.byKey(ValueKey(key))).onPressed!();
+        Map data() {
+          final e = (registry.snapshot()['context'] as List).singleWhere(
+            (dynamic x) => x['id'] == 'cloze/current-item-assistance',
+          );
+          return jsonDecode(e['value'] as String) as Map;
+        }
+
+        if (connection != 'absent') {
+          expect(data()['questionNumber'], 1);
+          expect(data()['phase'], 'awaitingAnswer');
+          expect(data()['promptLanguage'], 'en');
+          expect(data()['answerLanguage'], 'en');
+          expect(registry.snapshot()['actions'], isEmpty);
+        }
+        press('cloze-mode-typed');
+        await tester.pump();
+        final input = find.byKey(const ValueKey('cloze-typed-answer'));
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const ValueKey('cloze-submit-typed')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.enterText(input, 'air');
+        final state = tester.state(find.byType(FillInTheBlanksScreen));
+        if (connection != 'absent') {
+          expect(data()['responseKind'], 'typed');
+          expect(data().values, isNot(contains('air')));
+          expect(data().toString(), isNot(contains('airport')));
+          aiOwner = 'other';
+          expect(registry.snapshot()['context'], isEmpty);
+          aiOwner = owner;
+        }
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(tester.state(find.byType(FillInTheBlanksScreen)), same(state));
+        expect(tester.widget<TextField>(input).controller!.text, 'air');
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        await tester.enterText(input, 'airport');
+        press('cloze-submit-typed');
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+        expect(controller.state.committedResponseCount, 1);
+        expect(find.text('ทำต่อ: ข้อถัดไป'), findsOneWidget);
+        press('cloze-next');
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('cloze-mode-selected')),
+        );
+        press('cloze-mode-selected');
+        await tester.pump();
+        press('cloze-option-word:station-airport');
+        await tester.pump();
+        if (connection == 'connected') {
+          expect(data()['questionNumber'], 2);
+          expect(data()['responseKind'], 'selected');
+        }
+        press('cloze-submit-selected');
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
+        expect(controller.state.committedResponseCount, 2);
+        expect(find.text('ทำต่อ: ดูผลการเรียน'), findsOneWidget);
+        press('cloze-next');
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        expect(
+          (await database.select(database.learningSessions).getSingle()).state,
+          'completed',
+        );
+        expect(registry.snapshot()['context'], isEmpty);
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(2));
+        expect(attempts.map((a) => a.isCorrect), [true, false]);
+        expect(attempts.map((a) => a.evidenceClass), [
+          'independentRecall',
+          'recognition',
+        ]);
+      },
+    );
+  }
 
   testWidgets('B05 cloze blank and composing input never writes evidence', (
     tester,
