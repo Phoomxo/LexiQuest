@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 115,
+  "revision": 116,
   "planVersion": 5,
   "planPath": "docs/design/worksheet-to-play-blueprint.md",
   "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain.",
@@ -8,8 +8,8 @@
   "originWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
   "originBranch": "feature/ari-app-device-integration",
   "originHead": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
-  "stateRole": "IMMUTABLE_BC_CHECKPOINT",
-  "status": "STOPPED_AFTER_BC_BY_USER",
+  "stateRole": "CURRENT_AFTER_BACKUP",
+  "status": "BACKUP_ORGANIZATION",
   "sprint": {
     "id": "S01",
     "goal": "ต้นแบบสองเส้นทางที่เริ่ม ขอช่วย พัก และกลับมาได้ พร้อมชุดเนื้อหาที่มีสถานะตรวจครบถ้วน",
@@ -1033,7 +1033,7 @@
     "fullReleaseVerifierRequiresFrozenSha": true,
     "prototypeDoesNotProveNativeOrLearning": true
   },
-  "nextAction": "Controller backs up and verifies restoration before its separately authorized cleanup; no application successor",
+  "nextAction": "Finish verified retirement of historical worktrees before application continuation.",
   "checkpoint": {
     "atUtc": "2026-09-26T14:49:59.794924+00:00",
     "kind": "BC_HOST_COMPLETE_USER_REQUESTED_STOP",
@@ -1094,5 +1094,11 @@
   "nextReadyPackage": null,
   "BACompletedAtUtc": "2026-09-24T23:34:34.604133+00:00",
   "BBCompletedAtUtc": "2026-09-26T14:13:19.554166+00:00",
-  "BCCompletedAtUtc": "2026-09-26T14:49:59.794924+00:00"
+  "BCCompletedAtUtc": "2026-09-26T14:49:59.794924+00:00",
+  "backup": {
+    "branch": "codex/backup/ux-v5-through-s01-bc-20260926",
+    "commit": "c22cdaa3a11b83c8e3ce84151672ed8dab11a4e1",
+    "localArchive": "C:/Users/Phet/LexiQuest-Backups/2026-09-26-S01-BC",
+    "historicalPaths": "Resolve missing historical delivery files at backup commit; do not scan prior worktrees."
+  }
 }
