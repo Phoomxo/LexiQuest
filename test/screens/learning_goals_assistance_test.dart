@@ -18,13 +18,13 @@ void main() {
     (tester) async {
       final registry = MenuActionRegistry(currentOwner: () => 'local:goals');
       final repo = _Goals()..items.add(_goal());
-      var reads = 0;
+      var preparing = false;
       final cases = LearningGoalUseCases(
         repository: repo,
         nowUtc: () => DateTime.utc(2026, 9, 23),
         generateId: () => 'new',
         activeOwnerId: () async {
-          if (++reads > 2) throw StateError('private lookup failure');
+          if (preparing) throw StateError('private lookup failure');
           return 'local:goals';
         },
       );
@@ -47,6 +47,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey('learning-goals/save')),
       );
+      preparing = true;
       await tester.tap(find.byKey(const ValueKey('learning-goals/save')));
       await tester.pumpAndSettle();
       final context = _values(registry).single;
@@ -211,7 +212,12 @@ void main() {
     await tester.pumpWidget(_view(old, _Owners(), registry));
     await tester.pump();
     await tester.pumpWidget(
-      _view(_Goals(), _Owners()..id = 'local:other', registry),
+      _view(
+        _Goals(),
+        _Owners()..id = 'local:other',
+        registry,
+        nativeOwner: 'local:other',
+      ),
     );
     await tester.pumpAndSettle();
     expect(_summary(registry)['count'], 0);
@@ -269,21 +275,25 @@ void main() {
   });
 }
 
-Widget _view(_Goals repo, _Owners owners, MenuActionRegistry registry) =>
-    MenuActionScope(
-      registry: registry,
-      child: MaterialApp(
-        home: LearningGoalsScreen(
-          ownerIdentities: owners,
-          useCases: LearningGoalUseCases(
-            repository: repo,
-            nowUtc: () => DateTime.utc(2026, 9, 23),
-            generateId: () => 'new',
-            activeOwnerId: () async => 'local:goals',
-          ),
-        ),
+Widget _view(
+  _Goals repo,
+  _Owners owners,
+  MenuActionRegistry registry, {
+  String nativeOwner = 'local:goals',
+}) => MenuActionScope(
+  registry: registry,
+  child: MaterialApp(
+    home: LearningGoalsScreen(
+      ownerIdentities: owners,
+      useCases: LearningGoalUseCases(
+        repository: repo,
+        nowUtc: () => DateTime.utc(2026, 9, 23),
+        generateId: () => 'new',
+        activeOwnerId: () async => nativeOwner,
       ),
-    );
+    ),
+  ),
+);
 List<Map<String, dynamic>> _values(MenuActionRegistry registry) => [
   for (final v in registry.snapshot()['context'] as List)
     jsonDecode(v['value'] as String) as Map<String, dynamic>,

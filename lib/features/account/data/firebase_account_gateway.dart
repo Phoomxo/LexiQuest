@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../domain/account_contracts.dart';
@@ -5,13 +6,19 @@ import '../domain/account_contracts.dart';
 const _authActionUrl =
     'https://vocab-learning-app-219ef.firebaseapp.com/auth/action';
 
-final class FirebaseAccountGateway implements AccountGateway {
+final class FirebaseAccountGateway
+    implements AccountGateway, AccountSessionObserver {
   FirebaseAccountGateway(this.auth);
 
   final FirebaseAuth auth;
+  bool _passwordChanging = false;
 
   @override
   AccountSession? get currentSession => _session(auth.currentUser);
+
+  @override
+  Stream<AccountSession?> get sessionChanges =>
+      auth.authStateChanges().map(_session);
 
   @override
   Future<AccountSession> register({
@@ -152,19 +159,61 @@ final class FirebaseAccountGateway implements AccountGateway {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
+    bool Function()? isCurrent,
   }) async {
+    if (_passwordChanging) {
+      throw const AccountException(AccountFailureCode.cancelled);
+    }
     final user = auth.currentUser;
     final email = user?.email;
     if (user == null || email == null) {
       throw const AccountException(AccountFailureCode.invalidCredential);
     }
+    var retired = false;
+    var firstEvent = true;
+    final observed = Completer<void>();
+    StreamSubscription<User?>? subscription;
+    void requireCurrent() {
+      if (retired ||
+          auth.currentUser?.uid != user.uid ||
+          (isCurrent != null && !isCurrent())) {
+        throw const AccountException(AccountFailureCode.cancelled);
+      }
+    }
+
+    requireCurrent();
+    _passwordChanging = true;
     try {
+      subscription = auth.authStateChanges().listen(
+        (session) {
+          // The initial snapshot is not a new sign-in. Subsequent auth-state
+          // events, even for the same UID, retire this operation.
+          if (!firstEvent || session?.uid != user.uid) retired = true;
+          firstEvent = false;
+          if (!observed.isCompleted) observed.complete();
+        },
+        onError: (Object _, StackTrace _) {
+          retired = true;
+          if (!observed.isCompleted) observed.complete();
+        },
+        onDone: () {
+          retired = true;
+          if (!observed.isCompleted) observed.complete();
+        },
+      );
+      await observed.future;
+      requireCurrent();
       await user.reauthenticateWithCredential(
         EmailAuthProvider.credential(email: email, password: currentPassword),
       );
+      requireCurrent();
       await user.updatePassword(newPassword);
+      // Once sent, a password update cannot be rolled back or read back.
     } on FirebaseAuthException catch (error) {
       throw AccountException(_map(error.code));
+    } finally {
+      await subscription?.cancel();
+      _passwordChanging = false;
     }
   }
 
@@ -189,6 +238,7 @@ final class FirebaseAccountGateway implements AccountGateway {
       ? null
       : AccountSession(
           uid: user.uid,
+          sessionIdentity: user.uid,
           email: user.email,
           isAnonymous: user.isAnonymous,
           emailVerified: user.emailVerified,

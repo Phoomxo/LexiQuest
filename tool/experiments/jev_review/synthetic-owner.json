@@ -1,0 +1,7 @@
+{
+  "id": "owner-late",
+  "summary": "A catalog loads under a local data owner before optional AI connects. Context registration uses the absent AI session identity. Later connection cannot read that mounted catalog.",
+  "expected_category": "owner",
+  "expected_check_group": "owner-isolation",
+  "sanitized_reviewed": true
+}

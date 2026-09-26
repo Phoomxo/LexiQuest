@@ -52,6 +52,8 @@ final class UpgradeGuestOwner {
 
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout({
     required String sourceOwnerId,
+    Future<void> Function()? beforeCreate,
+    bool Function()? isCurrent,
   }) {
     final canonicalOwnerId = sourceOwnerId.trim();
     if (canonicalOwnerId.isEmpty) {
@@ -61,8 +63,20 @@ final class UpgradeGuestOwner {
         'must not be blank',
       );
     }
-    Future<OwnerUpgradeResult> operation() =>
-        _repository.createLocalGuestAfterLogout();
+    Future<OwnerUpgradeResult> operation() async {
+      await beforeCreate?.call();
+      final repository = _repository;
+      if (repository is AdmittedOwnerLogoutRepository &&
+          (beforeCreate != null || isCurrent != null)) {
+        return (repository as AdmittedOwnerLogoutRepository)
+            .createLocalGuestAfterLogout(
+              expectedOwnerId: canonicalOwnerId,
+              isCurrent: isCurrent,
+            );
+      }
+      return _repository.createLocalGuestAfterLogout();
+    }
+
     return coordinate?.call(canonicalOwnerId, operation) ?? operation();
   }
 

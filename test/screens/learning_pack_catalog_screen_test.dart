@@ -1,3 +1,6 @@
+import 'package:drift/drift.dart' show Value;
+import 'dart:async';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'dart:convert';
 import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
 import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
@@ -34,13 +37,44 @@ import '../support/test_quest_use_cases.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  _catalogRecoveryTests();
+  testWidgets(
+    'mounted catalog pack contexts remain fenced across owner changes',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      String? owner;
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: _dependencies(database),
+            child: const MaterialApp(home: LearningPackCatalogScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Travel basics'), findsOneWidget);
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'owner:catalog';
+      expect(registry.snapshot()['context'], hasLength(2));
+      owner = null;
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'owner:catalog';
+      expect(registry.snapshot()['context'], hasLength(2));
+      owner = 'another-owner';
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(find.text('Travel basics'), findsOneWidget);
+    },
+  );
   for (final empty in [true, false]) {
     testWidgets('catalog assistance reflects filter and empty state $empty', (
       tester,
     ) async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      String? owner = 'fixture';
+      String? owner;
       final registry = MenuActionRegistry(currentOwner: () => owner);
       await tester.pumpWidget(
         MenuActionScope(
@@ -52,6 +86,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(registry.snapshot()['context'], isEmpty);
+      owner = 'owner:catalog';
       Map summary() =>
           jsonDecode(
                 (registry.snapshot()['context'] as List).singleWhere(
@@ -95,6 +131,10 @@ void main() {
       owner = null;
       expect(registry.snapshot()['context'], isEmpty);
       expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
+      owner = 'owner:catalog';
+      expect(summary()['matchingCount'], 0);
+      owner = 'another-owner';
+      expect(registry.snapshot()['context'], isEmpty);
     });
   }
   testWidgets('personal sets entry remains reachable from an empty catalog', (
@@ -364,9 +404,11 @@ AppDependencies _dependencies(
   FeatureRegistry features = const BuildFeatureRegistry.allEnabled(),
   bool emptyCatalog = false,
   bool extraPack = false,
+  LearningPackRepository? packs,
+  LocalOwnerRepository? owners,
 }) {
   final research = InertResearchDependencies(database);
-  final owner = _Owner();
+  final owner = owners ?? _Owner();
   return AppDependencies(
     initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
@@ -392,7 +434,7 @@ AppDependencies _dependencies(
       nowUtc: () => DateTime.utc(2026, 8, 24),
     ),
     studyPlanning: StudyPlanningUseCases(
-      packs: _Packs(empty: emptyCatalog, extra: extraPack),
+      packs: packs ?? _Packs(empty: emptyCatalog, extra: extraPack),
       progress: ProgressUseCases(
         owners: owner,
         queries: DriftProgressQueries(database),
@@ -518,4 +560,591 @@ final class _GuestSession implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
       const GuestSessionStarted(uid: 'catalog');
+}
+
+final class _ControlledPacks implements LearningPackRepository {
+  int reads = 0;
+  Future<List<LearningPackSummary>> Function(int)? read;
+  @override
+  Future<List<LearningPackSummary>> list(LearningPackFilter filter) {
+    reads++;
+    return read?.call(reads) ?? _Packs().list(filter);
+  }
+
+  @override
+  Future<LearningPackDetail> getVersion(String id, int revision) =>
+      _Packs().getVersion(id, revision);
+}
+
+void _catalogRecoveryTests() {
+  testWidgets('S01-AP media changes do not refetch unchanged catalog', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final packs = _ControlledPacks();
+    final deps = _dependencies(db, packs: packs);
+    late StateSetter update;
+    var scale = 1.0;
+    await tester.pumpWidget(
+      StatefulBuilder(
+        builder: (_, set) {
+          update = set;
+          return AppDependenciesScope(
+            dependencies: deps,
+            child: MaterialApp(
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+              home: const LearningPackCatalogScreen(),
+            ),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    final before = packs.reads;
+    update(() => scale = 2);
+    await tester.pumpAndSettle();
+    expect(packs.reads, before);
+    await tester.enterText(find.byType(TextField), 'Travel');
+    await tester.pumpAndSettle();
+    expect(packs.reads, before);
+  });
+  testWidgets(
+    'S01-AP retry retains search and independent filters after cover failure',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final packs = _ControlledPacks();
+      packs.read = (n) => n == 2
+          ? Future.error(StateError('offline'))
+          : _Packs(extra: true).list(LearningPackFilter());
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(db, packs: packs),
+          child: MaterialApp(
+            navigatorKey: nav,
+            home: const LearningPackCatalogScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Travel');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilterChip, 'A1'));
+      await tester.pump();
+      nav.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('cover')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      nav.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
+      expect(packs.reads, 3);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'Travel',
+      );
+      expect(
+        tester
+            .widget<FilterChip>(find.widgetWithText(FilterChip, 'A1'))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('Travel basics'), findsOneWidget);
+      expect(find.text('Health basics'), findsNothing);
+    },
+  );
+  testWidgets('S01-AP retry remains bounded while deferred read is pending', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final pending = Completer<List<LearningPackSummary>>();
+    final packs = _ControlledPacks()
+      ..read = (n) =>
+          n == 1 ? Future.error(StateError('offline')) : pending.future;
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(db, packs: packs),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final retry = tester
+        .widget<FilledButton>(find.widgetWithText(FilledButton, 'ลองอีกครั้ง'))
+        .onPressed!;
+    retry();
+    await tester.pump();
+    retry();
+    retry();
+    expect(packs.reads, 2);
+    pending.complete(await _Packs().list(LearningPackFilter()));
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    retry();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+    'S01-AP returned owner revalidation rejects raced catalog context',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final owners = _RacingCatalogOwner();
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(db, owners: owners),
+          child: const MaterialApp(home: LearningPackCatalogScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Travel basics'), findsNothing);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      expect(
+        tester
+            .widgetList<MenuActionBinding>(find.byType(MenuActionBinding))
+            .where((x) => x.ownerId != null),
+        isEmpty,
+      );
+    },
+  );
+  testWidgets(
+    'S01-AP removed parent leaves child live and independently gated',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final nav = GlobalKey<NavigatorState>();
+      late StateSetter update;
+      var deps = _dependencies(db);
+      final replacement = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(replacement.dispose);
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (_, set) {
+            update = set;
+            return AppDependenciesScope(
+              dependencies: deps,
+              child: MaterialApp(
+                navigatorKey: nav,
+                home: const Scaffold(body: Text('root')),
+              ),
+            );
+          },
+        ),
+      );
+      final parent = MaterialPageRoute<void>(
+        builder: (_) => const LearningPackCatalogScreen(),
+      );
+      nav.currentState!.push(parent);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      nav.currentState!.removeRoute(parent);
+      await tester.pumpAndSettle();
+      update(() => deps = _dependencies(db, features: replacement));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(LearningPackDetailScreen), findsOneWidget);
+      replacement.emergencyOff(Feature.studyPlanning);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      nav.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('root'), findsOneWidget);
+    },
+  );
+  testWidgets('S01-AP personal sets shares single admission with detail', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final observer = _CatalogObserver();
+    final nav = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(db),
+        child: MaterialApp(
+          navigatorKey: nav,
+          navigatorObservers: [observer],
+          home: const LearningPackCatalogScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final sets = tester
+        .widget<IconButton>(
+          find.byWidgetPredicate(
+            (w) => w is IconButton && w.tooltip == 'ชุดคำส่วนตัว',
+          ),
+        )
+        .onPressed!;
+    final detail = tester.widget<ListTile>(find.byType(ListTile)).onTap!;
+    final before = observer.pushes;
+    sets();
+    sets();
+    detail();
+    await tester.pumpAndSettle();
+    expect(observer.pushes, before + 1);
+    expect(find.text('ชุดคำส่วนตัวยังไม่พร้อมใช้งาน'), findsOneWidget);
+    nav.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+  });
+  testWidgets(
+    'S01-AP Thai failure at 360px 200 percent has reachable semantic retry',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final handle = tester.ensureSemantics();
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final packs = _ControlledPacks()
+        ..read = (_) => Future.error(StateError('offline'));
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(db, packs: packs),
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const LearningPackCatalogScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('ลองอีกครั้ง'));
+      expect(tester.takeException(), isNull);
+      expect(find.bySemanticsLabel('ลองอีกครั้ง'), findsOneWidget);
+      expect(
+        tester.getSize(find.widgetWithText(FilledButton, 'ลองอีกครั้ง')).height,
+        greaterThanOrEqualTo(48),
+      );
+      handle.dispose();
+    },
+  );
+
+  for (final synchronous in [false, true]) {
+    testWidgets(
+      'S01-AP bounded retry observes repeated failure sync $synchronous',
+      (tester) async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final packs = _ControlledPacks();
+        packs.read = (n) {
+          if (n > 2) return _Packs().list(LearningPackFilter());
+          if (synchronous) throw StateError('catalog read failed');
+          return Future.error(StateError('catalog read failed'));
+        };
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: _dependencies(db, packs: packs),
+            child: const MaterialApp(home: LearningPackCatalogScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final retry = tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'ลองอีกครั้ง'),
+            )
+            .onPressed!;
+        retry();
+        retry();
+        await tester.pumpAndSettle();
+        expect(packs.reads, 2);
+        expect(tester.takeException(), isNull);
+        retry();
+        await tester.pumpAndSettle();
+        expect(packs.reads, 2);
+        await tester.tap(find.text('ลองอีกครั้ง'));
+        await tester.pumpAndSettle();
+        expect(packs.reads, 3);
+        expect(find.text('Travel basics'), findsOneWidget);
+      },
+    );
+  }
+  testWidgets('S01-AP standalone useCases replacement retires pending result', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final pending = Completer<List<LearningPackSummary>>();
+    final oldPacks = _ControlledPacks()..read = (_) => pending.future;
+    final old = _dependencies(db, packs: oldPacks).studyPlanning!;
+    final next = _dependencies(db, emptyCatalog: true).studyPlanning!;
+    await tester.pumpWidget(
+      MaterialApp(home: LearningPackCatalogScreen(useCases: old)),
+    );
+    await tester.pump();
+    await tester.pumpWidget(
+      MaterialApp(home: LearningPackCatalogScreen(useCases: next)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'), findsOneWidget);
+    pending.complete(await _Packs().list(LearningPackFilter()));
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsNothing);
+  });
+  testWidgets('S01-AP standalone ignores unrelated dependency replacement', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final packs = _ControlledPacks();
+    final useCases = _dependencies(db, packs: packs).studyPlanning!;
+    Widget app() => AppDependenciesScope(
+      dependencies: _dependencies(db),
+      child: MaterialApp(home: LearningPackCatalogScreen(useCases: useCases)),
+    );
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    expect(packs.reads, 1);
+  });
+  testWidgets('S01-AP current filters retire detached actions', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(db, extraPack: true),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final old = tester
+        .widget<FilterChip>(find.widgetWithText(FilterChip, 'reading'))
+        .onSelected!;
+    await tester.tap(find.widgetWithText(FilterChip, 'A1'));
+    await tester.pump();
+    old(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+    expect(find.text('ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'), findsNothing);
+  });
+  for (final boundary in ['tab', 'cover', 'inactive', 'dispose', 'pop']) {
+    testWidgets('S01-AP retired filter and detail actions after $boundary', (
+      tester,
+    ) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final deps = _dependencies(db);
+      final nav = GlobalKey<NavigatorState>();
+      late StateSetter update;
+      var active = true;
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: deps,
+          child: MaterialApp(
+            navigatorKey: nav,
+            home: const Scaffold(body: Text('root')),
+          ),
+        ),
+      );
+      nav.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => StatefulBuilder(
+            builder: (_, set) {
+              update = set;
+              return TickerMode(
+                enabled: active,
+                child: const LearningPackCatalogScreen(),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final chip = tester
+          .widget<FilterChip>(find.widgetWithText(FilterChip, 'A1'))
+          .onSelected!;
+      final search = tester
+          .widget<TextField>(find.byType(TextField))
+          .onChanged!;
+      final open = tester.widget<ListTile>(find.byType(ListTile)).onTap!;
+      if (boundary == 'tab') update(() => active = false);
+      if (boundary == 'cover')
+        nav.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('cover')),
+          ),
+        );
+      if (boundary == 'inactive')
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+      if (boundary == 'dispose') await tester.pumpWidget(const SizedBox());
+      if (boundary == 'pop') nav.currentState!.pop();
+      await tester.pumpAndSettle();
+      chip(true);
+      search('stale');
+      open();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(LearningPackDetailScreen), findsNothing);
+      if (boundary == 'inactive')
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      if (boundary == 'tab') update(() => active = true);
+      if (boundary == 'cover') nav.currentState!.pop();
+      await tester.pumpAndSettle();
+      if (['tab', 'cover', 'inactive'].contains(boundary)) {
+        expect(
+          tester
+              .widget<FilterChip>(find.widgetWithText(FilterChip, 'A1'))
+              .selected,
+          isFalse,
+        );
+        expect(find.text('Travel basics'), findsOneWidget);
+      }
+    });
+  }
+  testWidgets('S01-AP repeated detail action opens one usable pinned child', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final nav = GlobalKey<NavigatorState>();
+    final observer = _CatalogObserver();
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(db),
+        child: MaterialApp(
+          navigatorKey: nav,
+          navigatorObservers: [observer],
+          home: const LearningPackCatalogScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final open = tester.widget<ListTile>(find.byType(ListTile)).onTap!;
+    final before = observer.pushes;
+    open();
+    open();
+    await tester.pumpAndSettle();
+    expect(observer.pushes, before + 1);
+    expect(find.byType(LearningPackDetailScreen), findsOneWidget);
+    expect(find.bySemanticsLabel('Travel basics, A1, รุ่น 1'), findsOneWidget);
+    nav.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
+    open();
+    await tester.pumpAndSettle();
+    expect(observer.pushes, before + 1);
+    await tester.tap(find.byType(ListTile));
+    await tester.pumpAndSettle();
+    expect(observer.pushes, before + 2);
+  });
+  testWidgets('S01-AP detail follows replacement live registry', (
+    tester,
+  ) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final replacement = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    addTearDown(replacement.dispose);
+    late StateSetter update;
+    var deps = _dependencies(db);
+    await tester.pumpWidget(
+      StatefulBuilder(
+        builder: (_, set) {
+          update = set;
+          return AppDependenciesScope(
+            dependencies: deps,
+            child: const MaterialApp(home: LearningPackCatalogScreen()),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(ListTile));
+    await tester.pumpAndSettle();
+    replacement.emergencyOff(Feature.studyPlanning);
+    update(() => deps = _dependencies(db, features: replacement));
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningPackDetailScreen), findsNothing);
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+  });
+  testWidgets(
+    'S01-AP isolated committed owner refreshes optional catalog context',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      var id = 0;
+      final owners = DriftLocalOwnerRepository(
+        db,
+        generateId: () => 'owner:ap-${id++}',
+        nowUtc: () => DateTime.utc(2026, 9, 24),
+      );
+      final first = await owners.getOrCreateActiveOwner();
+      final registry = MenuActionRegistry(currentOwner: () => null);
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: _dependencies(db, owners: owners),
+            child: const MaterialApp(home: LearningPackCatalogScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      String? displayedOwner() => tester
+          .widgetList<MenuActionBinding>(find.byType(MenuActionBinding))
+          .singleWhere((x) => x.id == 'study-planning/catalog-summary')
+          .ownerId;
+      expect(displayedOwner(), first.id);
+      await db.transaction(() async {
+        await db
+            .update(db.localOwners)
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await owners.getOrCreateActiveOwner();
+      });
+      await tester.pump(const Duration(minutes: 3));
+      await tester.pumpAndSettle();
+      final next = await owners.getOrCreateActiveOwner();
+      expect(next.id, isNot(first.id));
+      expect(displayedOwner(), next.id);
+    },
+  );
+}
+
+class _CatalogObserver extends NavigatorObserver {
+  int pushes = 0;
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushes++;
+  }
+}
+
+final class _RacingCatalogOwner implements LocalOwnerRepository {
+  int reads = 0;
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async =>
+      identity.LocalOwner(
+        id: ++reads <= 2 ? 'owner:old' : 'owner:replacement',
+        createdAtUtc: DateTime.utc(2026, 9, 24),
+      );
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(String ownerId, String uid) =>
+      getOrCreateActiveOwner();
 }

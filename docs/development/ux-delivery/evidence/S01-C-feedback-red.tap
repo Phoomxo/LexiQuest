@@ -1,0 +1,90 @@
+TAP version 13
+# Subtest: UX-D01 new entry offers both independent teaching routes without quiz or login
+ok 1 - UX-D01 new entry offers both independent teaching routes without quiz or login
+  ---
+  duration_ms: 5.8376
+  type: 'test'
+  ...
+# Subtest: pilot pause/resume preserves each track step and support, never fabricates answers
+ok 2 - pilot pause/resume preserves each track step and support, never fabricates answers
+  ---
+  duration_ms: 3.2582
+  type: 'test'
+  ...
+# Subtest: pilot missing audio is explicit, skip/finish allow other track without microphone
+ok 3 - pilot missing audio is explicit, skip/finish allow other track without microphone
+  ---
+  duration_ms: 2.4267
+  type: 'test'
+  ...
+# Subtest: UX-D02 reading selector changes passage and question content through mode entry
+ok 4 - UX-D02 reading selector changes passage and question content through mode entry
+  ---
+  duration_ms: 3.9997
+  type: 'test'
+  ...
+# Subtest: UX-D03 typing draft survives leaving before review and re-entering writing
+ok 5 - UX-D03 typing draft survives leaving before review and re-entering writing
+  ---
+  duration_ms: 2.9142
+  type: 'test'
+  ...
+# Subtest: UX-D04 feedback retains scroll while navigating to another screen resets it
+ok 6 - UX-D04 feedback retains scroll while navigating to another screen resets it
+  ---
+  duration_ms: 1.8903
+  type: 'test'
+  ...
+# Subtest: pilot content is a pinned teaching subset with assessment answers excluded
+ok 7 - pilot content is a pinned teaching subset with assessment answers excluded
+  ---
+  duration_ms: 3.2924
+  type: 'test'
+  ...
+# Subtest: pilot repeat returns only the selected track to demonstration without wiping other progress
+ok 8 - pilot repeat returns only the selected track to demonstration without wiping other progress
+  ---
+  duration_ms: 2.2349
+  type: 'test'
+  ...
+# Subtest: keyboard focus remains on help toggle after render and moves to heading on navigation
+ok 9 - keyboard focus remains on help toggle after render and moves to heading on navigation
+  ---
+  duration_ms: 2.0313
+  type: 'test'
+  ...
+# Subtest: feedback after a hint does not invent independent learner evidence
+not ok 10 - feedback after a hint does not invent independent learner evidence
+  ---
+  duration_ms: 2.9462
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:102:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /ตอบด้วยตัวเองแล้ว/. Input:
+    
+    '<section class="screen" data-view="mode"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">วิธีฝึก · จำคำศัพท์</div><h1 class="title" tabindex="-1">เลือกความหมาย</h1><p class="sub">เห็นคำอังกฤษแล้วเลือกคำแปลไทย</p><span class="smalltag">ตัวอย่าง อังกฤษ → ไทย</span><div class="progress-track"><i></i></div><div class="question"><small>เลือกคำตอบที่ถูกต้อง</small><strong>book</strong></div><button class="choice" data-answer="หน้าต่าง">หน้าต่าง</button><button class="choice" data-answer="หนังสือ">หนังสือ</button><button class="choice" data-answer="ประตู">ประตู</button><button class="disclosure" data-action="hint">ขอคำใบ้</button><div class="feedback " role="status">ถูกต้อง! คุณตอบด้วยตัวเองแล้ว</div><button class="button full" data-action="retry-mode">ลองอีกครั้ง</button><p class="sample-note">ตัวอย่างนี้ไม่บันทึกคะแนน คำตอบจริงในแอปต้องมาจากผู้เรียนเท่านั้น</p></section>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<section class="screen" data-view="mode"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">วิธีฝึก · จำคำศัพท์</div><h1 class="title" tabindex="-1">เลือกความหมาย</h1><p class="sub">เห็นคำอังกฤษแล้วเลือกคำแปลไทย</p><span class="smalltag">ตัวอย่าง อังกฤษ → ไทย</span><div class="progress-track"><i></i></div><div class="question"><small>เลือกคำตอบที่ถูกต้อง</small><strong>book</strong></div><button class="choice" data-answer="หน้าต่าง">หน้าต่าง</button><button class="choice" data-answer="หนังสือ">หนังสือ</button><button class="choice" data-answer="ประตู">ประตู</button><button class="disclosure" data-action="hint">ขอคำใบ้</button><div class="feedback " role="status">ถูกต้อง! คุณตอบด้วยตัวเองแล้ว</div><button class="button full" data-action="retry-mode">ลองอีกครั้ง</button><p class="sample-note">ตัวอย่างนี้ไม่บันทึกคะแนน คำตอบจริงในแอปต้องมาจากผู้เรียนเท่านั้น</p></section>'
+  operator: 'doesNotMatch'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:106:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 9
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 121.5598

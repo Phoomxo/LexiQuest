@@ -1,0 +1,149 @@
+{
+  "taskId": "01a0d02e-195c-7aa2-917c-be297feef7c9",
+  "sourceFingerprint": "36b6433309cf16ca6962751cf89ecf7d7f9c7a0154eba86d3d53eb40826ced65",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-1d42330aa66a82ec1c2ffeb74fb6d9a1744f470af2c4c60be32a8505dc0e4b36.json",
+      "sha256": "35a50a52999e2aa61d1d6b17335c0c3f791173658e28e85ba0a805a5e8953d9b",
+      "status": "Passed",
+      "passingCases": 6,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/review_center_screen_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "review actual choice file reopen"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "3288f501428632b72acefb25dee101cc855b8fe10b555e041de0404fb31c7e51"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "3288f501428632b72acefb25dee101cc855b8fe10b555e041de0404fb31c7e51",
+          "fingerprint": "6ff7cdfa2dece1d860663a1f754a40a49ec796c64f0ae6f6d16eaee63be25d05",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:45:19.9713168+00:00",
+          "FinishedAt": "2026-09-23T21:45:35.0023464+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3288f5014286-6ff7cdfa2dec-78638aa4\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3288f5014286-6ff7cdfa2dec-78638aa4\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff7cdfa2dece1d860663a1f754a40a49ec796c64f0ae6f6d16eaee63be25d05",
+          "StdoutHash": "1070CF54C6F80E8D39A38B751823F7C3A3C5628D7AC87FC655F21D1C877829E9",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current closure"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-0486d7ab1686cfa37f99aa405f52c79e701fb8a6d129ed989627002f551516d9.json",
+      "sha256": "cd5539a2800898828428f72031a9be74fab0fca1c3a6339f37ca8ea61d994681",
+      "status": "Passed",
+      "passingCases": 53,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/weakness_clinic_screen_test.dart",
+            "test/screens/learning_goals_assistance_test.dart",
+            "test/screens/learning_goals_screen_test.dart",
+            "test/screens/study_plan_screen_test.dart",
+            "test/screens/personal_sets_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "65002112ac61bd9ba644f30a6dac6ff2b4ec86708b6079f71c1316b40035aa8b"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "65002112ac61bd9ba644f30a6dac6ff2b4ec86708b6079f71c1316b40035aa8b",
+          "fingerprint": "acf773ea37ec730d92f56a9bc8dc12cc8fc59d4280a4a322e47f086f4749c140",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:36:32.5792356+00:00",
+          "FinishedAt": "2026-09-23T21:36:57.7767293+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\65002112ac61-acf773ea37ec-2120f6ef\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\65002112ac61-acf773ea37ec-2120f6ef\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "acf773ea37ec730d92f56a9bc8dc12cc8fc59d4280a4a322e47f086f4749c140",
+          "StdoutHash": "E7B9A2FA26156647FE4508079CCB13EDFAA76125666EC5A5FAC82E87E28ACC4A",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [
+        "test/screens/review_center_screen_test.dart"
+      ],
+      "applicability": "Only unimported review_center_screen_test.dart gained stronger connected-context assertions after this gate. Selected five files and all production/config unchanged; preserve53 without rerun."
+    }
+  ],
+  "uniquePassingCases": 59,
+  "newPassingCases": 6,
+  "revalidatedCases": 53,
+  "initialPass": {
+    "receipt": "build/ari-r3-05/part13-review-initial-passed.json",
+    "sha256": "9db970d3a6da97f4362fe473ecb419ea4f3eb35446aac864fa3cbc9c82e6811c",
+    "note": "Six initial cases passed;localreview strengthened connected assertions;not additive to final6"
+  },
+  "productSourceChanged": [],
+  "testSourceChanged": [
+    "test/screens/review_center_screen_test.dart"
+  ],
+  "analysis": {
+    "log": "build/ari-r3-05/part13-analysis.log",
+    "sha256": "5c9f6623d6b7a1be3bef852f8f8ef0de1f3b59c77363d0dc7d1e6bcdf314b1fc",
+    "result": "No issues found"
+  },
+  "diff": {
+    "path": "build/ari-r3-05/part13-test.diff",
+    "sha256": "c3a40981961bae5adee4bcbf5dec19c3891f2166a8d438ba4df1e934b5349244",
+    "review": "New tests/helpers/imports;existing helper gains optionalFile with same memorydefault;two declaration lines replaced,no old assertions removed."
+  },
+  "recoveries": [
+    {
+      "method": "Native UI dump immediately after tap",
+      "observation": "First dump retained prior UI while commit pending",
+      "correction": "Fresh delayed dump/screenshot showed feedback without repeated answer tap."
+    },
+    {
+      "method": "Source search guessed home_screen.dart",
+      "observation": "Path absent",
+      "correction": "rg --files actual screens then search discovered paths;no retry of guessed path."
+    },
+    {
+      "method": "Native audit used id for all tables",
+      "observation": "IndexError at events_v2",
+      "correction": "PRAGMA primary-key discovery;all58tablescompared;fourmodifiedevents are projection cursors. Device restored before further offline inspection."
+    },
+    {
+      "method": "Diff assumed changedfile present in dirty ZIP",
+      "observation": "review_center_screen_test.dart not dirty in part12 archive",
+      "correction": "Fallback git show HEAD:path,verifybytesSHA matchespart12pin;onlytwohelperlinesreplaced;noassertionremoved."
+    },
+    {
+      "method": "Local test review discovered foreignowner check before answer",
+      "observation": "Registry legitimately retires ownerbound registration;weakens claimed connected-state coverage",
+      "correction": "Move foreign check after answered context;add explicit answered/action assertions. Preserve initial PASS receipt,rerun changed6 only;finalPASS6. No productRED/fix."
+    }
+  ],
+  "limits": [
+    "6 new W07 actual ReviewCenterScreen -> real QuizScreen/MeaningQuizModeAdapter/shell/controller/LearningUseCases/DriftLearningRepository cases;correct/wrong x absent/connected/disconnected. Review queue reader is _Reader fixture and lesson builder composed in test to match production pattern;not actual MainNavigation route or full canonical queue reader.",
+    "Actual visible buttons tapped;exact one recognition attempt matches owner and attached review session, noSRS,actualsessioncompleted;all non-sqlite_internal fixture tables identical after close/reopen. Not abruptprocessdeath/exactcommandreplay/fulllearnerdata/native review-center.",
+    "Connected feedback context verified after answer BEFORE foreign-owner check;disconnected context hidden,screen state unchanged. Registry simulated AI identity,not real provider auth.",
+    "53 existing W07-W08 cases revalidated across weakness,goals assistance+screen,studyplan,personalsets. Goal assistance uses repository doubles;some goal owner tests realSQLite;studyplan/personalset real in-memorySQLite. No broad file-reopen claim for53.",
+    "Native one standalone meaning-quiz wronganswer with part09APK,forward direction,itemCount1,timed600s,UNPAIRED. Result0correct/1wrong,exact one recognitionattempt and completed quizsession;10 protectedtable families unchanged;58tablescompared. Not native review-center or Pairrepair/replay;no native source build.",
+    "All14workflows/modes remainOPEN;215rows4passed211remaining unchanged. NoJev/provider/livecost/research/subagent."
+  ]
+}

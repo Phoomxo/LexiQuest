@@ -224,7 +224,9 @@ void main() {
             home: VocabListScreen(
               categoryId: category.id,
               categoryName: category.name,
-              vocabulary: _vocabulary(_VocabularyRepository([word])),
+              vocabulary: _vocabulary(
+                _VocabularyRepository([word], categories: [category]),
+              ),
               importer: _importer(),
             ),
           ),

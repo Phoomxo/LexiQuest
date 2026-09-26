@@ -47,6 +47,8 @@ final class PreparedVocabularyImport {
     required this.sourceHash,
     required this.rows,
     required this.nowUtc,
+    this.requireActiveOwner = false,
+    this.expectedCategoryRevision,
   });
 
   final String importId;
@@ -56,6 +58,8 @@ final class PreparedVocabularyImport {
   final String sourceHash;
   final List<PreparedVocabularyImportRow> rows;
   final DateTime nowUtc;
+  final bool requireActiveOwner;
+  final int? expectedCategoryRevision;
 }
 
 final class VocabularyImportCancelled implements Exception {

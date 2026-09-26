@@ -30,26 +30,60 @@ final class _OfflineContentManagerScreenState
   final Set<ContentIdentity> _downloads = <ContentIdentity>{};
   final Set<ContentIdentity> _cancelling = <ContentIdentity>{};
 
+  AppDependencies? _dependencies;
+  int _generation = 0;
+  int _loadSerial = 0;
+  bool _loading = false;
+
+  // Observe failures before the next frame; FutureBuilder still receives them.
+
+  void _reset() {
+    _generation++;
+    _busy.clear();
+    _downloads.clear();
+    _cancelling.clear();
+    _states = _load()..ignore();
+  }
+
+  bool _current(int generation) => mounted && generation == _generation;
+
+  bool _canAct(int generation) =>
+      _current(generation) &&
+      ModalRoute.of(context)?.isCurrent != false &&
+      widget.canInvoke();
+
+  void _retry(int generation, int serial) {
+    if (!_canAct(generation) || _loading || serial != _loadSerial) return;
+    setState(() {
+      _states = _load()..ignore();
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _states ??= _load();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (_states == null || !identical(dependencies, _dependencies)) {
+      _dependencies = dependencies;
+      _reset();
+    }
   }
 
   @override
   void didUpdateWidget(OfflineContentManagerScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.manager, widget.manager)) {
-      _states = _load();
+      _reset();
     }
   }
 
   Future<void> _perform<T>(
+    int generation,
     ContentIdentity identity,
     Future<T> Function() operation, {
     bool download = false,
   }) async {
-    if (_busy.contains(identity) || !widget.canInvoke()) return;
+    if (!_canAct(generation) || _busy.contains(identity)) return;
     setState(() {
       _busy.add(identity);
       if (download) _downloads.add(identity);
@@ -57,7 +91,7 @@ final class _OfflineContentManagerScreenState
     try {
       await operation();
     } on Object {
-      if (mounted) {
+      if (_canAct(generation)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'),
@@ -65,17 +99,18 @@ final class _OfflineContentManagerScreenState
         );
       }
     } finally {
-      if (mounted) {
+      if (_current(generation)) {
         setState(() {
           _busy.remove(identity);
           _downloads.remove(identity);
-          _states = _load();
+          if (widget.canInvoke()) _states = _load()..ignore();
         });
       }
     }
   }
 
-  Future<void> _cancel(ContentIdentity identity) async {
+  Future<void> _cancel(int generation, ContentIdentity identity) async {
+    if (!_canAct(generation)) return;
     final manager = widget.manager;
     if (!widget.canInvoke() ||
         manager is! OfflineContentDownloadControl ||
@@ -86,19 +121,19 @@ final class _OfflineContentManagerScreenState
     try {
       final cancelled = await (manager as OfflineContentDownloadControl)
           .cancelDownload(identity);
-      if (!cancelled && mounted) {
+      if (!cancelled && _canAct(generation)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว')),
         );
       }
     } on Object {
-      if (mounted) {
+      if (_canAct(generation)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ยกเลิกไม่สำเร็จ ลองใหม่ได้')),
         );
       }
     } finally {
-      if (mounted) setState(() => _cancelling.remove(identity));
+      if (_current(generation)) setState(() => _cancelling.remove(identity));
     }
   }
 
@@ -113,11 +148,24 @@ final class _OfflineContentManagerScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('อ่านสถานะเนื้อหาออฟไลน์ไม่ได้'),
-              ),
+            final generation = _generation;
+            final serial = _loadSerial;
+            return ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Semantics(
+                  liveRegion: true,
+                  child: const Text('อ่านสถานะเนื้อหาออฟไลน์ไม่ได้'),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  key: const ValueKey('offline-content/retry'),
+                  onPressed: widget.canInvoke()
+                      ? () => _retry(generation, serial)
+                      : null,
+                  child: const Text('ลองอ่านสถานะอีกครั้ง'),
+                ),
+              ],
             );
           }
           final states = snapshot.data ?? const <_OfflineContentEntry>[];
@@ -223,43 +271,62 @@ final class _OfflineContentManagerScreenState
   }
 
   Future<List<_OfflineContentEntry>> _load() async {
-    final dependencies = AppDependenciesScope.maybeOf(context);
+    // Capture every authority before awaiting; old results never drive a new view.
+    final manager = widget.manager;
+    final dependencies = _dependencies;
+    final generation = _generation;
+    final serial = ++_loadSerial;
+    _loading = true;
+    bool active() => _current(generation) && serial == _loadSerial;
     final planning =
         dependencies?.features.isVisible(Feature.studyPlanning) == true
         ? dependencies?.studyPlanning
         : null;
-    final states = await widget.manager.catalog();
-    return Future.wait(
-      states.map((state) async {
-        final canRemove =
-            state.status != OfflineContentStatus.verified ||
-            await widget.manager.canRemove(state.identity);
-        String? title;
-        if (state.identity.type == ContentType.learningPack &&
-            planning != null) {
-          try {
-            final detail = await planning.loadPinnedVersion(state.identity);
-            if (detail.summary.contentIdentity == state.identity) {
-              title = detail.summary.title;
+    try {
+      final states = await manager.catalog();
+      if (!active()) return const [];
+      final entries = await Future.wait(
+        states.map((state) async {
+          final canRemove =
+              state.status != OfflineContentStatus.verified ||
+              await manager.canRemove(state.identity);
+          if (!active()) return null;
+          String? title;
+          if (state.identity.type == ContentType.learningPack &&
+              planning != null) {
+            try {
+              final detail = await planning.loadPinnedVersion(state.identity);
+              if (detail.summary.contentIdentity == state.identity) {
+                title = detail.summary.title;
+              }
+            } on Object {
+              // Optional metadata must match the pinned revision.
             }
-          } on Object {
-            // Metadata is optional; never guess a name from ID or another revision.
           }
-        }
-        return _OfflineContentEntry(
-          state: state,
-          canRemove: canRemove,
-          title: title ?? _typeLabel(state.identity.type),
-          requiredBytes: widget.manager is OfflineContentDownloadControl
-              ? await (widget.manager as OfflineContentDownloadControl)
-                    .requiredBytes(state.identity)
-              : null,
-        );
-      }),
-    );
+          if (!active()) return null;
+          final requiredBytes = manager is OfflineContentDownloadControl
+              ? await (manager as OfflineContentDownloadControl).requiredBytes(
+                  state.identity,
+                )
+              : null;
+          if (!active()) return null;
+          return _OfflineContentEntry(
+            state: state,
+            canRemove: canRemove,
+            title: title ?? _typeLabel(state.identity.type),
+            requiredBytes: requiredBytes,
+          );
+        }),
+      );
+      return entries.whereType<_OfflineContentEntry>().toList();
+    } finally {
+      if (active()) _loading = false;
+    }
   }
 
   Widget _action(_OfflineContentEntry entry) {
+    final generation = _generation;
+    final manager = widget.manager;
     final state = entry.state;
     final identity = state.identity;
     if (_busy.contains(identity) ||
@@ -279,7 +346,7 @@ final class _OfflineContentManagerScreenState
               key: ValueKey('offline-content/cancel/${identity.id}'),
               onPressed: _cancelling.contains(identity)
                   ? null
-                  : () => _cancel(identity),
+                  : () => _cancel(generation, identity),
               child: Text(
                 _cancelling.contains(identity)
                     ? 'กำลังยกเลิกหลังขั้นตอนปัจจุบัน'
@@ -295,8 +362,9 @@ final class _OfflineContentManagerScreenState
             ? OutlinedButton(
                 key: ValueKey<String>('offline-content/remove/${identity.id}'),
                 onPressed: () => _perform(
+                  generation,
                   identity,
-                  () => widget.manager.removeBytes(identity),
+                  () => manager.removeBytes(identity),
                 ),
                 child: const Text('ลบไฟล์'),
               )
@@ -305,8 +373,9 @@ final class _OfflineContentManagerScreenState
       OfflineContentStatus.interrupted => FilledButton(
         key: ValueKey<String>('offline-content/repair/${identity.id}'),
         onPressed: () => _perform(
+          generation,
           identity,
-          () async => widget.manager.repair(identity),
+          () async => manager.repair(identity),
           download: true,
         ),
         child: const Text('ตรวจสอบและซ่อมไฟล์'),
@@ -314,8 +383,9 @@ final class _OfflineContentManagerScreenState
       OfflineContentStatus.notDownloaded => FilledButton(
         key: ValueKey<String>('offline-content/download/${identity.id}'),
         onPressed: () => _perform(
+          generation,
           identity,
-          () async => widget.manager.download(identity),
+          () async => manager.download(identity),
           download: true,
         ),
         child: const Text('ดาวน์โหลด'),

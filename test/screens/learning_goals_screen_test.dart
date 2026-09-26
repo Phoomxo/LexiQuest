@@ -1,3 +1,4 @@
+import 'package:vocab_learning_app/screens/study_reminder_settings_screen.dart';
 import 'dart:async';
 
 import 'package:drift/native.dart';
@@ -38,10 +39,12 @@ void main() {
           );
           final gate = Completer<String>();
           var calls = 0;
+          var opening = false;
           var currentOwner = 'owner-a';
           final cases = LearningGoalUseCases(
             repository: _Goals(editing ? [goal] : []),
             activeOwnerId: () {
+              if (!opening) return Future.value(currentOwner);
               calls++;
               return calls == 1 ? gate.future : Future.value(currentOwner);
             },
@@ -59,6 +62,7 @@ void main() {
                   : 'learning-goals/add',
             ),
           );
+          opening = true;
           await tester.tap(button);
           if (scenario == 'double tap') await tester.tap(button);
           await tester.pump();
@@ -473,6 +477,36 @@ void main() {
       find.byKey(const ValueKey('learning-goal/goal:ielts/reminder')),
       findsOneWidget,
     );
+
+    final open = tester
+        .widget<IconButton>(
+          find.byKey(const ValueKey('learning-goal/goal:ielts/reminder')),
+        )
+        .onPressed!;
+    open();
+    open();
+    await tester.pumpAndSettle();
+    expect(find.byType(StudyReminderSettingsScreen), findsOneWidget);
+    final childGuard = tester
+        .widget<StudyReminderSettingsScreen>(
+          find.byType(StudyReminderSettingsScreen),
+        )
+        .mutationAllowed;
+    expect(
+      childGuard(),
+      isTrue,
+      reason: 'Owned reminder entry must retain explicit manual authority.',
+    );
+    Navigator.of(
+      tester.element(find.byType(StudyReminderSettingsScreen)),
+    ).pop();
+    expect(
+      childGuard(),
+      isFalse,
+      reason:
+          'A popped reminder must immediately retire its captured authority.',
+    );
+    await tester.pumpAndSettle();
 
     await pump(enabled: false);
     expect(

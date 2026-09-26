@@ -5,6 +5,123 @@ import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
 import 'package:vocab_learning_app/services/local_reading_catalog.dart';
 
 void main() {
+  testWidgets('AS repeated displayed article taps admit one child', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: LocalReadingLibraryScreen(onVocabularyPractice: () {})),
+    );
+    final tile = find.widgetWithText(ListTile, 'A1 · A book for May');
+    await tester.tap(tile);
+    await tester.tap(tile);
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(CefrArticleReaderScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(LocalReadingLibraryScreen), findsOneWidget);
+  });
+
+  testWidgets('AS retained displayed article action cannot stack children', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: LocalReadingLibraryScreen(onVocabularyPractice: () {})),
+    );
+    final open = tester
+        .widget<ListTile>(find.widgetWithText(ListTile, 'A1 · A book for May'))
+        .onTap!;
+    open();
+    open();
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(CefrArticleReaderScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  for (final retirement in [
+    'tab',
+    'cover',
+    'lifecycle',
+    'dispose',
+    'replacement',
+  ]) {
+    testWidgets('AS library detached action retires after $retirement', (
+      tester,
+    ) async {
+      final nav = GlobalKey<NavigatorState>();
+      final visible = ValueNotifier(true);
+      final version = ValueNotifier(0);
+      addTearDown(visible.dispose);
+      addTearDown(version.dispose);
+      var calls = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: ValueListenableBuilder<int>(
+            valueListenable: version,
+            builder: (_, v, _) => ValueListenableBuilder<bool>(
+              valueListenable: visible,
+              builder: (_, active, _) => TickerMode(
+                enabled: active,
+                child: LocalReadingLibraryScreen(
+                  onVocabularyPractice: () {
+                    calls += v + 1;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final action = find.text('ฝึกจากคำศัพท์ที่มีระดับ');
+      await tester.scrollUntilVisible(action, 200);
+      await tester.pumpAndSettle();
+      final retained = tester
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, 'ฝึกจากคำศัพท์ที่มีระดับ'),
+          )
+          .onPressed!;
+      switch (retirement) {
+        case 'tab':
+          visible.value = false;
+          await tester.pump();
+          visible.value = true;
+          await tester.pump();
+        case 'cover':
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+          await tester.pumpAndSettle();
+          nav.currentState!.pop();
+          await tester.pumpAndSettle();
+        case 'lifecycle':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await tester.pump();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+        case 'dispose':
+          await tester.pumpWidget(const SizedBox());
+        case 'replacement':
+          version.value++;
+          await tester.pump();
+      }
+      retained();
+      await tester.pump();
+      expect(calls, 0);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('reading back returns to library and another level can open', (
     tester,
   ) async {

@@ -1,0 +1,25 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "defects": [
+    {
+      "id": "history-srs-activity-alias",
+      "rootCause": "Reader rejected canonical srsReview activity with configured flashcard mode.",
+      "fix": "Narrow srsReview -> flashcard mapping; owner/hash/configuration guards preserved.",
+      "red": "Two new accepted-state cases fail; mismatched dictation rejection passes. Actual copied native DB probe reproduces same error.",
+      "green": "Three new reader cases plus full reader/replay/screen65; native History loads."
+    },
+    {
+      "id": "pair-explicit-support-available-repair",
+      "rootCause": "UI allows explicit support on available repair; engine accepted guided confirmation only for forced guidedRequired repair.",
+      "fix": "Allow available repair with existing earlier-revision support; waiting repair and stale support still rejected.",
+      "red": "Actual host explicit-support test expected4 evidence, observed3; native save failure reproduced under cap.",
+      "green": "Two new engine cases and one actual host case; full engine/host64. Native five main answers preserved and replay isolated."
+    }
+  ],
+  "limits": [
+    "129 unique current full-file tests across five files; six new regression cases. Earlier 66 history/probe result overlaps and is not additive. Native fixture probe is diagnostic only, preserved outside test directory.",
+    "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification.",
+    "Part14 receipts may now have changed reachable inputs: inspect exact closure before reusing. No blind carry-forward of179 as current.",
+    "All215 criteria retain4passed/211remaining; all14 workflow/mode acceptance OPEN. Camera ground truth, actual scanner accept/file SQLite, reward file durability, hosted sync and broader native matrix remain."
+  ]
+}

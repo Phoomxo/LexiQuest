@@ -132,15 +132,22 @@ final class LearningGoalUseCases {
   Future<LearningGoal> updateStatus(
     LearningGoal goal,
     LearningGoalStatus status, {
+    String? expectedOwnerId,
     LearningGoalMutationGuard? mutationAllowed,
   }) async {
+    if (expectedOwnerId != null && await activeOwnerId() != expectedOwnerId)
+      throw const LearningGoalOwnerChanged();
     if (status == goal.status) return goal;
     final now = nowUtc();
     final updatedAt = now.isAfter(goal.updatedAtUtc)
         ? now
         : goal.updatedAtUtc.add(const Duration(milliseconds: 1));
     final updated = goal.copyWith(status: status, updatedAtUtc: updatedAt);
-    await repository.save(updated, mutationAllowed: mutationAllowed);
+    await repository.save(
+      updated,
+      mutationAllowed: mutationAllowed,
+      expectedOwnerId: expectedOwnerId,
+    );
     return updated;
   }
 

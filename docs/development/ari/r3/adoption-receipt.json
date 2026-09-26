@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0cf1c-f5ca-7f00-9fbc-3708502172ce",
+  "status": "COMPLETE_SUCCESSOR_ACK_VERIFIED",
+  "completed": [
+    "01.1",
+    "01.2",
+    "01.3"
+  ],
+  "sourceWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+  "head": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "branch": "feature/ari-app-device-integration",
+  "sourceFingerprint": "7172f8c36e539ba8c4ae50d2d38ac2004db120d262061e9ba91878fa4f13d48d",
+  "sourceManifest": "source-manifest.json",
+  "dirtyBackup": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\ari-r3-adoption-backup",
+  "acceptanceLedger": "acceptance-ledger.json",
+  "evidenceIndex": "evidence-index.json",
+  "observedAtUtc": "2026-09-23T16:37:49.015738+00:00",
+  "sourceRelease": "../execution-r3-source-release.json",
+  "plannerRelease": "01a0bf7a-8427-78e3-bc73-ae1d57050622 internal ACK: planning docs released; feature/ amendment accepted",
+  "acceptedPlanSha256": "60d6bfe58c5e2abf180f0d5e6a8c88bb711dee48c220646b0a55bcc05a5b2245",
+  "checkpointRevision": 150,
+  "backupChecks": {
+    "lexiquest.sqlite": true,
+    "lexiquest.sqlite-wal": true,
+    "lexiquest.sqlite-shm": true
+  },
+  "nativeFixtureInstalled": false,
+  "deviceState": "not re-observed in R3-01; refresh in R3-02 before any mutation",
+  "ownedJobs": [],
+  "applicationSourceWrites": 0,
+  "route": {
+    "routeStatus": "DETERMINISTIC_FALLBACK",
+    "selectedModel": "gpt-6-astra",
+    "effort": "medium",
+    "tierPolicy": "Standard/default only; actual runtime tier not independently exposed",
+    "reason": "Coordinator adoption and sequential handoff; installed router is offline-only and rev7 live Choice/dispatch guard acceptance remains pending; current free balance not freshly verified, so no Jev request is authorized. Do not use historical USD5 snapshot.",
+    "jevChoiceCalled": false,
+    "freshLedgerAggregate": [
+      [
+        "settled",
+        2,
+        0.0
+      ]
+    ],
+    "currentFreeBalance": "UNKNOWN_NOT_FETCHED",
+    "paidSpendThisTask": 0,
+    "nextOwnerPackage": "R3-03"
+  },
+  "lease": {
+    "predecessor": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+    "acceptedBy": "01a0cf1c-f5ca-7f00-9fbc-3708502172ce",
+    "status": "TRANSFERRED_ACK_VERIFIED",
+    "applicationWriter": "01a0cf23-34ae-78c2-9116-87746c0cd49c",
+    "coordinationWriter": "01a0cf23-34ae-78c2-9116-87746c0cd49c",
+    "reservedNextPackage": "R3-02",
+    "rule": "Successor must ACK accepted source/checkpoint and match manifest before any app write.",
+    "transferredAtUtc": "2026-09-23T16:41:25.135307+00:00"
+  },
+  "nextAction": "R3-02 host/device readiness and fixture/restore acceptance; retain external pending and proceed R3-03 when independent host work exhausted.",
+  "forecast": {
+    "basis": "210 open complete workflow/mode criteria, 5 catalog criteria; historical partial evidence reduces retest scope only after source audit",
+    "nextPackageActiveWork": "Host backup/fixture/readiness reconciliation first; duration unknown until device and receipt audit",
+    "remainingActiveWork": "7 sequential packages; no calibrated duration from adoption-only evidence",
+    "externalWait": "Vivo readiness, provider eligibility, hosted sync, physical audio/camera, real pilot prerequisites; unbounded until observed",
+    "knownFixedDuration": "Actual endurance >=180 minutes only after frozen accepted source",
+    "refresh": "After each package; do not infer release date from test counts."
+  },
+  "originalFreeGate": "NOT_MET",
+  "wholeScopeComplete": false,
+  "successorTaskId": "01a0cf23-34ae-78c2-9116-87746c0cd49c"
+}

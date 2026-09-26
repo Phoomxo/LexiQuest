@@ -1,0 +1,197 @@
+{
+  "taskId": "01a0d040-3e4f-74b1-b0ca-2adb6050caba",
+  "sourceFingerprint": "36b6433309cf16ca6962751cf89ecf7d7f9c7a0154eba86d3d53eb40826ced65",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-59652d12db1ada216911e11865bcb62be7af968336817b57873096c08546db21.json",
+      "sha256": "f1b0ac428f49f7c6d6942e77c2d561c07a56cecd36796599b77788c11e61a42d",
+      "passingCases": 89,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/learning_history_screen_test.dart",
+            "test/screens/mastery_dashboard_screen_test.dart",
+            "test/features/history/learning_history_reader_test.dart",
+            "test/features/progress/progress_projector_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "084658809302b6e51ea9d7ed9d76ee5c99bc72180f6d4d5b48e91a17538e1074"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "084658809302b6e51ea9d7ed9d76ee5c99bc72180f6d4d5b48e91a17538e1074",
+          "fingerprint": "ec9cef3774b42f265ec73d2d2148deba8613db24f53651d2ded0d19c946d8354",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:54:00.8228958+00:00",
+          "FinishedAt": "2026-09-23T21:54:21.9072254+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\084658809302-ec9cef3774b4-19bc6f12\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\084658809302-ec9cef3774b4-19bc6f12\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "ec9cef3774b42f265ec73d2d2148deba8613db24f53651d2ded0d19c946d8354",
+          "StdoutHash": "EC6BC306ABC8D47F8611762B6C03A57B75F8F3C1A507980BC79E2D536CF06327",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "29899cee2b4075d1368a1f8cddf779ccf3d2f1ddbce64f3b0182b6c8e0a20f71",
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded source closure;runtime digest attests recorded execution only."
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-b194ab967ce6729c6f44522ab7c6f9fa82f0bcc87e1d0c4ac301e96c6a1bae5f.json",
+      "sha256": "35bb62fb64602c5be9de47191d47dedd98973db459e29e2fd6ed8ec9b50629f0",
+      "passingCases": 18,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/quest_status_screen_test.dart",
+            "test/screens/avatar_equipment_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "be1df0eae486c23804254dfbf99e9eda623027be3032bd2078223d50eb70fb08"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "be1df0eae486c23804254dfbf99e9eda623027be3032bd2078223d50eb70fb08",
+          "fingerprint": "1c49fd45d26f645de164bb1e2516e945b025b014ccb380fcdb5fe923e3b99c30",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:54:49.1867043+00:00",
+          "FinishedAt": "2026-09-23T21:55:00.9542706+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\be1df0eae486-1c49fd45d26f-dcd3734a\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\be1df0eae486-1c49fd45d26f-dcd3734a\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "1c49fd45d26f645de164bb1e2516e945b025b014ccb380fcdb5fe923e3b99c30",
+          "StdoutHash": "07B78F040B8B65F6179F3CFE2F715502050CF538445AB72E6876509D7BFA8D77",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "29899cee2b4075d1368a1f8cddf779ccf3d2f1ddbce64f3b0182b6c8e0a20f71",
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded source closure;runtime digest attests recorded execution only."
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-32db9658b8ed6af8cd5a75e97851a279943f808116aaab4575fadae2bf76c778.json",
+      "sha256": "0ef83dcedd9e3f9060642160331085f33f5579114dd437346a0ebd8283100787",
+      "passingCases": 71,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/object_scanner_screen_test.dart",
+            "test/screens/export_center_flow_test.dart",
+            "test/screens/export_center_screen_test.dart",
+            "test/screens/offline_content_manager_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "b3f2ed5d7ebac8f3aec2deb1ccbdab17c966878b2debef39078e9667662fef6f"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "b3f2ed5d7ebac8f3aec2deb1ccbdab17c966878b2debef39078e9667662fef6f",
+          "fingerprint": "1c49fd45d26f645de164bb1e2516e945b025b014ccb380fcdb5fe923e3b99c30",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:55:25.9860652+00:00",
+          "FinishedAt": "2026-09-23T21:55:49.7120955+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\b3f2ed5d7eba-1c49fd45d26f-52dad170\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\b3f2ed5d7eba-1c49fd45d26f-52dad170\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "1c49fd45d26f645de164bb1e2516e945b025b014ccb380fcdb5fe923e3b99c30",
+          "StdoutHash": "F157EFC8CB70D8B91151E584D665AF370FA4D749A301776F4183AE5B625E4C91",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "29899cee2b4075d1368a1f8cddf779ccf3d2f1ddbce64f3b0182b6c8e0a20f71",
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded source closure;runtime digest attests recorded execution only."
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-d59a809b8e0ea3962f5bd095417e7a0ad4f4c85a581dd7679faf9cb610b118eb.json",
+      "sha256": "c0bf72f3aba20b873a3126a49cb58471aaf37bdd9360e7bfafe80ff77993c50b",
+      "passingCases": 1,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/scenarios/file_backed_sync_recovery_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "5dc5fb0ef9c343eb2f170434a5ab664f0db5c30c72a29a9e07a4336ba1c9f149"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "5dc5fb0ef9c343eb2f170434a5ab664f0db5c30c72a29a9e07a4336ba1c9f149",
+          "fingerprint": "ec9cef3774b42f265ec73d2d2148deba8613db24f53651d2ded0d19c946d8354",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:56:26.8921452+00:00",
+          "FinishedAt": "2026-09-23T21:56:35.4060881+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\5dc5fb0ef9c3-ec9cef3774b4-5330040d\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\5dc5fb0ef9c3-ec9cef3774b4-5330040d\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "ec9cef3774b42f265ec73d2d2148deba8613db24f53651d2ded0d19c946d8354",
+          "StdoutHash": "976B5249EE2E7798C3BA0BB4F721F266828A48B794876D30FDE40389AD683C51",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "29899cee2b4075d1368a1f8cddf779ccf3d2f1ddbce64f3b0182b6c8e0a20f71",
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded source closure;runtime digest attests recorded execution only."
+    }
+  ],
+  "uniquePassingCases": 179,
+  "newPassingCases": 0,
+  "revalidatedCases": 179,
+  "productSourceChanged": [],
+  "testSourceChanged": [],
+  "limits": [
+    "W09 89 tests across history screen,mastery dashboard,history reader,progress projector. Mixed doubles and real in-memory SQLite;screen display/context assertions do not certify full file durability/connection matrix/native history. Pair actual-host10 frompart11 not rerun.",
+    "W10 18 tests across quest and avatar. Quest dailyrefresh real in-memorySQLite plus repository doubles. Avatar preview/cancel/manual equipment/canonicalownership real in-memorySQLite;second database is a fresh memory database,not file reopen. No purchases made on native.",
+    "W12/W13/W14 71 tests across scanner,export flow+screen,offline manager. Scanner uses _FakeScanner;test named real adapter/persists accepted vocabulary checks acceptCalls,not real camera recognition or DBpersistence. Offline manager uses _FakeManager.",
+    "Export generator/Drift readers and temporary artifact bytes exercised;document picker outcomes injected. Export tests include synthetic consent guard coverage,not research activation or real Android picker certification.",
+    "Sync1 uses file-backed SQLite and _RestartCloud gateway double:offline/lostACK,4operations appliedonce,checkpoint and localinventory survive reopen;not hosted sync,network auth or abruptprocessdeath.",
+    "Native read-only progress/quest navigation on same part09 APK;58tables compared,13protectedtables unchanged. One dailyquest+progress and refresh timestamps. No history/review-center/Pair native run,provider or new answers. All215criterionrows/211remaining preserved."
+  ],
+  "recoveries": [
+    {
+      "method": "Read guessed audit_part13.py",
+      "observation": "Path does not exist",
+      "correction": "rg --files --hidden --no-ignore discovered record_part13.py,audit_part12.py,audit_part13_native.py;no repeated failed read."
+    }
+  ],
+  "whitespace": {
+    "wholeDirtyTree": "Historical docs/development/ari/app-device-integration.md:843 EOFblank only;not introduced by part14",
+    "changedPart14Files": "verified separately before handoff"
+  }
+}

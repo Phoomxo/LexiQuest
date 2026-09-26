@@ -74,7 +74,8 @@ final class ResearchOwnerUpgradeConflict implements Exception {
       'removal and re-enrollment are required before upgrading this owner.';
 }
 
-final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+final class DriftOwnerUpgradeRepository
+    implements OwnerUpgradeRepository, AdmittedOwnerLogoutRepository {
   DriftOwnerUpgradeRepository(
     this._database, {
     required this.nowUtc,
@@ -434,12 +435,23 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   @override
-  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout({
+    String? expectedOwnerId,
+    bool Function()? isCurrent,
+  }) {
+    void admit(String activeOwnerId) {
+      if (!(isCurrent?.call() ?? true) ||
+          (expectedOwnerId != null && expectedOwnerId != activeOwnerId)) {
+        throw StateError('logout owner admission retired');
+      }
+    }
+
     return _serialized(
       () => _withOwnerOperationGate((operationToken) async {
         final source = await (_database.select(
           _database.localOwners,
         )..where((row) => row.isActive.equals(true))).getSingle();
+        admit(source.id);
         return _runTransition(
           sourceOwnerId: source.id,
           operationToken: operationToken,
@@ -448,6 +460,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             if (!await _fenceOwnerTransition(operationToken)) {
               throw StateError('owner-operation gate was lost');
             }
+            final active = await (_database.select(
+              _database.localOwners,
+            )..where((row) => row.isActive.equals(true))).getSingle();
+            admit(active.id);
             await DriftOwnerGeneration(_database).advance();
             final ownerId =
                 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
@@ -473,6 +489,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
               _database,
               nowUtc: nowUtc,
             ).establishCutover(ownerId);
+            admit(source.id);
             return OwnerUpgradeResult(
               targetOwnerId: ownerId,
               mode: OwnerUpgradeMode.localGuestCreated,

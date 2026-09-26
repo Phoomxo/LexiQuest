@@ -1,0 +1,192 @@
+TAP version 13
+# Subtest: UX-D01 new entry offers both independent teaching routes without quiz or login
+not ok 1 - UX-D01 new entry offers both independent teaching routes without quiz or login
+  ---
+  duration_ms: 5.3369
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /data-pilot-track="phonics"/. Input:
+    
+    '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:21:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.start (node:internal/test_runner/test:1177:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+  ...
+# Subtest: pilot pause/resume preserves each track step and support, never fabricates answers
+not ok 2 - pilot pause/resume preserves each track step and support, never fabricates answers
+  ---
+  duration_ms: 3.5636
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:28:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /คำช่วย/. Input:
+    
+    '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:31:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: pilot missing audio is explicit, skip/finish allow other track without microphone
+not ok 3 - pilot missing audio is explicit, skip/finish allow other track without microphone
+  ---
+  duration_ms: 1.9093
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /ยังไม่มีเสียงที่ผ่านตรวจ/. Input:
+    
+    '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<section class="screen" data-view="home"><div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-label="โปรไฟล์ตัวอย่าง">L</div></div><div class="kicker">เรียนภาษาอังกฤษแบบค่อยเป็นค่อยไป</div><h1 class="title">วันนี้ เริ่มตรงนี้เลย</h1><p class="sub">ไม่ต้องรู้จักชื่อโหมดฝึกก็เริ่มได้</p><div class="hero"><span class="tag">แนะนำสำหรับวันนี้</span><h3>ฝึกสั้น ๆ 5 นาที</h3><p>เริ่มจากคำที่ใช้ในชีวิตประจำวัน</p><button data-mode="meaning-quiz">เริ่มเรียน →</button></div><div class="section-title">อยากทำอะไรต่อ?</div><button class="action-card" data-route="review"><span class="action-icon gold">◷</span><span class="action-copy"><strong>ทบทวนวันนี้</strong><small>ฝึกคำที่เคยเรียนให้จำแม่นขึ้น</small></span><span class="chev">›</span></button><button class="action-card" data-route="words"><span class="action-icon green">✦</span><span class="action-copy"><strong>คำศัพท์ของฉัน</strong><small>ค้นหา เพิ่มคำ หรือเลือกคำมาฝึก</small></span><span class="chev">›</span></button><button class="action-card" data-route="packs"><span class="action-icon ">▤</span><span class="action-copy"><strong>เลือกบทเรียน</strong><small>หาหัวข้อที่สนใจและระดับที่เหมาะ</small></span><span class="chev">›</span></button><button class="action-card" data-route="ai"><span class="action-icon ">✧</span><span class="action-copy"><strong>ถามผู้ช่วยเมื่อสงสัย</strong><small>คุยกับผู้ช่วยใน LexiQuest เมื่ออยากได้คำอธิบาย</small></span><span class="chev">›</span></button><p class="hint">เริ่มได้โดยไม่ต้องสมัครบัญชีหรือเปิดผู้ช่วย AI</p></section>'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:44:47)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: UX-D02 reading selector changes passage and question content through mode entry
+not ok 4 - UX-D02 reading selector changes passage and question content through mode entry
+  ---
+  duration_ms: 3.3031
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:51:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 3
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 3
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:60:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: UX-D03 typing draft survives leaving before review and re-entering writing
+not ok 5 - UX-D03 typing draft survives leaving before review and re-entering writing
+  ---
+  duration_ms: 2.7516
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:62:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /I will be ten minutes late\. &lt;ok&gt;/. Input:
+    
+    '<section class="screen" data-view="lab-activity"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">ฝึกทีละข้อ</div><h1 class="title">ห้องเขียน</h1><p class="sub">ร่างข้อความสั้นและตรวจงานของตัวเอง</p><div class="smalltag">โจทย์ตัวอย่าง 1 ข้อ</div><div class="card"><h3>สถานการณ์</h3><p>คุณจะไปพบเพื่อนช้ากว่าเวลานัด 10 นาที</p></div><div class="question"><small>ลองตอบด้วยตัวเอง</small><strong class="lab-question-text">เขียนข้อความภาษาอังกฤษสั้น ๆ บอกเพื่อนว่าจะมาสาย</strong></div><details class="card"><summary>ต้องเขียนอะไรบ้าง?</summary><p>บอกเพื่อนว่าเกิดอะไรขึ้น ระบุเวลา และใช้คำสุภาพ</p></details><label class="label" for="lab-writing">คำตอบของคุณ</label><textarea id="lab-writing" class="input" rows="4" placeholder="ลองเขียน 1–2 ประโยค"></textarea><button class="button full" data-action="lab-review-writing">ตรวจงานของฉัน</button><button class="button secondary full" data-route="skill-lab">เลือกแบบฝึกอื่น</button><p class="sample-note">กิจกรรมนี้เป็นร่าง UX ไม่บันทึกคำตอบ คะแนน XP หรือประวัติการเรียน</p></section>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '<section class="screen" data-view="lab-activity"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">ฝึกทีละข้อ</div><h1 class="title">ห้องเขียน</h1><p class="sub">ร่างข้อความสั้นและตรวจงานของตัวเอง</p><div class="smalltag">โจทย์ตัวอย่าง 1 ข้อ</div><div class="card"><h3>สถานการณ์</h3><p>คุณจะไปพบเพื่อนช้ากว่าเวลานัด 10 นาที</p></div><div class="question"><small>ลองตอบด้วยตัวเอง</small><strong class="lab-question-text">เขียนข้อความภาษาอังกฤษสั้น ๆ บอกเพื่อนว่าจะมาสาย</strong></div><details class="card"><summary>ต้องเขียนอะไรบ้าง?</summary><p>บอกเพื่อนว่าเกิดอะไรขึ้น ระบุเวลา และใช้คำสุภาพ</p></details><label class="label" for="lab-writing">คำตอบของคุณ</label><textarea id="lab-writing" class="input" rows="4" placeholder="ลองเขียน 1–2 ประโยค"></textarea><button class="button full" data-action="lab-review-writing">ตรวจงานของฉัน</button><button class="button secondary full" data-route="skill-lab">เลือกแบบฝึกอื่น</button><p class="sample-note">กิจกรรมนี้เป็นร่าง UX ไม่บันทึกคำตอบ คะแนน XP หรือประวัติการเรียน</p></section>'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:65:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: UX-D04 feedback retains scroll while navigating to another screen resets it
+not ok 6 - UX-D04 feedback retains scroll while navigating to another screen resets it
+  ---
+  duration_ms: 2.8846
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 340
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 340
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:70:45)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: pilot content is a pinned teaching subset with assessment answers excluded
+not ok 7 - pilot content is a pinned teaching subset with assessment answers excluded
+  ---
+  duration_ms: 2.1795
+  type: 'test'
+  location: 'C:\\Users\\Phet\\.codex\\worktrees\\ffeb\\LexiQuest\\docs\\design\\check-s01-navigation.cjs:74:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'undefined'
+    - 'object'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'object'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\ffeb\LexiQuest\docs\design\check-s01-navigation.cjs:76:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 0
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 108.6559

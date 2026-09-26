@@ -105,6 +105,17 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
     }
   }
 
+  void _queueWork(Future<void> Function() operation) {
+    if (!mounted || _busy) return;
+    final epoch = _epoch;
+    setState(() => _busy = true);
+    _work = _work.then((_) async {
+      // Cancel queued admission as well as replies from work already started.
+      if (!mounted || epoch != _epoch) return;
+      await operation();
+    });
+  }
+
   Future<void> _login() async {
     final epoch = ++_epoch;
     setState(() {
@@ -247,7 +258,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
               onPressed: _busy
                   ? null
                   : () {
-                      _work = _check();
+                      _queueWork(_check);
                     },
               child: const Text('กรอกเสร็จแล้ว ตรวจสถานะ'),
             ),
@@ -257,7 +268,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
               onPressed: _busy
                   ? null
                   : () {
-                      _work = _work.then((_) => _login());
+                      _queueWork(_login);
                     },
               child: const Text('เชื่อมบัญชี ChatGPT'),
             ),
@@ -266,7 +277,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
               onPressed: _busy
                   ? null
                   : () {
-                      _work = _work.then((_) => _check());
+                      _queueWork(_check);
                     },
               child: const Text('เปิดห้องสนทนา'),
             ),

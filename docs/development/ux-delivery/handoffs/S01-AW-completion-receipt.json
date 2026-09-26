@@ -1,0 +1,15 @@
+{
+  "atUtc": "2026-09-24T21:02:24.125996+00:00",
+  "taskId": "01a0d50a-273c-71b1-a13e-e4fd5649b4b4",
+  "stateRevision": 97,
+  "item": "S01-AW-explicit-category-action-recovery",
+  "status": "HOST_PASS",
+  "hostTests": 503,
+  "newCases": 31,
+  "remainingRed": [],
+  "sourcePinCount": 1549,
+  "inheritedArchivesVerified": 143,
+  "nextReady": "S01-AX-explicit-word-delete-recovery",
+  "sprintAccepted": false,
+  "writerRetainedUntilImmutableHandoff": true
+}

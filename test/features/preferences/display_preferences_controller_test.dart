@@ -17,6 +17,172 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 
 void main() {
+  for (final choice in ['theme', 'motion', 'cached-no-op']) {
+    test(
+      'BA fresh explicit $choice preserves canonical companion after old controller commit',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final cases = _useCases(database);
+        final old = DisplayPreferencesController(cases),
+            current = DisplayPreferencesController(cases);
+        addTearDown(old.dispose);
+        addTearDown(current.dispose);
+        await old.initialize();
+        await current.initialize();
+        if (choice == 'theme') {
+          await old.setReducedMotion(true);
+          await current.selectThemeMode(ThemeMode.dark);
+        } else {
+          await old.selectThemeMode(ThemeMode.dark);
+          if (choice == 'motion') {
+            await current.setReducedMotion(true);
+          } else {
+            await current.selectThemeMode(ThemeMode.system);
+          }
+        }
+        final saved = await cases.read();
+        expect(
+          saved.display.themeMode,
+          choice == 'cached-no-op'
+              ? LearnerThemePreference.system
+              : LearnerThemePreference.dark,
+        );
+        expect(
+          saved.display.motionMode,
+          choice == 'cached-no-op'
+              ? LearnerMotionPreference.system
+              : LearnerMotionPreference.reduced,
+        );
+        expect(
+          current.themeMode,
+          choice == 'cached-no-op' ? ThemeMode.system : ThemeMode.dark,
+        );
+        expect(await _outboxCount(database), 0);
+      },
+    );
+  }
+
+  test(
+    'BA owner retirement inside display transaction rolls back preference and owner',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final cases = _useCases(database);
+      final owner = await cases.owners.getOrCreateActiveOwner();
+      await database.customStatement(
+        "CREATE TRIGGER retire_display_owner AFTER INSERT ON learner_preferences BEGIN UPDATE local_owners SET is_active=0 WHERE id=NEW.owner_id; END",
+      );
+      await expectLater(
+        cases.saveDisplayPreferences(
+          expectedOwnerId: owner.id,
+          themeMode: LearnerThemePreference.dark,
+          motionMode: LearnerMotionPreference.system,
+        ),
+        throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+      );
+      expect(await database.select(database.learnerPreferences).get(), isEmpty);
+      expect(
+        (await database.select(database.localOwners).getSingle()).isActive,
+        isTrue,
+      );
+      expect(await _outboxCount(database), 0);
+    },
+  );
+
+  for (final write in [false, true]) {
+    test(
+      'BA canonical owner change during ${write ? "acknowledgement" : "initial read"} cannot publish',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final base = _useCases(database);
+        final first = await base.owners.getOrCreateActiveOwner();
+        final owners = _ControllableOwners(first);
+        final held = _HeldPreferences(base.repository);
+        final controller = DisplayPreferencesController(
+          LearnerPreferencesUseCases(
+            repository: held,
+            owners: owners,
+            nowUtc: base.nowUtc,
+          ),
+        );
+        addTearDown(controller.dispose);
+        if (write) await controller.initialize();
+        held.holdRead = !write;
+        held.holdWrite = write;
+        held.afterCommit = write;
+        final pending = write
+            ? controller.selectThemeMode(ThemeMode.dark)
+            : controller.initialize();
+        final checked = expectLater(
+          pending,
+          throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+        );
+        await held.entered.future;
+        owners.activeOwner = domain.LocalOwner(
+          id: 'other-owner',
+          createdAtUtc: DateTime.utc(2026, 9, 25),
+        );
+        await database.customUpdate(
+          'UPDATE local_owners SET is_active=0',
+          updates: {database.localOwners},
+        );
+        held.release.complete();
+        await checked;
+        expect(controller.themeMode, ThemeMode.system);
+        expect(
+          (await base.repository.read(first.id)).display.themeMode,
+          write ? LearnerThemePreference.dark : LearnerThemePreference.system,
+        );
+        expect(await _outboxCount(database), 0);
+      },
+    );
+  }
+
+  for (final existing in [false, true]) {
+    test(
+      'BA display transaction retirement rolls back insert/update $existing',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final useCases = _useCases(database);
+        final owner = await useCases.owners.getOrCreateActiveOwner();
+        if (existing) {
+          await useCases.saveDisplayPreferences(
+            expectedOwnerId: owner.id,
+            themeMode: LearnerThemePreference.light,
+            motionMode: LearnerMotionPreference.system,
+          );
+        }
+        final before = await database
+            .customSelect('SELECT * FROM learner_preferences')
+            .get();
+        var checks = 0;
+        await expectLater(
+          useCases.repository.saveDisplayPreferences(
+            owner.id,
+            LearnerDisplayPreferences(
+              themeMode: LearnerThemePreference.dark,
+              motionMode: LearnerMotionPreference.reduced,
+              updatedAtUtc: DateTime.utc(2026, 9, 25),
+            ),
+            mutationAllowed: () => ++checks == 1,
+          ),
+          throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+        );
+        final after = await database
+            .customSelect('SELECT * FROM learner_preferences')
+            .get();
+        expect(
+          after.map((r) => r.data).toList(),
+          before.map((r) => r.data).toList(),
+        );
+        expect(await _outboxCount(database), 0);
+      },
+    );
+  }
+
   test(
     'F01 disposed preference read cannot publish or execute queued work',
     () async {
@@ -50,7 +216,10 @@ void main() {
       expect(controller.isInitialized, isFalse);
       expect(notifications, 0);
       expect(held.reads, 1);
-      expect((await base.read()).display.themeMode, LearnerThemePreference.system);
+      expect(
+        (await base.read()).display.themeMode,
+        LearnerThemePreference.system,
+      );
     },
   );
 

@@ -1,0 +1,1098 @@
+{
+  "schemaVersion": 1,
+  "revision": 115,
+  "planVersion": 5,
+  "planPath": "docs/design/worksheet-to-play-blueprint.md",
+  "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain.",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "originWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "originBranch": "feature/ari-app-device-integration",
+  "originHead": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "stateRole": "IMMUTABLE_BC_CHECKPOINT",
+  "status": "STOPPED_AFTER_BC_BY_USER",
+  "sprint": {
+    "id": "S01",
+    "goal": "ต้นแบบสองเส้นทางที่เริ่ม ขอช่วย พัก และกลับมาได้ พร้อมชุดเนื้อหาที่มีสถานะตรวจครบถ้วน",
+    "cadenceDays": 28,
+    "status": "IN_PROGRESS",
+    "startedAtUtc": "2026-09-24T05:52:58.6746244Z",
+    "reviewDueAtUtc": "2026-10-22T05:52:58.6746244Z"
+  },
+  "currentItem": "S01-BC-logout-recovery",
+  "items": [
+    {
+      "id": "S01-A",
+      "status": "COMPLETE",
+      "acceptance": "PASS",
+      "dependsOn": [
+        "verified-source-handoff"
+      ],
+      "acceptanceScope": "Source transfer, bounded reuse/contract/readiness inspection only"
+    },
+    {
+      "id": "S01-B",
+      "status": "WAITING",
+      "acceptance": "EXTERNAL_PENDING",
+      "dependsOn": [
+        "S01-A"
+      ],
+      "draftStatus": "COMPLETE",
+      "artifacts": [
+        "docs/development/ux-delivery/pilot-content-r1.json",
+        "docs/development/ux-delivery/reviewer-packet.md"
+      ]
+    },
+    {
+      "id": "S01-C",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "dependsOn": [
+        "S01-A",
+        "S01-B-draft-for-navigation"
+      ],
+      "readinessByPurpose": {
+        "navigation": [
+          "S01-A",
+          "S01-B-draft-for-navigation"
+        ],
+        "learningTrial": [
+          "S01-B-reviewed",
+          "actual-participants"
+        ]
+      },
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/browser review",
+        "real keyboard/screen reader",
+        "reviewed content before learning trial"
+      ]
+    },
+    {
+      "id": "S01-D",
+      "status": "WAITING",
+      "acceptance": "EXTERNAL_PENDING",
+      "dependsOn": [
+        "S01-B-reviewed",
+        "S01-C-ready-for-trial",
+        "actual-participants"
+      ]
+    },
+    {
+      "id": "S01-E-readiness-and-routing",
+      "status": "COMPLETE",
+      "acceptance": "PASS",
+      "dependsOn": [
+        "S01-A"
+      ],
+      "acceptanceScope": "Offline guard/Choice adapter/capability contract only; live Jev pending"
+    },
+    {
+      "id": "S01-F-owner-audio-prototype",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "dependsOn": [
+        "S01-C-independent-implementation"
+      ],
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/browser/a11y review"
+      ]
+    },
+    {
+      "id": "S01-G-writing-draft-lifecycle",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "dependsOn": [
+        "S01-F-host-behavior"
+      ],
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/browser/a11y review"
+      ]
+    },
+    {
+      "id": "S01-H-story-support",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/browser/a11y review"
+      ]
+    },
+    {
+      "id": "S01-I-import-export-boundaries",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/browser/a11y/download review"
+      ]
+    },
+    {
+      "id": "S01-J-evidence-copy",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/a11y review"
+      ]
+    },
+    {
+      "id": "S01-K-camera-provider-boundaries",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/a11y/camera/provider verification"
+      ]
+    },
+    {
+      "id": "S01-L-vocabulary-form-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/a11y review"
+      ]
+    },
+    {
+      "id": "S01-M-form-accessibility",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader review"
+      ]
+    },
+    {
+      "id": "S01-N-empty-evidence",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/a11y review"
+      ]
+    },
+    {
+      "id": "S01-O-selection-accessibility",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader review"
+      ]
+    },
+    {
+      "id": "S01-P-selection-continuity",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader review"
+      ]
+    },
+    {
+      "id": "S01-Q-sync-selection",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader review"
+      ]
+    },
+    {
+      "id": "S01-R-input-route-boundaries",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/native owner/draft verification"
+      ]
+    },
+    {
+      "id": "S01-S-tile-interaction",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader review"
+      ]
+    },
+    {
+      "id": "S01-T-mode-input-drafts",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/screen-reader/native draft verification"
+      ]
+    },
+    {
+      "id": "S01-U-canvas-lifecycle",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted browser/visual/native drawing and real accessibility verification"
+      ]
+    },
+    {
+      "id": "S01-X-selector-boundaries",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted visual/keyboard/native verification"
+      ]
+    },
+    {
+      "id": "S01-Y-keyboard-continuation",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "permitted real keyboard/screen-reader/visual verification"
+      ]
+    },
+    {
+      "id": "S01-Z-instructional-interface-readiness",
+      "status": "COMPLETE",
+      "acceptance": "PASS",
+      "acceptanceScope": "Source/design consistency and reviewable proposed interface only; no implementation, qualified content approval or runtime/native/learning acceptance",
+      "artifact": "docs/development/ux-delivery/instructional-evidence-contract-v1.md"
+    },
+    {
+      "id": "S01-AA-native-four-tab-navigation",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AA-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 189,
+      "evidence": "docs/development/ux-delivery/evidence/S01-AA-validation.json",
+      "pending": [
+        "real native/device/visual/accessibility/user verification"
+      ]
+    },
+    {
+      "id": "S01-AB-native-thai-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "HOST_COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AB-acceptance.md",
+      "hostBehavior": "PASS",
+      "hostTests": 128,
+      "pending": [
+        "native/device",
+        "real accessibility/visual/user"
+      ]
+    },
+    {
+      "id": "S01-AC-offline-catalog-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "HOST_COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AC-acceptance.md",
+      "hostBehavior": "PASS",
+      "hostTests": 68,
+      "evidence": "docs/development/ux-delivery/evidence/S01-AC-validation.json",
+      "pending": [
+        "native/device",
+        "real accessibility/visual/user"
+      ]
+    },
+    {
+      "id": "S01-AD-personal-export-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "HOST_COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AD-acceptance.md",
+      "hostBehavior": "PASS",
+      "hostTests": 73,
+      "evidence": "docs/development/ux-delivery/evidence/S01-AD-validation.json",
+      "pending": [
+        "native/device",
+        "real accessibility/visual/user"
+      ]
+    },
+    {
+      "id": "S01-AE-review-queue-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "HOST_COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AE-acceptance.md",
+      "hostBehavior": "PASS",
+      "hostTests": 255,
+      "evidence": "docs/development/ux-delivery/evidence/S01-AE-validation.json",
+      "pending": [
+        "native/device",
+        "real accessibility/visual/user"
+      ]
+    },
+    {
+      "id": "S01-AF-progress-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "implementation": "HOST_COMPLETE",
+      "card": "docs/development/ux-delivery/S01-AF-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "native/device/restart",
+        "real accessibility/visual",
+        "user/trial/release"
+      ]
+    },
+    {
+      "id": "S01-AG-quest-status-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "dependsOn": [
+        "S01-AF-host-checkpoint"
+      ],
+      "acceptanceCard": "docs/development/ux-delivery/S01-AG-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/learning/trial",
+        "release"
+      ],
+      "evidence": "docs/development/ux-delivery/evidence/S01-AG-validation.json"
+    },
+    {
+      "id": "S01-AH-achievement-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AH-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AH-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/learning/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AI-avatar-reward-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AI-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AI-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/learning/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AJ-learner-preferences-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AJ-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AJ-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/learning/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AK-learning-goals-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AK-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AK-validation.json",
+      "pending": [
+        "native/device",
+        "real accessibility",
+        "visual/user",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AL-study-reminder-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AL-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AL-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AM-learning-calendar-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AM-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AM-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AN-profile-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AN-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AN-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AO-planning-navigation",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AO-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AO-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AP-catalog-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AP-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AP-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AQ-pack-detail-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AQ-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AQ-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AR-bookmark-report-owner-commit",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AR-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AR-validation.json",
+      "pending": [
+        "native/device",
+        "restart",
+        "real keyboard/screen reader",
+        "permitted visual/user review",
+        "qualified content/media/trials",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AS-reading-library-navigation",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AS-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AS-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AT-cefr-catalog-navigation-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AT-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AT-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AU-cefr-explicit-import-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AU-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AU-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AV-private-vocabulary-browse-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AV-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AV-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AW-explicit-category-action-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AW-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AW-validation.json",
+      "pending": [
+        "native/device/restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AX-explicit-word-delete-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AX-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AX-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AY-explicit-word-form-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AY-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AY-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-AZ-explicit-manual-import-recovery",
+      "status": "WAITING",
+      "acceptance": "NOT_TESTED",
+      "acceptanceCard": "docs/development/ux-delivery/S01-AZ-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "evidence": "docs/development/ux-delivery/evidence/S01-AZ-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual",
+        "user/qualified-content/media/trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-BA-display-preferences-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-BA-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 371,
+      "evidence": "docs/development/ux-delivery/evidence/S01-BA-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual/user",
+        "learning/trial/release"
+      ]
+    },
+    {
+      "id": "S01-BB-password-dialog-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-BB-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 432,
+      "evidence": "docs/development/ux-delivery/evidence/S01-BB-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual/user",
+        "learning/trial/release"
+      ]
+    },
+    {
+      "id": "S01-BC-logout-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "acceptanceCard": "docs/development/ux-delivery/S01-BC-acceptance.md",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 570,
+      "evidence": "docs/development/ux-delivery/evidence/S01-BC-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "real keyboard/screen-reader/visual/user",
+        "learning/trial/release"
+      ]
+    }
+  ],
+  "writer": {
+    "status": "RELEASED",
+    "holderThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
+    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\s01-bc-logout\\LexiQuest",
+    "branch": "feature/ux-s01-bc-logout-01a0de13",
+    "claimedAtUtc": "2026-09-26T14:19:33.778101+00:00",
+    "currentItem": "S01-BC-logout-recovery",
+    "dispatchId": "ux-s01-bc-20260926-0684",
+    "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-BC-source-receipt.json",
+    "predecessorReleased": true,
+    "routing": "Astra/medium deterministic fallback; not Jev-selected; Standard/default requested; runtime tier unexposed",
+    "releasedAtUtc": "2026-09-26T14:49:59.794924+00:00",
+    "releaseReason": "BC host checkpoint complete; latest user instruction stops successor dispatch"
+  },
+  "dispatch": {
+    "id": "ux-s01-bc-20260926-0684",
+    "status": "CLAIMED",
+    "successorThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944"
+  },
+  "latestHandoff": "docs/development/ux-delivery/handoffs/S01-BC-controller-checkpoint.json",
+  "sourceManifest": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
+  "evidence": {
+    "planConsistency": "PASS",
+    "originalChangePreservation": "PASS",
+    "reportPath": "docs/development/ux-delivery/S01.md",
+    "transferVerificationRecord": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
+    "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-BC-source-receipt.json",
+    "latestValidation": "docs/development/ux-delivery/evidence/S01-BC-validation.json",
+    "jevRouting": "docs/development/ux-delivery/evidence/S01-E-routing.json",
+    "interfaceReadiness": "docs/development/ux-delivery/evidence/S01-Z-source-review.json",
+    "personalExportRecovery": "docs/development/ux-delivery/evidence/S01-AD-validation.json",
+    "latestBacklogReassessment": "docs/development/ux-delivery/evidence/S01-BC-backlog-reassessment.json",
+    "reviewQueueRecovery": "docs/development/ux-delivery/evidence/S01-AE-validation.json",
+    "personalProgressRecovery": "docs/development/ux-delivery/evidence/S01-AF-validation.json",
+    "learningGoalsRecovery": "docs/development/ux-delivery/evidence/S01-AK-validation.json",
+    "learningCalendarRecovery": "docs/development/ux-delivery/evidence/S01-AM-validation.json"
+  },
+  "externalPrerequisites": [
+    {
+      "id": "qualified-reviewers",
+      "status": "UNCONFIRMED",
+      "blocks": [
+        "reviewed-content",
+        "learning-trial"
+      ],
+      "independentWork": [
+        "draft-content",
+        "navigation",
+        "thai-copy",
+        "accessibility",
+        "interface-analysis"
+      ]
+    },
+    {
+      "id": "reviewed-pilot-media",
+      "status": "NOT_AVAILABLE",
+      "blocks": [
+        "learning-trial"
+      ]
+    },
+    {
+      "id": "actual-participants",
+      "status": "UNCONFIRMED",
+      "blocks": [
+        "S01-D"
+      ]
+    },
+    {
+      "id": "ai-provider-budget-age-readiness",
+      "status": "UNCONFIRMED",
+      "blocks": [
+        "live-ai-only"
+      ]
+    },
+    {
+      "id": "hosted-sync-environment",
+      "status": "UNCONFIRMED",
+      "blocks": [
+        "hosted-sync-acceptance-only"
+      ]
+    },
+    {
+      "id": "permitted-prototype-visual-review",
+      "status": "NOT_AVAILABLE",
+      "blocks": [
+        "S01-C-visual-acceptance",
+        "UX-D01-D04-close"
+      ],
+      "reason": "Prior browser automation rejection may not be bypassed; host/source review completed"
+    }
+  ],
+  "openPrototypeDefects": [
+    {
+      "id": "UX-D01",
+      "description": "new and resume entry both launch meaning quiz",
+      "status": "OPEN",
+      "item": "S01-C",
+      "hostRegression": "PASS",
+      "pending": "Browser/visual retest under a permitted channel; no native or user acceptance",
+      "evidence": "docs/development/ux-delivery/evidence/S01-validation.json"
+    },
+    {
+      "id": "UX-D02",
+      "description": "reading selector does not select distinct content",
+      "status": "OPEN",
+      "item": "S01-C",
+      "hostRegression": "PASS",
+      "pending": "Browser/visual retest under a permitted channel; no native or user acceptance",
+      "evidence": "docs/development/ux-delivery/evidence/S01-validation.json"
+    },
+    {
+      "id": "UX-D03",
+      "description": "writing draft is not retained through re-entry",
+      "status": "OPEN",
+      "item": "S01-C",
+      "hostRegression": "PASS",
+      "pending": "Browser/visual retest under a permitted channel; no native or user acceptance",
+      "evidence": "docs/development/ux-delivery/evidence/S01-validation.json"
+    },
+    {
+      "id": "UX-D04",
+      "description": "feedback render resets scroll position",
+      "status": "OPEN",
+      "item": "S01-C",
+      "hostRegression": "PASS",
+      "pending": "Browser/visual retest under a permitted channel; no native or user acceptance",
+      "evidence": "docs/development/ux-delivery/evidence/S01-validation.json"
+    },
+    {
+      "id": "UX-D05",
+      "description": "Prototype owner state separation requires actual visual verification",
+      "status": "OPEN",
+      "item": "S01-F",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-F-validation.json"
+    },
+    {
+      "id": "UX-D06",
+      "description": "Prototype audio cancellation/control requires actual visual/audio verification",
+      "status": "OPEN",
+      "item": "S01-F",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-F-validation.json"
+    },
+    {
+      "id": "UX-D07",
+      "description": "Exam/task draft and discard require permitted visual/a11y verification",
+      "status": "OPEN",
+      "item": "S01-G",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-G-validation.json"
+    },
+    {
+      "id": "UX-D08",
+      "description": "Story support/modality and revision reset require permitted visual/a11y verification",
+      "status": "OPEN",
+      "item": "S01-H",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-H-validation.json"
+    },
+    {
+      "id": "UX-D09",
+      "description": "Import/edit/delete/export cancellation and empty states require permitted visual/a11y/download verification",
+      "status": "OPEN",
+      "item": "S01-I",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-I-validation.json"
+    },
+    {
+      "id": "UX-D10",
+      "description": "Sample/effort/no-evidence copy requires permitted visual/a11y verification",
+      "status": "OPEN",
+      "item": "S01-J",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-J-validation.json"
+    },
+    {
+      "id": "UX-D11",
+      "description": "Camera cancellation/readiness and AI readiness/cancellation require permitted visual/a11y review; no provider/native acceptance",
+      "status": "OPEN",
+      "item": "S01-K",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-K-validation.json"
+    },
+    {
+      "id": "UX-D12",
+      "description": "Form recovery and per-row import feedback require permitted visual/a11y verification",
+      "status": "OPEN",
+      "item": "S01-L",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-L-validation.json"
+    },
+    {
+      "id": "UX-D13",
+      "description": "Input focus/selection restoration and field-linked validation require actual keyboard/screen-reader verification",
+      "status": "OPEN",
+      "item": "S01-M",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-M-validation.json"
+    },
+    {
+      "id": "UX-D14",
+      "description": "No-evidence versus simulated weakness copy needs permitted visual/a11y review",
+      "status": "OPEN",
+      "item": "S01-N",
+      "hostRegression": "PASS"
+    },
+    {
+      "id": "UX-D15",
+      "description": "Goal/font/contrast selected semantics and focus require permitted keyboard/screen-reader review",
+      "status": "OPEN",
+      "item": "S01-O",
+      "hostRegression": "PASS"
+    },
+    {
+      "id": "UX-D16",
+      "description": "Category/reading selection semantics and category/exam focus need permitted real accessibility verification",
+      "status": "OPEN",
+      "item": "S01-P",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-P-validation.json"
+    },
+    {
+      "id": "UX-D17",
+      "description": "Sync sample selections, removed-choice focus and stale-event guards need permitted accessibility verification",
+      "status": "OPEN",
+      "item": "S01-Q",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-Q-validation.json"
+    },
+    {
+      "id": "UX-D18",
+      "description": "Route/task guards on draft input, review and export choices require permitted native/visual retest",
+      "status": "OPEN",
+      "item": "S01-R",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-R-validation.json"
+    },
+    {
+      "id": "UX-D19",
+      "description": "matching selection semantics and tile focus/input boundaries",
+      "status": "OPEN",
+      "item": "S01-S",
+      "hostRegression": "PASS",
+      "pending": "permitted visual/keyboard/screen-reader review",
+      "evidence": "docs/development/ux-delivery/evidence/S01-S-validation.json"
+    },
+    {
+      "id": "UX-D20",
+      "description": "typed practice draft loss during render and missing alternative-input label/retry focus",
+      "status": "OPEN",
+      "item": "S01-T",
+      "hostRegression": "PASS",
+      "pending": "permitted visual/keyboard/screen-reader/native draft verification",
+      "evidence": "docs/development/ux-delivery/evidence/S01-T-validation.json"
+    },
+    {
+      "id": "UX-D21",
+      "description": "Canvas draft lifecycle, pointer ownership and clear/retry need permitted real drawing/visual/accessibility verification",
+      "status": "OPEN",
+      "item": "S01-U",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-U-validation.json"
+    },
+    {
+      "id": "UX-D22",
+      "description": "Choice answers and detached controls require permitted visual/keyboard/native retest",
+      "status": "OPEN",
+      "item": "S01-V",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-V-validation.json"
+    },
+    {
+      "id": "UX-D23",
+      "description": "Support action stages, detached/disabled controls and audio exit guards require permitted real interaction/a11y/audio retest",
+      "status": "OPEN",
+      "item": "S01-W",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-W-validation.json"
+    },
+    {
+      "id": "UX-D24",
+      "description": "Selector event boundaries need permitted real interaction verification; malformed values and stale dispatches are defensive host contracts, not observed usability failures",
+      "status": "OPEN",
+      "item": "S01-X",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-X-validation.json"
+    },
+    {
+      "id": "UX-D25",
+      "description": "Focus destination after displayed controls disappear requires permitted real keyboard/screen-reader/visual verification",
+      "status": "OPEN",
+      "item": "S01-Y",
+      "hostRegression": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-Y-validation.json"
+    }
+  ],
+  "constraints": {
+    "singleWriter": true,
+    "allowSubagents": false,
+    "sequentialFreshProjectChatsAuthorized": true,
+    "historical215IsActive": false,
+    "purchasesPaidFallbackDeploymentResearchActivationAllowed": false,
+    "parallelHeavyChecksAllowed": false,
+    "fullReleaseVerifierRequiresFrozenSha": true,
+    "prototypeDoesNotProveNativeOrLearning": true
+  },
+  "nextAction": "Controller backs up and verifies restoration before its separately authorized cleanup; no application successor",
+  "checkpoint": {
+    "atUtc": "2026-09-26T14:49:59.794924+00:00",
+    "kind": "BC_HOST_COMPLETE_USER_REQUESTED_STOP",
+    "writerRetained": false,
+    "sprintAccepted": false,
+    "hostTests": 570,
+    "runningProcesses": []
+  },
+  "continuation": {
+    "enabled": false,
+    "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+    "heartbeatId": "lexiquest-r3",
+    "duplicateAutomationAllowed": false,
+    "routing": "Jev advice subject to fresh executor/quota/budget evidence; otherwise current model fallback",
+    "standardDefaultOnly": true,
+    "sharedTrancheUsd": 5,
+    "writerRetained": false,
+    "currentThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
+    "currentItem": "S01-BC-logout-recovery",
+    "nextReadyPackage": null,
+    "stopReason": "Latest user instruction: no successor after BC; controller backup only"
+  },
+  "nextDispatch": {
+    "status": "DISABLED_BY_USER_AFTER_BC",
+    "successorThreadId": null
+  },
+  "jevControllerUpdate": {
+    "atUtc": "2026-09-24",
+    "status": "PENDING",
+    "reason": "Controller read-only Edge Profile 1 Vercel dashboard redirected to login; authenticated dashboard unavailable, fresh free-credit/auto-reload/shared-spend/quota unknown",
+    "constraint": "No repeated login probes without changed signal; no inference/ledger writes; does not lift local prototype browser restriction"
+  },
+  "backlogReassessment": "docs/development/ux-delivery/readiness-12-groups.md",
+  "remainingRed": [],
+  "AACompletedAtUtc": "2026-09-24T11:53:12.528172+00:00",
+  "ABCompletedAtUtc": "2026-09-24T12:18:51.789023+00:00",
+  "ACCompletedAtUtc": "2026-09-24T12:36:45.621897+00:00",
+  "AECompletedAtUtc": "2026-09-24T13:13:39.947323+00:00",
+  "AFCompletedAtUtc": "2026-09-24T13:32:16.218881+00:00",
+  "AGCompletedAtUtc": "2026-09-24T13:50:03.550624+00:00",
+  "AICompletedAtUtc": "2026-09-24T14:29:36.346612+00:00",
+  "AJCompletedAtUtc": "2026-09-24T14:56:28.728461+00:00",
+  "AKCompletedAtUtc": "2026-09-24T15:27:17.596261+00:00",
+  "ALCompletedAtUtc": "2026-09-24T15:57:16.399530+00:00",
+  "ANCompletedAtUtc": "2026-09-24T16:35:17.919147+00:00",
+  "AOCompletedAtUtc": "2026-09-24T16:52:52.552335+00:00",
+  "APCompletedAtUtc": "2026-09-24T17:13:09.583917+00:00",
+  "AQCompletedAtUtc": "2026-09-24T17:41:36.465982+00:00",
+  "ARCompletedAtUtc": "2026-09-24T18:16:30.744355+00:00",
+  "ASCompletedAtUtc": "2026-09-24T18:39:26.959759+00:00",
+  "ATCompletedAtUtc": "2026-09-24T19:06:45.510482+00:00",
+  "AUCompletedAtUtc": "2026-09-24T19:38:51.233592+00:00",
+  "AVCompletedAtUtc": "2026-09-24T20:07:48.344322+00:00",
+  "AWCompletedAtUtc": "2026-09-24T21:02:24.125996+00:00",
+  "AXCompletedAtUtc": "2026-09-24T21:41:14.087034+00:00",
+  "AYCompletedAtUtc": "2026-09-24T22:25:32.640448+00:00",
+  "AZCompletedAtUtc": "2026-09-24T23:01:52.445810+00:00",
+  "nextReadyPackage": null,
+  "BACompletedAtUtc": "2026-09-24T23:34:34.604133+00:00",
+  "BBCompletedAtUtc": "2026-09-26T14:13:19.554166+00:00",
+  "BCCompletedAtUtc": "2026-09-26T14:49:59.794924+00:00"
+}

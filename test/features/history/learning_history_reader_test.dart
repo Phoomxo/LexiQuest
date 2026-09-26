@@ -247,6 +247,47 @@ void main() {
   }
 
   for (final state in ['completed', 'abandoned']) {
+    test('history reads $state srsReview flashcard storage alias', () async {
+      await _seedTerminalSession(
+        database,
+        id: 'session:srs-carrier',
+        state: state,
+        startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+        endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+        configuration: _configuration(mode: LessonMode.flashcard, itemCount: 1),
+      );
+      await database.customStatement(
+        "UPDATE learning_sessions SET activity_type='srsReview' WHERE id='session:srs-carrier'",
+      );
+      final before = await _sourceSnapshot(database);
+      final entries = await reader.list(
+        const HistoryFilter(ownerId: 'owner:history'),
+      );
+      expect(entries.single.mode, LessonMode.flashcard);
+      expect(entries.single.sessionId, 'session:srs-carrier');
+      expect(await _sourceSnapshot(database), before);
+    });
+  }
+
+  test('srsReview alias rejects an unrelated configured mode', () async {
+    await _seedTerminalSession(
+      database,
+      id: 'session:wrong-srs-carrier',
+      state: 'completed',
+      startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+      endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+      configuration: _configuration(mode: LessonMode.dictation, itemCount: 1),
+    );
+    await database.customStatement(
+      "UPDATE learning_sessions SET activity_type='srsReview' WHERE id='session:wrong-srs-carrier'",
+    );
+    await expectLater(
+      reader.list(const HistoryFilter(ownerId: 'owner:history')),
+      throwsStateError,
+    );
+  });
+
+  for (final state in ['completed', 'abandoned']) {
     test('history reads $state associativeReading storage alias', () async {
       await _seedTerminalSession(
         database,

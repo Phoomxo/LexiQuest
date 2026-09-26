@@ -1,0 +1,41 @@
+{
+  "id": "R3-05-LATE-VERIFICATION-001",
+  "taskId": "01a0cfd7-68db-7b63-bde0-f60a6014008a",
+  "status": "FIXED_AND_RETESTED",
+  "sourceFingerprint": "33fcf94b6b902063347e71728f61b602fa02b8dd24822f3db7113ce71b412202",
+  "symptom": "Late successful verification could close a covering route or discard pending committed identity after the optional session changed. Outer registry stale response did not undo UI side effects.",
+  "rootCause": "Word/delete lacked post-await admission check; import lacked current-route check; category verification ignored current route and session invalidation while intentionally tolerating its own list revision update.",
+  "fix": [
+    "Word admission checks current route and rechecks after readPinnedByIds.",
+    "Import cancellation includes route currentness.",
+    "Delete checks admission after listAllWords and before deleted response/dialog dismissal.",
+    "Category verification checks current route and sessionGeneration; accessor reuses existing registry epoch, independent of action-list revisions. Mutation original revision guard preserved."
+  ],
+  "productFiles": [
+    "lib/features/ai_tutor/application/menu_action_registry.dart",
+    "lib/screens/add_multiple_words_screen.dart",
+    "lib/screens/add_vocab_screen.dart",
+    "lib/screens/categories_page.dart",
+    "lib/screens/vocab_list_screen.dart"
+  ],
+  "red": [
+    {
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/7c9a0bd69282-09143f4f14b9-4dfc6419/Explicit-Flutter-tests.stdout.log",
+      "sha256": "bebd50bbe514dcda1027f57911350b4b096bbd077363717bff06d76411a322f6",
+      "failures": 4
+    },
+    {
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/491343e2e8f7-1eb80c15f441-2af48ddf/Explicit-Flutter-tests.stdout.log",
+      "sha256": "4ef7280fbf435f911c221575e7eb3c52a673c934bf9298ae8291cf48472a4a37",
+      "failures": 5
+    }
+  ],
+  "retest": "verification-r3-05-part08.json",
+  "behavior": "Stale completion retains committed identity and returns no record; reconnect/fresh request reads only, mutation count remains1. Disposal/withdrawal retain persisted data without touching absent UI.",
+  "limits": [
+    "Controlled real SQLite read delay on host; no live provider or native injected latency claim.",
+    "The30cases cover post-commit verification for create/edit/category/import/delete across cover, same-owner session invalidation, disconnect, foreign AI owner, disposal and feature withdrawal. They do not prove every pre-admission/in-transaction boundary.",
+    "Word cases compare all words/outbox after reopen; other3routes compare full5table snapshots. Database reopen is not durable provider request-ID/process-death reconciliation.",
+    "Native ordinary manual baseline only; actual foreign-owner native/provider lifecycle remains unproven. No whole W03/R3-05 acceptance."
+  ]
+}

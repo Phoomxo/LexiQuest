@@ -1,3 +1,9 @@
+import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -35,6 +41,668 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/review_center_screen.dart';
 
 void main() {
+  testWidgets(
+    'AE saved queue cannot start for a different owner after display',
+    (tester) async {
+      var owner = 'owner-1';
+      final launcher = _SessionLauncher();
+      final cases = ReviewCenterUseCases(
+        reader: _Reader(load: () async => [_item()]),
+        ownerIdentities: _ReadReviewOwner(() async => owner),
+        sessionLauncher: launcher,
+        nowUtc: () => _now,
+        timezoneId: 'Asia/Bangkok',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReviewCenterScreen(
+            useCases: cases,
+            lessonShellBuilder: _unusedDestination,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      owner = 'owner-2';
+      await tester.tap(find.text('เริ่มทบทวน'));
+      await tester.pumpAndSettle();
+      expect(
+        launcher._nextId,
+        0,
+        reason: 'the displayed queue belongs to owner-1',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final change in ['replace', 'pop', 'owner']) {
+    testWidgets(
+      'AE late lease attachment after $change retires original session',
+      (tester) async {
+        final fixture = await _durableFixture();
+        addTearDown(fixture.database.close);
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final timeRepository = _PendingTimeRepository(entered, release);
+        final navigator = GlobalKey<NavigatorState>();
+        final controller = UnifiedLessonController(
+          learning: fixture.learning,
+          adapter: const MeaningQuizModeAdapter(),
+          activeLearningTime: ActiveLearningTimeController(
+            repository: timeRepository,
+            monotonicMicros: () => 0,
+            nowUtc: () => _now,
+            timezoneContext: (_) => const LearningTimeZoneContext(
+              timezoneId: 'Asia/Bangkok',
+              utcOffsetMinutes: 420,
+            ),
+          ),
+        );
+        final lease = UnifiedLessonShellLease(
+          controller: controller,
+          learning: fixture.learning,
+          nowUtc: () => _now,
+          builder: (_) => const Scaffold(body: Text('old lesson')),
+        );
+        final builder = (ReviewLessonLaunchRequest _) => lease;
+        var cases = fixture.useCases;
+        late StateSetter update;
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            home: const Scaffold(body: Text('parent')),
+          ),
+        );
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return ReviewCenterScreen(
+                  useCases: cases,
+                  lessonShellBuilder: builder,
+                );
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('เริ่มทบทวน'));
+        await entered.future;
+        if (change == 'pop') {
+          navigator.currentState!.pop();
+        } else if (change == 'owner') {
+          await _switchToOwnerTwo(fixture.database);
+        } else {
+          update(() => cases = _useCases(result: []));
+          await tester.pump();
+        }
+        release.complete();
+        await tester.pumpAndSettle();
+        expect(find.text('old lesson'), findsNothing);
+        expect(await _activeSessions(fixture.database), isEmpty);
+        expect(() => lease.shell, throwsStateError);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'AE old launch completion does not unlock or reload a newer pending launch',
+    (tester) async {
+      final fixture = await _durableFixture();
+      addTearDown(fixture.database.close);
+      final releases = [Completer<void>(), Completer<void>()];
+      final persisted = [Completer<void>(), Completer<void>()];
+      final reads = [0, 0];
+      ReviewCenterUseCases cases(int index) => ReviewCenterUseCases(
+        reader: _Reader(
+          load: () async {
+            reads[index]++;
+            return [_item()];
+          },
+        ),
+        ownerIdentities: fixture.useCases.ownerIdentities,
+        sessionLauncher: _DelayedSessionLauncher(
+          fixture.useCases.sessionLauncher,
+          persisted: persisted[index],
+          release: releases[index],
+        ),
+        nowUtc: () => _now,
+        timezoneId: 'Asia/Bangkok',
+      );
+      final builder = (ReviewLessonLaunchRequest _) =>
+          _lessonDestination(learning: fixture.learning);
+      Widget app(ReviewCenterUseCases useCases) => MaterialApp(
+        home: ReviewCenterScreen(
+          useCases: useCases,
+          lessonShellBuilder: builder,
+        ),
+      );
+      await tester.pumpWidget(app(cases(0)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เริ่มทบทวน'));
+      await persisted[0].future;
+      await tester.pumpWidget(app(cases(1)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เริ่มทบทวน'));
+      await persisted[1].future;
+      releases[0].complete();
+      // A spinner remains by design: use bounded pumps, not pumpAndSettle.
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(reads, [1, 1]);
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+      final active = await _activeSessions(fixture.database);
+      expect(active.map((session) => session.id), ['session:review-2']);
+      releases[1].complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(UnifiedLessonShell), findsOneWidget);
+      Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
+      await tester.pumpAndSettle();
+      expect(await _activeSessions(fixture.database), isEmpty);
+      expect(reads, [1, 2]);
+    },
+  );
+
+  testWidgets(
+    'AE owner-bound guidance clears during replacement read and cannot leak late old data',
+    (tester) async {
+      final pending = Completer<List<ReviewQueueItem>>();
+      final replacement = ReviewCenterUseCases(
+        reader: _Reader(load: () => pending.future),
+        ownerIdentities: const _NamedReviewOwner('owner-2'),
+        sessionLauncher: _SessionLauncher(),
+        nowUtc: () => _now,
+        timezoneId: 'Asia/Bangkok',
+      );
+      Widget app(ReviewCenterUseCases cases) => MaterialApp(
+        home: ReviewCenterScreen(
+          useCases: cases,
+          lessonShellBuilder: _unusedDestination,
+        ),
+      );
+      await tester.pumpWidget(app(_useCases(result: [_item()])));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widgetList<MenuActionBinding>(find.byType(MenuActionBinding))
+            .map((b) => b.ownerId),
+        everyElement('owner-1'),
+      );
+      await tester.pumpWidget(app(replacement));
+      expect(find.byType(MenuActionBinding), findsNothing);
+      expect(find.text('station'), findsNothing);
+      pending.complete([]);
+      await tester.pumpAndSettle();
+      final binding = tester.widget<MenuActionBinding>(
+        find.byType(MenuActionBinding),
+      );
+      expect(binding.ownerId, 'owner-2');
+      expect(binding.onInvoke, isNull);
+      expect(jsonDecode(binding.readValue!)['queueCount'], 0);
+    },
+  );
+
+  testWidgets(
+    'AE disposed pending read observes late failure without retry or context',
+    (tester) async {
+      final pending = Completer<List<ReviewQueueItem>>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReviewCenterScreen(
+            useCases: _useCases(reader: _Reader(load: () => pending.future)),
+            lessonShellBuilder: _unusedDestination,
+          ),
+        ),
+      );
+      await tester.pumpWidget(const MaterialApp(home: Text('parent')));
+      pending.completeError(StateError('private read failed'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(MenuActionBinding), findsNothing);
+      expect(find.text('parent'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AE repeated immediate failure stays bounded and retries to empty',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var reads = 0;
+      final useCases = _useCases(
+        reader: _Reader(
+          load: () async {
+            reads++;
+            if (reads < 3) throw StateError('private-owner /private/path');
+            return [];
+          },
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: ReviewCenterScreen(
+            useCases: useCases,
+            lessonShellBuilder: _unusedDestination,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 2; attempt++) {
+        expect(find.text('ไม่สามารถโหลดรายการทบทวนได้'), findsOneWidget);
+        expect(find.textContaining('private-owner'), findsNothing);
+        await tester.tap(find.text('ลองอีกครั้ง'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+      expect(reads, 3);
+      expect(find.text('ยังไม่มีรายการที่ต้องทบทวน'), findsOneWidget);
+    },
+  );
+
+  testWidgets('AE duplicate retry callback starts only one pending read', (
+    tester,
+  ) async {
+    var reads = 0;
+    final pending = Completer<List<ReviewQueueItem>>();
+    final useCases = _useCases(
+      reader: _Reader(
+        load: () {
+          reads++;
+          return reads == 1
+              ? Future.error(StateError('read unavailable'))
+              : pending.future;
+        },
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReviewCenterScreen(
+          useCases: useCases,
+          lessonShellBuilder: _unusedDestination,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final retry = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .onPressed!;
+    retry();
+    retry();
+    await tester.pump();
+    final observedReads = reads;
+    pending.complete([_item()]);
+    await tester.pumpAndSettle();
+    expect(observedReads, 2);
+    expect(find.text('station'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final lateError in [false, true]) {
+    testWidgets(
+      'AE replacement read ignores late old completion error=$lateError',
+      (tester) async {
+        final pending = Completer<List<ReviewQueueItem>>();
+        final original = _useCases(reader: _Reader(load: () => pending.future));
+        final replacement = _useCases(result: []);
+        Widget app(ReviewCenterUseCases useCases) => MaterialApp(
+          home: ReviewCenterScreen(
+            useCases: useCases,
+            lessonShellBuilder: _unusedDestination,
+          ),
+        );
+        await tester.pumpWidget(app(original));
+        await tester.pumpWidget(app(replacement));
+        await tester.pump();
+        if (lateError) {
+          pending.completeError(StateError('old private owner'));
+        } else {
+          pending.complete([_item()]);
+        }
+        await tester.pumpAndSettle();
+        expect(find.text('ยังไม่มีรายการที่ต้องทบทวน'), findsOneWidget);
+        expect(find.text('station'), findsNothing);
+        expect(find.text('ไม่สามารถโหลดรายการทบทวนได้'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('AE retained launch callback cannot launch a replacement queue', (
+    tester,
+  ) async {
+    final fixture = await _durableFixture();
+    addTearDown(fixture.database.close);
+    final builder = (ReviewLessonLaunchRequest _) =>
+        _lessonDestination(learning: fixture.learning);
+    Widget app(ReviewCenterUseCases cases) => MaterialApp(
+      home: ReviewCenterScreen(useCases: cases, lessonShellBuilder: builder),
+    );
+    await tester.pumpWidget(app(fixture.useCases));
+    await tester.pumpAndSettle();
+    final launch = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .onPressed!;
+    await tester.pumpWidget(
+      app(
+        ReviewCenterUseCases(
+          reader: _Reader(load: () async => []),
+          ownerIdentities: fixture.useCases.ownerIdentities,
+          sessionLauncher: fixture.useCases.sessionLauncher,
+          nowUtc: () => _now,
+          timezoneId: 'Asia/Bangkok',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    launch();
+    await tester.pumpAndSettle();
+    final sessions = await fixture.database
+        .select(fixture.database.learningSessions)
+        .get();
+    if (find.byType(UnifiedLessonShell).evaluate().isNotEmpty) {
+      Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
+      await tester.pumpAndSettle();
+    }
+    expect(sessions, isEmpty);
+    expect(find.text('ยังไม่มีรายการที่ต้องทบทวน'), findsOneWidget);
+  });
+
+  for (final change in ['useCases', 'builder', 'dispose', 'pop']) {
+    testWidgets(
+      'AE pending durable launch fences $change before building or attaching',
+      (tester) async {
+        final fixture = await _durableFixture();
+        addTearDown(fixture.database.close);
+        final release = Completer<void>();
+        final persisted = Completer<void>();
+        final delayed = _DelayedSessionLauncher(
+          LearningUseCasesReviewSessionLauncher(fixture.learning),
+          persisted: persisted,
+          release: release,
+        );
+        final original = ReviewCenterUseCases(
+          reader: fixture.useCases.reader,
+          ownerIdentities: fixture.useCases.ownerIdentities,
+          sessionLauncher: delayed,
+          nowUtc: () => _now,
+          timezoneId: 'Asia/Bangkok',
+        );
+        var builds = 0;
+        UnifiedLessonShellLease builder(ReviewLessonLaunchRequest _) {
+          builds++;
+          return _lessonDestination(learning: fixture.learning);
+        }
+
+        var replacementBuilds = 0;
+        UnifiedLessonShellLease replacementBuilder(
+          ReviewLessonLaunchRequest _,
+        ) {
+          replacementBuilds++;
+          throw StateError('replacement must not receive old launch');
+        }
+
+        final replacement = _useCases(result: []);
+        final navigator = GlobalKey<NavigatorState>();
+        Widget screen(
+          ReviewCenterUseCases cases,
+          ReviewLessonShellBuilder shell,
+        ) => ReviewCenterScreen(useCases: cases, lessonShellBuilder: shell);
+        Widget app(Widget home) =>
+            MaterialApp(navigatorKey: navigator, home: home);
+        if (change == 'pop') {
+          await tester.pumpWidget(app(const Scaffold(body: Text('parent'))));
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(builder: (_) => screen(original, builder)),
+          );
+        } else {
+          await tester.pumpWidget(app(screen(original, builder)));
+        }
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('เริ่มทบทวน'));
+        await persisted.future;
+        expect(await _activeSessions(fixture.database), hasLength(1));
+        if (change == 'pop') {
+          navigator.currentState!.pop();
+          // Return the start result before reverse transition disposal.
+          expect(find.byType(ReviewCenterScreen), findsOneWidget);
+        } else if (change == 'dispose') {
+          await tester.pumpWidget(app(const Scaffold(body: Text('parent'))));
+        } else {
+          await tester.pumpWidget(
+            app(
+              screen(
+                change == 'useCases' ? replacement : original,
+                change == 'builder' ? replacementBuilder : builder,
+              ),
+            ),
+          );
+        }
+        release.complete();
+        await tester.pumpAndSettle();
+        final active = await _activeSessions(fixture.database);
+        final pushed = find.byType(UnifiedLessonShell).evaluate().isNotEmpty;
+        if (pushed) {
+          navigator.currentState!.pop();
+          await tester.pumpAndSettle();
+        }
+        expect(
+          active,
+          isEmpty,
+          reason: 'old launch must be abandoned by its original authority',
+        );
+        expect(pushed, isFalse);
+        expect(builds, 0);
+        expect(replacementBuilds, 0);
+        expect(find.text('ไม่สามารถเริ่มการทบทวนได้'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    for (final correct in [true, false]) {
+      testWidgets(
+        'review actual choice file reopen $connection correct=$correct',
+        (tester) async {
+          final directory = (await tester.runAsync(
+            () => Directory.systemTemp.createTemp('lexiquest-review-part13-'),
+          ))!;
+          final file = File('${directory.path}/review.sqlite');
+          late _DurableFixture fixture;
+          await tester.runAsync(() async {
+            fixture = await _durableFixture(file: file);
+            await fixture.database
+                .into(fixture.database.vocabularyWords)
+                .insert(
+                  VocabularyWordsCompanion.insert(
+                    id: 'word-alternative',
+                    ownerId: 'owner-1',
+                    categoryId: 'category-1',
+                    spelling: 'river',
+                    normalizedSpelling: 'river',
+                    meaning: 'แม่น้ำ',
+                    normalizedMeaning: 'แม่น้ำ',
+                    partOfSpeech: 'noun',
+                    createdAtUtcMs: 1,
+                    updatedAtUtcMs: 1,
+                  ),
+                );
+          });
+          var closed = false;
+          addTearDown(() async {
+            if (!closed) await fixture.database.close();
+            await directory.delete(recursive: true);
+          });
+          String? aiOwner = 'owner-1';
+          final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+          final controllers = <UnifiedLessonController>[];
+          final app = MaterialApp(
+            home: ReviewCenterScreen(
+              useCases: fixture.useCases,
+              lessonShellBuilder: (request) {
+                const adapter = MeaningQuizModeAdapter();
+                final controller = UnifiedLessonController(
+                  learning: fixture.learning,
+                  adapter: adapter,
+                );
+                controllers.add(controller);
+                return UnifiedLessonShellLease(
+                  controller: controller,
+                  learning: fixture.learning,
+                  nowUtc: () => _now,
+                  builder: (_) => QuizScreen(
+                    learning: fixture.learning,
+                    evidenceAdapter: CurrentActivityEvidenceAdapter(
+                      learning: fixture.learning,
+                    ),
+                    modeAdapter: adapter,
+                    attachedSession: request.session,
+                  ),
+                );
+              },
+            ),
+          );
+          await tester.pumpWidget(
+            connection == 'absent'
+                ? app
+                : MenuActionScope(registry: registry, child: app),
+          );
+          await _pumpReviewUntil(tester, find.text('เริ่มทบทวน'));
+          await tester.tap(find.text('เริ่มทบทวน'));
+          final option = find.byKey(
+            ValueKey(
+              'meaning-quiz-option-word-1-${correct ? 'สถานี' : 'แม่น้ำ'}',
+            ),
+          );
+          await _pumpReviewUntil(tester, option);
+          final state = tester.state(find.byType(QuizScreen));
+          expect(controllers, hasLength(1));
+          expect(controllers.single.state.sessionId, 'session:review-1');
+          if (connection != 'absent') {
+            final contexts = registry.snapshot()['context'] as List;
+            expect(
+              contexts.where(
+                (dynamic row) =>
+                    (row['id'] as String).startsWith('review/queue'),
+              ),
+              isEmpty,
+            );
+            expect(
+              contexts.any(
+                (dynamic row) =>
+                    row['id'] == 'quiz/current-question-assistance',
+              ),
+              isTrue,
+            );
+          }
+          if (connection == 'disconnected') {
+            aiOwner = null;
+            registry.invalidateSession(preserveContext: true);
+            await tester.pump();
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+          expect(tester.state(find.byType(QuizScreen)), same(state));
+          expect(tester.widget<FilledButton>(option).onPressed, isNotNull);
+          await tester.ensureVisible(option);
+          await tester.tap(option);
+          await _pumpReviewUntil(
+            tester,
+            find.byKey(const ValueKey('answer-feedback-panel')),
+          );
+          await tester.runAsync(() async {
+            final attempts = await fixture.database
+                .select(fixture.database.answerAttempts)
+                .get();
+            expect(attempts, hasLength(1));
+            expect(attempts.single.ownerId, 'owner-1');
+            expect(attempts.single.sessionId, 'session:review-1');
+            expect(attempts.single.isCorrect, correct);
+            expect(
+              attempts.single.evidenceClass,
+              EvidenceClass.recognition.name,
+            );
+            expect(
+              await fixture.database.select(fixture.database.srsStates).get(),
+              isEmpty,
+            );
+          });
+          expect(controllers.single.state.committedResponseCount, 1);
+          if (connection == 'connected') {
+            final context =
+                jsonDecode(
+                      (registry.snapshot()['context'] as List).singleWhere(
+                            (dynamic row) =>
+                                row['id'] == 'quiz/current-question-assistance',
+                          )['value']
+                          as String,
+                    )
+                    as Map;
+            expect(context['phase'], 'answered');
+            expect(registry.snapshot()['actions'], isEmpty);
+            aiOwner = 'foreign-owner';
+            expect(registry.snapshot()['context'], isEmpty);
+            aiOwner = 'owner-1';
+          } else {
+            expect(registry.snapshot()['context'], isEmpty);
+          }
+
+          final next = find.byKey(const ValueKey('meaning-quiz-next'));
+          await tester.ensureVisible(next);
+          await tester.tap(next);
+          var completed = false;
+          for (var i = 0; i < 100 && !completed; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() async {
+              await Future<void>.delayed(const Duration(milliseconds: 5));
+              final sessions = await fixture.database
+                  .select(fixture.database.learningSessions)
+                  .get();
+              completed = sessions.single.state == 'completed';
+            });
+          }
+          expect(completed, isTrue);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+          await tester.runAsync(() async {
+            final before = await _reviewTableSnapshot(fixture.database);
+            await fixture.database.close();
+            closed = true;
+            final reopened = AppDatabase(NativeDatabase(file));
+            try {
+              expect(await _reviewTableSnapshot(reopened), before);
+              final attempts = await reopened
+                  .select(reopened.answerAttempts)
+                  .get();
+              expect(attempts, hasLength(1));
+              expect(attempts.single.isCorrect, correct);
+              expect(
+                (await reopened.select(reopened.learningSessions).get())
+                    .single
+                    .state,
+                'completed',
+              );
+            } finally {
+              await reopened.close();
+            }
+          });
+        },
+      );
+    }
+  }
+
   for (final connection in ['absent', 'connected', 'disconnectBeforeAnswer']) {
     testWidgets('review durable answer and route context $connection', (
       tester,
@@ -774,7 +1442,7 @@ void main() {
     expect(ownerTwo.state, 'active');
   });
 
-  test('f22 is not exposed by navigation before f42 composes the action', () {
+  test('review remains a child of composed Today with live route gating', () {
     final record = allTcasIdeaIntegrationCatalog.records.singleWhere(
       (candidate) => candidate.id == FeatureContractId.f22,
     );
@@ -799,7 +1467,7 @@ void main() {
         .where((key) => key.startsWith('drawer/'))
         .toSet();
     final todayHubBuilderStart = mainNavigation.indexOf(
-      'Widget _buildTodayHub(BuildContext context)',
+      'Widget _buildTodayHub(BuildContext context,',
     );
     expect(todayHubBuilderStart, greaterThanOrEqualTo(0));
     final todayHubBuilderEnd = mainNavigation.indexOf(
@@ -828,7 +1496,8 @@ void main() {
     expect(record.dependencies, contains(FeatureContractId.f20));
     expect(record.dependencies, contains(FeatureContractId.f21));
     expect(todayHubRecord.dependencies, contains(FeatureContractId.f22));
-    expect(productionEntryIds, isNot(contains('home/today')));
+    // S01-AA makes Today primary; review remains its gated child.
+    expect(productionEntryIds, contains('home/today'));
     expect(
       RegExp(
         r"void _openToday\(\) => _pushFeatureDestination\(\s*"
@@ -853,12 +1522,18 @@ void main() {
       isTrue,
       reason: 'Only ready canonical review work may enter the composed action',
     );
-    expect(todayHubBuilder, contains('actions: _todayActions('));
+    expect(todayHubBuilder, contains('_todayActions('));
+    expect(todayHubBuilder, contains('actions: actions(null)'));
+    expect(todayHubBuilder, contains('bindActions: actions'));
+    expect(todayHubBuilder, contains('viewIsCurrent?.call() != false'));
     expect(
       todayHubBuilder,
-      contains('_selectLearningFromToday(fromTodayRoute: context)'),
+      contains('fromTodayRoute: embedded ? null : context,'),
     );
-    expect(todayActions, contains('openReview: _openTodayReview'));
+    expect(
+      todayActions,
+      contains('if (isCurrent?.call() != false) await _openTodayReview(work);'),
+    );
     expect(
       todayHubBuilder,
       contains('hasComposedDependencyFor(Feature.dailyContinuity)'),
@@ -1100,6 +1775,34 @@ final class _ReviewLessonAdapter implements LessonModeAdapter {
       const LessonItem(id: 'word-1');
 }
 
+final class _PendingTimeRepository implements LearningTimeRepository {
+  _PendingTimeRepository(this.entered, this.release);
+  final Completer<void> entered;
+  final Completer<void> release;
+  @override
+  Future<void> append(LearningTimeSegment segment) async {}
+  @override
+  Future<Duration> activeDuration(String sessionId) async {
+    entered.complete();
+    await release.future;
+    return Duration.zero;
+  }
+}
+
+final class _NamedReviewOwner implements ReviewOwnerIdentityReader {
+  const _NamedReviewOwner(this.owner);
+  final String owner;
+  @override
+  Future<String> requireSingleActiveOwnerId() async => owner;
+}
+
+final class _ReadReviewOwner implements ReviewOwnerIdentityReader {
+  const _ReadReviewOwner(this.read);
+  final Future<String> Function() read;
+  @override
+  Future<String> requireSingleActiveOwnerId() => read();
+}
+
 final class _DurableFixture {
   const _DurableFixture({
     required this.database,
@@ -1112,9 +1815,14 @@ final class _DurableFixture {
   final ReviewCenterUseCases useCases;
 }
 
-Future<_DurableFixture> _durableFixture({DateTime Function()? nowUtc}) async {
+Future<_DurableFixture> _durableFixture({
+  DateTime Function()? nowUtc,
+  File? file,
+}) async {
   final clock = nowUtc ?? () => _now;
-  final database = AppDatabase(NativeDatabase.memory());
+  final database = AppDatabase(
+    file == null ? NativeDatabase.memory() : NativeDatabase(file),
+  );
   await database
       .into(database.localOwners)
       .insert(
@@ -1234,3 +1942,30 @@ SessionConfiguration _sessionConfiguration() => SessionConfiguration.validated(
 );
 
 final _now = DateTime.utc(2026, 8, 28, 12);
+
+Future<void> _pumpReviewUntil(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 100 && finder.evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+  }
+  expect(finder, findsOneWidget);
+}
+
+Future<Map<String, List<String>>> _reviewTableSnapshot(
+  AppDatabase database,
+) async {
+  final tables = await database
+      .customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+      )
+      .get();
+  final snapshot = <String, List<String>>{};
+  for (final table in tables) {
+    final name = table.read<String>('name');
+    final rows = await database.customSelect('SELECT * FROM "$name"').get();
+    snapshot[name] = rows.map((row) => jsonEncode(row.data)).toList()..sort();
+  }
+  return snapshot;
+}

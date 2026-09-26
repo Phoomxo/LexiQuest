@@ -51,6 +51,60 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'AL owner changing during pre-prompt eligibility never receives a prompt',
+    () async {
+      final owner = await repository.activeOwnerId();
+      var permissionObserved = false;
+      var changed = false;
+      scheduler.beforePermissionReturn = () async {
+        permissionObserved = true;
+      };
+      final guarded = StudyReminderUseCases(
+        repository: repository,
+        scheduler: scheduler,
+        nowUtc: () => DateTime.utc(2026, 8, 28),
+        generateId: () => 'guarded-reminder',
+        loadFeatureEligibility: () async {
+          if (permissionObserved && !changed) {
+            changed = true;
+            await database.transaction(() async {
+              await database.customUpdate(
+                'UPDATE local_owners SET is_active = 0',
+              );
+              await database
+                  .into(database.localOwners)
+                  .insert(
+                    LocalOwnersCompanion.insert(
+                      id: 'replacement-owner',
+                      createdAtUtcMs: DateTime.utc(
+                        2026,
+                        8,
+                        28,
+                      ).millisecondsSinceEpoch,
+                    ),
+                  );
+            });
+          }
+          return const StudyReminderFeatureEligibility.unfenced();
+        },
+      );
+      try {
+        await guarded.optIn(
+          expectedOwnerId: owner,
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.utc(2026, 8, 29, 2),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+      } on StudyReminderMutationUnavailable {}
+      expect(changed, isTrue);
+      expect(scheduler.requestCalls, 0);
+      expect(await repository.listForOwner(owner), isEmpty);
+      expect(await repository.list(), isEmpty);
+    },
+  );
+
+  test(
     'F02 erasure lost during dispatched cancel issues no later native cancel',
     () async {
       final owner = await repository.activeOwnerId();

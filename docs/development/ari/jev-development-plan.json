@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "status": "OFFLINE_GUARD_PASS_LIVE_REVIEW_EXECUTED_PILOT_OPEN",
+  "date": "2026-09-23",
+  "objective": "Implement and use Jev for eligible development triage and code-review preparation, consuming only the authorized USD5 free-credit tranche; paid spend zero.",
+  "notInScope": [
+    "Application runtime integration",
+    "Automatic source or log transmission",
+    "Paid credits, paid API usage, or auto top-up",
+    "Replacing the existing optional MCP or baseline app workflows"
+  ],
+  "findings": {
+    "capabilities": [
+      "Choice",
+      "Score",
+      "Noul",
+      "probabilities",
+      "confidence"
+    ],
+    "goodFit": [
+      "Synthetic defect categorization",
+      "Code-review risk triage",
+      "Choosing targeted checks",
+      "Development report triage"
+    ],
+    "poorFit": [
+      "Code generation",
+      "Long-form conversational assistance",
+      "Replacing full human/primary-model code review",
+      "Autonomous patching or release decisions"
+    ],
+    "efficiencyClaim": "Potential faster triage and fewer unnecessary escalations are hypotheses. No evidence yet that Jev reduces Codex context/reasoning tokens; measure end-to-end latency and total calls/tokens. If Codex token telemetry is unavailable, token savings remain unverified.",
+    "knownSmoke": {
+      "httpStatus": 200,
+      "inputTokens": 290,
+      "outputTokens": 21,
+      "gatewayCostUsd": "0",
+      "marketCostUsd": "0.00001218",
+      "syntheticOnly": true,
+      "evidence": "jev-free-probe.json"
+    },
+    "pricingCaveat": "One zero gateway-cost receipt does not establish remaining free balance or future free access. Vercel Jev page showed promotional free listing ending 2026-09-25.",
+    "freeCreditBudgetUsd": "5",
+    "freeCreditBalanceObservedUsd": "5.00",
+    "paidSpendCeilingUsd": "0"
+  },
+  "hardStop": {
+    "when": [
+      "Free credits exhausted or insufficient for conservative next-request cost",
+      "Paid credits or card would be charged",
+      "Balance or billing unknown; timeout not reconciled",
+      "Approved five-dollar free-credit trial allowance exhausted"
+    ],
+    "action": "Stop Jev live calls before paid spend; continue ordinary development. Nonzero cost covered entirely by free allowance is authorized.",
+    "resumeRequires": "User instruction after the approved free-credit tranche is exhausted; no automatic monthly resumption or purchase."
+  },
+  "phases": [
+    {
+      "acceptance": "Use up to5 USD free credits; paid spend zero; verify auto top-up off; stop before insufficient balance.",
+      "name": "Scope and free-credit-only policy",
+      "id": "P1",
+      "status": "FREE_ONLY_PREFLIGHT_VERIFIED"
+    },
+    {
+      "acceptance": "Labels fixed before Jev results; include UI, storage, owner isolation, async state, configuration and insufficient evidence; use rules for trivial cases.",
+      "name": "Twelve-case synthetic baseline",
+      "id": "P2",
+      "status": "TWELVE_LABELLED_CASES_PREPARED"
+    },
+    {
+      "acceptance": "Proposed tool/experiments/jev_review/pilot.py and cases.json; one in-flight request; no automatic retry/fallback; max12 calls, 30-second timeout, 8000-character input cap; offline fail-closed checks.",
+      "name": "Minimal single-route caller",
+      "id": "P3",
+      "status": "OFFLINE_18_PASS"
+    },
+    {
+      "acceptance": "Reconcile actual costs against free allowance; stop when exhausted, insufficient, unknown or paid; reuse prior successful smoke.",
+      "name": "Live pilot only after cost preflight",
+      "id": "P4",
+      "status": "ONE_SYNTHETIC_CASE_EXECUTED"
+    },
+    {
+      "acceptance": "Sanitized summaries within existing authorization; category, uncertainty and suggested check group only; primary reviewer retains required full review and acceptance checks.",
+      "name": "One development-review batch",
+      "id": "P5",
+      "status": "REAL_CATALOG_REVIEW_EXECUTED"
+    },
+    {
+      "acceptance": "Pilot target: zero safe/dismiss labels on owner-isolation/data-loss cases; at least20 percent lower median total time with no observed quality loss. Count preparation/rework, report provider tokens separately; no inferred Codex token saving without telemetry.",
+      "name": "Keep or remove based on measured benefit",
+      "id": "P6",
+      "status": "NOT_MEASURED"
+    }
+  ],
+  "references": [
+    "https://docs.typesafe.ai/introduction",
+    "https://docs.typesafe.ai/introduction/quickstart",
+    "https://docs.typesafe.ai/confidence",
+    "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
+    "https://vercel.com/ai-gateway/models/jev",
+    "https://vercel.com/docs/ai-gateway/pricing"
+  ],
+  "revision": 7,
+  "reviewFindings": [
+    "Previous Markdown and JSON phases differed; now aligned P1-P6",
+    "Avoid general provider framework before proving value",
+    "Do not require repeated approval within already authorized development scope",
+    "Total effort must include preparing Jev inputs and checking its output",
+    "Market cost is distinct from actual billed cost; no provider-side zero-dollar hard cap verified",
+    "No additional API calls or billing changes in this review"
+  ],
+  "creditPolicy": {
+    "observedBalance": "5.00 Free Credit",
+    "autoTopUp": "VERIFIED_DISABLED_IN_DASHBOARD",
+    "authorizedFreeCreditsUsd": "5",
+    "observedUsage": {
+      "tokens": 311,
+      "requests": 1,
+      "costUsd": "0"
+    },
+    "runtimeGuardImplemented": true,
+    "paidSpendLimitUsd": "0",
+    "supersedes": "Revision2 prohibition on consuming free credits",
+    "teamBudget": "NOT_SET_OBSERVED"
+  },
+  "executionInstruction": {
+    "required": true,
+    "instruction": "Implement and invoke Jev alongside development for eligible failure triage and code-review preparation once the free-credit guard is ready. Planning alone does not fulfill this instruction. Record actual invocations and useful outcomes; do not make redundant calls solely to claim use.",
+    "budget": "Use only the authorized USD5 free-credit tranche. Pause Jev before exhaustion, insufficient balance or paid spend; continue main development.",
+    "currentState": "guard.py and pilot.py implemented;18 offline tests PASS; one synthetic owner case and one real sanitized catalog review executed, cost0; full quality/efficiency acceptance remains open."
+  },
+  "preExecutionReview": {
+    "freeBalanceObservedUsd": "5.00",
+    "autoReload": "disabled",
+    "remaining": [
+      "Full synthetic quality evaluation and timing comparison remain open",
+      "Fresh billing evidence required for every live invocation",
+      "Native catalog/detail acceptance and remaining14/14"
+    ],
+    "liveRequestsThisReview": 0,
+    "date": "2026-09-23",
+    "teamBudget": "not set"
+  },
+  "implementationEvidence": "jev-review-115.json",
+  "routingOrchestration": {
+    "status": "PLAN_ONLY_OFFLINE_ROUTER_CONTRACT_PASS_NO_LIVE_ROUTE_OR_DISPATCH",
+    "planSection": "jev-development-plan.md#revision-6--แผน-jev-controller-routing-และ-godkiller-zero-2026-09-23",
+    "sequence": [
+      "R0 pin state and comparable baseline",
+      "R1 preserve and migrate existing ledger with separate synthetic/review/routing batches",
+      "R2 bounded model and incident Choice policy with deterministic veto",
+      "R3 measure GODKILLER hook/MCP/proxy components separately on sanitized tasks",
+      "R4 reviewed single-writer sequential dispatch",
+      "R5 apply to existing 14 workflow/14 mode acceptance in risk order",
+      "R6 compare end-to-end time, quality and separately observed provider tokens"
+    ],
+    "godkillerObserved": {
+      "version": "1.0.0",
+      "mcpConfigured": true,
+      "globalGeminiHookPresent": true,
+      "mcpProcessObserved": true,
+      "defaultProxyPort4242Listening": false,
+      "antigravityTokenSavingsVerified": false,
+      "note": "README lab results are developer-reported Cursor examples; local Antigravity A/B and provider usage are pending. Installed binaries are unsigned; SHA256 matched local checksum manifest."
+    },
+    "authority": "Jev chooses model/effort and a bounded incident action only after eligibility filtering. Deterministic policy controls owner/data-loss, money, source fingerprint, retries and acceptance. Controller reviews each package.",
+    "candidatePoolRef": "antigravity-routing-discovery.json",
+    "workload": "One major work package and one source writer at a time; no background implementation workers or parallel heavy checks.",
+    "cost": "Same approved USD5 free-credit tranche; paid spend zero; no auto top-up or paid fallback.",
+    "success": "No owner/data-loss review loss; no quality loss; at least20 percent lower median total time on comparable work; token savings only with complete telemetry.",
+    "revision7": {
+      "planSection": "jev-development-plan.md#revision-7--แผนพัฒนาต่อและการตัดสินใจเมื่อเกิดเหตุ-2026-09-23",
+      "status": "PLAN_ONLY_NOT_DISPATCHED",
+      "sequence": [
+        "D0 reconcile current 14/14 evidence and pin source/backup",
+        "D1 native catalog/detail with canonical fixture and verified DB restore",
+        "D2 preserve/migrate Jev ledger and test bounded incident policy",
+        "D3 controlled GODKILLER A/B and Jev routing validation",
+        "D4 reviewed sequential dispatcher; read-only before sole bounded writer",
+        "D5 complete 14 workflow/14 mode criteria in risk order",
+        "D6 whole-project review and sequential SDLC repairs",
+        "D7 frozen-source regression, 180-minute endurance and release verifier"
+      ],
+      "stateMachine": [
+        "READY",
+        "ELIGIBLE",
+        "ROUTED",
+        "RUNNING",
+        "REVIEW",
+        "VERIFIED",
+        "DEFERRED",
+        "RECOVERY"
+      ],
+      "incidentActions": [
+        "continue",
+        "collect_evidence",
+        "retry_once",
+        "reroute_once",
+        "escalate",
+        "defer"
+      ],
+      "deterministicVeto": [
+        "owner_isolation",
+        "data_loss",
+        "original_data_restore",
+        "billing_and_free_credit",
+        "source_fingerprint",
+        "one_writer",
+        "required_acceptance"
+      ],
+      "godkillerMeasurement": "Use actual provider usage and full end-to-end timing. GODKILLER tokens_preserved and repo-map max_tokens are character-based heuristics, not billed usage; current installed binary need not match upstream main exactly.",
+      "fallback": "If Jev is unavailable, malformed, unreconciled or billing-unclear, defer Jev live and continue already-authorized LexiQuest work with deterministic/manual routing. Failed commands trigger diagnosis and corrected bounded method, not project abandonment.",
+      "evidenceAuthority": "optional-mcp-workflows.json for 14/14; post-mcp-project-review-plan.json after current acceptance; continuation-checkpoint.json for compact handoff",
+      "liveCallsDuringRevision": 0
+    }
+  }
+}

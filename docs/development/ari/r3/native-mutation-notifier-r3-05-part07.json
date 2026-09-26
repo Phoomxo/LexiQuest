@@ -1,0 +1,161 @@
+{
+  "taskId": "01a0cfc4-83a1-7872-80c1-91a93db7ee6d",
+  "sourceFingerprint": "cfda00118a8aeac81310c4d5d8ccb6a5c38a9070680596f27ce01aa8cd81d693",
+  "sourceManifest": "source-manifest-r3-05-part07.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part07.apk",
+  "apkSha256": "49f0cfb1e7f758efbfd818ae335806f0472a3ce5b5c92cbb952837abbad80b96",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "log": "build/ari-r3-05/part07-android-build.log",
+    "sha256": "9b8adc1ffd4d9f641ff5841bbc83224440634245e0b7c3fbbabc5c6a0003817d",
+    "warning": "Existing Kotlin Gradle warning"
+  },
+  "observed": [
+    "Fresh main/WAL/SHM backup before install; aapt package/activity verified; installed APK hash matches",
+    "R305Part07 category draft retained through AIunpaired expand/collapse, saved once",
+    "r307word created; edit corrects POS to noun and final meaning bookrevised, verified before restart",
+    "Exact3row import r307import,book,noun twice and invalid,,noun; draft retained AIunpaired expand/collapse; result1accepted1duplicate1rejected",
+    "Force-stop/relaunch preserves category, edited word and imported word",
+    "Cancel delete preserves r307word; confirm removes it; second force-stop/relaunch preserves r307import and absence of r307word",
+    "58table comparison:category+1 words+2(one tombstone revision3) import+1 rows+3 outbox+5 (4upsert1delete), originals preserved",
+    "Fresh snapshot restored byte-exact; isolated app force-stopped and pidof absent"
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part07-native/backup.json",
+  "restore": "build/ari-r3-05/part07-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "outbox_operations": {
+        "beforeRows": 359,
+        "afterRows": 364,
+        "added": 5,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "operation_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      "vocabulary_categories": {
+        "beforeRows": 8,
+        "afterRows": 9,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_import_rows": {
+        "beforeRows": 6,
+        "afterRows": 9,
+        "added": 3,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_imports": {
+        "beforeRows": 4,
+        "afterRows": 5,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_words": {
+        "beforeRows": 19,
+        "afterRows": 21,
+        "added": 2,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "fixture": {
+      "categoriesAdded": 1,
+      "wordsAdded": 2,
+      "wordTombstones": 1,
+      "outboxRowsAdded": 5,
+      "wordUpsertOutboxRows": 1,
+      "sameOwner": true
+    },
+    "installedApkSha256": "49f0cfb1e7f758efbfd818ae335806f0472a3ce5b5c92cbb952837abbad80b96",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "limits": [
+    "Fault injection is synchronous LocalMutationNotifier; actual bootstrap uses synchronous notifyLocalMutation plus detached SyncTrigger. No claim of production sync outage or async callback error handling.",
+    "Real SQLite ABORT before commit verified; no certification of OS/disk commit-ack ambiguity or arbitrary repository wrappers that throw after commit.",
+    "No durable request-ID/process-death reconciliation protocol; reopened rows prove storage integrity only.",
+    "Native ordinary baseline only, no injected notifier fault/provider claim; route owner/connection/lifecycle and other modes still open."
+  ]
+}

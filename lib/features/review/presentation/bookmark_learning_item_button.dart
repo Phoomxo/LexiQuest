@@ -4,6 +4,8 @@ import '../../../runtime/app_dependencies.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../application/learner_intent_use_cases.dart';
 import '../domain/learner_intent.dart';
+import '../domain/review_mutation_context.dart';
+import 'review_mutation_state.dart';
 
 /// Local intent actions only; no correctness, reward or mastery writer.
 final class BookmarkLearningItemButton extends StatefulWidget {
@@ -11,28 +13,48 @@ final class BookmarkLearningItemButton extends StatefulWidget {
     super.key,
     required this.identity,
     required this.onSave,
+    this.canInteract,
+    this.validateAction,
+    this.expectedOwnerId,
   });
   final ContentIdentity identity;
   final BookmarkLearningItemAction onSave;
+  final bool Function()? canInteract;
+  final Future<void> Function()? validateAction;
+  final String? expectedOwnerId;
   @override
   State<BookmarkLearningItemButton> createState() =>
       _BookmarkLearningItemButtonState();
 }
 
 final class _BookmarkLearningItemButtonState
-    extends State<BookmarkLearningItemButton> {
+    extends ReviewMutationState<BookmarkLearningItemButton> {
   bool _pending = false;
   String? _message;
-  int _generation = 0;
+  Object? _repository;
+
+  @override
+  void retireMutation() {
+    super.retireMutation();
+    _pending = false;
+    _message = null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final repository = AppDependenciesScope.maybeOf(context)?.learnerIntents;
+    if (!identical(repository, _repository)) retireMutation();
+    _repository = repository;
+  }
 
   @override
   void didUpdateWidget(covariant BookmarkLearningItemButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.identity != widget.identity ||
-        oldWidget.onSave != widget.onSave) {
-      _generation++;
-      _pending = false;
-      _message = null;
+        oldWidget.onSave != widget.onSave ||
+        oldWidget.expectedOwnerId != widget.expectedOwnerId) {
+      retireMutation();
     }
   }
 
@@ -40,30 +62,43 @@ final class _BookmarkLearningItemButtonState
     BookmarkLearningItemAction action, {
     required bool removing,
   }) async {
-    if (_pending) return;
-    final generation = _generation;
+    if (!mutationVisible || _pending || widget.canInteract?.call() == false)
+      return;
+    final generation = mutationGeneration;
     final identity = widget.identity;
+    final canInteract = widget.canInteract;
+    final validate = widget.validateAction;
+    final expectedOwnerId = widget.expectedOwnerId;
+    bool current() =>
+        mutationCurrent(generation) && canInteract?.call() != false;
     setState(() {
       _pending = true;
       _message = null;
     });
     try {
-      await action(identity);
-      if (!mounted || generation != _generation) return;
+      await validate?.call();
+      if (!current()) return;
+      await ReviewMutationContext.run(
+        () => action(identity),
+        isCurrent: current,
+        expectedOwnerId: expectedOwnerId,
+      );
+      await validate?.call();
+      if (!current()) return;
       setState(
         () => _message = removing
             ? 'นำออกจากรายการในเครื่องแล้ว'
             : 'บันทึกไว้ในเครื่องแล้ว',
       );
     } catch (_) {
-      if (!mounted || generation != _generation) return;
+      if (!current()) return;
       setState(
         () => _message = removing
-            ? 'นำออกไม่สำเร็จ ลองอีกครั้ง'
-            : 'บันทึกไม่สำเร็จ ลองอีกครั้ง',
+            ? 'ยังยืนยันการนำออกไม่ได้ ลองอีกครั้ง'
+            : 'ยังยืนยันการบันทึกไม่ได้ ลองอีกครั้ง',
       );
     } finally {
-      if (mounted && generation == _generation) {
+      if (mounted && generation == mutationGeneration) {
         setState(() => _pending = false);
       }
     }

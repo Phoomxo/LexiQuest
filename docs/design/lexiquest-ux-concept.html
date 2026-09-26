@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiQuest — ร่างดีไซน์แบบเริ่มจากงานของผู้เรียน</title>
+  <style>
+    @font-face { font-family: NotoThai; src: url('../../assets/fonts/NotoSansThai-Variable.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
+    :root { --blue:#1e88e5; --ink:#18263d; --muted:#66748a; --soft:#f5f8fc; --line:#e6ebf2; --green:#178568; --cream:#fff8e9; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:radial-gradient(circle at 12% 8%,#deebff 0,transparent 26%),radial-gradient(circle at 92% 92%,#e0f6ef 0,transparent 26%),#f4f6fb; font:15px/1.5 NotoThai,'Leelawadee UI',sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible { outline:3px solid #ffb84d; outline-offset:3px; }
+    .page { display:grid; grid-template-columns:minmax(250px,390px) minmax(320px,410px) minmax(230px,330px); justify-content:center; gap:42px; align-items:start; max-width:1320px; margin:0 auto; padding:48px 30px 80px; }
+    .story,.notes { padding-top:38px; }
+    .eyebrow { color:#2778bd; font-weight:800; font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
+    h1 { font-size:clamp(33px,3.3vw,51px); line-height:1.12; letter-spacing:-.055em; margin:15px 0 20px; }
+    .story p,.notes p { color:#506078; font-size:15px; line-height:1.85; }
+    .story strong { color:var(--ink); }
+    .chip-row { display:flex; gap:8px; flex-wrap:wrap; margin:23px 0 34px; }
+    .chip { background:#fff; border:1px solid #dce8f4; color:#2e6394; border-radius:999px; padding:7px 11px; font-size:12px; font-weight:700; }
+    .story h2,.notes h2 { font-size:16px; margin:28px 0 12px; }
+    .flow { display:grid; gap:12px; }
+    .flow div { display:flex; align-items:center; gap:12px; color:#526077; font-size:14px; }
+    .flow b { flex:none; display:grid; place-items:center; width:29px; height:29px; border-radius:10px; color:#1265a7; background:#e6f3ff; }
+    .phone-wrap { position:relative; }
+    .phone { width:100%; max-width:390px; height:812px; margin:auto; border:9px solid #17243a; border-radius:43px; padding:5px; background:#17243a; box-shadow:0 30px 75px #30436130,0 6px 14px #17243a20; }
+    .phone-inner { position:relative; height:100%; overflow:hidden; border-radius:30px; background:#fbfcfe; }
+    .phone-top { height:25px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; background:#fbfcfe; font-size:11px; font-weight:800; }
+    .camera { position:absolute; width:70px; height:17px; background:#17243a; border-radius:0 0 14px 14px; top:0; left:50%; transform:translateX(-50%); }
+    .phone-content { height:calc(100% - 93px); overflow:auto; scrollbar-width:none; }
+    .phone-content::-webkit-scrollbar { display:none; }
+    .screen { display:none; padding:16px 20px 24px; min-height:100%; }
+    .screen.active { display:block; }
+    .topline { display:flex; justify-content:space-between; align-items:center; margin-bottom:21px; }
+    .brand { font-weight:900; font-size:18px; letter-spacing:-.035em; }
+    .brand em { color:var(--blue); font-style:normal; }
+    .avatar { width:37px; height:37px; display:grid; place-items:center; border-radius:13px; background:#e7f3ff; color:#126db3; font-weight:900; }
+    .small-cap { text-transform:uppercase; letter-spacing:.1em; font-size:11px; font-weight:800; color:#74839a; }
+    .screen-title { font-size:27px; line-height:1.3; letter-spacing:-.045em; margin:5px 0 4px; }
+    .sub { margin:0; color:var(--muted); font-size:13px; }
+    .hero { overflow:hidden; position:relative; background:linear-gradient(140deg,#1664b6,#259ee3); color:#fff; margin:22px 0 18px; padding:22px; min-height:215px; border-radius:25px; box-shadow:0 14px 24px #1979c727; }
+    .hero:before { content:''; position:absolute; width:210px; height:210px; border:1px solid #ffffff36; border-radius:50%; top:-100px; right:-65px; box-shadow:0 0 0 30px #ffffff0b,0 0 0 75px #ffffff0a; }
+    .hero:after { content:'✦'; position:absolute; right:28px; bottom:12px; font-size:75px; line-height:1; color:#ffffff38; transform:rotate(-14deg); }
+    .hero-tag { display:inline-block; background:#ffffff2b; border:1px solid #ffffff35; padding:4px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+    .hero h3 { position:relative; font-size:24px; line-height:1.27; margin:12px 0 4px; letter-spacing:-.03em; }
+    .hero p { position:relative; color:#e7f5ff; font-size:12px; margin:0 0 17px; max-width:215px; }
+    .primary { border:0; background:#fff; color:#1267aa; border-radius:13px; padding:10px 18px; font-weight:900; font-size:13px; box-shadow:0 3px 0 #07549230; }
+    .hero .primary { position:relative; z-index:1; }
+    .section-head { display:flex; justify-content:space-between; align-items:center; margin:20px 0 11px; }
+    .section-head h3 { font-size:16px; margin:0; letter-spacing:-.025em; }
+    .text-action { border:0; color:#1378ca; background:transparent; font-weight:800; font-size:12px; padding:3px; }
+    .task { width:100%; border:1px solid var(--line); background:#fff; display:flex; align-items:center; gap:12px; padding:13px; border-radius:18px; text-align:left; margin:9px 0; box-shadow:0 3px 12px #193b6008; color:inherit; }
+    .task:hover,.goal:hover { border-color:#b3daf9; background:#fafdff; }
+    .task-icon { flex:none; width:46px; height:46px; display:grid; place-items:center; border-radius:14px; font-size:23px; background:#eaf5ff; }
+    .task-icon.gold { background:#fff3dc; }
+    .task-icon.green { background:#e7f8ef; }
+    .task-copy { flex:1; min-width:0; }
+    .task-copy strong { display:block; font-size:14px; }
+    .task-copy small { display:block; color:#77859a; font-size:11px; line-height:1.4; margin-top:1px; }
+    .chev { color:#9aa9b9; font-size:21px; }
+    .note-line { color:#8b98a8; font-size:11px; margin:20px 0 0; }
+    .nav { height:68px; background:#fff; border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(4,1fr); padding:4px 7px 8px; }
+    .nav button { border:0; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; color:#8795a7; font-weight:700; font-size:10px; border-radius:13px; }
+    .nav button.active { color:#126fbb; }
+    .nav button.active .nav-icon { background:#e5f3ff; }
+    .nav-icon { display:grid; place-items:center; width:47px; height:30px; border-radius:999px; font-size:18px; line-height:1; }
+    .sample-bar { display:flex; gap:8px; align-items:center; justify-content:center; margin:20px auto 0; font-size:12px; color:#66748a; }
+    .sample-bar button { border:1px solid #d4e5f5; background:white; color:#226faf; border-radius:10px; padding:5px 10px; font-weight:800; }
+    .sample-bar button.selected { background:#deeeff; }
+    .goal { display:block; width:100%; text-align:left; border:1px solid var(--line); border-radius:20px; background:white; padding:14px; margin:10px 0; color:inherit; }
+    .goal-row { display:flex; align-items:center; gap:11px; }
+    .goal-icon { width:45px; height:45px; display:grid; place-items:center; font-size:23px; background:#eaf5ff; border-radius:14px; }
+    .goal strong { font-size:15px; }
+    .goal p { font-size:11px; color:#768399; margin:1px 0 0; }
+    .goal .details { display:flex; gap:5px; margin:11px 0 0 56px; }
+    .details span { color:#3575a5; background:#eef7ff; padding:3px 7px; border-radius:7px; font-size:10px; font-weight:700; }
+    .plain-button { width:100%; border:1px solid #c7dff4; border-radius:14px; background:white; color:#1b78c1; padding:11px; font-weight:800; margin:14px 0; }
+    .mode-list { display:none; background:#fff; border:1px solid var(--line); border-radius:16px; padding:12px; margin-top:0; color:#5e6d81; font-size:12px; line-height:1.9; }
+    .mode-list.open { display:block; }
+    .search { width:100%; border:1px solid #e2e9f1; background:#fff; border-radius:14px; padding:12px 15px; outline:0; margin:22px 0 5px; color:var(--ink); }
+    .word-stats { display:flex; gap:8px; margin:13px 0 20px; }
+    .word-stats span { background:#e8f4ff; color:#3378ae; font-size:11px; font-weight:800; border-radius:8px; padding:5px 9px; }
+    .word-row { display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line); }
+    .word-row strong { display:block; font-size:15px; }
+    .word-row small { color:#8190a2; font-size:12px; }
+    .word-row em { font-style:normal; color:#428dbf; font-size:11px; background:#f0f7ff; border-radius:8px; padding:4px 7px; }
+    .word-empty { display:none; color:#8895a5; text-align:center; padding:25px 0; font-size:13px; }
+    .add-button { width:100%; border:0; border-radius:15px; color:#fff; font-weight:900; background:#1e88e5; padding:12px; margin-top:24px; }
+    .summary { border-radius:22px; background:linear-gradient(135deg,#e9f5ff,#f2f8ff); border:1px solid #d7ebfb; padding:17px; margin:22px 0; }
+    .summary-head { display:flex; align-items:center; justify-content:space-between; }
+    .summary strong { display:block; font-size:25px; letter-spacing:-.04em; margin:4px 0 0; }
+    .bars { display:flex; align-items:end; justify-content:space-between; gap:9px; height:85px; margin-top:20px; }
+    .bars div { flex:1; background:#9bd1f7; border-radius:6px 6px 3px 3px; position:relative; }
+    .bars div:nth-child(3),.bars div:nth-child(5) { background:#1e88e5; }
+    .bars span { position:absolute; font-size:9px; color:#7a8da0; bottom:-17px; width:100%; text-align:center; }
+    .me-link { width:100%; border:1px solid var(--line); border-radius:15px; background:#fff; padding:13px; display:flex; align-items:center; justify-content:space-between; text-align:left; margin:9px 0; color:var(--ink); font-weight:700; font-size:13px; }
+    .me-link small { font-size:17px; color:#a2acba; }
+    .exercise { background:#f5f9fe; }
+    .back { border:0; background:none; padding:3px 0; font-weight:800; color:#3980b9; }
+    .track { height:7px; border-radius:8px; background:#daeaf7; margin:20px 0 34px; overflow:hidden; }
+    .track i { display:block; width:35%; height:100%; background:#1e88e5; border-radius:8px; }
+    .question { background:#fff; border:1px solid #e4edf4; border-radius:24px; text-align:center; padding:26px 15px; margin:14px 0 20px; }
+    .question span { display:block; font-size:11px; color:#8491a0; }
+    .question strong { display:block; font-size:39px; letter-spacing:-.05em; margin:3px 0; }
+    .answer { width:100%; text-align:left; padding:12px 16px; border:1px solid #dce7f0; background:#fff; border-radius:13px; margin:5px 0; color:#34445c; font-weight:700; }
+    .answer.correct { border-color:#3caf8c; background:#e9f9f1; color:#136f54; }
+    .answer.wrong { border-color:#e68c8c; background:#fff1f1; color:#9f4141; }
+    .feedback { display:none; color:#136f54; background:#e8f8f0; border-radius:13px; padding:11px; margin-top:15px; font-size:12px; }
+    .feedback.show { display:block; }
+    .dialog-backdrop { display:none; position:absolute; inset:0; background:#12264070; z-index:5; align-items:end; }
+    .dialog-backdrop.open { display:flex; }
+    .dialog { width:100%; background:white; border-radius:24px 24px 0 0; padding:23px; box-shadow:0 -15px 40px #12264022; }
+    .dialog h3 { margin:0 0 8px; }
+    .dialog p { font-size:12px; color:#728095; margin:0 0 12px; }
+    .dialog input { width:100%; border:1px solid #dce6ef; border-radius:11px; margin:5px 0; padding:10px; }
+    .dialog-actions { display:flex; gap:8px; margin-top:13px; }
+    .dialog-actions button { flex:1; border:1px solid #d3e3f1; background:#fff; border-radius:12px; padding:10px; font-weight:800; color:#397ba9; }
+    .dialog-actions button:last-child { background:#1e88e5; color:#fff; border-color:#1e88e5; }
+    .notes { background:#ffffffb8; border:1px solid #e3eaf3; padding:20px; border-radius:20px; margin-top:35px; }
+    .notes h2:first-child { margin-top:0; }
+    .notes ul { padding-left:20px; margin:0; color:#506078; font-size:13px; line-height:1.85; }
+    .notes .pill { display:inline-block; color:#7b6330; background:#fff1c8; font-size:11px; padding:4px 9px; border-radius:999px; font-weight:800; }
+    @media (max-width:1080px) { .page { grid-template-columns:minmax(240px,390px) minmax(320px,410px); } .notes { grid-column:1 / -1; max-width:800px; margin:0; } }
+    @media (max-width:700px) { body { background:#f7f9fd; } .page { display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 12px 50px; } .story { padding:3px 6px; max-width:390px; } .story h1 { font-size:32px; } .story .flow,.story .chip-row { display:none; } .phone-wrap { width:100%; max-width:390px; } .phone { height:min(812px,85vh); min-height:620px; } .notes { max-width:390px; } }
+    body.phone-preview { background:#eef3fa; }
+    body.phone-preview .page { display:block; padding:20px; }
+    body.phone-preview .story,body.phone-preview .notes,body.phone-preview .sample-bar { display:none; }
+    body.phone-preview .phone { height:812px; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="story">
+      <div class="eyebrow">LexiQuest · UX concept 01</div>
+      <h1>เปิดแอปแล้ว<br>รู้เลยว่าต้องทำอะไร</h1>
+      <p><a href="lexiquest-full-ux-prototype.html" style="display:inline-block;background:#1e88e5;color:#fff;text-decoration:none;border-radius:12px;padding:10px 14px;font-weight:800">ดูต้นแบบ UX/UI ครบระบบ →</a></p>
+      <p>ร่างใหม่เริ่มจาก <strong>เป้าหมายของผู้เรียน</strong> แทนการให้เลือกจากชื่อโหมดฝึกจำนวนมาก หน้าแรกชวนเริ่มสั้น ๆ แล้วพาไปเรียนต่อ ทบทวน และคำศัพท์ของตัวเอง</p>
+      <div class="chip-row"><span class="chip">ภาษาไทยอ่านง่าย</span><span class="chip">ใช้งานได้โดยไม่ล็อกอิน</span><span class="chip">AI เป็นตัวเลือกเสริม</span></div>
+      <h2>ลองกดในโทรศัพท์จำลอง</h2>
+      <div class="flow"><div><b>1</b> เริ่มฝึกสั้น ๆ จากหน้าแรก</div><div><b>2</b> เลือกเป้าหมายที่หน้า “ฝึก”</div><div><b>3</b> ค้นหาและเพิ่มคำของตัวเอง</div><div><b>4</b> ดูความก้าวหน้าในหน้า “ฉัน”</div></div>
+    </section>
+    <section class="phone-wrap" aria-label="ต้นแบบหน้าจอ LexiQuest">
+      <div class="phone"><div class="phone-inner">
+        <div class="camera" aria-hidden="true"></div>
+        <div class="phone-top"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="phone-content" id="phone-content">
+          <section class="screen active" id="today" aria-label="หน้า วันนี้">
+            <div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar" aria-hidden="true">L</div></div>
+            <div class="small-cap">พร้อมเรียนวันละนิด</div>
+            <h2 class="screen-title">วันนี้ เริ่มตรงนี้เลย</h2>
+            <p class="sub">ไม่ต้องเลือกโหมดให้ยุ่งยาก</p>
+            <div class="hero"><span class="hero-tag" id="hero-tag">แนะนำสำหรับวันนี้</span><h3 id="hero-title">ฝึกสั้น ๆ 5 นาที</h3><p id="hero-description">เริ่มจากคำศัพท์ที่ใช้ในชีวิตประจำวัน</p><button class="primary" data-go="exercise" id="hero-action">เริ่มเรียน →</button></div>
+            <div class="section-head"><h3>อยากทำอะไรต่อ?</h3></div>
+            <button class="task" data-go="practice"><span class="task-icon gold">⏱</span><span class="task-copy"><strong>ทบทวนคำที่เคยเรียน</strong><small>จำให้แม่นขึ้นทีละนิด</small></span><span class="chev">›</span></button>
+            <button class="task" data-go="words"><span class="task-icon green">✦</span><span class="task-copy"><strong>คำศัพท์ของฉัน</strong><small>เพิ่มคำใหม่หรือกลับมาดูคำที่บันทึกไว้</small></span><span class="chev">›</span></button>
+            <p class="note-line">เริ่มใช้งานได้โดยไม่ต้องเชื่อม AI หรือสมัครบัญชี</p>
+          </section>
+          <section class="screen" id="practice" aria-label="หน้า ฝึก">
+            <div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar">L</div></div>
+            <div class="small-cap">เลือกจากสิ่งที่อยากทำ</div><h2 class="screen-title">วันนี้อยากฝึกอะไร?</h2><p class="sub">เลือกเป้าหมายก่อน แล้วค่อยเลือกวิธีฝึก</p>
+            <div class="section-head"><h3>แนะนำ</h3></div>
+            <button class="goal" data-go="exercise"><div class="goal-row"><span class="goal-icon">◈</span><span><strong>จำคำศัพท์ให้ได้</strong><p>ฝึกความหมายและการนึกคำ</p></span></div><div class="details"><span>5 นาที</span><span>เริ่มง่าย</span></div></button>
+            <button class="goal" data-go="exercise"><div class="goal-row"><span class="goal-icon" style="background:#fff2e7">▤</span><span><strong>อ่านและใช้ในประโยค</strong><p>เข้าใจคำจากบริบทที่พบจริง</p></span></div><div class="details"><span>อ่าน</span><span>เขียน</span></div></button>
+            <button class="goal" data-go="exercise"><div class="goal-row"><span class="goal-icon" style="background:#ecf8ef">♫</span><span><strong>ฟังและพูด</strong><p>ฝึกออกเสียงและจับใจความ</p></span></div><div class="details"><span>ใช้ไมค์เมื่อพร้อม</span></div></button>
+            <button class="plain-button" id="toggle-modes" aria-expanded="false">ดูวิธีฝึกทั้งหมด 14 แบบ ⌄</button>
+            <div class="mode-list" id="mode-list">จำคำศัพท์: แบบเลือกคำตอบ · พิมพ์คำ · จับคู่ · นิยาม · บัตรคำ · เรียงคำ · เขียนมือ<br>อ่านและประโยค: อ่านเชื่อมโยง · เติมคำ · อ่านตามระดับ · เรียงประโยค<br>ฟังและพูด: เขียนตามเสียง · พูดคำ · พูดตาม</div>
+          </section>
+          <section class="screen" id="words" aria-label="หน้า คำศัพท์">
+            <div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar">L</div></div>
+            <div class="small-cap">คลังคำส่วนตัว</div><h2 class="screen-title">คำศัพท์ของฉัน</h2><p class="sub">เก็บคำที่อยากจำ แล้วค่อยกลับมาฝึก</p>
+            <input class="search" id="word-search" type="search" placeholder="ค้นหาคำศัพท์ เช่น book" aria-label="ค้นหาคำศัพท์">
+            <div class="word-stats"><span id="word-count">3 คำในตัวอย่าง</span><span>ใช้งานในเครื่อง</span></div>
+            <div id="word-list"><div class="word-row" data-word="book หนังสือ"><span><strong>book</strong><small>หนังสือ</small></span><em>คำทั่วไป</em></div><div class="word-row" data-word="learn เรียนรู้"><span><strong>learn</strong><small>เรียนรู้</small></span><em>คำทั่วไป</em></div><div class="word-row" data-word="window หน้าต่าง"><span><strong>window</strong><small>หน้าต่าง</small></span><em>คำทั่วไป</em></div></div>
+            <div class="word-empty" id="word-empty">ยังไม่พบคำนี้ ลองค้นหาใหม่หรือเพิ่มคำของคุณ</div>
+            <button class="add-button" id="open-add">＋ เพิ่มคำศัพท์</button><button class="plain-button" data-go="exercise">ฝึกคำศัพท์ของฉัน</button>
+          </section>
+          <section class="screen" id="me" aria-label="หน้า ฉัน">
+            <div class="topline"><div class="brand">Lexi<em>Quest</em></div><div class="avatar">L</div></div>
+            <div class="small-cap">ความก้าวหน้าของฉัน</div><h2 class="screen-title">ค่อย ๆ เก่งขึ้นทุกวัน</h2><p class="sub">ดูสิ่งที่ทำแล้วและเลือกก้าวต่อไป</p>
+            <div class="summary"><div class="summary-head"><span>เวลาเรียนสัปดาห์นี้</span><span>↗</span></div><strong>42 นาที</strong><div class="bars"><div style="height:35%"><span>จ</span></div><div style="height:62%"><span>อ</span></div><div style="height:81%"><span>พ</span></div><div style="height:44%"><span>พฤ</span></div><div style="height:94%"><span>ศ</span></div><div style="height:27%"><span>ส</span></div><div style="height:55%"><span>อา</span></div></div></div>
+            <button class="me-link" data-dialog="history">ประวัติการเรียน <small>›</small></button><button class="me-link" data-dialog="rewards">ภารกิจและรางวัล <small>›</small></button><button class="me-link" data-dialog="settings">การตั้งค่า <small>›</small></button>
+            <div class="section-head"><h3>ตัวช่วยเพิ่มเติม</h3></div>
+            <button class="task" data-dialog="ai"><span class="task-icon">✧</span><span class="task-copy"><strong>ถามผู้ช่วย AI</strong><small>ใช้เมื่อเชื่อมต่อบริการ AI แล้วเท่านั้น</small></span><span class="chev">›</span></button>
+            <p class="note-line">ตัวเลขทั้งหมดในร่างนี้เป็นข้อมูลตัวอย่าง ไม่ใช่ผลการเรียนจริง</p>
+          </section>
+          <section class="screen exercise" id="exercise" aria-label="ตัวอย่างแบบฝึก">
+            <button class="back" data-go="today">← กลับหน้าวันนี้</button><div class="track"><i></i></div>
+            <div class="small-cap">แบบฝึกตัวอย่าง · อังกฤษ → ไทย</div><h2 class="screen-title">คำนี้แปลว่าอะไร?</h2><div class="question"><span>เลือกความหมายของ</span><strong>book</strong><span>/bʊk/</span></div>
+            <button class="answer" data-answer="wrong">หน้าต่าง</button><button class="answer" data-answer="correct">หนังสือ</button><button class="answer" data-answer="wrong">ประตู</button>
+            <div class="feedback" id="answer-feedback">ถูกต้อง! “book” แปลว่า “หนังสือ”</div><button class="add-button" data-go="today" id="exercise-done" style="display:none">กลับหน้าวันนี้</button>
+            <p class="note-line">หน้าจอนี้เป็น prototype เพื่อดูเส้นทางเท่านั้น ไม่บันทึกคะแนน</p>
+          </section>
+        </div>
+        <nav class="nav" aria-label="เมนูหลัก"><button class="active" data-go="today" aria-current="page"><span class="nav-icon">⌂</span>วันนี้</button><button data-go="practice"><span class="nav-icon">◇</span>ฝึก</button><button data-go="words"><span class="nav-icon">▤</span>คำศัพท์</button><button data-go="me"><span class="nav-icon">◉</span>ฉัน</button></nav>
+        <div class="dialog-backdrop" id="dialog-backdrop"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><h3 id="dialog-title">เพิ่มคำศัพท์</h3><p id="dialog-description">ข้อมูลใน prototype นี้อยู่ชั่วคราวในหน้าเว็บเท่านั้น</p><div id="word-form"><input id="new-word" placeholder="คำภาษาอังกฤษ" aria-label="คำภาษาอังกฤษ"><input id="new-meaning" placeholder="ความหมายภาษาไทย" aria-label="ความหมายภาษาไทย"></div><div class="dialog-actions"><button id="close-dialog">ปิด</button><button id="confirm-dialog">เพิ่มคำ</button></div></div></div>
+      </div></div>
+      <div class="sample-bar">ตัวอย่างหน้าแรก <button id="sample-fresh" class="selected">ผู้ใช้ใหม่</button><button id="sample-returning">กลับมาเรียนต่อ</button></div>
+    </section>
+    <aside class="notes"><span class="pill">ร่างเพื่อทดสอบกับผู้ใช้</span><h2>หลักการจัดหน้า</h2><ul><li>มีปุ่มเริ่มเรียนที่เด่นที่สุดเพียงจุดเดียว</li><li>แท็บหลักเหลือ 4 จุดหมายที่เรียกตามงานของผู้เรียน</li><li>14 วิธีฝึกยังอยู่ครบ แต่ซ่อนอยู่หลังเป้าหมายการฝึก</li><li>ความก้าวหน้า รางวัล และตั้งค่าอยู่ใน “ฉัน”</li><li>AI ไม่ขวางการเรียนแบบไม่เชื่อมต่อ</li></ul><h2>สิ่งที่ต้องถามผู้ทดลอง</h2><p>โดยไม่อธิบายเมนู ให้ลองเริ่มเรียนต่อ ค้นหาคำ เพิ่มคำ และดูผลการเรียน แล้วจดจุดที่ลังเลหรือกดผิด ร่างนี้ยังไม่ใช่หน้าจอ production และข้อมูลที่แสดงเป็นตัวอย่าง</p></aside>
+  </main>
+  <script>
+    const previewParams=new URLSearchParams(location.search);
+    if(previewParams.get('preview')==='phone') document.body.classList.add('phone-preview');
+    const screens = [...document.querySelectorAll('.screen')];
+    const navButtons = [...document.querySelectorAll('.nav button')];
+    const scroller = document.getElementById('phone-content');
+    function go(name) {
+      screens.forEach(screen => screen.classList.toggle('active', screen.id === name));
+      navButtons.forEach(button => {
+        const active = button.dataset.go === name || (name === 'exercise' && button.dataset.go === 'practice');
+        button.classList.toggle('active', active);
+        if (active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
+      });
+      scroller.scrollTop = 0;
+      if (name === 'exercise') {
+        document.querySelectorAll('.answer').forEach(button => button.classList.remove('correct','wrong'));
+        document.getElementById('answer-feedback').classList.remove('show');
+        document.getElementById('exercise-done').style.display='none';
+      }
+    }
+    document.addEventListener('click', event => {
+      const route = event.target.closest('[data-go]');
+      if (route) go(route.dataset.go);
+      const info = event.target.closest('[data-dialog]');
+      if (info) openDialog(info.dataset.dialog);
+      const answer = event.target.closest('[data-answer]');
+      if (answer) {
+        document.querySelectorAll('.answer').forEach(button => button.classList.remove('correct','wrong'));
+        answer.classList.add(answer.dataset.answer);
+        const feedback=document.getElementById('answer-feedback');
+        feedback.textContent=answer.dataset.answer==='correct' ? 'ถูกต้อง! “book” แปลว่า “หนังสือ”' : 'ยังไม่ใช่ ลองดูอีกครั้ง: “book” แปลว่า “หนังสือ”';
+        feedback.classList.add('show');
+        document.getElementById('exercise-done').style.display='block';
+      }
+    });
+    document.getElementById('toggle-modes').addEventListener('click', function() { const open=document.getElementById('mode-list').classList.toggle('open'); this.setAttribute('aria-expanded',String(open)); this.textContent=open?'ซ่อนวิธีฝึกทั้งหมด ⌃':'ดูวิธีฝึกทั้งหมด 14 แบบ ⌄'; });
+    document.getElementById('word-search').addEventListener('input', function() { const q=this.value.trim().toLowerCase(); let shown=0; document.querySelectorAll('#word-list .word-row').forEach(row=>{const visible=row.dataset.word.toLowerCase().includes(q);row.style.display=visible?'':'none';if(visible)shown++;}); document.getElementById('word-empty').style.display=shown?'none':'block'; });
+    const backdrop=document.getElementById('dialog-backdrop');
+    const modalText={ history:['ประวัติการเรียน','ร่างนี้แสดงตำแหน่งเมนู ประวัติจริงต้องอ่านจากข้อมูลการเรียนของเจ้าของปัจจุบัน'],rewards:['ภารกิจและรางวัล','ร่างนี้แสดงตำแหน่งเมนู ไม่มีการสร้างคะแนนหรือรางวัล'],settings:['การตั้งค่า','ร่างนี้แสดงตำแหน่งเมนู การตั้งค่าจริงอยู่ในแอป'],ai:['ผู้ช่วย AI เป็นตัวเลือกเสริม','การเรียนพื้นฐานใช้ได้โดยไม่เชื่อม AI และไม่มีการส่งคำถามจาก prototype นี้'] };
+    function openDialog(kind) { const data=modalText[kind]; document.getElementById('dialog-title').textContent=data?data[0]:'เพิ่มคำศัพท์'; document.getElementById('dialog-description').textContent=data?data[1]:'ข้อมูลใน prototype นี้อยู่ชั่วคราวในหน้าเว็บเท่านั้น'; document.getElementById('word-form').style.display=data?'none':'block'; document.getElementById('confirm-dialog').style.display=data?'none':'block'; backdrop.classList.add('open'); if(!data)document.getElementById('new-word').focus(); }
+    document.getElementById('open-add').addEventListener('click',()=>openDialog('word'));
+    document.getElementById('close-dialog').addEventListener('click',()=>backdrop.classList.remove('open'));
+    backdrop.addEventListener('click',event=>{if(event.target===backdrop)backdrop.classList.remove('open');});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')backdrop.classList.remove('open');});
+    document.getElementById('confirm-dialog').addEventListener('click',()=>{ const word=document.getElementById('new-word').value.trim();const meaning=document.getElementById('new-meaning').value.trim();if(!word||!meaning)return;const row=document.createElement('div');row.className='word-row';row.dataset.word=word+' '+meaning;const copy=document.createElement('span');const strong=document.createElement('strong');strong.textContent=word;const small=document.createElement('small');small.textContent=meaning;copy.append(strong,small);const badge=document.createElement('em');badge.textContent='เพิ่มในตัวอย่าง';row.append(copy,badge);document.getElementById('word-list').prepend(row);const count=document.querySelectorAll('#word-list .word-row').length;document.getElementById('word-count').textContent=count+' คำในตัวอย่าง';document.getElementById('new-word').value='';document.getElementById('new-meaning').value='';document.getElementById('word-search').value='';document.querySelectorAll('#word-list .word-row').forEach(item=>item.style.display='');document.getElementById('word-empty').style.display='none';backdrop.classList.remove('open'); });
+    function sample(returning) { document.getElementById('sample-fresh').classList.toggle('selected',!returning);document.getElementById('sample-returning').classList.toggle('selected',returning);document.getElementById('hero-tag').textContent=returning?'ทำต่อจากครั้งก่อน':'แนะนำสำหรับวันนี้';document.getElementById('hero-title').textContent=returning?'เรียนต่อจากที่ค้างไว้':'ฝึกสั้น ๆ 5 นาที';document.getElementById('hero-description').textContent=returning?'กลับไปทำบทเรียนที่เริ่มไว้':'เริ่มจากคำศัพท์ที่ใช้ในชีวิตประจำวัน';document.getElementById('hero-action').textContent=returning?'เรียนต่อ →':'เริ่มเรียน →';go('today'); }
+    document.getElementById('sample-fresh').addEventListener('click',()=>sample(false));
+    document.getElementById('sample-returning').addEventListener('click',()=>sample(true));
+    const initialScreen=previewParams.get('screen');
+    if(['today','practice','words','me','exercise'].includes(initialScreen)) go(initialScreen);
+  </script>
+</body>
+</html>

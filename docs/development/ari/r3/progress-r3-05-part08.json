@@ -1,0 +1,15 @@
+{
+  "taskId": "01a0cfd7-68db-7b63-bde0-f60a6014008a",
+  "status": "COMPLETE_PART_ONLY_APPLICATION_RELEASED",
+  "source": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "checkpointReceived": 163,
+  "sourceAck": "1788 pins/ZIP/Jev verified; execution33 released writer",
+  "finding": "R3-05-LATE-VERIFICATION-001: create/edit late verification pops covering route or clears committed identity after session invalidation",
+  "reproduction": "part08-lifecycle-red-corrected.log:4 product failures; initial fixture pumpAndSettle spinner timeout separately recorded",
+  "fix": "add_vocab_screen allowed checks current route and rechecks after async read",
+  "wordGate": "targeted-ai-d43a003b9ba2412aafb4f93ba89593f9cbf94ba1b8fb0a308c6537c51adcfa4b.json Passed",
+  "next": "Post-commit late verification is now bounded-proven across30cases; do not repeat unchanged mutation/notifier/reconciliation gates. Audit exact A01-A23 boundary map for any remaining actionable pre-admission or in-flight owner/route assertions without inventing arbitrary transaction faults. Native foreign-owner/actual-provider limits remain explicit. Next actionable connection/reauth/lifecycle including route-cover/background and lease/restart exact assertions; inspect managed screen/runtime/host tests and fill missing current-source combinations. Questionnaire/main/drawer connection/lifecycle and account-control applicability/fixture remain. Reuse existing settings evidence under dependency closure. Then W05-W14/all14nested modes. Preserve215rows/4passed/211remaining IDs. NoR3-06before realR3-05exit.",
+  "ownedJobs": [],
+  "runtimeTier": "not exposed; no confirmation claim",
+  "receipt": "receipt-r3-05-part08.json"
+}

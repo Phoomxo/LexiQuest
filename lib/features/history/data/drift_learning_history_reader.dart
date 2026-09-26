@@ -490,6 +490,10 @@ SELECT * FROM candidates
 
   bool _matchesConfiguredActivity(String activityType, LessonMode mode) {
     if (activityType == mode.id) return true;
+    // startDueReview stores configured flashcard sessions under this alias.
+    if (activityType == 'srsReview') {
+      return mode == LessonMode.flashcard;
+    }
     // The reading launcher and recovery store retain this established alias.
     if (activityType == 'associativeReading') {
       return mode == LessonMode.associativeReading;

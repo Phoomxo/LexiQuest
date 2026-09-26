@@ -26,15 +26,43 @@ final class ProductionFeatureUnavailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canReturn = Navigator.of(context).canPop();
     return Scaffold(
-      appBar: AppBar(title: const Text('Feature unavailable')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'This feature is not available right now. Your saved learning '
-            'data is unchanged.',
-            textAlign: TextAlign.center,
+      appBar: AppBar(),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'ยังเปิดหน้านี้ไม่ได้',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'หน้านี้ยังไม่พร้อมใช้งาน ข้อมูลการเรียนที่บันทึกไว้ยังอยู่',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                if (canReturn)
+                  FilledButton(
+                    style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    child: const Text('กลับหน้าก่อนหน้า', textAlign: TextAlign.center),
+                  )
+                else
+                  const Text(
+                    'เลือกหน้าอื่นจากเมนูที่มีอยู่ หรือกลับมาเปิดแอปภายหลัง',
+                    textAlign: TextAlign.center,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

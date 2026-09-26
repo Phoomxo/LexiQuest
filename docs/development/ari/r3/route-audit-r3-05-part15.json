@@ -1,0 +1,47 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "sourceFingerprint": "1a6fb05ff4c103e1225cab065f90b12b5e58a4009d680548346ed7b909c474cc",
+  "assertions": [
+    {
+      "id": "A49",
+      "groups": [
+        "W09"
+      ],
+      "proven": [
+        "History canonical SRS alias regression fixed;65 current history reader/replay/screen cases; native Today/review-center/history observation."
+      ],
+      "limits": [
+        "129 unique current full-file tests across five files; six new regression cases. Earlier 66 history/probe result overlaps and is not additive. Native fixture probe is diagnostic only, preserved outside test directory.",
+        "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification."
+      ]
+    },
+    {
+      "id": "A50",
+      "groups": [
+        "W03",
+        "W09"
+      ],
+      "proven": [
+        "Explicit support available-repair engine fix;64 engine/actual-host cases; native wrong/repair/support terminal and result-button replay with58table DB reconciliation."
+      ],
+      "limits": [
+        "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification."
+      ]
+    }
+  ],
+  "native": "native-history-pair-r3-05-part15.json",
+  "verification": "verification-r3-05-part15.json",
+  "limits": [
+    "129 unique current full-file tests across five files; six new regression cases. Earlier 66 history/probe result overlaps and is not additive. Native fixture probe is diagnostic only, preserved outside test directory.",
+    "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification.",
+    "Part14 receipts may now have changed reachable inputs: inspect exact closure before reusing. No blind carry-forward of179 as current.",
+    "All215 criteria retain4passed/211remaining; all14 workflow/mode acceptance OPEN. Camera ground truth, actual scanner accept/file SQLite, reward file durability, hosted sync and broader native matrix remain."
+  ],
+  "next": [
+    "First W12 actual camera/scanner accept use cases through repository and file-backed SQLite: mapped result, owner scoping, AI absent/connected/disconnected, retry and reopen. Existing FakeScanner acceptCalls is not persistence evidence. W10 reward file durability next; do not confuse fresh memory DB with reopen.",
+    "Native preview now installed and Today/History/Pair routes verified. Remaining Pair active-board restart, History-origin replay, cap boundaries; W01/W02 account/provider/process death, W03 delayed preadmission, W06 eligibility, positive speech/camera ground truth, hosted sync and180minute endurance remain. Fresh device/foreground/package observation and fresh main/WAL/SHM backup before each cycle; restore exact; preserve original app/accounts.",
+    "Reuse129 exact current cases only while closure unchanged; inspect older receipts after two product changes. No blanket179 current claim. All215rows4passed211remaining and14workflows/modes OPEN; noR3-06. No live Jev/provider/money/research/security/deploy/subagents/background implementers.",
+    "At major outcome/context boundary record checkpoint and verified dirty/local ZIP; release application writes and create exactly one project-bound successor. Actual-ID read-only ACK before coordination release. Existing watcher unchanged."
+  ],
+  "wholeScopeComplete": false
+}

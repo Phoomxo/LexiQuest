@@ -5,6 +5,53 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'pair_matching_source_composer_test.dart' as f;
 
 void main() {
+  for (final spaced in [false, true]) {
+    test('explicit repair support preserves spacing=$spaced and stale revision guards', () {
+      final plan = (f.compose(List.generate(4, f.fixture)) as PairPlanReady).plan;
+      var state = PairMatchingState.initial(plan);
+      void tap(String id, PairTileSide side) {
+        state = PairMatchingEngine.reduce(state, PairSelectTile(
+          operationId: '${state.operationRevision}:support-regression',
+          ownerId: plan.ownerId, sessionId: plan.learningSessionId,
+          roundOrdinal: 0, expectedRevision: state.operationRevision,
+          tile: PairTile(side, id), responseTimeMs: 20,
+        )).state;
+        if (state.pending != null) state = PairMatchingEngine.acknowledge(state, state.pending!.operationId);
+      }
+      tap('synthetic-0', PairTileSide.prompt);
+      tap('synthetic-1', PairTileSide.target);
+      if (spaced) {
+        for (final id in ['synthetic-1', 'synthetic-2']) {
+          tap(id, PairTileSide.prompt); tap(id, PairTileSide.target);
+        }
+      }
+      state = PairMatchingEngine.reduce(state, PairRevealMapping(
+        operationId: '${state.operationRevision}:reveal', ownerId: plan.ownerId,
+        sessionId: plan.learningSessionId, roundOrdinal: 0,
+        expectedRevision: state.operationRevision, wordId: 'synthetic-0',
+      )).state;
+      PairConfirmGuidedMapping confirm(int revision) => PairConfirmGuidedMapping(
+        operationId: '${state.operationRevision}:confirm', ownerId: plan.ownerId,
+        sessionId: plan.learningSessionId, roundOrdinal: 0,
+        expectedRevision: state.operationRevision, wordId: 'synthetic-0',
+        shownSupportRevision: revision, responseTimeMs: 20,
+      );
+      final shown = state.supportAtRevision['synthetic-0']!;
+      expect(() => PairMatchingEngine.reduce(state, confirm(shown + 1)), throwsStateError);
+      if (!spaced) {
+        expect(() => PairMatchingEngine.reduce(state, confirm(shown)), throwsStateError);
+      } else {
+        final accepted = PairMatchingEngine.reduce(state, confirm(shown));
+        expect(accepted.attempt!.role, PairAttemptRole.guidedCompletion);
+        expect(state.classificationFor(accepted.attempt!).hintLevel, greaterThan(0));
+        final done = PairMatchingEngine.acknowledge(accepted.state, accepted.attempt!.operationId);
+        expect(done.attempts, hasLength(4));
+        expect(done.attempts.first.isCorrect, false);
+        expect(done.matchedWordIds, contains('synthetic-0'));
+      }
+    });
+  }
+
   for (final direction in PairDirection.values) {
     for (final first in PairTileSide.values) {
       test('neutral selection and prompt role $direction $first', () {

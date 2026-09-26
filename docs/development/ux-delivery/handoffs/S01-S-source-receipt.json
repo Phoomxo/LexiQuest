@@ -1,0 +1,15 @@
+{
+  "dispatchId": "ux-s01-s-20260924-d933",
+  "receivedAtUtc": "2026-09-24T07:55:40.770791+00:00",
+  "threadId": "01a0d268-69d1-70b0-b1ac-b8a6d7b7eea3",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\810c\\LexiQuest",
+  "branch": "feature/ux-s01-s-810c",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "c813c7af10cdf4bd0f2d4b14084028b5e81bc300874e8fadb62e081a896056d6",
+  "verifiedEntries": 396,
+  "archiveSha256": "db0bc71e193342d4ca02e56eeeaf620d9745a8d98cb1592da2861fb287728aba",
+  "predecessorUnmodified": true,
+  "routing": "Explicit current-model GPT-6 Astra/medium fallback, not Jev-selected",
+  "runtimeServiceTier": "NOT_EXPOSED; Standard/default required",
+  "sprintDatesPreserved": true
+}

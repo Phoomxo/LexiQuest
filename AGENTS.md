@@ -1,5 +1,23 @@
 # LexiQuest Development Guardrails
 
+## Continuous UX execution and routing — latest user authorization 2026-09-24
+
+- Continue approved plan v5 automatically through useful ready work across the backlog, sequential work packages/sprints/fresh project tasks. A finished S01 draft is not a reason to stop independent approved UX, accessibility, interface or prototype work. Preserve all learning/media/trial gates; do not implement instructional Flutter before relevant trial acceptance.
+- Jev may advise the model/effort for the next task from the user-authorized pool intersected with that executor's freshly observed schema/capability/quota. This supersedes fixed Astra/medium routing only for this UX continuation. Preserve Standard/default, never Fast/priority, one writer and no subagents. When Jev is unavailable, retain the current model as explicit deterministic fallback; never label it Jev-selected or claim unmeasured savings.
+- Reuse the existing Jev guard, ledger and cache and the original USD5 tranche. Fresh pricing/free-credit/shared-spend/quota evidence is required for each batch, with durable reservation before inference. No ledger reset, pending clearance, purchase, auto-top-up, paid fallback or old billing snapshot. Send manually sanitized task summaries only; no raw source, learner data or secrets. Antigravity additionally requires fresh CLI capability/quota and verified source/writer isolation.
+- Existing controller heartbeat `lexiquest-r3` tracks UX v5 every 30 minutes at task `01a0ce9e-23a6-7931-88e6-6390da748f39`. Do not create another automation or wait for its tick to continue. This explicitly supersedes the older prohibition on authorized automation.
+- At a context boundary preserve immutable source snapshot/hashes, evidence, OPEN/RED/pending, next ready scope, routing/fallback receipt and recovery policy. Release writer before dispatching exactly one fresh successor in the saved project; track/reuse its ID and keep the predecessor receipt discoverable. If no useful independent work is actually ready, record indispensable prerequisites once and stop spinning without closing the sprint.
+
+## Active UX sprint authority — user authorization 2026-09-24
+
+- The user approved implementation of `docs/design/worksheet-to-play-blueprint.md` version 5: four-week sprints, one fresh project chat per sprint, and sequential continuation chats when a bounded work package needs a context handoff. This supersedes the older no-new-task and G/B-bundle dispatch rules for this UX delivery scope only. There is still exactly one application writer and no subagents or parallel implementation workers.
+- Read `docs/development/ux-delivery/README.md`, the current `state.json`, and the latest handoff first. They govern the new UX work; old Ari/MCP, 215-criterion, Jev and full-system dispatch state remains historical and must not restart automatically.
+- Use the saved LexiQuest project `e0d28f74-0d26-40bc-b126-4cfebe4ff7a0`. Verify the predecessor's actual source, dirty-file manifest and evidence before writing. The original UX source is the d38e worktree on `feature/ari-app-device-integration`; a new task's default checkout is not proof of source continuity. Preserve the original checkout and all user changes; never reset/clean it for a handoff.
+- A completed chat is not a completed sprint or accepted increment. Carry unresolved defects, RED results, source/content revisions and external prerequisites forward without weakening acceptance. Distinguish checkpoint source from accepted source.
+- The active writer may dispatch exactly one authorized successor after an immutable handoff and release of application-writing authority. Reuse an existing successor ID; pending setup is not a reason to create another. The predecessor must stop changing application source after release. Record coordination receipts separately.
+- While reviewers/media/participants are unavailable, continue only independent approved prototype/navigation/accessibility/interface work. Reviewed content is required before learning trials; qualified trial evidence is required before implementing a new instructional unit in Flutter. Never invent reviewer approval, learner results, live-provider success or native acceptance.
+- Keep four tabs, Thai-first instructions, baseline without login/AI, independent Phonics/story access, canonical owner/content/scoring authorities, and the existing recovery policy. No automatic purchase, paid fallback, deployment or research activation. New user pause/stop instructions override succession.
+
 ## Ari task storage — user correction 2026-09-20
 
 - All new LexiQuest tasks, including planning and documentation, belong to the saved LexiQuest project; do not create projectless tasks for this work.

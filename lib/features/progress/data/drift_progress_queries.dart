@@ -59,6 +59,7 @@ final class DriftProgressQueries {
         .where((id) => matching[id]!.state == 'completed')
         .length;
     return PackProgressSnapshot(
+      ownerId: ownerId,
       sampleSize: attempts.length,
       correctCount: attempts.where((attempt) => attempt.isCorrect).length,
       completedSessions: completed,

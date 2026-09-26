@@ -96,6 +96,7 @@ void main() {
           ),
         );
         await settle();
+        expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 0);
         for (final (index, id)
             in NavigationGlossary.mainDestinationIds.indexed) {
           await invoke(id);
@@ -123,7 +124,8 @@ void main() {
           await settle();
         }
         for (final id in NavigationGlossary.secondaryDestinationIds) {
-          await invoke(id == 'home/weakness' ? 'home/mastery' : 'home/learn');
+          await invoke(id == 'home/study-planning' ? 'home/learn' : 'home/profile');
+          if (id == 'home/weakness') await invoke('home/mastery');
           await invoke(id);
           expect(navigator.currentState!.canPop(), isTrue, reason: id);
           if (id == 'home/study-planning') {
@@ -150,17 +152,24 @@ void main() {
         }
         await invoke('home/profile');
         await invoke('profile-open-mastery');
-        expect(
-          tester
-              .widget<NavigationBar>(find.byType(NavigationBar))
-              .selectedIndex,
-          2,
-        );
+        expect(navigator.currentState!.canPop(), isTrue);
         await invoke('mastery-open-review');
         expect(navigator.currentState!.canPop(), isTrue);
         navigator.currentState!.popUntil((route) => route.isFirst);
         await settle();
+        await invoke('home/profile');
+        for (final id in ['profile/rewards/quests', 'profile/rewards/shop', 'home/today/history', 'profile/settings']) {
+          await invoke(id);
+          expect(navigator.currentState!.canPop(), isTrue, reason: id);
+          navigator.currentState!.popUntil((route) => route.isFirst);
+          await settle();
+          expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 3);
+        }
         await invoke('home/learn');
+        await Scrollable.ensureVisible(tester.element(find.byKey(const ValueKey('learn-show-all-modes'))), alignment: 0.5);
+        await settle();
+        await tester.tap(find.byKey(const ValueKey('learn-show-all-modes')));
+        await settle();
         for (final id in NavigationGlossary.learningModeIds) {
           await invoke(id);
           expect(navigator.currentState!.canPop(), isTrue, reason: id);

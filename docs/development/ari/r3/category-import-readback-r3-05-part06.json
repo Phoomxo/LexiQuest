@@ -1,0 +1,57 @@
+{
+  "taskId": "01a0cfb2-6a0a-7940-9f53-c0aaaef50aa4",
+  "sourceFingerprint": "b6ade277692668fba6de65f332fc9a5c1dc0f949ec786ad84214c639cb88a0c7",
+  "defects": [
+    {
+      "id": "R3-05-CATEGORY-READBACK-001",
+      "source": "lib/screens/categories_page.dart",
+      "redCases": 2,
+      "redLog": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/bfed68d25ec3-f3721b27d067-b3d7acd3/Explicit-Flutter-tests.stdout.log",
+      "observed": "Real SQLite category+outbox persisted, expected outcome_unknown but actual failed when independent readback threw",
+      "redLogSha256": "91aaf334a5aa34370096e4d6fac20671a046bf139c9117d00551a6eb35a17507"
+    },
+    {
+      "id": "R3-05-IMPORT-READBACK-001",
+      "source": "lib/screens/add_multiple_words_screen.dart",
+      "redCases": 2,
+      "redLog": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/26767707e156-8e10afc23fde-2bf814e2/Explicit-Flutter-tests.stdout.log",
+      "observed": "Real SQLite word/import/3row-results/outbox committed, expected outcome_unknown but actual failed when readResult threw",
+      "redLogSha256": "4603f090ce0e94b9bd31ca591350b0c0d1c7f5ed9e9266d915610031069bcaf4"
+    }
+  ],
+  "fix": "Retain committed category/result until independent verification succeeds; new MCP request reconciles read-only. Failed, missing or mismatching reads return outcome_unknown; native save/fields and optional fill disabled while pending. Successful verification clears pending; category dialog closes and import original completion preserved.",
+  "verified": [
+    "Four file-backed tests: category/import x reconcile-before-restart/restart-while-unknown",
+    "Single mutation despite fresh request IDs after throw/missing/mismatch; category revision mismatch and import counts mismatch remain unknown",
+    "Disconnect/foreign-owner action suppression/reconnect; optional fill busy and native fields/save disabled during unresolved outcome",
+    "Exact original record/result identity after recovery; survivor categories and all categories/words/imports/row-results/outbox match after DB reopen as applicable",
+    "Existing successful category receipt and manual form behavior assertions unchanged"
+  ],
+  "limits": [
+    "No durable provider request-ID or process-death reconciliation protocol claim; restart tests verify database integrity only",
+    "Exceptions inside mutation methods or their post-mutation notifier before returning success remain unaudited; not certified",
+    "Native exercised ordinary create/import baseline; injected verification faults are host-only",
+    "Actual provider/foreign-owner-native/other route lifecycle combinations remain pending; no whole W03/R3-05 completion"
+  ],
+  "recoveries": [
+    {
+      "failure": "Import fixture supplied category field name instead of rows",
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/26767707e156-9de2487106e1-2bc0b9af/Explicit-Flutter-tests.stdout.log",
+      "correction": "Corrected input key; same busy assertion retained"
+    },
+    {
+      "failure": "First affected48 run:47pass1fail, existing category receipt became stale",
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/89ce6dd4ce2b-0d5dfd06bf0d-f66a089a/Explicit-Flutter-tests.stdout.log",
+      "cause": "Successful category insert refreshes list bindings and registry revision during verification",
+      "correction": "Keep original revision guard for mutation; reconciliation checks owner and route admission; existing saved assertion kept"
+    },
+    {
+      "failure": "Initial native start named nonexistent Activity",
+      "correction": "Read launchable-activity from aapt badging; launch verified com.lexiquest.app.MainActivity with am start -W. Unrelated foreground dump excluded from artifacts."
+    },
+    {
+      "failure": "Read-only discovery included absent .codex folder / wrong skill root",
+      "correction": "Used discovered existing docs paths and catalog skill root; no repeated failed method"
+    }
+  ]
+}

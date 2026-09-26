@@ -57,6 +57,42 @@ void main() {
     },
   );
 
+  for (final error in [
+    StateError('private-picker'),
+    PlatformException(code: 'UNAVAILABLE'),
+  ]) {
+    test(
+      'AD desktop picker failure is typed before staging (${error.runtimeType})',
+      () async {
+        var staging = 0;
+        var writes = 0;
+        final store = FileSelectorExportStore(
+          isAndroid: false,
+          desktopLocation: (_) async => throw error,
+          temporaryDirectory: () async {
+            staging++;
+            return Directory.systemTemp;
+          },
+          desktopSaver: (_, _) async {
+            writes++;
+          },
+        );
+        await expectLater(
+          store.save(artifact, cancellation: ExportCancellation()),
+          throwsA(
+            isA<ExportException>().having(
+              (e) => e.code,
+              'code',
+              ExportFailureCode.unavailable,
+            ),
+          ),
+        );
+        expect(staging, 0);
+        expect(writes, 0);
+      },
+    );
+  }
+
   test(
     'Android cancellation reaches pending native write and maps CANCELLED',
     () async {

@@ -1681,6 +1681,53 @@ void main() {
       await tester.pumpAndSettle();
     },
   );
+  testWidgets('explicit support completes an available repair without losing evidence', (tester) async {
+    final h = PairHarness();
+    addTearDown(h.db.close);
+    await h.initialize(measured: true);
+    await tester.pumpWidget(MaterialApp(home: PairMatchingExperienceHost.recover(
+      runtime: _runtime(h), operation: h.operation, onExit: () {},
+    )));
+    await tester.pumpAndSettle();
+    Future<void> tap(String key) async {
+      final target = find.byKey(ValueKey(key));
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
+    Future<void> pair(int source, int target) async {
+      await tap('pair-tile:prompt:synthetic-$source');
+      await tap('pair-tile:target:synthetic-$target');
+    }
+    await pair(0, 1);
+    await pair(1, 1);
+    await pair(2, 2);
+    await tap('pair-tile:prompt:synthetic-0');
+    await tap('pair-reveal:synthetic-0');
+    final before = await h.db.select(h.db.answerAttempts).get();
+    expect(before, hasLength(3));
+    await tap('pair-confirm-guided:synthetic-0');
+    final repaired = await h.db.select(h.db.answerAttempts).get();
+    expect(repaired, hasLength(4));
+    final added = repaired.singleWhere((r) => !before.any((old) => old.id == r.id));
+    expect(added.wordId, 'synthetic-0');
+    expect(added.isCorrect, true);
+    expect(added.evidenceClass, 'guidedPractice');
+    for (final old in before) {
+      expect(repaired.singleWhere((r) => r.id == old.id), old);
+    }
+    await pair(3, 3);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
+    final result = await h.real.read(ownerId: h.owner, sessionId: h.operation.plan.learningSessionId);
+    expect(result.snapshot!.terminal!.acknowledged, true);
+    expect(result.snapshot!.evidenceIds.toSet(), hasLength(5));
+    expect(await h.db.select(h.db.answerAttempts).get(), hasLength(5));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets(
     'actual wrong repair guided confirmation and Review preserve canonical evidence',
     (tester) async {

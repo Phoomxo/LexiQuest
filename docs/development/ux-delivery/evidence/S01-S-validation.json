@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "result": "HOST_PASS",
+  "atUtc": "2026-09-24T07:59:21.457176+00:00",
+  "tests": 65,
+  "compatibilityChecks": 3,
+  "inputPins": {
+    "docs/design/lexiquest-full-ux.js": "95b3cc27a404445ba295f7674ab8f0bd27467340c071a06920b1ebe902b590fa",
+    "docs/design/check-s01-navigation.cjs": "517a8aee5536586eb4b91f16c67cb3e49f02782ede6c994253f653494e6193ff",
+    "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+    "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+    "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+    "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+    "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+    "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+  },
+  "notTested": [
+    "browser/visual/download",
+    "real keyboard/screen reader",
+    "native persistence",
+    "learning"
+  ],
+  "red": [
+    "build/ux-delivery/S01-S/red-confirmed.log"
+  ],
+  "gateResultPath": "docs/development/ux-delivery/evidence/S01-S-gate.json",
+  "gateFingerprint": "a554a36166b6912465333faeded068c9bb122f02e77cc7480c1be75913b9bce9",
+  "selfReview": "Only self-review. Guarded tiles and clear/check lifecycle; matching pressed state and toggled deselection; token next-enabled/wrap/check focus with preventScroll. Content and scoring unchanged.",
+  "testRefinement": "Assert each stale event separately to avoid clear/check masking an earlier invalid mutation; confirmed all six RED before source edits."
+}

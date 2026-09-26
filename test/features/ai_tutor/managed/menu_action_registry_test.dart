@@ -4,6 +4,32 @@ import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_reg
 
 void main() {
   test(
+    'session generation survives action revisions and fences invalidation',
+    () {
+      String? owner = 'owner-a';
+      final registry = MenuActionRegistry(currentOwner: () => owner);
+      final original = registry.sessionGeneration;
+      final remove = registry.register(
+        id: 'action',
+        label: 'Action',
+        available: () => true,
+        invoke: () {},
+      );
+      expect(registry.sessionGeneration, original);
+      remove();
+      expect(registry.sessionGeneration, original);
+      registry.invalidateSession(preserveContext: true);
+      final invalidated = registry.sessionGeneration;
+      expect(invalidated, greaterThan(original));
+      owner = null;
+      final disconnected = registry.sessionGeneration;
+      expect(disconnected, greaterThan(invalidated));
+      owner = 'owner-b';
+      expect(registry.sessionGeneration, greaterThan(disconnected));
+    },
+  );
+
+  test(
     'navigation acknowledges invocation before route closes and retains late failures',
     () async {
       final closed = Completer<void>();

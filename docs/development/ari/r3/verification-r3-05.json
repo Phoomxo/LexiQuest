@@ -1,0 +1,308 @@
+{
+  "taskId": "01a0cf50-d495-7a02-b1d2-8090500798da",
+  "sourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-bfe5e382a64a4289892cd7b235c0c10a1d2191f4be0fa1b1e3f40d8d3ed97ea3.json",
+      "sha256": "3c08250fb1fcbe07e95c257ce617a9016d59ee066dc82fa4f21b236cf4d68f27",
+      "status": "Passed",
+      "environmentFingerprint": "b92b0ce9de536a03cffdc2abcbaf95710bf259933c58e91029c5a06e976f42cc",
+      "targets": [
+        "test/features/ai_tutor/managed/optional_ai_app_test.dart",
+        "test/features/ai_tutor/managed/menu_bridge_test.dart",
+        "test/features/ai_tutor/managed/lesson_assistance_test.dart",
+        "test/features/ai_tutor/owner_operation_coordinator_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/d84b1a8a276d-1561543bbff6-af646cc9/Explicit-Flutter-tests.stdout.log",
+          "sha256": "7573dd7df33a3688860baa02085f76b547543f6e1f95996b3c576eea3a3ec42b",
+          "tests": 20
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-e0b1c1e465452f8f1b1920c228a0d791b3fa4848e8f44d873dc3baf24d528e7a.json",
+      "sha256": "5b5cd1620f96bebec61d62cf2370cd2ec18485842c1dc5d18d131a296098139c",
+      "status": "Passed",
+      "environmentFingerprint": "b92b0ce9de536a03cffdc2abcbaf95710bf259933c58e91029c5a06e976f42cc",
+      "targets": [
+        "test/features/ai_tutor/managed/menu_action_registry_test.dart",
+        "test/features/ai_tutor/managed/menu_form_registry_test.dart",
+        "test/features/ai_tutor/managed/menu_action_binding_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/session_configuration_mode_matrix_test.dart",
+        "test/architecture/lesson_mode_adapter_coverage_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/a4be7685d099-1561543bbff6-98819fe4/Explicit-Flutter-tests.stdout.log",
+          "sha256": "01f3e1442a516c78db3bc0f4b17fa85e0a58bc5bbc57fd3ba254db3d98a391bf",
+          "tests": 219
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-aaf5ddaeeb043cea52e31ca5d92996bfc42416b76aee3120e15c661ac2270bfb.json",
+      "sha256": "8926bc6becf2eacb0acf7066d4283f66f482ebf268352d4c7cbce29fbfb86d15",
+      "status": "Passed",
+      "environmentFingerprint": "b92b0ce9de536a03cffdc2abcbaf95710bf259933c58e91029c5a06e976f42cc",
+      "targets": [
+        "test/scenarios/production_learning_restart_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/scenarios/associative_reading_restart_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/0c6fe65edf2c-e1d39df4f884-4dc1cf17/Explicit-Flutter-tests.stdout.log",
+          "sha256": "892049b2bcf9778787cf80716616f2be08bfbe7dccfc59b80b9d3facac131563",
+          "tests": 29
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-de25a5762932e95dd1bb29e9e7485d0257a9a1f15b4235998d8477e863c4e80b.json",
+      "sha256": "f102c17a917aaf7bbe0560cf74737398b6ec71bf2253e2742f11ea8ad32e556b",
+      "status": "Passed",
+      "environmentFingerprint": "b92b0ce9de536a03cffdc2abcbaf95710bf259933c58e91029c5a06e976f42cc",
+      "targets": [
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/8536361998af-1ebd6a34e7ae-12543182/Explicit-Flutter-tests.stdout.log",
+          "sha256": "9f3a5037bd2b95fc3fd3ff597907850246b002c99167fc1f7e9727f71f9f6d37",
+          "tests": 28
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-974373341801e522123188534ed4d3af83b9247a8df8714a97abfcd2f70a9e8c.json",
+      "sha256": "4e22c949131e3256d3862ec727cdf0a94d69849586edb18027e21e153a22ae59",
+      "status": "Passed",
+      "environmentFingerprint": "b92b0ce9de536a03cffdc2abcbaf95710bf259933c58e91029c5a06e976f42cc",
+      "targets": [
+        "test/features/ai_tutor/managed/optional_ai_app_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/architecture/lesson_mode_adapter_coverage_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/f3eccf630113-1ebd6a34e7ae-3ada2d21/Explicit-Flutter-tests.stdout.log",
+          "sha256": "c38452e9ab867a6caf1e229ffd524fdc5eb007eac4d83b5e2029eda9a9d9469c",
+          "tests": 193
+        }
+      ]
+    }
+  ],
+  "testCountsMeaning": "20 + 219 + 29 + 28 + 193 executions; final193 repeats affected prior tests after shadowing projection fix, not additive coverage. No full-suite acceptance.",
+  "dependencyClosure": "closure-audit-r3-05.json",
+  "modeConfigurationDeclarations": [
+    {
+      "mode": "associativeReading",
+      "route": "learning/associative-reading",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "meaningQuiz",
+      "route": "learning/quiz",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward",
+        "reverse",
+        "mixed"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": true,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "typedRecall",
+      "route": "learning/typed-recall",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "mixed"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "definitionQuiz",
+      "route": "learning/definition-quiz",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "cloze",
+      "route": "learning/cloze",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "matching",
+      "route": "learning/matching",
+      "minItems": 2,
+      "maxItems": 6,
+      "defaultItems": 6,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "flashcard",
+      "route": "learning/srs",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "route": "learning/handwriting-scratchpad",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "dictation",
+      "route": "game/dictation",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "speaking",
+      "route": "practice/speaking",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "shadowing",
+      "route": "practice/shadowing",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "cefrReading",
+      "route": "learning/cefr-reading",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "sentenceScramble",
+      "route": "game/sentence-scramble",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    },
+    {
+      "mode": "wordScramble",
+      "route": "game/word-scramble",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "handwritingConfigurationUsedByRoute": false
+    }
+  ],
+  "modeMeaning": "14 registry configurations; direction is a declared capability, not proof all native route direction choices work. Matching internalPairMatching can have different capability. Handwriting uses its real scratchpad route and is not automatic grading.",
+  "reusedHistoricalSourceOnly": [
+    "managed_tutor_host_test.dart",
+    "managed_tutor_runtime_test.dart",
+    "managed_tutor_controller_test.dart"
+  ],
+  "environmentCaveat": "Old environment fingerprints differ and contain all environment values including task metadata. Cause cannot be isolated from digest; do not infer SDK change, assert fresh runtime equivalence, or rerun unchanged source tests merely from digest mismatch."
+}

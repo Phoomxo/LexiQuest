@@ -58,6 +58,13 @@ final class MenuActionRegistry {
     return () => _context.remove(key);
   }
 
+  /// Session identity independent of action-list revisions caused by local UI
+  /// updates. Async reconciliation must remain within the admitting session.
+  int get sessionGeneration {
+    _refreshOwner();
+    return _sessionEpoch;
+  }
+
   void invalidateSession({bool preserveContext = false}) {
     _sessionEpoch++;
     _revision++;

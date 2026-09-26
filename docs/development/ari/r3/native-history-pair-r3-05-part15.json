@@ -1,0 +1,743 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "sourceFingerprint": "1a6fb05ff4c103e1225cab065f90b12b5e58a4009d680548346ed7b909c474cc",
+  "cycles": {
+    "part15-native": {
+      "tablesCompared": 58,
+      "changes": {
+        "answer_attempts": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "content_download_states": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        },
+        "events_v2": {
+          "added": 7,
+          "removed": 0,
+          "modified": 4,
+          "changedColumns": [
+            "aggregate_id",
+            "causation_id",
+            "occurred_at_utc",
+            "payload_json",
+            "recorded_at_utc"
+          ]
+        },
+        "learning_day_log": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "learning_sessions": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "learning_time_segments": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "outbox_operations": {
+          "added": 3,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "points_ledger_entries": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_instances": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_objective_progress": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "reward_transactions": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "streak_states": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "current_streak_days",
+            "last_learned_at_utc_ms",
+            "longest_streak_days",
+            "updated_at_utc_ms"
+          ]
+        }
+      },
+      "protectedUnchanged": [
+        "local_owners",
+        "vocabulary_categories",
+        "vocabulary_words",
+        "vocabulary_imports",
+        "vocabulary_import_rows",
+        "srs_states",
+        "ai_usage_events"
+      ],
+      "restore": {
+        "status": "RESTORED_BYTE_EXACT",
+        "files": {
+          "lexiquest.sqlite": {
+            "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+            "bytes": 3375104
+          },
+          "lexiquest.sqlite-wal": {
+            "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+            "bytes": 4185952
+          },
+          "lexiquest.sqlite-shm": {
+            "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+            "bytes": 32768
+          }
+        },
+        "appForceStopped": true
+      },
+      "newSessionSummaries": [
+        {
+          "activity_type": "reviewCenter",
+          "state": "completed",
+          "correct_count": 1,
+          "wrong_count": 0,
+          "configuration_active_effort_us": 0
+        }
+      ]
+    },
+    "part15-retest-native": {
+      "tablesCompared": 58,
+      "changes": {
+        "answer_attempts": {
+          "added": 3,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "content_download_states": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        },
+        "events_v2": {
+          "added": 27,
+          "removed": 0,
+          "modified": 4,
+          "changedColumns": [
+            "aggregate_id",
+            "causation_id",
+            "occurred_at_utc",
+            "payload_json",
+            "recorded_at_utc"
+          ]
+        },
+        "learning_sessions": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "learning_time_segments": {
+          "added": 2,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "outbox_operations": {
+          "added": 5,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_instances": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_objective_progress": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "session_configurations": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        }
+      },
+      "protectedUnchanged": [
+        "local_owners",
+        "vocabulary_categories",
+        "vocabulary_words",
+        "vocabulary_imports",
+        "vocabulary_import_rows",
+        "srs_states",
+        "ai_usage_events"
+      ],
+      "restore": {
+        "status": "RESTORED_BYTE_EXACT",
+        "files": {
+          "lexiquest.sqlite": {
+            "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+            "bytes": 3375104
+          },
+          "lexiquest.sqlite-wal": {
+            "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+            "bytes": 4185952
+          },
+          "lexiquest.sqlite-shm": {
+            "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+            "bytes": 32768
+          }
+        },
+        "appForceStopped": true
+      },
+      "newSessionSummaries": [
+        {
+          "activity_type": "matching",
+          "state": "active",
+          "correct_count": 2,
+          "wrong_count": 1,
+          "configuration_active_effort_us": 600000000
+        }
+      ]
+    },
+    "part15-pair-native": {
+      "tablesCompared": 58,
+      "changes": {
+        "answer_attempts": {
+          "added": 3,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "content_download_states": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        },
+        "events_v2": {
+          "added": 27,
+          "removed": 0,
+          "modified": 4,
+          "changedColumns": [
+            "aggregate_id",
+            "causation_id",
+            "occurred_at_utc",
+            "payload_json",
+            "recorded_at_utc"
+          ]
+        },
+        "learning_sessions": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "outbox_operations": {
+          "added": 3,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_instances": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_objective_progress": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "session_configurations": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        }
+      },
+      "protectedUnchanged": [
+        "local_owners",
+        "vocabulary_categories",
+        "vocabulary_words",
+        "vocabulary_imports",
+        "vocabulary_import_rows",
+        "srs_states",
+        "ai_usage_events"
+      ],
+      "restore": {
+        "status": "RESTORED_BYTE_EXACT",
+        "files": {
+          "lexiquest.sqlite": {
+            "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+            "bytes": 3375104
+          },
+          "lexiquest.sqlite-wal": {
+            "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+            "bytes": 4185952
+          },
+          "lexiquest.sqlite-shm": {
+            "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+            "bytes": 32768
+          }
+        },
+        "appForceStopped": true
+      },
+      "newSessionSummaries": [
+        {
+          "activity_type": "matching",
+          "state": "active",
+          "correct_count": 2,
+          "wrong_count": 1,
+          "configuration_active_effort_us": 130601194
+        }
+      ]
+    },
+    "part15-final-native": {
+      "tablesCompared": 58,
+      "changes": {
+        "answer_attempts": {
+          "added": 9,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "content_download_states": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        },
+        "events_v2": {
+          "added": 83,
+          "removed": 0,
+          "modified": 4,
+          "changedColumns": [
+            "aggregate_id",
+            "causation_id",
+            "occurred_at_utc",
+            "payload_json",
+            "recorded_at_utc"
+          ]
+        },
+        "learning_sessions": {
+          "added": 2,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "learning_time_segments": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "outbox_operations": {
+          "added": 10,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_instances": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "quest_objective_progress": {
+          "added": 1,
+          "removed": 0,
+          "modified": 0,
+          "changedColumns": []
+        },
+        "session_configurations": {
+          "added": 0,
+          "removed": 0,
+          "modified": 1,
+          "changedColumns": [
+            "updated_at_utc_ms"
+          ]
+        }
+      },
+      "protectedUnchanged": [
+        "local_owners",
+        "vocabulary_categories",
+        "vocabulary_words",
+        "vocabulary_imports",
+        "vocabulary_import_rows",
+        "srs_states",
+        "ai_usage_events"
+      ],
+      "restore": {
+        "status": "RESTORED_BYTE_EXACT",
+        "files": {
+          "lexiquest.sqlite": {
+            "sha256": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+            "bytes": 3375104
+          },
+          "lexiquest.sqlite-wal": {
+            "sha256": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+            "bytes": 4185952
+          },
+          "lexiquest.sqlite-shm": {
+            "sha256": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2",
+            "bytes": 32768
+          }
+        },
+        "appForceStopped": true
+      },
+      "newSessionSummaries": [
+        {
+          "activity_type": "matching",
+          "state": "completed",
+          "correct_count": 4,
+          "wrong_count": 0,
+          "configuration_active_effort_us": 0
+        },
+        {
+          "activity_type": "matching",
+          "state": "completed",
+          "correct_count": 4,
+          "wrong_count": 1,
+          "configuration_active_effort_us": 245168321
+        }
+      ]
+    }
+  },
+  "replayReconciliation": {
+    "tablesCompared": 58,
+    "changes": {
+      "answer_attempts": {
+        "added": 4,
+        "removed": 0,
+        "modified": 0
+      },
+      "events_v2": {
+        "added": 37,
+        "removed": 0,
+        "modified": 4
+      },
+      "learning_sessions": {
+        "added": 1,
+        "removed": 0,
+        "modified": 0
+      },
+      "outbox_operations": {
+        "added": 4,
+        "removed": 0,
+        "modified": 0
+      }
+    },
+    "sameOriginalSessionAndAttempts": true,
+    "rewardProgressQuestStreakSrsAndTimeTablesUnchanged": true,
+    "newSessionPurpose": "practiceReplay",
+    "newSessionDistinct": true,
+    "sourceSessionIdMatches": true,
+    "newAnswers": 4,
+    "allReplayAnswersRecreationalEngagementFalse": true,
+    "mainAnswerCount": 5,
+    "mainFirstAnswersCorrect": 3,
+    "mainFirstAnswersTotal": 4,
+    "mainGuidedRepairCount": 1,
+    "mainUiStars": 2,
+    "replayUiStars": 3,
+    "mainTimer": {
+      "mode": "off",
+      "remainingActiveMs": 0,
+      "elapsedActiveMs": 0,
+      "interactiveElapsedMs": 240623,
+      "extensionUsed": false,
+      "reasons": [
+        "boardUnavailable",
+        "persistence"
+      ],
+      "lastOperationId": null,
+      "lastFingerprint": null
+    },
+    "replayTimer": {
+      "mode": "off",
+      "remainingActiveMs": 0,
+      "elapsedActiveMs": 0,
+      "interactiveElapsedMs": 98082,
+      "extensionUsed": false,
+      "reasons": [
+        "boardUnavailable",
+        "persistence"
+      ],
+      "lastOperationId": null,
+      "lastFingerprint": null
+    },
+    "bothTerminalAcknowledged": true,
+    "scope": "Actual result-button replay only; raw session4correct1wrong includes repair, while UI first-opportunity3/4 correctly excludes guided repair."
+  },
+  "deviceFinal": {
+    "installedApkSha256": "a58c0486d75a364765cb9943f60748890e276191ba68533588c09141eaf08632",
+    "localApk": "build/ari-r3-05/ari-r3-05-part15-final.apk",
+    "pidofExit": 1,
+    "forceStopped": true
+  },
+  "observations": [
+    "Today12 due items; actual ReviewCenter plate meaning correct1/1; initial History failure diagnosed from copied native DB.",
+    "Fixed History displays ReviewCenter and SRS completed/abandoned results and honest self-rating/unavailable-content labels.",
+    "Explicit reveal on available repair initially rejected both long600s cycle and fresh130.6s cycle; final corrected APK completes3/4first answers,1/1repair,2stars; replay4/4,3stars."
+  ],
+  "files": {
+    "build/ari-r3-05/part15-native/adb-stderr.log": "b59074a30a5a5765a2d73ea38c196a9716fe7ccc1da55f4168a7033637fba08e",
+    "build/ari-r3-05/part15-native/after.json": "cad619815623fc5de2dee52b472035c8a3c111913ccbf0e438f695f2e6d55def",
+    "build/ari-r3-05/part15-native/backup.json": "fdd6639d16703b4fdfac6dcb4f9d6c482afafcf85784f625d5b7bd58de21a05e",
+    "build/ari-r3-05/part15-native/history.xml": "1d40f74c08bf96a40672003f2e30b98837b1f4b54e4c18e0331928645721e8f1",
+    "build/ari-r3-05/part15-native/launch.xml": "b0efd29d26a091c9d72b41d4afd0933af45a513f44ea4ab80f319f115995eba0",
+    "build/ari-r3-05/part15-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part15-native/review-center.xml": "833cacaff37c99b875916f038d97d249e46a5c1bc49c4b05eaa9adb76b24e1ac",
+    "build/ari-r3-05/part15-native/review-feedback-bottom.xml": "d0414f21ab4435731faf37d83abc1fdd607431b2e6d6f1ad8a7d1651fbb1044e",
+    "build/ari-r3-05/part15-native/review-feedback-ready.xml": "9b88261d173e2c17c3332f75d67335e083d5f2a8bfd788e5774856c2a264303d",
+    "build/ari-r3-05/part15-native/review-feedback.xml": "1205cf22767b7211b601b5bc42a0a844802d1e7dc93ebe12dc70c0bcc04e615b",
+    "build/ari-r3-05/part15-native/review-question.xml": "2bf3d7d842d4d7df7fc717b1b1cc65c6a0c43992ba1da300101890e4913dc114",
+    "build/ari-r3-05/part15-native/review-result-ready.xml": "ad6d9e6fd463d13c9b8a39e32dd9d0c315d9863fbd8655402debd1a9ec9565e0",
+    "build/ari-r3-05/part15-native/review-result.xml": "7120bb6e0aeac897dcf42c0494f67ddfaf54f599dc6b906ff4edabedc6976a55",
+    "build/ari-r3-05/part15-native/review-return.xml": "833cacaff37c99b875916f038d97d249e46a5c1bc49c4b05eaa9adb76b24e1ac",
+    "build/ari-r3-05/part15-native/storage-audit.json": "356f296ab866dbd4c99ac95ef312db7ee484f3029c3e07ac454a54d5b69d030b",
+    "build/ari-r3-05/part15-native/storage-comparison.json": "63cbcbe66e705743ac3ea0a133fabea80a7e5fe561d8a94d86dff7a15ab2a493",
+    "build/ari-r3-05/part15-native/today-lower-ready.xml": "332c7323170d7f36fee79cf7148adbe9ea88975784eb0d624f7f90a0f89fce72",
+    "build/ari-r3-05/part15-native/today-lower.xml": "f0558a00755cce7b35380a5da223b5b7a6ba7c5b9ed78efaaee5d45077af0ed7",
+    "build/ari-r3-05/part15-native/today-ready.xml": "f0558a00755cce7b35380a5da223b5b7a6ba7c5b9ed78efaaee5d45077af0ed7",
+    "build/ari-r3-05/part15-native/today.xml": "23a12c63f5d63dcb8cdcdd8d24964cf21e0891d304732c6e3cef7561b9bf303d",
+    "build/ari-r3-05/part15-retest-native/adb-stderr.log": "dde241a89a946d7e78480d4c29eba6338a6ce6ff001f64cb528adf389a2634c9",
+    "build/ari-r3-05/part15-retest-native/after.json": "db4c0d42a37ea6f5dda08b7d72450e75ff71af77c74cd4781019c6e8fe180502",
+    "build/ari-r3-05/part15-retest-native/back-learn.xml": "b0efd29d26a091c9d72b41d4afd0933af45a513f44ea4ab80f319f115995eba0",
+    "build/ari-r3-05/part15-retest-native/back-today.xml": "332c7323170d7f36fee79cf7148adbe9ea88975784eb0d624f7f90a0f89fce72",
+    "build/ari-r3-05/part15-retest-native/backup.json": "20b2d7a5b88f55f8e3ed0340399730c99b52805e24cd31bf7a8bb3dcbab5c2b3",
+    "build/ari-r3-05/part15-retest-native/history-ready.xml": "2115abb01e1cc614d1409d63a0a637c4d20fb2b9fa52c9beeebe2c6f2ee741aa",
+    "build/ari-r3-05/part15-retest-native/history.xml": "c0184d9233b448b542a2480830e0dc4a00b45794abe245fad2d07187be0bb5ff",
+    "build/ari-r3-05/part15-retest-native/launch.xml": "b0efd29d26a091c9d72b41d4afd0933af45a513f44ea4ab80f319f115995eba0",
+    "build/ari-r3-05/part15-retest-native/learn-modes.xml": "4de5913750890b47851561ceff739b0fd4d6e0221de148470c9b037870abf3a3",
+    "build/ari-r3-05/part15-retest-native/pair-bag-repair.dump.log": "ea2664a5f5f4cec57e59b0dc23eaaf8bdacb9fe784498715d382b7ea5b667fb9",
+    "build/ari-r3-05/part15-retest-native/pair-bag-repair.xml": "b7610148e91b5979d1afadf4fad53b8734ea5d0b543bf4666d176fb8f7229603",
+    "build/ari-r3-05/part15-retest-native/pair-bag.dump.log": "a7af24b2d9b66462df89c49d55512d271f96f71464f0deea4351f1459cca1645",
+    "build/ari-r3-05/part15-retest-native/pair-bag.xml": "86b7bf1ea7d07316bf9898d330320128291aa84774919e6f25ddfac47f49c2c5",
+    "build/ari-r3-05/part15-retest-native/pair-board-direct.xml": "2b9ba6b93bbef7ba4f4d348819a76b6030279ca9f0aa4ebfca32d773e8a80e24",
+    "build/ari-r3-05/part15-retest-native/pair-board-fresh.xml": "6956886df9580793e5164e7984b33763e28fe44d747f77ca0466749ec584d628",
+    "build/ari-r3-05/part15-retest-native/pair-board-recovery.png": "54bd923e28ea9747220ff1f7f2b3865b8191ed9581b8a32c44b409e0e1c854c5",
+    "build/ari-r3-05/part15-retest-native/pair-book-correct-scrolled.dump.log": "6a82ef6828a3063c731d6e93f7cd0ab4e12f10a6cbbc9d17007d31515e9df62d",
+    "build/ari-r3-05/part15-retest-native/pair-book-correct-scrolled.xml": "dd299472ff0e7b9d149ceb49b6be12f3f17c81631afce3b99ae9ef79f85763ff",
+    "build/ari-r3-05/part15-retest-native/pair-book-correct.dump.log": "296fd4ebee0307aaac66102e26cec08b80a047c99166c5a588db235db4bf9b4d",
+    "build/ari-r3-05/part15-retest-native/pair-book-lower.dump.log": "1045d43023d948efe2cccce2411f547c57f2260b813f39cd6a609a00470e9d32",
+    "build/ari-r3-05/part15-retest-native/pair-book-lower.xml": "cad2d52e52a7caefaf6a21e93cb6467fb12369ef783dbd7384485e2831d49691",
+    "build/ari-r3-05/part15-retest-native/pair-book.dump.log": "104ea93211bb53653a3e6eb6f5ae199167b9bf18cd9fe1eccbdd700d6b6a288b",
+    "build/ari-r3-05/part15-retest-native/pair-book.xml": "b1ac685894ac17435207e0f6d77ac9c163c627f285a5e55a86f8233118a358b1",
+    "build/ari-r3-05/part15-retest-native/pair-chair-correct.dump.log": "1003b01f37cc5c9a593355ae97892a4485e87179a2fdeadb16c0afeeca8d3af1",
+    "build/ari-r3-05/part15-retest-native/pair-chair-correct.xml": "aacaa2d837f69b2a811f8a7bcff0fe4013ad129b65060d793482c7922f75359f",
+    "build/ari-r3-05/part15-retest-native/pair-chair.dump.log": "85e793b76a77ada194695c21fa8c029a091e7ced00135afd64275596d0fc3407",
+    "build/ari-r3-05/part15-retest-native/pair-chair.xml": "969577f5e281b9a2b5036b9182332a3b4606f1fa31528a8fff081f020aefe1a5",
+    "build/ari-r3-05/part15-retest-native/pair-current-state.dump.log": "88a29661a13ddbec5ec39b58d6188b52dbd8d4cc621e49ddd735b74a0f5a185d",
+    "build/ari-r3-05/part15-retest-native/pair-current-state.xml": "9d557147405a64f63405a380cc5b02d612a289593f9acf61f441d52a4d747c93",
+    "build/ari-r3-05/part15-retest-native/pair-current.png": "0057457089efad64259dab95186a65e695f5617eda7044891c29941086b7a3d7",
+    "build/ari-r3-05/part15-retest-native/pair-fresh.dump.log": "afa67f3b57d3ce9d6ee403e0eec83e4577e587423440a81bb4db9d65418b9e65",
+    "build/ari-r3-05/part15-retest-native/pair-fresh.xml": "a062885fdee940a7d36e1ddcecae6723f27028c78fc5e6929a3c3a8873a4d9f4",
+    "build/ari-r3-05/part15-retest-native/pair-guided-confirm.dump.log": "fac5468fe45c9cad39ece09c72e7b60074e10b47995f169a747d9caf43f9b182",
+    "build/ari-r3-05/part15-retest-native/pair-guided-confirm.xml": "ee51be9cb262a9e248849bcc5aaab663eb5b7457263cb60ecce3e49d0c5bd94a",
+    "build/ari-r3-05/part15-retest-native/pair-next.dump.log": "712c4df84c516880b37253d173bc6ac0006e06c496c3a0280c03f96a3572f808",
+    "build/ari-r3-05/part15-retest-native/pair-next.xml": "46cf2a2dbcc4c2cca7e4bb1c3820b2451bc7aafcaf4d849f23c9be5ce46e732e",
+    "build/ari-r3-05/part15-retest-native/pair-repair-board.dump.log": "6cd66c1c572df7635198436b7b97cc56c96eba43c7207e3cb89276a57d7fd7e1",
+    "build/ari-r3-05/part15-retest-native/pair-repair-board.xml": "0bfc212be292f419b35a94be8b763bad5a7c7f9bdde2a605165581c23bb3723e",
+    "build/ari-r3-05/part15-retest-native/pair-save-state.dump.log": "6bdc89abb2bfe4bbd203c38ea538f5dd0a6386ca08801176367ce29d79bf2e91",
+    "build/ari-r3-05/part15-retest-native/pair-save-state.xml": "948f891cf2163300afc5be897f37191bc5d8c471a6f92f60bd79390de4fe98d9",
+    "build/ari-r3-05/part15-retest-native/pair-selected.dump.log": "ca8c00bbad1f7840ebfe56ec688d08d915326427a1ffa72d5746035363fde39b",
+    "build/ari-r3-05/part15-retest-native/pair-selected.xml": "a062885fdee940a7d36e1ddcecae6723f27028c78fc5e6929a3c3a8873a4d9f4",
+    "build/ari-r3-05/part15-retest-native/pair-setup.xml": "5d807bb5964c90d7bd4388c47e2285cdb16a3329fa71ea91ba1120017d98e0e2",
+    "build/ari-r3-05/part15-retest-native/pair-support-bottom.dump.log": "071446de337c6aa7964a6cb6e667465e5dad3bb7d6d85ed683a1c3bce1f785d5",
+    "build/ari-r3-05/part15-retest-native/pair-support-bottom.xml": "7e29fccf1baa4ffb2b93b83323980948ba80c97025759505a7311efa79ff825c",
+    "build/ari-r3-05/part15-retest-native/pair-support-ready.dump.log": "7a0bffcaa83e0b56e56f9b94af858bcbb0d8d18413d6402023b95a52abfb705c",
+    "build/ari-r3-05/part15-retest-native/pair-support-ready.xml": "b12e6956d940366573f04411214a151744fa415a57291516f97bac83717f1afe",
+    "build/ari-r3-05/part15-retest-native/pair-support.dump.log": "f64c48ea182a9157984cf5f2dc526a8d738750ff4d3e6e14244482411f551a5f",
+    "build/ari-r3-05/part15-retest-native/pair-support.xml": "b12e6956d940366573f04411214a151744fa415a57291516f97bac83717f1afe",
+    "build/ari-r3-05/part15-retest-native/pair-two-ready.dump.log": "be13a82b58a68f59f63d4df985f462df3ef5ae848881a54ccc1e70bc62ef16ba",
+    "build/ari-r3-05/part15-retest-native/pair-two-ready.xml": "c409d62475e8af0eb8c44ab90a92133d375f217b723e71590e2bd39e3fc05d5b",
+    "build/ari-r3-05/part15-retest-native/pair-wrong-ready.dump.log": "079f97747ceded5c4fad74962c0d59f34813143a51a021690e6980cdfe87e564",
+    "build/ari-r3-05/part15-retest-native/pair-wrong-ready.xml": "563c35f2927271c3eaad83f02f7bf0dc94735e51e950175a2ee325f1de77d69b",
+    "build/ari-r3-05/part15-retest-native/pair-wrong.dump.log": "ac6b90e20259c55b417491f66cd07f0c95d9619dbcb14130412df1d624e70269",
+    "build/ari-r3-05/part15-retest-native/pair-wrong.xml": "fb5ad8e7afebe490d9a5aaf3662dd54adb8f2cfcbb651a379e24de0ff0c88911",
+    "build/ari-r3-05/part15-retest-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part15-retest-native/storage-audit.json": "a153b38e03ec3bd26fd88958e5e691cc15d0f02dda6b9bcf6920dec04e935b88",
+    "build/ari-r3-05/part15-retest-native/today-lower.xml": "332c7323170d7f36fee79cf7148adbe9ea88975784eb0d624f7f90a0f89fce72",
+    "build/ari-r3-05/part15-retest-native/today-ready.xml": "f0558a00755cce7b35380a5da223b5b7a6ba7c5b9ed78efaaee5d45077af0ed7",
+    "build/ari-r3-05/part15-retest-native/today.xml": "23a12c63f5d63dcb8cdcdd8d24964cf21e0891d304732c6e3cef7561b9bf303d",
+    "build/ari-r3-05/part15-pair-native/adb-stderr.log": "727882fbe19daff7f5a92f7c6961cdf6f2f3a6e42295b28811927bcb8275f160",
+    "build/ari-r3-05/part15-pair-native/after.json": "f1e7f3b63be6497df7f4f249c85a9f516a4213c5bf747da30c5aa58387061c0d",
+    "build/ari-r3-05/part15-pair-native/backup.json": "25d723c88e0811b7d9f303751e243bc670ad0fff7f5499f2fa81cc1a43bbda7d",
+    "build/ari-r3-05/part15-pair-native/bag.dump.log": "313c05728dd6acd5c10549ea7b58a487e0c095679e09cd6b7c053584f323e88d",
+    "build/ari-r3-05/part15-pair-native/bag.xml": "86b7bf1ea7d07316bf9898d330320128291aa84774919e6f25ddfac47f49c2c5",
+    "build/ari-r3-05/part15-pair-native/board.dump.log": "0de7f5f7bbd082d9304d698ad216a139ded9e97e4efe8c01ddd7c2647bd92490",
+    "build/ari-r3-05/part15-pair-native/board.xml": "a062885fdee940a7d36e1ddcecae6723f27028c78fc5e6929a3c3a8873a4d9f4",
+    "build/ari-r3-05/part15-pair-native/book-correct.dump.log": "6deefed32dd554253ef44bd68de60fc89faf088ca021199888c1fc5d66699b57",
+    "build/ari-r3-05/part15-pair-native/book-correct.xml": "dd299472ff0e7b9d149ceb49b6be12f3f17c81631afce3b99ae9ef79f85763ff",
+    "build/ari-r3-05/part15-pair-native/book-target.dump.log": "8e1c84086ca3de17272e6212a300dbd7d546ebd08466837fc6d788445ee29fd3",
+    "build/ari-r3-05/part15-pair-native/book-target.xml": "cad2d52e52a7caefaf6a21e93cb6467fb12369ef783dbd7384485e2831d49691",
+    "build/ari-r3-05/part15-pair-native/book.dump.log": "ce98bd0ee182228207b3fd2e816453b85d2424c4b2d038ecd42b4535d23c237f",
+    "build/ari-r3-05/part15-pair-native/book.xml": "b1ac685894ac17435207e0f6d77ac9c163c627f285a5e55a86f8233118a358b1",
+    "build/ari-r3-05/part15-pair-native/chair-correct.dump.log": "f37c517535146ae6f2bf1e8ce33d41f4796911c122fe4dcd62fed7625c5fddfd",
+    "build/ari-r3-05/part15-pair-native/chair-correct.xml": "aacaa2d837f69b2a811f8a7bcff0fe4013ad129b65060d793482c7922f75359f",
+    "build/ari-r3-05/part15-pair-native/chair-ready.dump.log": "7130ff13691d96eb58083628715233162f71d3606b40e02f65d7c8df3cddfbaf",
+    "build/ari-r3-05/part15-pair-native/chair-ready.xml": "46cf2a2dbcc4c2cca7e4bb1c3820b2451bc7aafcaf4d849f23c9be5ce46e732e",
+    "build/ari-r3-05/part15-pair-native/chair.dump.log": "6baf95bbdf8050f989685217407b46c987e2bd02dbba9f70439f2c3f7d30acfa",
+    "build/ari-r3-05/part15-pair-native/chair.xml": "969577f5e281b9a2b5036b9182332a3b4606f1fa31528a8fff081f020aefe1a5",
+    "build/ari-r3-05/part15-pair-native/diagnosis.dump.log": "893af3608cad7f93a242933e74ce000a5753282d8d983fb0445dc67f431819a3",
+    "build/ari-r3-05/part15-pair-native/diagnosis.xml": "c409d62475e8af0eb8c44ab90a92133d375f217b723e71590e2bd39e3fc05d5b",
+    "build/ari-r3-05/part15-pair-native/guided-ready.dump.log": "2cd428471762cc549bfd97096af8400fcf144f217ffc18971377c6d67c330ede",
+    "build/ari-r3-05/part15-pair-native/guided-ready.xml": "cced7811b18c0b7ca86c87425d12b9c28b4e0a8ef5e801b4310a165805c47508",
+    "build/ari-r3-05/part15-pair-native/guided-tap.dump.log": "e11b5aa48905a63d34c42378f673fbe0ef995f4e47c1a4e8acc7e43dd5adabe0",
+    "build/ari-r3-05/part15-pair-native/guided-tap.xml": "ee51be9cb262a9e248849bcc5aaab663eb5b7457263cb60ecce3e49d0c5bd94a",
+    "build/ari-r3-05/part15-pair-native/launch.xml": "b0efd29d26a091c9d72b41d4afd0933af45a513f44ea4ab80f319f115995eba0",
+    "build/ari-r3-05/part15-pair-native/modes.xml": "9ce8c4b0e9e25bba1a64c9e8e62ae747fcd2a738cdb047c75c348fcbb22e9ebc",
+    "build/ari-r3-05/part15-pair-native/repair-tap.dump.log": "5186cd2e1a13edb6b8618bd397b239e38891b6e70a3fa37eefb168a471edcb01",
+    "build/ari-r3-05/part15-pair-native/repair-tap.xml": "b7610148e91b5979d1afadf4fad53b8734ea5d0b543bf4666d176fb8f7229603",
+    "build/ari-r3-05/part15-pair-native/repair.dump.log": "a588e35f8ba1e987894915275277ac3e0b91fee9799743e88d21113738da4f99",
+    "build/ari-r3-05/part15-pair-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part15-pair-native/setup.xml": "5d807bb5964c90d7bd4388c47e2285cdb16a3329fa71ea91ba1120017d98e0e2",
+    "build/ari-r3-05/part15-pair-native/storage-audit.json": "65a17760c5d3af51dd45503c519e4fc5dc396c4fcc26f58b115fddfabd9dbd05",
+    "build/ari-r3-05/part15-pair-native/support-tap.dump.log": "5dc160ff067215979e58f35c0d5b4388655e01edb3a398fa412daef73c770a57",
+    "build/ari-r3-05/part15-pair-native/support-tap.xml": "b12e6956d940366573f04411214a151744fa415a57291516f97bac83717f1afe",
+    "build/ari-r3-05/part15-pair-native/support.dump.log": "c7cf55a48092123707f833f478d7ade2500fefe3710f098e987677b8b01e0cd8",
+    "build/ari-r3-05/part15-pair-native/two-ready.dump.log": "7b6ab660eab85c95a619b6fcfdb7033d1e29bc850f037671a7132cb1d8793f70",
+    "build/ari-r3-05/part15-pair-native/two-ready.xml": "c409d62475e8af0eb8c44ab90a92133d375f217b723e71590e2bd39e3fc05d5b",
+    "build/ari-r3-05/part15-pair-native/wrong-ready.dump.log": "e4e541274d499a8e27a6cc1fb0843a2680797fab2945b86bfeb33db73f6909a8",
+    "build/ari-r3-05/part15-pair-native/wrong-ready.xml": "b61bed73150da24a8a24913918b0656f4799103cf982423a19a5a4bf432534af",
+    "build/ari-r3-05/part15-pair-native/wrong.dump.log": "e1a217311046c30ae6beaf7000160a0b07805a77836a8cf06bd80a5eac8cfbea",
+    "build/ari-r3-05/part15-pair-native/wrong.xml": "fb5ad8e7afebe490d9a5aaf3662dd54adb8f2cfcbb651a379e24de0ff0c88911",
+    "build/ari-r3-05/part15-final-native/adb-stderr.log": "81ae6b720c9235971d60ad4cd51c74fb7669d78741049efe143fc151358378e4",
+    "build/ari-r3-05/part15-final-native/after.json": "ee2e1ce67446479d477f7a0adc85acd34d9b3481422747284bb08ff11cfa9f72",
+    "build/ari-r3-05/part15-final-native/backup.json": "37fd85b531ad870d37cf8c69e0ceb86c17471a2b5e98a6ca7699a329457a940a",
+    "build/ari-r3-05/part15-final-native/bag-state.dump.log": "7414630a544ce358be3bdd35a45ba0ce21e540d333ef61029d5912777760f52f",
+    "build/ari-r3-05/part15-final-native/bag-state.xml": "a062885fdee940a7d36e1ddcecae6723f27028c78fc5e6929a3c3a8873a4d9f4",
+    "build/ari-r3-05/part15-final-native/bag-tap.dump.log": "478d1248c85ecc86f40638b8b941d20d04d0a6c4da901422ad985bd7e7df318b",
+    "build/ari-r3-05/part15-final-native/bag-tap.xml": "86b7bf1ea7d07316bf9898d330320128291aa84774919e6f25ddfac47f49c2c5",
+    "build/ari-r3-05/part15-final-native/bag.dump.log": "6345674cfad3f68c90488367f4a9511c7461086d8b120a81541478977923846c",
+    "build/ari-r3-05/part15-final-native/before-replay.json": "ca2eeebbdf49860b032b61faba8d3e3c0e561c098da18e6b47482d975e1e4860",
+    "build/ari-r3-05/part15-final-native/board.dump.log": "98bd025dca1a59d6f35f2d55953ae156cced870ef6dd6a261c854e0ca7bc7e05",
+    "build/ari-r3-05/part15-final-native/board.xml": "5019fe3fd17d2f190a9c096a3f2dc62945701d03a96790ee80c6d414e07778c9",
+    "build/ari-r3-05/part15-final-native/book-correct-no-cache.dump.log": "2e01029b57b211b325ea70467ec5674b67a34d3c9bbb48a6a42c0d34c888d435",
+    "build/ari-r3-05/part15-final-native/book-correct-no-cache.xml": "a2236cef0782d11784dc85f64d3a7cb602465229c21edbcb3a3164b848fac87d",
+    "build/ari-r3-05/part15-final-native/book-correct-recovered.dump.log": "1dd6a7c7c230cb4149a865cf9c5312f6c275d6dde9d14ab260eaa93b9812ef69",
+    "build/ari-r3-05/part15-final-native/book-correct.dump.log": "24c2dfbcae405a4aaf7f7865ee590b7b0c4dc300d7b6e1ad51e717fb16880770",
+    "build/ari-r3-05/part15-final-native/book-target.dump.log": "1f6cc0927aa279708c128d322aed06484edf9e271b7d5673242029f923965e34",
+    "build/ari-r3-05/part15-final-native/book-target.xml": "cad2d52e52a7caefaf6a21e93cb6467fb12369ef783dbd7384485e2831d49691",
+    "build/ari-r3-05/part15-final-native/book.dump.log": "a697cdf8cc13e593c1bb2bd276e5d9f3d0434530403a50c3d8cea6196354b3b3",
+    "build/ari-r3-05/part15-final-native/book.xml": "b1ac685894ac17435207e0f6d77ac9c163c627f285a5e55a86f8233118a358b1",
+    "build/ari-r3-05/part15-final-native/bottle-correct.dump.log": "aea623241723a05674dee464a8fcad94b3046fd0cdd0353e121857442e4d3d05",
+    "build/ari-r3-05/part15-final-native/bottle-correct.xml": "13ff56e35e3202447f7ff4836ed7ce13e7c8b93866b8748e881005099a89622a",
+    "build/ari-r3-05/part15-final-native/bottle.dump.log": "c910a3bea3cc7877284798ca7f003400d84daccc6250a0f76c253a30e4ade9ac",
+    "build/ari-r3-05/part15-final-native/bottle.xml": "e5c9a02fd5db58635404292d841327c6218cda3202bc06815b25fc769a27137b",
+    "build/ari-r3-05/part15-final-native/chair-correct.dump.log": "b75f758759dd152de427781f7279449f65a3cdb6884dfb92e95c04a0a2f4e1bb",
+    "build/ari-r3-05/part15-final-native/chair-correct.xml": "a3896a02333dab57fe2fd4a65a22107c5088cf22aa6c2c66536620b47087e9bc",
+    "build/ari-r3-05/part15-final-native/chair.dump.log": "4fbd5e28dd05e6651ab6bba5df05d1c29c16549dcb4fa4d2edf68be36a64545a",
+    "build/ari-r3-05/part15-final-native/chair.xml": "969577f5e281b9a2b5036b9182332a3b4606f1fa31528a8fff081f020aefe1a5",
+    "build/ari-r3-05/part15-final-native/current-after-helper-exit.dump.log": "342b7b7465588f00a9ec6befdc31f977516c267326021d2980bfd298f21ae4b2",
+    "build/ari-r3-05/part15-final-native/current-after-helper-exit.xml": "9d557147405a64f63405a380cc5b02d612a289593f9acf61f441d52a4d747c93",
+    "build/ari-r3-05/part15-final-native/device-final.json": "e0a180032cfc4cc8b67db1509117d93c26134ced48d0147b6ce5e906b21c3082",
+    "build/ari-r3-05/part15-final-native/guided-ready.dump.log": "4cd2f7a138482ff00e9c07a7e38c16d7267166390988695446fb8c09570cf37b",
+    "build/ari-r3-05/part15-final-native/guided-ready.xml": "cb059264e728b6bceaf11e7273731b9021d2cd8b0ec4bd2362092851578bb663",
+    "build/ari-r3-05/part15-final-native/guided.dump.log": "ef6c1bc592b58dfdd0bc7d3f4e07c8de6812dad0f21c736f1dca93876d884516",
+    "build/ari-r3-05/part15-final-native/guided.xml": "faed10677b14da1d1caf61195649793c0942c599aa6bec1b3e53969e00dafe2e",
+    "build/ari-r3-05/part15-final-native/launch.xml": "b0efd29d26a091c9d72b41d4afd0933af45a513f44ea4ab80f319f115995eba0",
+    "build/ari-r3-05/part15-final-native/modes.xml": "6e1a9b3010dc77bf6cca54e01aa781007550b958c5dc06ac9bcff434761b3cb5",
+    "build/ari-r3-05/part15-final-native/one-ready.dump.log": "a401b5599de26b84c3b25d875679b4097467fdd484efba3dce25a07d54350699",
+    "build/ari-r3-05/part15-final-native/one-ready.xml": "46cf2a2dbcc4c2cca7e4bb1c3820b2451bc7aafcaf4d849f23c9be5ce46e732e",
+    "build/ari-r3-05/part15-final-native/repair.dump.log": "c0a220387833db778b96d44a3ec47001c46b4aa94e08289968147ece6086ae3c",
+    "build/ari-r3-05/part15-final-native/repair.xml": "b7610148e91b5979d1afadf4fad53b8734ea5d0b543bf4666d176fb8f7229603",
+    "build/ari-r3-05/part15-final-native/replay-bag-correct.dump.log": "d3c5686a7902914db394d66040e8e57c5330ef7f3b125504e95a15d65c6c250a",
+    "build/ari-r3-05/part15-final-native/replay-bag-correct.xml": "25ff102ae0d57d16a5cbb24647091c4081e52fb525cba0e307c6ee5e32b871ae",
+    "build/ari-r3-05/part15-final-native/replay-bag.dump.log": "8ed5498cc1c14717ca51273aed804e10172e6ce7fdd990d57ba6c3391edc9626",
+    "build/ari-r3-05/part15-final-native/replay-bag.xml": "c4f6a73c7b4a210f652bb2f1835da6424db3ead09f3b2a679edf2f0b61e4063d",
+    "build/ari-r3-05/part15-final-native/replay-board.dump.log": "39f79fa5a91f10d219f8b63778f9c6a7047c0946c54ecb6693be3f650f990927",
+    "build/ari-r3-05/part15-final-native/replay-board.xml": "7b8dc5b10645192806cd9b7bab50632135a52c178d082f069ebdb5af43ef76ab",
+    "build/ari-r3-05/part15-final-native/replay-book-correct.dump.log": "3944f40e072f20bdf0d0c38b9bd8960a91e1a697c232226b19dfe0288481ab17",
+    "build/ari-r3-05/part15-final-native/replay-book-correct.xml": "be4bf18c74322d25642a4ef531f66b0019173e0542d241100bc90d8b860dcba4",
+    "build/ari-r3-05/part15-final-native/replay-book.dump.log": "31554dbf72b56c38c4585be701f3bf94de4228639ab186605c894e2b46ba607e",
+    "build/ari-r3-05/part15-final-native/replay-book.xml": "9947e4c025f26abbc56f0f8da89ce23e9b7d42594632f7fe9695468bb7d13df5",
+    "build/ari-r3-05/part15-final-native/replay-bottle-correct.dump.log": "06698d8a1c55756cb50ecd7051feaafc13eaf9f4a00a5c712dd75499e9cea7fd",
+    "build/ari-r3-05/part15-final-native/replay-bottle-correct.xml": "1d06ace04914dc35a2616885458d819e16c328c99d19bf159e5320ae8a901e37",
+    "build/ari-r3-05/part15-final-native/replay-bottle.dump.log": "52d6851543e0d2b7c64abd3511159ab33c76f3c43d20552e09467f955608d733",
+    "build/ari-r3-05/part15-final-native/replay-bottle.xml": "41d9b924527fe5ae851fec16ca2b96c6c25c7ffa7962866a7440dbd4a1870258",
+    "build/ari-r3-05/part15-final-native/replay-chair-correct.dump.log": "d64dee4cfcb3e1efde850f5b79d80f586e0ec25f766768557c937549ac319f7a",
+    "build/ari-r3-05/part15-final-native/replay-chair-correct.xml": "7e22e0901b258592a74d88312f8fd13c85d17d9950d2fb416c1181f5cdd3763a",
+    "build/ari-r3-05/part15-final-native/replay-chair.dump.log": "07d7c3f7ff2fd7929b2e118d0bffae1b36a70f1eccc6879949ec3db903e46870",
+    "build/ari-r3-05/part15-final-native/replay-chair.xml": "2bcae167fce97fa2036faed46a23eec310d6dde5b12b554c71c696a495d9862e",
+    "build/ari-r3-05/part15-final-native/replay-one.dump.log": "d4ef8e8a9999c3f37df81484bd2d3d11746177e88e80aa4666e521fc00419c4b",
+    "build/ari-r3-05/part15-final-native/replay-one.xml": "3d8cf3657f55565fbeda5b1ab7069460f2d9932c8acae324e6ca9050f1e82c2d",
+    "build/ari-r3-05/part15-final-native/replay-ready.dump.log": "c735baada2c828a5defd2f7a441bcf0fcb534fc915f59987c244c587018acbe4",
+    "build/ari-r3-05/part15-final-native/replay-ready.xml": "2b6555e0a1041a17a77c137cbb7bcdb9a5ab9bd0d053fe51473031e93e0c9af2",
+    "build/ari-r3-05/part15-final-native/replay-reconciliation.json": "8e097fd81d2858239eb750a98e79e926ec5511bdb582f882a72947b2b8cabdd0",
+    "build/ari-r3-05/part15-final-native/replay-result.dump.log": "fc646617f723adc5659f9221527923bce9ecf135628605c737d529595ab14706",
+    "build/ari-r3-05/part15-final-native/replay-result.xml": "0ef5e2236e1078e5114c6810748fe7c91d91773124adbf755902b188cb529bb1",
+    "build/ari-r3-05/part15-final-native/replay-setup.dump.log": "a2f9f9bc8843004a0dba1c7799b3bfda54777115234c1e82ab92a609a1c9488d",
+    "build/ari-r3-05/part15-final-native/replay-setup.xml": "9ef0ab72dc2dd7f13b7565d0951f067cd98d024610ac37ab40522b8714c53c11",
+    "build/ari-r3-05/part15-final-native/replay-three.dump.log": "063f28a301fd80d437acaa3ffcbbff774a5973418722264a06b5db582195eec1",
+    "build/ari-r3-05/part15-final-native/replay-three.xml": "1b508d7255a4a468a3921ea0eb47d4d58e3e52ff135854615d2fdde378119555",
+    "build/ari-r3-05/part15-final-native/replay-two.dump.log": "406a3081969edc4c02629061a30c7e1f1f83a52103baffe33374f302739fbec9",
+    "build/ari-r3-05/part15-final-native/replay-two.xml": "d2cbd789afefe651d721ae464bf81aa043ec060d1e99c653208fb795bd370dd6",
+    "build/ari-r3-05/part15-final-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part15-final-native/result-bottom.dump.log": "ef62bfb77ee1785e79ccad147ca1edb334930be31ca95c0f14c36537db20fbcf",
+    "build/ari-r3-05/part15-final-native/result-bottom.xml": "61e77118fb96173ae3362f8efe64adad7202aa25f498103fc18a042cba7f5879",
+    "build/ari-r3-05/part15-final-native/result-ready.dump.log": "2d3bf0bdf44580feae86a1c42f5aa0d9c2c751a9d98fd3e84f5082cfde5d4816",
+    "build/ari-r3-05/part15-final-native/result-ready.xml": "7c7d051671e40bf9016a8acfcbd0d57ca0339ba05c18c3ad3cfc525ea06ada14",
+    "build/ari-r3-05/part15-final-native/result.dump.log": "537a7f5e5f43f02702a78dc6f61ee30e75492cc49f937c857aae5d607cec686c",
+    "build/ari-r3-05/part15-final-native/result.xml": "b2379ae7548929b81bde48b4d7b047befc58c05ec623184df42a92f7bd319c18",
+    "build/ari-r3-05/part15-final-native/setup.xml": "5d807bb5964c90d7bd4388c47e2285cdb16a3329fa71ea91ba1120017d98e0e2",
+    "build/ari-r3-05/part15-final-native/storage-audit.json": "c3782dc468a1bf06e86d952f0324e2bd0143ba7a567cdeab44c874656a81c332",
+    "build/ari-r3-05/part15-final-native/support.dump.log": "eec4f2460e244c229775de8784a6927bfe7a6bd46087da2af1102b93b6a85eee",
+    "build/ari-r3-05/part15-final-native/support.xml": "b12e6956d940366573f04411214a151744fa415a57291516f97bac83717f1afe",
+    "build/ari-r3-05/part15-final-native/two-ready.dump.log": "1bb2c54b162a5abd77242e288cbcf870fd2936503ee6f01fc541f9217acb6b84",
+    "build/ari-r3-05/part15-final-native/two-ready.xml": "c409d62475e8af0eb8c44ab90a92133d375f217b723e71590e2bd39e3fc05d5b",
+    "build/ari-r3-05/part15-final-native/wrong-ready.dump.log": "d6725c5e10d90d99f7b3bf95965a1f87ad27e5d5ae2e66033c20589522b0cc41",
+    "build/ari-r3-05/part15-final-native/wrong-ready.xml": "b61bed73150da24a8a24913918b0656f4799103cf982423a19a5a4bf432534af",
+    "build/ari-r3-05/part15-final-native/wrong.dump.log": "d64dee4cfcb3e1efde850f5b79d80f586e0ec25f766768557c937549ac319f7a",
+    "build/ari-r3-05/part15-final-native/wrong.xml": "fb5ad8e7afebe490d9a5aaf3662dd54adb8f2cfcbb651a379e24de0ff0c88911"
+  },
+  "limits": [
+    "129 unique current full-file tests across five files; six new regression cases. Earlier 66 history/probe result overlaps and is not additive. Native fixture probe is diagnostic only, preserved outside test directory.",
+    "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification.",
+    "Part14 receipts may now have changed reachable inputs: inspect exact closure before reusing. No blind carry-forward of179 as current.",
+    "All215 criteria retain4passed/211remaining; all14 workflow/mode acceptance OPEN. Camera ground truth, actual scanner accept/file SQLite, reward file durability, hosted sync and broader native matrix remain."
+  ]
+}

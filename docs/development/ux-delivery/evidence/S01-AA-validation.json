@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "item": "S01-AA-native-four-tab-navigation",
+  "atUtc": "2026-09-24T12:01:39.066458+00:00",
+  "result": "HOST_PASS",
+  "tests": 189,
+  "gates": [
+    {
+      "label": "combined",
+      "tests": 188,
+      "result": "PASS",
+      "gate": "docs/development/ux-delivery/evidence/S01-AA-combined-gate.json",
+      "gateSha256": "8040bdf62978faee6027942eea174c7c99d4c744e372bbd9e6fe06216345fac8",
+      "fingerprint": "94c228b034a61cc38eb932b08ad1afabc11c202596b614b4773338b86ed1049d",
+      "sourceInputsVerified": 1539,
+      "logs": {
+        "Stdout": {
+          "path": "build/ux-delivery/S01-AA/final-combined.stdout.log",
+          "sha256": "535190a957e8d6ee1a6b5df88c4178ce8046960e81ac434cce4ec10c61be956d",
+          "bytes": 203310
+        },
+        "Stderr": {
+          "path": "build/ux-delivery/S01-AA/final-combined.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+          "bytes": 392
+        }
+      }
+    },
+    {
+      "label": "bootstrap",
+      "tests": 1,
+      "result": "PASS",
+      "gate": "docs/development/ux-delivery/evidence/S01-AA-bootstrap-gate.json",
+      "gateSha256": "1d2ddfb5c42ddfb9fed3ae3cf701f313fb5cbc229bb6bed1e6c5e89822b4d576",
+      "fingerprint": "ca70e26e5aab3cedcd81e699346fbf8350ccc0c4941987c633885955bd8aa4d2",
+      "sourceInputsVerified": 1539,
+      "logs": {
+        "Stdout": {
+          "path": "build/ux-delivery/S01-AA/final-bootstrap.stdout.log",
+          "sha256": "76cbb357e4ea937f0a609fbb7dc09679f680e4dc393e680a9df4e1b8ec63f6ae",
+          "bytes": 16516
+        },
+        "Stderr": {
+          "path": "build/ux-delivery/S01-AA/final-bootstrap.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+          "bytes": 392
+        }
+      }
+    }
+  ],
+  "remainingRed": [],
+  "productionAndTestChanges": [
+    {
+      "path": "lib/navigation/navigation_glossary.dart",
+      "beforeSha256": "db612052933e256a4b19048dd1f7be2e70defe87a737d8d2f722e7e904307d37",
+      "afterSha256": "0179206352e767834a85b0da3835d3b498b224fa2b33c131b259b902f48e78b9",
+      "beforeBytes": 32231,
+      "afterBytes": 32189
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "beforeSha256": "203559b236cdaac6736933473ab494234e5976824fcb88d3af4fb379bf3580e3",
+      "afterSha256": "08ec2cb51c9d4d3e1668058b158f52d35540ac19e9062d625a4217cacc0a257a",
+      "beforeBytes": 86293,
+      "afterBytes": 95479
+    },
+    {
+      "path": "lib/screens/profile_settings_screen.dart",
+      "beforeSha256": "387097b944ec3bb69111d677f0becd0464fbc28f385ec6adfcbc4e8ac5adccc9",
+      "afterSha256": "1cea2e4a2a58821eabc74682ddf37ab2ae60204bd9429e8dfa643bdb75d5bfd2",
+      "beforeBytes": 12429,
+      "afterBytes": 13051
+    },
+    {
+      "path": "lib/screens/today_hub_screen.dart",
+      "beforeSha256": "dc374e9d95fea87ca98d2c2b2a2403d8f3bd01b0a713436ba15eefef71d4f255",
+      "afterSha256": "d06175d7a27b5aaa8ef6d1c76169bb7a48eb544ba57c98710ee1103a0ba370c9",
+      "beforeBytes": 2417,
+      "afterBytes": 7721
+    },
+    {
+      "path": "lib/screens/today_hub_view.dart",
+      "beforeSha256": "f4a538b3498104e1415aeb285e901eacab9005cb599be626a92c6e02bb85d445",
+      "afterSha256": "f3ae296bcd9cd457bb504146c0abaaa17f01887f77f08b344a14fea2796a611d",
+      "beforeBytes": 32733,
+      "afterBytes": 33041
+    },
+    {
+      "path": "test/features/ai_tutor/managed/full_menu_navigation_test.dart",
+      "beforeSha256": "666a2d9ae6b7a27f3065b6570c09693e0d42d21c61bc2914f3a6daca81f9a595",
+      "afterSha256": "409cef62fc38c1414c6274d28baf26978996478c32126c8bf4ae5be0be6514db",
+      "beforeBytes": 8576,
+      "afterBytes": 9363
+    },
+    {
+      "path": "test/navigation/navigation_glossary_test.dart",
+      "beforeSha256": "97f126dee75d20a597926675b1b768c995d1bcbbcf6f99b8ec58ade369d9030e",
+      "afterSha256": "226e127e751f92b09a7b023f3f8d6fe01afcc7a09570247e263757efdb6f31e5",
+      "beforeBytes": 22410,
+      "afterBytes": 22368
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "beforeSha256": "7a868fc881e0ae3b13b921780d1cf87d09db32b53889dee3240070f0a43c4080",
+      "afterSha256": "f217fde57b5a2df57846d7a1df62bae41770b1bbafcb03885aa06415265af2a3",
+      "beforeBytes": 349823,
+      "afterBytes": 349838
+    },
+    {
+      "path": "test/scenarios/production_feature_navigation_test.dart",
+      "beforeSha256": "ce3b763ba11566a232fdd4fd7dcc20b394549cbd85a0c3fbb7564e3b7cd85d95",
+      "afterSha256": "d19f7002f0f4286b771f19b325b2c296848c51eb7a7ca915c60d1cfc91ba63aa",
+      "beforeBytes": 60011,
+      "afterBytes": 61813
+    },
+    {
+      "path": "test/scenarios/runtime_kill_switch_journey_test.dart",
+      "beforeSha256": "ebeeed1f8ea52d7004353f37707c93ed9e00bcf4363cdedb842001fbe521b413",
+      "afterSha256": "767cb06c2460e20444a0816d0d80c968bc23e19405a7cd5df82864229e726b91",
+      "beforeBytes": 16396,
+      "afterBytes": 16413
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "beforeSha256": "cdcc5a345e42b727177fbdd10e4865994f80e573abff34fed45dc10ebee2249f",
+      "afterSha256": "78a2c964073c12be0600dd3b36dc4eddc91ef1a227579e2839cc3b72de81df21",
+      "beforeBytes": 135103,
+      "afterBytes": 152741
+    },
+    {
+      "path": "test/screens/profile_settings_screen_test.dart",
+      "beforeSha256": "c1e7d6f1d020c41c17da85578cedbd9bb3ac5f083066033542226161318d169a",
+      "afterSha256": "6c0537e9a5176ca4af4e3167a349fce4cafb79d26fd38aae04322ee362f57e7b",
+      "beforeBytes": 12594,
+      "afterBytes": 13431
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "beforeSha256": "0e67a205806d71c2fb7936375dc78a761ddbf9ac97f51e610353872fd5b54016",
+      "afterSha256": "2e0a72d616c4284b48c4976e63a44209be561db98be7f29449be5aac30c19769",
+      "beforeBytes": 26398,
+      "afterBytes": 27032
+    }
+  ],
+  "testAdaptationRationale": [
+    "Five primary labels/counts changed to Today/Practice/Vocabulary/Me; stable route IDs retained.",
+    "Explicit legacy indexes 0/1/2/3/99 retain entry intent; old mastery/achievement primary-state assertions now verify named secondary route/back; primary state/removal tests moved to still-primary Vocabulary/Profile.",
+    "Named secondary Today action key becomes home/learn/open-today to avoid collision with the primary home/today binding; pushed route remains home/today.",
+    "Unavailable real destinations are unmounted instead of constructing hidden offstage gates. Direct/stale route typed gates, feature state and composition assertions remain.",
+    "Bad-owner Today no longer exposes a resume action; the old owner-creation assertion remains and now also requires retry/no stale action.",
+    "Study-planning fixture without composed practice uses the fallback drawer; bootstrap Adventure fixture explicitly requests legacy practice index 0. Production MyApp default Today is separately asserted.",
+    "Composed-menu and production-navigation fixtures open the existing folded mode list with an actual visible tap; every former mode/gate assertion remains. Profile secondary navigation is exercised independently of drawer routes.",
+    "All predecessor test bytes preserved in pre-edit ZIPs. No owner/storage/pinned-content/replay/reward assertion is skipped or disabled."
+  ],
+  "prototypeReuse": {
+    "tests": 115,
+    "compatibilityChecks": 3,
+    "pinsVerified": {
+      "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+      "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+      "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+      "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+      "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+      "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+      "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+      "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+    },
+    "rerun": false
+  },
+  "selfReview": "Self-review only under single-writer/no-subagent authorization. Checked legacy entry selection, named/back routes, composition/kill switches, independent profile links, unique menu identities, inactive/late owner loads, durable epochs, replaced view generations and async navigation cancellation. No blocking source defect found in this scope; controller/native/user acceptance is separate.",
+  "notTested": [
+    "real native/device UI",
+    "real keyboard/screen reader",
+    "permitted visual/browser review",
+    "user comprehension",
+    "learning/trial acceptance",
+    "release/full-system verification"
+  ],
+  "recoveryNotes": [
+    "First Flutter invocation created package_config/package_graph/local.properties and changed environment fingerprint; retained InputDrift result, then confirmed stable RED before source edits.",
+    "TestName is a plain-name filter; an attempted regex selected no tests and was replaced with the S01-AA prefix.",
+    "Drift TableUpdateQuery API corrected from nonexistent anyOf to documented allOf; compiler failure preserved.",
+    "Pending-owner fixture initially counted the separate hidden practice recovery reader. Isolated by omitting optional currentActivityEvidence, restored pre-fix source and confirmed expected late-loader RED before retaining cancellation fix.",
+    "All observed failures fixed and final logs/source pins inspected. Original generated registrant byte conventions restored after Flutter setup."
+  ],
+  "redEvidence": [
+    "build/ux-delivery/S01-AA/red-confirmed.json",
+    "build/ux-delivery/S01-AA/owner-red-confirmed.json",
+    "build/ux-delivery/S01-AA/cancellation-menu-red.json",
+    "build/ux-delivery/S01-AA/pending-owner-confirmed-red.json",
+    "build/ux-delivery/S01-AA/generation-action-red.json"
+  ],
+  "routing": "Current GPT-6 Astra/medium deterministic fallback, not Jev-selected. Standard/default requested; runtime tier not exposed. No paid call, purchase, ledger/quota reset, deployment or browser automation."
+}

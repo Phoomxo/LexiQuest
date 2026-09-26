@@ -1,0 +1,70 @@
+{
+  "taskId": "01a0cf7f-be37-7c31-a1b9-294858718135",
+  "status": "BOUNDED_PYTHON_PROTOCOL_APPLICABILITY_RECONCILED",
+  "sourcePins": {
+    "tool/experiments/ari_app_server/adapter.py": "b5ce17c1f178e5a37ae7c0c8d6f9c6eb1d6c4c07cba2b617317c608e2cfad668",
+    "tool/experiments/ari_app_server/chat_bridge.py": "c30689387e9df3a56a020ea897667634399a682afd38e8d043dce66c112fcb07",
+    "tool/experiments/ari_app_server/login_bridge.py": "6d641584ed10b8387647345fd5197f5ba1dab7450f0648bd96bf11aa6f9960b1",
+    "tool/experiments/ari_app_server/menu_channel.py": "f0d7fd5676f727ef13e08820ee16f3d9b540ffd6aa742be9d4d29679093f095c",
+    "tool/experiments/ari_app_server/probe.py": "fc8ddddfe67179ce37668e490041a682a3c9675928b037e449874057e4e7992d",
+    "tool/experiments/ari_app_server/test_chat_bridge.py": "1d939c3ccb08c6e5f2509bf73fe46bb875bdc416c1d8eed8fcb44e5bf1c793c2",
+    "tool/experiments/ari_app_server/test_menu_channel.py": "9d6907c48cab2b9e885e216da9b8e8abe1c6b7ae89adcb3970ecd5d1b1fe5e64",
+    "tool/experiments/ari_app_server/test_login_bridge.py": "3e162daf72ca6aaa2de51ebadf43821e5b31cb2fae19a6068f0308cafc45899a",
+    "tool/experiments/ari_app_server/test_tutor_mcp.py": "102009b6fe92dd89707091938a238d554246fa160f6fe5f6f3f3d50463f8e297",
+    "tool/experiments/ari_app_server/tutor_mcp.py": "45c4101d375bde6b69bbb650c8c25f8d2031b2b7909ce19c43a0d450b460d1b1"
+  },
+  "closureMethod": "AST local import traversal plus tutor_mcp.py subprocess target; Python standard library only. Probe schema/binary paths are not invoked by these selected fixture tests. test_login_bridge also included for26-test historical receipt.",
+  "reused": {
+    "receipt": "docs/development/ari/evidence/export-live-083/host.json",
+    "receiptSha256": "f1e4225147504c523ae2ed4cabf91ad03f46d3b38a524477837272c9d6e70b35",
+    "log": "build/export-083-bridge-green.log",
+    "logSha256": "73ce4b571c3aeecec81bf55e44e957f074bce86422ac64434732c47c6ec77794",
+    "tests": 26,
+    "modules": [
+      "test_chat_bridge",
+      "test_menu_channel",
+      "test_login_bridge"
+    ],
+    "sourceCommit": "58cfb96712839909b4a9e0c124d3c8cc6c575054",
+    "commitAssociation": "Commit contains source changes, matching4 explicit source pins, host receipt and report; all transitive module bodies match current ignoring CRLF only",
+    "commitBlobMatches": {
+      "tool/experiments/ari_app_server/adapter.py": true,
+      "tool/experiments/ari_app_server/chat_bridge.py": true,
+      "tool/experiments/ari_app_server/login_bridge.py": true,
+      "tool/experiments/ari_app_server/menu_channel.py": true,
+      "tool/experiments/ari_app_server/probe.py": true,
+      "tool/experiments/ari_app_server/test_chat_bridge.py": true,
+      "tool/experiments/ari_app_server/test_menu_channel.py": true,
+      "tool/experiments/ari_app_server/test_login_bridge.py": true,
+      "tool/experiments/ari_app_server/test_tutor_mcp.py": true,
+      "tool/experiments/ari_app_server/tutor_mcp.py": true
+    },
+    "rerun": false
+  },
+  "fresh": {
+    "command": "python -X utf8 -m unittest test_tutor_mcp -v",
+    "cwd": "tool/experiments/ari_app_server",
+    "tests": 4,
+    "exitCode": 0,
+    "log": "build/ari-r3-05/part03-python-tutor.log",
+    "logSha256": "9a603acfe69aa8eae8dc2cf242ad3dac644e07b3a32b488a3c3379ea9f60ae86",
+    "why": "Standalone4 tutor tests absent from083 selected modules; older37/44/45 records precede tutor changes. Do not infer execution from Flutter receipt inputClosure.",
+    "runner": "Existing bounded unittest convention; verify-scope explicit TestTargets supports Dart only; no full backend run"
+  },
+  "currentPython": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "runtimeLimit": "Historical Python runtime pin unavailable; source applicability/historical execution retained, not claim current runtime recertification for reused26. Task-ID-bearing Flutter environment hash mismatch is not SDK change.",
+  "assertions": [
+    "Owner binding and unauthenticated requests rejected before fake provider turn",
+    "Followup retains thread and duplicate request does not launch second turn",
+    "Cancel interrupts fixture provider; late reply discarded",
+    "Fresh mailbox on reconnect after owned temp-home cleanup",
+    "Actual stdio carries application saved/previewed/deleted result, timeout is not success",
+    "Unknown tools/path/shell/wrong types rejected",
+    "Selected word protocol, deterministic draft without learning credit, missing context tool error"
+  ],
+  "limits": [
+    "No live provider launch or inference",
+    "No full W01/W04 criterion closed",
+    "Transport fixture results do not prove provider billing/semantics or physical connection lifecycle"
+  ]
+}

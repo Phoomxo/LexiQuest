@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/screens/learning_preference_quiz_screen.dart';
 
 void main() {
+  recoveryTests();
   testWidgets(
     'optional preferences separate draft and confirmed data across reconnect',
     (tester) async {
@@ -430,12 +431,24 @@ final class _Preferences implements LearnerPreferencesRepository {
     updatedAtUtc: DateTime.utc(2026, 8, 30),
   );
   int saveCount = 0;
+  int readCount = 0;
+  int failures = 0;
+  bool throwSynchronously = false;
+  bool failAcknowledgement = false;
+  Future<void>? acknowledgement;
   Completer<void>? beforeSave;
   Completer<LearnerPreferences>? pendingRead;
 
   @override
-  Future<LearnerPreferences> read(String ownerId) async =>
-      pendingRead == null ? current : await pendingRead!.future;
+  Future<LearnerPreferences> read(String ownerId) {
+    readCount++;
+    if (failures > 0) {
+      failures--;
+      if (throwSynchronously) throw StateError('private read failure');
+      return Future.error(StateError('private read failure'));
+    }
+    return pendingRead?.future ?? Future.value(current);
+  }
 
   @override
   Future<void> save(
@@ -449,6 +462,8 @@ final class _Preferences implements LearnerPreferencesRepository {
     }
     current = preferences;
     saveCount += 1;
+    await acknowledgement;
+    if (failAcknowledgement) throw StateError("ack lost");
   }
 
   @override
@@ -488,3 +503,429 @@ Map<String, dynamic> _context(MenuActionRegistry registry) =>
           (registry.snapshot()['context'] as List).single['value'] as String,
         )
         as Map<String, dynamic>;
+
+LearnerPreferencesUseCases _cases(_Preferences repo, [_Owner? owner]) =>
+    LearnerPreferencesUseCases(
+      repository: repo,
+      owners: owner ?? _Owner(),
+      nowUtc: () => DateTime.utc(2026, 9, 24),
+    );
+
+void recoveryTests() {
+  testWidgets(
+    'AJ post save owner revalidation rejects retired acknowledgement',
+    (tester) async {
+      final ack = Completer<void>();
+      final repo = _Preferences()..acknowledgement = ack.future;
+      final owners = _Owner();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LearningPreferenceQuizScreen(useCases: _cases(repo, owners)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '56');
+      await tester.tap(find.byKey(const ValueKey('learning-preferences/save')));
+      await tester.pump();
+      expect(repo.saveCount, 1);
+      owners.id = 'local:replacement';
+      ack.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('บันทึกการตั้งค่าการเรียนแล้ว'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(repo.saveCount, 1);
+    },
+  );
+  testWidgets(
+    'AJ failed refresh retains same owner draft but not replacement owner',
+    (tester) async {
+      final repo = _Preferences();
+      final owner = _Owner();
+      final cases = _cases(repo, owner);
+      var active = true;
+      Widget app() => MaterialApp(
+        home: TickerMode(
+          enabled: active,
+          child: LearningPreferenceQuizScreen(useCases: cases),
+        ),
+      );
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '77');
+      active = false;
+      await tester.pumpWidget(app());
+      repo.failures = 1;
+      active = true;
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '77',
+      );
+      active = false;
+      await tester.pumpWidget(app());
+      owner.id = 'local:other';
+      repo.current = LearnerPreferences.defaults(
+        ownerId: owner.id,
+        updatedAtUtc: DateTime.utc(2026),
+      );
+      active = true;
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '20',
+      );
+      expect(repo.saveCount, 0);
+    },
+  );
+  testWidgets(
+    'AJ failed acknowledgement and failed read disable save until read retry',
+    (tester) async {
+      final repo = _Preferences()..failAcknowledgement = true;
+      final hold = Completer<void>();
+      repo.beforeSave = hold;
+      final cases = _cases(repo);
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:preferences-screen',
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: LearningPreferenceQuizScreen(useCases: cases),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '66');
+      final save = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('learning-preferences/save')),
+          )
+          .onPressed!;
+      save();
+      await tester.pump();
+      repo.failures = 1;
+      hold.complete();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('learning-preferences/save')),
+        findsNothing,
+      );
+      save();
+      await tester.pump();
+      expect(repo.saveCount, 1);
+      await tester.tap(find.text('ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(_context(registry)['lastConfirmed']['minutes'], 66);
+      expect(_context(registry)['status'], 'saved');
+      expect(repo.saveCount, 1);
+    },
+  );
+  testWidgets('AJ dropdown selection and dismissal preserve user draft', (
+    tester,
+  ) async {
+    final repo = _Preferences();
+    final registry = MenuActionRegistry(
+      currentOwner: () => 'local:preferences-screen',
+    );
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: LearningPreferenceQuizScreen(useCases: _cases(repo)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '43');
+    await tester.tap(find.byKey(const ValueKey('learning-preferences/goal')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('เตรียมสอบ').last);
+    await tester.pumpAndSettle();
+    expect(_context(registry)['draft']['goal'], 'examPreparation');
+    await tester.tap(find.byKey(const ValueKey('learning-preferences/goal')));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(2, 2));
+    await tester.pumpAndSettle();
+    expect(_context(registry)['draft']['minutes'], 43);
+    expect(repo.saveCount, 0);
+  });
+  for (final sync in [false, true]) {
+    testWidgets('AJ repeated read failure retry is bounded sync=$sync', (
+      tester,
+    ) async {
+      final repo = _Preferences()
+        ..failures = 2
+        ..throwSynchronously = sync;
+      await tester.pumpWidget(
+        MaterialApp(home: LearningPreferenceQuizScreen(useCases: _cases(repo))),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final retry = tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'ลองใหม่'))
+          .onPressed!;
+      retry();
+      retry();
+      await tester.pumpAndSettle();
+      expect(repo.readCount, 2);
+      expect(tester.takeException(), isNull);
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'ลองใหม่'))
+          .onPressed!();
+      await tester.pumpAndSettle();
+      expect(repo.readCount, 3);
+      expect(repo.saveCount, 0);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        '20',
+      );
+      retry();
+      await tester.pump();
+      expect(repo.readCount, 3);
+    });
+  }
+  for (final boundary in ['cover', 'pop', 'tab', 'dispose', 'replacement']) {
+    testWidgets('AJ stale draft callbacks retired on $boundary', (
+      tester,
+    ) async {
+      final repo = _Preferences();
+      var cases = _cases(repo);
+      final nav = GlobalKey<NavigatorState>();
+      var active = true;
+      Widget app() => MaterialApp(
+        navigatorKey: nav,
+        home: TickerMode(
+          enabled: active,
+          child: LearningPreferenceQuizScreen(useCases: cases),
+        ),
+      );
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      if (boundary == 'pop') {
+        nav.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => LearningPreferenceQuizScreen(useCases: cases),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+      final goal = tester
+          .widget<DropdownButtonFormField<LearnerPreferenceGoal>>(
+            find.byKey(const ValueKey('learning-preferences/goal')),
+          )
+          .onChanged!;
+      final activity = tester
+          .widget<DropdownButtonFormField<LearnerActivityPreference>>(
+            find.byKey(
+              const ValueKey('learning-preferences/activity-preference'),
+            ),
+          )
+          .onChanged!;
+      final text = tester.widget<TextField>(find.byType(TextField)).onChanged!;
+      final save = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('learning-preferences/save')),
+          )
+          .onPressed!;
+      switch (boundary) {
+        case 'cover':
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+        case 'pop':
+          nav.currentState!.pop();
+        case 'tab':
+          active = false;
+          await tester.pumpWidget(app());
+        case 'dispose':
+          await tester.pumpWidget(const SizedBox());
+        case 'replacement':
+          cases = _cases(_Preferences());
+          await tester.pumpWidget(app());
+          await tester.pumpAndSettle();
+      }
+      goal(LearnerPreferenceGoal.examPreparation);
+      activity(LearnerActivityPreference.quiz);
+      text('90');
+      save();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(repo.saveCount, 0);
+      if (boundary == 'cover') {
+        nav.currentState!.pop();
+        await tester.pumpAndSettle();
+      }
+      if (boundary == 'tab') {
+        active = true;
+        await tester.pumpWidget(app());
+        await tester.pumpAndSettle();
+      }
+      if (boundary != 'dispose') {
+        final current = tester
+            .widget<DropdownButtonFormField<LearnerPreferenceGoal>>(
+              find.byKey(const ValueKey('learning-preferences/goal')),
+            );
+        expect(current.initialValue, LearnerPreferenceGoal.balancedGrowth);
+      }
+    });
+  }
+  for (final boundary in ['cover', 'pop', 'tab']) {
+    testWidgets('AJ pending save cannot mutate after $boundary', (
+      tester,
+    ) async {
+      final release = Completer<void>();
+      final repo = _Preferences()..beforeSave = release;
+      final cases = _cases(repo);
+      final nav = GlobalKey<NavigatorState>();
+      var active = true;
+      Widget app() => MaterialApp(
+        navigatorKey: nav,
+        home: TickerMode(
+          enabled: active,
+          child: LearningPreferenceQuizScreen(useCases: cases),
+        ),
+      );
+      await tester.pumpWidget(app());
+      await tester.pumpAndSettle();
+      if (boundary == 'pop') {
+        nav.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => LearningPreferenceQuizScreen(useCases: cases),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+      await tester.enterText(find.byType(TextField), '65');
+      final save = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('learning-preferences/save')),
+          )
+          .onPressed!;
+      save();
+      save();
+      await tester.pump();
+      if (boundary == 'cover')
+        nav.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => const Scaffold()),
+        );
+      if (boundary == 'pop') nav.currentState!.pop();
+      if (boundary == 'tab') {
+        active = false;
+        await tester.pumpWidget(app());
+      }
+      release.complete();
+      await tester.pumpAndSettle();
+      expect(repo.saveCount, 0);
+      expect(tester.takeException(), isNull);
+      if (boundary == 'cover') {
+        nav.currentState!.pop();
+        await tester.pumpAndSettle();
+      }
+      if (boundary == 'tab') {
+        active = true;
+        await tester.pumpWidget(app());
+        await tester.pumpAndSettle();
+      }
+      if (boundary != 'pop')
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          '65',
+        );
+    });
+  }
+  testWidgets(
+    'AJ uncertain acknowledgement reconciles without automatic resave',
+    (tester) async {
+      final repo = _Preferences()..failAcknowledgement = true;
+      final registry = MenuActionRegistry(
+        currentOwner: () => 'local:preferences-screen',
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: LearningPreferenceQuizScreen(useCases: _cases(repo)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '55');
+      await tester.tap(find.byKey(const ValueKey('learning-preferences/save')));
+      await tester.pumpAndSettle();
+      expect(repo.saveCount, 1);
+      expect(_context(registry)['lastConfirmed']['minutes'], 55);
+      expect(_context(registry)['status'], 'saved');
+      expect(registry.snapshot()['actions'], isEmpty);
+    },
+  );
+  testWidgets('AJ owner changes during read cannot display previous receipt', (
+    tester,
+  ) async {
+    final pending = Completer<LearnerPreferences>();
+    final repo = _Preferences()..pendingRead = pending;
+    final owner = _Owner();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LearningPreferenceQuizScreen(useCases: _cases(repo, owner)),
+      ),
+    );
+    await tester.pump();
+    owner.id = 'local:replacement';
+    pending.complete(repo.current);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'ลองใหม่'), findsOneWidget);
+    expect(repo.saveCount, 0);
+  });
+  testWidgets('AJ Thai failure scrolls at 360px and 200 percent', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+
+    final repo = _Preferences()..failures = 1;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: LearningPreferenceQuizScreen(useCases: _cases(repo)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+    await tester.ensureVisible(find.text('ลองใหม่'));
+    expect(
+      tester.getSemantics(find.text('ลองใหม่')).label,
+      contains('ลองใหม่'),
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('ลองใหม่'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('learning-preferences/save')),
+      150,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+}

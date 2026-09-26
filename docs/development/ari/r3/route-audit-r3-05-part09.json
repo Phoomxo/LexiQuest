@@ -1,0 +1,63 @@
+{
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "atUtc": "2026-09-23T20:36:20.310594+00:00",
+  "sourceFingerprint": "6db9afc3bb93af8435c9683adf234c3e2fd2df5bc864ff917b53728b53498d40",
+  "sourceManifest": "source-manifest-r3-05-part09.json",
+  "wholeScopeComplete": false,
+  "priorAssertionsReviewed": "A01-A23 plus currentW03sourceassertions;no inherited whole-criterion claim",
+  "boundaryMap": "boundary-map-r3-05-part09.json",
+  "assertions": [
+    {
+      "id": "A24",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "proven": [
+        "10queued cases:login/status x cancel/cover/owner/background/dispose;invalidated queue sends zero login/status requests",
+        "8non-disposed cases then explicitly request again and observe one valid bridge call;late code absent before fresh request",
+        "2valid queue controls prove cleanup ordering and one request despite twice invoking retained callback before rebuild",
+        "6active status/connect/reply x routecover/background cases prove stale result suppression, correct covering route, no automatic reconnect on return and successful explicit recovery",
+        "Existing4screen and5composed cases unchanged"
+      ],
+      "evidence": "queued-login-r3-05-part09.json",
+      "limits": [
+        "Bridge responses and transport completions are controlled host fixtures; no provider authentication or native delayed-request injection was performed.",
+        "Route-cover tests apply to standalone ManagedTutorTestScreen. The embedded Ari shell intentionally keeps the AI panel across core route navigation; no claim that every main-route change disconnects embedded AI.",
+        "Native bridge is unpaired, so native baseline does not execute the changed login widget; changed behavior is proven by host tests and included in installed APK.",
+        "No new file-backed owner-lease/process-death acceptance or provider request-ID protocol; remaining criteria stay open."
+      ]
+    },
+    {
+      "id": "A25",
+      "groups": [
+        "W01",
+        "W02",
+        "W03"
+      ],
+      "proven": [
+        "Fresh main/WAL/SHM backed up before isolated installation. aapt confirmed com.lexiquest.app.ariTest;installed APK hash matches local54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5.",
+        "Main learning screen shows baseline controls. Expand AI shows unpaired message;HOME/foreground retains baseline and unpaired state;collapse then vocabulary navigation works.",
+        "Open category dialog, enter exact R309Draft;expand AI,HOME/foreground,collapse retain exact draft. Cancel without saving.",
+        "Force-stop/relaunch then explicit AI expansion remains unpaired; no login/inference occurred.",
+        "All58tables compared by actual primary keys;category/word/import/importrows/outbox/owner/answer/session/AIusage unchanged. Cancelled draft absent.",
+        "One content timestamp and one runtime timestamp/expiry updated;quest_instances+1 andquest_objective_progress+1 separately recorded.",
+        "Fresh snapshot restored BYTEEXACT;isolated app force-stopped andpidof absent."
+      ],
+      "evidence": "native-connection-baseline-r3-05-part09.json",
+      "limits": [
+        "Bridge responses and transport completions are controlled host fixtures; no provider authentication or native delayed-request injection was performed.",
+        "Route-cover tests apply to standalone ManagedTutorTestScreen. The embedded Ari shell intentionally keeps the AI panel across core route navigation; no claim that every main-route change disconnects embedded AI.",
+        "Native bridge is unpaired, so native baseline does not execute the changed login widget; changed behavior is proven by host tests and included in installed APK.",
+        "No new file-backed owner-lease/process-death acceptance or provider request-ID protocol; remaining criteria stay open."
+      ]
+    }
+  ],
+  "nextByGroup": {
+    "W01": "Queued login/status cancellation and actual standalone route-cover/background active completions now bounded-proven. Next inspect file-backed ManagedTutorRuntime/DriftOwnerOperationGate lease persistence/reopen, canonical owner generation and explicit fresh connection;existing in-memory lease test is not full durable evidence. Do not repeat unchanged27tests.",
+    "W02": "Questionnaire/main/drawer connection/lifecycle and account-control applicability/fixture remain. Reuse settings results under real dependency closure;native account controls absent earlier.",
+    "W03": "Use boundary-map-r3-05-part09.json;postcommit/notifiercoverage is established. Delayed pre-admission owner-query/route combinations remain bounded gaps,not a reason to recertify A20/A22.",
+    "remaining": "Then W05-W14/all14nestedmodes. Keep215rows/4passed/211remaining IDs;noR3-06untilrealR3-05exit. Providerunpaired/Jevpending does not block independenthost/native."
+  },
+  "localReview": "Sole coordinator normalized diff against part08 ZIP if present,otherwise unchanged HEAD base. Productdelta1file helper+3callers. Verified old epoch invalidation on disconnect/owner/cover/background/disposal;new request queues behind cleanup and survives;private-login browser semantics unchanged. No subagent."
+}

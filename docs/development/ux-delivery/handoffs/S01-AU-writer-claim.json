@@ -1,0 +1,12 @@
+{
+  "atUtc": "2026-09-24T19:11:13.556438+00:00",
+  "threadId": "01a0d4d2-8d05-7483-bc94-102feed8a18d",
+  "stateRevision": 90,
+  "status": "ACTIVE",
+  "holderThreadId": "01a0d4d2-8d05-7483-bc94-102feed8a18d",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\57de\\LexiQuest",
+  "branch": "feature/ux-s01-au-57de",
+  "claimedAtUtc": "2026-09-24T19:11:13.556438+00:00",
+  "currentItem": "S01-AU-cefr-explicit-import-recovery",
+  "dispatchId": "ux-s01-au-20260925-5581"
+}

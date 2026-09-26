@@ -70,13 +70,13 @@ import 'weakness_clinic_screen.dart';
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({
     super.key,
-    this.initialIndex = 0,
+    this.initialIndex,
     this.featureRegistry,
   });
 
-  /// Index within the currently visible primary destinations, in this order:
+  /// Omitted opens Today. Explicit indexes retain the legacy visible order:
   /// learning, vocabulary, mastery, achievements, profile. Out-of-range clamps.
-  final int initialIndex;
+  final int? initialIndex;
   final FeatureRegistry? featureRegistry;
 
   @override
@@ -130,15 +130,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     _visibleEntries = _entries
         .where(
           (entry) =>
-              entry.isVisible(features, AppDependenciesScope.maybeOf(context)),
+              entry.isVisible(
+                features,
+                AppDependenciesScope.maybeOf(context),
+              ) &&
+              (entry.alwaysVisible ||
+                  entry.visibilityFeatures.any(
+                    (feature) =>
+                        _secondaryAvailable(feature, requireComposition: true),
+                  )),
         )
         .toList(growable: false);
     if (!_selectionInitialized) {
-      final initialIndex = widget.initialIndex.clamp(
-        0,
-        _visibleEntries.length - 1,
-      );
-      _selectedEntryId = _visibleEntries[initialIndex].id;
+      final legacy = _buildLegacyEntries()
+          .where(
+            (entry) => entry.isVisible(
+              features,
+              AppDependenciesScope.maybeOf(context),
+            ),
+          )
+          .toList();
+      final requested = widget.initialIndex;
+      final id = requested == null
+          ? 'today'
+          : legacy[requested.clamp(0, legacy.length - 1)].id;
+      final secondary = id == 'mastery' || id == 'achievements';
+      _selectedEntryId = secondary ? 'profile' : id;
+      if (!_visibleEntries.any((entry) => entry.id == _selectedEntryId)) {
+        _selectedEntryId = _visibleEntries.first.id;
+      }
+      if (secondary) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (id == 'mastery') {
+            _selectMastery();
+          } else {
+            _openAchievements();
+          }
+        });
+      }
       _selectionInitialized = true;
       return;
     }
@@ -161,6 +191,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   List<_NavigationEntry> _buildEntries() => [
+    _NavigationEntry(
+      id: 'today',
+      productionEntryId: 'home/today',
+      alwaysVisible: true,
+      screen: Builder(builder: _buildEmbeddedToday),
+      glossary: NavigationGlossary.require('home/today'),
+    ),
+    ..._buildLegacyEntries().where(
+      (entry) => entry.id != 'mastery' && entry.id != 'achievements',
+    ),
+  ];
+
+  List<_NavigationEntry> _buildLegacyEntries() => [
     _NavigationEntry(
       id: 'learning',
       productionEntryId: 'home/learn',
@@ -210,9 +253,41 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       productionEntryId: 'home/profile',
       alwaysVisible: true,
       screen: ProfileSettingsScreen(
-        onOpenMastery: _secondaryAvailable(Feature.mastery)
+        onOpenMastery:
+            _secondaryAvailable(Feature.mastery, requireComposition: true)
             ? _selectMastery
             : null,
+        secondaryActions: [
+          if (_secondaryAvailable(
+            Feature.achievements,
+            requireComposition: true,
+          ))
+            _secondaryTile(
+              'home/achievements',
+              'ดูรางวัลจากการฝึกที่ผ่านมา',
+              _openAchievements,
+            ),
+          if (_secondaryAvailable(Feature.questV2, requireComposition: true))
+            _secondaryTile(
+              'drawer/rewards/quests',
+              'ดูภารกิจที่มีอยู่',
+              _openQuests,
+            ),
+          if (_secondaryAvailable(Feature.shop, requireComposition: true))
+            _secondaryTile('drawer/rewards/shop', 'เปิดร้านค้า', _openShop),
+          if (_secondaryAvailable(
+            Feature.dailyContinuity,
+            requireComposition: true,
+          ))
+            _secondaryTile('home/today/history', 'ดูประวัติที่บันทึกไว้', () {
+              _openTodayHistory();
+            }),
+          _secondaryTile(
+            'drawer/settings',
+            'ปรับการตั้งค่าแอป',
+            () => _pushDestination('settings', (_) => const SettingScreen()),
+          ),
+        ],
       ),
       glossary: NavigationGlossary.require('home/profile'),
     ),
@@ -223,6 +298,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     bool requireComposition = false,
   }) =>
       _features(context)?.isVisible(feature) == true &&
+      _features(context)?.isEnabled(feature) == true &&
       (!requireComposition ||
           AppDependenciesScope.maybeOf(
                 context,
@@ -233,7 +309,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     Feature.quiz,
     Feature.srs,
     Feature.reading,
-  ].any((feature) => _features(context)?.isVisible(feature) == true);
+  ].any((feature) => _secondaryAvailable(feature, requireComposition: true));
 
   void _openToday() => _pushFeatureDestination(
     'home/today',
@@ -261,15 +337,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     (_) => const ShopPage(),
   );
 
-  Widget _secondaryTile(String id, String description, VoidCallback onTap) {
+  String _secondaryActionId(String id) => id == 'home/today'
+      ? 'home/learn/open-today'
+      : id.startsWith('drawer/')
+      ? id.replaceFirst('drawer/', 'profile/')
+      : id;
+
+  Widget _secondaryTile(
+    String id,
+    String description,
+    VoidCallback onTap, {
+    String? title,
+  }) {
     final entry = NavigationGlossary.require(id);
     return Card(
-      key: ValueKey<String>(id),
+      key: ValueKey<String>(_secondaryActionId(id)),
       margin: EdgeInsets.zero,
       child: Tooltip(
         message: entry.tooltip,
         child: MenuActionBinding(
-          id: entry.id,
+          id: _secondaryActionId(id),
           label: entry.fullThaiLabel,
           onInvoke: onTap,
           child: Semantics(
@@ -283,7 +370,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 vertical: 8,
               ),
               leading: Icon(entry.icon),
-              title: Text(entry.fullThaiLabel),
+              title: Text(title ?? entry.fullThaiLabel),
               subtitle: Text(description),
               trailing: const Icon(Icons.chevron_right),
               onTap: onTap,
@@ -304,13 +391,55 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         : null,
   );
 
-  void _selectMastery() {
-    if (!mounted ||
-        !_secondaryAvailable(Feature.mastery) ||
-        !_visibleEntries.any((entry) => entry.id == 'mastery')) {
-      return;
+  void _selectMastery() => _pushFeatureDestination(
+    'home/mastery',
+    Feature.mastery,
+    (_) => _buildMasterySurface(),
+  );
+
+  void _openAchievements() => _pushFeatureDestination(
+    'home/achievements',
+    Feature.achievements,
+    (_) => AchievementsScreen(
+      onOpenQuests: _secondaryAvailable(Feature.questV2) ? _openQuests : null,
+      onOpenShop: _secondaryAvailable(Feature.shop) ? _openShop : null,
+    ),
+  );
+
+  Widget _buildEmbeddedToday(BuildContext context) {
+    if (_secondaryAvailable(
+      Feature.dailyContinuity,
+      requireComposition: true,
+    )) {
+      return _buildTodayHub(context, embedded: true);
     }
-    setState(() => _selectedEntryId = 'mastery');
+    return Scaffold(
+      appBar: AppBar(title: const Text('วันนี้')),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'รายการวันนี้ยังไม่พร้อมใช้งาน',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                if (_visibleEntries.any((entry) => entry.id == 'learning'))
+                  FilledButton.icon(
+                    key: const ValueKey('today-unavailable-practice'),
+                    onPressed: _selectLearningFromToday,
+                    icon: const Icon(Icons.school_outlined),
+                    label: const Text('เลือกฝึกเอง'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildLearningSurface() {
@@ -328,6 +457,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         dependencies?.activeOwnerIdentities != null;
     return ChooseModeScreen(
       featureRegistry: widget.featureRegistry,
+      focusHome: true,
       leadingCards: <Widget>[
         if (canDiscoverTerminalRecovery)
           _PendingMixedReviewRecoveryCard(
@@ -353,9 +483,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ))
           _secondaryTile(
             'home/today',
-            'ดูสิ่งที่เรียนค้างและรายการทบทวนวันนี้',
+            'กลับไปทำบทเรียนที่ค้าง หรือฝึกคำที่ถึงเวลาทบทวน',
             _openToday,
+            title: 'เรียนต่อหรือทบทวน',
           ),
+        if (eligible) AdventureTodayEntryCard(onOpen: _openTodayExperience),
         if (_secondaryAvailable(
           Feature.studyPlanning,
           requireComposition: true,
@@ -365,7 +497,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             'เลือกชุดคำศัพท์ ตั้งเป้าหมาย และปรับแผนเรียน',
             _openPlanning,
           ),
-        if (eligible) AdventureTodayEntryCard(onOpen: _openTodayExperience),
       ],
     );
   }
@@ -956,25 +1087,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   _MainNavigationTodayHubActions _todayActions({
     VoidCallback? returnToLearning,
+    bool Function()? isCurrent,
   }) => _MainNavigationTodayHubActions(
-    resume: (session) =>
-        _resumeFromToday(session, returnToLearning: returnToLearning),
+    resume: (session) => _resumeFromToday(
+      session,
+      returnToLearning: returnToLearning,
+      isCurrent: isCurrent,
+    ),
     startRecommendation: (recommendation) => _startTodayRecommendation(
       recommendation,
       returnToLearning: returnToLearning,
+      isCurrent: isCurrent,
     ),
-    openReview: _openTodayReview,
-    openHistory: _openTodayHistory,
-    startAssessment: _openTodayAssessment,
-    openPlanning: _openTodayPlanning,
+    openReview: (work) async {
+      if (isCurrent?.call() != false) await _openTodayReview(work);
+    },
+    openHistory: () => _openTodayHistory(isCurrent: isCurrent),
+    startAssessment: (assessment) =>
+        _openTodayAssessment(assessment, isCurrent: isCurrent),
+    openPlanning: (ownerId) =>
+        _openTodayPlanning(ownerId, isCurrent: isCurrent),
   );
 
-  Future<void> _openTodayPlanning(String ownerId) async {
-    if (!await _todayOwnerMatches(ownerId) || !mounted) return;
-    if (!_secondaryAvailable(Feature.studyPlanning, requireComposition: true) ||
-        _features(context)?.isEnabled(Feature.studyPlanning) != true) {
+  Future<void> _openTodayPlanning(
+    String ownerId, {
+    bool Function()? isCurrent,
+  }) async {
+    if (isCurrent?.call() == false ||
+        !await _todayOwnerMatches(ownerId) ||
+        !mounted ||
+        isCurrent?.call() == false)
       return;
-    }
+    if (!_secondaryAvailable(Feature.studyPlanning, requireComposition: true))
+      return;
     _openPlanning();
   }
 
@@ -987,7 +1132,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildTodayHub(BuildContext context) {
+  Widget _buildTodayHub(BuildContext context, {bool embedded = false}) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final todayHub = dependencies?.todayHub;
     if (dependencies == null ||
@@ -998,12 +1143,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         reason: ProductionFeatureUnavailableReason.missingDependency,
       );
     }
+    TodayHubActionDelegate actions(bool Function()? viewIsCurrent) =>
+        _todayActions(
+          isCurrent: () =>
+              viewIsCurrent?.call() != false &&
+              mounted &&
+              context.mounted &&
+              (embedded
+                  ? _selectedEntryId == 'today'
+                  : ModalRoute.of(context)?.isCurrent == true) &&
+              _secondaryAvailable(
+                Feature.dailyContinuity,
+                requireComposition: true,
+              ),
+          returnToLearning: () => _selectLearningFromToday(
+            fromTodayRoute: embedded ? null : context,
+          ),
+        );
     return TodayHubScreen(
       useCases: todayHub,
-      actions: _todayActions(
-        returnToLearning: () =>
-            _selectLearningFromToday(fromTodayRoute: context),
+      ownerIdentities: dependencies.activeOwnerIdentities,
+      onOpenPractice: embedded ? _selectLearningFromToday : null,
+      manualPracticeAvailable: _visibleEntries.any(
+        (entry) => entry.id == 'learning',
       ),
+      actions: actions(null),
+      bindActions: actions,
       features: widget.featureRegistry ?? dependencies.features,
       assessmentAvailable: dependencies.assessment != null,
     );
@@ -1012,8 +1177,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _resumeFromToday(
     LearningSessionSummary session, {
     VoidCallback? returnToLearning,
+    bool Function()? isCurrent,
   }) async {
-    if (!await _todayOwnerMatches(session.ownerId) || !mounted) {
+    if (isCurrent?.call() == false) return;
+    if (!await _todayOwnerMatches(session.ownerId) ||
+        (!mounted || isCurrent?.call() == false)) {
       throw StateError('Today resume no longer belongs to the active owner.');
     }
     if (session.activityType == dialogueActivityType) {
@@ -1024,33 +1192,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       final owner = await service.sets.begin();
       try {
         final run = await service.resume(owner, session.id);
-        if (mounted) _openDialogue(service, run);
+        if (mounted && isCurrent?.call() != false) _openDialogue(service, run);
       } catch (_) {
-        if (!mounted ||
+        if ((!mounted || isCurrent?.call() == false) ||
             !await _todayOwnerMatches(session.ownerId) ||
-            !mounted) {
+            (!mounted || isCurrent?.call() == false)) {
           return;
         }
         final end = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Mission cannot be reopened'),
+            scrollable: true,
+            title: const Text('ยังกลับเข้าภารกิจนี้ไม่ได้'),
             content: const Text(
-              'The saved mission or its exact content is unavailable. Keep the saved choices and try again later, or end this mission without completing it.',
+              'ยังเปิดภารกิจหรือเนื้อหาเดิมไม่ได้ ตัวเลือกที่บันทึกไว้ยังอยู่ เลือกเก็บไว้แล้วกลับเพื่อมาลองเปิดภายหลัง หรือยุติภารกิจนี้โดยไม่ถือว่าทำสำเร็จ',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep saved'),
+                autofocus: true,
+                child: const Text('เก็บไว้แล้วกลับ'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('End mission'),
+                child: const Text('ยุติภารกิจนี้'),
               ),
             ],
           ),
         );
-        if (end == true) await service.abandon(owner, session.id);
+        if (end == true && isCurrent?.call() != false)
+          await service.abandon(owner, session.id);
       }
       return;
     }
@@ -1093,7 +1264,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         dependencies: dependencies,
         run: run,
       );
-      if (!mounted) return;
+      if ((!mounted || isCurrent?.call() == false)) return;
       _openAdventureMixedReview(
         dependencies: dependencies,
         recovery: recovery,
@@ -1109,12 +1280,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _startTodayRecommendation(
     TodayHubRecommendation recommendation, {
     VoidCallback? returnToLearning,
+    bool Function()? isCurrent,
   }) async {
+    if (isCurrent?.call() == false) return;
     final ownerId = recommendation.result.ownerId;
     if (!recommendation.isAuthoritative ||
         ownerId == null ||
         !await _todayOwnerMatches(ownerId) ||
-        !mounted) {
+        (!mounted || isCurrent?.call() == false)) {
       throw StateError('Today recommendation is no longer authoritative.');
     }
     final mode = recommendation.result.recommendedMode;
@@ -1208,7 +1381,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Future<void> _openTodayHistory() async {
+  Future<void> _openTodayHistory({bool Function()? isCurrent}) async {
+    if (isCurrent?.call() == false) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final history = dependencies?.learningHistory;
     if (history == null || !mounted) {
@@ -1216,7 +1390,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
     final owner = await dependencies?.activeOwnerIdentities
         ?.requireSingleActiveOwnerId();
-    if (!mounted) return;
+    if (!mounted || isCurrent?.call() == false) return;
     _pushDestination(
       'home/today/history',
       (_) => LearningHistoryScreen(
@@ -1259,15 +1433,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _openTodayAssessment(
-    TodayHubAssignedAssessment assessment,
-  ) async {
+    TodayHubAssignedAssessment assessment, {
+    bool Function()? isCurrent,
+  }) async {
+    if (isCurrent?.call() == false) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final useCases = dependencies?.assessment;
     final features = _features(context);
     if (useCases == null ||
         features?.isEnabled(Feature.researchAssessment) != true ||
         !await _todayOwnerMatches(assessment.run.ownerId) ||
-        !mounted) {
+        (!mounted || isCurrent?.call() == false)) {
       throw StateError('Assigned assessment is unavailable.');
     }
     final run = assessment.run;
@@ -1632,13 +1808,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        showBanner ? _localStatusSummary(status) : 'LexiQuest',
+                        status != null &&
+                                status.localData != RuntimeAvailability.ready
+                            ? _localStatusSummary(status)
+                            : 'LexiQuest',
                         key: showBanner
                             ? const ValueKey<String>('runtime-status-banner')
                             : null,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                        style:
+                            status != null &&
+                                status.localData != RuntimeAvailability.ready
+                            ? Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              )
+                            : Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
                     IconButton(
@@ -1670,7 +1853,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   for (var index = 0; index < _entries.length; index++)
                     TickerMode(
                       enabled: index == selectedStackIndex,
-                      child: _entries[index].screen,
+                      child:
+                          !_visibleEntries.any(
+                                (entry) => entry.id == _entries[index].id,
+                              ) ||
+                              (_entries[index].id == 'today' &&
+                                  index != selectedStackIndex)
+                          ? const SizedBox.shrink()
+                          : _entries[index].screen,
                     ),
                 ],
               ),
@@ -1708,7 +1898,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       requireComposition: true,
                     ))
                   _glossaryDrawerTile(
-                    key: const ValueKey('home/today'),
+                    key: const ValueKey('home/learn/open-today'),
                     entry: NavigationGlossary.require('home/today'),
                     onTap: _openToday,
                   ),
@@ -1803,6 +1993,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   _glossaryDrawerTile(
                     entry: NavigationGlossary.require('home/vocabulary'),
                     onTap: () {
+                      if (!_visibleEntries.any(
+                        (entry) => entry.id == 'vocabulary',
+                      )) {
+                        _pushDestination(
+                          'home/vocabulary',
+                          (_) => _gate(
+                            'vocabulary',
+                            Feature.vocabulary,
+                            (_) => const CategoriesPage(),
+                          ),
+                        );
+                        return;
+                      }
                       _scaffoldKey.currentState?.closeDrawer();
                       setState(() {
                         _selectedEntryId = 'vocabulary';

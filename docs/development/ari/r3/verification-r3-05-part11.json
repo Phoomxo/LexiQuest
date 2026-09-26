@@ -1,0 +1,354 @@
+{
+  "taskId": "01a0d00c-89c3-72c0-8ba1-b198c5aeaaaa",
+  "sourceFingerprint": "21ef7436ed2a535de27d5f9a078c7f75d0ae581bd044cefb44e57076772bacbb",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-4bdd9381255fc00cc3e06dfe939a1fb36f442ae00761b0aeed741058e99e79b7.json",
+      "sha256": "6ee88bcd9d8db58e26f676a839968d3eae17931c4e371afd13c033a9126dcc5b",
+      "status": "Passed",
+      "passingCases": 9,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/unified_lesson_controller_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "CEFR"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "7ee3b500db195e5b7fa72f901e91260d4f86fd20d06d3ab944373fbf77e19277"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "7ee3b500db195e5b7fa72f901e91260d4f86fd20d06d3ab944373fbf77e19277",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:03:06.2500224+00:00",
+          "FinishedAt": "2026-09-23T21:03:20.1673531+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\7ee3b500db19-6ff2325dced4-ae47fafd\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\7ee3b500db19-6ff2325dced4-ae47fafd\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "06AF7F66E294919456AF2CE46A46DFDE2B684DC0B329894FDE917FD504033BA9",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-29dbe5f23f929f976322dbbf90fd52fb5359b1743157d89f2679064b1c4b52ac.json",
+      "sha256": "e5bd237e3651f1e336ac59ed9b76fb33598aa0efe96bf33338960f1b50734965",
+      "status": "Passed",
+      "passingCases": 14,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/quiz_screen_test.dart",
+            "test/screens/definition_quiz_screen_test.dart",
+            "test/screens/fill_in_the_blanks_screen_test.dart",
+            "test/screens/associative_reading_session_screen_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "assistance"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "d30769dd68b2f51d058ae156ece96f67595196cdb21b77bc257eb3141a0464f5"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "d30769dd68b2f51d058ae156ece96f67595196cdb21b77bc257eb3141a0464f5",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:03:57.1214335+00:00",
+          "FinishedAt": "2026-09-23T21:04:09.5589363+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\d30769dd68b2-6ff2325dced4-0f5c9563\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\d30769dd68b2-6ff2325dced4-0f5c9563\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "B08F91E9D4149BAFAC88801FD2A18508CF6E7E3BEAE8F1BD60912837FBA8C4B6",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-29d72377629a1938af80be1e59eab4bc56a74fe371fab314309ccbdd3ee4d18a.json",
+      "sha256": "2f0b48ed595a5f52882ddf3ea59127de749fe5037ef3a3715343aa67678a2ce9",
+      "status": "Passed",
+      "passingCases": 12,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/srs_flashcards_screen_test.dart",
+            "test/screens/choose_mode_screen_test.dart",
+            "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "MCP"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "70620bd3dcc30fc32d241c02404696e0f81e7392bd60923d7401d2bf2577162c"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "70620bd3dcc30fc32d241c02404696e0f81e7392bd60923d7401d2bf2577162c",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:04:44.8587887+00:00",
+          "FinishedAt": "2026-09-23T21:05:03.1455289+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\70620bd3dcc3-6ff2325dced4-71525911\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\70620bd3dcc3-6ff2325dced4-71525911\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "81BDB8624A4421C08819D68A7F34CADE9C867A33506759C1052446B37193C860",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-e98b581edf8b4fba6af1561c8f57f05c48a34d19a1c0a7cba12729b6ca87402f.json",
+      "sha256": "542f3aa82a6314196cde76d45597baa324ff715e83ff029527ecec3322d42447",
+      "status": "Passed",
+      "passingCases": 6,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/unified_lesson_controller_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "dictation MCP"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "37fe68f7c3999c816bbfac083b77b57bf87d27c78fbf4f94b02bfd35e798d8d5"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "37fe68f7c3999c816bbfac083b77b57bf87d27c78fbf4f94b02bfd35e798d8d5",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:05:28.2825506+00:00",
+          "FinishedAt": "2026-09-23T21:05:39.2948942+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\37fe68f7c399-6ff2325dced4-d06e62f2\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\37fe68f7c399-6ff2325dced4-d06e62f2\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "1EE66039C6C790B461D289DF23A4AE08C753AF941363607D494DA8BA6BF51067",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-fea68323df310e2cce6ce06e10db09563906411da03b651414f7afc32ae84268.json",
+      "sha256": "8a04a8c371a335adc42ec28587b35fa82822ae752c758cbef9640c9f9d7ca1c0",
+      "status": "Passed",
+      "passingCases": 6,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/unified_lesson_controller_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "native scramble MCP"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "62cf442681a870ad559cdc9e04e2a85a9ebef99cc8d05ef7e7f76d7eb5e6273a"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "62cf442681a870ad559cdc9e04e2a85a9ebef99cc8d05ef7e7f76d7eb5e6273a",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:05:50.7880177+00:00",
+          "FinishedAt": "2026-09-23T21:06:01.5259326+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\62cf442681a8-6ff2325dced4-f3af1d36\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\62cf442681a8-6ff2325dced4-f3af1d36\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "5B331478A4D29C0267B786939ACE97B3C809E4DE7E761B145EB92828EA45841D",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-d002f347e08fb8da9c96cc8c485ff61190561a69067c491fca199ecddb0de232.json",
+      "sha256": "53ddb64a09a91cecffeab633b26783c9545b51c204a30ef2b25d68fb7d427202",
+      "status": "Passed",
+      "passingCases": 1,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/unified_lesson_controller_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "MCP disconnect during durable answer"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "9f917b465d0a77d8ebc895fec8463c20422f99e062a24825528da45cfaa18114"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "9f917b465d0a77d8ebc895fec8463c20422f99e062a24825528da45cfaa18114",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:06:12.7217026+00:00",
+          "FinishedAt": "2026-09-23T21:06:21.8591289+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\9f917b465d0a-6ff2325dced4-0c8048a9\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\9f917b465d0a-6ff2325dced4-0c8048a9\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "F432B84401561FAC0E47062CA68C4184B38A9B3BA2B04189AD1351002A893C4C",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-6c863c0c45ca355ff26cbeb9d56c0503ea958ede02beb2dac529f0d1edce4d14.json",
+      "sha256": "b163f4a39b97249aa28de055a21e6fe476ca0deadbf1ae0b63023f25ced571c7",
+      "status": "Passed",
+      "passingCases": 10,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "actual"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "9b823444c2ad73aa53890390a0328b441f31b4c1e3c34af0ce08da5c708e0ee8"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "9b823444c2ad73aa53890390a0328b441f31b4c1e3c34af0ce08da5c708e0ee8",
+          "fingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:06:48.6425316+00:00",
+          "FinishedAt": "2026-09-23T21:07:09.9128056+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\9b823444c2ad-6ff2325dced4-1d339502\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\9b823444c2ad-6ff2325dced4-1d339502\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "6ff2325dced41ba904e073d5807fadaded5887a06d31a2e1dddbe28e101835ea",
+          "StdoutHash": "1AF1993D710014D2BADDC033097C45B14592CCFA7A9D4C65B9FBAF12E3B7F066",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "mismatches": []
+    }
+  ],
+  "uniquePassingCases": 58,
+  "newPassingCases": 2,
+  "revalidatedCases": 56,
+  "testSourceChanged": [
+    "test/features/learning/unified_lesson_controller_test.dart"
+  ],
+  "analysis": {
+    "log": "build\\ari-r3-05\\part11-analysis.log",
+    "sha256": "dba3c8425a0ab73fe16557e7d45b8856e4d40917f7a4de3f91124b4b7092814f",
+    "result": "No issues found"
+  },
+  "diff": {
+    "path": "build\\ari-r3-05\\part11-test.diff",
+    "sha256": "e88487cb62b105dedcf6cb891c6c5dce7d0a9c1c186497d4b2c8e85d232ec35f",
+    "review": "Only CEFR test variants, bounded real IO waits, session identity assertions, reopen/duplicate checks and injected DB fixture option; all original behavioral assertions retained."
+  },
+  "failedAttempts": {
+    "receipt": "build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\targeted-ai-cc6c9e1f336c7d13ed7ff05e4ddb0283e922ed6b77111d03bd39d4873c77888b.json",
+    "sha256": "50f94d150d68de8c7e3f0aa61c43a0192361485224a6624ef833c906fda7dc6f",
+    "status": "Failed",
+    "reason": "Second fixture attempt used seed session id instead of production-loaded session; no passing case counted.",
+    "initialTimeoutLogs": {
+      "build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\49bf2bfbd5c2-e369de877234-9934e79a\\Explicit-Flutter-tests.stderr.log": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\49bf2bfbd5c2-e369de877234-9934e79a\\Explicit-Flutter-tests.stdout.log": "870912c35ff68d1fff983f58af2c51001d2c15a56f236acd166551a724b61547"
+    },
+    "initialNote": "First pumpAndSettle timeout required terminating owned flutter_tester7116. Same-selector receipt is overwritten by verifier on later attempt; original log files retained, do not claim separate surviving first receipt."
+  },
+  "recoveries": [
+    {
+      "method": "Guessed production loader test/source filename",
+      "diagnosis": "Paths do not exist",
+      "corrected": "Receipt points to unified_lesson_controller_test.dart; rg class finds choose_mode_screen.dart; no repeated guessed-path method allowed."
+    },
+    {
+      "method": "Receipt schema scan assumes dictionary",
+      "diagnosis": "Evidence folder also contains JSON arrays",
+      "corrected": "Check isinstance(dict) before accessing schema;18receipts audited with logs valid."
+    },
+    {
+      "method": "File-backed widget pumpAndSettle",
+      "diagnosis": "Fake clock does not allow actual filesystem IO to finish at initial loader",
+      "corrected": "Bounded pump/runAsync waits and IO queries; terminated only owned stuck flutter_tester7116;failed gate retained."
+    },
+    {
+      "method": "New assertion used fixture initial session",
+      "diagnosis": "NativeVocabularyLessonModeLoader._loadSession starts a separate canonical session",
+      "corrected": "Assert rendered screen session id, completed state;original seed session remains active;reopen/replay assertions unchanged."
+    },
+    {
+      "method": "ZIP entry verification used Windows backslash log paths",
+      "diagnosis": "zipfile canonicalizes archive entry separators to forward slash;read lookup did not",
+      "corrected": "Normalize all archive names with Path.as_posix;preserve original two ZIPs and produce new -verified ZIPs;entry hashes verified before handoff"
+    }
+  ],
+  "limits": [
+    "Test-only change; no product defect, product RED or fix claimed. Two new cases plus56 current-source revalidations=58 unique; no repeated passed current fingerprint.",
+    "All connection variants use registry owner state, not live provider or actual authentication. No native action/build this part; part09 APK/restore preserved.",
+    "New CEFR tests use real file-backed SQLite and composed production loader/host/reader with existing blocking/fail-before-write repository wrapper. Complete snapshot equality across reopen and duplicate exact command is bounded to seeded fixture; many learner tables empty; not abrupt native process death.",
+    "CEFR fixture seeds an initial session; actual NativeVocabularyLessonModeLoader opens another. Accepted attempt must belong to rendered session which is completed; seed session remains active with zero attempts. This is not a configured CEFR session end-to-end eligibility audit.",
+    "Cross-adapter single test iterates only four buildLegacyLessonModeRegistry registrations: associative-reading,meaning-quiz,flashcard,typed-recall. It is controller/shell evidence with placeholder exercise, NOT14mode UI acceptance.",
+    "Flashcard offline restart test rebuilds LearningUseCases over same in-memory database; not file reopen. Associative assistance uses ordered repository fixture; no new associative durability or native080 recertification.",
+    "Quiz assistance cases use mixed typed-recall route; English-to-Thai choice leg is not standalone meaning-quiz route acceptance. Speaking/shadowing need independent inspection and physical evidence; no new native/audio/camera/provider claims."
+  ]
+}

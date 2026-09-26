@@ -1,0 +1,431 @@
+{
+  "schemaVersion": 1,
+  "revision": "s01-a-r1",
+  "evidenceLayer": "SOURCE_INSPECTION_ONLY",
+  "sourceManifest": "handoffs/bootstrap-source-manifest.json",
+  "workflows": [
+    {
+      "id": "W01",
+      "label": "เริ่มใช้และบัญชี",
+      "route": "account",
+      "disposition": "REUSE",
+      "source": "lib/features/identity/domain/local_owner_repository.dart",
+      "decision": "Keep local owner entry; no login gate",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W02",
+      "label": "เมนูและการตั้งค่า",
+      "route": "settings",
+      "disposition": "ADJUST",
+      "source": "lib/features/session/domain/app_entry_state.dart",
+      "decision": "Four tabs, Thai instructions, start/help/pause/resume",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W03",
+      "label": "คำศัพท์ของฉัน",
+      "route": "words",
+      "disposition": "REUSE",
+      "source": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+      "decision": "Canonical import/edit/word identity",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W04",
+      "label": "ผู้ช่วยสอน AI",
+      "route": "ai",
+      "disposition": "HOLD",
+      "source": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "decision": "Local help now; live provider readiness later",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W05",
+      "label": "แบบฝึกและเกม",
+      "route": "practice",
+      "disposition": "ADJUST",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "decision": "Teach before testing; preserve all mode identities",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W06",
+      "label": "อ่านตามระดับ",
+      "route": "reading",
+      "disposition": "ADJUST",
+      "source": "lib/features/learning/application/native_mode_adapters.dart",
+      "decision": "Select distinct text and conditions; no CEFR inference",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W07",
+      "label": "ทบทวนและฝึกจุดที่พลาด",
+      "route": "review",
+      "disposition": "REUSE",
+      "source": "lib/features/review/application/review_center_use_cases.dart",
+      "decision": "Keep SRS writer; assisted attempts require policy",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W08",
+      "label": "วางแผนการเรียน",
+      "route": "plan",
+      "disposition": "REUSE",
+      "source": "lib/features/goals/application/study_plan_use_cases.dart",
+      "decision": "Keep goals separate from skill",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W09",
+      "label": "ความก้าวหน้าและประวัติ",
+      "route": "progress",
+      "disposition": "ADJUST",
+      "source": "lib/features/progress/application/progress_use_cases.dart",
+      "decision": "No evidence is not zero ability",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W10",
+      "label": "ภารกิจ รางวัล และร้านค้า",
+      "route": "rewards",
+      "disposition": "REUSE",
+      "source": "lib/features/rewards/application/reward_use_cases.dart",
+      "decision": "Keep canonical idempotent economy",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W11",
+      "label": "ฟังและพูด",
+      "route": "speech",
+      "disposition": "HOLD",
+      "source": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+      "decision": "Reviewed audio/recognition and native permissions pending",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W12",
+      "label": "เรียนคำจากภาพ",
+      "route": "camera",
+      "disposition": "HOLD",
+      "source": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "decision": "Manual confirmation; no mastery from image",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W13",
+      "label": "ส่งออกข้อมูล",
+      "route": "export",
+      "disposition": "REUSE",
+      "source": "lib/features/export/application/export_use_cases.dart",
+      "decision": "Owner-scoped artifacts; actual export verification later",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "W14",
+      "label": "เรียนเมื่อไม่มีเน็ตและใช้หลายเครื่อง",
+      "route": "offline",
+      "disposition": "REUSE",
+      "source": "lib/features/offline_content/application/offline_content_manager.dart",
+      "decision": "Local baseline; hosted sync remains pending",
+      "acceptance": "NOT_TESTED"
+    }
+  ],
+  "modes": [
+    {
+      "id": "associative-reading",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05",
+        "W06"
+      ],
+      "families": [
+        "evidence"
+      ],
+      "direction": "English story → Thai meaning; memory aid ≠ comprehension",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "meaning-quiz",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "picture"
+      ],
+      "direction": "English → Thai recognition",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "typed-recall",
+      "disposition": "REUSE",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "writing"
+      ],
+      "direction": "Thai → English typed word; not free writing",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "definition-quiz",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "picture"
+      ],
+      "direction": "Definition → English word; prototype definition is Thai",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "cloze",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "sentence"
+      ],
+      "direction": "English sentence → English choice",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "matching",
+      "disposition": "REUSE",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "picture"
+      ],
+      "direction": "English ↔ Thai paired recognition",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "flashcard",
+      "disposition": "REUSE",
+      "workflows": [
+        "W05",
+        "W07"
+      ],
+      "families": [
+        "picture"
+      ],
+      "direction": "English → Thai self-check",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "handwriting-scratchpad",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "writing"
+      ],
+      "direction": "Thai cue → English trace/copy/recall must separate",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "dictation",
+      "disposition": "HOLD",
+      "workflows": [
+        "W05",
+        "W11"
+      ],
+      "families": [
+        "listening"
+      ],
+      "direction": "English audio → English typed response",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "speaking",
+      "disposition": "HOLD",
+      "workflows": [
+        "W05",
+        "W11"
+      ],
+      "families": [
+        "mission"
+      ],
+      "direction": "English prompt → English speech",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "shadowing",
+      "disposition": "HOLD",
+      "workflows": [
+        "W05",
+        "W11"
+      ],
+      "families": [
+        "listening"
+      ],
+      "direction": "English audio → English speech imitation",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "cefr-reading",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05",
+        "W06"
+      ],
+      "families": [
+        "evidence"
+      ],
+      "direction": "English text → comprehension response",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "sentence-scramble",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "sentence"
+      ],
+      "direction": "English tokens → English sentence",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "word-scramble",
+      "disposition": "ADJUST",
+      "workflows": [
+        "W05"
+      ],
+      "families": [
+        "picture"
+      ],
+      "direction": "Thai cue → English letters; not phoneme decoding",
+      "source": "lib/features/learning/application/lesson_mode_registry.dart",
+      "prototypeSource": "docs/design/lexiquest-full-ux.js",
+      "acceptance": "NOT_TESTED"
+    }
+  ],
+  "families": [
+    {
+      "id": "picture",
+      "title": "ภาพ–เสียง–คำ",
+      "decision": "ADD reviewed grapheme–phoneme sequence; reuse tap selection, no drag requirement",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "meaning-quiz",
+        "definition-quiz",
+        "matching",
+        "flashcard",
+        "word-scramble"
+      ],
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "listening",
+      "title": "ฟังแล้วหา",
+      "decision": "ADJUST continuous story input with optional support; no quiz every page",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "dictation",
+        "shadowing"
+      ],
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "sentence",
+      "title": "ประโยคใช้จริง",
+      "decision": "ADJUST explain purpose and accept appropriate variants",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "cloze",
+        "sentence-scramble"
+      ],
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "evidence",
+      "title": "นักสืบข้อความ",
+      "decision": "ADJUST new stories, evidence and missing-information rubric",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "associative-reading",
+        "cefr-reading"
+      ],
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "writing",
+      "title": "ห้องเขียน",
+      "decision": "ADJUST capture drafts while typing and retain through re-entry",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "typed-recall",
+        "handwriting-scratchpad"
+      ],
+      "acceptance": "NOT_TESTED"
+    },
+    {
+      "id": "mission",
+      "title": "ภารกิจใช้จริง",
+      "decision": "HOLD full scenario expansion; optional bridge only in pilot",
+      "source": "docs/design/lexiquest-full-ux.js",
+      "modes": [
+        "speaking"
+      ],
+      "acceptance": "NOT_TESTED"
+    }
+  ],
+  "sourcePins": {
+    "lib/features/identity/domain/local_owner_repository.dart": "e95ab84c52b0cec9c092c5b9b87b996064064ca44fb5a8ca421958fe6722b720",
+    "lib/features/session/domain/app_entry_state.dart": "c7e43f8bd68f34a2562a361ba747f631253752e75fe3207b6d09f3ac54ba6537",
+    "lib/features/vocabulary/application/vocabulary_use_cases.dart": "9cbf2d33a43788ada2a27ee370a05a24bfb95a3dbc2b0934a065223378e38d30",
+    "lib/features/ai_tutor/application/ai_tutor_use_cases.dart": "70d5322f874558d9325ebe343f01fb5885a077e80d3be8bed028b3729e010d37",
+    "lib/features/learning/application/lesson_mode_registry.dart": "a741f433f9885a283d4a84c0a922c997c6ac2b00ee4d5a730504e62800244e6b",
+    "lib/features/learning/application/native_mode_adapters.dart": "70e720e9acccb80053aa975871229fe4f10962a9426b1f189a770ad6fc789628",
+    "lib/features/review/application/review_center_use_cases.dart": "5e3a62aa309878a86d7b1f95809ecf738140ffb1634acdb6c64cebf3c6e65ebc",
+    "lib/features/goals/application/study_plan_use_cases.dart": "3a70bc5823743b7aa7d04157d860ebc6bf9a502b8da3808d9bdfed411434e7ba",
+    "lib/features/progress/application/progress_use_cases.dart": "36ab057d63844dbc980267ff9d3f03bb0eb8d836ece4e51cfbfd39146486f189",
+    "lib/features/rewards/application/reward_use_cases.dart": "f6ac2df6591693acc81a29008a9af44742edbd7d6675b4a78c8fa09bff21b485",
+    "lib/features/media_practice/application/speech_practice_use_cases.dart": "e6df7f688e0e94bf14a7f01e6c8e3398e55825d34ae1195e02e407e20bec538b",
+    "lib/features/media_practice/application/object_scanner_use_cases.dart": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5",
+    "lib/features/export/application/export_use_cases.dart": "59d63718405edff246689a7df957e8ba77eb77f11d87bb01963318188eec567d",
+    "lib/features/offline_content/application/offline_content_manager.dart": "6ff4ccd82570982f4307e402646c68260c4230287aed3bb3e5a2657c62f36167",
+    "docs/design/lexiquest-full-ux.js": "a9529e659100c28426654f3fa414b341387548e4424984079f93367a7528f14d",
+    "lib/features/learning/domain/learning_models.dart": "775da3755457a0a3b17525866192d9aa9ecc2c0951ba417a849fa621fe9cb096",
+    "lib/features/learning/domain/evidence_context.dart": "a37f616b3712b7e79d7f8024a0fae32bdaa5cef9d1dc73e896711764bf813468",
+    "lib/features/learning/domain/learning_evidence_contract.dart": "5aef1ec3a096b034ed93b623568ca6c26e59860e68435b1a1b537096348dd5b4",
+    "lib/voice/bundled_voice_asset_provider.dart": "57c8d07a863000b5b2d60e0c96331ce4071559e1a3b4648db86507a4f6e8fc41",
+    "lib/features/device_model/domain/model_manifest.dart": "4f2c764194e99426aa91f3eaf7b06bb8a404caa6f7243a84d1c32297cbc6d89d",
+    "lib/features/learning_packs/domain/content_quality_policy.dart": "325558d75f6d4f0c29d0009e73bd3f400d1c4658c0e15194d5298ab97e5d0d3d"
+  }
+}

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
@@ -189,11 +190,36 @@ void main() {
     });
   }
 
-  for (final connection in ['absent', 'connected', 'disconnected', 'retry']) {
-    testWidgets('CEFR reading MCP $connection preserves exposure and learner completion', (tester) async {
+  for (final scenario in ['absent', 'connected', 'disconnected', 'retry', 'durable-disconnected', 'durable-retry']) {
+    final connection = scenario.replaceFirst('durable-', '');
+    final durable = scenario.startsWith('durable-');
+    testWidgets('CEFR reading MCP $scenario preserves exposure and learner completion', (tester) async {
+      Future<void> settle({Finder? until}) async {
+        if (!durable) { await tester.pumpAndSettle(); return; }
+        for (var tick = 0; tick < 200; tick++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+          if (!tester.binding.hasScheduledFrame && (until == null || until.evaluate().isNotEmpty)) return;
+        }
+        fail('File-backed CEFR UI did not settle at $until');
+      }
       const adapter = CefrReadingModeAdapter();
-      final fixture = await _fixture(adapter: adapter, blockRecord: true,
-        failFirstRecordBeforeWrite: connection == 'retry');
+      Directory? directory;
+      AppDatabase? durableDatabase;
+      if (durable) {
+        directory = await tester.runAsync(() => Directory.systemTemp.createTemp('cefr-durable-'));
+        durableDatabase = AppDatabase(NativeDatabase(File('${directory!.path}/learning.sqlite')));
+        addTearDown(() async {
+          await durableDatabase?.close();
+          await directory!.delete(recursive: true);
+        });
+      }
+      Future<_Fixture> createFixture() => _fixture(
+        adapter: adapter, blockRecord: true,
+        failFirstRecordBeforeWrite: connection == 'retry',
+        databaseOverride: durableDatabase,
+      );
+      final fixture = durable ? (await tester.runAsync(createFixture))! : await createFixture();
       String? providerOwner = fixture.startCommand.ownerId;
       final registry = MenuActionRegistry(currentOwner: () => providerOwner);
       tester.view.physicalSize = const Size(1200, 1500);
@@ -219,47 +245,48 @@ void main() {
         )),
       );
       await tester.pumpWidget(connection == 'absent' ? app : MenuActionScope(registry: registry, child: app));
-      await tester.pumpAndSettle();
+      await settle(until: find.byType(CefrArticleReaderScreen));
       Map<String, dynamic> context() => jsonDecode(
         (registry.snapshot()['context'] as List).singleWhere((dynamic e) => e['id'] == 'reading/article-assistance')['value'] as String,
       ) as Map<String, dynamic>;
       final mode = find.byType(CefrArticleReaderScreen);
       final originalState = tester.state(mode);
+      final renderedSessionId = tester.widget<CefrArticleReaderScreen>(mode).sessionId;
       if (connection != 'absent') {
         expect(context()['interpretation'], 'reading-exposure-not-comprehension-or-cefr-assessment');
         expect(context()['evidenceSaved'], false);
         expect(context()['completed'], false);
         expect(context()['excerpt'], 'A lesson helps us learn.');
         await tester.tap(find.text('lesson'));
-        await tester.pumpAndSettle();
+        await settle();
         expect(context()['selectedWord'], 'lesson');
       }
       final finish = find.byKey(const ValueKey<String>('cefr-reading-complete'));
       await tester.ensureVisible(finish);
       await tester.tap(finish);
-      await fixture.repository.recordStarted.future;
+      await tester.runAsync(() => fixture.repository.recordStarted.future);
       await tester.pump();
       if (connection != 'absent') {
         expect(context()['evidenceSaved'], false);
         expect(context()['completed'], false);
         expect(context()['persistencePending'], true);
       }
-      expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+      expect(await tester.runAsync(() => fixture.database.select(fixture.database.answerAttempts).get()), isEmpty);
       if (connection == 'disconnected') {
         providerOwner = null;
         registry.invalidateSession(preserveContext: true);
         expect(registry.snapshot()['context'], isEmpty);
       }
       fixture.repository.releaseRecord();
-      await tester.pumpAndSettle();
+      await settle(until: find.text(connection == 'retry' ? 'ลองบันทึกผลอีกครั้ง' : 'อ่านจบแล้ว'));
       if (connection == 'retry') {
         expect(context()['evidenceSaved'], false);
         expect(context()['retryRequired'], true);
-        expect(await fixture.database.select(fixture.database.answerAttempts).get(), isEmpty);
+        expect(await tester.runAsync(() => fixture.database.select(fixture.database.answerAttempts).get()), isEmpty);
         await tester.tap(find.text('ลองบันทึกผลอีกครั้ง'));
-        await tester.pumpAndSettle();
+        await settle(until: find.text('อ่านจบแล้ว'));
       }
-      expect(await fixture.database.select(fixture.database.answerAttempts).get(), hasLength(1));
+      expect(await tester.runAsync(() => fixture.database.select(fixture.database.answerAttempts).get()), hasLength(1));
       expect(fixture.repository.lastRecordCommand!.evidenceContext.evidenceClass, EvidenceClass.exposure);
       expect(fixture.repository.recordCalls, connection == 'retry' ? 2 : 1);
       expect(fixture.controller.feedback, isNull, reason: 'Reading exposure must not become correct/incorrect feedback');
@@ -279,7 +306,38 @@ void main() {
       expect(registry.snapshot()['actions'], isEmpty);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpAndSettle();
+      await settle();
+      if (durable) {
+        await tester.runAsync(() async {
+          Future<Map<String, Object?>> snapshot(AppDatabase db) async => {
+            for (final table in db.allTables)
+              table.actualTableName: (await db.customSelect(
+                'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+              ).get()).map((row) => row.data).toList(),
+          };
+          final command = fixture.repository.lastRecordCommand!;
+          final before = await snapshot(fixture.database);
+          final attempt = (await fixture.database.select(fixture.database.answerAttempts).get()).single;
+          expect(attempt.evidenceClass, EvidenceClass.exposure.name);
+          expect(attempt.ownerId, fixture.startCommand.ownerId);
+          expect(attempt.sessionId, renderedSessionId);
+          expect(attempt.sessionId, isNot(fixture.session.id));
+          final sessions = await fixture.database.select(fixture.database.learningSessions).get();
+          expect(sessions.singleWhere((row) => row.id == renderedSessionId).state, 'completed');
+          expect(sessions.singleWhere((row) => row.id == fixture.session.id).state, 'active');
+          await durableDatabase!.close();
+          durableDatabase = null;
+          final reopened = AppDatabase(NativeDatabase(File('${directory!.path}/learning.sqlite')));
+          try {
+            expect(await snapshot(reopened), before, reason: 'Every fixture table survives database reopen');
+            final duplicate = await DriftLearningRepository(reopened).recordAnswer(command);
+            expect(duplicate.inserted, isFalse);
+            expect(await snapshot(reopened), before, reason: 'Exact accepted command replay after reopen cannot duplicate evidence or side effects');
+          } finally {
+            await reopened.close();
+          }
+        });
+      }
     });
   }
 
@@ -5593,6 +5651,7 @@ LessonStartCommand _configuredCommand(
 );
 
 Future<_Fixture> _fixture({
+  AppDatabase? databaseOverride,
   LessonModeAdapter? adapter,
   HintUseCases? hints,
   CompanionReactionUseCases? companion,
@@ -5610,8 +5669,8 @@ Future<_Fixture> _fixture({
   SessionConfigurationMonotonicMicros? configurationMonotonicMicros,
   Duration configurationIdleTimeout = const Duration(minutes: 5),
 }) async {
-  final database = AppDatabase(NativeDatabase.memory());
-  addTearDown(database.close);
+  final database = databaseOverride ?? AppDatabase(NativeDatabase.memory());
+  if (databaseOverride == null) addTearDown(database.close);
   final now = DateTime.utc(2026, 8, 24, 9);
   final owners = DriftLocalOwnerRepository(
     database,

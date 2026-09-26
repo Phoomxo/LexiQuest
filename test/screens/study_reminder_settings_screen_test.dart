@@ -4,8 +4,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as timezone_data;
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/reminders/application/study_reminder_use_cases.dart';
 import 'package:vocab_learning_app/features/reminders/data/drift_study_reminder_repository.dart';
 import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
@@ -14,6 +17,451 @@ import 'package:vocab_learning_app/screens/study_reminder_settings_screen.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
+
+  testWidgets('AL owner change retires an owned date picker', (tester) async {
+    final f = await _Fixture.create(ReminderPermissionState.granted);
+    addTearDown(f.dispose);
+    await tester.pumpWidget(_screen(f));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('study-reminder/scheduled-at/date')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    await f.database.transaction(() async {
+      await f.database.customUpdate('UPDATE local_owners SET is_active = 0');
+      await f.database
+          .into(f.database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-b',
+              createdAtUtcMs: DateTime.utc(2026, 8, 28).millisecondsSinceEpoch,
+            ),
+          );
+    });
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsNothing);
+    expect(find.text('เลือกวันที่'), findsOneWidget);
+    expect(f.scheduler.requests, isEmpty);
+  });
+
+  for (final action in ['opt-in', 'cancel']) {
+    testWidgets('AL uncertain $action acknowledgement only rereads state', (
+      tester,
+    ) async {
+      final f = await _Fixture.create(ReminderPermissionState.granted);
+      addTearDown(f.dispose);
+      if (action == 'cancel')
+        await f.useCases.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.utc(2026, 8, 29, 2),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+      await tester.pumpWidget(_screen(f));
+      await tester.pumpAndSettle();
+      if (action == 'opt-in')
+        await _selectLocalDateTime(
+          tester,
+          'study-reminder/scheduled-at',
+          '08/29/2026',
+          '09',
+          '00',
+        );
+      if (action == 'opt-in') {
+        f.scheduler.afterSchedule = () => f.owners.fail = true;
+      } else {
+        f.scheduler.afterCancel = () => f.owners.fail = true;
+      }
+      await tester.ensureVisible(
+        find.byKey(ValueKey('study-reminder/$action')),
+      );
+      await tester.tap(find.byKey(ValueKey('study-reminder/$action')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('study-reminder/retry')),
+        findsOneWidget,
+      );
+      final scheduled = f.scheduler.requests.length;
+      final cancelled = f.scheduler.cancelCalls;
+      f.owners.fail = false;
+      f.scheduler.afterSchedule = null;
+      f.scheduler.afterCancel = null;
+      await tester.tap(find.byKey(const ValueKey('study-reminder/retry')));
+      await tester.pumpAndSettle();
+      expect((await f.repository.list()).single.isEnabled, action == 'opt-in');
+      expect(f.scheduler.requests.length, scheduled);
+      expect(f.scheduler.cancelCalls, cancelled);
+      expect(f.scheduler.requestCalls, 0);
+      expect(
+        find.byKey(
+          ValueKey(
+            'study-reminder/${action == 'opt-in' ? 'cancel' : 'opt-in'}',
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+  }
+
+  testWidgets('AL duplicate explicit opt-in has only one pending operation', (
+    tester,
+  ) async {
+    final f = await _Fixture.create(ReminderPermissionState.unknown);
+    addTearDown(f.dispose);
+    await tester.pumpWidget(_screen(f));
+    await tester.pumpAndSettle();
+    await _selectLocalDateTime(
+      tester,
+      'study-reminder/scheduled-at',
+      '08/29/2026',
+      '09',
+      '00',
+    );
+    final entered = Completer<void>();
+    final release = Completer<void>();
+    f.scheduler.beforePermission = () async {
+      if (!entered.isCompleted) entered.complete();
+      await release.future;
+    };
+    final callback = tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey('study-reminder/opt-in')),
+        )
+        .onPressed!;
+    callback();
+    callback();
+    await _pumpUntil(tester, () => entered.isCompleted);
+    expect(f.scheduler.requestCalls, 0);
+    f.scheduler.beforePermission = null;
+    release.complete();
+    await tester.pumpAndSettle();
+    expect(f.scheduler.requestCalls, 1);
+    expect(f.scheduler.requests, hasLength(1));
+    expect(await f.repository.list(), hasLength(1));
+  });
+
+  testWidgets('AL live owner replacement hides the previous private draft', (
+    tester,
+  ) async {
+    final f = await _Fixture.create(ReminderPermissionState.granted);
+    addTearDown(f.dispose);
+    await tester.pumpWidget(_screen(f));
+    await tester.pumpAndSettle();
+    await _selectLocalDateTime(
+      tester,
+      'study-reminder/scheduled-at',
+      '08/29/2026',
+      '09',
+      '00',
+    );
+    await f.database.transaction(() async {
+      await f.database.customUpdate('UPDATE local_owners SET is_active = 0');
+      await f.database
+          .into(f.database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-b',
+              createdAtUtcMs: DateTime.utc(2026, 8, 28).millisecondsSinceEpoch,
+            ),
+          );
+    });
+    await tester.pumpAndSettle();
+    expect(find.textContaining('29 ส.ค. 2569'), findsNothing);
+    expect(f.scheduler.requests, isEmpty);
+  });
+
+  for (final action in ['opt-in', 'cancel']) {
+    testWidgets('AL pending $action retires before mutation on cover', (
+      tester,
+    ) async {
+      final f = await _Fixture.create(ReminderPermissionState.unknown);
+      addTearDown(f.dispose);
+      if (action == 'cancel') {
+        f.scheduler.permission = ReminderPermissionState.granted;
+        await f.useCases.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.utc(2026, 8, 29, 2),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+      }
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(navigatorKey: nav, home: _reminder(f)),
+      );
+      await tester.pumpAndSettle();
+      if (action == 'opt-in')
+        await _selectLocalDateTime(
+          tester,
+          'study-reminder/scheduled-at',
+          '08/29/2026',
+          '09',
+          '00',
+        );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      if (action == 'opt-in') {
+        f.scheduler.beforePermission = () async {
+          if (!entered.isCompleted) entered.complete();
+          await release.future;
+        };
+      } else {
+        f.owners.onRead = () {
+          if (!entered.isCompleted) entered.complete();
+        };
+        f.owners.gate = release;
+      }
+      await tester.ensureVisible(
+        find.byKey(ValueKey('study-reminder/$action')),
+      );
+      await tester.tap(find.byKey(ValueKey('study-reminder/$action')));
+      await _pumpUntil(tester, () => entered.isCompleted);
+      nav.currentState!.push(
+        DialogRoute<void>(
+          context: nav.currentContext!,
+          builder: (_) => const AlertDialog(content: Text('cover pending')),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      nav.currentState!.pop();
+      await tester.pump(const Duration(milliseconds: 350));
+      f.scheduler.beforePermission = null;
+      f.owners.onRead = null;
+      f.owners.gate = null;
+      release.complete();
+      await tester.pumpAndSettle();
+      expect(f.scheduler.requestCalls, 0);
+      if (action == 'opt-in') {
+        expect(await f.repository.list(), isEmpty);
+        expect(f.scheduler.requests, isEmpty);
+      } else {
+        expect((await f.repository.list()).single.isEnabled, isTrue);
+        expect(f.scheduler.cancelCalls, 0);
+      }
+    });
+  }
+
+  testWidgets(
+    'AL owner replacement clears private date and quiet draft on resume',
+    (tester) async {
+      final f = await _Fixture.create(ReminderPermissionState.granted);
+      addTearDown(f.dispose);
+      await tester.pumpWidget(_screen(f));
+      await tester.pumpAndSettle();
+      await _selectLocalDateTime(
+        tester,
+        'study-reminder/scheduled-at',
+        '08/29/2026',
+        '09',
+        '00',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('study-reminder/quiet-start')),
+      );
+      await tester.pumpAndSettle();
+      final inputs = find.descendant(
+        of: find.byType(TimePickerDialog),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(inputs.at(0), '21');
+      await tester.enterText(inputs.at(1), '15');
+      await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('21:15'), findsOneWidget);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await f.database.transaction(() async {
+        await f.database.customUpdate('UPDATE local_owners SET is_active = 0');
+        await f.database
+            .into(f.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'owner-b',
+                createdAtUtcMs: DateTime.utc(
+                  2026,
+                  8,
+                  28,
+                ).millisecondsSinceEpoch,
+              ),
+            );
+      });
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('29 ส.ค. 2569'), findsNothing);
+      expect(find.textContaining('21:15'), findsNothing);
+      expect(find.textContaining('22:00'), findsOneWidget);
+      expect(f.scheduler.requests, isEmpty);
+    },
+  );
+
+  testWidgets('AL Thai read retry fits 360px at 200 percent', (tester) async {
+    final f = await _Fixture.create(ReminderPermissionState.granted);
+    addTearDown(f.dispose);
+    f.owners.fail = true;
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: _reminder(f),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('study-reminder/retry')),
+    );
+    expect(find.text('ลองอ่านใหม่'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(f.scheduler.requestCalls, 0);
+    semantics.dispose();
+  });
+
+  for (final failure in ['opening', 'status']) {
+    testWidgets('AL $failure failure has bounded read-only retry', (
+      tester,
+    ) async {
+      final fixture = await _Fixture.create(ReminderPermissionState.granted);
+      addTearDown(fixture.dispose);
+      if (failure == 'opening') fixture.owners.fail = true;
+      if (failure == 'status') fixture.failEligibility = true;
+      await tester.pumpWidget(_screen(fixture));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final retry = find.byKey(const ValueKey('study-reminder/retry'));
+      expect(retry, findsOneWidget);
+      expect(find.byKey(const ValueKey('study-reminder/opt-in')), findsNothing);
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(retry, findsOneWidget);
+      fixture.owners.fail = false;
+      fixture.failEligibility = false;
+      final gate = Completer<void>();
+      fixture.owners.gate = gate;
+      final callback = tester.widget<OutlinedButton>(retry).onPressed!;
+      final reads = fixture.owners.reads;
+      callback();
+      callback();
+      await tester.pump();
+      expect(fixture.owners.reads, reads + 1);
+      gate.complete();
+      fixture.owners.gate = null;
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('study-reminder/opt-in')),
+        findsOneWidget,
+      );
+      expect(fixture.scheduler.requestCalls, 0);
+      expect(fixture.scheduler.requests, isEmpty);
+      expect(await fixture.repository.list(), isEmpty);
+    });
+  }
+
+  testWidgets('AL same owner partial date draft survives resume read failure', (
+    tester,
+  ) async {
+    final fixture = await _Fixture.create(ReminderPermissionState.granted);
+    addTearDown(fixture.dispose);
+    await tester.pumpWidget(_screen(fixture));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('study-reminder/scheduled-at/date')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find
+          .descendant(
+            of: find.byType(DatePickerDialog),
+            matching: find.byType(TextField),
+          )
+          .first,
+      '08/29/2026',
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+    await tester.pumpAndSettle();
+    expect(find.text('29 ส.ค. 2569'), findsOneWidget);
+    fixture.owners.fail = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.text('29 ส.ค. 2569'), findsNothing);
+    expect(tester.takeException(), isNull);
+    fixture.owners.fail = false;
+    await tester.tap(find.byKey(const ValueKey('study-reminder/retry')));
+    await tester.pumpAndSettle();
+    expect(find.text('29 ส.ค. 2569'), findsOneWidget);
+    expect(fixture.scheduler.requests, isEmpty);
+  });
+
+  for (final boundary in ['cover', 'pop', 'inactive', 'replacement']) {
+    testWidgets('AL retained opt-in callback cannot act after $boundary', (
+      tester,
+    ) async {
+      final fixture = await _Fixture.create(ReminderPermissionState.granted);
+      addTearDown(fixture.dispose);
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: const Scaffold(body: Text('parent')),
+        ),
+      );
+      nav.currentState!.push(
+        MaterialPageRoute<void>(builder: (_) => _reminder(fixture)),
+      );
+      await tester.pumpAndSettle();
+      await _selectLocalDateTime(
+        tester,
+        'study-reminder/scheduled-at',
+        '08/29/2026',
+        '09',
+        '00',
+      );
+      final callback = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('study-reminder/opt-in')),
+          )
+          .onPressed!;
+      if (boundary == 'cover') {
+        nav.currentState!.push(
+          DialogRoute<void>(
+            context: nav.currentContext!,
+            builder: (_) => const AlertDialog(content: Text('cover')),
+          ),
+        );
+        await tester.pumpAndSettle();
+        nav.currentState!.pop();
+        await tester.pumpAndSettle();
+      } else if (boundary == 'pop') {
+        nav.currentState!.pop();
+      } else if (boundary == 'inactive') {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+      } else {
+        await tester.pumpWidget(_screen(fixture));
+        await tester.pumpAndSettle();
+      }
+      callback();
+      await tester.pumpAndSettle();
+      expect(fixture.scheduler.requests, isEmpty);
+      expect(fixture.scheduler.requestCalls, 0);
+      expect(await fixture.repository.list(), isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+  }
 
   for (final retired in ['replacement', 'disposal']) {
     testWidgets('pending status read cannot overwrite screen after $retired', (
@@ -556,36 +1004,38 @@ Future<void> _insertGoal(AppDatabase database, String ownerId) => database
     );
 
 final class _Fixture {
-  _Fixture(this.database, this.repository, this.scheduler, this.useCases);
+  _Fixture(this.database, this.repository, this.scheduler, this.owners);
+  bool failEligibility = false;
+  late final StudyReminderUseCases useCases = StudyReminderUseCases(
+    repository: repository,
+    scheduler: scheduler,
+    nowUtc: () => DateTime.utc(2026, 8, 28),
+    generateId: () => 'reminder:screen',
+    loadFeatureEligibility: () async {
+      if (failEligibility) throw StateError('status read');
+      return const StudyReminderFeatureEligibility.unfenced();
+    },
+  );
 
   static Future<_Fixture> create(ReminderPermissionState permission) async {
     final database = AppDatabase(NativeDatabase.memory());
-    final repository = DriftStudyReminderRepository(
-      database,
-      owners: DriftLocalOwnerRepository(
+    final owners = _FaultOwners(
+      DriftLocalOwnerRepository(
         database,
         generateId: () => 'owner-a',
         nowUtc: () => DateTime.utc(2026, 8, 28),
       ),
     );
+    final repository = DriftStudyReminderRepository(database, owners: owners);
+    await repository.activeOwnerId();
     final scheduler = _ScreenScheduler()..permission = permission;
-    return _Fixture(
-      database,
-      repository,
-      scheduler,
-      StudyReminderUseCases(
-        repository: repository,
-        scheduler: scheduler,
-        nowUtc: () => DateTime.utc(2026, 8, 28),
-        generateId: () => 'reminder:screen',
-      ),
-    );
+    return _Fixture(database, repository, scheduler, owners);
   }
 
   final AppDatabase database;
   final DriftStudyReminderRepository repository;
   final _ScreenScheduler scheduler;
-  final StudyReminderUseCases useCases;
+  final _FaultOwners owners;
 
   Future<void> dispose() => database.close();
 }
@@ -597,6 +1047,10 @@ final class _ScreenScheduler implements ReminderScheduler {
   int permissionReads = 0;
   bool failSchedule = false;
   Future<void> Function()? beforePendingReturn;
+  Future<void> Function()? beforePermission;
+  int cancelCalls = 0;
+  void Function()? afterSchedule;
+  void Function()? afterCancel;
   final Map<int, ReminderPlatformEntry> pending = {};
   final List<ReminderScheduleRequest> requests = [];
 
@@ -609,6 +1063,7 @@ final class _ScreenScheduler implements ReminderScheduler {
   @override
   Future<ReminderPermissionState> permissionState() async {
     permissionReads += 1;
+    await beforePermission?.call();
     return permission;
   }
 
@@ -635,11 +1090,14 @@ final class _ScreenScheduler implements ReminderScheduler {
       ownerId: request.ownerId,
       reminderId: request.reminderId,
     );
+    afterSchedule?.call();
   }
 
   @override
   Future<void> cancel(int platformId) async {
+    cancelCalls++;
     pending.remove(platformId);
+    afterCancel?.call();
   }
 }
 
@@ -675,4 +1133,43 @@ Future<void> _selectLocalDateTime(
   await tester.enterText(inputs.at(1), minute);
   await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
   await tester.pumpAndSettle();
+}
+
+Widget _reminder(_Fixture f) => StudyReminderSettingsScreen(
+  useCases: f.useCases,
+  source: const StudyReminderSource.dueReview(),
+  sourceLabel: 'Synthetic reminder',
+);
+Widget _screen(_Fixture f) => MaterialApp(home: _reminder(f));
+
+final class _FaultOwners implements LocalOwnerRepository {
+  _FaultOwners(this.delegate);
+  final LocalOwnerRepository delegate;
+  bool fail = false;
+  int reads = 0;
+  Completer<void>? gate;
+  void Function()? onRead;
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    reads++;
+    onRead?.call();
+    if (fail) throw StateError('Synthetic owner read failure');
+    await gate?.future;
+    return delegate.getOrCreateActiveOwner();
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
+Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {
+  final clock = Stopwatch()..start();
+  while (!done() && clock.elapsed < const Duration(seconds: 3)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 2)),
+    );
+    await tester.pump();
+  }
+  expect(done(), isTrue);
 }

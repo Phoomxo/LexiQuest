@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T12:51:56.303270+00:00",
+  "scope": "S01-AD existing personal export failure recovery and dependency/operation/owner-guidance lifecycle; host only",
+  "result": "PASS",
+  "hostTests": 73,
+  "newTests": 11,
+  "newWidgetRouteTests": 9,
+  "newStoreTests": 2,
+  "confirmedRedCases": 9,
+  "gate": "build/ux-delivery/S01-AD/final-combined.json",
+  "verifiedSourcePins": 1539,
+  "sourceFingerprint": "7ddda6292ffea5c67576f63cb22aaf6a9278e38d52c3d3cf84193c69a74058f2",
+  "changes": [
+    {
+      "path": "lib/screens/export_center_screen.dart",
+      "beforeSha256": "d51f2dc93e21ec3885757bf35dc550e39467e6bd3875d9e3ba8d905309ff1cb8",
+      "afterSha256": "707818b856db8a04fa73b1ac205c05aa23060d25858847805429b9ce70d4a339"
+    },
+    {
+      "path": "lib/features/export/data/file_selector_export_store.dart",
+      "beforeSha256": "aca4b5db47469c54bddadd0497b85b63fdf6e3ae4cbda62f509b0b5ac84fc2b5",
+      "afterSha256": "bf32c26c7cb549aa4a0385487ddc2cb699cdf2413a58a3eab46b63ca74d58cf2"
+    },
+    {
+      "path": "test/screens/export_center_flow_test.dart",
+      "beforeSha256": "3e43c4935be471a06a668647c39c69fff5bc174bdf1b1b3ee84246f35398b604",
+      "afterSha256": "9eda949e8ff1b42bce6d56250685e57f25cf6a9278280d1a0ddbffdd30c4fb6c"
+    },
+    {
+      "path": "test/features/export/file_selector_export_store_test.dart",
+      "beforeSha256": "b4f17df6d1176d09ac116f5ea2e501240c3a0eea81aedcb0f4044988bcf748db",
+      "afterSha256": "ab9ec6412353d9032e885b62359839684bdc58e05d0e8c8ce7ad85cf1603dd6c"
+    }
+  ],
+  "prototypeReuse": {
+    "tests": 115,
+    "compatibilityChecks": 3,
+    "pinsVerified": {
+      "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+      "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+      "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+      "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+      "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+      "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+      "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+      "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+    },
+    "rerun": false
+  },
+  "remainingRed": [],
+  "redEvidence": "build/ux-delivery/S01-AD/red-stable.json",
+  "preservation": "Original application/test/state bytes in pre-edit.zip; documentation in docs-pre-edit.zip. All imported archives including predecessor-changed-bytes.zip retained. Canonical format/content/owner snapshot/consent/store cleanup/rollback source unchanged except typed desktop picker failure before any destination/staging mutation.",
+  "coverage": [
+    "Real ExportUseCases/Drift synthetic DB; PDF font and desktop picker untyped errors, repeated explicit retry, no automatic saves, retained selections at 360px/200%",
+    "Replacement invalidates pending picker/preparation and stale start/cancel/results/finally; a newer pending operation remains running when the old operation ends",
+    "Inherited dependency removal/restoration; optional owner reader replacement/late identity/failure; new native save works independently of optional guidance",
+    "Route pop cancels immediately before reverse transition ends; late font success/failure and retained disposed cancel callback are safe",
+    "Inherited duplicate activation, cancelled picker, every format, synthetic offline research consent, canonical owner filtering, rollback/cleanup and menu/gate regressions"
+  ],
+  "selfReview": "Self-review only per no-subagent instruction. Effective dependencies and optional owner readers rebind, preserve format/selections, cancel stale work and clear prior guidance. Generation and operation identity fence callbacks; PopScope cancels before disposal. Unexpected UI failures publish only stable failure code and Thai recovery; desktop pre-save picker errors become unavailable. Canonical data snapshot/session/consent/format authority unchanged. No AI mutation or raw exception/path in guidance.",
+  "recoveryNotes": [
+    "First bootstrap gate recorded InputDrift caused by new worktree Flutter dependency setup; stable RED retained before application changes.",
+    "Initial owner-context expectation encountered missing registration; strengthened assertion directly checks replacement MenuActionBinding owner identity.",
+    "First GREEN had seven passes and two fixture failures because 200% virtualized status was outside viewport; scroll to actual status before assertion. Recovery assertions retained; repeated retry added.",
+    "One exact patch did not match formatted source; re-read exact lines and applied corrected patch.",
+    "All final 73 host tests pass; source pins and stream hashes verified; stderr only PowerShell module initialization progress."
+  ],
+  "notAcceptance": [
+    "native/device/picker/restart",
+    "real keyboard/screen-reader",
+    "visual/user comprehension",
+    "learning/trial",
+    "release"
+  ],
+  "routing": "GPT-6 Astra/medium deterministic fallback, not Jev-selected; Standard/default requested; runtime tier unexposed. No live Jev/provider call or ledger mutation."
+}

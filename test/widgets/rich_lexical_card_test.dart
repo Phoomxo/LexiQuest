@@ -41,7 +41,7 @@ void main() {
     pending.completeError(StateError('storage unavailable'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('บันทึกไม่สำเร็จ ลองอีกครั้ง'), findsOneWidget);
+    expect(find.text('ยังยืนยันการบันทึกไม่ได้ ลองอีกครั้ง'), findsOneWidget);
     await tester.tap(find.text('บันทึกไว้ทบทวน'));
     await tester.pumpAndSettle();
     expect(calls, 2);
@@ -494,8 +494,14 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'),
+        180,
+        scrollable: find.byType(Scrollable),
+      );
       await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
       await tester.pump();
+      expect(find.bySemanticsLabel('ซ่อนรายละเอียดคำศัพท์'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.bySemanticsLabel('ฟังเสียงอ่านคำศัพท์'),
         200,

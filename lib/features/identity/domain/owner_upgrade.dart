@@ -44,4 +44,13 @@ abstract interface class OwnerUpgradeRepository {
   });
 }
 
+/// Optional in-memory admission for an explicit logout queued behind another
+/// owner operation. It does not change persisted owner or session identities.
+abstract interface class AdmittedOwnerLogoutRepository {
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout({
+    String? expectedOwnerId,
+    bool Function()? isCurrent,
+  });
+}
+
 final Set<String> ownerUpgradeInventory = ownerLifecycleDirectOwnerTableNames;

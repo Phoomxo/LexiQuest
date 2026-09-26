@@ -1,0 +1,197 @@
+{
+  "taskId": "01a0cf7f-be37-7c31-a1b9-294858718135",
+  "atUtc": "2026-09-23T18:30:10.526897+00:00",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "installedApkVerifiedSha256": "2bf09c7a94ec9d48e8ef87b7788511020021b7dea9eaae83fc71861da1970386",
+  "productSourceFingerprint": "27046adc8204871ac19605f7616de6daee044114fe23f5fa8feb5ca10697af88",
+  "provider": "FRESH_NATIVE_UNPAIRED; no provider process/call",
+  "backup": "build/ari-r3-05/part03-native/backup.json",
+  "restore": {
+    "atUtc": "2026-09-23T18:29:05.177874+00:00",
+    "byteExact": true,
+    "forceStopped": true,
+    "verified": {
+      "lexiquest.sqlite": "574dc273887d50fe02a06b05974cddc5a4514c2fcad4474c7052df01d2f6271c",
+      "lexiquest.sqlite-wal": "c510cb864bbdc46670b202bae0e6c288396141e71f54d5c5c00b6b24f28f8769",
+      "lexiquest.sqlite-shm": "41b85c841e62e4a04a81809d08c042a616ff10cefa8e8ca9da00335ada1e8ac2"
+    }
+  },
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": [
+      {
+        "table": "content_download_states",
+        "beforeRows": 2,
+        "afterRows": 2,
+        "pk": [
+          "id"
+        ],
+        "added": 0,
+        "removed": 0,
+        "changedRows": 1,
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      {
+        "table": "runtime_flags",
+        "beforeRows": 3,
+        "afterRows": 3,
+        "pk": [
+          "key"
+        ],
+        "added": 0,
+        "removed": 0,
+        "changedRows": 1,
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      {
+        "table": "quest_instances",
+        "beforeRows": 3,
+        "afterRows": 4,
+        "pk": [
+          "instance_id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedRows": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "quest_objective_progress",
+        "beforeRows": 3,
+        "afterRows": 4,
+        "pk": [
+          "id"
+        ],
+        "added": 1,
+        "removed": 0,
+        "changedRows": 0,
+        "changedColumns": []
+      },
+      {
+        "table": "learner_preferences",
+        "beforeRows": 1,
+        "afterRows": 1,
+        "pk": [
+          "owner_id"
+        ],
+        "added": 0,
+        "removed": 0,
+        "changedRows": 1,
+        "changedColumns": [
+          "display_updated_at_utc_ms",
+          "motion_mode",
+          "theme_mode"
+        ]
+      }
+    ],
+    "integrity": "ok both disposable clones"
+  },
+  "uiStates": {
+    "03-settings": {
+      "theme": [
+        "ใช้รูปแบบตามระบบ"
+      ],
+      "reducedMotion": [
+        "false"
+      ]
+    },
+    "04-light-reduced": {
+      "theme": [
+        "ใช้รูปแบบสว่าง"
+      ],
+      "reducedMotion": [
+        "false"
+      ]
+    },
+    "05-ai-expanded": {
+      "theme": [
+        "ใช้รูปแบบสว่าง"
+      ],
+      "reducedMotion": [
+        "false"
+      ]
+    },
+    "06-reduced-on": {
+      "theme": [
+        "ใช้รูปแบบสว่าง"
+      ],
+      "reducedMotion": [
+        "true"
+      ]
+    },
+    "08-restart-settings": {
+      "theme": [
+        "ใช้รูปแบบสว่าง"
+      ],
+      "reducedMotion": [
+        "true"
+      ]
+    },
+    "09-dark": {
+      "theme": [
+        "ใช้รูปแบบมืด"
+      ],
+      "reducedMotion": [
+        "true"
+      ]
+    },
+    "13-settings-return": {
+      "theme": [
+        "ใช้รูปแบบมืด"
+      ],
+      "reducedMotion": [
+        "true"
+      ]
+    }
+  },
+  "evidenceHashes": {
+    "build/ari-r3-05/part03-native/02-drawer.xml": "19e56e4b5c6a9475628c41e3742b85c64fae7130be86bc0959bd7a4a3d5ebab5",
+    "build/ari-r3-05/part03-native/03-settings.xml": "a623475667ae0f2c56178e36e4d85e2a3bc5063ca4b39ba87b8629de27fa6386",
+    "build/ari-r3-05/part03-native/04-light-reduced.xml": "8af212c718354b3b3a03c1b4b32fd4be29a37671bf76d8ed91776916afa5df08",
+    "build/ari-r3-05/part03-native/05-ai-expanded.xml": "462efe52176911dcdf3120c4c72839ce451dd1c772b8533806faa0bf49965d6c",
+    "build/ari-r3-05/part03-native/06-reduced-on.xml": "4715887facbf3ad962b782ea497a930b7d5179b2b138407903e69e4e2f60b70d",
+    "build/ari-r3-05/part03-native/07-restart-drawer.xml": "19e56e4b5c6a9475628c41e3742b85c64fae7130be86bc0959bd7a4a3d5ebab5",
+    "build/ari-r3-05/part03-native/08-restart-settings.xml": "d99b4b7db8f65cddb89ab8bde615e2fd2a63bd20976dd04e338f0719502e4da7",
+    "build/ari-r3-05/part03-native/09-dark.xml": "f5d31f1ab3675af0898d06d595772341c3c08f787f93f574db79e76b94f956d4",
+    "build/ari-r3-05/part03-native/10-settings-lower.xml": "f29452a9fbb094d9a257da7a15189830d261eaa6290486d6c646140b771953b3",
+    "build/ari-r3-05/part03-native/11-erase-dialog.xml": "e390001476214729bcfca364650a608ba1e8cfe5b932b616802e55361b7f65f1",
+    "build/ari-r3-05/part03-native/12-offline-content.xml": "0ad14675a5d0739be1654237074c5e2da10ca1b654ddfa08dd7cad1ac3c14364",
+    "build/ari-r3-05/part03-native/13-settings-return.xml": "f5d31f1ab3675af0898d06d595772341c3c08f787f93f574db79e76b94f956d4"
+  },
+  "proven": [
+    "Native display theme light/dark and reduced motion change while AI unpaired",
+    "Light/reduced settings persist across force-stop/relaunch and settings reentry",
+    "Expand/collapse optional AI preserves settings; native clearly reports unpaired",
+    "Erase dialog cancel returns without deleting learner data",
+    "Offline content route opens and returns; no download/remove invoked",
+    "All58 table comparison: only display preferences and documented timestamp/quest refresh changed"
+  ],
+  "limits": [
+    "Not W02 whole acceptance: account-specific controls absent in current native session; no account logout/password/consent mutation",
+    "No research activation",
+    "No successful paired provider or native foreign-owner switch",
+    "No complete settings/questionnaire/drawer/connection lifecycle certification"
+  ],
+  "recovery": [
+    {
+      "symptom": "Activity type3 on first launch",
+      "cause": "Wrong assumed component",
+      "correctedMethod": "cmd package resolve-activity reports com.lexiquest.app.MainActivity; corrected launch succeeded"
+    },
+    {
+      "symptom": "Initial dump null root",
+      "diagnosis": "dumpsys foreground confirmed isolated app; screenshot showed usable Flutter learning screen",
+      "correctedMethod": "Open observed drawer then fresh dump successful; CPU EACCES warning is separate"
+    },
+    {
+      "symptom": "First reduced-motion tap immediately after theme switch did not toggle",
+      "correctedMethod": "Fresh dump proved false; tap after settled UI proved true; no blind success claim"
+    }
+  ]
+}

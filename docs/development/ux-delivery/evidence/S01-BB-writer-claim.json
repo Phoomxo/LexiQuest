@@ -1,0 +1,12 @@
+{
+  "status": "ACTIVE",
+  "holderThreadId": "01a0d5c7-b638-77a2-a8ac-b1aec699146d",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\0684\\LexiQuest",
+  "branch": "feature/ux-s01-bb-0684",
+  "claimedAtUtc": "2026-09-24T23:38:38.220518+00:00",
+  "currentItem": "S01-BB-password-dialog-recovery",
+  "dispatchId": "ux-s01-bb-20260925-f7d4",
+  "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BB-source-receipt.json",
+  "predecessorReleased": true,
+  "routing": "Astra/medium deterministic fallback; not Jev-selected; Standard/default requested; runtime tier unexposed"
+}

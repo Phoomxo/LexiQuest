@@ -142,8 +142,9 @@ void main() {
     const _ProductionEntryCase(
       feature: Feature.mastery,
       id: 'home/mastery',
-      surface: _EntrySurface.bottom,
+      surface: _EntrySurface.profile,
       destinationType: MasteryDashboardScreen,
+      routeName: 'home/mastery',
     ),
     const _ProductionEntryCase(
       feature: Feature.weakness,
@@ -162,8 +163,9 @@ void main() {
     const _ProductionEntryCase(
       feature: Feature.achievements,
       id: 'home/achievements',
-      surface: _EntrySurface.bottom,
+      surface: _EntrySurface.profile,
       destinationType: AchievementsScreen,
+      routeName: 'home/achievements',
     ),
     const _ProductionEntryCase(
       feature: Feature.shop,
@@ -248,6 +250,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
           await _openProductionEntry(tester, entryCase);
           _expectEnabledDestination(tester, entryCase);
@@ -282,8 +285,10 @@ void main() {
         MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
       );
       await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
       switch (entryCase.surface) {
+        case _EntrySurface.profile:
         case _EntrySurface.mastery:
           await _openProductionEntry(tester, entryCase);
           _expectEnabledDestination(tester, entryCase);
@@ -418,6 +423,7 @@ void main() {
         MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
       );
       await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
       expect(
         tester
@@ -462,6 +468,7 @@ void main() {
       MyApp(dependencies: _dependencies(features, repository)),
     );
     await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('legacy-drawer-button')),
@@ -504,6 +511,7 @@ void main() {
       MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
     );
     await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
     await tester.tap(find.byKey(const ValueKey('home/learn')));
     await tester.pump();
@@ -558,6 +566,7 @@ void main() {
       MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
     );
     await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
     await tester.tap(find.byKey(const ValueKey('home/learn')));
     await tester.pump();
@@ -597,6 +606,7 @@ void main() {
         MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
       );
       await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
       final entry = find.byKey(const ValueKey<String>('home/study-planning'));
       expect(entry, findsOneWidget);
@@ -636,13 +646,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
-      final entry = find.byKey(const ValueKey<String>('home/today'));
+      final entry = find.byKey(const ValueKey<String>('home/learn/open-today'));
       expect(entry, findsOneWidget);
       await tester.tap(entry);
       await tester.pumpAndSettle();
       expect(find.byType(TodayHubScreen), findsOneWidget);
-      expect(loader.calls, 1);
+      expect(loader.calls, 2, reason: 'default Today plus the named secondary entry');
       expect(
         find.byKey(const ValueKey('today-hub-assessment-action')),
         findsOneWidget,
@@ -700,7 +711,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await _showLegacyPractice(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
       await tester.pumpAndSettle();
 
       expect(find.byType(TodayHubScreen), findsOneWidget);
@@ -740,7 +752,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await _showLegacyPractice(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
       await tester.pumpAndSettle();
 
       expect(find.byType(TodayHubScreen), findsOneWidget);
@@ -773,9 +786,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await _showLegacyPractice(tester);
 
       Future<void> openToday() async {
-        await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+        await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
         await tester.pumpAndSettle();
         expect(find.byType(TodayHubScreen), findsOneWidget);
       }
@@ -820,13 +834,37 @@ void _expectEnabledDestination(
   }
 }
 
+Future<void> _showLegacyPractice(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('home/learn')));
+  await tester.pumpAndSettle();
+  final expand = find.byKey(const ValueKey('learn-show-all-modes'));
+  if (expand.evaluate().isNotEmpty && find.text('ดูโหมดฝึกทั้งหมด').evaluate().isNotEmpty) {
+    await Scrollable.ensureVisible(tester.element(expand), alignment: 0.5);
+    await tester.pumpAndSettle();
+    await tester.tap(expand);
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _openProfileFeature(WidgetTester tester, String id) async {
+  await tester.tap(find.byKey(const ValueKey('home/profile')));
+  await tester.pumpAndSettle();
+  final target = find.byKey(ValueKey(id == 'home/mastery' ? 'profile-open-mastery' : id));
+  await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openProductionEntry(
   WidgetTester tester,
   _ProductionEntryCase entryCase,
 ) async {
   switch (entryCase.surface) {
+    case _EntrySurface.profile:
+      await _openProfileFeature(tester, entryCase.id);
     case _EntrySurface.mastery:
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await _openProfileFeature(tester, 'home/mastery');
       await tester.pumpAndSettle();
       final entry = find.byKey(ValueKey(entryCase.id));
       await tester.scrollUntilVisible(
@@ -951,7 +989,7 @@ void _expectUnavailableGate(
         widget.feature == entryCase.feature,
     skipOffstage: entryCase.surface != _EntrySurface.bottom,
   );
-  expect(unavailableFinder, findsOneWidget);
+  expect(unavailableFinder, entryCase.surface == _EntrySurface.bottom ? findsNothing : findsOneWidget);
   if (entryCase.surface == _EntrySurface.bottom) {
     expect(find.byKey(ValueKey(entryCase.id)), findsNothing);
     expect(find.byType(ChooseModeScreen), findsOneWidget);
@@ -962,7 +1000,7 @@ void _expectUnavailableGate(
   }
 }
 
-enum _EntrySurface { bottom, learning, mastery, drawer }
+enum _EntrySurface { bottom, learning, profile, mastery, drawer }
 
 final class _ProductionEntryCase {
   const _ProductionEntryCase({

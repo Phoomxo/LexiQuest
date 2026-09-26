@@ -5,6 +5,7 @@ import '../../identity/domain/local_owner_repository.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/learner_intent.dart';
 import '../domain/learner_intent_repository.dart';
+import '../domain/review_mutation_context.dart';
 
 typedef LearnerIntentUtcNow = DateTime Function();
 typedef LearnerIntentMutationNotifier = Future<void> Function();
@@ -27,10 +28,13 @@ final class DriftLearnerIntentRepository implements LearnerIntentRepository {
     _requireCanonicalText(command.id, 'command.id');
     _requireContentIdentity(command.contentIdentity);
     _requireUtc(command.savedAtUtc, 'command.savedAtUtc');
-    await owners.getOrCreateActiveOwner();
+    final admission = ReviewMutationContext.current;
+    admission?.requireCurrent();
+    final owner = await owners.getOrCreateActiveOwner();
+    admission?.requireCurrent(owner.id);
 
-    final changed = await database.transaction(() async {
-      final ownerId = await _requireSingleActiveOwnerId();
+    final changed = await _transaction(owner.id, admission, () async {
+      final ownerId = owner.id;
       final existing = await _byNaturalKey(ownerId, command.contentIdentity);
       if (existing != null) {
         if (!existing.isDeleted) return false;
@@ -102,10 +106,13 @@ final class DriftLearnerIntentRepository implements LearnerIntentRepository {
     final occurredAt = nowUtc();
     _requireUtc(occurredAt, 'nowUtc');
     final occurredAtMs = occurredAt.millisecondsSinceEpoch;
-    await owners.getOrCreateActiveOwner();
+    final admission = ReviewMutationContext.current;
+    admission?.requireCurrent();
+    final owner = await owners.getOrCreateActiveOwner();
+    admission?.requireCurrent(owner.id);
 
-    final changed = await database.transaction(() async {
-      final ownerId = await _requireSingleActiveOwnerId();
+    final changed = await _transaction(owner.id, admission, () async {
+      final ownerId = owner.id;
       final existing = await _byNaturalKey(ownerId, identity);
       if (existing == null || existing.isDeleted) return false;
       if (occurredAtMs < existing.updatedAtUtcMs) {
@@ -145,6 +152,26 @@ final class DriftLearnerIntentRepository implements LearnerIntentRepository {
     }
     return activeOwners.single.id;
   }
+
+  Future<bool> _transaction(
+    String ownerId,
+    ReviewMutationContext? admission,
+    Future<bool> Function() write,
+  ) => database.transaction(() async {
+    Future<void> validate() async {
+      if (await _requireSingleActiveOwnerId() != ownerId) {
+        throw StateError('Learner intent owner changed');
+      }
+      admission?.requireCurrent(ownerId);
+    }
+
+    await validate();
+    final changed = await write();
+    // This also covers no-op replay. Throwing rolls back the item/tombstone and
+    // outbox together, including retirement during any awaited local write.
+    await validate();
+    return changed;
+  });
 
   Future<db.SavedLearningItemRow?> _byNaturalKey(
     String ownerId,

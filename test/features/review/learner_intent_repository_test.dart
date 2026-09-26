@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -175,12 +176,26 @@ void main() {
   );
 
   test(
-    'save resolves the active owner atomically after an interleaved upgrade',
+    'save rejects interleaved upgrade then explicit current-owner retry preserves lifecycle ownership',
     () async {
       await _seedAccountOwner(database);
       owners.interleaveNextEnsure(() => _upgradeGuest(database));
 
-      await repository.save(_savedItem(id: 'saved:interleaved-save'));
+      await expectLater(
+        repository.save(_savedItem(id: 'saved:interleaved-save')),
+        throwsStateError,
+      );
+      expect(await database.select(database.savedLearningItems).get(), isEmpty);
+      expect(await _outboxRows(database), isEmpty);
+      await DriftLearnerIntentRepository(
+        database,
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unused',
+          nowUtc: () => nowUtc,
+        ),
+        nowUtc: () => nowUtc,
+      ).save(_savedItem(id: 'saved:interleaved-save'));
 
       await _expectTargetLifecycleOwnership(
         database,
@@ -191,14 +206,29 @@ void main() {
   );
 
   test(
-    'unsave resolves the moved row atomically after an interleaved upgrade',
+    'unsave rejects interleaved upgrade then explicit current-owner retry preserves lifecycle ownership',
     () async {
       await repository.save(_savedItem(id: 'saved:interleaved-unsave'));
       await _seedAccountOwner(database);
       owners.interleaveNextEnsure(() => _upgradeGuest(database));
       nowUtc = DateTime.utc(2026, 8, 24, 10);
 
-      await repository.unsave(_identity);
+      await expectLater(repository.unsave(_identity), throwsStateError);
+      final moved = await database
+          .select(database.savedLearningItems)
+          .getSingle();
+      expect(moved.ownerId, 'owner:account');
+      expect(moved.isDeleted, isFalse);
+      expect(await _outboxRows(database), hasLength(1));
+      await DriftLearnerIntentRepository(
+        database,
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unused',
+          nowUtc: () => nowUtc,
+        ),
+        nowUtc: () => nowUtc,
+      ).unsave(_identity);
 
       await _expectTargetLifecycleOwnership(
         database,

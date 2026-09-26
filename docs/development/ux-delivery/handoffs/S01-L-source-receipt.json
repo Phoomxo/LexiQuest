@@ -1,0 +1,13 @@
+{
+  "dispatchId": "ux-s01-l-20260924-1d7b",
+  "receivedAtUtc": "2026-09-24T07:24:13.225908+00:00",
+  "threadId": "01a0d24b-bdc5-70b1-a0de-531f2818a044",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\26db\\LexiQuest",
+  "branch": "feature/ux-s01-l-26db",
+  "verifiedEntries": 343,
+  "manifestSha256": "a5960089b9188d2f43ba544871b16c8b0d4463b1f42eaa08ff9c2230ce857981",
+  "archiveSha256": "19a4e93ce3193818e9492d162239a5efa509d897c2cbc8ba031af0863e5aad81",
+  "originPreservation": "All imported bytes verified; predecessor untouched",
+  "routing": "Explicit current-model Astra/medium fallback; not Jev-selected; fresh billing/shared-spend/quota unavailable",
+  "runtimeTier": "Not exposed; Standard/default requested; no tier or savings claim"
+}

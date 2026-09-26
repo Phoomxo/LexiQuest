@@ -1,3 +1,5 @@
+import 'package:flutter/scheduler.dart';
+import 'vocabulary_browse_lifetime.dart';
 import 'package:flutter/material.dart';
 import '../features/ai_tutor/presentation/menu_action_binding.dart';
 
@@ -21,22 +23,66 @@ class CategoriesPage extends StatefulWidget {
   State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
+class _CategoriesPageState extends State<CategoriesPage>
+    with WidgetsBindingObserver, VocabularyBrowseLifetime<CategoriesPage> {
   VocabularyUseCases? _vocabulary;
-  Stream<List<VocabularyCategory>>? _categories;
+  VocabularyBrowseRead<VocabularyCategory>? _categories;
+  FeatureRegistry? _boundFeatures;
+  final _actionChanges = ChangeNotifier();
+  Listenable? _actionFeatures;
+  Route<void>? _actionDialog;
+  int _actionEpoch = 0;
+  bool _actionForeground = true;
+  bool _actionExited = false;
+
+  void _retireAction() {
+    _actionEpoch++;
+    _actionChanges.notifyListeners();
+  }
+
+  bool get _actionVisible =>
+      mounted &&
+      !_actionExited &&
+      _actionForeground &&
+      TickerMode.valuesOf(context).enabled &&
+      (ModalRoute.of(context)?.isCurrent != false ||
+          _actionDialog?.isCurrent == true);
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    _actionForeground = state == AppLifecycleState.resumed;
+    _retireAction();
+  }
 
   void _bindVocabulary() {
     final next =
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final features = _features;
+    if (!identical(features, _boundFeatures)) {
+      browseGeneration++;
+      _retireAction();
+      _actionFeatures?.removeListener(_retireAction);
+      _actionFeatures = features is Listenable ? features as Listenable : null;
+      _actionFeatures?.addListener(_retireAction);
+    }
+    _boundFeatures = features;
+    bindBrowseFeatures(features);
     if (identical(next, _vocabulary)) return;
+    browseGeneration++;
+    _retireAction();
+    _categories?.dispose();
     _vocabulary = next;
-    _categories = next?.watchCategories();
+    _categories = next == null
+        ? null
+        : VocabularyBrowseRead(next, next.vocabulary.watchCategories);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _bindVocabulary();
+    if (_actionDialog != null && !_actionVisible) _retireAction();
   }
 
   @override
@@ -45,13 +91,65 @@ class _CategoriesPageState extends State<CategoriesPage> {
     _bindVocabulary();
   }
 
-  void _retry() {
-    if (!_admitted) return;
-    setState(() {
-      // A new subscription resolves the active owner again, even when the
-      // injected use-case object has not changed.
-      _categories = _vocabulary?.watchCategories();
-    });
+  void _retry(int generation, int revision) {
+    final read = _categories;
+    if (!browseCurrent(generation) ||
+        browseOpening ||
+        !_admitted ||
+        read == null ||
+        revision != read.revision ||
+        read.pending)
+      return;
+    read.refresh();
+  }
+
+  Future<void> _openCategory(
+    VocabularyCategory category,
+    int generation,
+    int revision,
+  ) async {
+    final read = _categories;
+    if (!browseCurrent(generation) ||
+        browseOpening ||
+        !_admitted ||
+        read == null ||
+        read.revision != revision)
+      return;
+    browseOpening = true;
+    try {
+      if (!await read.admit() ||
+          !browseCurrent(generation) ||
+          read.revision != revision ||
+          !_admitted)
+        return;
+      final explicitVocabulary = widget.vocabulary;
+      final explicitFeatures = widget.featureRegistry;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'vocabulary/category',
+          builder: (_) => VocabListScreen(
+            vocabulary: explicitVocabulary,
+            featureRegistry: explicitFeatures,
+            categoryId: category.id,
+            categoryName: category.name,
+          ),
+        ),
+      );
+    } finally {
+      browseOpening = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _actionExited = true;
+    _retireAction();
+    _actionFeatures?.removeListener(_retireAction);
+    _actionChanges.dispose();
+    _categories?.dispose();
+    super.dispose();
   }
 
   FeatureRegistry? get _features =>
@@ -61,29 +159,43 @@ class _CategoriesPageState extends State<CategoriesPage> {
       mounted && _features?.isEnabled(Feature.vocabulary) == true;
 
   @override
-  Widget build(BuildContext context) => ProductionFeatureGate(
-    feature: Feature.vocabulary,
-    registry: _features,
-    builder: _buildContent,
+  Widget build(BuildContext context) => PopScope<void>(
+    onPopInvokedWithResult: (didPop, _) {
+      if (didPop) {
+        browseExit();
+        _actionExited = true;
+        _retireAction();
+      }
+    },
+    child: ProductionFeatureGate(
+      feature: Feature.vocabulary,
+      registry: _features,
+      builder: _buildContent,
+    ),
   );
 
   Widget _buildContent(BuildContext context) {
     final useCases = _vocabulary;
+    final actionGeneration = browseGeneration;
     return Scaffold(
       appBar: AppBar(title: const Text('คลังคำศัพท์')),
       body: useCases == null
           ? const _LocalDataUnavailable()
-          : StreamBuilder<List<VocabularyCategory>>(
-              key: ObjectKey(_categories),
-              stream: _categories,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return _FailureState(onRetry: _retry);
+          : ListenableBuilder(
+              listenable: _categories!,
+              builder: (context, _) {
+                final read = _categories!;
+                final generation = browseGeneration;
+                final revision = read.revision;
+                if (read.failed) {
+                  return _FailureState(
+                    onRetry: () => _retry(generation, revision),
+                  );
                 }
-                if (!snapshot.hasData) {
+                if (read.data == null) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final categories = snapshot.data!;
+                final categories = read.data!;
                 if (categories.isEmpty) {
                   return const Center(
                     child: Text(
@@ -99,20 +211,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     void openCategory() {
-                      if (!_admitted) return;
-                      final features = _features;
-                      AppNavigator.pushPage<void>(
-                        context,
-                        AppPage<void>(
-                          name: 'vocabulary/category',
-                          builder: (_) => VocabListScreen(
-                            featureRegistry: features,
-                            vocabulary: widget.vocabulary,
-                            categoryId: category.id,
-                            categoryName: category.name,
-                          ),
-                        ),
-                      );
+                      _openCategory(category, generation, revision);
                     }
 
                     return Card(
@@ -137,6 +236,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     context,
                                     useCases,
                                     category,
+                                    generation,
+                                    revision,
                                   ),
                                 ),
                           onTap: openCategory,
@@ -152,11 +253,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
           : MenuActionBinding(
               id: 'vocabulary/add-category',
               label: 'เพิ่มหมวดหมู่',
-              onInvoke: () => _showAddCategory(context, useCases),
+              onInvoke: () =>
+                  _showAddCategory(context, useCases, actionGeneration),
               child: FloatingActionButton.extended(
                 key: const ValueKey('add-category'),
                 heroTag: 'categories-add',
-                onPressed: () => _showAddCategory(context, useCases),
+                onPressed: () =>
+                    _showAddCategory(context, useCases, actionGeneration),
                 icon: const Icon(Icons.add),
                 label: const Text('เพิ่มหมวดหมู่'),
               ),
@@ -167,122 +270,354 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Future<void> _showAddCategory(
     BuildContext context,
     VocabularyUseCases useCases,
-  ) async {
-    if (!_admitted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) =>
-          _AddCategoryDialog(vocabulary: useCases, admitted: () => _admitted),
-    );
-  }
+    int generation,
+  ) => _showCategoryAction(useCases, generation);
 
   Future<void> _confirmDelete(
     BuildContext context,
     VocabularyUseCases useCases,
     VocabularyCategory category,
+    int generation,
+    int revision,
   ) async {
-    if (!_admitted) return;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบหมวดหมู่'),
-        content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true || !_admitted) return;
-    try {
-      await useCases.deleteCategory(category.id);
-    } catch (_) {
-      if (context.mounted) {
-        _showMessage(context, 'ลบหมวดหมู่ไม่สำเร็จ');
-      }
-    }
+    if (_categories?.revision != revision) return;
+    await _showCategoryAction(useCases, generation, category: category);
   }
 
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _showCategoryAction(
+    VocabularyUseCases useCases,
+    int generation, {
+    VocabularyCategory? category,
+  }) async {
+    if (!browseCurrent(generation) ||
+        browseOpening ||
+        !_admitted ||
+        !identical(useCases, _vocabulary))
+      return;
+    browseOpening = true;
+    final epoch = ++_actionEpoch;
+    final read = _categories!;
+    bool allowed() =>
+        _actionVisible &&
+        epoch == _actionEpoch &&
+        _admitted &&
+        identical(useCases, _vocabulary);
+    final route = DialogRoute<void>(
+      context: context,
+      builder: (_) => _AddCategoryDialog(
+        vocabulary: useCases,
+        admitted: allowed,
+        reconcileAdmitted: () =>
+            _actionVisible && _admitted && identical(useCases, _vocabulary),
+        changes: _actionChanges,
+        read: read,
+        category: category,
+      ),
+    );
+    _actionDialog = route;
+    try {
+      await Navigator.of(context).push(route);
+    } finally {
+      _actionDialog = null;
+      browseOpening = false;
+      if (mounted) setState(() {});
+    }
   }
 }
 
 class _AddCategoryDialog extends StatefulWidget {
-  const _AddCategoryDialog({required this.vocabulary, required this.admitted});
+  const _AddCategoryDialog({
+    required this.vocabulary,
+    required this.admitted,
+    required this.reconcileAdmitted,
+    required this.changes,
+    required this.read,
+    this.category,
+  });
   final VocabularyUseCases vocabulary;
   final bool Function() admitted;
-
+  final bool Function() reconcileAdmitted;
+  final Listenable changes;
+  final VocabularyBrowseRead<VocabularyCategory> read;
+  final VocabularyCategory? category;
   @override
   State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
 }
 
-class _AddCategoryDialogState extends State<_AddCategoryDialog> {
-  final TextEditingController _controller = TextEditingController();
+class _AddCategoryDialogState extends State<_AddCategoryDialog>
+    with WidgetsBindingObserver {
+  final _controller = TextEditingController();
   String? _formOwner;
   bool _saving = false;
+  bool _filling = false;
+  bool _ownerRetired = false;
+  bool _reading = false;
+  Future<void>? _ownerReady;
+  bool _closed = false;
+  bool _retired = false;
+  int _generation = 0;
+  int _viewEpoch = 0;
+  String? _error;
+  VocabularyCategory? _committedCategory;
 
   @override
   void initState() {
     super.initState();
-    _bindLocalOwner();
+    WidgetsBinding.instance.addObserver(this);
+    _formOwner = widget.category?.ownerId ?? widget.read.ownerId;
+    widget.changes.addListener(_changed);
+    widget.read.addListener(_changed);
+    _ownerReady = _bindLocalOwner();
   }
 
-  Future<void> _bindLocalOwner() async {
-    try {
-      final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
-      if (mounted) setState(() => _formOwner = owner.id);
-    } catch (_) {
-      // Optional tool admission must not block ordinary form interaction.
+  void _changed() {
+    if (!mounted || _closed) return;
+    if (_formOwner != null &&
+        widget.read.ownerId != null &&
+        _formOwner != widget.read.ownerId) {
+      _ownerRetired = true;
+    }
+    if (!widget.admitted() ||
+        (_formOwner != null &&
+            widget.read.ownerId != null &&
+            _formOwner != widget.read.ownerId) ||
+        (widget.category != null &&
+            !_saving &&
+            widget.read.data != null &&
+            !widget.read.data!.any(
+              (c) =>
+                  c.id == widget.category!.id &&
+                  c.ownerId == widget.category!.ownerId &&
+                  c.localRevision == widget.category!.localRevision,
+            ))) {
+      _retired = true;
+      _viewEpoch++;
+    }
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
     }
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == false ||
+        !TickerMode.valuesOf(context).enabled) {
+      _retired = true;
+      _viewEpoch++;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (mounted)
+      setState(() {
+        _retired = true;
+        _viewEpoch++;
+      });
+  }
+
+  bool get _current =>
+      mounted &&
+      !_closed &&
+      !_retired &&
+      widget.admitted() &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      TickerMode.valuesOf(context).enabled;
+  bool _displayed(int generation) => generation == _generation && _current;
+
+  bool get _readCurrent =>
+      mounted &&
+      !_closed &&
+      !_ownerRetired &&
+      widget.read.ownerId == _formOwner &&
+      widget.reconcileAdmitted() &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      TickerMode.valuesOf(context).enabled;
+
+  Future<bool> _ownerCurrent({bool readOnly = false}) async {
+    bool current() => readOnly ? _readCurrent : _current;
+    if (!current()) return false;
+    final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
+    if (!current()) return false;
+    if (_formOwner != null && owner.id != _formOwner) {
+      setState(() {
+        _retired = true;
+        _ownerRetired = true;
+      });
+      return false;
+    }
+    _formOwner = owner.id;
+    return true;
+  }
+
+  Future<void> _bindLocalOwner() async {
+    if (_reading || _closed || _retired) return;
+    _reading = true;
+    try {
+      // The future is observed immediately, including synchronous read failures.
+      final owner = await widget.vocabulary.owners.getOrCreateActiveOwner();
+      if (!mounted || _closed || _retired) return;
+      if (_formOwner != null && owner.id != _formOwner) {
+        _retired = true;
+        _ownerRetired = true;
+      } else {
+        _formOwner = owner.id;
+        _error = null;
+      }
+    } catch (_) {
+      if (mounted && !_closed)
+        _error = 'ยังตรวจสอบคลังคำศัพท์ไม่ได้ กรุณาลองใหม่';
+    } finally {
+      _reading = false;
+      if (mounted && !_closed) setState(() {});
+    }
   }
 
   void _message(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    if (_current) setState(() => _error = message);
   }
 
-  Future<Map<String, Object?>> _save({String? expectedOwnerId}) async {
-    if (!mounted || !widget.admitted() || _saving) return {'status': 'busy'};
+  void _close(int generation) {
+    // A retired dialog may still be explicitly closed, but never pop a cover.
+    if (!mounted ||
+        _closed ||
+        generation != _generation ||
+        ModalRoute.of(context)?.isCurrent != true)
+      return;
+    _closed = true;
+    Navigator.pop(context);
+  }
+
+  Future<Map<String, Object?>> _save(
+    int generation, {
+    String? expectedOwnerId,
+  }) async {
+    final pending = _committedCategory;
+    if (generation != _generation ||
+        _filling ||
+        _saving ||
+        (pending == null ? !_current : !_readCurrent))
+      return {'status': 'busy'};
     final registry = MenuActionScope.maybeOf(context);
     final revision = registry?.snapshot()['revision'];
+    final sessionGeneration = registry?.sessionGeneration;
+    final viewEpoch = _viewEpoch;
     bool allowed() =>
-        mounted &&
-        widget.admitted() &&
+        _current &&
         (expectedOwnerId == null ||
             registry?.currentOwner() == expectedOwnerId &&
                 registry?.snapshot()['revision'] == revision);
-    setState(() => _saving = true);
+    bool verificationAllowed() =>
+        _current &&
+        (expectedOwnerId == null ||
+            registry?.currentOwner() == expectedOwnerId &&
+                registry?.sessionGeneration == sessionGeneration);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      final saved = await widget.vocabulary.createCategory(
-        _controller.text,
-        expectedOwnerId: expectedOwnerId,
-        mutationAllowed: allowed,
-      );
-      // The ordinary button keeps its original completion path. Only the
-      // optional MCP receipt needs a separate persisted-data verification.
-      if (expectedOwnerId == null) {
-        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
-          Navigator.pop(context);
+      await _ownerReady;
+      if (_formOwner == null) {
+        _message('ยังตรวจสอบคลังคำศัพท์ไม่ได้ กรุณาลองใหม่');
+        return {'status': 'failed'};
+      }
+      if (pending != null) {
+        return await _verifySaved(
+          pending,
+          () =>
+              _readCurrent &&
+              viewEpoch == _viewEpoch &&
+              (expectedOwnerId == null ||
+                  registry?.currentOwner() == expectedOwnerId &&
+                      registry?.sessionGeneration == sessionGeneration),
+        );
+      }
+      if (!await _ownerCurrent() || !allowed()) return {'status': 'stale'};
+      if (widget.category case final category?) {
+        final categories = await widget.vocabulary.vocabulary
+            .watchCategories(_formOwner!)
+            .first;
+        if (!await _ownerCurrent() || !allowed()) return {'status': 'stale'};
+        if (!categories.any(
+          (c) =>
+              c.id == category.id &&
+              c.ownerId == _formOwner &&
+              c.localRevision == category.localRevision &&
+              !c.isDeleted &&
+              !c.isReadOnly,
+        )) {
+          setState(() => _retired = true);
+          return {'status': 'stale'};
         }
+        await widget.vocabulary.deleteCategory(
+          category.id,
+          expectedOwnerId: _formOwner,
+          mutationAllowed: allowed,
+        );
+        if (await _ownerCurrent() && verificationAllowed()) _close(_generation);
         return {'status': 'invoked'};
       }
+      final saved = await widget.vocabulary.createCategory(
+        _controller.text,
+        expectedOwnerId: _formOwner,
+        mutationAllowed: allowed,
+      );
+      if (expectedOwnerId != null) _committedCategory = saved;
+      if (!await _ownerCurrent() || !verificationAllowed())
+        return {'status': 'stale'};
+      if (expectedOwnerId == null) {
+        _close(_generation);
+        return {'status': 'invoked'};
+      }
+      _committedCategory = saved;
+      return await _verifySaved(saved, verificationAllowed);
+    } on InvalidVocabularyFailure catch (failure) {
+      if (failure.field == 'owner') {
+        if (mounted && !_closed) {
+          setState(() {
+            _retired = true;
+            _ownerRetired = true;
+          });
+        }
+        return {'status': 'stale'};
+      }
+      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
+      return {'status': 'invalid'};
+    } on DuplicateVocabularyFailure {
+      _message('มีหมวดหมู่นี้แล้ว');
+      return {'status': 'duplicate'};
+    } catch (_) {
+      try {
+        if (await _ownerCurrent()) {
+          _message(
+            widget.category == null
+                ? 'ยังยืนยันผลการบันทึกไม่ได้ กรุณาตรวจหมวดหมู่ก่อนลองใหม่'
+                : 'ยังยืนยันผลการลบไม่ได้ กรุณาตรวจหมวดหมู่ก่อนลองใหม่',
+          );
+        }
+      } catch (_) {
+        _message('ยังตรวจสอบคลังคำศัพท์ไม่ได้ กรุณาลองใหม่');
+      }
+      return {'status': 'outcome_unknown'};
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<Map<String, Object?>> _verifySaved(
+    VocabularyCategory saved,
+    bool Function() allowed,
+  ) async {
+    try {
+      if (!await _ownerCurrent(readOnly: true) || !allowed())
+        return {'status': 'stale'};
       final records = await widget.vocabulary.vocabulary
           .watchCategories(saved.ownerId)
           .first;
@@ -297,10 +632,11 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
                 !record.isDeleted,
           )
           .firstOrNull;
-      if (persisted == null) return {'status': 'verification_failed'};
-      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
-        Navigator.pop(context);
-      }
+      if (persisted == null) return {'status': 'outcome_unknown'};
+      if (!await _ownerCurrent(readOnly: true) || !allowed())
+        return {'status': 'stale'};
+      _committedCategory = null;
+      _close(_generation);
       return {
         'status': 'saved',
         'record': {
@@ -309,36 +645,119 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
           'revision': persisted.localRevision,
         },
       };
-    } on InvalidVocabularyFailure {
-      _message('กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
-      return {'status': 'invalid'};
-    } on DuplicateVocabularyFailure {
-      _message('มีหมวดหมู่นี้แล้ว');
-      return {'status': 'duplicate'};
     } catch (_) {
-      _message('บันทึกหมวดหมู่ไม่สำเร็จ');
-      return {'status': 'failed'};
-    } finally {
-      if (mounted) setState(() => _saving = false);
+      _message('บันทึกแล้ว แต่ยังตรวจสอบผลไม่ได้ กรุณาปิดแล้วตรวจหมวดหมู่');
+      return {'status': 'outcome_unknown'};
     }
   }
 
   @override
+  void dispose() {
+    _closed = true;
+    widget.changes.removeListener(_changed);
+    widget.read.removeListener(_changed);
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Keep bindings mounted even before optional AI is connected, so attaching
-    // an owner does not replace the focused native form or discard its draft.
+    final generation = ++_generation;
+    final retired = _committedCategory != null
+        ? !_readCurrent
+        : _retired || !widget.admitted();
+    final category = widget.category;
+    final dialog = PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _closed = true;
+      },
+      child: AlertDialog(
+        title: Text(category == null ? 'เพิ่มหมวดหมู่' : 'ลบหมวดหมู่'),
+        scrollable: true,
+        content: retired
+            ? const Text('ข้อมูลหรือหน้าจอเปลี่ยนไปแล้ว กรุณาปิดและเปิดใหม่')
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (category != null)
+                    Text(
+                      'ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่',
+                    ),
+                  if (category == null)
+                    TextField(
+                      key: const ValueKey('category-name-field'),
+                      controller: _controller,
+                      enabled: !_saving && _committedCategory == null,
+                      autofocus: true,
+                      maxLength: maxCategoryNameLength,
+                      decoration: const InputDecoration(
+                        labelText: 'ชื่อหมวดหมู่',
+                      ),
+                      onChanged: (_) {
+                        if (_displayed(generation)) setState(() {});
+                      },
+                      onSubmitted: (_) => _save(generation),
+                    ),
+                  if (_error != null) Text(_error!),
+                  if (_error != null && !_saving)
+                    TextButton(
+                      onPressed: _reading
+                          ? null
+                          : () {
+                              if (_displayed(generation))
+                                _ownerReady = _bindLocalOwner();
+                            },
+                      child: const Text('ลองใหม่'),
+                    ),
+                ],
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => _close(generation),
+            child: const Text('ยกเลิก'),
+          ),
+          if (!retired)
+            FilledButton(
+              key: const ValueKey('save-category'),
+              onPressed: _saving || _committedCategory != null
+                  ? null
+                  : () => _save(generation),
+              child: Text(category == null ? 'บันทึก' : 'ลบ'),
+            ),
+        ],
+      ),
+    );
+    if (category != null) return dialog;
     return MenuActionBinding(
       id: 'vocabulary/category-fill',
       label: 'กรอกชื่อหมวดหมู่ (ยังไม่บันทึก)',
       ownerId: _formOwner,
       onInvoke: null,
       fields: const {'name': maxCategoryNameLength},
-      onForm: _formOwner == null
+      onForm: _formOwner == null || retired
           ? null
-          : (values) {
-              if (_saving || !widget.admitted()) return {'status': 'busy'};
-              setState(() => _controller.text = values['name']!);
-              return {'status': 'filled', 'values': values};
+          : (values) async {
+              if (!_displayed(generation) ||
+                  _saving ||
+                  _filling ||
+                  _committedCategory != null) {
+                return {'status': 'busy'};
+              }
+              _filling = true;
+              try {
+                if (!await _ownerCurrent() ||
+                    !_displayed(generation) ||
+                    _saving)
+                  return {'status': 'stale'};
+                setState(() => _controller.text = values['name']!);
+                return {'status': 'filled', 'values': values};
+              } catch (_) {
+                _message('ยังตรวจสอบคลังคำศัพท์ไม่ได้ กรุณาลองใหม่');
+                return {'status': 'failed'};
+              } finally {
+                _filling = false;
+              }
             },
       child: MenuActionBinding(
         id: 'vocabulary/category-save',
@@ -346,33 +765,10 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
         ownerId: _formOwner,
         revisionKey: _controller.text,
         onInvoke: null,
-        onForm: _formOwner == null
+        onForm: _formOwner == null || retired
             ? null
-            : (_) => _save(expectedOwnerId: _formOwner),
-        child: AlertDialog(
-          title: const Text('เพิ่มหมวดหมู่'),
-          scrollable: true,
-          content: TextField(
-            key: const ValueKey('category-name-field'),
-            controller: _controller,
-            autofocus: true,
-            maxLength: maxCategoryNameLength,
-            decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => _save(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก'),
-            ),
-            FilledButton(
-              key: const ValueKey('save-category'),
-              onPressed: _saving ? null : () => _save(),
-              child: const Text('บันทึก'),
-            ),
-          ],
-        ),
+            : (_) => _save(generation, expectedOwnerId: _formOwner),
+        child: dialog,
       ),
     );
   }
@@ -403,13 +799,16 @@ class _FailureState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('อ่านหมวดหมู่ไม่สำเร็จ'),
-          const SizedBox(height: 8),
-          OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
-        ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('อ่านหมวดหมู่ไม่สำเร็จ'),
+            const SizedBox(height: 8),
+            OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
+          ],
+        ),
       ),
     );
   }

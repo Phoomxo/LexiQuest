@@ -1,0 +1,48 @@
+{
+  "taskId": "01a0cfc4-83a1-7872-80c1-91a93db7ee6d",
+  "sourceFingerprint": "cfda00118a8aeac81310c4d5d8ccb6a5c38a9070680596f27ce01aa8cd81d693",
+  "id": "R3-05-MUTATION-NOTIFIER-001",
+  "rootCause": "Eight vocabulary/import use-case paths call optional sync notification after repository transaction commits, before returning result. A synchronous callback exception escapes and consumers can falsely classify committed work as failed.",
+  "red": {
+    "cases": 8,
+    "precommitControlsPassed": 8,
+    "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/8e4784e3d853-fe7d83919f0a-50c6229b/Explicit-Flutter-tests.stdout.log",
+    "sha256": "181e2e198c090d46844d9d8accbe6b24c3db878c256dec6e8001fdd2cbb0994e",
+    "assertion": "Committed mutation must return success despite optional notification exception; verified entire5table snapshot before asserting exception, then exact snapshot after reopen."
+  },
+  "operations": [
+    "createCategory",
+    "createWord",
+    "updateWord",
+    "deleteWord",
+    "ImportVocabulary.call",
+    "renameCategory",
+    "deleteCategory",
+    "createOrReuseWordInCategory"
+  ],
+  "fix": "Common notifyCommittedVocabularyMutation catches only callback exceptions after repository return, emits generic developer warning plus stack trace without error payload, and preserves committed result/outbox. Mutation/transaction exceptions still propagate. No mutation retry.",
+  "verified": [
+    "16 file-backed tests:8 notifier failures after successful commits +8 SQLite ABORT controls after local writes before outbox insertion; full categories/words/imports/row-results/outbox snapshots survive reopen; aborted snapshots exactly unchanged and notification count0",
+    "10 additional route tests inject notifier failure together with independent post-commit readback faults across create/edit/delete/category/import and both reconciliation-before-restart/restart-while-unknown; previous assertions unchanged",
+    "Existing route assertions still prove fresh request IDs cause read-only reconciliation, owner/disconnect suppression/reconnect, disabled unresolved controls and exact identity/result verification"
+  ],
+  "boundaryAudit": {
+    "vocabularyRepository": "create/update final _wordById read and domain conversion occur INSIDE database.transaction; SQLite outbox trigger failure rolls back local writes. No repository product edit required.",
+    "importRepository": "Persist result is produced inside transaction; word/import/row/outbox writes atomic under ABORT.",
+    "bootstrap": "app_bootstrap.dart notifyLocalMutation invokes optional observer then requestDetached; SyncTrigger requestDetached consumes async runner/disposed failures. Callback isolation is still required at use-case contract."
+  },
+  "limits": [
+    "Fault injection is synchronous LocalMutationNotifier; actual bootstrap uses synchronous notifyLocalMutation plus detached SyncTrigger. No claim of production sync outage or async callback error handling.",
+    "Real SQLite ABORT before commit verified; no certification of OS/disk commit-ack ambiguity or arbitrary repository wrappers that throw after commit.",
+    "No durable request-ID/process-death reconciliation protocol; reopened rows prove storage integrity only.",
+    "Native ordinary baseline only, no injected notifier fault/provider claim; route owner/connection/lifecycle and other modes still open."
+  ],
+  "recoveries": [
+    "Read-only search included absent lib/core; corrected to actual lib/runtime discovered from rg. No blind retry.",
+    "UTF8 log decode failed on BOM UTF16; switched BOM-aware decoding.",
+    "Native input tap/text race and unsupported Ctrl+A behavior inspected through fresh XML; used UI selection/verified actual values; initial stored POS nnounnoun corrected by edit to noun, final meaning bookrevised. No assertion of exact initially intended book/noun create.",
+    "PowerShell CSV literal parsing failed before execution; quoted CSV literals then exact draft checked.",
+    "adb input --help unsupported; actual no-args usage inspected.",
+    "CPU sysfs EACCES warning retained in native adb-stderr.log; fresh dumps succeeded."
+  ]
+}

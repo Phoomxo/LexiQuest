@@ -591,7 +591,7 @@ void main() {
         await dependencies.learnerPreferences!.saveHomeExperience(expectedOwnerId:owner.ownerId,homeExperience:HomeExperience.adventure);
       });
       Future<void> settle() async {for(var i=0;i<50;i++){await tester.pump(const Duration(milliseconds:30));await tester.runAsync(()=>Future<void>.delayed(const Duration(milliseconds:10)));}}
-      await tester.pumpWidget(AppDependenciesScope(dependencies:dependencies,child:const MaterialApp(home:MainNavigationScreen())));
+      await tester.pumpWidget(AppDependenciesScope(dependencies:dependencies,child:const MaterialApp(home:MainNavigationScreen(initialIndex: 0))));
       await settle();
       final entry=find.byKey(const ValueKey('home/learn/today-experience'));
       await tester.scrollUntilVisible(entry,180,scrollable:find.byType(Scrollable).first);
@@ -7866,6 +7866,7 @@ final class _BootstrapAccountGateway implements AccountGateway {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
+    bool Function()? isCurrent,
   }) async {}
 
   @override

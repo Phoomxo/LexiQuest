@@ -1,3 +1,10 @@
+import 'package:vocab_learning_app/features/adventure/application/dialogue_mission_use_cases.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
+import 'package:vocab_learning_app/features/identity/application/owner_generation.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/personal_sets_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_personal_set_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk_repository.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'dart:async';
 import 'dart:ui' show Tristate;
 
@@ -45,6 +52,7 @@ import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_cat
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_generation.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -92,6 +100,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
@@ -133,8 +142,325 @@ Future<void> _showLearnSecondary(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _openProfileDestination(WidgetTester tester, String id) async {
+  final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+  navigator.popUntil((route) => route.isFirst);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('home/profile')));
+  await tester.pumpAndSettle();
+  final target = find.byKey(ValueKey(id == 'home/mastery' ? 'profile-open-mastery' : id));
+  await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+}
+
 void main() {
+  for (final choice in ['retain', 'back', 'barrier', 'keyboard', 'owner-change', 'end']) {
+    testWidgets('S01-AB saved dialogue recovery $choice retains exact work unless ended', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final now = DateTime.utc(2026, 9, 24);
+      final owners = DriftLocalOwnerRepository(db, generateId: () => 'ab-owner', nowUtc: () => now);
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      Future<String> activeOwner() async => (await owners.getOrCreateActiveOwner()).id;
+      final repository = DriftLearningRepository(db);
+      await repository.startSessionWithCheckpoint(
+        session: LearningSessionDraft(id: 'ab-saved', ownerId: ownerId,
+          activityType: dialogueActivityType, startedAtUtc: now, appVersion: 'test', buildId: 'ab'),
+        checkpoint: LearningActivityCheckpoint(sessionId: 'ab-saved', activityType: dialogueActivityType,
+          revision: 1, occurredAtUtc: now, state: const {'schemaVersion': 999, 'savedChoices': ['keep exact']}),
+      );
+      final learning = LearningUseCases(owners: owners, repository: repository,
+        generateId: () => 'ab-event', nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'ab'));
+      final sets = PersonalSetsUseCases(
+        repository: DriftPersonalSetRepository(db, SenseCrosswalkRepository(DriftContentManifestRepository(db)), nowUtc: () => now),
+        ownerGeneration: OwnerGeneration(activeOwnerId: activeOwner, readDurableStamp: DriftOwnerGeneration(db).read),
+        ownerOperations: OwnerOperationCoordinator(gate: DriftOwnerOperationGate(db), activeOwnerId: activeOwner, nowUtc: () => now),
+      );
+      final service = DialogueMissionUseCases(sets: sets, learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning), isAvailable: () => false);
+      addTearDown(service.dispose);
+      final summary = (await learning.loadExactActivityRecovery(ownerId: ownerId,
+        sessionId: 'ab-saved', activityType: dialogueActivityType))!.session;
+      final before = await db.customSelect("SELECT * FROM events_v2 WHERE event_type = 'LearningActivityCheckpoint'").get();
+      expect(before, hasLength(1));
+      await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+        initialIndex: null, textScale: 2, databaseOverride: db, localOwners: owners,
+        learningOverride: learning, dialogueOverride: service,
+        activeOwnerIdentities: _NavigationReviewOwnerIdentities(ownerId),
+        todayHub: _NavigationTodayHubLoader(_navigationResumeToday(ownerId, summary))));
+      await tester.pumpAndSettle();
+      final resume = find.byKey(const ValueKey('today-hub-resume-action'));
+      await tester.ensureVisible(resume);
+      await tester.tap(resume);
+      await tester.pumpAndSettle();
+      expect(find.text('ยังกลับเข้าภารกิจนี้ไม่ได้'), findsOneWidget);
+      expect(find.textContaining('ตัวเลือกที่บันทึกไว้ยังอยู่'), findsOneWidget);
+      expect(find.textContaining('Unsupported dialogue'), findsNothing);
+      expect(tester.takeException(), isNull);
+      if (choice == 'keyboard') {
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      } else if (choice == 'back') {
+        await tester.binding.handlePopRoute();
+      } else if (choice == 'barrier') {
+        await tester.tapAt(const Offset(5, 5));
+      } else {
+        if (choice == 'owner-change') {
+          await db.customStatement("UPDATE local_owners SET is_active = 0");
+          await db.customStatement("INSERT INTO local_owners (id, created_at_utc_ms, is_active) VALUES ('ab-other', 2, 1)");
+        }
+        final action = find.widgetWithText(TextButton, (choice == 'end' || choice == 'owner-change') ? 'ยุติภารกิจนี้' : 'เก็บไว้แล้วกลับ');
+        await tester.ensureVisible(action);
+        await tester.tap(action);
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      final row = await db.select(db.learningSessions).getSingle();
+      expect(row.state, choice == 'end' ? 'abandoned' : 'active');
+      expect(row.correctCount, 0);
+      expect(row.wrongCount, 0);
+      final after = await db.customSelect("SELECT * FROM events_v2 WHERE event_type = 'LearningActivityCheckpoint'").get();
+      expect(after.map((r) => r.data).toList(), before.map((r) => r.data).toList());
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   setUpAll(timezone_data.initializeTimeZones);
+  testWidgets('S01-AA default opens four Thai tabs and existing practice', (tester) async {
+    final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+    await tester.pumpWidget(_mainNavigationApp(
+      const BuildFeatureRegistry.allEnabled(), initialIndex: null, todayHub: loader,
+    ));
+    await tester.pumpAndSettle();
+    expect(tester.widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .map((entry) => entry.label), ['วันนี้', 'ฝึก', 'คำศัพท์', 'ฉัน']);
+    expect(find.byType(TodayHubScreen), findsOneWidget);
+    expect(loader.calls, 1);
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+    expect(find.byType(MainNavigationScreen), findsOneWidget);
+  });
+
+  testWidgets('S01-AA stale embedded Today callbacks cannot navigate after leaving tab', (tester) async {
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot())));
+    await tester.pumpAndSettle();
+    final actions = tester.widget<TodayHubView>(find.byType(TodayHubView)).actions;
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
+    await tester.pumpAndSettle();
+    await actions.openHistory();
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningHistoryScreen), findsNothing);
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  });
+
+  testWidgets('S01-AA embedded Today rejects a snapshot from a previous owner', (tester) async {
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+      activeOwnerIdentities: _NavigationReviewOwnerIdentities('different-owner')));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsNothing);
+    expect(find.byKey(const ValueKey('today-hub-retry')), findsOneWidget);
+  });
+
+  testWidgets('S01-AA missing composition never exposes real learning or vocabulary tabs', (tester) async {
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, includeLearning: false, includeVocabulary: false));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('home/learn')), findsNothing);
+    expect(find.byKey(const ValueKey('home/vocabulary')), findsNothing);
+    expect(find.text('รายการวันนี้ยังไม่พร้อมใช้งาน'), findsOneWidget);
+    expect(find.byKey(const ValueKey('today-unavailable-practice')), findsNothing);
+  });
+
+  testWidgets('S01-AA Today load is cancelled on tab exit and reloaded on reentry', (tester) async {
+    final loader = _DeferredNavigationTodayLoader();
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: loader));
+    await tester.pump();
+    expect(loader.loads, hasLength(1));
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
+    await tester.pumpAndSettle();
+    loader.loads.first.complete(_emptyTodayHubSnapshot());
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('home/today')));
+    await tester.pump();
+    expect(loader.loads, hasLength(2));
+    loader.loads.last.complete(_emptyTodayHubSnapshot());
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('today-hub-manual-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+    expect(Navigator.of(tester.element(find.byType(MainNavigationScreen))).canPop(), isFalse);
+  });
+
+  testWidgets('S01-AA owner drift during Today load rejects the late snapshot', (tester) async {
+    final loader = _DeferredNavigationTodayLoader();
+    final owner = _MutableNavigationReviewOwnerIdentities('owner:main-navigation');
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: loader, activeOwnerIdentities: owner));
+    await tester.pump();
+    owner.ownerId = 'owner:changed';
+    loader.loads.single.complete(_emptyTodayHubSnapshot());
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsNothing);
+    expect(find.byKey(const ValueKey('today-hub-retry')), findsOneWidget);
+  });
+
+  for (final legacy in [2, 3, 99]) {
+    testWidgets('S01-AA legacy secondary index $legacy preserves destination and back', (tester) async {
+      await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(), initialIndex: legacy));
+      await tester.pumpAndSettle();
+      if (legacy == 99) {
+        expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+      } else {
+        final type = legacy == 2 ? MasteryDashboardScreen : AchievementsScreen;
+        expect(find.byType(type), findsOneWidget);
+        expect(ModalRoute.of(tester.element(find.byType(type)))?.settings.name,
+          legacy == 2 ? 'home/mastery' : 'home/achievements');
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+      }
+      expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 3);
+    });
+  }
+
+  testWidgets('S01-AA Today does not offer manual practice when every practice feature is off', (tester) async {
+    final registry = RuntimeFeatureRegistry(const BuildFeatureRegistry.allEnabled());
+    addTearDown(registry.dispose);
+    for (final feature in [Feature.quiz, Feature.srs, Feature.reading]) { registry.emergencyOff(feature); }
+    await tester.pumpWidget(_mainNavigationApp(registry, initialIndex: null,
+      todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot())));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsOneWidget);
+    expect(find.byKey(const ValueKey('today-hub-manual-practice')), findsNothing);
+  });
+
+  testWidgets('S01-AA in-flight Today history cannot navigate after tab exit', (tester) async {
+    final owner = _DelayedNavigationOwnerIdentity();
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+      activeOwnerIdentities: owner));
+    await tester.pumpAndSettle();
+    final actions = tester.widget<TodayHubView>(find.byType(TodayHubView)).actions;
+    owner.blockAt = owner.calls + 2;
+    final pending = actions.openHistory();
+    await tester.pump();
+    expect(owner.calls, owner.blockAt);
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
+    await tester.pumpAndSettle();
+    owner.block.complete('owner:main-navigation');
+    await pending;
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningHistoryScreen), findsNothing);
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  });
+
+  testWidgets('S01-AA durable owner epoch invalidates loaded Today and retained actions', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final loader = _DeferredNavigationTodayLoader();
+    try {
+      await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+        initialIndex: null, todayHub: loader, databaseOverride: db, exposeDatabase: true));
+      Future<void> until(bool Function() ready) async {
+        for (var i = 0; i < 80 && !ready(); i++) {
+          await tester.pump(const Duration(milliseconds: 10));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
+        }
+        expect(ready(), isTrue);
+      }
+      await until(() => loader.loads.length == 1);
+      loader.loads.first.complete(_emptyTodayHubSnapshot());
+      await until(() => find.byType(TodayHubView).evaluate().isNotEmpty);
+      final stale = tester.widget<TodayHubView>(find.byType(TodayHubView)).actions;
+      await tester.runAsync(() => DriftOwnerGeneration(db).advance());
+      await until(() => loader.loads.length == 2);
+      expect(find.byType(TodayHubView), findsNothing);
+      await stale.openHistory();
+      await tester.pump();
+      expect(find.byType(LearningHistoryScreen), findsNothing);
+      loader.loads.last.complete(_emptyTodayHubSnapshot());
+      await until(() => find.byType(TodayHubView).evaluate().isNotEmpty);
+      await stale.openHistory();
+      await tester.pump();
+      expect(find.byType(LearningHistoryScreen), findsNothing);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(db.close);
+    }
+  });
+
+  testWidgets('S01-AA pending owner lookup cannot start Today loading after tab exit', (tester) async {
+    final owner = _DelayedNavigationOwnerIdentity()..blockAt = 1;
+    final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+    await tester.pumpWidget(_mainNavigationApp(const BuildFeatureRegistry.allEnabled(),
+      initialIndex: null, todayHub: loader, activeOwnerIdentities: owner,
+      includeCurrentActivityEvidence: false));
+    await tester.pump();
+    expect(owner.calls, 1);
+    expect(loader.calls, 0);
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
+    await tester.pumpAndSettle();
+    owner.block.complete('owner:main-navigation');
+    await tester.pumpAndSettle();
+    expect(loader.calls, 0);
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  });
+
+  testWidgets('S01-AA limited Today is available until its live kill switch', (tester) async {
+    final registry = RuntimeFeatureRegistry(const BuildFeatureRegistry.allEnabled(),
+      overrides: {Feature.dailyContinuity: FeatureState.limited});
+    addTearDown(registry.dispose);
+    final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+    await tester.pumpWidget(_mainNavigationApp(registry, initialIndex: null, todayHub: loader));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsOneWidget);
+    final actions = tester.widget<TodayHubView>(find.byType(TodayHubView)).actions;
+    registry.emergencyOff(Feature.dailyContinuity);
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsNothing);
+    expect(find.text('รายการวันนี้ยังไม่พร้อมใช้งาน'), findsOneWidget);
+    await actions.openHistory();
+    expect(find.byType(LearningHistoryScreen), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('today-unavailable-practice')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  });
+
+  testWidgets('S01-AA replaced Today generation cancels in-flight history', (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final owner = _DelayedNavigationOwnerIdentity();
+    const registry = BuildFeatureRegistry.allEnabled();
+    Widget app() => _mainNavigationApp(registry, initialIndex: null,
+      todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+      activeOwnerIdentities: owner, databaseOverride: db,
+      includeCurrentActivityEvidence: false);
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    final actions = tester.widget<TodayHubView>(find.byType(TodayHubView)).actions;
+    owner.blockAt = owner.calls + 2;
+    final pending = actions.openHistory();
+    await tester.pump();
+    expect(owner.calls, owner.blockAt);
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+    owner.block.complete('owner:main-navigation');
+    await pending;
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningHistoryScreen), findsNothing);
+    expect(find.byType(TodayHubView), findsOneWidget);
+  });
+
   for (final boundary in ['normal', 'stale-owner', 'disabled-quiz']) {
     testWidgets(
       'Today History packaged Pair replay owns route and practice boundary $boundary',
@@ -241,8 +567,8 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
         await tester.pumpAndSettle();
-        await _showLearnSecondary(tester, 'home/today');
-        await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+        await _showLearnSecondary(tester, 'home/learn/open-today');
+        await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
         await tester.pumpAndSettle();
         final historyButton = find.byKey(
           const ValueKey('today-hub-open-history'),
@@ -397,8 +723,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
       await tester.pumpAndSettle();
-      await _showLearnSecondary(tester, 'home/today');
-      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await _showLearnSecondary(tester, 'home/learn/open-today');
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
       await tester.pumpAndSettle();
       final review = find.byKey(
         const ValueKey<String>('today-hub-open-review'),
@@ -569,8 +895,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await _showLearnSecondary(tester, 'home/today');
-      await tester.tap(find.byKey(const ValueKey('home/today')));
+      await _showLearnSecondary(tester, 'home/learn/open-today');
+      await tester.tap(find.byKey(const ValueKey('home/learn/open-today')));
       await tester.pumpAndSettle();
       final screen = tester.widget<TodayHubScreen>(find.byType(TodayHubScreen));
       final planning = find.byKey(const ValueKey('today-hub-open-planning'));
@@ -620,7 +946,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       final starter = find.byKey(const ValueKey('learn-starter'));
-      final today = find.byKey(const ValueKey('home/today'));
+      final today = find.byKey(const ValueKey('home/learn/open-today'));
       expect(starter, findsOneWidget);
       expect(today, findsOneWidget);
       expect(
@@ -632,6 +958,51 @@ void main() {
         0,
         reason: 'Learning must not wait for the Today snapshot.',
       );
+    },
+  );
+  testWidgets('learning home names the return task and opens Today', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _mainNavigationApp(
+        const BuildFeatureRegistry.allEnabled(),
+        todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final today = find.byKey(const ValueKey('home/learn/open-today'));
+    expect(
+      find.descendant(of: today, matching: find.text('เรียนต่อหรือทบทวน')),
+      findsOneWidget,
+    );
+    await _showLearnSecondary(tester, 'home/learn/open-today');
+    await tester.tap(today);
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubScreen), findsOneWidget);
+  });
+  testWidgets(
+    'learning home keeps one quick start visible and reveals all practice modes on demand',
+    (tester) async {
+      await tester.pumpWidget(
+        _mainNavigationApp(const BuildFeatureRegistry.allEnabled()),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('learn-starter')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home/learn/quiz/cloze')), findsNothing);
+
+      final reveal = find.byKey(const ValueKey('learn-show-all-modes'));
+      expect(reveal, findsOneWidget);
+      await tester.ensureVisible(reveal);
+      await tester.tap(reveal);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('home/learn/quiz/cloze')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('home/learn/srs')), findsOneWidget);
     },
   );
   testWidgets(
@@ -648,7 +1019,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await _openProfileDestination(tester, 'home/mastery');
       await tester.pumpAndSettle();
       expect(find.text('ยังไม่มีข้อมูลการเรียน'), findsNothing);
       expect(find.text('ไม่สามารถอ่านข้อมูลในเครื่องได้'), findsNothing);
@@ -697,7 +1068,7 @@ void main() {
   );
 
   testWidgets(
-    'Task5 profile selects retained visible mastery and hides the callback on live removal',
+    'Task5 profile opens named mastery and returns to profile and hides the callback on live removal',
     (tester) async {
       final registry = RuntimeFeatureRegistry(
         const BuildFeatureRegistry.allEnabled(),
@@ -705,10 +1076,9 @@ void main() {
       addTearDown(registry.dispose);
       await tester.pumpWidget(_mainNavigationApp(registry));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await _openProfileDestination(tester, 'home/mastery');
       await tester.pumpAndSettle();
-      final masteryState = tester.state(find.byType(MasteryDashboardScreen));
-      await tester.tap(find.byKey(const ValueKey('home/profile')));
+      await tester.pageBack();
       await tester.pumpAndSettle();
       final button = find.byKey(const ValueKey('profile-open-mastery'));
       await tester.scrollUntilVisible(
@@ -738,21 +1108,9 @@ void main() {
       expect(button.hitTestable(), findsOneWidget);
       await tester.tap(button);
       await tester.pumpAndSettle();
-      expect(
-        tester.state(find.byType(MasteryDashboardScreen)),
-        same(masteryState),
-      );
-      expect(
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        2,
-      );
-      expect(
-        Navigator.of(
-          tester.element(find.byType(MasteryDashboardScreen)),
-        ).canPop(),
-        isFalse,
-      );
-      await tester.tap(find.byKey(const ValueKey('home/profile')));
+      expect(ModalRoute.of(tester.element(find.byType(MasteryDashboardScreen)))?.settings.name, 'home/mastery');
+      expect(Navigator.of(tester.element(find.byType(MasteryDashboardScreen))).canPop(), isTrue);
+      await tester.pageBack();
       await tester.pumpAndSettle();
       registry.emergencyOff(Feature.mastery);
       await tester.pumpAndSettle();
@@ -775,7 +1133,7 @@ void main() {
       addTearDown(registry.dispose);
       await tester.pumpWidget(_mainNavigationApp(registry));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/achievements')));
+      await _openProfileDestination(tester, 'home/achievements');
       await tester.pumpAndSettle();
       for (final entry in <(String, String, Feature)>[
         ('rewards-open-quests', 'rewards/quests', Feature.questV2),
@@ -820,23 +1178,23 @@ void main() {
       );
       final replacement = RuntimeFeatureRegistry(
         const BuildFeatureRegistry.allEnabled(),
-      )..emergencyOff(Feature.mastery);
+      )..emergencyOff(Feature.vocabulary);
       addTearDown(oldRegistry.dispose);
       addTearDown(replacement.dispose);
       await tester.pumpWidget(_mainNavigationApp(oldRegistry));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
       await tester.pumpAndSettle();
       await tester.pumpWidget(_mainNavigationApp(replacement));
       await tester.pumpAndSettle();
       expect(find.byType(ChooseModeScreen), findsOneWidget);
-      expect(find.byKey(const ValueKey('home/mastery')), findsNothing);
-      oldRegistry.emergencyOff(Feature.vocabulary);
+      expect(find.byKey(const ValueKey('home/vocabulary')), findsNothing);
+      oldRegistry.emergencyOff(Feature.quiz);
       await tester.pump();
-      expect(find.byKey(const ValueKey('home/vocabulary')), findsOneWidget);
-      replacement.clearOverride(Feature.mastery);
+      expect(find.byKey(const ValueKey('home/learn')), findsOneWidget);
+      replacement.clearOverride(Feature.vocabulary);
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('home/mastery')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home/vocabulary')), findsOneWidget);
       expect(find.byType(ChooseModeScreen), findsOneWidget);
     },
   );
@@ -918,7 +1276,7 @@ void main() {
       ]) {
         await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
         await tester.pumpAndSettle();
-        final target = find.byKey(ValueKey(entry.$1));
+        final target = find.byKey(ValueKey(entry.$1 == 'home/today' ? 'home/learn/open-today' : entry.$1));
         await tester.scrollUntilVisible(
           target,
           150,
@@ -956,11 +1314,11 @@ void main() {
     );
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      1,
+      2,
     );
   });
   testWidgets(
-    'five primary destinations retain tap semantics at 360px and 200 percent',
+    'four primary destinations retain tap semantics at 360px and 200 percent',
     (tester) async {
       tester.view.physicalSize = const Size(360, 800);
       tester.view.devicePixelRatio = 1;
@@ -972,9 +1330,18 @@ void main() {
           _mainNavigationApp(
             const BuildFeatureRegistry.allEnabled(),
             textScale: 2,
+            initialIndex: null,
+            todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
           ),
         );
         await tester.pumpAndSettle();
+        for (final id in NavigationGlossary.mainDestinationIds) {
+          final entry = NavigationGlossary.require(id);
+          tester.semantics.performAction(_bottomDestinationFinder(entry), SemanticsAction.tap);
+          await tester.pumpAndSettle();
+          expect(_bottomDestinationSemantics(entry).flagsCollection.isSelected, Tristate.isTrue);
+          expect(tester.takeException(), isNull, reason: id);
+        }
         final profile = NavigationGlossary.require('home/profile');
         tester.semantics.performAction(
           _bottomDestinationFinder(profile),
@@ -993,7 +1360,7 @@ void main() {
     },
   );
   testWidgets(
-    'primary navigation starts learning and uses five semantic destinations',
+    'explicit legacy zero starts practice within four semantic destinations',
     (tester) async {
       await tester.pumpWidget(
         _mainNavigationApp(const BuildFeatureRegistry.allEnabled()),
@@ -1006,17 +1373,16 @@ void main() {
             )
             .map((entry) => entry.key),
         [
+          const ValueKey('home/today'),
           const ValueKey('home/learn'),
           const ValueKey('home/vocabulary'),
-          const ValueKey('home/mastery'),
-          const ValueKey('home/achievements'),
           const ValueKey('home/profile'),
         ],
       );
       expect(find.byType(ChooseModeScreen), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        0,
+        1,
       );
     },
   );
@@ -1030,23 +1396,23 @@ void main() {
       addTearDown(registry.dispose);
       await tester.pumpWidget(_mainNavigationApp(registry));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
       await tester.pumpAndSettle();
-      registry.emergencyOff(Feature.mastery);
+      registry.emergencyOff(Feature.vocabulary);
       await tester.pumpAndSettle();
       expect(find.byType(ChooseModeScreen), findsOneWidget);
       expect(find.byType(ProductionFeatureUnavailable), findsNothing);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        0,
+        1,
       );
-      registry.clearOverride(Feature.mastery);
+      registry.clearOverride(Feature.vocabulary);
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('home/mastery')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home/vocabulary')), findsOneWidget);
       expect(find.byType(ChooseModeScreen), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        0,
+        1,
       );
     },
   );
@@ -1075,7 +1441,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final today = find.byKey(const ValueKey('home/today'));
+      final today = find.byKey(const ValueKey('home/learn/open-today'));
       await tester.ensureVisible(today);
       await tester.pumpAndSettle();
       await tester.tap(today);
@@ -1098,6 +1464,32 @@ void main() {
       );
     },
   );
+  testWidgets('ready local status keeps the header focused on the app', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _mainNavigationApp(
+        const BuildFeatureRegistry.allEnabled(),
+        runtimeStatusOverride: const AppRuntimeStatus(
+          localData: RuntimeAvailability.ready,
+          firebase: RuntimeAvailability.unavailable,
+          supabase: RuntimeAvailability.unavailable,
+          backends: RuntimeAvailability.unavailable,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('runtime-status-banner')))
+          .data,
+      'LexiQuest',
+    );
+    await tester.tap(find.byKey(const ValueKey('runtime-status-details')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('การเรียนในเครื่องยังใช้ได้'), findsOneWidget);
+  });
   testWidgets('system banner and menu respect the phone status inset', (
     tester,
   ) async {
@@ -1448,7 +1840,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('today-hub-resume-action')),
@@ -2033,14 +2425,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('home/learn/open-today')), findsNothing);
       expect(loader.calls, 0);
 
       await tester.pumpWidget(
         _mainNavigationApp(const BuildFeatureRegistry.allEnabled()),
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('home/learn/open-today')), findsNothing);
     },
   );
 
@@ -2055,7 +2447,7 @@ void main() {
       await tester.pumpWidget(_mainNavigationApp(features, todayHub: loader));
       await tester.pumpAndSettle();
 
-      final entry = find.byKey(const ValueKey<String>('home/today'));
+      final entry = find.byKey(const ValueKey<String>('home/learn/open-today'));
       expect(entry, findsOneWidget);
       expect(
         tester
@@ -2063,7 +2455,7 @@ void main() {
               find.byType(NavigationDestination),
             )
             .map((destination) => destination.label),
-        isNot(contains('วันนี้')),
+        contains('วันนี้'),
       );
 
       await tester.tap(entry);
@@ -2073,7 +2465,7 @@ void main() {
 
       features.emergencyOff(Feature.dailyContinuity);
       await tester.pump();
-      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('home/learn/open-today')), findsNothing);
       expect(find.byType(TodayHubScreen), findsNothing);
       expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
       expect(loader.calls, 1);
@@ -2104,7 +2496,7 @@ void main() {
           reason: 'missing $missing authority must fail closed',
         );
         expect(
-          find.byKey(const ValueKey<String>('home/today')),
+          find.byKey(const ValueKey<String>('home/learn/open-today')),
           findsNothing,
           reason: 'missing $missing authority must hide Today delivery',
         );
@@ -2143,9 +2535,10 @@ void main() {
       await tester.pumpAndSettle();
       final callsBeforeTodayAction = owner.getOrCreateCalls;
 
-      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/open-today')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('today-hub-resume-action')));
+      expect(find.byKey(const ValueKey('today-hub-resume-action')), findsNothing);
+      expect(find.byKey(const ValueKey('today-hub-retry')), findsOneWidget);
       await tester.pumpAndSettle();
 
       expect(
@@ -2192,7 +2585,7 @@ void main() {
           reason: '$missing must fail closed',
         );
         expect(
-          find.byKey(const ValueKey<String>('home/today')),
+          find.byKey(const ValueKey<String>('home/learn/open-today')),
           findsNothing,
           reason: '$missing must hide Today delivery',
         );
@@ -2202,7 +2595,7 @@ void main() {
   );
 
   testWidgets(
-    'all-enabled composition renders five destinations and opens secondary weakness',
+    'all-enabled composition renders four destinations and opens secondary weakness',
     (WidgetTester tester) async {
       await tester.pumpWidget(
         _mainNavigationApp(const BuildFeatureRegistry.allEnabled()),
@@ -2215,10 +2608,10 @@ void main() {
               find.byType(NavigationDestination),
             )
             .map((destination) => destination.label),
-        <String>['เรียน', 'คำศัพท์', 'ความก้าวหน้า', 'รางวัล', 'โปรไฟล์'],
+        <String>['วันนี้', 'ฝึก', 'คำศัพท์', 'ฉัน'],
       );
 
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await _openProfileDestination(tester, 'home/mastery');
       await tester.pumpAndSettle();
       expect(find.text('ภาพรวมการเรียน'), findsOneWidget);
 
@@ -2228,11 +2621,11 @@ void main() {
 
       await tester.pageBack();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('home/achievements')));
+      await _openProfileDestination(tester, 'home/achievements');
       await tester.pumpAndSettle();
       expect(find.text('ความสำเร็จ'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('home/profile')));
+      await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.byType(ProfileSettingsScreen), findsOneWidget);
     },
@@ -2249,10 +2642,9 @@ void main() {
         await tester.pumpAndSettle();
 
         const entryIds = <String>[
+          'home/today',
           'home/learn',
           'home/vocabulary',
-          'home/mastery',
-          'home/achievements',
           'home/profile',
         ];
         final destinations = tester
@@ -2274,7 +2666,7 @@ void main() {
         final learning = tester.widget<NavigationDestination>(
           find.byKey(const ValueKey<String>('home/learn')),
         );
-        expect(learning.label, 'เรียน');
+        expect(learning.label, 'ฝึก');
         expect((learning.icon as Icon).icon, Icons.school_outlined);
         expect((learning.selectedIcon! as Icon).icon, Icons.school);
 
@@ -2285,7 +2677,7 @@ void main() {
           expect(data.role, SemanticsRole.tab, reason: entry.id);
           expect(
             data.flagsCollection.isSelected == Tristate.isTrue,
-            index == 0,
+            index == 1,
             reason: entry.id,
           );
           expect(data.label, contains(entry.semanticsLabel), reason: entry.id);
@@ -2448,12 +2840,12 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey<String>('home/mastery')));
+    await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
     await tester.pump();
 
-    final masteryContext = tester.element(find.byType(MasteryDashboardScreen));
+    final masteryContext = tester.element(find.byType(CategoriesPage));
     expect(TickerMode.valuesOf(masteryContext).enabled, isTrue);
-    await tester.tap(find.byKey(const ValueKey<String>('home/vocabulary')));
+    await tester.tap(find.byKey(const ValueKey<String>('home/profile')));
     await tester.pump();
     expect(TickerMode.valuesOf(masteryContext).enabled, isFalse);
   });
@@ -2466,12 +2858,12 @@ void main() {
     );
     await tester.pumpWidget(_mainNavigationApp(registry));
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.byType(NavigationDestination), findsNWidgets(4));
 
-    registry.emergencyOff(Feature.mastery);
+    registry.emergencyOff(Feature.vocabulary);
     await tester.pump();
 
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
   testWidgets(
@@ -2483,16 +2875,16 @@ void main() {
       await tester.pumpWidget(_mainNavigationApp(registry));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await tester.tap(find.byKey(const ValueKey('home/profile')));
       await tester.pumpAndSettle();
-      final selectedState = tester.state(find.byType(MasteryDashboardScreen));
+      final selectedState = tester.state(find.byType(ProfileSettingsScreen));
 
       registry.emergencyOff(Feature.vocabulary);
       await tester.pump();
 
-      expect(find.byType(MasteryDashboardScreen), findsOneWidget);
+      expect(find.byType(ProfileSettingsScreen), findsOneWidget);
       expect(
-        tester.state(find.byType(MasteryDashboardScreen)),
+        tester.state(find.byType(ProfileSettingsScreen)),
         same(selectedState),
       );
     },
@@ -2507,15 +2899,15 @@ void main() {
       await tester.pumpWidget(_mainNavigationApp(registry));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
       await tester.pumpAndSettle();
-      expect(find.byType(MasteryDashboardScreen), findsOneWidget);
+      expect(find.byType(CategoriesPage), findsOneWidget);
 
-      registry.emergencyOff(Feature.mastery);
+      registry.emergencyOff(Feature.vocabulary);
       await tester.pump();
 
-      expect(find.byType(NavigationDestination), findsNWidgets(4));
-      expect(find.byType(MasteryDashboardScreen), findsNothing);
+      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.byType(CategoriesPage), findsNothing);
       expect(find.byType(ProductionFeatureUnavailable), findsNothing);
     },
   );
@@ -2538,7 +2930,7 @@ void main() {
       registry.emergencyOff(Feature.reading);
       await tester.pump();
 
-      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      expect(find.byType(NavigationDestination), findsNWidgets(3));
       expect(find.byType(ProductionFeatureUnavailable), findsNothing);
       expect(find.byType(ChooseModeScreen), findsNothing);
       expect(find.text('อ่านเชื่อมโยงความจำ'), findsNothing);
@@ -2547,14 +2939,14 @@ void main() {
   );
 
   testWidgets(
-    'missing or all-hidden registries keep a one-entry Profile shell',
+    'missing or all-hidden registries keep a truthful Today and Profile shell',
     (tester) async {
       await tester.pumpWidget(const MaterialApp(home: MainNavigationScreen()));
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(NavigationBar), findsNothing);
-      expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.text('รายการวันนี้ยังไม่พร้อมใช้งาน'), findsOneWidget);
       expect(find.byType(ChooseModeScreen), findsNothing);
 
       await tester.pumpWidget(
@@ -2567,13 +2959,13 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(NavigationBar), findsNothing);
-      expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.text('รายการวันนี้ยังไม่พร้อมใช้งาน'), findsOneWidget);
       expect(find.byType(ChooseModeScreen), findsNothing);
     },
   );
 
-  testWidgets('one-entry fallback automatically selects Profile', (
+  testWidgets('reduced shell retains Profile access', (
     tester,
   ) async {
     final registry = RuntimeFeatureRegistry(
@@ -2582,7 +2974,7 @@ void main() {
     await tester.pumpWidget(_mainNavigationApp(registry));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('home/mastery')));
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
     await tester.pumpAndSettle();
     for (final feature in <Feature>[
       Feature.vocabulary,
@@ -2600,7 +2992,7 @@ void main() {
 
     expect(find.byType(ProductionFeatureUnavailable), findsNothing);
     final profileFallback = find.byKey(
-      const ValueKey<String>('profile-fallback-destination'),
+      const ValueKey<String>('home/profile'),
     );
     expect(profileFallback, findsOneWidget);
 
@@ -2674,7 +3066,7 @@ void _expectSingleThaiDrawerAction(
 
 Widget _mainNavigationApp(
   FeatureRegistry registry, {
-  int initialIndex = 0,
+  int? initialIndex = 0,
   double textScale = 1,
   AppRuntimeStatus? runtimeStatusOverride,
   FeatureRegistry? dependencyFeatureRegistry,
@@ -2684,6 +3076,7 @@ Widget _mainNavigationApp(
   bool exposeDatabase = false,
   bool internalPairMatching = false,
   LearningHistoryUseCases? historyOverride,
+  DialogueMissionUseCases? dialogueOverride,
   LearningUseCases? learningOverride,
   VocabularyUseCases? vocabularyOverride,
   ReviewOwnerIdentityReader? activeOwnerIdentities,
@@ -2822,6 +3215,7 @@ Widget _mainNavigationApp(
     rewardAccounts: includeAdventure && includeRewardAccounts
         ? const _NavigationRewardAccounts()
         : null,
+    dialogueMissions: dialogueOverride,
     todayHub: todayHub,
     activeOwnerIdentities: includeActiveOwnerIdentities
         ? ownerIdentities
@@ -3642,4 +4036,25 @@ final class _NavigationAiTutor implements AiTutorController {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _DeferredNavigationTodayLoader implements TodayHubSnapshotLoader {
+  final loads = <Completer<TodayHubSnapshot>>[];
+  @override
+  Future<TodayHubSnapshot> load() {
+    final load = Completer<TodayHubSnapshot>();
+    loads.add(load);
+    return load.future;
+  }
+}
+
+final class _DelayedNavigationOwnerIdentity implements ReviewOwnerIdentityReader {
+  int calls = 0;
+  int? blockAt;
+  final block = Completer<String>();
+  @override
+  Future<String> requireSingleActiveOwnerId() {
+    calls++;
+    return calls == blockAt ? block.future : Future.value('owner:main-navigation');
+  }
 }

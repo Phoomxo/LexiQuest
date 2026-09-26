@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/cefr_practice_examples.dart';
@@ -922,6 +923,229 @@ void main() {
         expect(dueAfterRestart.questions.single.word.id, word.id);
       },
     );
+  }
+
+  for (final remembered in [true, false]) {
+    testWidgets('flashcard file reopen preserves self rating retry $remembered', (
+      tester,
+    ) async {
+      final directory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp('lexiquest-flashcard-part12-'),
+      ))!;
+      final file = File('${directory.path}/learning.sqlite');
+      var database = AppDatabase(NativeDatabase(file));
+      addTearDown(() async {
+        await database.close();
+        await directory.delete(recursive: true);
+      });
+      late LearningUseCases durableLearning;
+      late String ownerId;
+      late String wordId;
+      await tester.runAsync(() async {
+        final now = DateTime.utc(2026, 8, 25, 9);
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'flashcard-owner',
+          nowUtc: () => now,
+        );
+        final vocabulary = VocabularyUseCases(
+          owners: owners,
+          vocabulary: DriftVocabularyRepository(database),
+          generateId: () => 'flashcard-vocabulary-id',
+          nowUtc: () => now,
+        );
+        final category = await vocabulary.createCategory('Flashcards');
+        final word = await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: 'book',
+            meaning: 'หนังสือ',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A1',
+          ),
+        );
+        var nextId = 0;
+        var clock = now.subtract(const Duration(days: 2));
+        final learning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'flashcard-${++nextId}',
+          nowUtc: () => clock.add(Duration(milliseconds: nextId)),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-test'),
+        );
+        final seedSession = await learning.startQuiz();
+        await learning.recordEvidence(
+          sourceEvidenceId: 'attempt:flashcard-seed',
+          occurredAtUtc: clock,
+          sessionId: seedSession.id,
+          wordId: word.id,
+          promptMode: 'srsRecall',
+          isCorrect: true,
+          responseTimeMs: 200,
+          attemptNumber: 1,
+          evidenceContext: EvidenceContext.legacyCompatibility(
+            evidenceClass: EvidenceClass.independentRecall,
+            skillId: 'srs-recall',
+            hintLevel: 0,
+            contentRevision: 'built-in-v1',
+            engagementAllowed: true,
+          ),
+        );
+
+        clock = now;
+        durableLearning = learning;
+        ownerId = seedSession.ownerId!;
+        wordId = word.id;
+        await database.customStatement(
+          'CREATE TRIGGER part12_fail_answer BEFORE INSERT ON answer_attempts BEGIN SELECT RAISE(ABORT, "part12 prewrite failure"); END',
+        );
+      });
+      String? aiOwner = ownerId;
+      final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+      final controller = UnifiedLessonController(
+        learning: durableLearning,
+        adapter: const FlashcardModeAdapter(),
+      );
+      addTearDown(controller.dispose);
+      Future<void> until(bool Function() ready) async {
+        for (var i = 0; i < 400 && !ready(); i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 5)),
+          );
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        expect(
+          ready(),
+          isTrue,
+          reason: 'file-backed UI reaches expected state',
+        );
+      }
+
+      Map contextData() =>
+          jsonDecode(
+                (registry.snapshot()['context'] as List).singleWhere(
+                      (dynamic e) => e['id'] == 'flashcard/review-assistance',
+                    )['value']
+                    as String,
+              )
+              as Map;
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: controller,
+              builder: (_) => SrsFlashcardsScreen(
+                learning: durableLearning,
+                evidenceAdapter: CurrentActivityEvidenceAdapter(
+                  learning: durableLearning,
+                ),
+                modeAdapter: const FlashcardModeAdapter(),
+              ),
+            ),
+          ),
+        ),
+      );
+      final rating = find.byKey(
+        ValueKey(
+          remembered ? 'flashcard-remembered' : 'flashcard-not-remembered',
+        ),
+      );
+      await until(() => rating.evaluate().isNotEmpty);
+      final originalState = tester.state(find.byType(SrsFlashcardsScreen));
+      expect(contextData()['phase'], 'awaitingRecall');
+      await tester.tap(rating);
+      final retry = find.byKey(const ValueKey('current-evidence-retry'));
+      await until(() => retry.evaluate().isNotEmpty);
+      expect(contextData()['phase'], 'evidenceRetryRequired');
+      expect(controller.state.committedResponseCount, 0);
+      expect(rating, findsNothing);
+      await tester.runAsync(() async {
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+          reason: 'only seeded evidence exists after SQL abort',
+        );
+        await database.customStatement('DROP TRIGGER part12_fail_answer');
+      });
+      aiOwner = null;
+      registry.invalidateSession(preserveContext: true);
+      await tester.pump();
+      expect(registry.snapshot()['context'], isEmpty);
+      expect(
+        tester.state(find.byType(SrsFlashcardsScreen)),
+        same(originalState),
+      );
+      tester.widget<FilledButton>(retry).onPressed!();
+      await until(() => controller.state.committedResponseCount == 1);
+      var closed = false;
+      for (var i = 0; i < 100 && !closed; i++) {
+        await tester.runAsync(() async {
+          final attempts = await database.select(database.answerAttempts).get();
+          if (attempts.length == 2) {
+            final accepted = attempts.singleWhere(
+              (row) => row.id != 'attempt:flashcard-seed',
+            );
+            final sessions = await database
+                .select(database.learningSessions)
+                .get();
+            closed =
+                sessions
+                    .singleWhere((row) => row.id == accepted.sessionId)
+                    .state ==
+                'completed';
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        });
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      expect(
+        closed,
+        isTrue,
+        reason: 'manual retry closes actual review session',
+      );
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(() async {
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(2));
+        final accepted = attempts.singleWhere(
+          (row) => row.id != 'attempt:flashcard-seed',
+        );
+        expect(accepted.ownerId, ownerId);
+        expect(accepted.wordId, wordId);
+        expect(accepted.isCorrect, remembered);
+        expect(accepted.evidenceClass, EvidenceClass.independentRecall.name);
+        final sessions = await database.select(database.learningSessions).get();
+        expect(
+          sessions.singleWhere((row) => row.id == accepted.sessionId).state,
+          'completed',
+        );
+        final srs = (await database.select(database.srsStates).get()).single;
+        expect(srs.repetitions, remembered ? 2 : 0);
+        expect(srs.lapses, remembered ? 0 : 1);
+        Future<Map<String, Object?>> snapshot(AppDatabase db) async => {
+          for (final table in db.allTables)
+            table.actualTableName:
+                (await db
+                        .customSelect(
+                          'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+                        )
+                        .get())
+                    .map((row) => row.data)
+                    .toList(),
+        };
+        final before = await snapshot(database);
+        await database.close();
+        database = AppDatabase(NativeDatabase(file));
+        expect(
+          await snapshot(database),
+          before,
+          reason: 'all seeded fixture tables equal after real SQLite reopen',
+        );
+      });
+      expect(registry.snapshot()['actions'], isEmpty);
+      expect(tester.takeException(), isNull);
+    });
   }
 
   for (final locale in const [Locale('th'), Locale('en')]) {

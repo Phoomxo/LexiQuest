@@ -1,0 +1,21 @@
+{
+  "dispatchId": "ux-s01-n-20260924-26db",
+  "atUtc": "2026-09-24T07:34:31.122026+00:00",
+  "status": "SUCCESSOR_CLAIMED",
+  "successorClientThreadId": "client-new-thread:3165e64f-b364-41da-9a3d-2345dc344232",
+  "successorThreadId": "01a0d256-3f05-7950-a2be-d313ebad7e4f",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "manifestSha256": "2848ff454c801854262deca0417819134104f0a410b03d6f1160f9955f9b0366",
+  "archiveSha256": "f9614e346dc588e72ae12d05121785cdae3b2aa01c5a85e34678dced5aa435c7",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "routing": "Explicit current-model fallback, not Jev-selected; fresh billing/shared-spend/quota missing",
+  "runtimeTier": "Not exposed; Standard/default required; no claim of enforcement",
+  "writerReleased": true,
+  "createCount": 1,
+  "successorWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\3663\\LexiQuest",
+  "successorSourceReceipt": "C:/Users/Phet/.codex/worktrees/3663/LexiQuest/docs/development/ux-delivery/handoffs/S01-N-source-receipt.json",
+  "confirmedAtUtc": "2026-09-24T07:36:16.557887+00:00",
+  "discovery": "list_threads omitted fresh task; found exact dispatch source receipt via bounded filename discovery; no duplicate creation"
+}

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "result": "HOST_PASS",
+  "atUtc": "2026-09-24T08:15:49.126665+00:00",
+  "tests": 78,
+  "compatibilityChecks": 3,
+  "inputPins": {
+    "docs/design/lexiquest-full-ux.js": "6665a81aff8268e0667a14c94aa805ee3143f2d47451ef590e194dd4d9909b58",
+    "docs/design/check-s01-navigation.cjs": "427dc2c4fb136a341c81e812248adeb38c545eb0fbd8ae9dd7daa57c338e7a5a",
+    "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+    "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+    "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+    "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+    "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+    "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+  },
+  "notTested": [
+    "browser/visual",
+    "real keyboard/screen reader",
+    "native drawing/persistence",
+    "learning"
+  ],
+  "red": [
+    "build/ux-delivery/S01-U/red.log",
+    "build/ux-delivery/S01-U/review-confirmed-red.log",
+    "build/ux-delivery/S01-U/shared-action-red.log"
+  ],
+  "remainingRed": [],
+  "gateResultPath": "docs/development/ux-delivery/evidence/S01-U-gate.json",
+  "gateFingerprint": "a0050710e3b401c8587d99aa1e278edccd9289d8165457b889ed698c7f6a6887",
+  "selfReview": "Self-review only. Canvas replacement replay; owner/mode isolation; clear/retry; pointer ownership/cancel/lost capture/stale target; finite coordinates; typed alternative; shared story show-answer preserved.",
+  "recoveryNotes": [
+    "Review fixture corrected to render hint after input before inspecting HTML; assertions preserved.",
+    "Restored exact inherited test prefix and source CRLF after newline normalization; reran changed fingerprint."
+  ],
+  "confirmedRedCount": 6,
+  "newTests": 7,
+  "stderrReview": "Module initialization CLIXML progress only; stdout 78 pass, zero fail/skip plus 3 compatibility; stream hashes verified."
+}

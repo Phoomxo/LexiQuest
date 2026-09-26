@@ -6,6 +6,7 @@ Future<TimeOfDay?> showStudyTimePicker({
   required BuildContext context,
   required TimeOfDay initialTime,
   required String helpText,
+  ValueChanged<Route<dynamic>>? onPickerRoute,
 }) {
   // The Material input picker reserves a horizontal clock row plus dialog
   // padding. Use stacked fields before that minimum can clip a narrow route.
@@ -23,16 +24,26 @@ Future<TimeOfDay?> showStudyTimePicker({
       errorInvalidText: 'กรุณากรอกเวลาให้ถูกต้อง',
       cancelText: 'ยกเลิก',
       confirmText: 'ตกลง',
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
-      ),
+      builder: (context, child) {
+        final route = ModalRoute.of(context);
+        if (route != null) onPickerRoute?.call(route);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
   }
   return showDialog<TimeOfDay>(
     context: context,
-    builder: (_) =>
-        _StudyTimePickerDialog(initialTime: initialTime, helpText: helpText),
+    builder: (context) {
+      final route = ModalRoute.of(context);
+      if (route != null) onPickerRoute?.call(route);
+      return _StudyTimePickerDialog(
+        initialTime: initialTime,
+        helpText: helpText,
+      );
+    },
   );
 }
 

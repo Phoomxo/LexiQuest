@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "tests": 44,
+  "commands": [
+    {
+      "Name": "jev-review.tests.ps1",
+      "commandKey": "c2b2d70ac40f6bc89c03b7cd5320685a1e1dbf8892cbb877cca23085615eed80",
+      "fingerprint": "2efb4d79f372926b2e50a1bc105cb56410d5c2a69486c789012ed98a37769778",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T17:10:04.3260738+00:00",
+      "FinishedAt": "2026-09-23T17:10:05.9298924+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\c2b2d70ac40f-2efb4d79f372-6934f015\\jev-review.tests.ps1.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\c2b2d70ac40f-2efb4d79f372-6934f015\\jev-review.tests.ps1.stderr.log",
+      "postFingerprint": "2efb4d79f372926b2e50a1bc105cb56410d5c2a69486c789012ed98a37769778",
+      "StdoutHash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "StderrHash": "C4D832107F168D7EED415E531D128A35B61C0AA21E8143DE118AB89811272908"
+    }
+  ],
+  "dependencyClosure": {
+    "tool/experiments/jev_review/guard.py": "b50eacd8ca2df38bd74b7f22fca7ac50cbc01bcee09608448d196ace4e5b1abf",
+    "tool/experiments/jev_review/model_route.py": "858ac69c8634185577c60ff3515b61f5f0f2a67fa9272531e5e5ac0443d36c0d",
+    "tool/experiments/jev_review/pilot.py": "e0bbcadcbffd432cac7a4e3f80fd41c3430c338280652bf8d448e02faa543eaf",
+    "tool/experiments/jev_review/test_batches.py": "a61fa391e6c54b57c0f8ee16e2ec95e41f63819b04c2a339e5b0a62b1f1aa9e7",
+    "tool/experiments/jev_review/test_guard.py": "d7fdbb1b2aa0519947d4268009a35d19dd1a43325fa6ea1f5f68ac5c7b34683e",
+    "tool/experiments/jev_review/test_incidents.py": "9d8977d2c4aee9df7ea21cf1b0093fee09e4e01a6bc1258cd6730976b1e94d8e",
+    "tool/experiments/jev_review/test_migration.py": "92f63f22ca4d510bd228f553321ada0160ea17f8823cc7350edba09214b47b6e",
+    "tool/experiments/jev_review/test_model_route.py": "9b8299c875acf3a5e8d79329675c8e23f006fcfc66b9beb23b3b4b7caab1ca38",
+    "tool/experiments/jev_review/test_pilot.py": "8f8094cb39c95d17a437aa696ab0ab9801778bfb74b86583c30e1d2b011fb613",
+    "tool/cli/tests/jev-review.tests.ps1": "57fc7bd99aef4e1c99f9f6ad6c038e9913f275e96c26c1aa86d8cfb27acfa5b4",
+    "tool/cli/verify-scope.ps1": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+  },
+  "sourceFingerprint": "592b95e31940f33b3a50a9831adf72c908c51379c966fa39f6179b1dc5a0cc13",
+  "reusedAfterDocsOnlyEdits": true,
+  "closureCheck": "All Python modules/tests and CLI runner/verifier match passed receipt; README/state/handoff are not execution dependencies",
+  "redRuns": [
+    "42ecc40376cc-9369750b: migration missing; Windows fixture connections then corrected",
+    "c24bfd128af0-0053f2d3: purpose API absent and nonfinite expiry accepted",
+    "f3d4752d33fe-61d20496: incident/eligibility/fallback missing",
+    "7145a2469335-60dfa60a: migrated cache duplicate send",
+    "1383a997c886-32b0c5d2: CLI review purpose missing"
+  ]
+}

@@ -467,6 +467,7 @@ final class _FakeGateway implements AccountGateway {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
+    bool Function()? isCurrent,
   }) async {}
 
   @override

@@ -1175,6 +1175,113 @@ void main() {
     });
   }
 
+  for (final connection in ['absent', 'connected', 'disconnected']) {
+    testWidgets(
+      'standalone meaning quiz assistance preserves choice direction $connection',
+      (tester) async {
+        late String owner;
+        await tester.runAsync(() async {
+          owner = (await owners.getOrCreateActiveOwner()).id;
+          await _insertWord(
+            database,
+            ownerId: owner,
+            id: 'word-2',
+            spelling: 'airport',
+            meaning: 'สนามบิน',
+          );
+        });
+        String? aiOwner = owner;
+        final registry = MenuActionRegistry(currentOwner: () => aiOwner);
+        final app = MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const MeaningQuizModeAdapter(),
+          ),
+        );
+        await tester.pumpWidget(
+          connection == 'absent'
+              ? app
+              : MenuActionScope(registry: registry, child: app),
+        );
+        await _pumpUntilFound(tester, find.text('station'));
+        Map data() {
+          final entries = registry.snapshot()['context'] as List;
+          final entry = entries.singleWhere(
+            (dynamic e) => e['id'] == 'quiz/current-question-assistance',
+          );
+          return jsonDecode(entry['value'] as String) as Map;
+        }
+
+        if (connection != 'absent') {
+          expect(data()['promptLanguage'], 'en');
+          expect(data()['answerLanguage'], 'th');
+          expect(data()['responseKind'], 'choice');
+          expect(data()['questionNumber'], 1);
+          expect(data().toString(), isNot(contains('station')));
+        }
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('meaning-quiz-option-word-1-สถานี')),
+            )
+            .onPressed!();
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('meaning-quiz-next')),
+            )
+            .onPressed!();
+        final input = find.byKey(
+          const ValueKey('meaning-quiz-option-word-2-station'),
+        );
+        await _pumpUntilFound(tester, input);
+        final originalState = tester.state(find.byType(QuizScreen));
+        expect(find.byKey(const ValueKey('typed-recall-input')), findsNothing);
+        expect(tester.widget<FilledButton>(input).onPressed, isNotNull);
+        if (connection != 'absent') {
+          expect(data()['promptLanguage'], 'th');
+          expect(data()['answerLanguage'], 'en');
+          expect(data()['responseKind'], 'choice');
+          expect(data()['questionNumber'], 2);
+          expect(data()['phase'], 'awaitingAnswer');
+          expect(data().toString(), isNot(contains('airport')));
+          expect(registry.snapshot()['actions'], isEmpty);
+          aiOwner = 'different-owner';
+          expect(registry.snapshot()['context'], isEmpty);
+          aiOwner = owner;
+        }
+        if (connection == 'disconnected') {
+          aiOwner = null;
+          registry.invalidateSession(preserveContext: true);
+          await tester.pump();
+          expect(registry.snapshot()['context'], isEmpty);
+        }
+        expect(tester.state(find.byType(QuizScreen)), same(originalState));
+        expect(tester.widget<FilledButton>(input).onPressed, isNotNull);
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        tester.widget<FilledButton>(input).onPressed!();
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(2));
+        expect(attempts.map((a) => a.isCorrect), <bool>[true, false]);
+        expect(attempts.map((a) => a.ownerId).toSet(), <String>{owner});
+        expect(attempts.map((a) => a.promptMode), <String>[
+          'meaningChoice',
+          'wordChoice',
+        ]);
+        expect(await database.select(database.srsStates).get(), isEmpty);
+        expect(attempts.map((a) => a.evidenceClass).toSet(), <String>{
+          EvidenceClass.recognition.name,
+        });
+        if (connection == 'connected') expect(data()['phase'], 'answered');
+      },
+    );
+  }
+
   testWidgets('B05 typed recall waits for IME composition before evidence', (
     tester,
   ) async {

@@ -278,7 +278,7 @@ void main() {
     expect(find.byKey(_drawerButtonKey), findsOneWidget);
   });
 
-  testWidgets('field shell exposes all completed primary workspaces', (
+  testWidgets('field shell exposes only composed primary workspaces', (
     tester,
   ) async {
     await _pumpHome(tester);
@@ -293,11 +293,8 @@ void main() {
         .toList();
 
     expect(destinations.map((destination) => destination.label), <String>[
-      'เรียน',
-      'คำศัพท์',
-      'ความก้าวหน้า',
-      'รางวัล',
-      'โปรไฟล์',
+      'วันนี้',
+      'ฉัน',
     ]);
   });
 
@@ -307,23 +304,8 @@ void main() {
     await _pumpHome(tester);
 
     const destinations = <({String destinationKey, String? backingKey})>[
-      (
-        destinationKey: 'home/vocabulary',
-        backingKey: 'production-feature-view-vocabulary',
-      ),
-      (
-        destinationKey: 'home/learn',
-        backingKey: 'production-feature-view-learning',
-      ),
-      (
-        destinationKey: 'home/mastery',
-        backingKey: 'production-feature-view-mastery',
-      ),
-      (
-        destinationKey: 'home/achievements',
-        backingKey: 'production-feature-view-achievements',
-      ),
       (destinationKey: 'home/profile', backingKey: null),
+      (destinationKey: 'home/today', backingKey: 'today'),
     ];
 
     for (final destination in destinations) {
@@ -333,7 +315,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       if (destination.backingKey case final backingKey?) {
         expect(
-          find.byKey(ValueKey<String>(backingKey)),
+          backingKey == 'today'
+              ? find.text('รายการวันนี้ยังไม่พร้อมใช้งาน')
+              : find.byKey(ValueKey<String>(backingKey)),
           findsOneWidget,
           reason:
               '${destination.destinationKey} must select its exact backing '
@@ -368,42 +352,58 @@ void main() {
     expect(status.data, contains('การเรียนในเครื่องยังใช้ได้'));
   });
 
-  testWidgets('drawer vocabulary item keeps the category workspace selected', (
-    tester,
-  ) async {
-    await _pumpHome(tester);
-    await _openDrawer(tester);
+  testWidgets(
+    'drawer vocabulary missing dependency shows recoverable gate and preserves parent',
+    (tester) async {
+      await _pumpHome(tester);
+      await _openDrawer(tester);
 
-    final vocabularyTile = find.descendant(
-      of: find.byType(Drawer),
-      matching: find.widgetWithText(ListTile, 'คำศัพท์'),
-    );
-    await tester.scrollUntilVisible(
-      vocabularyTile,
-      150,
-      scrollable: find.descendant(
+      final vocabularyTile = find.descendant(
         of: find.byType(Drawer),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    expect(vocabularyTile, findsOneWidget);
-    await tester.tap(vocabularyTile);
-    await tester.pumpAndSettle();
+        matching: find.widgetWithText(ListTile, 'คำศัพท์'),
+      );
+      await tester.scrollUntilVisible(
+        vocabularyTile,
+        150,
+        scrollable: find.descendant(
+          of: find.byType(Drawer),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(vocabularyTile, findsOneWidget);
+      await tester.tap(vocabularyTile);
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('production-feature-view-vocabulary')),
-      findsOneWidget,
-    );
-    final unavailable = tester.widget<ProductionFeatureUnavailable>(
-      find.byType(ProductionFeatureUnavailable),
-    );
-    expect(unavailable.feature, Feature.vocabulary);
-    expect(
-      unavailable.reason,
-      ProductionFeatureUnavailableReason.missingDependency,
-    );
-    expect(find.byType(CategoriesPage), findsNothing);
-  });
+      expect(
+        find.byKey(
+          const ValueKey<String>('production-feature-view-vocabulary'),
+        ),
+        findsOneWidget,
+      );
+      final unavailable = tester.widget<ProductionFeatureUnavailable>(
+        find.byType(ProductionFeatureUnavailable),
+      );
+      expect(unavailable.feature, Feature.vocabulary);
+      expect(
+        unavailable.reason,
+        ProductionFeatureUnavailableReason.missingDependency,
+      );
+      expect(find.byType(CategoriesPage), findsNothing);
+      expect(
+        ModalRoute.of(
+          tester.element(find.byType(ProductionFeatureUnavailable)),
+        )?.settings.name,
+        'home/vocabulary',
+      );
+      await tester.tap(find.text('กลับหน้าก่อนหน้า'));
+      await tester.pumpAndSettle();
+      expect(find.text('รายการวันนี้ยังไม่พร้อมใช้งาน'), findsOneWidget);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        0,
+      );
+    },
+  );
 
   testWidgets('drawer settings item reaches SettingScreen', (tester) async {
     await _pumpHome(tester);
@@ -461,6 +461,31 @@ void main() {
           const ValueKey<String>('home/vocabulary'),
         );
         await _pumpUntilFound(tester, vocabularyDestination);
+        expect(
+          tester
+              .widgetList<NavigationDestination>(
+                find.byType(NavigationDestination),
+              )
+              .map((destination) => destination.label),
+          ['วันนี้', 'ฝึก', 'คำศัพท์', 'ฉัน'],
+        );
+        for (final key in ['home/learn', 'home/profile', 'home/today']) {
+          await tester.tap(find.byKey(ValueKey(key)));
+          await tester.pump(const Duration(milliseconds: 50));
+          expect(
+            tester
+                .widget<NavigationBar>(find.byType(NavigationBar))
+                .selectedIndex,
+            {'home/learn': 1, 'home/profile': 3, 'home/today': 0}[key],
+          );
+          if (key == 'home/profile')
+            expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+          if (key == 'home/learn')
+            expect(
+              find.byKey(const ValueKey('production-feature-view-learning')),
+              findsOneWidget,
+            );
+        }
         await tester.tap(vocabularyDestination);
         await tester.pump(const Duration(milliseconds: 50));
         await _pumpUntilFound(tester, find.byType(CategoriesPage));

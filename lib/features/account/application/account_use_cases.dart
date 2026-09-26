@@ -1,3 +1,4 @@
+import 'dart:async';
 import '../../identity/application/upgrade_guest_owner.dart';
 import '../../identity/domain/local_owner.dart';
 import '../../identity/domain/local_owner_repository.dart';
@@ -19,8 +20,15 @@ final class AccountUseCases {
   final UpgradeGuestOwner upgradeGuestOwner;
   final AppEntryStateStore entryState;
   final Future<void> Function()? onOwnerTransitionCommitted;
+  static final _logoutPending = Expando<bool>();
 
   AccountSession? get currentSession => gateway.currentSession;
+  Stream<AccountSession?> get sessionChanges {
+    final source = gateway;
+    return source is AccountSessionObserver
+        ? (source as AccountSessionObserver).sessionChanges
+        : const Stream<AccountSession?>.empty();
+  }
 
   Future<void> reconcileLocalOwner() async {
     final session = gateway.currentSession;
@@ -89,35 +97,136 @@ final class AccountUseCases {
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) => gateway.changePassword(
-    currentPassword: _password(currentPassword),
-    newPassword: _password(newPassword),
-  );
+    bool Function()? isCurrent,
+  }) {
+    if (isCurrent != null && !isCurrent()) {
+      throw const AccountException(AccountFailureCode.cancelled);
+    }
+    return gateway.changePassword(
+      currentPassword: _password(currentPassword),
+      newPassword: _password(newPassword),
+      isCurrent: isCurrent,
+    );
+  }
 
-  Future<OwnerUpgradeResult> signOutToLocalGuest() async {
+  Future<OwnerUpgradeResult> signOutToLocalGuest({
+    bool Function()? isCurrent,
+  }) async {
+    if (_logoutPending[gateway] == true) {
+      throw const AccountException(AccountFailureCode.cancelled);
+    }
+    _logoutPending[gateway] = true;
+    StreamSubscription<AccountSession?>? subscription;
+    try {
+      var sessionChanged = false;
+      var initial = true;
+      final startingUid = gateway.currentSession?.uid;
+      subscription = sessionChanges.listen(
+        (session) {
+          if (!initial || session?.uid != startingUid) sessionChanged = true;
+          initial = false;
+        },
+        onError: (Object _, StackTrace _) {
+          sessionChanged = true;
+        },
+      );
+      return await _signOutToLocalGuest(
+        isCurrent: isCurrent,
+        sessionUnchanged: () => !sessionChanged,
+      );
+    } finally {
+      _logoutPending[gateway] = false;
+      // Cancellation stops delivery immediately. Provider stream cleanup must
+      // not hold an already committed account transition open.
+      if (subscription != null) {
+        unawaited(
+          Future<void>.sync(subscription.cancel).catchError((Object _) {}),
+        );
+      }
+    }
+  }
+
+  Future<OwnerUpgradeResult> _signOutToLocalGuest({
+    bool Function()? isCurrent,
+    required bool Function() sessionUnchanged,
+  }) async {
+    final session = gateway.currentSession;
+    final identity = session?.sessionIdentity ?? session;
+    bool sameSession() {
+      final current = gateway.currentSession;
+      return sessionUnchanged() &&
+          current?.uid == session?.uid &&
+          (current?.sessionIdentity ?? current) == identity;
+    }
+
+    void admit() {
+      if (!(isCurrent?.call() ?? true) || !sameSession()) {
+        throw const AccountException(AccountFailureCode.cancelled);
+      }
+    }
+
+    admit();
     final previousEntry = await entryState.read();
-    await entryState.clear();
+    admit();
     LocalOwner? previous;
     OwnerUpgradeResult? guest;
     try {
+      await entryState.clear();
+      admit();
       previous = await owners.getOrCreateActiveOwner();
+      admit();
       guest = await upgradeGuestOwner.createLocalGuestAfterLogout(
         sourceOwnerId: previous.id,
+        isCurrent: () {
+          admit();
+          return true;
+        },
+        beforeCreate: () async {
+          admit();
+          final active = await owners.getOrCreateActiveOwner();
+          admit();
+          if (active.id != previous!.id) {
+            throw const AccountException(AccountFailureCode.cancelled);
+          }
+        },
       );
+      admit();
       await gateway.signOut();
     } catch (error, stackTrace) {
-      if (previous != null && guest != null) {
+      // Preserve canonical rollback only while the original provider session
+      // still owns this attempt. A committed sign-out or newer session is not
+      // reversible, even if the provider returned an error.
+      final canRestore = sameSession();
+      var restoreEntry = canRestore;
+      if (canRestore && previous != null && guest == null) {
+        try {
+          restoreEntry =
+              (await owners.getOrCreateActiveOwner()).id == previous.id;
+        } on Object {
+          restoreEntry = false;
+        }
+      }
+      if (canRestore && previous != null && guest != null) {
         try {
           await upgradeGuestOwner.rollbackLocalGuestLogout(
             previousOwnerId: previous.id,
             guestOwnerId: guest.targetOwnerId,
           );
         } catch (_) {
+          try {
+            restoreEntry =
+                (await owners.getOrCreateActiveOwner()).id ==
+                guest.targetOwnerId;
+          } on Object {
+            restoreEntry = false;
+          }
           // Continue restoring entry state and preserve the original failure.
         }
       }
       try {
-        await _restoreEntryState(previousEntry);
+        if (restoreEntry && sameSession()) {
+          await _restoreEntryState(previousEntry);
+        }
       } catch (_) {
         // Preserve the original failure after best-effort rollback.
       }
@@ -125,6 +234,15 @@ final class AccountUseCases {
       Error.throwWithStackTrace(error, stackTrace);
     }
     await _notifyOwnerTransitionCommitted();
+    if (session != null) {
+      final active = await owners.getOrCreateActiveOwner();
+      if (active.id != guest.targetOwnerId ||
+          (gateway.currentSession != null && !sameSession())) {
+        // Provider success is retained. A newer owner/session must not be
+        // represented as this attempt's guest or navigated away from.
+        throw const AccountException(AccountFailureCode.cancelled);
+      }
+    }
     return guest;
   }
 

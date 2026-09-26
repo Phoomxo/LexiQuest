@@ -1,0 +1,66 @@
+{
+  "taskId": "01a0cffe-6e5b-7e42-b135-1dad3feabff7",
+  "sourceFingerprint": "a2a3f7203d535439dd00e002effa418a7a90030aa66f24f486ed36ab72906a20",
+  "wholeScopeComplete": false,
+  "assertions": [
+    {
+      "id": "A26",
+      "groups": [
+        "W01",
+        "W04"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/managed_tutor_durable_lifecycle_test.dart"
+      ],
+      "proven": [
+        "Canonical durable lease/fence survives reopen, denies competing token before expiry, expires at exact boundary, stale renew fails, successor token/fence survives old release/endFence, correct release survives reopen.",
+        "Canonical DriftOwnerGeneration.advance during delayed connect/reply cancels transport, suppresses late reply, releases lease, permits explicit fresh connect/reply.",
+        "Same-owner account change, canonical owner change, ambiguous active owners suppress stale replies; ambiguous owner blocks connect until resolved.",
+        "New runtime after DB reopen starts disconnected/no transcript/no automatic transport; only explicit connect binds canonical account/owner. All fixture tables equal at specified before/after reopen boundaries."
+      ]
+    },
+    {
+      "id": "A27",
+      "groups": [
+        "W01",
+        "W02"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/optional_ai_w02_lifecycle_test.dart"
+      ],
+      "proven": [
+        "AriTestApp actual5main tabs preserve ready embedded AI, actualdrawer/settings navigation; guest app account password/logout actions absent.",
+        "Questionnaire draft47 survives explicit AI logout or full background/foreground; no automatic reconnect or draft save; manual save works while disconnected; explicit simulated auth/connect then lastConfirmed47; route reentry47; no reply calls."
+      ]
+    },
+    {
+      "id": "A28",
+      "groups": [
+        "W02"
+      ],
+      "tests": [
+        "test/features/ai_tutor/managed/optional_ai_account_applicability_test.dart"
+      ],
+      "proven": [
+        "App account absent/anonymous/authenticated visibility independent of optional AI attachment; AI detach does not change app session.",
+        "MCP logout never available; authenticated password action only available with AI identity, retained action rejected after detach.",
+        "Manual password dialog opens while AI off, cancel calls no account gateway method; no account or owner mutation."
+      ]
+    }
+  ],
+  "limits": [
+    "Only test source added; no reproduced product defect and no product fix/RED claim.",
+    "W01 uses real file-backed SQLite/gate/generation and controlled transport. Reopen is host database reopen, not abrupt native process death, provider request-ID persistence, live auth or live quota.",
+    "W01 all-table snapshots preserve fixture rows across reopen; most learner tables are empty. This is not a seeded full learner-data integrity matrix.",
+    "W02 composed AriTestApp uses actual bootstrap and file-backed DB with controlled HTTP. Navigation/route reentry, preferences save47 and lifecycle are host evidence; no database reopen or native execution in those two cases.",
+    "Account applicability uses absent/anonymous/authenticated synthetic app sessions and AI-owner attachment transitions. It proves visibility, manual-only logout, stale-action rejection and password-dialog cancel with zero gateway calls, not successful password change/logout/native account acceptance.",
+    "Native APK/source/baseline part09 unchanged and retained; no new device cycle, build or provider/Jev call. Whole W01/W02/R3-05 remains open."
+  ],
+  "next": [
+    "Move to W05-W14 and all14nested modes: start W05 learning exercises/games and W06 reading source/assertion/dependency audit using exact historical receipts. Reuse unchanged associative080 and representative mode evidence only when actual closure matches; entry navigation is not lesson acceptance.",
+    "W01 durable gate/runtime/reopen and W02 composed main/drawer/questionnaire/account applicability now bounded-proven A26-A28. Do not rerun unchanged11tests or part09 27tests. Native provider/account transitions, abrupt process death and full owner/learner data still pending; do not close entire workflows.",
+    "W03 exact boundary-map-r3-05-part09 remains authoritative. Delayed pre-admission owner-query/route combinations can be tested using existing repository boundaries; A20 notifier/A22 postcommit readback already proven, do not loop unchanged tests.",
+    "Keep215rows/4passed/211remaining exact IDs; noR3-06 until realR3-05 exit. Continue independent host/native despite unpaired provider/Jev pending. Fresh backup before every native cycle; preserve all backups/APKs/native originals."
+  ],
+  "review": "Sole coordinator reviewed new3testfiles; original1792source pins unchanged. W02 fixture-only lifecycle correction exact initial source hash reconstructed and compared; no skipped/disabled assertion. No subagents."
+}

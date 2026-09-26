@@ -28,15 +28,15 @@ final class NavigationGlossaryEntry {
 /// Canonical navigation/menu presentation entries keyed by stable IDs.
 abstract final class NavigationGlossary {
   static const Set<String> mainDestinationIds = <String>{
+    'home/today',
     'home/learn',
     'home/vocabulary',
-    'home/mastery',
-    'home/achievements',
     'home/profile',
   };
 
   static const Set<String> secondaryDestinationIds = <String>{
-    'home/today',
+    'home/mastery',
+    'home/achievements',
     'home/study-planning',
     'home/weakness',
   };
@@ -131,9 +131,9 @@ abstract final class NavigationGlossary {
     ),
     'home/learn': NavigationGlossaryEntry(
       id: 'home/learn',
-      fullThaiLabel: 'เรียน',
-      shortThaiLabel: 'เรียน',
-      semanticsLabel: 'เปิดหน้าเรียน',
+      fullThaiLabel: 'ฝึก',
+      shortThaiLabel: 'ฝึก',
+      semanticsLabel: 'เปิดหน้าฝึก',
       tooltip: 'เปิดกิจกรรมการเรียนรู้',
       icon: Icons.school_outlined,
       selectedIcon: Icons.school,
@@ -194,8 +194,8 @@ abstract final class NavigationGlossary {
     ),
     'home/profile': NavigationGlossaryEntry(
       id: 'home/profile',
-      fullThaiLabel: 'โปรไฟล์',
-      shortThaiLabel: 'โปรไฟล์',
+      fullThaiLabel: 'ฉัน',
+      shortThaiLabel: 'ฉัน',
       semanticsLabel: 'เปิดโปรไฟล์',
       tooltip: 'เปิดโปรไฟล์',
       icon: Icons.person_outlined,

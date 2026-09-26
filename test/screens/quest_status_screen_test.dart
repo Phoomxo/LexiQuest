@@ -20,6 +20,393 @@ import 'package:vocab_learning_app/screens/quest_status_screen.dart';
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
 
+  testWidgets(
+    'AG notification just after uncover does not duplicate reactivation read',
+    (tester) async {
+      final repo = _QuestRepositoryFake();
+      final quest = _useCases(repo);
+      addTearDown(quest.dispose);
+      final nav = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: nav,
+          home: QuestStatusScreen(quest: quest),
+        ),
+      );
+      await tester.pumpAndSettle();
+      nav.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('cover')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      nav.currentState!.pop();
+      await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 2);
+    },
+  );
+
+  testWidgets(
+    'AG initially inactive tab reads once after activation with replacement',
+    (tester) async {
+      final repo = _QuestRepositoryFake();
+      final nextRepo = _QuestRepositoryFake();
+      final quest = _useCases(repo);
+      final next = _useCases(nextRepo);
+      addTearDown(quest.dispose);
+      addTearDown(next.dispose);
+      Widget app(bool active, QuestUseCases q) => MaterialApp(
+        home: TickerMode(
+          enabled: active,
+          child: QuestStatusScreen(quest: q),
+        ),
+      );
+      await tester.pumpWidget(app(false, quest));
+      await tester.pumpAndSettle();
+      await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 0);
+      await tester.pumpWidget(app(true, next));
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 0);
+      expect(nextRepo.readCalls, 1);
+    },
+  );
+
+  for (final failOld in [false, true]) {
+    testWidgets(
+      'AG old completion after reactivation cannot release pending guard fail=$failOld',
+      (tester) async {
+        final old = Completer<List<QuestInstance>>();
+        final latest = Completer<List<QuestInstance>>();
+        final repo = _QuestRepositoryFake()..pending = old;
+        final quest = _useCases(repo);
+        addTearDown(quest.dispose);
+        Widget app(bool active) => MaterialApp(
+          home: TickerMode(
+            enabled: active,
+            child: QuestStatusScreen(quest: quest),
+          ),
+        );
+        await tester.pumpWidget(app(true));
+        await tester.pump();
+        await tester.pumpWidget(app(false));
+        repo.pending = latest;
+        await tester.pumpWidget(app(true));
+        await tester.pump();
+        expect(repo.readCalls, 2);
+        if (failOld) {
+          old.completeError(StateError('retired'));
+        } else {
+          old.complete([_instance(QuestInstanceState.active, 'retired')]);
+        }
+        await tester.pump();
+        await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+        await tester.pump();
+        expect(repo.readCalls, 2);
+        expect(find.text('กำลังทำ'), findsNothing);
+        repo.pending = null;
+        repo.instances = [_instance(QuestInstanceState.completed, 'fresh')];
+        latest.complete(const []);
+        await tester.pumpAndSettle();
+        expect(repo.readCalls, 3);
+        expect(find.text('สำเร็จแล้ว'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'AG retry is bounded and retired after immediate repeated failure',
+    (tester) async {
+      final repo = _QuestRepositoryFake()..failure = StateError('private');
+      final quest = _useCases(repo);
+      addTearDown(quest.dispose);
+      await tester.pumpWidget(
+        MaterialApp(home: QuestStatusScreen(quest: quest)),
+      );
+      await tester.pumpAndSettle();
+      final retry = tester
+          .widget<QuestStatusFailure>(find.byType(QuestStatusFailure))
+          .onRetry!;
+      retry();
+      retry();
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 2);
+      retry();
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 2, reason: 'old failed-view callback retired');
+      repo.failure = null;
+      await tester.tap(find.text('ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(find.byType(QuestStatusEmpty), findsOneWidget);
+      expect(repo.readCalls, 3);
+      expect(repo.lastLimit, 50);
+      expect(repo.mutations, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final retirement in [
+    'replacement',
+    'dispose',
+    'pop',
+    'covered',
+    'tab',
+  ]) {
+    testWidgets('AG stale retry cannot read after $retirement', (tester) async {
+      final repo = _QuestRepositoryFake()..failure = StateError('private');
+      final nextRepo = _QuestRepositoryFake();
+      final quest = _useCases(repo);
+      final nextQuest = _useCases(nextRepo);
+      addTearDown(quest.dispose);
+      addTearDown(nextQuest.dispose);
+      final nav = GlobalKey<NavigatorState>();
+      Widget page(QuestUseCases q, {bool active = true}) => TickerMode(
+        enabled: active,
+        child: QuestStatusScreen(key: const ValueKey('stable'), quest: q),
+      );
+      if (retirement == 'pop') {
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: nav,
+            home: const Scaffold(body: Text('parent')),
+          ),
+        );
+        nav.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => page(quest)),
+        );
+      } else {
+        await tester.pumpWidget(
+          MaterialApp(navigatorKey: nav, home: page(quest)),
+        );
+      }
+      await tester.pumpAndSettle();
+      final retry = tester
+          .widget<QuestStatusFailure>(find.byType(QuestStatusFailure))
+          .onRetry!;
+      switch (retirement) {
+        case 'replacement':
+          await tester.pumpWidget(
+            MaterialApp(navigatorKey: nav, home: page(nextQuest)),
+          );
+          await tester.pumpAndSettle();
+        case 'dispose':
+          await tester.pumpWidget(const SizedBox.shrink());
+        case 'pop':
+          nav.currentState!
+              .pop(); // callback must retire before exit animation/disposal
+        case 'covered':
+          nav.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+          await tester.pumpAndSettle();
+        case 'tab':
+          await tester.pumpWidget(
+            MaterialApp(navigatorKey: nav, home: page(quest, active: false)),
+          );
+          await tester.pumpAndSettle();
+      }
+      retry();
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 1);
+      expect(nextRepo.readCalls, retirement == 'replacement' ? 1 : 0);
+      expect(repo.mutations, 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets(
+    'AG durable notifications coalesce during a pending read then load fresh status',
+    (tester) async {
+      final pending = Completer<List<QuestInstance>>();
+      final repo = _QuestRepositoryFake()..pending = pending;
+      final quest = _useCases(repo);
+      addTearDown(quest.dispose);
+      await tester.pumpWidget(
+        MaterialApp(home: QuestStatusScreen(quest: quest)),
+      );
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      }
+      await tester.pump();
+      expect(
+        repo.readCalls,
+        1,
+        reason: 'notifications must not overlap the pending read',
+      );
+      repo.pending = null;
+      repo.instances = [_instance(QuestInstanceState.completed, 'fresh')];
+      final mutations =
+          repo.mutations; // scheduling above is the external durable authority
+      pending.complete([_instance(QuestInstanceState.active, 'old')]);
+      await tester.pumpAndSettle();
+      expect(
+        repo.readCalls,
+        2,
+        reason: 'one trailing read preserves notifications',
+      );
+      expect(find.text('สำเร็จแล้ว'), findsOneWidget);
+      expect(find.text('กำลังทำ'), findsNothing);
+      expect(repo.mutations, mutations, reason: 'UI performs reads only');
+    },
+  );
+
+  for (final hidden in ['tab', 'covered']) {
+    testWidgets('AG notification while $hidden waits for reactivation', (
+      tester,
+    ) async {
+      final repo = _QuestRepositoryFake();
+      final quest = _useCases(repo);
+      addTearDown(quest.dispose);
+      final nav = GlobalKey<NavigatorState>();
+      Widget app(bool active) => MaterialApp(
+        navigatorKey: nav,
+        home: TickerMode(
+          enabled: active,
+          child: QuestStatusScreen(quest: quest),
+        ),
+      );
+      await tester.pumpWidget(app(true));
+      await tester.pumpAndSettle();
+      if (hidden == 'tab') {
+        await tester.pumpWidget(app(false));
+      } else {
+        nav.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('cover')),
+          ),
+        );
+      }
+      await tester.pumpAndSettle();
+      await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 1);
+      repo.instances = [_instance(QuestInstanceState.completed, 'fresh')];
+      final mutations = repo.mutations;
+      if (hidden == 'tab') {
+        await tester.pumpWidget(app(true));
+      } else {
+        nav.currentState!.pop();
+      }
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 2);
+      expect(find.text('สำเร็จแล้ว'), findsOneWidget);
+      expect(repo.mutations, mutations);
+    });
+  }
+
+  testWidgets(
+    'AG late obsolete failure cannot trigger queued reads after replacement',
+    (tester) async {
+      final pending = Completer<List<QuestInstance>>();
+      final repo = _QuestRepositoryFake()..pending = pending;
+      final quest = _useCases(repo);
+      final nextRepo = _QuestRepositoryFake();
+      final next = _useCases(nextRepo);
+      addTearDown(quest.dispose);
+      addTearDown(next.dispose);
+      await tester.pumpWidget(
+        MaterialApp(home: QuestStatusScreen(quest: quest)),
+      );
+      await tester.pump();
+      await quest.refreshDaily(expectedOwnerId: 'owner-secret');
+      await tester.pumpWidget(
+        MaterialApp(home: QuestStatusScreen(quest: next)),
+      );
+      await tester.pumpAndSettle();
+      pending.completeError(StateError('retired'));
+      await tester.pumpAndSettle();
+      expect(repo.readCalls, 1);
+      expect(nextRepo.readCalls, 1);
+      expect(find.byType(QuestStatusEmpty), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'AG owner change during status read remains failed and read only',
+    (tester) async {
+      final pending = Completer<List<QuestInstance>>();
+      final repo = _QuestRepositoryFake()..pending = pending;
+      final owners = _OwnerFake();
+      final quest = QuestUseCases(
+        repository: repo,
+        owners: owners,
+        generateId: () => 'unused',
+        nowUtc: () => DateTime.utc(2026, 8, 11),
+        timezoneId: 'Asia/Bangkok',
+      );
+      addTearDown(quest.dispose);
+      await tester.pumpWidget(
+        MaterialApp(home: QuestStatusScreen(quest: quest)),
+      );
+      await tester.pump();
+      owners.current = LocalOwner(
+        id: 'other',
+        createdAtUtc: DateTime.utc(2026),
+      );
+      pending.complete([_instance(QuestInstanceState.active, 'old-owner')]);
+      await tester.pumpAndSettle();
+      expect(find.byType(QuestStatusFailure), findsOneWidget);
+      expect(find.text('กำลังทำ'), findsNothing);
+      expect(repo.mutations, 0);
+    },
+  );
+
+  testWidgets(
+    'AG Thai failure scrolls at 360px and 200 percent with semantic retry',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 220);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repo = _QuestRepositoryFake()
+        ..failure = StateError('private-error');
+      final quest = _useCases(repo);
+      addTearDown(quest.dispose);
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: QuestStatusScreen(quest: quest),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.text('ลองใหม่'));
+      expect(
+        tester.getSemantics(find.widgetWithText(FilledButton, 'ลองใหม่')),
+        matchesSemantics(
+          label: 'ลองใหม่',
+          isButton: true,
+          hasTapAction: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isFocusable: true,
+          hasFocusAction: true,
+        ),
+      );
+      expect(find.textContaining('private-error'), findsNothing);
+      repo.failure = null;
+      await tester.tap(find.text('ลองใหม่'));
+      await tester.pumpAndSettle();
+      expect(find.byType(QuestStatusEmpty), findsOneWidget);
+      semantics.dispose();
+    },
+  );
+
   testWidgets('visible quest page reloads Day2 after durable refresh completes', (
     tester,
   ) async {
@@ -409,8 +796,10 @@ final class _OwnerFake implements LocalOwnerRepository {
     createdAtUtc: DateTime.utc(2026, 8, 1),
   );
 
+  LocalOwner current = owner;
+
   @override
-  Future<LocalOwner> getOrCreateActiveOwner() async => owner;
+  Future<LocalOwner> getOrCreateActiveOwner() async => current;
 
   @override
   Future<LocalOwner> bindFirebaseUid(

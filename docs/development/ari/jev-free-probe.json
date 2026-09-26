@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-23",
+  "purpose": "User-authorized free-only Jev development-tool trial",
+  "endpoint": "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+  "model": "typesafe-ai/jev",
+  "input": "Synthetic test: all three unit tests passed. No test failed.",
+  "question": "Does the test report contain a failed test?",
+  "requestsSent": 1,
+  "httpStatus": 403,
+  "errorType": "customer_verification_required",
+  "result": "Gateway requires a valid credit card before servicing requests, including free credits. No model answer returned.",
+  "cardAdded": false,
+  "creditsPurchased": false,
+  "applicationIntegration": false,
+  "recovery": "Initial local credential decoding failed on trailing newline before network transmission; trimmed serialized encrypted value and sent one request. No credentials logged.",
+  "acceptance": "INITIAL_REQUEST_BLOCKED_THEN_FREE_SMOKE_PASSED",
+  "followUp": {
+    "authorization": "User requested retry after opening card form",
+    "httpStatus": 200,
+    "model": "typesafe-ai/jev",
+    "has_failure": 0.02,
+    "inputTokens": 290,
+    "outputTokens": 21,
+    "gatewayCostUsd": "0",
+    "marketCostUsd": "0.00001218",
+    "surchargeCostUsd": "0",
+    "generationId": "gen_01M37815KB0JTYKHFCDR7C77G8",
+    "result": "Actual Jev response received; billed cost reported as zero. One synthetic smoke case only, not development-workload acceptance or permanent-free assurance. Card form completion was user-controlled and not inspected."
+  }
+}

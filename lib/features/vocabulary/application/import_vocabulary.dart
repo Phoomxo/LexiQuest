@@ -32,6 +32,8 @@ final class ImportVocabulary {
     required String sourceName,
     bool Function()? isCancelled,
     String? expectedOwnerId,
+    int? expectedCategoryRevision,
+    void Function(PreparedVocabularyImport)? onPrepared,
   }) async {
     final cancellation = isCancelled ?? _neverCancelled;
     if (cancellation()) {
@@ -96,19 +98,23 @@ final class ImportVocabulary {
       }),
     );
 
+    final prepared = PreparedVocabularyImport(
+      importId: 'import:${_nextId()}',
+      ownerId: owner.id,
+      categoryId: canonicalCategoryId,
+      sourceName: canonicalSourceName,
+      sourceHash: sourceHash,
+      rows: preparedRows,
+      nowUtc: now,
+      requireActiveOwner: expectedOwnerId != null,
+      expectedCategoryRevision: expectedCategoryRevision,
+    );
+    onPrepared?.call(prepared);
     final result = await repository.persist(
-      PreparedVocabularyImport(
-        importId: 'import:${_nextId()}',
-        ownerId: owner.id,
-        categoryId: canonicalCategoryId,
-        sourceName: canonicalSourceName,
-        sourceHash: sourceHash,
-        rows: preparedRows,
-        nowUtc: now,
-      ),
+      prepared,
       isCancelled: cancellation,
     );
-    onLocalMutation?.call();
+    notifyCommittedVocabularyMutation(onLocalMutation);
     return result;
   }
 
@@ -133,6 +139,7 @@ final class ImportVocabulary {
       categoryId: categoryId,
     );
     if (stored == null ||
+        stored.importId != result.importId ||
         stored.accepted != result.accepted ||
         stored.duplicates != result.duplicates ||
         stored.rejected.length != result.rejected.length) {
@@ -144,7 +151,8 @@ final class ImportVocabulary {
         return false;
       }
     }
-    return true;
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    return currentOwner.id == expectedOwnerId;
   }
 
   String _nextId() {

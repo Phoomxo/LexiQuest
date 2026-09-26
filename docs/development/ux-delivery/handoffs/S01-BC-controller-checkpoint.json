@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-26T14:49:59.794924+00:00",
+  "dispatchId": "ux-s01-bc-20260926-0684",
+  "threadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\s01-bc-logout\\LexiQuest",
+  "branch": "feature/ux-s01-bc-logout-01a0de13",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "stateRevision": 115,
+  "status": "HOST_PASS",
+  "writerReleased": true,
+  "hostTests": 570,
+  "newCases": 46,
+  "remainingRed": [],
+  "runningProcesses": [],
+  "sprintAccepted": false,
+  "pending": [
+    "native/device/real restart",
+    "real keyboard/screen-reader/visual/user",
+    "learning/trial/release"
+  ],
+  "nextDispatch": null,
+  "successorCreated": false,
+  "cleanupPerformed": false,
+  "commitOrPushPerformed": false,
+  "sourceTransfer": "No new transfer ZIP. Preserve current checkout, inherited archives and exact inventory; controller owns backup/restore verification.",
+  "gates": [
+    {
+      "path": "build/ux-delivery/S01-BC/verified-core.json",
+      "sha256": "527356e3737c1e567079861755164a639563e7078658f2073ccad38259c255e5",
+      "status": "Passed",
+      "tests": 286,
+      "sourceFingerprint": "18321aaadf1536f8961a0c634101fb0cf119c22cfa7d074992535352042c2d69",
+      "streams": [
+        {
+          "path": "build/ux-delivery/S01-BC/verified-core-0.stdout.log",
+          "sha256": "db75b3be5bd6156c90fb2486df43b7f617ace697b03c4584c746e6977c5ef95d"
+        },
+        {
+          "path": "build/ux-delivery/S01-BC/verified-core-0.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "sourceArchive": "build/ux-delivery/S01-BC/verified-core-source.zip",
+      "sourceArchiveSha256": "61c57ee1ff9a4c2e5efc454f3e5170780caf225b59d4aebade04105ddbefd7a5",
+      "driftWarnings": 11
+    },
+    {
+      "path": "build/ux-delivery/S01-BC/verified-runtime.json",
+      "sha256": "15d55ea73d8a832e3bc637dcbd35d9560945c6257efb52cda2930f753abba4dc",
+      "status": "Passed",
+      "tests": 284,
+      "sourceFingerprint": "4d3f6566c09a133102c5879de5f82aab987a3667425d723eee312ae344d9b2a1",
+      "streams": [
+        {
+          "path": "build/ux-delivery/S01-BC/verified-runtime-0.stdout.log",
+          "sha256": "e705b6f4d9f868a6b4b7083e803cf67d5681f99c7851c453446c8bea6423871b"
+        },
+        {
+          "path": "build/ux-delivery/S01-BC/verified-runtime-0.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ],
+      "sourceArchive": "build/ux-delivery/S01-BC/verified-runtime-source.zip",
+      "sourceArchiveSha256": "61c57ee1ff9a4c2e5efc454f3e5170780caf225b59d4aebade04105ddbefd7a5",
+      "driftWarnings": 25
+    }
+  ],
+  "validation": "docs/development/ux-delivery/evidence/S01-BC-validation.json",
+  "backupInventory": "docs/development/ux-delivery/handoffs/S01-BC-backup-inventory.json",
+  "routing": "Astra/medium deterministic fallback; not Jev-selected; Standard/default requested; runtime tier unexposed",
+  "constraints": "No real services, deployment/research activation, Security workflow, Jev probes or budget/ledger/heartbeat changes."
+}

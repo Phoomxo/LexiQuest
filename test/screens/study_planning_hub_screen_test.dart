@@ -115,6 +115,7 @@ void main() {
         dependencies: _dependencies(database),
         child: const MaterialApp(
           home: MainNavigationScreen(
+            initialIndex: 0,
             featureRegistry: BuildFeatureRegistry.allEnabled(),
           ),
         ),
@@ -122,6 +123,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
+    await tester.pumpAndSettle();
     final entry = find.byKey(const ValueKey<String>('home/study-planning'));
     expect(entry, findsOneWidget);
     expect(
@@ -316,10 +319,15 @@ void main() {
       AppDependenciesScope(
         dependencies: _dependencies(database, features: registry),
         child: MaterialApp(
-          home: MainNavigationScreen(featureRegistry: registry),
+          home: MainNavigationScreen(
+            initialIndex: 0,
+            featureRegistry: registry,
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('home/study-planning')));
     await tester.pumpAndSettle();
@@ -349,10 +357,15 @@ void main() {
       AppDependenciesScope(
         dependencies: _dependencies(database, features: registry),
         child: MaterialApp(
-          home: MainNavigationScreen(featureRegistry: registry),
+          home: MainNavigationScreen(
+            initialIndex: 0,
+            featureRegistry: registry,
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey<String>('home/study-planning')));
     await tester.pumpAndSettle();
@@ -411,10 +424,15 @@ void main() {
           learningGoals: goals,
         ),
         child: MaterialApp(
-          home: MainNavigationScreen(featureRegistry: registry),
+          home: MainNavigationScreen(
+            initialIndex: 0,
+            featureRegistry: registry,
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('home/study-planning')));
     await tester.pumpAndSettle();
@@ -475,10 +493,15 @@ void main() {
           learningGoals: goals,
         ),
         child: MaterialApp(
-          home: MainNavigationScreen(featureRegistry: registry),
+          home: MainNavigationScreen(
+            initialIndex: 0,
+            featureRegistry: registry,
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('legacy-drawer-button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('home/study-planning')));
     await tester.pumpAndSettle();
@@ -508,6 +531,353 @@ void main() {
       hasLength(1),
     );
   });
+
+  for (final action in [
+    'open-catalog',
+    'open-goals',
+    'open-learning-preferences',
+    'open-plan',
+    'open-personal-sets',
+  ]) {
+    testWidgets('AO $action admits one child and returns to original parent', (
+      tester,
+    ) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final observer = _PushObserver();
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(database),
+          child: MaterialApp(
+            navigatorObservers: [observer],
+            home: const StudyPlanningHubScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final parent = tester.element(find.byType(StudyPlanningHubScreen));
+      final invoke = _planningAction(tester, action);
+      final before = observer.pushes;
+      invoke();
+      invoke();
+      await tester.pumpAndSettle();
+      expect(observer.pushes, before + 1);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(tester.element(find.byType(StudyPlanningHubScreen)), same(parent));
+      _planningAction(tester, action)();
+      await tester.pumpAndSettle();
+      expect(observer.pushes, before + 2);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final boundary in [
+    'tab',
+    'cover',
+    'inactive',
+    'dispose',
+    'pop',
+    'dependencies',
+  ]) {
+    testWidgets('AO detached parent callback is fenced after $boundary', (
+      tester,
+    ) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final observer = _PushObserver();
+      final navigator = GlobalKey<NavigatorState>();
+      var dependencies = _dependencies(database);
+      var active = true;
+      var show = true;
+      late StateSetter update;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return AppDependenciesScope(
+              dependencies: dependencies,
+              child: MaterialApp(
+                navigatorKey: navigator,
+                navigatorObservers: [observer],
+                home: const Scaffold(body: Text('root')),
+              ),
+            );
+          },
+        ),
+      );
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => StatefulBuilder(
+            builder: (context, setState) {
+              if (boundary == 'tab' || boundary == 'dispose') update = setState;
+              return TickerMode(
+                enabled: active,
+                child: show ? const StudyPlanningHubScreen() : const Scaffold(),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final stale = _planningAction(tester, 'open-catalog');
+      switch (boundary) {
+        case 'tab':
+          update(() => active = false);
+          await tester.pumpAndSettle();
+        case 'dispose':
+          update(() => show = false);
+          await tester.pumpAndSettle();
+        case 'cover':
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+          await tester.pumpAndSettle();
+        case 'pop':
+          navigator.currentState!.pop();
+        case 'inactive':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.inactive,
+          );
+          await tester.pump();
+        case 'dependencies':
+          update(() => dependencies = _dependencies(database));
+          await tester.pumpAndSettle();
+      }
+      final before = observer.pushes;
+      stale();
+      await tester.pumpAndSettle();
+      expect(observer.pushes, before);
+      expect(tester.takeException(), isNull);
+      if (boundary == 'inactive') {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        stale();
+        await tester.pumpAndSettle();
+        expect(observer.pushes, before);
+        _planningAction(tester, 'open-catalog')();
+        await tester.pumpAndSettle();
+        expect(observer.pushes, before + 1);
+      }
+    });
+  }
+
+  for (final (action, screen) in [
+    ('open-catalog', LearningPackCatalogScreen),
+    ('open-goals', LearningGoalsScreen),
+    ('open-learning-preferences', LearningPreferenceQuizScreen),
+  ]) {
+    testWidgets(
+      'AO $action child follows replacement registry and stays usable',
+      (tester) async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final old = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.allEnabled(),
+        );
+        final replacement = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.allEnabled(),
+        );
+        addTearDown(old.dispose);
+        addTearDown(replacement.dispose);
+        var dependencies = _dependencies(database, features: old);
+        late StateSetter update;
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              update = setState;
+              return AppDependenciesScope(
+                dependencies: dependencies,
+                child: const MaterialApp(home: StudyPlanningHubScreen()),
+              );
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+        _planningAction(tester, action)();
+        await tester.pumpAndSettle();
+        expect(find.byType(screen), findsOneWidget);
+        replacement.emergencyOff(Feature.studyPlanning);
+        update(
+          () => dependencies = _dependencies(database, features: replacement),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(screen), findsNothing);
+        expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+        replacement.setOverride(Feature.studyPlanning, FeatureState.enabled);
+        await tester.pumpAndSettle();
+        expect(find.byType(screen), findsOneWidget);
+        old.emergencyOff(Feature.studyPlanning);
+        await tester.pumpAndSettle();
+        expect(find.byType(screen), findsOneWidget);
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(StudyPlanningHubScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'AO real Drift goal child remains editable after single parent admission',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final goals = await _realGoalUseCases(database);
+      final goal = await goals.create(
+        kind: LearningGoalKind.languageTest,
+        title: 'Planning lifetime goal',
+        deadlineAtUtc: DateTime.utc(2026, 9, 1, 5),
+        timezone: const LearningGoalTimezoneContext(
+          timezoneId: 'Asia/Bangkok',
+          utcOffsetMinutes: 420,
+        ),
+      );
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(database, learningGoals: goals),
+          child: const MaterialApp(home: StudyPlanningHubScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final open = _planningAction(tester, 'open-goals');
+      open();
+      open();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(LearningGoalsScreen, skipOffstage: false),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(ValueKey('learning-goal/${goal.id}/status')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('สำเร็จแล้ว').last);
+      await tester.pumpAndSettle();
+      final row = await database.select(database.learningGoals).getSingle();
+      expect(row.status, 'completed');
+      expect(row.localRevision, 2);
+      expect(
+        (await database.select(database.outboxOperations).get()).where(
+          (r) => r.entityType == 'learningGoal',
+        ),
+        hasLength(2),
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(StudyPlanningHubScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('AO compact Thai controls and semantic action retain one route', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final semantics = tester.ensureSemantics();
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    try {
+      final observer = _PushObserver();
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(database),
+          child: MaterialApp(
+            navigatorObservers: [observer],
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const StudyPlanningHubScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final id in NavigationGlossary.studyPlanningActionIds) {
+        final action = find.byKey(ValueKey(id));
+        await tester.ensureVisible(action);
+        await tester.pumpAndSettle();
+        _expectSingleThaiGlossaryAction(action: action, entryId: id);
+        expect(tester.takeException(), isNull);
+      }
+      final action = find.byKey(const ValueKey('study-planning/open-catalog'));
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
+      final button = tester.widget<FilledButton>(action).onPressed!;
+      final semantic = find
+          .ancestor(of: action, matching: find.byType(Semantics))
+          .evaluate()
+          .map((e) => e.widget)
+          .whereType<Semantics>()
+          .firstWhere((w) => w.properties.onTap != null)
+          .properties
+          .onTap!;
+      button();
+      semantic();
+      _planningAction(tester, 'open-goals')();
+      await tester.pumpAndSettle();
+      expect(observer.pushes, 2);
+      expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  for (final action in [
+    'open-catalog',
+    'open-goals',
+    'open-learning-preferences',
+  ]) {
+    testWidgets('AO $action child rebuild survives removed parent', (
+      tester,
+    ) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final navigator = GlobalKey<NavigatorState>();
+      var dependencies = _dependencies(database);
+      late StateSetter update;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (_, setState) {
+            update = setState;
+            return AppDependenciesScope(
+              dependencies: dependencies,
+              child: MaterialApp(
+                navigatorKey: navigator,
+                home: const Scaffold(body: Text('root')),
+              ),
+            );
+          },
+        ),
+      );
+      final parentRoute = MaterialPageRoute<void>(
+        builder: (_) => const StudyPlanningHubScreen(),
+      );
+      navigator.currentState!.push(parentRoute);
+      await tester.pumpAndSettle();
+      _planningAction(tester, action)();
+      await tester.pumpAndSettle();
+      navigator.currentState!.removeRoute(parentRoute);
+      await tester.pumpAndSettle();
+      update(() => dependencies = _dependencies(database));
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(StudyPlanningHubScreen, skipOffstage: false),
+        findsNothing,
+      );
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('root'), findsOneWidget);
+    });
+  }
 }
 
 void _expectSingleThaiGlossaryAction({
@@ -769,4 +1139,20 @@ final class _GuestSession implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
       const GuestSessionStarted(uid: 'study-planning');
+}
+
+MenuAction _planningAction(WidgetTester tester, String action) => tester
+    .widget<MenuActionBinding>(
+      find.byWidgetPredicate(
+        (w) => w is MenuActionBinding && w.id == 'study-planning/$action',
+      ),
+    )
+    .onInvoke!;
+
+class _PushObserver extends NavigatorObserver {
+  int pushes = 0;
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushes++;
+  }
 }

@@ -1,0 +1,31 @@
+{
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "status": "COMPLETE_PART_ONLY_APPLICATION_RELEASED",
+  "atUtc": "2026-09-23T20:28:10.988564+00:00",
+  "adoption": {
+    "source": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+    "executionRevision": 36,
+    "checkpointRevision": 164,
+    "verifiedPins": 1790,
+    "sourceFingerprint": "33fcf94b6b902063347e71728f61b602fa02b8dd24822f3db7113ce71b412202",
+    "ackBeforeWrites": true,
+    "backupEntryHashesVerified": [
+      160,
+      76
+    ],
+    "jevLedgerUnchanged": true
+  },
+  "defect": "R3-05-QUEUED-LOGIN-001",
+  "red": "10 failures:8 stale bridge requests and2 setState-after-dispose",
+  "fix": "Capture existing screen epoch at queue admission; check mounted/epoch before execution; set busy immediately to prevent duplicate queued requests",
+  "productFiles": [
+    "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart"
+  ],
+  "host": "22 screen tests pass including18new; optional composed5 running",
+  "next": "Queued login/status cancellation and actual standalone route-cover/background active completions now bounded-proven. Next inspect file-backed ManagedTutorRuntime/DriftOwnerOperationGate lease persistence/reopen, canonical owner generation and explicit fresh connection;existing in-memory lease test is not full durable evidence. Do not repeat unchanged27tests. Questionnaire/main/drawer connection/lifecycle and account-control applicability/fixture remain. Reuse settings results under real dependency closure;native account controls absent earlier. Use boundary-map-r3-05-part09.json;postcommit/notifiercoverage is established. Delayed pre-admission owner-query/route combinations remain bounded gaps,not a reason to recertify A20/A22. Then W05-W14/all14nestedmodes. Keep215rows/4passed/211remaining IDs;noR3-06untilrealR3-05exit. Providerunpaired/Jevpending does not block independenthost/native.",
+  "remainingCriterionIds": "Unchanged211; no whole W01 or R3-05 acceptance",
+  "ownedJobs": [],
+  "provider": "UNPAIRED; no live calls",
+  "jev": "DETERMINISTIC_FALLBACK; no calls/cost; runtime tier not exposed",
+  "receipt": "receipt-r3-05-part09.json"
+}

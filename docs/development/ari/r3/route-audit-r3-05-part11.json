@@ -1,0 +1,156 @@
+{
+  "taskId": "01a0d00c-89c3-72c0-8ba1-b198c5aeaaaa",
+  "sourceFingerprint": "21ef7436ed2a535de27d5f9a078c7f75d0ae581bd044cefb44e57076772bacbb",
+  "assertions": [
+    {
+      "id": "A29",
+      "groups": [
+        "W06",
+        "cefr-reading"
+      ],
+      "proven": [
+        "7existing CEFR host/library cases revalidated for absent/connected/disconnected/retry. Library screen-only completion creates no graded evidence; context owner guard/read-only actions; in-flight disconnect retains learner completion.",
+        "2new file-backed cases: blocked prewrite disconnect or one prewrite failure/retry produce exactly1 exposure attempt for actual loaded completed session; same widget survives; all fixture tables preserved at reopen; exact command replay inserted=false and all tables unchanged."
+      ],
+      "tests": [
+        "test/features/learning/unified_lesson_controller_test.dart"
+      ],
+      "limits": [
+        "New CEFR tests use real file-backed SQLite and composed production loader/host/reader with existing blocking/fail-before-write repository wrapper. Complete snapshot equality across reopen and duplicate exact command is bounded to seeded fixture; many learner tables empty; not abrupt native process death.",
+        "CEFR fixture seeds an initial session; actual NativeVocabularyLessonModeLoader opens another. Accepted attempt must belong to rendered session which is completed; seed session remains active with zero attempts. This is not a configured CEFR session end-to-end eligibility audit."
+      ]
+    },
+    {
+      "id": "A30",
+      "groups": [
+        "W05",
+        "typed-recall"
+      ],
+      "proven": [
+        "3mixed typed-recall cases: direction changes en/th choice to th/en typed, draft survives detach, foreign AI owner hides context, manual answers persist exactly2attempts."
+      ],
+      "tests": [
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "limits": [
+        "Quiz assistance cases use mixed typed-recall route; English-to-Thai choice leg is not standalone meaning-quiz route acceptance. Speaking/shadowing need independent inspection and physical evidence; no new native/audio/camera/provider claims."
+      ]
+    },
+    {
+      "id": "A31",
+      "groups": [
+        "W05",
+        "definition-quiz",
+        "cloze"
+      ],
+      "proven": [
+        "8cases: definition3connection states + unreviewed skip; cloze3connection states + skip. Manual wrong/typed/selected evidence and no-fabricated-progress skip, exact2answers and completed sessions; hidden drafts/answers before learner response; context detached on owner/route changes."
+      ],
+      "tests": [
+        "test/screens/definition_quiz_screen_test.dart",
+        "test/screens/fill_in_the_blanks_screen_test.dart"
+      ]
+    },
+    {
+      "id": "A32",
+      "groups": [
+        "W06",
+        "associative-reading"
+      ],
+      "proven": [
+        "3connection variants traverse6stage assistance; partial recall retained on detach; stage4reattach; no target/privatecue/sentence exposure; one manual recall command, no AI actions, owner/dispose clears context; compact connected viewport reachable."
+      ],
+      "tests": [
+        "test/screens/associative_reading_session_screen_test.dart"
+      ],
+      "limits": [
+        "Ordered repository fixture; not completion durability or native080 rerun."
+      ]
+    },
+    {
+      "id": "A33",
+      "groups": [
+        "W05",
+        "flashcard",
+        "handwriting-scratchpad"
+      ],
+      "proven": [
+        "3flashcard variants: assisted reveal persists exposure, preserves seeded SRS schedule, shared progress1, no retrospective self-rating, owner hidden; new use-case object still reads original in-memory DB.",
+        "3scratchpad variants: typed draft/stroke survives detach, self-check leaves all fixture tables equal, no private text/context actions, foreign owner hidden, disposal clears strokes."
+      ],
+      "tests": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "limits": [
+        "Flashcard offline restart test rebuilds LearningUseCases over same in-memory database; not file reopen. Associative assistance uses ordered repository fixture; no new associative durability or native080 recertification."
+      ]
+    },
+    {
+      "id": "A34",
+      "groups": [
+        "W05",
+        "matching"
+      ],
+      "proven": [
+        "6Pair result variants across3connection states and result-read fault/retry: four canonical attempts, same controller, owner-bound result, no AI mutation.",
+        "10actual-host tests include parent gate checkpoint, background timer, History replay, repair/review and replay. Repair projection3/4first,1/2repair,3independent1assisted,4matched2stars survives detach/reattach. Practice replay fresh controller/session,3000ms,one current result,16table learning-side-effect snapshot unchanged."
+      ],
+      "tests": [
+        "test/features/learning/pair_matching/pair_matching_experience_host_test.dart"
+      ]
+    },
+    {
+      "id": "A35",
+      "groups": [
+        "W05",
+        "dictation",
+        "word-scramble",
+        "sentence-scramble"
+      ],
+      "proven": [
+        "6dictation variants3connections x correct/wrong and6scramble variants3connections x word/sentence revalidated with actual composed mode widgets, controlled repository prewrite gate, no early feedback, retained UI and committed evidence."
+      ],
+      "tests": [
+        "test/features/learning/unified_lesson_controller_test.dart"
+      ],
+      "limits": [
+        "No physical audio intelligibility, provider reply or file reopen."
+      ]
+    },
+    {
+      "id": "A36",
+      "groups": [
+        "W05",
+        "W06"
+      ],
+      "proven": [
+        "1controller/shell test loops4legacy registrations, blocks evidence write, detaches AI, accepts exactly1manual attempt; duplicate submission same result/one repository call; explicit context reattachment shows committed feedback."
+      ],
+      "tests": [
+        "test/features/learning/unified_lesson_controller_test.dart"
+      ],
+      "limits": [
+        "Cross-adapter single test iterates only four buildLegacyLessonModeRegistry registrations: associative-reading,meaning-quiz,flashcard,typed-recall. It is controller/shell evidence with placeholder exercise, NOT14mode UI acceptance."
+      ]
+    }
+  ],
+  "historicalAudit": "historical-audit-r3-05-part11.json",
+  "historicalConclusion": "18receipt originals/commands/logs inspected; all recorded closures include changed menu_action_registry;additional broad-area differences vary by receipt. OriginalPASS retained, no current-native recertification. Boundedhost selections freshly revalidated.",
+  "limits": [
+    "Test-only change; no product defect, product RED or fix claimed. Two new cases plus56 current-source revalidations=58 unique; no repeated passed current fingerprint.",
+    "All connection variants use registry owner state, not live provider or actual authentication. No native action/build this part; part09 APK/restore preserved.",
+    "New CEFR tests use real file-backed SQLite and composed production loader/host/reader with existing blocking/fail-before-write repository wrapper. Complete snapshot equality across reopen and duplicate exact command is bounded to seeded fixture; many learner tables empty; not abrupt native process death.",
+    "CEFR fixture seeds an initial session; actual NativeVocabularyLessonModeLoader opens another. Accepted attempt must belong to rendered session which is completed; seed session remains active with zero attempts. This is not a configured CEFR session end-to-end eligibility audit.",
+    "Cross-adapter single test iterates only four buildLegacyLessonModeRegistry registrations: associative-reading,meaning-quiz,flashcard,typed-recall. It is controller/shell evidence with placeholder exercise, NOT14mode UI acceptance.",
+    "Flashcard offline restart test rebuilds LearningUseCases over same in-memory database; not file reopen. Associative assistance uses ordered repository fixture; no new associative durability or native080 recertification.",
+    "Quiz assistance cases use mixed typed-recall route; English-to-Thai choice leg is not standalone meaning-quiz route acceptance. Speaking/shadowing need independent inspection and physical evidence; no new native/audio/camera/provider claims."
+  ],
+  "next": [
+    "Continue W05 remaining real gaps: standalone meaning-quiz route directions/input continuity (mixed typed leg does not prove it); flashcard self-rating/retry and file-backed restart; pair active-board/wrong-repair native applicability. Audit latest relevant receipts before any rerun. Do not repeat passed58cases for unchanged source.",
+    "Inspect speaking/shadowing independent host evidence041/042 and concrete physical prerequisites; then W07-W14 source/assertion/dependency audit. All14mode map remains open; entry navigation is not lesson acceptance. W06 configured-session eligibility/reopen and seeded learner-data matrix remain distinct from A29.",
+    "W01/W02 boundedA26-A28 done but native/provider/realaccount/abrupt-process-death open. W03 boundary-map part09 authoritative; delayed preadmission cases require real repository boundary. Do not repeat A20/A22 or part09/10 passed gates.",
+    "Keep215matrix rows/4passed/211remaining exact IDs. NoR3-06 until actualR3-05 exit. Provider last UNPAIRED; native no actions inpart11. Future native cycle requires fresh transport and backup before every cycle; preserve all old backups/APKs."
+  ],
+  "wholeScopeComplete": false
+}

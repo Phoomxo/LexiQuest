@@ -19,6 +19,19 @@ class QuestStatusScreen extends StatefulWidget {
 class _QuestStatusScreenState extends State<QuestStatusScreen> {
   QuestUseCases? _quest;
   Future<List<QuestStatusEntry>>? _load;
+  var _generation = 0;
+  var _active = false;
+  var _pending = false;
+  var _refreshQueued = false;
+  var _routeExited = false;
+
+  bool get _visible =>
+      !_routeExited &&
+      TickerMode.valuesOf(context).enabled &&
+      ModalRoute.of(context)?.isCurrent != false;
+
+  bool _current(int generation) =>
+      mounted && !_routeExited && generation == _generation;
 
   @override
   void didChangeDependencies() {
@@ -32,56 +45,112 @@ class _QuestStatusScreenState extends State<QuestStatusScreen> {
     _bindQuest(widget.quest ?? AppDependenciesScope.maybeOf(context)?.quest);
   }
 
+  void _retireRead() {
+    _generation++;
+    _load = null;
+    _pending = false;
+    _refreshQueued = false;
+  }
+
   void _bindQuest(QuestUseCases? quest) {
-    if (identical(quest, _quest)) return;
-    _quest?.removeStatusListener(_refreshStatus);
-    _quest = quest;
-    _quest?.addStatusListener(_refreshStatus);
-    _load = quest?.loadStatusForCurrentOwner(limit: 50);
-    _load?.ignore();
+    final changed = !identical(quest, _quest);
+    if (changed) {
+      _quest?.removeStatusListener(_refreshStatus);
+      _quest = quest;
+      if (!_routeExited) _quest?.addStatusListener(_refreshStatus);
+    }
+    final active = _visible;
+    if (changed || active != _active) {
+      _retireRead();
+      _active = active;
+      if (active) _startRead();
+    }
+  }
+
+  void _startRead() {
+    final quest = _quest;
+    if (quest == null) return;
+    final generation = ++_generation;
+    _pending = true;
+    _refreshQueued = false;
+    _load = Future<List<QuestStatusEntry>>.sync(
+      () => quest.loadStatusForCurrentOwner(limit: 50),
+    );
+    // Attach immediately: a retry may fail before FutureBuilder's next frame.
+    _load!.then<void>(
+      (_) => _readFinished(generation),
+      onError: (Object _, StackTrace __) => _readFinished(generation),
+    );
+  }
+
+  void _readFinished(int generation) {
+    if (!_current(generation)) return;
+    _pending = false;
+    // Keep one trailing read for durable notifications received while pending.
+    // Retired reads cannot start work on a replacement authority or hidden page.
+    if (_refreshQueued && _visible) setState(_startRead);
   }
 
   void _refreshStatus() {
-    if (mounted) _retry();
+    if (!mounted || _routeExited) return;
+    if (!_visible || _pending) {
+      _refreshQueued = true;
+      return;
+    }
+    setState(_startRead);
+  }
+
+  void _retry(int generation) {
+    if (!_current(generation) || !_active || _pending || !_visible) return;
+    setState(_startRead);
+  }
+
+  void _exit() {
+    _routeExited = true;
+    _quest?.removeStatusListener(_refreshStatus);
+    _retireRead();
   }
 
   @override
   void dispose() {
-    _quest?.removeStatusListener(_refreshStatus);
+    _exit();
     super.dispose();
-  }
-
-  void _retry() {
-    final next = _quest?.loadStatusForCurrentOwner(limit: 50);
-    next?.ignore();
-    setState(() {
-      _load = next;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     final load = _load;
-    return Scaffold(
-      appBar: AppBar(title: const Text('ภารกิจการเรียน')),
-      body: load == null
-          ? const QuestStatusUnavailable()
-          : FutureBuilder<List<QuestStatusEntry>>(
-              future: load,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const QuestStatusLoading();
-                }
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return QuestStatusFailure(onRetry: _retry);
-                }
-                final instances = snapshot.data!;
-                if (instances.isEmpty) {
-                  return const QuestStatusEmpty();
-                }
-                return _QuestStatusList(instances: instances);
-              },
-            ),
+    final generation = _generation;
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_routeExited) setState(_exit);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ภารกิจการเรียน')),
+        body: !_active || _routeExited
+            ? const SizedBox.shrink()
+            : load == null
+            ? const QuestStatusUnavailable()
+            : FutureBuilder<List<QuestStatusEntry>>(
+                key: ValueKey(generation),
+                future: load,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const QuestStatusLoading();
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return QuestStatusFailure(
+                      onRetry: () => _retry(generation),
+                    );
+                  }
+                  final instances = snapshot.data!;
+                  if (instances.isEmpty) {
+                    return const QuestStatusEmpty();
+                  }
+                  return _QuestStatusList(instances: instances);
+                },
+              ),
+      ),
     );
   }
 }
@@ -112,12 +181,15 @@ class QuestStatusFailure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('โหลดสถานะภารกิจไม่สำเร็จ'),
+            Semantics(
+              header: true,
+              child: const Text('โหลดสถานะภารกิจไม่สำเร็จ'),
+            ),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
               FilledButton(onPressed: onRetry, child: const Text('ลองใหม่')),

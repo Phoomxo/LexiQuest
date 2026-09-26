@@ -1,0 +1,15 @@
+{
+  "dispatchId": "ux-s01-ai-20260924-85c8",
+  "atUtc": "2026-09-24T14:14:56.551340+00:00",
+  "taskId": "01a0d3c3-92d7-7de1-8757-43af319c4220",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\85c8\\LexiQuest",
+  "destinationRoot": "C:\\Users\\Phet\\.codex\\worktrees\\06be\\LexiQuest",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "1904a9155c30701b248e9487e555bcb8f09778098c3b93f9d21a9e624d258087",
+  "archiveSha256": "ace7a383ba3068fe685dd5508cc3fcf4cf3b74eb3bf44284c84e18030da3b785",
+  "overlayFingerprintSha256": "69b96c6e909a32166e93f1c63ff31e757d3d2b6189377a4745da977e06af8e3b",
+  "entries": 912,
+  "verifiedFiles": 912,
+  "status": "PASS",
+  "verification": "raw paths, containment, casefold uniqueness, exact ZIP membership/CRC, every size/hash/deletion; original archives/media/evidence preserved; predecessor untouched"
+}

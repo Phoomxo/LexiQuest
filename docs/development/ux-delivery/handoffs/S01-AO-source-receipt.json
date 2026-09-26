@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T16:39:54.427862+00:00",
+  "threadId": "01a0d447-f4c3-7ef3-8e8b-f06de3190950",
+  "dispatchId": "ux-s01-ao-20260924-419c",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\419c\\LexiQuest",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\3b5c\\LexiQuest",
+  "branch": "feature/ux-s01-ao-3b5c",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "7b904e85b90362c90631b1536986496cbdf5ade2c9d2e6d015902d2a6ba702a0",
+  "archiveSha256": "0a876687d0ef2ef676f7a8c4c9bcfccbe1b81564c45579041fd530d7c5655f61",
+  "overlayFingerprintSha256": "8eaa6367813564fc650bdf468532388e6f06ed76d5d8d99d14db8ed327bf541c",
+  "pinsVerified": 1672,
+  "exactMembershipCrcRawPathsContainmentCasefoldBytesHashesDeletions": "PASS",
+  "predecessorUntouched": true,
+  "allOriginalArchivesPreserved": true
+}

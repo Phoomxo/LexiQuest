@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T21:02:24.125996+00:00",
+  "scope": "All twelve groups reassessed after AW by current source pins/deltas and bounded host evidence; external acceptance remains pending.",
+  "groups": [
+    {
+      "id": "UX01",
+      "sourcePins": {
+        "lib/screens/main_navigation_screen.dart": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34",
+        "lib/screens/today_hub_screen.dart": "d06175d7a27b5aaa8ef6d1c76169bb7a48eb544ba57c98710ee1103a0ba370c9",
+        "lib/screens/profile_settings_screen.dart": "2cd56d6db640f192c67ecfdd8b97a17f308e655713004e00e7a17717bc79cc6c",
+        "lib/runtime/production_feature_gate.dart": "ff5d1e7b56b8616a5a6d4e22b67aeb2f170a1fb8e166a3272cf7adb1acc18523"
+      },
+      "assessment": "AN profile recovery/private identity HOST_PASS: 387 scoped tests, 19 new, 9 confirmed RED resolved. Read-only retry, canonical owner/account matching, standalone identity isolation and navigation/lifecycle fencing preserve compact axes. Native/visual/user pending.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX02",
+      "sourcePins": {
+        "lib/screens/phonetic_explorer_screen.dart": "35b64328a3a794c23957e693f886284fe19caee59cffe2f54c99fecc953f4249",
+        "lib/features/learning/domain/lesson_mode.dart": "f21ed9821f8a38e28b7837ee8b4fb2a5ca008afb67b10a8b88bf76395667a30f",
+        "docs/development/ux-delivery/instructional-evidence-contract-v1.md": "d05d8628230794104d019a64d8d1a358177d5f8c2c41510e527cb3faddabeed3"
+      },
+      "assessment": "Existing explorer/lesson authorities inventoried; proposed Z interface unchanged. New instructional units require qualified content/media and trial evidence.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX03",
+      "sourcePins": {
+        "lib/screens/local_reading_library_screen.dart": "ad729a455a4cb7bbfac57925a47bce57463e8a5f4a0a318a6ee3bc9fbfb3b9f2",
+        "lib/screens/associative_reading_session_screen.dart": "c02b9338b6d585bfd8376b3964030be4ebad993915365e2df1e26749053afadc",
+        "lib/screens/cefr_vocabulary_catalog_screen.dart": "24ba34d376b8e5198e26fd3507049441132f5cee6c7f2a688ecbe66b32550a7d",
+        "lib/screens/cefr_vocabulary_detail_screen.dart": "d96b468c1dec6f0e1eeaeadd1aad22b8223f955dd8ed04598f9b6915f354167b"
+      },
+      "assessment": "AU explicit CEFR import recovery HOST_PASS495 scoped tests,30 new. Owned category picker/read/owner/route/tab/lifecycle/dependency lifetime, transaction rollback before commit decision and truthful acknowledgement preserve all lexical/content/rights/legacy identities. Native/user/trial pending.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX04",
+      "sourcePins": {
+        "lib/screens/categories_page.dart": "a198a036640ef4a8ab53c495493df50ad5e60faec1b5fbe04ca5a9b5bac26118",
+        "lib/screens/review_center_screen.dart": "66241aaf4ae5f2e91f89a65bd40a92b569aaac530a662c89c5995f8090e76320",
+        "lib/screens/cefr_vocabulary_catalog_screen.dart": "24ba34d376b8e5198e26fd3507049441132f5cee6c7f2a688ecbe66b32550a7d",
+        "lib/screens/cefr_vocabulary_detail_screen.dart": "d96b468c1dec6f0e1eeaeadd1aad22b8223f955dd8ed04598f9b6915f354167b",
+        "lib/features/vocabulary/application/cefr_catalog_import.dart": "6eb756e17c19fe7d77f131685817158d44a87bd47ae4add1cbc9a6f7735b6d1a",
+        "lib/features/vocabulary/application/vocabulary_use_cases.dart": "b28ba1b190d24d92c7c9665a08fe7de13d3af9d0139642651702947b0c07e1d3",
+        "lib/features/vocabulary/domain/vocabulary_repository.dart": "3894741986321d1dc91c7d1fe8486530fb60d5bcb5974f2dad168ea76db539f3",
+        "lib/features/vocabulary/data/drift_vocabulary_repository.dart": "199b169639a27e1a2750efb34dc75dedb537ccd8db5a2213b4df6cf07f1fc076",
+        "lib/screens/vocab_list_screen.dart": "15ab83274645982441ecb277eb4055f49e711f98d9e35213f463354a5aeaf1a5",
+        "lib/screens/vocabulary_browse_lifetime.dart": "ec87703cbb7df633009407946004e638413ce6313e25d96e57cd99e4e48da222"
+      },
+      "assessment": "AW explicit category add/delete recovery HOST_PASS503,31 new. Canonical owner and owned-dialog lifetime, native early-save admission, partial draft/read retry, truthful acknowledgement and read-only committed reconciliation preserve existing vocabulary authorities. Optional transaction admission rolls category/word tombstones/outbox back before commit decision; no new data/content authority. Native/device/restart/user/trial/release remain pending. Existing explicit word-delete lifetime is the next source hypothesis.",
+      "sourceDelta": [
+        {
+          "path": "lib/screens/categories_page.dart",
+          "before": "acedb865e7df0a27fb3194f28a6d14fc11c0cd9b56d921ebf5c1751f9e28cdfa",
+          "after": "a198a036640ef4a8ab53c495493df50ad5e60faec1b5fbe04ca5a9b5bac26118"
+        },
+        {
+          "path": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+          "before": "b3199fe9ab67ec9cea6651acd68dcce6e4f33eda5ea81301e65a99ee475d197c",
+          "after": "b28ba1b190d24d92c7c9665a08fe7de13d3af9d0139642651702947b0c07e1d3"
+        },
+        {
+          "path": "lib/features/vocabulary/domain/vocabulary_repository.dart",
+          "before": "66d7016001cb5212e45ae673616fdaa6912c54391921327dfbb9a00bf3db9366",
+          "after": "3894741986321d1dc91c7d1fe8486530fb60d5bcb5974f2dad168ea76db539f3"
+        },
+        {
+          "path": "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
+          "before": "b16fd540d6ea701e1b8517b0ccbe9d081d8a59a1a831c708976f71f99af87320",
+          "after": "199b169639a27e1a2750efb34dc75dedb537ccd8db5a2213b4df6cf07f1fc076"
+        }
+      ]
+    },
+    {
+      "id": "UX05",
+      "sourcePins": {
+        "lib/screens/sentence_scramble_screen.dart": "63a07e948d83fe6855910a1e21a30aa26d455b97adf9f76a8118687e7eeff373",
+        "lib/features/learning/presentation/handwriting_scratchpad.dart": "b54705fcd3974da7144edf49baf5e6e3b3edf7358db5f12c752e95a355bb2987"
+      },
+      "assessment": "Existing writing/scramble authorities preserved. New rubric/12-form instructional coverage remains gated; no new source defect selected in this bounded inventory.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX06",
+      "sourcePins": {
+        "lib/screens/dictation_quiz_screen.dart": "186251f52619b91ac7e6c85fcf3f98f52f6f2f76788aae25992adec7b0816445",
+        "lib/screens/shadowing_challenge_screen.dart": "eb28b4b0350eaa7cbacd975ce2371ef59b55b30c44cf4814f93e31c2fa40880e"
+      },
+      "assessment": "Existing voice routes remain reachable. Native permissions/media/recognition and qualified oral evidence remain separate prerequisites.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX07",
+      "sourcePins": {
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart": "6739e22a22d2b66bca8ce37da732797e82d9e306aa4bf3e4f65ff370c5983672",
+        "lib/features/adventure/presentation/dialogue_mission_screen.dart": "ed9a75ac7e5b70864a1592b026809b512334c1f0d699e2e967932fc1f3ac45f9"
+      },
+      "assessment": "Existing missions/owner/content boundaries preserved. Saved-mission unavailable copy is included in AB, with no scoring/session-policy expansion. AB Thai recovery now HOST_PASS; native/user pending.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX08",
+      "sourcePins": {
+        "lib/screens/study_planning_hub_screen.dart": "4c4fc33b3af52520b47f8f462cd130c9c5051df497177ce218d2cf47a463fce0",
+        "lib/screens/mastery_dashboard_screen.dart": "f7c526e4e8db598077ca6111a55b58ee1db662b720635f3887c277388c326a7a",
+        "lib/screens/quest_status_screen.dart": "a95d8f434c15360caaf97c4b1c7ef1568fa3530413114dcf0556644bc1e1d47f",
+        "lib/screens/shop_page.dart": "3e17fdcc091409b16f23b82935c6df0a03330e4ae465f47f2fa1abf0b7aedc2a",
+        "lib/screens/achievements_screen.dart": "342b2692c965ec77b9ccebf1e40901562004af94400638853d1900955093a40d",
+        "lib/screens/avatar_equipment_screen.dart": "b3a2c5c2d2419c2e40199b77c5dfb683536b5b5cb2c8163b888115311bbb54e9",
+        "lib/screens/learning_preference_quiz_screen.dart": "4b36bd5f80923c920caa06e1db1c9f63f6c51d283c780cde1a906844c14ebf38",
+        "lib/screens/learning_goals_screen.dart": "9ad7a19d89e09b572818dcc3b89c4a18df9936a44c79d0f02817ca898812d90e",
+        "lib/features/goals/application/learning_goal_use_cases.dart": "dda1496cf55b7c20e966f281aa8a3e4e96aced85db934d21698bb663750dbc24",
+        "lib/features/goals/data/drift_learning_goal_repository.dart": "9e04f2be83851e2a68953677a0c74537dfb8e796a0a751fce273525ad1fde005",
+        "lib/screens/study_reminder_settings_screen.dart": "5871dda9273f08d467ebbb33d147235a9eefa3304b7cb17dc0e6544d6837336f",
+        "lib/features/reminders/application/study_reminder_use_cases.dart": "339df505459238abfe9338f08b8d4e6c1b78b523b94f28e444c8e84dfe8b1193",
+        "lib/features/reminders/data/drift_study_reminder_repository.dart": "8695c6abf016ebdd277f719caa03cee641ebe767ada41407bc9afa50d96e3357",
+        "lib/widgets/local_study_datetime_field.dart": "6b2623969e9388f3336d1ed89cd00834e3a4cfd915f5ae1d44b7b886eab47730",
+        "lib/widgets/study_time_picker.dart": "d501e0637defb58883b9726d348424f8495cf2a2125675c29424727d6ba8286e",
+        "lib/screens/learning_calendar_screen.dart": "ea03759de9825261ba7f044298989976fcbbfd1960cf9c56eac3441932f12474",
+        "lib/screens/learning_pack_catalog_screen.dart": "cf096085058b730d5db783ae3fa24096342ba2fb7b08b9d1d6bcc15e349223d6",
+        "lib/screens/learning_pack_detail_screen.dart": "b311f4d4b170e14a521f7c3951b32a48016fe7551a1a45c132f27947cc44a021",
+        "lib/features/learning_packs/application/learning_pack_use_cases.dart": "41917ffaeb03d646db22910b5eec2da07133bb5a9ba142aae664558ff6c00dde",
+        "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart": "c121639c95c22c1a3f04c2d0bb965941cf2a5bf43af596bb13e31a3ea787cd88"
+      },
+      "assessment": "AR bookmark/unsave/report canonical owner and transaction lifetime HOST_PASS 547 scoped tests,28 new,21 original-source RED resolved. Atomic rollback before commit decision, truthful unknown acknowledgement and explicit idempotent retry. Existing content/progress meanings retained; external acceptance pending.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX09",
+      "sourcePins": {
+        "lib/screens/object_scanner_screen.dart": "0a4f878df7c5575351d63e354d54698b4ce3bf1cec01321f7f21323d069de02e"
+      },
+      "assessment": "Scanner authority retained. Real device/held-out/rights acceptance stays pending; no new model/provider work selected.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX10",
+      "sourcePins": {
+        "lib/screens/ai_tutor_screen.dart": "4bbd26bc0c9e3b5fea616795b5bd3d2a95e2040dd111602e9b667139e6f13168",
+        "lib/screens/ai_tutor_settings_screen.dart": "47863940852d94c39a36b8a1f6aa83886ddc5c764bc90df58b041945fcbf4408"
+      },
+      "assessment": "Optional AI/menu integration tested at offline host layer. No live provider or billing/consent admission; baseline remains local. AF dashboard recovery HOST_PASS: 222 affected host tests/18 new; owner observation/read revalidation, bounded retry, loader/tab/route retirement. Separate axes and canonical authority preserved; required external layers pending.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX11",
+      "sourcePins": {
+        "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+        "lib/features/learning/domain/lesson_mode.dart": "f21ed9821f8a38e28b7837ee8b4fb2a5ca008afb67b10a8b88bf76395667a30f"
+      },
+      "assessment": "Prototype exam workflow and native lesson registry inspected as separate surfaces. This does not establish native exam coverage; blueprint/media/rubric/trial prerequisites remain.",
+      "sourceDelta": []
+    },
+    {
+      "id": "UX12",
+      "sourcePins": {
+        "lib/screens/offline_content_manager_screen.dart": "21a86c69b2ad7bada050847f635116d79ef289852713dd368c5cb47fd64566bf",
+        "lib/screens/export_center_screen.dart": "707818b856db8a04fa73b1ac205c05aa23060d25858847805429b9ce70d4a339",
+        "lib/screens/setting_screen.dart": "12a2b931247571983abf2ffae001bfdd4044fa127762b6ce0e5d343da894a92c",
+        "lib/features/vocabulary/application/cefr_catalog_import.dart": "6eb756e17c19fe7d77f131685817158d44a87bd47ae4add1cbc9a6f7735b6d1a",
+        "lib/features/vocabulary/application/vocabulary_use_cases.dart": "b28ba1b190d24d92c7c9665a08fe7de13d3af9d0139642651702947b0c07e1d3",
+        "lib/features/vocabulary/domain/vocabulary_repository.dart": "3894741986321d1dc91c7d1fe8486530fb60d5bcb5974f2dad168ea76db539f3",
+        "lib/features/vocabulary/data/drift_vocabulary_repository.dart": "199b169639a27e1a2750efb34dc75dedb537ccd8db5a2213b4df6cf07f1fc076"
+      },
+      "assessment": "AW explicit category add/delete recovery HOST_PASS503,31 new. Canonical owner and owned-dialog lifetime, native early-save admission, partial draft/read retry, truthful acknowledgement and read-only committed reconciliation preserve existing vocabulary authorities. Optional transaction admission rolls category/word tombstones/outbox back before commit decision; no new data/content authority. Native/device/restart/user/trial/release remain pending. Existing explicit word-delete lifetime is the next source hypothesis.",
+      "sourceDelta": [
+        {
+          "path": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+          "before": "b3199fe9ab67ec9cea6651acd68dcce6e4f33eda5ea81301e65a99ee475d197c",
+          "after": "b28ba1b190d24d92c7c9665a08fe7de13d3af9d0139642651702947b0c07e1d3"
+        },
+        {
+          "path": "lib/features/vocabulary/domain/vocabulary_repository.dart",
+          "before": "66d7016001cb5212e45ae673616fdaa6912c54391921327dfbb9a00bf3db9366",
+          "after": "3894741986321d1dc91c7d1fe8486530fb60d5bcb5974f2dad168ea76db539f3"
+        },
+        {
+          "path": "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
+          "before": "b16fd540d6ea701e1b8517b0ccbe9d081d8a59a1a831c708976f71f99af87320",
+          "after": "199b169639a27e1a2750efb34dc75dedb537ccd8db5a2213b4df6cf07f1fc076"
+        }
+      ]
+    }
+  ],
+  "selectedPackage": "S01-AW-explicit-category-action-recovery",
+  "concreteFindings": [
+    {
+      "path": "lib/screens/vocab_list_screen.dart",
+      "sha256": "15ab83274645982441ecb277eb4055f49e711f98d9e35213f463354a5aeaf1a5",
+      "finding": "Existing _deleteWord uses mounted/feature-only initial admission and raw retained dialog cancel/confirm controls. Ordinary delete awaits useCases then messages using mounted only. _mcpDeleteWord has existing optional owner/registry/current-dialog guards and committed readback; confirm owner/category/word/route/dependency and in-flight transaction boundaries before changing it. Source hypothesis, no confirmed AX RED."
+    }
+  ],
+  "remainingRed": [],
+  "notAcceptance": [
+    "native/device",
+    "real accessibility",
+    "learning/trial",
+    "release"
+  ],
+  "nextReady": {
+    "item": "S01-AX-explicit-word-delete-recovery",
+    "status": "NOT_STARTED",
+    "hypothesis": "One existing explicit personal word-delete journey, owned confirmation, truthful acknowledgement/reconciliation and canonical deletion lifetime. No confirmed AX RED.",
+    "sourcePins": {
+      "lib/screens/vocab_list_screen.dart": "15ab83274645982441ecb277eb4055f49e711f98d9e35213f463354a5aeaf1a5",
+      "lib/features/vocabulary/application/vocabulary_use_cases.dart": "b28ba1b190d24d92c7c9665a08fe7de13d3af9d0139642651702947b0c07e1d3",
+      "lib/features/vocabulary/data/drift_vocabulary_repository.dart": "199b169639a27e1a2750efb34dc75dedb537ccd8db5a2213b4df6cf07f1fc076"
+    }
+  }
+}

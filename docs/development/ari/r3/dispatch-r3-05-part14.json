@@ -1,0 +1,9 @@
+{
+  "predecessorTaskId": "01a0d02e-195c-7aa2-917c-be297feef7c9",
+  "reservationId": "R3-05-part14-from-part13-20260924",
+  "clientThreadId": "client-new-thread:c59659ec-d2af-4719-8343-0ec22f6146a0",
+  "taskId": "01a0d040-3e4f-74b1-b0ca-2adb6050caba",
+  "status": "ACK_VERIFIED_ALL_PREDECESSOR_WRITES_RELEASED",
+  "exactlyOneCreateCall": true,
+  "releasedAtUtc": "2026-09-23T21:52:30.347209+00:00"
+}

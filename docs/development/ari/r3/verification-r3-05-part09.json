@@ -1,0 +1,111 @@
+{
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "atUtc": "2026-09-23T20:36:20.310594+00:00",
+  "sourceFingerprint": "6db9afc3bb93af8435c9683adf234c3e2fd2df5bc864ff917b53728b53498d40",
+  "sourceManifest": "source-manifest-r3-05-part09.json",
+  "finalGates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-b271c93ed1cb1458883aa1e9472c5794a58665910e4871048dc5fa681d44adc9.json",
+      "sha256": "2ea8aa4994cc40451d4ddcb09c9e29cd2971a2e06ee5a74948ae9fdebdcc05fa",
+      "tests": 22,
+      "files": 3,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/managed_login_queue_lifecycle_test.dart",
+            "test/features/ai_tutor/managed/managed_connection_route_lifecycle_test.dart",
+            "test/features/ai_tutor/managed/managed_tutor_test_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "3a7f9dcd61eca39c45d2cc614d79b0023e2187e70cc416feb6bc6b04049c098f"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "3a7f9dcd61eca39c45d2cc614d79b0023e2187e70cc416feb6bc6b04049c098f",
+          "fingerprint": "06d2881f16c67e48144d325ff0ea997d6e48f48fb0984653c53093a42871e6f1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T20:26:42.2826477+00:00",
+          "FinishedAt": "2026-09-23T20:26:53.3712870+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3a7f9dcd61ec-06d2881f16c6-2a8a0aa3\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3a7f9dcd61ec-06d2881f16c6-2a8a0aa3\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "06d2881f16c67e48144d325ff0ea997d6e48f48fb0984653c53093a42871e6f1",
+          "StdoutHash": "E9DBE6F9572982157EB8BCF630FC7AE8F7463ACFBC7D5A7DB046932E47E03371",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePinsReverified": 1533
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-fe301653e945dd95f79209689d49331a5cfbc5379b04cdde484eedfd3b82fb13.json",
+      "sha256": "69a3e9516141608cc62bd484f8d7bdb767ebdba0fab1295cd57a840b18237de5",
+      "tests": 5,
+      "files": 1,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/optional_ai_app_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "e96fe10b9fca9b049ef6559de9c3deda167eee99f515fa9dd0777421a3dedb99"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "e96fe10b9fca9b049ef6559de9c3deda167eee99f515fa9dd0777421a3dedb99",
+          "fingerprint": "06d2881f16c67e48144d325ff0ea997d6e48f48fb0984653c53093a42871e6f1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T20:27:47.5856963+00:00",
+          "FinishedAt": "2026-09-23T20:28:27.5240823+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\e96fe10b9fca-06d2881f16c6-c59be5a7\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\e96fe10b9fca-06d2881f16c6-c59be5a7\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "06d2881f16c67e48144d325ff0ea997d6e48f48fb0984653c53093a42871e6f1",
+          "StdoutHash": "2336C18E2700513428AC2CD720FD05B5CA1E0A9AEE887B5CB3B1F0A9D9EF55E1",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePinsReverified": 1533
+    }
+  ],
+  "uniqueTests": 27,
+  "distinctFiles": 4,
+  "newCases": 18,
+  "counts": "Final22screen+5composed=27unique; initial14green is contained, not additive. Prior part08 gates not rerun.",
+  "red": {
+    "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/3e4cc7b2b095-c604452ed2d0-023727a2/Explicit-Flutter-tests.stdout.log",
+    "sha256": "313eb26d1c4879a56857b98bda6b7ef97cc8365b9068e69b4148a46d45a41b37",
+    "failures": 10,
+    "meaning": "8 invalidated queued requests still reached bridge;2 disposed-widget setState errors"
+  },
+  "analysis": {
+    "log": "build/ari-r3-05/part09-analysis.log",
+    "sha256": "dd09cff6c845870b5c25c7290b22f5d4d19e7630f0eed4874f165ca07ea155a9",
+    "files": 3,
+    "result": "No issues found"
+  },
+  "recoveries": [
+    "Native uiautomator dump returned null root during keyboard/dialog transition. Inspected actual foreground and screenshot, entered observed draft, dismissed keyboard, then obtained a fresh successful XML; stale XML was not used.",
+    "Native audit initially assumed a daily_quest_instances table. Read actual58-table PK comparison, identified quest_instances and quest_objective_progress additions with no edits/deletes, then asserted exact table/column delta. No learner-data assertion weakened.",
+    "Optional-app targeted5 overlapped initial APK build briefly; neither was a full test suite. Both completed; no full Flutter/backend/GPU jobs ran concurrently."
+  ],
+  "limits": [
+    "Bridge responses and transport completions are controlled host fixtures; no provider authentication or native delayed-request injection was performed.",
+    "Route-cover tests apply to standalone ManagedTutorTestScreen. The embedded Ari shell intentionally keeps the AI panel across core route navigation; no claim that every main-route change disconnects embedded AI.",
+    "Native bridge is unpaired, so native baseline does not execute the changed login widget; changed behavior is proven by host tests and included in installed APK.",
+    "No new file-backed owner-lease/process-death acceptance or provider request-ID protocol; remaining criteria stay open."
+  ]
+}

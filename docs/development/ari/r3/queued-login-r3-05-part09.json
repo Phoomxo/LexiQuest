@@ -1,0 +1,32 @@
+{
+  "id": "R3-05-QUEUED-LOGIN-001",
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "status": "FIXED_AND_RETESTED",
+  "sourceFingerprint": "6db9afc3bb93af8435c9683adf234c3e2fd2df5bc864ff917b53728b53498d40",
+  "symptom": "Login/status queued behind slow disconnect started after cancel, cover, owner change or background; disposal caused setState after dispose.",
+  "rootCause": "Screen checked epoch only after active requests returned; deferred admission captured no epoch and started methods with unconditional setState. Busy was not set until deferred work started.",
+  "fix": "One _queueWork admission helper captures existing epoch, sets busy immediately, rejects repeated retained callbacks and checks mounted/epoch before executing. All3 login/status entry buttons use it. Existing bridge/account/session authorities unchanged.",
+  "productFiles": [
+    "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart"
+  ],
+  "red": {
+    "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/3e4cc7b2b095-c604452ed2d0-023727a2/Explicit-Flutter-tests.stdout.log",
+    "sha256": "313eb26d1c4879a56857b98bda6b7ef97cc8365b9068e69b4148a46d45a41b37",
+    "failures": 10,
+    "meaning": "8 invalidated queued requests still reached bridge;2 disposed-widget setState errors"
+  },
+  "retest": "verification-r3-05-part09.json",
+  "assertions": [
+    "10queued cases:login/status x cancel/cover/owner/background/dispose;invalidated queue sends zero login/status requests",
+    "8non-disposed cases then explicitly request again and observe one valid bridge call;late code absent before fresh request",
+    "2valid queue controls prove cleanup ordering and one request despite twice invoking retained callback before rebuild",
+    "6active status/connect/reply x routecover/background cases prove stale result suppression, correct covering route, no automatic reconnect on return and successful explicit recovery",
+    "Existing4screen and5composed cases unchanged"
+  ],
+  "limits": [
+    "Bridge responses and transport completions are controlled host fixtures; no provider authentication or native delayed-request injection was performed.",
+    "Route-cover tests apply to standalone ManagedTutorTestScreen. The embedded Ari shell intentionally keeps the AI panel across core route navigation; no claim that every main-route change disconnects embedded AI.",
+    "Native bridge is unpaired, so native baseline does not execute the changed login widget; changed behavior is proven by host tests and included in installed APK.",
+    "No new file-backed owner-lease/process-death acceptance or provider request-ID protocol; remaining criteria stay open."
+  ]
+}

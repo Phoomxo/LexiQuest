@@ -1,0 +1,215 @@
+{
+  "status": "COORDINATOR_FALLBACK_VERIFIED",
+  "records": [
+    {
+      "package": "R3-04-read-only",
+      "state": "VERIFIED",
+      "card": {
+        "acceptance": [
+          "canonical source and acceptance preserved",
+          "no diff",
+          "no worker or provider launch"
+        ],
+        "cwd": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+        "id": "R3-04-read-only",
+        "invariants": [
+          "no source outside d38e",
+          "single coordinator",
+          "real spend zero"
+        ],
+        "mode": "read-only",
+        "owner": "01a0cf43-68e0-7221-9eae-cef542735905",
+        "scope": [
+          "tool/experiments/jev_review/README.md"
+        ],
+        "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3"
+      },
+      "route": {
+        "dispatch": "NONE_COORDINATOR_CONTINUES",
+        "effort": "medium",
+        "jevChoiceCalled": false,
+        "paidSpend": 0,
+        "reason": "Live Choice adapter and fresh billing not accepted; no worker authorized",
+        "routeStatus": "DETERMINISTIC_FALLBACK",
+        "selectedModel": "gpt-6-astra",
+        "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3",
+        "tierPolicy": "Standard/default requested; runtime tier not exposed"
+      },
+      "events": [
+        {
+          "event": "ROUTED",
+          "detail": {
+            "execution": "NONE",
+            "route": {
+              "dispatch": "NONE_COORDINATOR_CONTINUES",
+              "effort": "medium",
+              "jevChoiceCalled": false,
+              "paidSpend": 0,
+              "reason": "Live Choice adapter and fresh billing not accepted; no worker authorized",
+              "routeStatus": "DETERMINISTIC_FALLBACK",
+              "selectedModel": "gpt-6-astra",
+              "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3",
+              "tierPolicy": "Standard/default requested; runtime tier not exposed"
+            }
+          }
+        },
+        {
+          "event": "RUNNING",
+          "detail": {
+            "execution": "COORDINATOR_ONLY",
+            "runtime": {
+              "cwd": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+              "effort": "medium",
+              "model": "gpt-6-astra",
+              "tier": null,
+              "workerStarted": false
+            },
+            "runtimeTierVerified": false
+          }
+        },
+        {
+          "event": "REVIEW",
+          "detail": {
+            "changed": [],
+            "exit": 0,
+            "scopeOK": true,
+            "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3"
+          }
+        },
+        {
+          "event": "VERIFIED",
+          "detail": {
+            "evidence": [
+              "docs/development/ari/r3/context-ab-r3-04.json"
+            ],
+            "reviewer": "owning_coordinator"
+          }
+        }
+      ]
+    },
+    {
+      "package": "R3-04-coordinator-doc",
+      "state": "VERIFIED",
+      "card": {
+        "acceptance": [
+          "document controller boundary and no-live status",
+          "only README changed",
+          "55 offline checks preserved"
+        ],
+        "cwd": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+        "id": "R3-04-coordinator-doc",
+        "invariants": [
+          "no source outside d38e",
+          "single coordinator",
+          "real spend zero"
+        ],
+        "mode": "coordinator-write",
+        "owner": "01a0cf43-68e0-7221-9eae-cef542735905",
+        "scope": [
+          "tool/experiments/jev_review/README.md"
+        ],
+        "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3"
+      },
+      "route": {
+        "dispatch": "NONE_COORDINATOR_CONTINUES",
+        "effort": "medium",
+        "jevChoiceCalled": false,
+        "paidSpend": 0,
+        "reason": "Live Choice adapter and fresh billing not accepted; no worker authorized",
+        "routeStatus": "DETERMINISTIC_FALLBACK",
+        "selectedModel": "gpt-6-astra",
+        "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3",
+        "tierPolicy": "Standard/default requested; runtime tier not exposed"
+      },
+      "events": [
+        {
+          "event": "ROUTED",
+          "detail": {
+            "execution": "NONE",
+            "route": {
+              "dispatch": "NONE_COORDINATOR_CONTINUES",
+              "effort": "medium",
+              "jevChoiceCalled": false,
+              "paidSpend": 0,
+              "reason": "Live Choice adapter and fresh billing not accepted; no worker authorized",
+              "routeStatus": "DETERMINISTIC_FALLBACK",
+              "selectedModel": "gpt-6-astra",
+              "sourceFingerprint": "514cc1c6c4fb86b6fdfa2d1ea4059039d6154e14949a30fd685b1c796b12eba3",
+              "tierPolicy": "Standard/default requested; runtime tier not exposed"
+            }
+          }
+        },
+        {
+          "event": "RUNNING",
+          "detail": {
+            "execution": "COORDINATOR_ONLY",
+            "runtime": {
+              "cwd": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+              "effort": "medium",
+              "model": "gpt-6-astra",
+              "tier": null,
+              "workerStarted": false
+            },
+            "runtimeTierVerified": false
+          }
+        },
+        {
+          "event": "INCIDENT",
+          "detail": {
+            "attempts": 0,
+            "decision": {
+              "action": "collect_evidence",
+              "execution": "NONE_CONTROLLER_REVIEW",
+              "proposedAction": "collect_evidence",
+              "reason": "diagnose_failed_method"
+            },
+            "execution": "NONE",
+            "id": "R3-04-encoding-setup"
+          }
+        },
+        {
+          "event": "REVIEW",
+          "detail": {
+            "changed": [
+              "tool/experiments/jev_review/README.md"
+            ],
+            "exit": 0,
+            "scopeOK": true,
+            "sourceFingerprint": "286f6a45de609c7ad7b4e0f4aa8380f3351e88c2095a4cc666f04be882996b55"
+          }
+        },
+        {
+          "event": "VERIFIED",
+          "detail": {
+            "evidence": [
+              "docs/development/ari/r3/verification-r3-04.json",
+              "tool/experiments/jev_review/README.md"
+            ],
+            "reviewer": "owning_coordinator"
+          }
+        }
+      ]
+    }
+  ],
+  "activePackages": 0,
+  "runtime": {
+    "turnContext": [
+      {
+        "cwd": "C:\\Users\\Phet\\.codex\\worktrees\\c0bc\\LexiQuest",
+        "model": "gpt-6-astra",
+        "effort": "medium"
+      }
+    ],
+    "serviceTier": null,
+    "toolWorkdir": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+    "note": "turn cwd is app-created checkout; all source operations explicitly use d38e"
+  },
+  "workerDryRun": "OFFLINE_ONLY_NO_WORKER_LAUNCH",
+  "liveWorkerModelBinding": "NOT_RUN",
+  "actualSourceCwd": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+  "diffReview": "Only README changed in bounded documentation job; 29-line additive journal guide",
+  "sourcePinProvenance": "r3/source-manifest-r3-03.json plus new dispatch_review.py and test_dispatch_review.py; README changed only in doc job",
+  "providerUsage": null,
+  "argv": [],
+  "externalCalls": 0
+}
