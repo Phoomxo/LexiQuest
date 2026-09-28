@@ -1,6 +1,8 @@
 # Current UX delivery
 
-Read this file, current state.json summary, and S01-CF.md first. Do not enumerate historical worktrees or archives.
+Read this file, current state.json summary, and S01-CG.md first. Do not enumerate historical worktrees or archives.
+
+- Latest: S01-CG local Git engineering checkpoint of BY–CF. Source commit `2749da8531ff0790ae1a02e752142a8ef9e1ce7d`, tree `857cf7f09daecf821f52fb9c30b87dd760ced4bb`; 178 payload paths plus four audit records, with included inventory and 16 historical APKs inventoried as ignored/local-only. CF 17 source + nine evidence + 850 manifest pins matched before CG metadata edits. No remote operation, native run or release acceptance. Final coordination commit is recorded locally under `build/S01-CG/`; see S01-CG.md and evidence/S01-CG-checkpoint.json. Writer released; no successor dispatched.
 
 - Latest: S01-CF PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION on physical V2041/API33. Fresh isolated nativeStaleCf installed once; CF01–CF05 receipts PASS across PID 9649 → absent → 10228. A covered QuizScreen callback and revision-only pinned content drift rejected with zero unauthorized writes; all 58 table digests equal before/after each rejection. Nine protected packages and 14 prior APK files preserved. 15 targeted HOST cases, CF CLI contract, five-file analyzer, 850 source pins and read-only preflight PASS. No production lib changed. Native visual/IME/TalkBack N05, user/trial and frozen release remain OPEN/NOT_RUN; CB historical install count remains UNVERIFIED_UP_TO_TWO_ATTEMPTS. See evidence/S01-CF-checkpoint.json. Writer released; no successor dispatched.
 

@@ -8,6 +8,8 @@ docs/development/ux-delivery/evidence/S01-B[Y-Z]* -text
 docs/development/ux-delivery/evidence/S01-B[Y-Z]*/** -text
 docs/development/ux-delivery/evidence/S01-C[A-F]* -text
 docs/development/ux-delivery/evidence/S01-C[A-F]*/** -text
+docs/development/ux-delivery/evidence/S01-CG* -text
+docs/development/ux-delivery/evidence/S01-CG*/** -text
 
 # B07 verification receipts must survive worktree checkout byte-for-byte.
 docs/development/full-system/evidence/bundles/B07/**/*.log binary

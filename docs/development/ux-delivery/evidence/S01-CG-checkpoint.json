@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-CG-local-source-checkpoint",
+  "writerStatus": "RELEASED",
+  "releasedAtUtc": "2026-09-28T20:39:26.700308+00:00",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "baseCommit": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "sourceCommit": "2749da8531ff0790ae1a02e752142a8ef9e1ce7d",
+  "sourceTree": "857cf7f09daecf821f52fb9c30b87dd760ced4bb",
+  "sourceCommitChangedPaths": 182,
+  "includedPayloadPaths": 178,
+  "includedRawBytes": 11991569,
+  "rawEvidenceGitBlobsVerified": 101,
+  "sourceTreeBlobMismatches": 0,
+  "predecessor": {
+    "cfCheckpointSha256": "461160fff654aeaea7accd6a05d344e1df8288eccc6a588e4ee9e58eea821602",
+    "sourcePins": 17,
+    "evidencePins": 9,
+    "buildTimeSourcePins": 850,
+    "mismatches": 0,
+    "verificationBeforeCgEdits": true
+  },
+  "auditRecordSha256": {
+    "S01-CG-included-inventory.json": "39a6c2a06ea92cdfe174bf8fdfa947c566db394224535ac24e311e402eb9a094",
+    "S01-CG-local-only-inventory.json": "c389b5b2926b9b95b73399d6e961db47042137ad3ec01da59cf90d7f4f868269",
+    "S01-CG-predecessor-integrity.json": "7b51dad8d0ce8c3356a287455a8e2453580a1f78af380310c0785ef71514aa7f",
+    "S01-CG-secret-review.json": "c708505810a15fab4ffde2b6aabf3ca31f42c3a0b4e4a06c07a052011cd592bb"
+  },
+  "coordinationFileSha256": {
+    "docs/development/ux-delivery/S01-CG.md": "ac700a246576072e511b0e86bb9c3cd601520ff4f613e581460ffd26b8b2edfa",
+    "docs/development/ux-delivery/README.md": "9c94351fc297f27d8da73eb9101b221902b7fe74e4f906d05ee3f9c65c226cbf",
+    "docs/development/ux-delivery/state.json": "50acc79ef96388ac3c0e43e8169a8a5c41139d87801d7298349b75cc76b55f94",
+    ".gitattributes": "73fc83d6b0cf21a87584cfc585aceb66bfa6deda431365ed29aacd9b213321f8"
+  },
+  "localOnly": {
+    "historicalApkFiles": 16,
+    "bxHistoricalFileCount": 5751,
+    "currentIgnoredBuildCacheExhaustivelyHashed": false,
+    "preservedInPlace": true,
+    "recoverableFromGitAlone": false
+  },
+  "secretReview": {
+    "stagedFindings": 40,
+    "reviewedCommandKeySha256": 40,
+    "unresolved": 0,
+    "coordinationMetadataSha256PinFindings": 1,
+    "coordinationUnresolved": 0
+  },
+  "checks": {
+    "payloadIndexRawSha256": "MATCH",
+    "rawEvidenceGitBlob": "MATCH",
+    "sourceTreeInventory": "MATCH",
+    "readOnlyGitShowSamples": 3,
+    "focusedCoordinationDiffCheck": "PASS",
+    "byCfBlankAtEofDiagnosticsPreserved": 5,
+    "fullRegression": "NOT_RUN_BY_CG",
+    "nativeDevice": "NOT_RUN_BY_CG",
+    "releaseVerifier": "NOT_RUN_BY_CG"
+  },
+  "selfReferenceBoundary": "Final coordination commit/tree are recorded after commit in ignored local-only build/S01-CG/final-confirmation.json; this checkpoint cannot contain its own commit hash.",
+  "stateRevision": 160,
+  "sprintAccepted": false,
+  "releaseAccepted": false,
+  "successorDispatched": false,
+  "runningTaskBuildTestProcesses": [],
+  "remainingAcceptance": [
+    "S01/UX-D01-25",
+    "N05 native visual/IME/TalkBack",
+    "actual-user/learning trials deferred",
+    "frozen-source release",
+    "CB historical install command count UNVERIFIED_UP_TO_TWO_ATTEMPTS"
+  ],
+  "nextAction": "Controller review; preserve all installed packages and local-only APK/build evidence. No successor dispatched."
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 159,
+  "revision": 160,
   "planVersion": 5,
   "planPath": "docs/design/worksheet-to-play-blueprint.md",
   "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain. 2026-09-27: Actual-user participation/trials deferred; autonomous bounded engineering/UI audit authorized without waiting for user trials.",
@@ -18,8 +18,15 @@
     "startedAtUtc": "2026-09-24T05:52:58.6746244Z",
     "reviewDueAtUtc": "2026-10-22T05:52:58.6746244Z"
   },
-  "currentItem": "S01-CF-native-stale-route-content-revision",
+  "currentItem": "S01-CG-local-source-checkpoint",
   "items": [
+    {
+      "id": "S01-CG-local-source-checkpoint",
+      "status": "COMPLETE",
+      "acceptance": "LOCAL_GIT_RECOVERY_CHECKPOINT_ONLY",
+      "acceptanceScope": "BY-CF source/evidence in local commit 2749da8531ff0790ae1a02e752142a8ef9e1ce7d; 178 payload paths and four audit records. CF predecessor 17 source, nine evidence and 850 manifest pins matched. Sixteen historical APKs retained ignored/local-only. No remote publication, native/device, user/trial or release acceptance.",
+      "report": "docs/development/ux-delivery/S01-CG.md"
+    },
     {
       "id": "S01-CF-native-stale-route-content-revision",
       "status": "COMPLETE",
@@ -956,12 +963,12 @@
   ],
   "BDCompletedAtUtc": "2026-09-26T17:25:35.6273492Z",
   "boundedCheckpoint": {
-    "id": "S01-CF-native-stale-route-content-revision",
-    "status": "PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION",
-    "acceptance": "PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION",
-    "hostFlutterTests": 15,
-    "hostCliContract": "PASS",
-    "evidence": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+    "id": "S01-CG-local-source-checkpoint",
+    "status": "LOCAL_GIT_RECOVERY_CHECKPOINT_ONLY",
+    "acceptance": "SOURCE_TREE_AND_LOCAL_ONLY_INVENTORY_VERIFIED",
+    "hostFlutterTests": "NOT_RUN_BY_CG",
+    "hostCliContract": "NOT_RUN_BY_CG",
+    "evidence": "docs/development/ux-delivery/evidence/S01-CG-checkpoint.json",
     "pending": [
       "N05 visual/IME/TalkBack",
       "Actual-user participation/trials DEFERRED",
@@ -971,25 +978,25 @@
   "writer": {
     "predecessorReleased": true,
     "threadId": null,
-    "currentItem": "S01-CF-native-stale-route-content-revision",
+    "currentItem": "S01-CG-local-source-checkpoint",
     "status": "RELEASED",
-    "releaseReason": "CF native synthetic stale-route and content-revision rejection passed across actual process restart. Scope remains synthetic; N05/user/trial/release open. CF and prior packages/evidence retained; no successor dispatch.",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+    "releaseReason": "CG local Git source/evidence recovery checkpoint verified; no remote publication, native run, user trial or release acceptance. Ignored artifacts preserved; no successor dispatch.",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CG-checkpoint.json",
     "routing": "GPT-6 Sol medium and Standard/default requested; actual executor/tier unverified; no Jev/Fast/paid/quota changes"
   },
   "dispatch": {
-    "id": "ux-s01-cf",
+    "id": "ux-s01-cg",
     "status": "RELEASED_TO_CONTROLLER",
     "successorThreadId": null
   },
-  "latestHandoff": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+  "latestHandoff": "docs/development/ux-delivery/evidence/S01-CG-checkpoint.json",
   "sourceManifest": "docs/development/ux-delivery/evidence/S01-CF-runs/source-manifest.json",
   "evidence": {
     "planConsistency": "PASS",
     "originalChangePreservation": "PASS",
-    "reportPath": "docs/development/ux-delivery/S01-CF.md",
+    "reportPath": "docs/development/ux-delivery/S01-CG.md",
     "transferVerificationRecord": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CG-checkpoint.json",
     "latestValidation": "docs/development/ux-delivery/evidence/S01-CF-validation.json",
     "jevRouting": "docs/development/ux-delivery/evidence/S01-E-routing.json",
     "interfaceReadiness": "docs/development/ux-delivery/evidence/S01-Z-source-review.json",
@@ -1271,7 +1278,7 @@
     "fullReleaseVerifierRequiresFrozenSha": true,
     "prototypeDoesNotProveNativeOrLearning": true
   },
-  "nextAction": "Controller reviews CF native synthetic stale-route/content-revision PASS. Preserve installed CF/CE/CD and all earlier packages/APKs; never reinstall/reseed them. N05 visual/IME/TalkBack remains open; actual-user participation/trials deferred and frozen-source release not accepted. CB two historical install command counts remain UNVERIFIED_UP_TO_TWO_ATTEMPTS. No successor dispatched.",
+  "nextAction": "Controller reviews CG local source/evidence checkpoint. Preserve all installed packages, APKs and ignored local-only bytes. N05 visual/IME/TalkBack remains open; actual-user participation/trials deferred and frozen-source release not accepted. CB historical install count remains UNVERIFIED_UP_TO_TWO_ATTEMPTS. No successor dispatched.",
   "checkpoint": {
     "kind": "CF_NATIVE_SYNTHETIC_STALE_ROUTE_REVISION_REJECTION",
     "writerRetained": false,
@@ -1291,9 +1298,9 @@
     "sharedTrancheUsd": 5,
     "writerRetained": false,
     "currentThreadId": null,
-    "currentItem": "S01-CF-native-stale-route-content-revision",
+    "currentItem": "S01-CG-local-source-checkpoint",
     "nextReadyPackage": null,
-    "stopReason": "CF native synthetic stale-route/content-revision rejection completed with immutable receipts. Writer released; next scope requires controller routing."
+    "stopReason": "CG local BY-CF source/evidence checkpoint committed with immutable receipt. Writer released; next scope requires controller routing."
   },
   "nextDispatch": {
     "status": "READY_FOR_CONTROLLER_REVIEW",
@@ -1575,6 +1582,23 @@
     "native": "NOT_RUN",
     "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
     "productionLibChangedFiles": [],
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CGAudit": {
+    "report": "docs/development/ux-delivery/S01-CG.md",
+    "sourceCommit": "2749da8531ff0790ae1a02e752142a8ef9e1ce7d",
+    "sourceTree": "857cf7f09daecf821f52fb9c30b87dd760ced4bb",
+    "includedPayloadPaths": 178,
+    "rawEvidenceBlobsVerified": 101,
+    "predecessorSourcePins": 17,
+    "predecessorEvidencePins": 9,
+    "predecessorBuildSourcePins": 850,
+    "predecessorMismatches": 0,
+    "ignoredHistoricalApksRetained": 16,
+    "localOnlyInventory": "docs/development/ux-delivery/evidence/S01-CG-local-only-inventory.json",
+    "remotePublished": false,
+    "nativeRunByCg": false,
     "releaseAccepted": false,
     "successorDispatched": false
   },
