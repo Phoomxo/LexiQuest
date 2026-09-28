@@ -1,0 +1,93 @@
+{
+  "nativeAttempts": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-runs/native-attempts.json",
+    "sha256": "d51d622ac2afbeae6e58cc09def325937d0950cc9b81d2412aacb7e3617a8a1b"
+  },
+  "sourcePins": 839,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "nextAction": "Controller review; fix runner failure receipt and require changed physical ADB transport evidence. Install command count in prior two runs unverified, CB absent on postcheck. Preserve seven installed packages/APKs; no successor dispatched.",
+  "nativePhaseReceipts": [],
+  "productionLibChangedFiles": [],
+  "releasedAtUtc": "2026-09-28T14:19:52.1424195Z",
+  "sourceState": "UNCOMMITTED_SOURCE_PINNED_BY_BUILD_MANIFEST",
+  "hostTestsPassed": 48,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "status": "HOST_SYNTHETIC_PASS_NATIVE_NOT_RUN_TRANSPORT_UNCERTAIN_INSTALL_ATTEMPTS",
+  "notRun": [
+    "native draft OS restart",
+    "native stale-route/content revision",
+    "N05 visual/IME/TalkBack",
+    "actual-user/UAT/learning trial",
+    "frozen-source full release"
+  ],
+  "nativeResult": "NOT_RUN_TRANSPORT_NO_RECEIPTS",
+  "readinessPins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-CB-runs/readiness-1.json",
+      "sha256": "cca6aca63d511d0ae778af836883a6945ebd7e7f0dbe2c69fc6dded9c5508399"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-CB-runs/readiness-2.json",
+      "sha256": "4e4df0ad4a95dfb3bbf1238d64a7dd33eb07c06db3051531854eb2daff367593"
+    }
+  ],
+  "postPreservation": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-runs/post-preservation.json",
+    "sha256": "751b6de74d1cdd3d1d6f90424cee2a7994fb5cc14e5345fccb481c37e884b8ca"
+  },
+  "readmePin": {
+    "path": "docs/development/ux-delivery/README.md",
+    "sha256": "37eb8fc2ee7d39a07d8f267c43219ed795f8f58a171632858e7a2d78e8c8a849"
+  },
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "branch": "codex/ux-current-after-s01-bc",
+  "statePin": {
+    "path": "docs/development/ux-delivery/state.json",
+    "sha256": "2242dcd22c48b1013bece7fd8b8a66fae097dcc6597142fde0c028c55eb60558"
+  },
+  "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+  "schemaVersion": 1,
+  "validationPin": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-validation.json",
+    "sha256": "5ba846fb1b2733f221c9fef6ff31a5f6ef4180ca0b481e3ffbe03471f41947ed"
+  },
+  "successorDispatched": false,
+  "buildExitCode": 0,
+  "sprintAccepted": false,
+  "hostGateFingerprint": "1dab309fd13e8a8d48efd3dabcd91c3b0ff30976c23ab7d46c716898295e14d1",
+  "writerStatus": "RELEASED",
+  "cliContractCases": 27,
+  "apkSha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+  "reportPin": {
+    "path": "docs/development/ux-delivery/S01-CB.md",
+    "sha256": "339bcfe8ad80a2e79e70f5c855b9a4d07aef38907e98bf5f6e8dfb48ed1f399e"
+  },
+  "cliGateFingerprint": "06c17739caa481b56e4753032005afed923b90d53add4d0598d908f60a14520a",
+  "packageCbInstalled": false,
+  "sourceManifest": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-runs/build-manifest.json",
+    "sha256": "bce6dc0db149ba88fbca17e2fdbd2e60e071771ff6e778ed1f1dfba1006ca445"
+  },
+  "apkPath": "build/native-draft/S01-CB/gradle/app/outputs/apk/debug/app-debug.apk",
+  "hostGate": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-runs/host-gate.json",
+    "sha256": "e6b33048a9b435c8bb4ae5e94905d3b01144872aeae957cbeb6889b02dd03037"
+  },
+  "priorApkFilesPreserved": 7,
+  "routing": "GPT-6 Sol medium and Standard/default requested; actual executor/tier unverified; no token-saving claim",
+  "releaseAccepted": false,
+  "analyzerIssues": 0,
+  "cliGate": {
+    "path": "docs/development/ux-delivery/evidence/S01-CB-runs/cli-gate.json",
+    "sha256": "50a204e10e8b0e3056cbc37ef1c909b42ed8de3dd63386d3d8e5e1c8eed13faf"
+  },
+  "sourceDrift": 0,
+  "protectedPackagesPreserved": 7,
+  "package": "S01-CB-native-draft-recovery",
+  "researchActivation": "OFF_UNCHANGED",
+  "nativeForceStopCount": 0,
+  "cliRunnerCases": 6,
+  "stateRevision": 155,
+  "nativeInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+  "successfulInstallObserved": false
+}

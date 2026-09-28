@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-CC-native-draft-runner-failure-receipt",
+  "status": "HOST_STUB_PASS_NATIVE_NOT_RUN",
+  "writerStatus": "RELEASED",
+  "successorDispatched": false,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "stateRevision": 156,
+  "changedFiles": [
+    "tool/cli/run-native-draft-acceptance.ps1",
+    "tool/cli/tests/native-draft-runner.tests.ps1",
+    "docs/development/ux-delivery/S01-CC.md",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/evidence/S01-CC-validation.json",
+    "docs/development/ux-delivery/evidence/S01-CC-checkpoint.json",
+    "docs/development/ux-delivery/evidence/S01-CC-checkpoint.sha256"
+  ],
+  "pins": {
+    "runner": "068d324f38274bb3055452fc976ea157745ee1a8a6733074f3b625b8e6d960b7",
+    "runnerTest": "300ce7362bc71d794155c6486a9106292035120f37e5328ebc54a369581cac1d",
+    "report": "eeccdb1977484aeaec4f1060fd015245ecd162f26c25991f92b75f647f9ab33c",
+    "readme": "e912dac61b907fa41107348b5ccff1352725c3b2ddab0ac6176f2808c609e9ea",
+    "state": "a77210e24d7f8a1f05de4b5d36b4d6d8c00c8ef0621c2bf7abe2f33abeb46723",
+    "validation": "0512e892630c702dd4137dce139bfb519c624492f56377878442a276303e5dfb",
+    "cliGate": "f47fb19722b402a31b48a422b64e7d7003f946811bf2cc2d11e0b72c4d8b0cf7",
+    "cbCheckpoint": "b500ed55fb1c328eaa46093da0ad8fc405275f99b96bc03543c969cc3caf2b3d"
+  },
+  "cbSourcePins": 839,
+  "cbSourcePinMismatchesExpected": [
+    "tool/cli/run-native-draft-acceptance.ps1",
+    "tool/cli/tests/native-draft-runner.tests.ps1"
+  ],
+  "cliGateCases": {
+    "contract": 27,
+    "runner": 9,
+    "isolation": "PASS"
+  },
+  "native": "NOT_RUN",
+  "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+  "productionLibChangedFiles": [],
+  "runningProcesses": [],
+  "nextAction": "Controller review. No native retry until changed ADB transport evidence and truthful resolution of prior install-attempt uncertainty; new runner source requires new build/source manifest. Preserve protected seven packages and seven prior APKs."
+}

@@ -251,6 +251,9 @@ void main() {
         }
         final prompt = original.currentQuestion.prompt;
         original.dispose();
+        // Post-commit replay now runs successfully outside the ordinary
+        // transaction. Freeze the baseline only after its existing queue drains.
+        await baselineAwait(tester, dependencies.learningReconciliation!.drain);
         final before = await baselineAwait(tester, () => _rows(db));
         final snapshot = await baselineAwait(
           tester,

@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "sourcePins": 850,
+  "sourceDrift": 0,
+  "priorApks": 14,
+  "priorApkDrift": 0,
+  "protectedPackages": 9,
+  "protectedMetadataDrift": 0,
+  "apkSha256": "5f2aa68130d87eaec57ffa90e40df22a12ea382046333153178b1e743f718e9c",
+  "nativeStatus": "PASS",
+  "installCommands": 1
+}

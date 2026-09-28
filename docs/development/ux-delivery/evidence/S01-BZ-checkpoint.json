@@ -1,0 +1,145 @@
+{
+  "runningHostTasks": [],
+  "readmePin": {
+    "sha256": "98433e18317b2657bb05e4244a9a545c5eabbee2f189bbb03cb03a3a699c0e65",
+    "path": "docs/development/ux-delivery/README.md"
+  },
+  "package": "S01-BZ-native-pending-next-recovery",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "reportPin": {
+    "sha256": "cc87d65c579a2b9373e07535fbfd811a7b50db2f4d4216c05ebdb073dc7f698b",
+    "path": "docs/development/ux-delivery/S01-BZ.md"
+  },
+  "hostTestsPassed": 51,
+  "sourceClosure": {
+    "hostEntries": 1610,
+    "prePublicationAllMismatches": 0,
+    "executableMismatches": [],
+    "nativeEntries": 815,
+    "cliPostGateDocumentationChanges": [
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "cliEntries": 5530
+  },
+  "deferred": [
+    "actual-user/UAT/learning trials"
+  ],
+  "writerThreadId": "01a0e679-4065-7040-8684-0621d889d7bb",
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "cli": {
+    "runnerCases": 6,
+    "contractCases": 23,
+    "isolationSuites": 4
+  },
+  "branch": "codex/ux-current-after-s01-bc",
+  "native": {
+    "sessionId": "session:568de6da-0560-4225-92ca-9bd7b394290f",
+    "databaseEvidence": {
+      "sha256": "3ba8fd3636038b92816fa5d913fad0ffdf2e14775fe7c2f8a537e8825f64a30e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/device-final.json"
+    },
+    "installCount": 1,
+    "nextDigest": "da8bb3d5ba9854e3faa1dcf28d3753e00850f72be19be77319c4e45048853a60",
+    "model": "V2041",
+    "pendingDigest": "0f4f9611d457e3dc56ea31708ea535087c6a4fe267c6368bec2cd97dfa73bd8a",
+    "tables": 58,
+    "apkSha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+    "intentionalCheckpointAppends": 2,
+    "packageId": "com.lexiquest.app.nativeRecoveryBz",
+    "planDigest": "a6c2a068ddb928ff44125617d15bfb56b478bd01694b9d01f6c99ad64affb646",
+    "forceStopCount": 2,
+    "ownerId": "local:synthetic-bz-synthetic-01-owner",
+    "pids": [
+      "14187",
+      "",
+      "14483",
+      "",
+      "14834"
+    ],
+    "deviceId": "9582188822004C6",
+    "api": 33
+  },
+  "schemaVersion": 1,
+  "status": "PASS_NATIVE_SYNTHETIC_PENDING_AND_NEXT_OS_RESTART",
+  "researchActivation": "OFF_UNCHANGED",
+  "statePin": {
+    "sha256": "e2aceac62094757e3c2b24701411ab676224fcf25b206a487e8972cb5ac7af10",
+    "path": "docs/development/ux-delivery/state.json"
+  },
+  "gatePrePost": [
+    {
+      "pin": {
+        "sha256": "a965cbbd1e188b2a2385dc2bbeafb051dbf6a7f5a6836a79f41de0d1cccce4bc",
+        "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-gate.json"
+      },
+      "scope": "HOST",
+      "pre": "3aeddf3dc6dfdf21634eed31a9eb76d1da04a08763cce36ffe4c5019d6b07531",
+      "post": "3aeddf3dc6dfdf21634eed31a9eb76d1da04a08763cce36ffe4c5019d6b07531"
+    },
+    {
+      "pin": {
+        "sha256": "bf5b23435d7b7fe2f3ec88f618881f9421ddab3767baf30907a3a108fe8e22f8",
+        "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-gate.json"
+      },
+      "scope": "CLI",
+      "pre": "f0b9195b3faca3ed7a9f77ec3cd3905d5a95dbc8618413c4466376a3a954337d",
+      "post": "f0b9195b3faca3ed7a9f77ec3cd3905d5a95dbc8618413c4466376a3a954337d"
+    }
+  ],
+  "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+  "releaseAccepted": false,
+  "routing": "Current-model deterministic fallback; Standard/default requested, effective tier unverified. No Jev/Fast/probe/login/paid/quota reset; USD5 ledger unchanged.",
+  "nextAction": "Controller 01a0ce9e-23a6-7931-88e6-6390da748f39 reviews BZ immutable receipt/hash/source closure read-only, then chooses remaining native terminal-close/draft/stale-route/N05 or other authorized gap. Preserve all six installed packages and five prior APK files; no reinstall/clear/uninstall/reseed. BZ closes only synthetic pending acknowledgement and next restore. No successor dispatched; user/trial/frozen-release remain open.",
+  "analyzer": {
+    "pin": {
+      "sha256": "f3988661e96ce4144df7c9c496cd6b4cd95dca0e6ceddff2843e63b55b872e07",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/analyzer-final.log"
+    },
+    "files": 4,
+    "issues": 0
+  },
+  "validationPin": {
+    "sha256": "e952e384ef448d3744a85456d9d560ec88d7988e6e49eacbf46a34ab9b64c82e",
+    "path": "docs/development/ux-delivery/evidence/S01-BZ-validation.json"
+  },
+  "sourceState": "UNCOMMITTED_SOURCE_PINNED_BY_HOST_AND_NATIVE_CLOSURES",
+  "preservation": {
+    "changedOnly": [
+      "android/app/build.gradle.kts",
+      "android/build.gradle.kts",
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "allRetainedPackages": 6,
+    "baselinePaths": 5518,
+    "protectedPackages": 5,
+    "byReceipt": {
+      "sha256": "0562f38ede24ea1d65939836c6ae1a24419c9677db903ce88e8773142b6f2480",
+      "path": "docs/development/ux-delivery/evidence/S01-BY-checkpoint.json"
+    },
+    "oldApkFiles": 5
+  },
+  "notRun": [
+    "native terminal close/completion acknowledgement",
+    "native draft",
+    "native stale route",
+    "N05 visual",
+    "N05 IME",
+    "N05 TalkBack",
+    "mid-transaction/power-loss crash",
+    "frozen-source full release"
+  ],
+  "stateRevision": 153,
+  "writerStatus": "RELEASED",
+  "releasedAtUtc": "2026-09-28T06:01:57.2817540Z",
+  "sprintAccepted": false,
+  "productionLibChangedFiles": [],
+  "retainedNativeProcess": "14834; final UI disposed and DB closed",
+  "sourceManifest": {
+    "sha256": "5913ea1391aff7dd14b8a9f624a352c8eb2c0ab5c593ae45a3ce605b4a8a442f",
+    "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/build-manifest.json"
+  },
+  "successorDispatched": false
+}

@@ -1,0 +1,129 @@
+{
+  "priorApks": [
+    {
+      "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+      "preserved": true,
+      "path": "build/app/outputs/apk/debug/app-debug.apk"
+    },
+    {
+      "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+      "preserved": true,
+      "path": "build/app/outputs/flutter-apk/app-debug.apk"
+    },
+    {
+      "sha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+      "preserved": true,
+      "path": "build/native-baseline/S01-BM/app-debug-e10429750a94.apk"
+    },
+    {
+      "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+      "preserved": true,
+      "path": "build/native-resume/S01-BW/app-debug-e271910a2f24.apk"
+    },
+    {
+      "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+      "preserved": true,
+      "path": "build/native-today/S01-BY/gradle/app/outputs/apk/debug/app-debug.apk"
+    },
+    {
+      "sha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+      "preserved": true,
+      "path": "build/native-recovery/S01-BZ/gradle/app/outputs/apk/debug/app-debug.apk"
+    },
+    {
+      "sha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+      "preserved": true,
+      "path": "build/native-terminal/S01-CA/gradle/app/outputs/apk/debug/app-debug.apk"
+    }
+  ],
+  "checkedAtUtc": "2026-09-28T14:15:48.3423581Z",
+  "packageQueryExit": 0,
+  "protected": [
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app",
+      "metadata": [
+        "versionCode=23 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-13 08:14:41",
+        "firstInstallTime=2026-09-01 00:27:20",
+        "firstInstallTime=2026-09-01 00:27:20"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.ariTest",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-24 05:38:40",
+        "firstInstallTime=2026-09-21 00:24:50",
+        "firstInstallTime=2026-09-21 00:24:50"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.nativeBaselineBm",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-27 07:56:28",
+        "firstInstallTime=2026-09-27 07:56:28",
+        "firstInstallTime=2026-09-27 07:56:28"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.nativeResumeBw",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-28 10:33:31",
+        "firstInstallTime=2026-09-28 10:33:31",
+        "firstInstallTime=2026-09-28 10:33:31"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.nativeTodayBy",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-28 12:09:14",
+        "firstInstallTime=2026-09-28 12:09:14",
+        "firstInstallTime=2026-09-28 12:09:14"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.nativeRecoveryBz",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-28 12:52:43",
+        "firstInstallTime=2026-09-28 12:52:43",
+        "firstInstallTime=2026-09-28 12:52:43"
+      ],
+      "exitCode": 0
+    },
+    {
+      "preserved": true,
+      "id": "com.lexiquest.app.nativeTerminalCa",
+      "metadata": [
+        "versionCode=14 minSdk=26 targetSdk=36",
+        "versionName=1.0.0",
+        "lastUpdateTime=2026-09-28 13:23:46",
+        "firstInstallTime=2026-09-28 13:23:46",
+        "firstInstallTime=2026-09-28 13:23:46"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "packageId": "com.lexiquest.app.nativeDraftCb",
+  "packageInstalled": false
+}

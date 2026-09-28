@@ -1,0 +1,34 @@
+{
+  "deviceId": "9582188822004C6",
+  "note": "Both full runners lost ADB transport; a finally protected-metadata probe masked the primary failure and prevented result.json. The adapter may have issued adb install in either run. No successful install was observed; package absent on postcheck. No host phase receipts or OS restart evidence.",
+  "noExternalUiCommands": true,
+  "protectedPackageMetadataPreserved": 7,
+  "betweenAttemptsReadiness": "READINESS_PASS",
+  "priorApkFilesPreserved": 7,
+  "attempts": [
+    {
+      "receiptCount": 0,
+      "failure": "Observed terminal error: Protected package metadata unavailable; primary failure unrecorded",
+      "stage": "UNKNOWN_BEFORE_OR_DURING_INSTALL_MASKED_BY_FINALLY",
+      "output": "build/S01-CB/native-1"
+    },
+    {
+      "receiptCount": 0,
+      "failure": "Observed terminal error: Protected package metadata unavailable; primary failure unrecorded",
+      "stage": "UNKNOWN_BEFORE_OR_DURING_INSTALL_MASKED_BY_FINALLY",
+      "output": "build/S01-CB/native-2"
+    }
+  ],
+  "phaseReceipts": [],
+  "packageId": "com.lexiquest.app.nativeDraftCb",
+  "schemaVersion": 1,
+  "afterAttemptsPackageInstalled": false,
+  "status": "NATIVE_NOT_RUN_TRANSPORT_NO_RECEIPTS",
+  "forceStopCount": 0,
+  "runAttempts": 2,
+  "installCommandCount": "UNVERIFIED_DUE_TO_MISSING_RUNNER_RESULT",
+  "possibleInstallCommandAttemptsUpperBound": 2,
+  "successfulInstallObserved": false,
+  "primaryFailure": "UNKNOWN_MASKED_BY_FINALLY_POSTCHECK",
+  "observedTerminalError": "Protected package metadata unavailable"
+}

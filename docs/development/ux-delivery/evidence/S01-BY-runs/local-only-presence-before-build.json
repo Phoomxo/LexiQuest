@@ -1,0 +1,5 @@
+{
+  "checked": 5751,
+  "policy": "Existence check only for mutable build/cache inventory; immutable predecessor receipts and APKs checked by hash separately",
+  "missing": []
+}

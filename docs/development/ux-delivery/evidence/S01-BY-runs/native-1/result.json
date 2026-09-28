@@ -1,0 +1,1498 @@
+{
+    "apkId":  "com.lexiquest.app.nativeTodayBy",
+    "apkSha256":  "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+    "protectedBefore":  {
+                            "com.lexiquest.app.nativeResumeBw":  [
+                                                                     "versionCode=14 minSdk=26 targetSdk=36",
+                                                                     "versionName=1.0.0",
+                                                                     "lastUpdateTime=2026-09-28 10:33:31",
+                                                                     "firstInstallTime=2026-09-28 10:33:31",
+                                                                     "firstInstallTime=2026-09-28 10:33:31"
+                                                                 ],
+                            "com.lexiquest.app":  [
+                                                      "versionCode=23 minSdk=26 targetSdk=36",
+                                                      "versionName=1.0.0",
+                                                      "lastUpdateTime=2026-09-13 08:14:41",
+                                                      "firstInstallTime=2026-09-01 00:27:20",
+                                                      "firstInstallTime=2026-09-01 00:27:20"
+                                                  ],
+                            "com.lexiquest.app.nativeBaselineBm":  [
+                                                                       "versionCode=14 minSdk=26 targetSdk=36",
+                                                                       "versionName=1.0.0",
+                                                                       "lastUpdateTime=2026-09-27 07:56:28",
+                                                                       "firstInstallTime=2026-09-27 07:56:28",
+                                                                       "firstInstallTime=2026-09-27 07:56:28"
+                                                                   ],
+                            "com.lexiquest.app.ariTest":  [
+                                                              "versionCode=14 minSdk=26 targetSdk=36",
+                                                              "versionName=1.0.0",
+                                                              "lastUpdateTime=2026-09-24 05:38:40",
+                                                              "firstInstallTime=2026-09-21 00:24:50",
+                                                              "firstInstallTime=2026-09-21 00:24:50"
+                                                          ]
+                        },
+    "isolationVerified":  true,
+    "pid_verify":  "11936",
+    "commands":  [
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.0505300Z",
+                         "arguments":  [
+                                           "get-state"
+                                       ],
+                         "durationMs":  35.1032
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.0939335Z",
+                         "arguments":  [
+                                           "shell",
+                                           "getprop",
+                                           "ro.product.model"
+                                       ],
+                         "durationMs":  88.9269
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.1838645Z",
+                         "arguments":  [
+                                           "shell",
+                                           "getprop",
+                                           "ro.build.version.sdk"
+                                       ],
+                         "durationMs":  79.6076
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.2634721Z",
+                         "arguments":  [
+                                           "shell",
+                                           "getprop",
+                                           "ro.kernel.qemu"
+                                       ],
+                         "durationMs":  80.2335
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.3467075Z",
+                         "arguments":  [
+                                           "shell",
+                                           "pm",
+                                           "list",
+                                           "packages",
+                                           "com.lexiquest"
+                                       ],
+                         "durationMs":  106.9098
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.4606142Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app"
+                                       ],
+                         "durationMs":  121.1939
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.5978226Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.ariTest"
+                                       ],
+                         "durationMs":  98.1691
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.7032833Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.nativeBaselineBm"
+                                       ],
+                         "durationMs":  97.4163
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:04.8045301Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.nativeResumeBw"
+                                       ],
+                         "durationMs":  117.9431
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:05.1783908Z",
+                         "arguments":  [
+                                           "install",
+                                           "-t",
+                                           "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\build\\native-today\\S01-BY\\gradle\\app\\outputs\\apk\\debug\\app-debug.apk"
+                                       ],
+                         "durationMs":  9015.2243
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:14.1957793Z",
+                         "arguments":  [
+                                           "shell",
+                                           "am",
+                                           "start",
+                                           "-W",
+                                           "-n",
+                                           "com.lexiquest.app.nativeTodayBy/com.lexiquest.app.NativeTodayActivity",
+                                           "--es",
+                                           "baselineRun",
+                                           "by-synthetic-01",
+                                           "--es",
+                                           "baselinePhase",
+                                           "seed"
+                                       ],
+                         "durationMs":  8203.9381000000012
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:22.4007185Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  72.227100000000007
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:23.4880758Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  61.620400000000004
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:24.5596638Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  61.351000000000006
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:25.6359468Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  60.6407
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:26.7050082Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  103.79090000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:27.8185611Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  92.1053
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:28.9207109Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  67.45320000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:29.9892661Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  55.785000000000004
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:31.0575644Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  53.8951
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:32.1184305Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  78.402200000000008
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:33.2018551Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  104.41080000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:34.3213394Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  159.83350000000002
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:35.4851697Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  57.3502
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:36.5529727Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  113.83000000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:37.6706390Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  97.0214
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:38.7696628Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  96.0412
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:39.8719984Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  57.1008
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:40.9436376Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  100.7566
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:42.0568663Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  99.0618
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:43.1595709Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  98.3302
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:44.2621471Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  114.2026
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:45.3904281Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  100.3011
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:46.5059315Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  100.23320000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:47.6072508Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  98.632
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:48.7094220Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  97.6076
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:49.8221412Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  103.807
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:50.9414432Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  101.39590000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:52.0465482Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  110.23700000000001
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:53.1631053Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-seed.json"
+                                       ],
+                         "durationMs":  109.3429
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:53.3055345Z",
+                         "arguments":  [
+                                           "shell",
+                                           "pidof",
+                                           "com.lexiquest.app.nativeTodayBy"
+                                       ],
+                         "durationMs":  135.3586
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:53.4439125Z",
+                         "arguments":  [
+                                           "shell",
+                                           "am",
+                                           "force-stop",
+                                           "com.lexiquest.app.nativeTodayBy"
+                                       ],
+                         "durationMs":  171.54410000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:53.6154566Z",
+                         "arguments":  [
+                                           "shell",
+                                           "pidof",
+                                           "com.lexiquest.app.nativeTodayBy"
+                                       ],
+                         "durationMs":  81.1701
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:09:53.9043387Z",
+                         "arguments":  [
+                                           "shell",
+                                           "am",
+                                           "start",
+                                           "-W",
+                                           "-n",
+                                           "com.lexiquest.app.nativeTodayBy/com.lexiquest.app.NativeTodayActivity",
+                                           "--es",
+                                           "baselineRun",
+                                           "by-synthetic-01",
+                                           "--es",
+                                           "baselinePhase",
+                                           "verify"
+                                       ],
+                         "durationMs":  3459.3872
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:57.3637259Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  70.03240000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:58.4472978Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  88.3973
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:09:59.5496782Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  77.438600000000008
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:00.6359758Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  114.99900000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:01.7589743Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  101.5824
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:02.8719120Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  108.33930000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:03.9870927Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  102.6132
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:05.1061845Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  111.0899
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:06.2244220Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  99.0109
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:07.3293985Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  100.2782
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:08.4440074Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  97.841500000000011
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:09.5459872Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  98.58890000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:10.6487451Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  103.40140000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:11.7669935Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  110.62490000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:12.8925711Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  106.81920000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:14.0088162Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  103.69420000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:15.1135455Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  71.662
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:16.1984813Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  105.9642
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:17.3184946Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  104.1101
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:18.4388883Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  100.30340000000001
+                     },
+                     {
+                         "exitCode":  1,
+                         "atUtc":  "2026-09-28T05:10:19.5403222Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  147.4351
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:20.7028361Z",
+                         "arguments":  [
+                                           "shell",
+                                           "run-as",
+                                           "com.lexiquest.app.nativeTodayBy",
+                                           "cat",
+                                           "files/by-synthetic-01-verify.json"
+                                       ],
+                         "durationMs":  98.9034
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:20.8087402Z",
+                         "arguments":  [
+                                           "shell",
+                                           "pidof",
+                                           "com.lexiquest.app.nativeTodayBy"
+                                       ],
+                         "durationMs":  107.18310000000001
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:20.9179215Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app"
+                                       ],
+                         "durationMs":  142.8752
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:21.0678101Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.ariTest"
+                                       ],
+                         "durationMs":  126.9882
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:21.2021460Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.nativeBaselineBm"
+                                       ],
+                         "durationMs":  106.3669
+                     },
+                     {
+                         "exitCode":  0,
+                         "atUtc":  "2026-09-28T05:10:21.3125164Z",
+                         "arguments":  [
+                                           "shell",
+                                           "dumpsys",
+                                           "package",
+                                           "com.lexiquest.app.nativeResumeBw"
+                                       ],
+                         "durationMs":  146.6266
+                     }
+                 ],
+    "pid_seed":  "11195",
+    "phases":  [
+                   {
+                       "phase":  "seed",
+                       "atUtc":  "2026-09-28T05:09:53.2734514Z",
+                       "durationMs":  30874.7315,
+                       "receipt":  {
+                                       "packageId":  "com.lexiquest.app.nativeTodayBy",
+                                       "runId":  "by-synthetic-01",
+                                       "phase":  "seed",
+                                       "status":  "PASS",
+                                       "closed":  true,
+                                       "cases":  {
+                                                     "N01":  "PASS",
+                                                     "N02":  "PASS",
+                                                     "N03":  "PASS"
+                                                 },
+                                       "fixtureDigest":  "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1",
+                                       "tableDigests":  {
+                                                            "achievement_unlocks":  "59b57c0ca35a3bd57886d4a9f52514ddffba2773ffc077b00fd3356837e71d4f",
+                                                            "active_plan_pointers":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "ai_usage_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "answer_attempts":  "b3aca6c615048e4241cc85444a109f4df94fd55b141bd926798ff028eb07288f",
+                                                            "assessment_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "association_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "associative_memory_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "audio_lesson_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "content_download_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "content_manifests":  "59801b518386e191d9519ef298e2a55e108f1bf61c90ee594ea56a684cb9fcd7",
+                                                            "content_quality_reports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "equipped_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "events_v2":  "3296e34df8ca54cb8efd77b545083392b2543e7c2cbc8601bc18b18691125bf1",
+                                                            "experiment_assignments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "guided_repair_operations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learner_preferences":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_day_log":  "ad6f5645e15fa0193b7e552173e565ff21865ddeaf1f3671f7053bc11051a143",
+                                                            "learning_goals":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_pack_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_packs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_sessions":  "42550efcdccd0f2f0185e835ddda26adf28bd1925a72bec948d20d1f28d4d7f6",
+                                                            "learning_time_segments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "legacy_learning_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "local_owners":  "c19cb5da4902ddb18f016d6f24932010f1b10df49f806b7c8d8ddb6dfe967aea",
+                                                            "measurement_opportunities":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "model_downloads":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "motivation_measurement_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "motivation_responses":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "outbox_operations":  "0ab86a145deaf7725255443bb43517e863f14b7ac3562303dbe7926ccb8e3322",
+                                                            "owned_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "personal_set_members":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "personal_set_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "points_ledger_entries":  "936c23eab52fc95ab33686a2fb197ad263a7ffff5df08b99cdef8b5c9ba298cf",
+                                                            "quest_definitions":  "2a45f44ef0544f61d46996c7e316d53836fac72e41fc1de140c0d71198825aea",
+                                                            "quest_instances":  "007927dd4adfefd9b8a139ea5b15ccb9c224c2ac3592347816432678a94c32dc",
+                                                            "quest_objective_progress":  "1bc2fe216266bb214ff8592e56d4c9b51c08ae72172bf25d623736f315cfd8d6",
+                                                            "reading_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "reading_progress_entries":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_consents":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_participation_permits":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_session_proofs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "reward_transactions":  "6e2baa1193bafe4224ec0f4c68b65b594e8a0c9c772f3a8bb0e21f7257974719",
+                                                            "runtime_flags":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "saved_learning_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "session_configurations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "speaking_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "speech_evidence":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "srs_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "streak_states":  "107127194bb4328fd2a53d74bbe3ae4c0e9f6b992f34071d0a78a8b2199b6f2e",
+                                                            "study_plan_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "study_reminders":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "sync_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "sync_conflicts":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_categories":  "e03b447596f0b00074f9b5de1a4b0b6d13e0faf6a5ec74a697b99535330160db",
+                                                            "vocabulary_import_rows":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_imports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_words":  "f852cdc48ec667cdcf34f5c381760d4258f97bdb42a69bd2ccec3a92172a4e02",
+                                                            "written_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                                                        },
+                                       "planDigest":  "5f0f67ba9f12370b77650c63044ecfd86b37bafc22e3230ebb94a39b1a26cd64",
+                                       "progressDigest":  "8ca9e41903263b7b1c86a06aef66608531850965fe1f424034dad456234f51e4",
+                                       "ownerId":  "local:synthetic-by-synthetic-01-owner",
+                                       "sessionId":  "session:7cdeb86d-9ec1-4a67-adee-042c0400b515",
+                                       "index":  0,
+                                       "progressPhase":  "answered",
+                                       "tableCounts":  {
+                                                           "achievement_unlocks":  2,
+                                                           "active_plan_pointers":  0,
+                                                           "ai_usage_events":  0,
+                                                           "answer_attempts":  1,
+                                                           "assessment_runs":  0,
+                                                           "association_records":  0,
+                                                           "associative_memory_states":  0,
+                                                           "audio_lesson_checkpoints":  0,
+                                                           "content_download_states":  0,
+                                                           "content_manifests":  15,
+                                                           "content_quality_reports":  0,
+                                                           "equipped_reward_items":  0,
+                                                           "events_v2":  17,
+                                                           "experiment_assignments":  0,
+                                                           "guided_repair_operations":  0,
+                                                           "learner_preferences":  0,
+                                                           "learning_day_log":  1,
+                                                           "learning_goals":  0,
+                                                           "learning_pack_items":  0,
+                                                           "learning_packs":  0,
+                                                           "learning_sessions":  1,
+                                                           "learning_time_segments":  0,
+                                                           "legacy_learning_records":  0,
+                                                           "local_owners":  2,
+                                                           "measurement_opportunities":  0,
+                                                           "model_downloads":  0,
+                                                           "motivation_measurement_runs":  0,
+                                                           "motivation_responses":  0,
+                                                           "outbox_operations":  4,
+                                                           "owned_reward_items":  0,
+                                                           "personal_set_members":  0,
+                                                           "personal_set_revisions":  0,
+                                                           "points_ledger_entries":  1,
+                                                           "quest_definitions":  1,
+                                                           "quest_instances":  1,
+                                                           "quest_objective_progress":  1,
+                                                           "reading_events":  0,
+                                                           "reading_progress_entries":  0,
+                                                           "research_consents":  0,
+                                                           "research_participation_permits":  0,
+                                                           "research_session_proofs":  0,
+                                                           "reward_transactions":  1,
+                                                           "runtime_flags":  0,
+                                                           "saved_learning_items":  0,
+                                                           "session_configurations":  0,
+                                                           "speaking_practice_results":  0,
+                                                           "speech_evidence":  0,
+                                                           "srs_states":  0,
+                                                           "streak_states":  1,
+                                                           "study_plan_revisions":  0,
+                                                           "study_reminders":  0,
+                                                           "sync_checkpoints":  0,
+                                                           "sync_conflicts":  0,
+                                                           "vocabulary_categories":  2,
+                                                           "vocabulary_import_rows":  0,
+                                                           "vocabulary_imports":  0,
+                                                           "vocabulary_words":  14,
+                                                           "written_practice_results":  0
+                                                       },
+                                       "externalCalls":  0,
+                                       "researchRows":  0,
+                                       "outboxRows":  0,
+                                       "ordinaryLocalOutboxRows":  4
+                                   }
+                   },
+                   {
+                       "phase":  "verify",
+                       "atUtc":  "2026-09-28T05:10:20.8027382Z",
+                       "durationMs":  23439.012300000002,
+                       "receipt":  {
+                                       "packageId":  "com.lexiquest.app.nativeTodayBy",
+                                       "runId":  "by-synthetic-01",
+                                       "phase":  "verify",
+                                       "status":  "PASS",
+                                       "closed":  true,
+                                       "cases":  {
+                                                     "N04":  "PASS"
+                                                 },
+                                       "fixtureDigest":  "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1",
+                                       "tableDigests":  {
+                                                            "achievement_unlocks":  "59b57c0ca35a3bd57886d4a9f52514ddffba2773ffc077b00fd3356837e71d4f",
+                                                            "active_plan_pointers":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "ai_usage_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "answer_attempts":  "b3aca6c615048e4241cc85444a109f4df94fd55b141bd926798ff028eb07288f",
+                                                            "assessment_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "association_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "associative_memory_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "audio_lesson_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "content_download_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "content_manifests":  "59801b518386e191d9519ef298e2a55e108f1bf61c90ee594ea56a684cb9fcd7",
+                                                            "content_quality_reports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "equipped_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "events_v2":  "3296e34df8ca54cb8efd77b545083392b2543e7c2cbc8601bc18b18691125bf1",
+                                                            "experiment_assignments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "guided_repair_operations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learner_preferences":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_day_log":  "ad6f5645e15fa0193b7e552173e565ff21865ddeaf1f3671f7053bc11051a143",
+                                                            "learning_goals":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_pack_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_packs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "learning_sessions":  "42550efcdccd0f2f0185e835ddda26adf28bd1925a72bec948d20d1f28d4d7f6",
+                                                            "learning_time_segments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "legacy_learning_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "local_owners":  "c19cb5da4902ddb18f016d6f24932010f1b10df49f806b7c8d8ddb6dfe967aea",
+                                                            "measurement_opportunities":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "model_downloads":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "motivation_measurement_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "motivation_responses":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "outbox_operations":  "0ab86a145deaf7725255443bb43517e863f14b7ac3562303dbe7926ccb8e3322",
+                                                            "owned_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "personal_set_members":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "personal_set_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "points_ledger_entries":  "936c23eab52fc95ab33686a2fb197ad263a7ffff5df08b99cdef8b5c9ba298cf",
+                                                            "quest_definitions":  "2a45f44ef0544f61d46996c7e316d53836fac72e41fc1de140c0d71198825aea",
+                                                            "quest_instances":  "007927dd4adfefd9b8a139ea5b15ccb9c224c2ac3592347816432678a94c32dc",
+                                                            "quest_objective_progress":  "1bc2fe216266bb214ff8592e56d4c9b51c08ae72172bf25d623736f315cfd8d6",
+                                                            "reading_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "reading_progress_entries":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_consents":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_participation_permits":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "research_session_proofs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "reward_transactions":  "6e2baa1193bafe4224ec0f4c68b65b594e8a0c9c772f3a8bb0e21f7257974719",
+                                                            "runtime_flags":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "saved_learning_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "session_configurations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "speaking_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "speech_evidence":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "srs_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "streak_states":  "107127194bb4328fd2a53d74bbe3ae4c0e9f6b992f34071d0a78a8b2199b6f2e",
+                                                            "study_plan_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "study_reminders":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "sync_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "sync_conflicts":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_categories":  "e03b447596f0b00074f9b5de1a4b0b6d13e0faf6a5ec74a697b99535330160db",
+                                                            "vocabulary_import_rows":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_imports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                            "vocabulary_words":  "f852cdc48ec667cdcf34f5c381760d4258f97bdb42a69bd2ccec3a92172a4e02",
+                                                            "written_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                                                        },
+                                       "planDigest":  "5f0f67ba9f12370b77650c63044ecfd86b37bafc22e3230ebb94a39b1a26cd64",
+                                       "progressDigest":  "8ca9e41903263b7b1c86a06aef66608531850965fe1f424034dad456234f51e4",
+                                       "ownerId":  "local:synthetic-by-synthetic-01-owner",
+                                       "sessionId":  "session:7cdeb86d-9ec1-4a67-adee-042c0400b515",
+                                       "index":  0,
+                                       "progressPhase":  "answered",
+                                       "tableCounts":  {
+                                                           "achievement_unlocks":  2,
+                                                           "active_plan_pointers":  0,
+                                                           "ai_usage_events":  0,
+                                                           "answer_attempts":  1,
+                                                           "assessment_runs":  0,
+                                                           "association_records":  0,
+                                                           "associative_memory_states":  0,
+                                                           "audio_lesson_checkpoints":  0,
+                                                           "content_download_states":  0,
+                                                           "content_manifests":  15,
+                                                           "content_quality_reports":  0,
+                                                           "equipped_reward_items":  0,
+                                                           "events_v2":  17,
+                                                           "experiment_assignments":  0,
+                                                           "guided_repair_operations":  0,
+                                                           "learner_preferences":  0,
+                                                           "learning_day_log":  1,
+                                                           "learning_goals":  0,
+                                                           "learning_pack_items":  0,
+                                                           "learning_packs":  0,
+                                                           "learning_sessions":  1,
+                                                           "learning_time_segments":  0,
+                                                           "legacy_learning_records":  0,
+                                                           "local_owners":  2,
+                                                           "measurement_opportunities":  0,
+                                                           "model_downloads":  0,
+                                                           "motivation_measurement_runs":  0,
+                                                           "motivation_responses":  0,
+                                                           "outbox_operations":  4,
+                                                           "owned_reward_items":  0,
+                                                           "personal_set_members":  0,
+                                                           "personal_set_revisions":  0,
+                                                           "points_ledger_entries":  1,
+                                                           "quest_definitions":  1,
+                                                           "quest_instances":  1,
+                                                           "quest_objective_progress":  1,
+                                                           "reading_events":  0,
+                                                           "reading_progress_entries":  0,
+                                                           "research_consents":  0,
+                                                           "research_participation_permits":  0,
+                                                           "research_session_proofs":  0,
+                                                           "reward_transactions":  1,
+                                                           "runtime_flags":  0,
+                                                           "saved_learning_items":  0,
+                                                           "session_configurations":  0,
+                                                           "speaking_practice_results":  0,
+                                                           "speech_evidence":  0,
+                                                           "srs_states":  0,
+                                                           "streak_states":  1,
+                                                           "study_plan_revisions":  0,
+                                                           "study_reminders":  0,
+                                                           "sync_checkpoints":  0,
+                                                           "sync_conflicts":  0,
+                                                           "vocabulary_categories":  2,
+                                                           "vocabulary_import_rows":  0,
+                                                           "vocabulary_imports":  0,
+                                                           "vocabulary_words":  14,
+                                                           "written_practice_results":  0
+                                                       },
+                                       "externalCalls":  0,
+                                       "researchRows":  0,
+                                       "outboxRows":  0,
+                                       "ordinaryLocalOutboxRows":  4
+                                   }
+                   }
+               ],
+    "status":  "PASS",
+    "runId":  "by-synthetic-01",
+    "contract":  {
+                     "status":  "PASS",
+                     "apkSha":  "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+                     "runId":  "by-synthetic-01",
+                     "seed":  {
+                                  "planDigest":  "5f0f67ba9f12370b77650c63044ecfd86b37bafc22e3230ebb94a39b1a26cd64",
+                                  "tableCounts":  {
+                                                      "achievement_unlocks":  2,
+                                                      "active_plan_pointers":  0,
+                                                      "ai_usage_events":  0,
+                                                      "answer_attempts":  1,
+                                                      "assessment_runs":  0,
+                                                      "association_records":  0,
+                                                      "associative_memory_states":  0,
+                                                      "audio_lesson_checkpoints":  0,
+                                                      "content_download_states":  0,
+                                                      "content_manifests":  15,
+                                                      "content_quality_reports":  0,
+                                                      "equipped_reward_items":  0,
+                                                      "events_v2":  17,
+                                                      "experiment_assignments":  0,
+                                                      "guided_repair_operations":  0,
+                                                      "learner_preferences":  0,
+                                                      "learning_day_log":  1,
+                                                      "learning_goals":  0,
+                                                      "learning_pack_items":  0,
+                                                      "learning_packs":  0,
+                                                      "learning_sessions":  1,
+                                                      "learning_time_segments":  0,
+                                                      "legacy_learning_records":  0,
+                                                      "local_owners":  2,
+                                                      "measurement_opportunities":  0,
+                                                      "model_downloads":  0,
+                                                      "motivation_measurement_runs":  0,
+                                                      "motivation_responses":  0,
+                                                      "outbox_operations":  4,
+                                                      "owned_reward_items":  0,
+                                                      "personal_set_members":  0,
+                                                      "personal_set_revisions":  0,
+                                                      "points_ledger_entries":  1,
+                                                      "quest_definitions":  1,
+                                                      "quest_instances":  1,
+                                                      "quest_objective_progress":  1,
+                                                      "reading_events":  0,
+                                                      "reading_progress_entries":  0,
+                                                      "research_consents":  0,
+                                                      "research_participation_permits":  0,
+                                                      "research_session_proofs":  0,
+                                                      "reward_transactions":  1,
+                                                      "runtime_flags":  0,
+                                                      "saved_learning_items":  0,
+                                                      "session_configurations":  0,
+                                                      "speaking_practice_results":  0,
+                                                      "speech_evidence":  0,
+                                                      "srs_states":  0,
+                                                      "streak_states":  1,
+                                                      "study_plan_revisions":  0,
+                                                      "study_reminders":  0,
+                                                      "sync_checkpoints":  0,
+                                                      "sync_conflicts":  0,
+                                                      "vocabulary_categories":  2,
+                                                      "vocabulary_import_rows":  0,
+                                                      "vocabulary_imports":  0,
+                                                      "vocabulary_words":  14,
+                                                      "written_practice_results":  0
+                                                  },
+                                  "phase":  "seed",
+                                  "progressDigest":  "8ca9e41903263b7b1c86a06aef66608531850965fe1f424034dad456234f51e4",
+                                  "externalCalls":  0,
+                                  "cases":  {
+                                                "N01":  "PASS",
+                                                "N03":  "PASS",
+                                                "N02":  "PASS"
+                                            },
+                                  "tableDigests":  {
+                                                       "achievement_unlocks":  "59b57c0ca35a3bd57886d4a9f52514ddffba2773ffc077b00fd3356837e71d4f",
+                                                       "active_plan_pointers":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "ai_usage_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "answer_attempts":  "b3aca6c615048e4241cc85444a109f4df94fd55b141bd926798ff028eb07288f",
+                                                       "assessment_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "association_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "associative_memory_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "audio_lesson_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "content_download_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "content_manifests":  "59801b518386e191d9519ef298e2a55e108f1bf61c90ee594ea56a684cb9fcd7",
+                                                       "content_quality_reports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "equipped_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "events_v2":  "3296e34df8ca54cb8efd77b545083392b2543e7c2cbc8601bc18b18691125bf1",
+                                                       "experiment_assignments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "guided_repair_operations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "learner_preferences":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "learning_day_log":  "ad6f5645e15fa0193b7e552173e565ff21865ddeaf1f3671f7053bc11051a143",
+                                                       "learning_goals":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "learning_pack_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "learning_packs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "learning_sessions":  "42550efcdccd0f2f0185e835ddda26adf28bd1925a72bec948d20d1f28d4d7f6",
+                                                       "learning_time_segments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "legacy_learning_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "local_owners":  "c19cb5da4902ddb18f016d6f24932010f1b10df49f806b7c8d8ddb6dfe967aea",
+                                                       "measurement_opportunities":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "model_downloads":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "motivation_measurement_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "motivation_responses":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "outbox_operations":  "0ab86a145deaf7725255443bb43517e863f14b7ac3562303dbe7926ccb8e3322",
+                                                       "owned_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "personal_set_members":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "personal_set_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "points_ledger_entries":  "936c23eab52fc95ab33686a2fb197ad263a7ffff5df08b99cdef8b5c9ba298cf",
+                                                       "quest_definitions":  "2a45f44ef0544f61d46996c7e316d53836fac72e41fc1de140c0d71198825aea",
+                                                       "quest_instances":  "007927dd4adfefd9b8a139ea5b15ccb9c224c2ac3592347816432678a94c32dc",
+                                                       "quest_objective_progress":  "1bc2fe216266bb214ff8592e56d4c9b51c08ae72172bf25d623736f315cfd8d6",
+                                                       "reading_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "reading_progress_entries":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "research_consents":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "research_participation_permits":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "research_session_proofs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "reward_transactions":  "6e2baa1193bafe4224ec0f4c68b65b594e8a0c9c772f3a8bb0e21f7257974719",
+                                                       "runtime_flags":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "saved_learning_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "session_configurations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "speaking_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "speech_evidence":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "srs_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "streak_states":  "107127194bb4328fd2a53d74bbe3ae4c0e9f6b992f34071d0a78a8b2199b6f2e",
+                                                       "study_plan_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "study_reminders":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "sync_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "sync_conflicts":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "vocabulary_categories":  "e03b447596f0b00074f9b5de1a4b0b6d13e0faf6a5ec74a697b99535330160db",
+                                                       "vocabulary_import_rows":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "vocabulary_imports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                       "vocabulary_words":  "f852cdc48ec667cdcf34f5c381760d4258f97bdb42a69bd2ccec3a92172a4e02",
+                                                       "written_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                                                   },
+                                  "packageId":  "com.lexiquest.app.nativeTodayBy",
+                                  "closed":  true,
+                                  "ownerId":  "local:synthetic-by-synthetic-01-owner",
+                                  "index":  0,
+                                  "progressPhase":  "answered",
+                                  "runId":  "by-synthetic-01",
+                                  "sessionId":  "session:7cdeb86d-9ec1-4a67-adee-042c0400b515",
+                                  "status":  "PASS",
+                                  "fixtureDigest":  "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1",
+                                  "researchRows":  0,
+                                  "outboxRows":  0,
+                                  "ordinaryLocalOutboxRows":  4
+                              },
+                     "verify":  {
+                                    "planDigest":  "5f0f67ba9f12370b77650c63044ecfd86b37bafc22e3230ebb94a39b1a26cd64",
+                                    "tableCounts":  {
+                                                        "achievement_unlocks":  2,
+                                                        "active_plan_pointers":  0,
+                                                        "ai_usage_events":  0,
+                                                        "answer_attempts":  1,
+                                                        "assessment_runs":  0,
+                                                        "association_records":  0,
+                                                        "associative_memory_states":  0,
+                                                        "audio_lesson_checkpoints":  0,
+                                                        "content_download_states":  0,
+                                                        "content_manifests":  15,
+                                                        "content_quality_reports":  0,
+                                                        "equipped_reward_items":  0,
+                                                        "events_v2":  17,
+                                                        "experiment_assignments":  0,
+                                                        "guided_repair_operations":  0,
+                                                        "learner_preferences":  0,
+                                                        "learning_day_log":  1,
+                                                        "learning_goals":  0,
+                                                        "learning_pack_items":  0,
+                                                        "learning_packs":  0,
+                                                        "learning_sessions":  1,
+                                                        "learning_time_segments":  0,
+                                                        "legacy_learning_records":  0,
+                                                        "local_owners":  2,
+                                                        "measurement_opportunities":  0,
+                                                        "model_downloads":  0,
+                                                        "motivation_measurement_runs":  0,
+                                                        "motivation_responses":  0,
+                                                        "outbox_operations":  4,
+                                                        "owned_reward_items":  0,
+                                                        "personal_set_members":  0,
+                                                        "personal_set_revisions":  0,
+                                                        "points_ledger_entries":  1,
+                                                        "quest_definitions":  1,
+                                                        "quest_instances":  1,
+                                                        "quest_objective_progress":  1,
+                                                        "reading_events":  0,
+                                                        "reading_progress_entries":  0,
+                                                        "research_consents":  0,
+                                                        "research_participation_permits":  0,
+                                                        "research_session_proofs":  0,
+                                                        "reward_transactions":  1,
+                                                        "runtime_flags":  0,
+                                                        "saved_learning_items":  0,
+                                                        "session_configurations":  0,
+                                                        "speaking_practice_results":  0,
+                                                        "speech_evidence":  0,
+                                                        "srs_states":  0,
+                                                        "streak_states":  1,
+                                                        "study_plan_revisions":  0,
+                                                        "study_reminders":  0,
+                                                        "sync_checkpoints":  0,
+                                                        "sync_conflicts":  0,
+                                                        "vocabulary_categories":  2,
+                                                        "vocabulary_import_rows":  0,
+                                                        "vocabulary_imports":  0,
+                                                        "vocabulary_words":  14,
+                                                        "written_practice_results":  0
+                                                    },
+                                    "phase":  "verify",
+                                    "progressDigest":  "8ca9e41903263b7b1c86a06aef66608531850965fe1f424034dad456234f51e4",
+                                    "externalCalls":  0,
+                                    "cases":  {
+                                                  "N04":  "PASS"
+                                              },
+                                    "tableDigests":  {
+                                                         "achievement_unlocks":  "59b57c0ca35a3bd57886d4a9f52514ddffba2773ffc077b00fd3356837e71d4f",
+                                                         "active_plan_pointers":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "ai_usage_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "answer_attempts":  "b3aca6c615048e4241cc85444a109f4df94fd55b141bd926798ff028eb07288f",
+                                                         "assessment_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "association_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "associative_memory_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "audio_lesson_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "content_download_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "content_manifests":  "59801b518386e191d9519ef298e2a55e108f1bf61c90ee594ea56a684cb9fcd7",
+                                                         "content_quality_reports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "equipped_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "events_v2":  "3296e34df8ca54cb8efd77b545083392b2543e7c2cbc8601bc18b18691125bf1",
+                                                         "experiment_assignments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "guided_repair_operations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "learner_preferences":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "learning_day_log":  "ad6f5645e15fa0193b7e552173e565ff21865ddeaf1f3671f7053bc11051a143",
+                                                         "learning_goals":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "learning_pack_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "learning_packs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "learning_sessions":  "42550efcdccd0f2f0185e835ddda26adf28bd1925a72bec948d20d1f28d4d7f6",
+                                                         "learning_time_segments":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "legacy_learning_records":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "local_owners":  "c19cb5da4902ddb18f016d6f24932010f1b10df49f806b7c8d8ddb6dfe967aea",
+                                                         "measurement_opportunities":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "model_downloads":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "motivation_measurement_runs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "motivation_responses":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "outbox_operations":  "0ab86a145deaf7725255443bb43517e863f14b7ac3562303dbe7926ccb8e3322",
+                                                         "owned_reward_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "personal_set_members":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "personal_set_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "points_ledger_entries":  "936c23eab52fc95ab33686a2fb197ad263a7ffff5df08b99cdef8b5c9ba298cf",
+                                                         "quest_definitions":  "2a45f44ef0544f61d46996c7e316d53836fac72e41fc1de140c0d71198825aea",
+                                                         "quest_instances":  "007927dd4adfefd9b8a139ea5b15ccb9c224c2ac3592347816432678a94c32dc",
+                                                         "quest_objective_progress":  "1bc2fe216266bb214ff8592e56d4c9b51c08ae72172bf25d623736f315cfd8d6",
+                                                         "reading_events":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "reading_progress_entries":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "research_consents":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "research_participation_permits":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "research_session_proofs":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "reward_transactions":  "6e2baa1193bafe4224ec0f4c68b65b594e8a0c9c772f3a8bb0e21f7257974719",
+                                                         "runtime_flags":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "saved_learning_items":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "session_configurations":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "speaking_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "speech_evidence":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "srs_states":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "streak_states":  "107127194bb4328fd2a53d74bbe3ae4c0e9f6b992f34071d0a78a8b2199b6f2e",
+                                                         "study_plan_revisions":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "study_reminders":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "sync_checkpoints":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "sync_conflicts":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "vocabulary_categories":  "e03b447596f0b00074f9b5de1a4b0b6d13e0faf6a5ec74a697b99535330160db",
+                                                         "vocabulary_import_rows":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "vocabulary_imports":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+                                                         "vocabulary_words":  "f852cdc48ec667cdcf34f5c381760d4258f97bdb42a69bd2ccec3a92172a4e02",
+                                                         "written_practice_results":  "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+                                                     },
+                                    "packageId":  "com.lexiquest.app.nativeTodayBy",
+                                    "closed":  true,
+                                    "ownerId":  "local:synthetic-by-synthetic-01-owner",
+                                    "index":  0,
+                                    "progressPhase":  "answered",
+                                    "runId":  "by-synthetic-01",
+                                    "sessionId":  "session:7cdeb86d-9ec1-4a67-adee-042c0400b515",
+                                    "status":  "PASS",
+                                    "fixtureDigest":  "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1",
+                                    "researchRows":  0,
+                                    "outboxRows":  0,
+                                    "ordinaryLocalOutboxRows":  4
+                                }
+                 },
+    "deviceId":  "9582188822004C6",
+    "packageId":  "com.lexiquest.app.nativeTodayBy",
+    "pid_stopped":  "",
+    "protectedAfter":  {
+                           "com.lexiquest.app.nativeResumeBw":  [
+                                                                    "versionCode=14 minSdk=26 targetSdk=36",
+                                                                    "versionName=1.0.0",
+                                                                    "lastUpdateTime=2026-09-28 10:33:31",
+                                                                    "firstInstallTime=2026-09-28 10:33:31",
+                                                                    "firstInstallTime=2026-09-28 10:33:31"
+                                                                ],
+                           "com.lexiquest.app":  [
+                                                     "versionCode=23 minSdk=26 targetSdk=36",
+                                                     "versionName=1.0.0",
+                                                     "lastUpdateTime=2026-09-13 08:14:41",
+                                                     "firstInstallTime=2026-09-01 00:27:20",
+                                                     "firstInstallTime=2026-09-01 00:27:20"
+                                                 ],
+                           "com.lexiquest.app.nativeBaselineBm":  [
+                                                                      "versionCode=14 minSdk=26 targetSdk=36",
+                                                                      "versionName=1.0.0",
+                                                                      "lastUpdateTime=2026-09-27 07:56:28",
+                                                                      "firstInstallTime=2026-09-27 07:56:28",
+                                                                      "firstInstallTime=2026-09-27 07:56:28"
+                                                                  ],
+                           "com.lexiquest.app.ariTest":  [
+                                                             "versionCode=14 minSdk=26 targetSdk=36",
+                                                             "versionName=1.0.0",
+                                                             "lastUpdateTime=2026-09-24 05:38:40",
+                                                             "firstInstallTime=2026-09-21 00:24:50",
+                                                             "firstInstallTime=2026-09-21 00:24:50"
+                                                         ]
+                       }
+}

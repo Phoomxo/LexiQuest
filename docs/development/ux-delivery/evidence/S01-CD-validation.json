@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-CD-native-draft-fresh-identity-attempt",
+  "status": "HOST_PASS_NATIVE_SEED_FAIL_NO_RESTART",
+  "stateRevision": 157,
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "nativePackage": "com.lexiquest.app.nativeDraftCd",
+  "cdApkPath": "build/native-draft/S01-CD/gradle/app/outputs/apk/debug/app-debug.apk",
+  "cdApkSha256": "ec7e950bd203063677e6a886ed9a37828831ffac22f60fa4db7a92dc6971683c",
+  "buildExitCode": 0,
+  "buildTimeSourcePins": 840,
+  "buildTimeSourceManifestSha256": "fae51a92e2f2434125571f0bd17cf5dba526127c84bfbe98e83c3ceeba869ab7",
+  "buildTimeSourceDriftAfterFix": [
+    "integration_test/support/native_draft_fixture.dart",
+    "test/support/native_draft_fixture_test.dart",
+    "tool/cli/run-native-draft-acceptance.ps1",
+    "tool/cli/tests/native-draft-runner.tests.ps1"
+  ],
+  "readiness": "PASS_ISOLATED_APK_7_PROTECTED_PACKAGES_0_INSTALL",
+  "native": "FAIL_SEED_STATE_ERROR_NO_RESUME_OR_OS_RESTART",
+  "nativeInstallCommandCount": 1,
+  "nativeInstallResponse": "SUCCESS_RETURNED",
+  "cdPackageInstalledAfterAttempt": true,
+  "nativeForceStopCount": 0,
+  "protectedMetadataUnchanged": 7,
+  "priorApkMismatchCount": 0,
+  "cbApkPreserved": true,
+  "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+  "hostTestsPassed": 3,
+  "analyzerIssues": 0,
+  "cliGate": {
+    "path": "build/verification/c3a69c5fea4a5a9f08be06e2ea5717a937edc34d/targeted-runtime-cli-6ab32c28615a27850be9161be3e8760b6d4576892931c6610cbd82f2ef3fa6c9.json",
+    "sha256": "3f45284c59f12430b6ec71d913419b05a95efe10dce09f3af41bc76b3b09956b",
+    "status": "Passed",
+    "fingerprint": "3015693efa2622219832535876d93a6cafa68a3c9cdf27d4f59431a4917111f3",
+    "postFingerprint": "3015693efa2622219832535876d93a6cafa68a3c9cdf27d4f59431a4917111f3",
+    "commands": [
+      "native-draft-contract.tests.ps1:Passed:0",
+      "native-draft-isolation.tests.ps1:Passed:0",
+      "native-draft-cd-contract.tests.ps1:Passed:0",
+      "native-draft-runner.tests.ps1:Passed:0"
+    ],
+    "runnerStubCases": 12
+  },
+  "evidenceHashes": {
+    "source-manifest.json": "fae51a92e2f2434125571f0bd17cf5dba526127c84bfbe98e83c3ceeba869ab7",
+    "readiness-result.json": "c3eb96fccba9fb352943868a445ef6e577173e0e6ba5932f1fe9ac1efd4f4bf6",
+    "install-attempt.json": "21faa212f4e8707bebd9a8251bc0cf3fb6ed24dbe3bad5465dc180f02785c47d",
+    "native-result.json": "5aa3196dc976c90ad52cc046e54dfa5a35c5ffc1185923eae4d943ffe09ce494",
+    "seed-receipt.json": "c019053b583f4c08d03207ece5e966ed646f0c5012be9dbdf6e9298cf8586eb1"
+  },
+  "productionLibChangedFiles": [],
+  "releaseAccepted": false
+}

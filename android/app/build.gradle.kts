@@ -11,7 +11,14 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 val ariLocalTest = providers.gradleProperty("ariLocalTest").orNull == "true"
 val nativeBaselineTest = providers.gradleProperty("nativeBaselineTest").orNull == "true"
 val nativeResumeTest = providers.gradleProperty("nativeResumeTest").orNull == "true"
-check(listOf(ariLocalTest, nativeBaselineTest, nativeResumeTest).count { it } <= 1) { "Choose one isolated debug identity." }
+val nativeTodayTest = providers.gradleProperty("nativeTodayTest").orNull == "true"
+val nativeRecoveryTest = providers.gradleProperty("nativeRecoveryTest").orNull == "true"
+val nativeTerminalTest = providers.gradleProperty("nativeTerminalTest").orNull == "true"
+val nativeDraftTest = providers.gradleProperty("nativeDraftTest").orNull == "true"
+val nativeDraftCdTest = providers.gradleProperty("nativeDraftCdTest").orNull == "true"
+val nativeDraftCeTest = providers.gradleProperty("nativeDraftCeTest").orNull == "true"
+val nativeStaleCfTest = providers.gradleProperty("nativeStaleCfTest").orNull == "true"
+check(listOf(ariLocalTest, nativeBaselineTest, nativeResumeTest, nativeTodayTest, nativeRecoveryTest, nativeTerminalTest, nativeDraftTest, nativeDraftCdTest, nativeDraftCeTest, nativeStaleCfTest).count { it } <= 1) { "Choose one isolated debug identity." }
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -44,6 +51,41 @@ val releaseProvenanceReady =
 
 android {
     namespace = "com.lexiquest.app"
+    if (nativeDraftTest || nativeDraftCdTest || nativeDraftCeTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeDraft/AndroidManifest.xml")
+            java.srcDir("src/nativeDraft/kotlin")
+        }
+        sourceSets.getByName("debug").manifest.srcFile("src/nativeDraft/DebugAndroidManifest.xml")
+    }
+    if (nativeStaleCfTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeStale/AndroidManifest.xml")
+            java.srcDir("src/nativeStale/kotlin")
+        }
+        sourceSets.getByName("debug").manifest.srcFile("src/nativeStale/DebugAndroidManifest.xml")
+    }
+    if (nativeTerminalTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeTerminal/AndroidManifest.xml")
+            java.srcDir("src/nativeTerminal/kotlin")
+        }
+        sourceSets.getByName("debug").manifest.srcFile("src/nativeTerminal/DebugAndroidManifest.xml")
+    }
+    if (nativeRecoveryTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeRecovery/AndroidManifest.xml")
+            java.srcDir("src/nativeRecovery/kotlin")
+        }
+        sourceSets.getByName("debug").manifest.srcFile("src/nativeRecovery/DebugAndroidManifest.xml")
+    }
+    if (nativeTodayTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeToday/AndroidManifest.xml")
+            java.srcDir("src/nativeToday/kotlin")
+        }
+        sourceSets.getByName("debug").manifest.srcFile("src/nativeToday/DebugAndroidManifest.xml")
+    }
     if (nativeResumeTest) {
         sourceSets.getByName("main") {
             manifest.srcFile("src/nativeResume/AndroidManifest.xml")
@@ -99,6 +141,13 @@ android {
             }
             if (nativeBaselineTest) applicationIdSuffix = ".nativeBaselineBm"
             if (nativeResumeTest) applicationIdSuffix = ".nativeResumeBw"
+            if (nativeTodayTest) applicationIdSuffix = ".nativeTodayBy"
+            if (nativeRecoveryTest) applicationIdSuffix = ".nativeRecoveryBz"
+            if (nativeTerminalTest) applicationIdSuffix = ".nativeTerminalCa"
+            if (nativeDraftTest) applicationIdSuffix = ".nativeDraftCb"
+            if (nativeDraftCdTest) applicationIdSuffix = ".nativeDraftCd"
+            if (nativeDraftCeTest) applicationIdSuffix = ".nativeDraftCe"
+            if (nativeStaleCfTest) applicationIdSuffix = ".nativeStaleCf"
         }
         release {
             signingConfig = signingConfigs.getByName("release")
@@ -126,7 +175,7 @@ gradle.taskGraph.whenReady {
     }
     // Debug builds also contain mergeDebugArtProfile/StartupProfile tasks.
     // Match the artifact variant, not any occurrence of the word Profile.
-    if ((nativeBaselineTest || nativeResumeTest) && allTasks.any {
+    if ((nativeBaselineTest || nativeResumeTest || nativeTodayTest || nativeRecoveryTest || nativeTerminalTest || nativeDraftTest || nativeDraftCdTest || nativeDraftCeTest || nativeStaleCfTest) && allTasks.any {
         Regex("^(assemble|bundle|package|compileFlutterBuild)(Release|Profile).*").matches(it.name)
     }) {
         throw GradleException("Native baseline is debug-only.")
@@ -153,7 +202,7 @@ gradle.taskGraph.whenReady {
 
 tasks.configureEach {
     // The isolated test package never initializes Firebase or cloud services.
-    if ((ariLocalTest || nativeBaselineTest || nativeResumeTest) && name == "processDebugGoogleServices") enabled = false
+    if ((ariLocalTest || nativeBaselineTest || nativeResumeTest || nativeTodayTest || nativeRecoveryTest || nativeTerminalTest || nativeDraftTest || nativeDraftCdTest || nativeDraftCeTest || nativeStaleCfTest) && name == "processDebugGoogleServices") enabled = false
 }
 
 kotlin {

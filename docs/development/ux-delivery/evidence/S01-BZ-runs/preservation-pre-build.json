@@ -1,0 +1,14 @@
+{
+  "changes": [
+    {
+      "state": "changed",
+      "path": "android/app/build.gradle.kts"
+    },
+    {
+      "state": "changed",
+      "path": "android/build.gradle.kts"
+    }
+  ],
+  "atUtc": "2026-09-28T05:37:33.4042732Z",
+  "baselineCount": 5518
+}

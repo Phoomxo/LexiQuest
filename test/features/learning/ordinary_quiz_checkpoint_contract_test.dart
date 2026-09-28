@@ -86,6 +86,72 @@ void main() {
   });
   tearDown(() => db.close());
 
+  for (final outcome in ['commit', 'rollback', 'caughtRollback']) {
+    final rollback = outcome != 'commit';
+    test('BY ordinary outer commit notifications $outcome', () async {
+      var local = 0;
+      final notifiedOwners = <String>[];
+      var inTransaction = false;
+      final subject = LearningUseCases(
+        owners: learning.owners,
+        repository: repository,
+        generateId: () => 'by-notification',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'by-test', buildId: 'synthetic'),
+        eventContextProvider: const BaselineLearningEventContextProvider(),
+        onLocalMutation: () {
+          expect(inTransaction, isFalse);
+          local++;
+        },
+        onSideEffectsPending: (owner) {
+          expect(inTransaction, isFalse);
+          notifiedOwners.add(owner);
+        },
+      );
+      final session = await subject.startQuiz(ordinaryMeaning: true, limit: 2);
+      local = 0;
+      notifiedOwners.clear();
+      final controller = const MeaningQuizModeAdapter().createReview(
+        session: session,
+        learning: subject,
+        evidence: CurrentActivityEvidenceAdapter(learning: subject),
+      );
+      Future<void> transaction() =>
+          subject.deferNotificationsUntilCommit(() async {
+            inTransaction = true;
+            try {
+              await db.transaction(() async {
+                await controller.answer(
+                  option: controller.currentQuestion.correctOption,
+                  responseTimeMs: 12,
+                );
+                expect(local, 0);
+                expect(notifiedOwners, isEmpty);
+                if (rollback) throw StateError('synthetic rollback');
+              });
+            } finally {
+              inTransaction = false;
+            }
+          });
+      if (outcome == 'caughtRollback') {
+        await subject.deferNotificationsUntilCommit(() async {
+          await expectLater(transaction(), throwsStateError);
+        });
+      } else if (rollback) {
+        await expectLater(transaction(), throwsStateError);
+      } else {
+        await transaction();
+      }
+      expect(local, rollback ? 0 : 4);
+      expect(notifiedOwners, rollback ? isEmpty : [ownerId]);
+      expect(
+        await db.select(db.answerAttempts).get(),
+        hasLength(rollback ? 0 : 1),
+      );
+      controller.dispose();
+    });
+  }
+
   LearningSessionDraft draft() => LearningSessionDraft(
     id: 'session:bt-session',
     ownerId: ownerId,
@@ -550,7 +616,7 @@ void main() {
       );
       review.dispose();
     });
-    for (final drift in ['owner', 'content', 'route']) {
+    for (final drift in ['owner', 'content', 'revision', 'route']) {
       test('BV exact recovery rejects $drift drift without mutation', () async {
         final session = await learning.startQuiz(
           ordinaryMeaning: true,
@@ -577,8 +643,13 @@ void main() {
               normalizedMeaning: Value('changed'),
             ),
           );
+        } else if (drift == 'revision') {
+          await (db.update(db.vocabularyWords)
+                ..where((r) => r.id.equals('bt-b')))
+              .write(const VocabularyWordsCompanion(contentRevision: Value(2)));
         }
         final before = await rows('events_v2');
+        final beforeProjections = await projections();
         await expectLater(
           OrdinaryMeaningRecovery.load(
             learning: learning,
@@ -589,6 +660,7 @@ void main() {
           throwsA(anyOf(isA<FormatException>(), isA<StateError>())),
         );
         expect(await rows('events_v2'), before);
+        expect(await projections(), beforeProjections);
       });
     }
     test(

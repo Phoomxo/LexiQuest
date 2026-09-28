@@ -1,0 +1,19 @@
+{
+  "atUtc": "2026-09-28T05:55:05.7939600Z",
+  "deviceDatabaseHashes": [
+    "ec7ae68f0cefa383e9f4700a55a6b79492fcd941fc7ef88f66765c9291a928e0  files/bz-synthetic-01/resume.sqlite",
+    "1a40d89208ec6b1e753e79ff03f5c9389b6f22e6616fba665855a1c51056258c  files/bz-synthetic-01/sealed.json",
+    "0f4f9611d457e3dc56ea31708ea535087c6a4fe267c6368bec2cd97dfa73bd8a  files/bz-synthetic-01/sealed-rows.json",
+    "0e5e062024bb4d4fa7be8e4e8ae1bf9630cdcb1d0d9969c2b68018332db7e89f  files/bz-synthetic-01/next.json",
+    "da8bb3d5ba9854e3faa1dcf28d3753e00850f72be19be77319c4e45048853a60  files/bz-synthetic-01/next-rows.json"
+  ],
+  "installedApkSha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+  "installedPath": "/data/app/~~ke-MZeD0IYTXq-v7VAaTeg==/com.lexiquest.app.nativeRecoveryBz-SVPBO9SiIcrpgFhsA8YxLA==/base.apk",
+  "packageMetadata": [
+    "versionCode=14 minSdk=26 targetSdk=36",
+    "versionName=1.0.0",
+    "lastUpdateTime=2026-09-28 12:52:43",
+    "firstInstallTime=2026-09-28 12:52:43",
+    "firstInstallTime=2026-09-28 12:52:43"
+  ]
+}

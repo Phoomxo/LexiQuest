@@ -208,13 +208,15 @@ final class OrdinaryMeaningRecovery {
     if (repository is! OrdinaryMeaningOperationRepository) {
       throw StateError('Ordinary operation authority unavailable');
     }
-    return (repository as OrdinaryMeaningOperationRepository)
-        .runOrdinaryOperation(
-          ownerId: progress.plan.session.ownerId!,
-          checkpoint: recovery.checkpoint!,
-          acceptsOperation: accepts,
-          operation: operation,
-        );
+    return learning.deferNotificationsUntilCommit(
+      () => (repository as OrdinaryMeaningOperationRepository)
+          .runOrdinaryOperation(
+            ownerId: progress.plan.session.ownerId!,
+            checkpoint: recovery.checkpoint!,
+            acceptsOperation: accepts,
+            operation: operation,
+          ),
+    );
   }
 
   static Future<OrdinaryMeaningRecovery> load({

@@ -1,0 +1,58 @@
+[
+  {
+    "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "path": "build/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "path": "build/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "sha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+    "path": "build/native-draft/S01-CB/gradle/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+    "path": "build/native-draft/S01-CB/gradle/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "sha256": "ec7e950bd203063677e6a886ed9a37828831ffac22f60fa4db7a92dc6971683c",
+    "path": "build/native-draft/S01-CD/gradle/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "ec7e950bd203063677e6a886ed9a37828831ffac22f60fa4db7a92dc6971683c",
+    "path": "build/native-draft/S01-CD/gradle/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "sha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+    "path": "build/native-recovery/S01-BZ/gradle/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+    "path": "build/native-recovery/S01-BZ/gradle/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "sha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+    "path": "build/native-terminal/S01-CA/gradle/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+    "path": "build/native-terminal/S01-CA/gradle/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+    "path": "build/native-today/S01-BY/gradle/app/outputs/apk/debug/app-debug.apk"
+  },
+  {
+    "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+    "path": "build/native-today/S01-BY/gradle/app/outputs/flutter-apk/app-debug.apk"
+  },
+  {
+    "path": "build/native-draft/S01-CE/gradle/app/outputs/apk/debug/app-debug.apk",
+    "sha256": "19f9fe039948c74210a212b6717d72d7c59a221c2f5293d3cde7774e8a683b98"
+  },
+  {
+    "path": "build/native-draft/S01-CE/gradle/app/outputs/flutter-apk/app-debug.apk",
+    "sha256": "19f9fe039948c74210a212b6717d72d7c59a221c2f5293d3cde7774e8a683b98"
+  }
+]

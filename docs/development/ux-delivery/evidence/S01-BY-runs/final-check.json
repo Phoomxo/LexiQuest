@@ -1,0 +1,32 @@
+{
+  "trackedChanged": [
+    "android/app/build.gradle.kts",
+    "android/build.gradle.kts",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "lib/features/learning/application/learning_use_cases.dart",
+    "lib/features/learning/application/ordinary_meaning_recovery.dart",
+    "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+    "test/support/today_quiz_resume_contract_test.dart"
+  ],
+  "unexpectedChanges": [],
+  "stopCount": 1,
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "localOnlyMissing": [],
+  "nativeClosureEntries": 808,
+  "trackedChecked": 5483,
+  "forbiddenCommands": 0,
+  "protectedPackagesPreserved": 4,
+  "runningTaskHostProcesses": [],
+  "diffCheck": "PASS core.whitespace=cr-at-eol",
+  "retainedNativePid": "11936",
+  "installCount": 1,
+  "atUtc": "2026-09-28T05:17:02.2330260Z",
+  "hostClosureEntries": 1601,
+  "nativeTables": 58,
+  "localOnlyChecked": 5751,
+  "databaseClosed": true,
+  "historicalApksPreserved": 4,
+  "sourceClosureMismatches": [],
+  "branch": "codex/ux-current-after-s01-bc"
+}

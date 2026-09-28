@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-CG",
+  "verifiedAtUtc": "2026-09-28T20:35:34.552180+00:00",
+  "baseCommit": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "cfCheckpointSha256": "461160fff654aeaea7accd6a05d344e1df8288eccc6a588e4ee9e58eea821602",
+  "cfCheckpointSidecarMatch": true,
+  "cfSourcePins": 17,
+  "cfEvidencePins": 9,
+  "cfBuildSourcePins": 850,
+  "mismatches": 0,
+  "note": "Verified before CG coordination edits; source README/state pins describe CF revision 159."
+}

@@ -1,0 +1,474 @@
+{
+  "buildExitCode": 0,
+  "artifactPins": [
+    {
+      "path": "build/native-today/S01-BY/gradle/app/outputs/apk/debug/app-debug.apk",
+      "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/analyzer-final.log",
+      "sha256": "6d4db0918ab033109779e61cc3bfb6d9c6194a1466e1cbfa8fd479c563ba01e9"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/build.log",
+      "sha256": "23735afe7cadddeaa6656491e49a810dd174ac1a87638c7344f1d2f036d4e3ea"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/build-manifest.json",
+      "sha256": "e22881ab5ff89ec5856b4c138c36d91157069bc3b68d27bd6fca12d756189588"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/build-source-pre.json",
+      "sha256": "0f21cf9e8c909b93183c2ce98e20fa9e6f7988b90bfd496a82dcd4a692e149ca"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-gate.json",
+      "sha256": "ee8521a51f89e845663f27f5a54d0612f54fa9134002a6a0b43b27ed69885635"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-baseline-isolation.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-baseline-isolation.tests.ps1.stdout.log",
+      "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-resume-isolation.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-resume-isolation.tests.ps1.stdout.log",
+      "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-contract.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-contract.tests.ps1.stdout.log",
+      "sha256": "21eb313d97e28f644a181470b0f21fda6f93e5947768cc2698e8228cedf20334"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-isolation.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-isolation.tests.ps1.stdout.log",
+      "sha256": "fdc7f2bebf65ac5bdc01cd1b8560fe97010487e657bbf5e7c8fa6515dcce7acb"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-runner.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-native-today-runner.tests.ps1.stdout.log",
+      "sha256": "4f8c8046d49a5d2a842cddd5ed082ee031a1fc43ab7cd5f26b2e2e5ae3015c18"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/early-package-preflight.json",
+      "sha256": "0722d17fc5eddec9f4c70803487c082aa76cc407f9fb7db2a08ebebbadb3ff36"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/final-check.json",
+      "sha256": "c222a3e537b9de626535efd9c56251dddbed6e70a3d126aa7f5c20bc07f62e19"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/host-Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/host-Explicit-Flutter-tests.stdout.log",
+      "sha256": "015a14fbd3499799c947bd76a6c535c1a16665f79c30682006d3f2266b5c64e6"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/host-gate.json",
+      "sha256": "c33b9ebc735c1cc85900674e1cdb116728691e761b44b8325e74178ec0a90645"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/installed-apk.json",
+      "sha256": "200975f638e29e4e1dd2d3dc296d63adad80ea767ad1feacf06dd354f31ccc6f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/local-only-presence-before-build.json",
+      "sha256": "f7438703c3477b9e5aeb32f2196f82b7f5b39b7f968ef5d77cc7528a88170455"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/merged-manifest.txt",
+      "sha256": "2685b3a72c7cd8498ce06e9d40cd0387d2ec31385d48e8b7c283155a1fb0ad79"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/result.json",
+      "sha256": "645d556181a1df0bb9eda4baf299415dd5dbd8f0ee8391c770dd3720ff35c42a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/sealed-rows.json",
+      "sha256": "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/sealed-rows-pin.json",
+      "sha256": "5899adb39414df62f5e5a4855bc9d2e1cefe27c33d490b28081f488174077139"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/seed-receipt.json",
+      "sha256": "f0bba5347a39e427c722f6c66c7d61568e00b5839c94ac00db5776ca2ae818e6"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-1/verify-receipt.json",
+      "sha256": "9393247f1560e4653f634eaa2205c1573a2eed70e0778e9afd157f648061b894"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/native-run.log",
+      "sha256": "5ed82aed07955c576eb1aa5a5ddd78b2b2f474c958ef63cc6de318eaf6a4a181"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/nestedRed-Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/nestedRed-Explicit-Flutter-tests.stdout.log",
+      "sha256": "78e6f18a0c389cc16023a0bf56a1942aa2a3d660f65dbc798d3ab36222fa831d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/nestedRed-gate.json",
+      "sha256": "2df9251491773859e5a7aa5283ce82d8ee0615b53f1d02f2c6f9fa4b40119736"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/preflight/merged-manifest.txt",
+      "sha256": "2685b3a72c7cd8498ce06e9d40cd0387d2ec31385d48e8b7c283155a1fb0ad79"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/preflight/result.json",
+      "sha256": "1289797a022fd3953f37601f36f58c7b634a57700f334a25cdae0ad37f9ee7e4"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/preservation-before-build.json",
+      "sha256": "c681c2277f85aca3f8d5f2bfe07243261fa6f4fd8646c3fcf49f3295fe10ecb1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/projectionRed-Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/projectionRed-Explicit-Flutter-tests.stdout.log",
+      "sha256": "ea08230314362f026595e0320401db83d1f1562d9471aea8650bcb3e8057176c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/projectionRed-gate.json",
+      "sha256": "939aeec9d813fa2dc0d55e1b3ba76cd1abcaf38184ff6a70ed03fedd138f175c"
+    }
+  ],
+  "status": "PASS_NATIVE_SYNTHETIC_ACTUAL_BOOTSTRAP_TODAY_RESUME",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "hostTestsPassed": 320,
+  "analyzer": {
+    "pin": {
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/analyzer-final.log",
+      "sha256": "6d4db0918ab033109779e61cc3bfb6d9c6194a1466e1cbfa8fd479c563ba01e9"
+    },
+    "files": 8,
+    "issues": 0
+  },
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "reportPin": {
+    "path": "docs/development/ux-delivery/S01-BY.md",
+    "sha256": "88f6cd82bc26a460ec064c4e133679b7535e33aec339bbc4d2c43fff6e4087ab"
+  },
+  "hostSourcePins": 1601,
+  "hostTestFiles": 13,
+  "sourceClosureMismatches": 0,
+  "otherNativeRecoveryVariants": "NOT_RUN",
+  "nativeSourcePins": 808,
+  "sourceManifest": {
+    "path": "docs/development/ux-delivery/evidence/S01-BY-runs/build-manifest.json",
+    "sha256": "e22881ab5ff89ec5856b4c138c36d91157069bc3b68d27bd6fca12d756189588"
+  },
+  "hostTestsFailed": 0,
+  "cli": {
+    "status": "PASS",
+    "runnerCases": 6,
+    "isolationSuites": 3,
+    "contractCases": 23
+  },
+  "actualUserTrials": "DEFERRED",
+  "readmePin": {
+    "path": "docs/development/ux-delivery/README.md",
+    "sha256": "259696d9542aa7c198274775e293c98245227d84d14725b509efe35af54368f3"
+  },
+  "branch": "codex/ux-current-after-s01-bc",
+  "preservation": {
+    "trackedChanged": [
+      "android/app/build.gradle.kts",
+      "android/build.gradle.kts",
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/state.json",
+      "lib/features/learning/application/learning_use_cases.dart",
+      "lib/features/learning/application/ordinary_meaning_recovery.dart",
+      "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "test/support/today_quiz_resume_contract_test.dart"
+    ],
+    "unexpectedChanges": [],
+    "stopCount": 1,
+    "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+    "localOnlyMissing": [],
+    "nativeClosureEntries": 808,
+    "trackedChecked": 5483,
+    "forbiddenCommands": 0,
+    "protectedPackagesPreserved": 4,
+    "runningTaskHostProcesses": [],
+    "diffCheck": "PASS core.whitespace=cr-at-eol",
+    "retainedNativePid": "11936",
+    "installCount": 1,
+    "atUtc": "2026-09-28T05:17:02.233026Z",
+    "hostClosureEntries": 1601,
+    "nativeTables": 58,
+    "localOnlyChecked": 5751,
+    "databaseClosed": true,
+    "historicalApksPreserved": 4,
+    "sourceClosureMismatches": [],
+    "branch": "codex/ux-current-after-s01-bc"
+  },
+  "package": "S01-BY-native-today-resume",
+  "sourceReview": "MANUAL_SOLE_WRITER_NO_SUBAGENTS",
+  "sourceState": "UNCOMMITTED_SOURCE_PINNED_BY_BUILD_AND_HOST_CLOSURES",
+  "fixedDefects": [
+    "S01-BY-01 ordinary reconciliation scheduled before outer transaction commit",
+    "Caught nested rollback must discard its notification buffer"
+  ],
+  "visualImeTalkBack": "NOT_RUN",
+  "sprintAccepted": false,
+  "fieldDailyContinuity": "HIDDEN_UNCHANGED_PREVIEW_INJECTION_ONLY",
+  "statePin": {
+    "path": "docs/development/ux-delivery/state.json",
+    "sha256": "67c47351452d2833295a97b3bc70402b8994e2d667cb40a62ae296cd22e117f4"
+  },
+  "routing": "Current-model deterministic fallback; Standard/default requested, effective tier unverified; no Jev/billing/login/quota/paid probes or USD5 ledger changes",
+  "gatePrePost": [
+    {
+      "status": "Passed",
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "241f05af55353c8bd5c0b7cd557ba3019a57858a1d855d8cf901dec94d06e627",
+          "postFingerprint": "241f05af55353c8bd5c0b7cd557ba3019a57858a1d855d8cf901dec94d06e627",
+          "StdoutHash": "015A14FBD3499799C947BD76A6C535C1A16665F79C30682006D3F2266B5C64E6",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "sha256": "c33b9ebc735c1cc85900674e1cdb116728691e761b44b8325e74178ec0a90645",
+      "pre": "241f05af55353c8bd5c0b7cd557ba3019a57858a1d855d8cf901dec94d06e627",
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/host-gate.json",
+      "post": "241f05af55353c8bd5c0b7cd557ba3019a57858a1d855d8cf901dec94d06e627"
+    },
+    {
+      "status": "Passed",
+      "commands": [
+        {
+          "Name": "native-today-contract.tests.ps1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "postFingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "StdoutHash": "21EB313D97E28F644A181470B0F21FDA6F93E5947768CC2698E8228CEDF20334",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        },
+        {
+          "Name": "native-today-runner.tests.ps1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "postFingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "StdoutHash": "4F8C8046D49A5D2A842CDDD5ED082EE031A1FC43AB7CD5F26B2E2E5AE3015C18",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        },
+        {
+          "Name": "native-today-isolation.tests.ps1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "postFingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "StdoutHash": "FDC7F2BEBF65AC5BDC01CD1B8560FE97010487E657BBF5E7C8FA6515DCCE7ACB",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        },
+        {
+          "Name": "native-resume-isolation.tests.ps1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "postFingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "StdoutHash": "371030B759F607E9FCD1A0CB8CCD245A09DB5FEAF8AA72BC68DF57A046993970",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        },
+        {
+          "Name": "native-baseline-isolation.tests.ps1",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "fingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "postFingerprint": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+          "StdoutHash": "371030B759F607E9FCD1A0CB8CCD245A09DB5FEAF8AA72BC68DF57A046993970",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "sha256": "ee8521a51f89e845663f27f5a54d0612f54fa9134002a6a0b43b27ed69885635",
+      "pre": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068",
+      "path": "docs/development/ux-delivery/evidence/S01-BY-runs/cli-gate.json",
+      "post": "4adb3626a3907fdb311f0d887c98c79781e56cb353b50905178aeb0ed0011068"
+    }
+  ],
+  "native": {
+    "databaseClosed": true,
+    "deviceId": "9582188822004C6",
+    "researchRows": 0,
+    "tableCount": 58,
+    "noDuplicateEvidenceScoreSrsReward": true,
+    "pidSeed": "11195",
+    "tableCounts": {
+      "achievement_unlocks": 2,
+      "active_plan_pointers": 0,
+      "ai_usage_events": 0,
+      "answer_attempts": 1,
+      "assessment_runs": 0,
+      "association_records": 0,
+      "associative_memory_states": 0,
+      "audio_lesson_checkpoints": 0,
+      "content_download_states": 0,
+      "content_manifests": 15,
+      "content_quality_reports": 0,
+      "equipped_reward_items": 0,
+      "events_v2": 17,
+      "experiment_assignments": 0,
+      "guided_repair_operations": 0,
+      "learner_preferences": 0,
+      "learning_day_log": 1,
+      "learning_goals": 0,
+      "learning_pack_items": 0,
+      "learning_packs": 0,
+      "learning_sessions": 1,
+      "learning_time_segments": 0,
+      "legacy_learning_records": 0,
+      "local_owners": 2,
+      "measurement_opportunities": 0,
+      "model_downloads": 0,
+      "motivation_measurement_runs": 0,
+      "motivation_responses": 0,
+      "outbox_operations": 4,
+      "owned_reward_items": 0,
+      "personal_set_members": 0,
+      "personal_set_revisions": 0,
+      "points_ledger_entries": 1,
+      "quest_definitions": 1,
+      "quest_instances": 1,
+      "quest_objective_progress": 1,
+      "reading_events": 0,
+      "reading_progress_entries": 0,
+      "research_consents": 0,
+      "research_participation_permits": 0,
+      "research_session_proofs": 0,
+      "reward_transactions": 1,
+      "runtime_flags": 0,
+      "saved_learning_items": 0,
+      "session_configurations": 0,
+      "speaking_practice_results": 0,
+      "speech_evidence": 0,
+      "srs_states": 0,
+      "streak_states": 1,
+      "study_plan_revisions": 0,
+      "study_reminders": 0,
+      "sync_checkpoints": 0,
+      "sync_conflicts": 0,
+      "vocabulary_categories": 2,
+      "vocabulary_import_rows": 0,
+      "vocabulary_imports": 0,
+      "vocabulary_words": 14,
+      "written_practice_results": 0
+    },
+    "runId": "by-synthetic-01",
+    "sessionId": "session:7cdeb86d-9ec1-4a67-adee-042c0400b515",
+    "api": 33,
+    "pidStopped": "",
+    "status": "PASS",
+    "tableDigests": {
+      "achievement_unlocks": "59b57c0ca35a3bd57886d4a9f52514ddffba2773ffc077b00fd3356837e71d4f",
+      "active_plan_pointers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "ai_usage_events": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "answer_attempts": "b3aca6c615048e4241cc85444a109f4df94fd55b141bd926798ff028eb07288f",
+      "assessment_runs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "association_records": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "associative_memory_states": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "audio_lesson_checkpoints": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "content_download_states": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "content_manifests": "59801b518386e191d9519ef298e2a55e108f1bf61c90ee594ea56a684cb9fcd7",
+      "content_quality_reports": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "equipped_reward_items": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "events_v2": "3296e34df8ca54cb8efd77b545083392b2543e7c2cbc8601bc18b18691125bf1",
+      "experiment_assignments": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "guided_repair_operations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "learner_preferences": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "learning_day_log": "ad6f5645e15fa0193b7e552173e565ff21865ddeaf1f3671f7053bc11051a143",
+      "learning_goals": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "learning_pack_items": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "learning_packs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "learning_sessions": "42550efcdccd0f2f0185e835ddda26adf28bd1925a72bec948d20d1f28d4d7f6",
+      "learning_time_segments": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "legacy_learning_records": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "local_owners": "c19cb5da4902ddb18f016d6f24932010f1b10df49f806b7c8d8ddb6dfe967aea",
+      "measurement_opportunities": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "model_downloads": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "motivation_measurement_runs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "motivation_responses": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outbox_operations": "0ab86a145deaf7725255443bb43517e863f14b7ac3562303dbe7926ccb8e3322",
+      "owned_reward_items": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "personal_set_members": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "personal_set_revisions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "points_ledger_entries": "936c23eab52fc95ab33686a2fb197ad263a7ffff5df08b99cdef8b5c9ba298cf",
+      "quest_definitions": "2a45f44ef0544f61d46996c7e316d53836fac72e41fc1de140c0d71198825aea",
+      "quest_instances": "007927dd4adfefd9b8a139ea5b15ccb9c224c2ac3592347816432678a94c32dc",
+      "quest_objective_progress": "1bc2fe216266bb214ff8592e56d4c9b51c08ae72172bf25d623736f315cfd8d6",
+      "reading_events": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "reading_progress_entries": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "research_consents": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "research_participation_permits": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "research_session_proofs": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "reward_transactions": "6e2baa1193bafe4224ec0f4c68b65b594e8a0c9c772f3a8bb0e21f7257974719",
+      "runtime_flags": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "saved_learning_items": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "session_configurations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "speaking_practice_results": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "speech_evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "srs_states": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "streak_states": "107127194bb4328fd2a53d74bbe3ae4c0e9f6b992f34071d0a78a8b2199b6f2e",
+      "study_plan_revisions": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "study_reminders": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sync_checkpoints": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sync_conflicts": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "vocabulary_categories": "e03b447596f0b00074f9b5de1a4b0b6d13e0faf6a5ec74a697b99535330160db",
+      "vocabulary_import_rows": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "vocabulary_imports": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "vocabulary_words": "f852cdc48ec667cdcf34f5c381760d4258f97bdb42a69bd2ccec3a92172a4e02",
+      "written_practice_results": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "ordinaryLocalOutboxRows": 4,
+    "fixtureDigest": "5afbbb84b6e56dd9e4da20ee74723bbc3fa91b85c5481cab3c4b6ec3c958afb1",
+    "packageId": "com.lexiquest.app.nativeTodayBy",
+    "progressDigest": "8ca9e41903263b7b1c86a06aef66608531850965fe1f424034dad456234f51e4",
+    "unexpectedOrAttemptedOutboxRows": 0,
+    "installedApk": {
+      "atUtc": "2026-09-28T05:10:39.6358951Z",
+      "packageId": "com.lexiquest.app.nativeTodayBy",
+      "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+      "path": "/data/app/~~FKjPFFhQ8bjA2re2PpWGyQ==/com.lexiquest.app.nativeTodayBy-Tkf13bQt-bgmPxueHahOQw==/base.apk",
+      "matchesBuild": true
+    },
+    "protectedPackagesPreserved": 4,
+    "installCount": 1,
+    "model": "V2041",
+    "externalCalls": 0,
+    "pidVerify": "11936",
+    "planDigest": "5f0f67ba9f12370b77650c63044ecfd86b37bafc22e3230ebb94a39b1a26cd64",
+    "ownerId": "local:synthetic-by-synthetic-01-owner"
+  },
+  "releaseAccepted": false,
+  "schemaVersion": 1
+}

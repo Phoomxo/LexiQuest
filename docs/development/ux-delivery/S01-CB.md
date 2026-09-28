@@ -1,0 +1,17 @@
+# S01-CB — native draft recovery handoff (native NOT_RUN)
+
+Canonical checkout `C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest`, branch `codex/ux-current-after-s01-bc`, HEAD `c3a69c5fea4a5a9f08be06e2ea5717a937edc34d`. Controller `01a0ce9e-23a6-7931-88e6-6390da748f39`.
+
+## ผลที่ยืนยันได้
+
+**HOST_SYNTHETIC_PASS; NATIVE_NOT_RUN_TRANSPORT_NO_RECEIPTS.** Fixture ใหม่บังคับให้ canonical ordinary meaning controller บันทึกตัวเลือกลง draft checkpoint แล้วเกิด synthetic failure ก่อน answer commit. Host disk reopen ผ่าน actual `AppBootstrap` → `MyApp` → Today → original `QuizScreen`: owner/session/frozen plan/selected option เดิม, การคืนค่าไม่เพิ่ม row ใน 58 ตาราง; wrong owner/session ถูกปฏิเสธ. นี่เป็น host synthetic reproduction ไม่ใช่หลักฐาน Android process restart. UI ปัจจุบันแตะตัวเลือกแล้วเริ่มส่งคำตอบทันที; CB ทดสอบ draft ที่ค้างเพราะ pre-commit failure ไม่ได้เพิ่ม two-step selection UI.
+
+Targeted Runtime gate **48 HOST tests PASS**, pre/post fingerprint `1dab309fd13e8a8d48efd3dabcd91c3b0ff30976c23ab7d46c716898295e14d1`. CLI gate: **27 contract cases**, isolation source check และ **6 runner stub cases PASS**, pre/post fingerprint `06c17739caa481b56e4753032005afed923b90d53add4d0598d908f60a14520a`. Focused analyzer ของ Dart ใหม่ 4 ไฟล์: no issues. Gradle isolated `assembleDebug` exit 0. Source closure 839 ไฟล์ไม่เปลี่ยนหลัง build; APK SHA256 `80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1` ที่ `build/native-draft/S01-CB/gradle/app/outputs/apk/debug/app-debug.apk`.
+
+## Native boundary
+
+Readiness สองครั้งผ่านบน physical V2041/API33: package ID/transport/APK/merged manifest ตรวจครบ, one activity, ไม่มี provider/service/receiver หรือ VIEW/BROWSABLE, permission ที่ห้ามถูกตัด, CB package ยังไม่ติดตั้ง. เมื่อเริ่ม full runner ทั้งสองครั้ง ADB คืน `error: closed`; runner จบด้วย `Protected package metadata unavailable` ใน `finally` และไม่ได้เขียน `result.json` จึงทราบไม่ได้ว่าแต่ละรอบส่งคำสั่ง install แล้วหรือยัง (อาจมีได้สูงสุดสอง install attempts). **ไม่พบการติดตั้งสำเร็จ**: หลัง failure ตรวจ read-only ว่า CB package ยังไม่ติดตั้ง. ไม่มี host seed/resume receipt, ไม่มี CB PID/OS restart ที่ยืนยันได้, และไม่มี force-stop หลัง receipt; metadata ของ production, ariTest, BM, BW, BY, BZ, CA ตรง readiness baseline ทั้งเจ็ด; APK เดิมเจ็ดไฟล์ hash ตรง pre-build. จึงไม่สามารถรับรองเงื่อนไข at most one install command สำหรับสองรอบนี้ได้ และไม่รัน native เพิ่มหรือเปลี่ยนเกณฑ์ทดสอบ. ข้อผิดพลาดหลักของ runner ถูก postcheck ใน `finally` บังไว้ จึงต้องแก้การเก็บ failure receipt ก่อนความพยายามครั้งใหม่หลัง transport เสถียร.
+
+Native draft, stale-route/content-revision rejection, N05 visual/IME/TalkBack, actual-user/UAT/learning trial และ frozen-source release **NOT_RUN/DEFERRED**. ไม่มี production `lib`/schema/scoring/SRS/reward/route/gate/research authority edit ใน CB. Research default-off; no-login/no-AI/no-network harness; field `dailyContinuity` hidden. ไม่มี deploy, upload, real enrollment, external contact หรือ cleanup. Requested GPT-6 Sol medium and Standard/default; actual executor/tier not visible, no token-saving claim.
+
+Validation: `evidence/S01-CB-validation.json`; immutable handoff: `evidence/S01-CB-checkpoint.json`; source/APK/preflight/failure pins: `evidence/S01-CB-runs/`. Writer released without successor dispatch. Next action requires changed physical transport evidence before any new native attempt; preserve all seven installed packages and APKs. S01/UX-D01–25 remain open.

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-CG",
+  "scope": "Known high-value ignored local-only artifacts, not exhaustive current build/cache enumeration",
+  "historicalApks": [
+    {
+      "path": "build/app/outputs/apk/debug/app-debug.apk",
+      "size": 230008641,
+      "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/app/outputs/flutter-apk/app-debug.apk",
+      "size": 230008641,
+      "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CB/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 230033257,
+      "sha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CB/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 230033257,
+      "sha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CD/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 230034029,
+      "sha256": "ec7e950bd203063677e6a886ed9a37828831ffac22f60fa4db7a92dc6971683c",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CD/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 230034029,
+      "sha256": "ec7e950bd203063677e6a886ed9a37828831ffac22f60fa4db7a92dc6971683c",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-recovery/S01-BZ/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 155799131,
+      "sha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-recovery/S01-BZ/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 155799131,
+      "sha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-terminal/S01-CA/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 155800339,
+      "sha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-terminal/S01-CA/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 155800339,
+      "sha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-today/S01-BY/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 155781519,
+      "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-today/S01-BY/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 155781519,
+      "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CE/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 230034605,
+      "sha256": "19f9fe039948c74210a212b6717d72d7c59a221c2f5293d3cde7774e8a683b98",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-draft/S01-CE/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 230034605,
+      "sha256": "19f9fe039948c74210a212b6717d72d7c59a221c2f5293d3cde7774e8a683b98",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-stale/S01-CF/gradle/app/outputs/apk/debug/app-debug.apk",
+      "size": 230037489,
+      "sha256": "5f2aa68130d87eaec57ffa90e40df22a12ea382046333153178b1e743f718e9c",
+      "gitIgnored": true
+    },
+    {
+      "path": "build/native-stale/S01-CF/gradle/app/outputs/flutter-apk/app-debug.apk",
+      "size": 230037489,
+      "sha256": "5f2aa68130d87eaec57ffa90e40df22a12ea382046333153178b1e743f718e9c",
+      "gitIgnored": true
+    }
+  ],
+  "apkCount": 16,
+  "priorBxLocalOnlyInventory": {
+    "path": "docs/development/ux-delivery/evidence/S01-BX-local-only-inventory.json",
+    "sha256": "33c1f489d87e2c8d86a3d7175d399f55e4bd402f3d1e7c98f11aa2bdb2d65cd8",
+    "historicalFileCount": 5751,
+    "historicalBytes": 3594793522
+  },
+  "ignoredCategories": [
+    "/build/ (APK, Gradle, test and audit outputs)",
+    "/.dart_tool/",
+    "tool/cli/.runtime/ and tool/cli/logs/",
+    "*.log and local backend runtime/config patterns from .gitignore"
+  ],
+  "retention": "Preserved in place; not in Git commit. Git alone cannot recover these bytes after local disk loss."
+}

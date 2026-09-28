@@ -1,0 +1,8 @@
+{
+  "changed": [
+    "android/app/build.gradle.kts",
+    "android/build.gradle.kts"
+  ],
+  "entries": 2409,
+  "byReceiptHash": "0562F38EDE24EA1D65939836C6AE1A24419C9677DB903CE88E8773142B6F2480"
+}

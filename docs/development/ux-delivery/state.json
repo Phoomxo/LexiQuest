@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 150,
+  "revision": 159,
   "planVersion": 5,
   "planPath": "docs/design/worksheet-to-play-blueprint.md",
   "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain. 2026-09-27: Actual-user participation/trials deferred; autonomous bounded engineering/UI audit authorized without waiting for user trials.",
@@ -18,8 +18,64 @@
     "startedAtUtc": "2026-09-24T05:52:58.6746244Z",
     "reviewDueAtUtc": "2026-10-22T05:52:58.6746244Z"
   },
-  "currentItem": "S01-BX-source-checkpoint",
+  "currentItem": "S01-CF-native-stale-route-content-revision",
   "items": [
+    {
+      "id": "S01-CF-native-stale-route-content-revision",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION",
+      "acceptanceScope": "Fresh nativeStaleCf debug package installed once on physical V2041/API33. CF01–CF05 PASS across PID 9649 → absent → 10228; covered-route callback and revision-only exact recovery rejected with 58 table digests equal before/after each rejection. 15 focused HOST cases, CLI contract, analyzer, 850 source pins and read-only preflight PASS. Nine protected packages and 14 prior APK files preserved. Synthetic authority scope only; N05 visual/IME/TalkBack, user/trial and frozen release remain open. CB historical install count unverified.",
+      "report": "docs/development/ux-delivery/S01-CF.md"
+    },
+    {
+      "id": "S01-CE-native-draft-exact-recovery",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_DRAFT_EXACT_BOOTSTRAP_TODAY_OS_RESTART",
+      "acceptanceScope": "Physical V2041/API33 isolated nativeDraftCe installed once. D01–D05 receipts PASS across PID 4267 → absent → 4627: actual AppBootstrap/Today draft selection, same owner/session/frozen plan/selected answer/progress, 58 table digests unchanged. Zero answer/scoring/SRS/reward/research/outbox/external operations; 8 protected packages and 12 prior APK files preserved. HOST regression, targeted CLI gates, analyzer, 840 source pins, isolated debuggable APK and read-only preflight passed. Synthetic preview only; stale-route/content revision, N05 visual/IME/TalkBack, user/trial and release remain open. CB historical install count remains unverified.",
+      "report": "docs/development/ux-delivery/S01-CE.md"
+    },
+    {
+      "id": "S01-CD-native-draft-fresh-identity-attempt",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS_NATIVE_SEED_FAIL_NO_RESTART",
+      "acceptanceScope": "Fresh isolated nativeDraftCd APK and 840-pin readiness; one install returned Success. Seed receipt FAIL StateError from CB-only sandbox path, no resume/OS restart or force-stop. After native, host regression and runner failed-receipt handling pass, but CD build manifest has four expected source drifts and CD cannot be reinstalled/reseeded. Seven protected packages and prior APKs preserved; CB install uncertainty remains. Next native attempt requires new identity/build and controller review. Native draft/stale-route/N05/user/trial/release open.",
+      "report": "docs/development/ux-delivery/S01-CD.md"
+    },
+    {
+      "id": "S01-CC-native-draft-runner-failure-receipt",
+      "status": "COMPLETE",
+      "acceptance": "HOST_STUB_PASS_NATIVE_NOT_RUN",
+      "acceptanceScope": "Native draft runner writes failure result despite protected postcheck failure, preserves primary and postcheck errors, journals install invocation before ADB execution, and rejects second install. Stub adb/aapt only; no physical device operation. S01-CB prior two install attempt count remains unverified, at most two attempts, and a fresh native attempt needs changed transport evidence plus honest cross-run prerequisite resolution. Native draft/stale-route/N05/user/trial/release remain open.",
+      "report": "docs/development/ux-delivery/S01-CC.md"
+    },
+    {
+      "id": "S01-CB-native-draft-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_SYNTHETIC_PASS_NATIVE_NOT_RUN_TRANSPORT_UNCERTAIN_INSTALL_ATTEMPTS",
+      "acceptanceScope": "48 targeted HOST tests, 27 CLI contract cases, 6 runner stub cases, clean four-file analyzer, isolated debug APK/readiness. Two full native attempts lost ADB; finally postcheck masked primary failure and wrote no result. Install command count unverified (up to two attempts); CB absent on postcheck, no phase/OS-restart receipt. Seven protected packages/APKs preserved. Native draft/stale-route/N05/user/trial/release remain open.",
+      "report": "docs/development/ux-delivery/S01-CB.md"
+    },
+    {
+      "id": "S01-CA-native-terminal-close-recovery",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_TERMINAL_CLOSE_OS_RESTART",
+      "acceptanceScope": "Physical V2041/API33 isolated nativeTerminalCa installed once. One-question canonical close durably committed and independently observed before synthetic acknowledgement loss; actual AppBootstrap/Today exact resume and completion retry across OS restart, then closed Today after second restart. All 58 tables preserved on each restart; retry appends only one terminal checkpoint, with no duplicate answer/scoring/SRS/reward/achievement. 49 targeted HOST tests, 23 CLI contract and 6 runner cases, 4-file analyzer. Synthetic preview only; draft/stale-route/N05/user/trial/release remain open.",
+      "report": "docs/development/ux-delivery/S01-CA.md"
+    },
+    {
+      "id": "S01-BZ-native-pending-next-recovery",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_PENDING_AND_NEXT_OS_RESTART",
+      "acceptanceScope": "V2041/API33 isolated nativeRecoveryBz. Post-outer-commit lost acknowledgement with independent read-only SQLite observation; actual AppBootstrap/Today pending retry and next-question restore across two OS restarts. All 58 tables preserved across restarts; replay/advance only append two checkpoints. 51 HOST tests, 23 CLI contract cases, 6 runner cases, four isolation suites, 4-file analyzer. Synthetic preview only; terminal-close/draft/stale-route/N05/user/trial/release remain open.",
+      "report": "docs/development/ux-delivery/S01-BZ.md"
+    },
+    {
+      "id": "S01-BY-native-today-resume",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_ACTUAL_BOOTSTRAP_TODAY_RESUME",
+      "acceptanceScope": "V2041/API33 isolated nativeTodayBy, actual AppBootstrap/MyApp Today resume to original admitted ordinary quiz after OS process restart; all 58 tables unchanged. 320 HOST tests, 23 CLI contracts, 6 runner cases, 3 isolation suites, 8-file analyzer. Preview only; no field/visual/user/trial/release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BY.md"
+    },
     {
       "id": "S01-BX-source-checkpoint",
       "status": "COMPLETE",
@@ -900,47 +956,45 @@
   ],
   "BDCompletedAtUtc": "2026-09-26T17:25:35.6273492Z",
   "boundedCheckpoint": {
-    "id": "S01-BX-source-checkpoint",
-    "status": "COMPLETE",
-    "acceptance": "ENGINEERING_SOURCE_SNAPSHOT_ONLY",
-    "hostFlutterTests": 0,
-    "hostCliCasesAndChecks": 0,
-    "evidence": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
+    "id": "S01-CF-native-stale-route-content-revision",
+    "status": "PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION",
+    "acceptance": "PASS_NATIVE_SYNTHETIC_STALE_ROUTE_CONTENT_REVISION_REJECTION",
+    "hostFlutterTests": 15,
+    "hostCliContract": "PASS",
+    "evidence": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
     "pending": [
-      "Native Today full bootstrap and other BV recovery cases",
-      "Native visual/TalkBack/IME",
+      "N05 visual/IME/TalkBack",
       "Actual-user participation/trials DEFERRED",
-      "Reviewed media/qualified trials",
       "Frozen-source release"
     ]
   },
   "writer": {
     "predecessorReleased": true,
-    "threadId": "01a0e634-e153-7953-a19d-0f29cbd8762c",
-    "currentItem": "S01-BX-source-checkpoint",
+    "threadId": null,
+    "currentItem": "S01-CF-native-stale-route-content-revision",
     "status": "RELEASED",
-    "releaseReason": "Source checkpoint pushed and verified. Final coordination ref confirmation is written once locally after final push. No application writes or successor dispatch after release.",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
-    "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/quota/ledger changes"
+    "releaseReason": "CF native synthetic stale-route and content-revision rejection passed across actual process restart. Scope remains synthetic; N05/user/trial/release open. CF and prior packages/evidence retained; no successor dispatch.",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+    "routing": "GPT-6 Sol medium and Standard/default requested; actual executor/tier unverified; no Jev/Fast/paid/quota changes"
   },
   "dispatch": {
-    "id": "ux-s01-bx-01a0e634",
+    "id": "ux-s01-cf",
     "status": "RELEASED_TO_CONTROLLER",
     "successorThreadId": null
   },
-  "latestHandoff": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
-  "sourceManifest": "docs/development/ux-delivery/evidence/S01-BX-staged-integrity.json",
+  "latestHandoff": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+  "sourceManifest": "docs/development/ux-delivery/evidence/S01-CF-runs/source-manifest.json",
   "evidence": {
     "planConsistency": "PASS",
     "originalChangePreservation": "PASS",
-    "reportPath": "docs/development/ux-delivery/S01-BX.md",
+    "reportPath": "docs/development/ux-delivery/S01-CF.md",
     "transferVerificationRecord": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
-    "latestValidation": "docs/development/ux-delivery/evidence/S01-BX-staged-integrity.json",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-CF-checkpoint.json",
+    "latestValidation": "docs/development/ux-delivery/evidence/S01-CF-validation.json",
     "jevRouting": "docs/development/ux-delivery/evidence/S01-E-routing.json",
     "interfaceReadiness": "docs/development/ux-delivery/evidence/S01-Z-source-review.json",
     "personalExportRecovery": "docs/development/ux-delivery/evidence/S01-AD-validation.json",
-    "latestBacklogReassessment": "docs/development/ux-delivery/S01-BW.md",
+    "latestBacklogReassessment": "docs/development/ux-delivery/S01-CB.md",
     "reviewQueueRecovery": "docs/development/ux-delivery/evidence/S01-AE-validation.json",
     "personalProgressRecovery": "docs/development/ux-delivery/evidence/S01-AF-validation.json",
     "learningGoalsRecovery": "docs/development/ux-delivery/evidence/S01-AK-validation.json",
@@ -1217,14 +1271,15 @@
     "fullReleaseVerifierRequiresFrozenSha": true,
     "prototypeDoesNotProveNativeOrLearning": true
   },
-  "nextAction": "Controller 01a0ce9e-23a6-7931-88e6-6390da748f39 reviews BX immutable checkpoint and local build/S01-BX/remote-confirmation.json for matching final canonical/backup refs. No successor dispatched. Preserve local-only bytes, all packages and gates. S01/UX-D01-25/native visual/user/trial/release remain open.",
+  "nextAction": "Controller reviews CF native synthetic stale-route/content-revision PASS. Preserve installed CF/CE/CD and all earlier packages/APKs; never reinstall/reseed them. N05 visual/IME/TalkBack remains open; actual-user participation/trials deferred and frozen-source release not accepted. CB two historical install command counts remain UNVERIFIED_UP_TO_TWO_ATTEMPTS. No successor dispatched.",
   "checkpoint": {
-    "kind": "BX_ENGINEERING_SOURCE_SNAPSHOT",
+    "kind": "CF_NATIVE_SYNTHETIC_STALE_ROUTE_REVISION_REJECTION",
     "writerRetained": false,
     "sprintAccepted": false,
     "releaseAccepted": false,
     "runningHostProcesses": [],
-    "testScope": "Snapshot integrity only; no Flutter/build/native/release rerun"
+    "testScope": "15 targeted HOST PASS; CF CLI contract and 5-file analyzer PASS; 850-pin source, isolated APK/readiness PASS. Native CF01-CF05 PASS across PID 9649→absent→10228; 58 tables unchanged at rejection, 9 protected packages and 14 prior APK files preserved.",
+    "retainedNativeProcess": null
   },
   "continuation": {
     "enabled": true,
@@ -1235,10 +1290,10 @@
     "standardDefaultOnly": true,
     "sharedTrancheUsd": 5,
     "writerRetained": false,
-    "currentThreadId": "01a0e634-e153-7953-a19d-0f29cbd8762c",
-    "currentItem": "S01-BX-source-checkpoint",
+    "currentThreadId": null,
+    "currentItem": "S01-CF-native-stale-route-content-revision",
     "nextReadyPackage": null,
-    "stopReason": "Bounded BX source checkpoint only; release to controller without successor dispatch."
+    "stopReason": "CF native synthetic stale-route/content-revision rejection completed with immutable receipts. Writer released; next scope requires controller routing."
   },
   "nextDispatch": {
     "status": "READY_FOR_CONTROLLER_REVIEW",
@@ -1402,6 +1457,24 @@
     "releaseAccepted": false,
     "successorDispatched": false
   },
+  "BYAudit": {
+    "report": "docs/development/ux-delivery/S01-BY.md",
+    "hostTestsPassed": 320,
+    "native": "PASS_ACTUAL_BOOTSTRAP_TODAY_FEEDBACK_OS_RESTART",
+    "nativePackage": "com.lexiquest.app.nativeTodayBy",
+    "apkSha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18",
+    "allTablesUnchangedAcrossResume": 58,
+    "productionLibChangedFiles": [
+      "lib/features/learning/application/learning_use_cases.dart",
+      "lib/features/learning/application/ordinary_meaning_recovery.dart"
+    ],
+    "resolvedDefect": "S01-BY-01 post-commit ordinary notifications; nested rollback discards notifications",
+    "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+    "userParticipation": "DEFERRED",
+    "visualImeTalkBack": "NOT_RUN",
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
   "BXAudit": {
     "sourceCommit": "18f7fd6d5a2ad9e15e328f1018cba241438c81ef",
     "sourceTree": "41285465304aa804dba15fc961b86dd249775ee7",
@@ -1409,5 +1482,120 @@
     "localOnlyInventory": "docs/development/ux-delivery/evidence/S01-BX-local-only-inventory.json",
     "finalRemoteConfirmation": "build/S01-BX/remote-confirmation.json",
     "releaseAccepted": false
+  },
+  "BZCompletedAtUtc": "2026-09-28T05:58:32.742Z",
+  "BZAudit": {
+    "report": "docs/development/ux-delivery/S01-BZ.md",
+    "hostTestsPassed": 51,
+    "native": "PASS_ACTUAL_BOOTSTRAP_TODAY_PENDING_AND_NEXT_TWO_OS_RESTARTS",
+    "nativePackage": "com.lexiquest.app.nativeRecoveryBz",
+    "apkSha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+    "allTablesUnchangedAcrossEachRestart": 58,
+    "intentionalCheckpointAppends": 2,
+    "productionLibChangedFiles": [],
+    "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+    "userParticipation": "DEFERRED",
+    "terminalCloseDraftStaleRoute": "NOT_RUN",
+    "visualImeTalkBack": "NOT_RUN",
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CAAudit": {
+    "report": "docs/development/ux-delivery/S01-CA.md",
+    "hostTestsPassed": 49,
+    "native": "PASS_ACTUAL_BOOTSTRAP_TODAY_TERMINAL_CLOSE_TWO_OS_RESTARTS",
+    "nativePackage": "com.lexiquest.app.nativeTerminalCa",
+    "apkSha256": "a78a0bb6ae4107bb241a58e1d75d5e47bfedea8677d8bccb2da1c075a824336f",
+    "allTablesUnchangedAcrossEachRestart": 58,
+    "intentionalTerminalCheckpointAppends": 1,
+    "productionLibChangedFiles": [],
+    "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+    "userParticipation": "DEFERRED",
+    "draftStaleRoute": "NOT_RUN",
+    "visualImeTalkBack": "NOT_RUN",
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CFCompletedAtUtc": "2026-09-28T20:05:15Z",
+  "CFAudit": {
+    "report": "docs/development/ux-delivery/S01-CF.md",
+    "native": "PASS_STALE_ROUTE_CONTENT_REVISION_REJECTION_AFTER_ACTUAL_BOOTSTRAP_TODAY_OS_RESTART",
+    "nativePackage": "com.lexiquest.app.nativeStaleCf",
+    "apkSha256": "5f2aa68130d87eaec57ffa90e40df22a12ea382046333153178b1e743f718e9c",
+    "sourcePins": 850,
+    "sourceDrift": 0,
+    "nativeInstallCommandCount": 1,
+    "processPids": ["9649", "absent", "10228"],
+    "unchangedTablesAtEachRejection": 58,
+    "protectedPackagesPreserved": 9,
+    "priorApkFilesPreserved": 14,
+    "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+    "productionLibChangedFiles": [],
+    "visualImeTalkBack": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CEAudit": {
+    "report": "docs/development/ux-delivery/S01-CE.md",
+    "native": "PASS_ACTUAL_BOOTSTRAP_TODAY_DRAFT_EXACT_OS_RESTART",
+    "nativePackage": "com.lexiquest.app.nativeDraftCe",
+    "apkSha256": "19f9fe039948c74210a212b6717d72d7c59a221c2f5293d3cde7774e8a683b98",
+    "sourcePins": 840,
+    "nativeInstallCommandCount": 1,
+    "processPids": ["4267", "absent", "4627"],
+    "allTablesUnchangedAcrossRestart": 58,
+    "protectedPackagesPreserved": 8,
+    "priorApkFilesPreserved": 12,
+    "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+    "productionLibChangedFiles": [],
+    "staleRouteContentRevision": "OPEN",
+    "visualImeTalkBack": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CDAudit": {
+    "report": "docs/development/ux-delivery/S01-CD.md",
+    "native": "FAIL_SEED_STATE_ERROR_NO_RESUME_OR_OS_RESTART",
+    "nativePackage": "com.lexiquest.app.nativeDraftCd",
+    "nativeInstallCommandCount": 1,
+    "nativeForceStopCount": 0,
+    "protectedPackagesPreserved": 7,
+    "priorApkFilesPreserved": 7,
+    "cbApkPreserved": true,
+    "currentBuildManifestSourceDrift": 4,
+    "productionLibChangedFiles": [],
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CCAudit": {
+    "report": "docs/development/ux-delivery/S01-CC.md",
+    "scope": "RUNNER_FAILURE_RECEIPT_ONLY",
+    "native": "NOT_RUN",
+    "priorCbInstallCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+    "productionLibChangedFiles": [],
+    "releaseAccepted": false,
+    "successorDispatched": false
+  },
+  "CBAudit": {
+    "report": "docs/development/ux-delivery/S01-CB.md",
+    "hostTestsPassed": 48,
+    "native": "NOT_RUN_TRANSPORT_NO_RECEIPTS",
+    "nativePackage": "com.lexiquest.app.nativeDraftCb",
+    "forceStopCount": 0,
+    "apkSha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+    "sourcePins": 839,
+    "protectedPackagesPreserved": 7,
+    "priorApkFilesPreserved": 7,
+    "productionLibChangedFiles": [],
+    "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+    "nativeDraftAndStaleRoute": "NOT_RUN",
+    "visualImeTalkBack": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "releaseAccepted": false,
+    "successorDispatched": false,
+    "installCommandCount": "UNVERIFIED_UP_TO_TWO_ATTEMPTS",
+    "successfulInstallObserved": false
   }
 }

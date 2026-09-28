@@ -1,0 +1,11 @@
+{
+  "serial": "9582188822004C6",
+  "atUtc": "2026-09-28T05:00:07.0877208Z",
+  "byAbsent": true,
+  "packages": [
+    "package:com.lexiquest.app.nativeBaselineBm",
+    "package:com.lexiquest.app.nativeResumeBw",
+    "package:com.lexiquest.app.ariTest",
+    "package:com.lexiquest.app"
+  ]
+}

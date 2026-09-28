@@ -1,0 +1,9 @@
+{
+    "status":  "ATTEMPTED_OUTCOME_UNKNOWN",
+    "atUtc":  "2026-09-28T17:32:01.7938109Z",
+    "arguments":  [
+                      "install",
+                      "-t",
+                      "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\build\\native-draft\\S01-CD\\gradle\\app\\outputs\\apk\\debug\\app-debug.apk"
+                  ]
+}

@@ -1,0 +1,307 @@
+{
+  "releaseAccepted": false,
+  "analyzer": {
+    "pin": {
+      "sha256": "f3988661e96ce4144df7c9c496cd6b4cd95dca0e6ceddff2843e63b55b872e07",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/analyzer-final.log"
+    },
+    "files": 4,
+    "issues": 0
+  },
+  "isolationSuites": 4,
+  "notRun": [
+    "native terminal close/completion acknowledgement",
+    "native draft",
+    "native stale route",
+    "N05 visual",
+    "N05 IME",
+    "N05 TalkBack",
+    "mid-transaction/power-loss crash",
+    "frozen-source full release"
+  ],
+  "artifacts": [
+    {
+      "sha256": "f3988661e96ce4144df7c9c496cd6b4cd95dca0e6ceddff2843e63b55b872e07",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/analyzer-final.log"
+    },
+    {
+      "sha256": "a827dec8d16759dada4ae2140893031022f9ffb5362d6d7825876341c85933cc",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/analyzer-pins.json"
+    },
+    {
+      "sha256": "21e4bc98c35e458c997362b2154dba89696bf567f3eeb05e2e726296e052f2fd",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/baseline.json"
+    },
+    {
+      "sha256": "69183ab1c44e9e61b02b5909b0a0693727c2a42ef513fc18017a2131e2c612a4",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/build.log"
+    },
+    {
+      "sha256": "5913ea1391aff7dd14b8a9f624a352c8eb2c0ab5c593ae45a3ce605b4a8a442f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/build-manifest.json"
+    },
+    {
+      "sha256": "b3024bec135b461124d1f0965e0028cbb31ea44103147a1badeed127225d9db6",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/build.ps1"
+    },
+    {
+      "sha256": "3975c5344ca565474edc1d8c7d04987c0a1a3b370313c4003012aeab5795e4ad",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/build-source-pre.json"
+    },
+    {
+      "sha256": "2dd3607a461e3ee23ec500ae6b194e004507f216fb6395047c9dc3846b6f4cce",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/by-source-reconciliation.json"
+    },
+    {
+      "sha256": "bf5b23435d7b7fe2f3ec88f618881f9421ddab3767baf30907a3a108fe8e22f8",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-gate.json"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-baseline-isolation.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-baseline-isolation.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-contract.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "2ba37da65e88b5c1baae7b46eafce079bf2c9301f28f58ceeeab42a94db5b1d5",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-contract.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-isolation.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "fdc7f2bebf65ac5bdc01cd1b8560fe97010487e657bbf5e7c8fa6515dcce7acb",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-isolation.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-runner.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "4f8c8046d49a5d2a842cddd5ed082ee031a1fc43ab7cd5f26b2e2e5ae3015c18",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-recovery-runner.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-resume-isolation.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-resume-isolation.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-today-isolation.tests.ps1.stderr.log"
+    },
+    {
+      "sha256": "fdc7f2bebf65ac5bdc01cd1b8560fe97010487e657bbf5e7c8fa6515dcce7acb",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-native-today-isolation.tests.ps1.stdout.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/contract-red.log"
+    },
+    {
+      "sha256": "3ba8fd3636038b92816fa5d913fad0ffdf2e14775fe7c2f8a537e8825f64a30e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/device-final.json"
+    },
+    {
+      "sha256": "7dc607388c92f7f4acfec53ad5fc617b5778e85ae96f859f426521f2536d40e1",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/diff-check.log"
+    },
+    {
+      "sha256": "86d668789b9837c6f0c999a0a7a10186c336da3e64004c7d7227c86ac3dd178e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/final-source-closure.json"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-Explicit-Flutter-tests.stderr.log"
+    },
+    {
+      "sha256": "0ee10e34a70002cb9a858b4a84a270608617faa92a3f401847915308c5e80733",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-Explicit-Flutter-tests.stdout.log"
+    },
+    {
+      "sha256": "7a30eca8770a892be6a517c8e4229468623cc5ca832bef2026f57da71b258b6e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-final.log"
+    },
+    {
+      "sha256": "cedb371c5605c4c21f4bbf4117f0d947e2ee2639d7f9e0f789a83044946eafdd",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-first.log"
+    },
+    {
+      "sha256": "7d87488d753d5195f01d148772ddbe43f0379df7feed8da2c18e166537578d44",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-fourth.log"
+    },
+    {
+      "sha256": "a965cbbd1e188b2a2385dc2bbeafb051dbf6a7f5a6836a79f41de0d1cccce4bc",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-gate.json"
+    },
+    {
+      "sha256": "fbea8bb0a3cd0d6a5de6db63a2d77296d49fdb423c067555868621157a629e17",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-guard-failure.log"
+    },
+    {
+      "sha256": "a4a5bd5503032661db11991b2f60ad8ac8cedf32351eefa163d3818b9be0c542",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-map-matcher-failure.log"
+    },
+    {
+      "sha256": "1081ce79072833be282601c55d476c03744c2587ba3321dcc4214af0cd8e00ca",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-second.log"
+    },
+    {
+      "sha256": "fc35a79f3de5d8cc3ffe1b53e7787df977724b8f28f77c44beade9cff97b52c4",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-sql-failure.log"
+    },
+    {
+      "sha256": "f12d5ccdc995a34520a334887c1fb1dc9b2ce1e820b28f65c2ed703e7c633fca",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-third.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/isolation-red.log"
+    },
+    {
+      "sha256": "1be6e88a62824287ca609e861823ac547d756713ac03410a725832beaa238bb3",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-1/merged-manifest.txt"
+    },
+    {
+      "sha256": "b37579d3ecbe77f8d06f267b2568faecba14db0a30f61a42ba6a4048425cdda0",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-1/next-receipt.json"
+    },
+    {
+      "sha256": "850211656cb2a3a5823097aafc86fcd3b7f2afcde785c75f7b298b153701f7b3",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-1/pending-receipt.json"
+    },
+    {
+      "sha256": "f47ebc5039268f7626d3b33e7a7116be0909407abd18a6177fcf1437e0c9374e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-1/result.json"
+    },
+    {
+      "sha256": "c4f248ff71c6befdf57b00366eb86ed285a1235a6c3ddc86b551962d1597ebc5",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-1/seed-receipt.json"
+    },
+    {
+      "sha256": "2ea10cb2c4fa8402ef5d46c5f717d4b34991dd43dbe7b75687c0ed047d99fd1b",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/native-run.log"
+    },
+    {
+      "sha256": "489daca85a9b46c7348b27f935ea29e01d58064d571f6f6dfc4fe27154587074",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/old-apks.json"
+    },
+    {
+      "sha256": "e87819955e8bcd9687aefeba0d83bef2aa1f95d0b44b0b0542857b3f34a755f6",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/preservation-pre-build.json"
+    },
+    {
+      "sha256": "e37e2954fc65f99d89844016b9b2be4782589cdeb4d2e5248082f9bea4cd4254",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/publish-validation.ps1"
+    },
+    {
+      "sha256": "1be6e88a62824287ca609e861823ac547d756713ac03410a725832beaa238bb3",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/readiness/merged-manifest.txt"
+    },
+    {
+      "sha256": "e15ea2e0e9bc6b68ed3527455b3edd619f5b866bb22681f4411b3c550206191e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/readiness/result.json"
+    },
+    {
+      "sha256": "6154df197f25e27b642e71934ce4a2df1b6cce1fa04154016c78ec44cf931638",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/runner-stub-string-failure.log"
+    }
+  ],
+  "deferred": [
+    "actual-user/UAT/learning trials"
+  ],
+  "atUtc": "2026-09-28T06:01:21.8500436Z",
+  "hostTests": 51,
+  "native": {
+    "sessionId": "session:568de6da-0560-4225-92ca-9bd7b394290f",
+    "databaseEvidence": {
+      "sha256": "3ba8fd3636038b92816fa5d913fad0ffdf2e14775fe7c2f8a537e8825f64a30e",
+      "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/device-final.json"
+    },
+    "installCount": 1,
+    "nextDigest": "da8bb3d5ba9854e3faa1dcf28d3753e00850f72be19be77319c4e45048853a60",
+    "model": "V2041",
+    "pendingDigest": "0f4f9611d457e3dc56ea31708ea535087c6a4fe267c6368bec2cd97dfa73bd8a",
+    "tables": 58,
+    "apkSha256": "97ad0d35438a334541f9b90c18229b0acdddc8d1473d78106ecc0d9830858b18",
+    "intentionalCheckpointAppends": 2,
+    "packageId": "com.lexiquest.app.nativeRecoveryBz",
+    "planDigest": "a6c2a068ddb928ff44125617d15bfb56b478bd01694b9d01f6c99ad64affb646",
+    "forceStopCount": 2,
+    "ownerId": "local:synthetic-bz-synthetic-01-owner",
+    "pids": [
+      "14187",
+      "",
+      "14483",
+      "",
+      "14834"
+    ],
+    "deviceId": "9582188822004C6",
+    "api": 33
+  },
+  "sourceClosure": {
+    "hostEntries": 1610,
+    "prePublicationAllMismatches": 0,
+    "executableMismatches": [],
+    "nativeEntries": 815,
+    "cliPostGateDocumentationChanges": [
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "cliEntries": 5530
+  },
+  "cliRunnerCases": 6,
+  "head": "c3a69c5fea4a5a9f08be06e2ea5717a937edc34d",
+  "branch": "codex/ux-current-after-s01-bc",
+  "cliContractCases": 23,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "productionLibChanges": [],
+  "status": "PASS_NATIVE_SYNTHETIC_PENDING_AND_NEXT_OS_RESTART",
+  "schemaVersion": 1,
+  "preservation": {
+    "changedOnly": [
+      "android/app/build.gradle.kts",
+      "android/build.gradle.kts",
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "allRetainedPackages": 6,
+    "baselinePaths": 5518,
+    "protectedPackages": 5,
+    "byReceipt": {
+      "sha256": "0562f38ede24ea1d65939836c6ae1a24419c9677db903ce88e8773142b6f2480",
+      "path": "docs/development/ux-delivery/evidence/S01-BY-checkpoint.json"
+    },
+    "oldApkFiles": 5
+  },
+  "gatePrePost": [
+    {
+      "pin": {
+        "sha256": "a965cbbd1e188b2a2385dc2bbeafb051dbf6a7f5a6836a79f41de0d1cccce4bc",
+        "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/host-gate.json"
+      },
+      "scope": "HOST",
+      "pre": "3aeddf3dc6dfdf21634eed31a9eb76d1da04a08763cce36ffe4c5019d6b07531",
+      "post": "3aeddf3dc6dfdf21634eed31a9eb76d1da04a08763cce36ffe4c5019d6b07531"
+    },
+    {
+      "pin": {
+        "sha256": "bf5b23435d7b7fe2f3ec88f618881f9421ddab3767baf30907a3a108fe8e22f8",
+        "path": "docs/development/ux-delivery/evidence/S01-BZ-runs/cli-gate.json"
+      },
+      "scope": "CLI",
+      "pre": "f0b9195b3faca3ed7a9f77ec3cd3905d5a95dbc8618413c4466376a3a954337d",
+      "post": "f0b9195b3faca3ed7a9f77ec3cd3905d5a95dbc8618413c4466376a3a954337d"
+    }
+  ]
+}

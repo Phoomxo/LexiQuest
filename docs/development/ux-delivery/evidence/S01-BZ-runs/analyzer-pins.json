@@ -1,0 +1,18 @@
+[
+  {
+    "sha256": "45E65999AE3310405B03416BED7E8BEFDDDE21B89A27240C8DCA22D879F4223B",
+    "path": "integration_test/native_recovery_acceptance_test.dart"
+  },
+  {
+    "sha256": "D9B96B64573D09472844CA32ACB0D907FD39B559CB3EF9D063F9017642E426CE",
+    "path": "integration_test/support/native_recovery_fixture.dart"
+  },
+  {
+    "sha256": "11B4D0471586E9D11D4F6CDEEF8F5556D455F3FB43931DB5134169ACF6AABBDA",
+    "path": "integration_test/support/native_recovery_cases.dart"
+  },
+  {
+    "sha256": "38192C76D9CF6124D7B2737C10646F0BAF67A621BEEE386C9C98251478B4446C",
+    "path": "test/support/native_recovery_fixture_test.dart"
+  }
+]

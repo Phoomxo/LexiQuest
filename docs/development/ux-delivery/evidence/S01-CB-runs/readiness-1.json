@@ -1,0 +1,318 @@
+{
+  "runId": "cb-synthetic-01",
+  "commands": [
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:21.5468726Z",
+      "arguments": [
+        "get-state"
+      ],
+      "durationMs": 46.2439
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:21.6010741Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.product.model"
+      ],
+      "durationMs": 98.5644
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:21.6998532Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.build.version.sdk"
+      ],
+      "durationMs": 78.3322
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:21.7784211Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.kernel.qemu"
+      ],
+      "durationMs": 80.5041
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:21.8614143Z",
+      "arguments": [
+        "shell",
+        "pm",
+        "list",
+        "packages",
+        "com.lexiquest"
+      ],
+      "durationMs": 134.082
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.0059332Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "durationMs": 137.2559
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.1638696Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "durationMs": 124.9164
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.2961767Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 134.5177
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.4339886Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "durationMs": 146.0898
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.5829937Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeTodayBy"
+      ],
+      "durationMs": 118.1115
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.7039304Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeRecoveryBz"
+      ],
+      "durationMs": 139.7046
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.8464037Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeTerminalCa"
+      ],
+      "durationMs": 128.9003
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:22.9840106Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "durationMs": 91.4613
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.0821069Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "durationMs": 107.1904
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.1937169Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 94.2715
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.2925739Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "durationMs": 92.3515
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.3871863Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeTodayBy"
+      ],
+      "durationMs": 115.8628
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.5053762Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeRecoveryBz"
+      ],
+      "durationMs": 113.7096
+    },
+    {
+      "exitCode": 0,
+      "atUtc": "2026-09-28T14:00:23.6214226Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeTerminalCa"
+      ],
+      "durationMs": 108.9375
+    }
+  ],
+  "protectedAfter": {
+    "com.lexiquest.app.nativeResumeBw": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 10:33:31",
+      "firstInstallTime=2026-09-28 10:33:31",
+      "firstInstallTime=2026-09-28 10:33:31"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ],
+    "com.lexiquest.app.nativeRecoveryBz": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 12:52:43",
+      "firstInstallTime=2026-09-28 12:52:43",
+      "firstInstallTime=2026-09-28 12:52:43"
+    ],
+    "com.lexiquest.app.nativeBaselineBm": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28"
+    ],
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.nativeTerminalCa": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 13:23:46",
+      "firstInstallTime=2026-09-28 13:23:46",
+      "firstInstallTime=2026-09-28 13:23:46"
+    ],
+    "com.lexiquest.app.nativeTodayBy": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 12:09:14",
+      "firstInstallTime=2026-09-28 12:09:14",
+      "firstInstallTime=2026-09-28 12:09:14"
+    ]
+  },
+  "isolationVerified": true,
+  "packageId": "com.lexiquest.app.nativeDraftCb",
+  "apkSha256": "80f3b20c086a4c4ebcf1739c55d09eba06c9a040266df72bd854b490100f66d1",
+  "deviceId": "9582188822004C6",
+  "protectedBefore": {
+    "com.lexiquest.app.nativeResumeBw": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 10:33:31",
+      "firstInstallTime=2026-09-28 10:33:31",
+      "firstInstallTime=2026-09-28 10:33:31"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ],
+    "com.lexiquest.app.nativeRecoveryBz": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 12:52:43",
+      "firstInstallTime=2026-09-28 12:52:43",
+      "firstInstallTime=2026-09-28 12:52:43"
+    ],
+    "com.lexiquest.app.nativeBaselineBm": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28"
+    ],
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.nativeTerminalCa": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 13:23:46",
+      "firstInstallTime=2026-09-28 13:23:46",
+      "firstInstallTime=2026-09-28 13:23:46"
+    ],
+    "com.lexiquest.app.nativeTodayBy": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-28 12:09:14",
+      "firstInstallTime=2026-09-28 12:09:14",
+      "firstInstallTime=2026-09-28 12:09:14"
+    ]
+  },
+  "apkId": "com.lexiquest.app.nativeDraftCb",
+  "status": "READINESS_PASS",
+  "phases": []
+}

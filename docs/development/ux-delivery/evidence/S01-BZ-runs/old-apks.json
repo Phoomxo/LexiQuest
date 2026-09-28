@@ -1,0 +1,30 @@
+[
+  {
+    "path": "build/app/outputs/apk/debug/app-debug.apk",
+    "size": 230008641,
+    "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "reason": "LOCAL_ONLY build/cache/runtime configuration; preserved in place, not uploaded"
+  },
+  {
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "size": 230008641,
+    "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "reason": "LOCAL_ONLY build/cache/runtime configuration; preserved in place, not uploaded"
+  },
+  {
+    "path": "build/native-baseline/S01-BM/app-debug-e10429750a94.apk",
+    "size": 229949462,
+    "sha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+    "reason": "LOCAL_ONLY build/cache/runtime configuration; preserved in place, not uploaded"
+  },
+  {
+    "path": "build/native-resume/S01-BW/app-debug-e271910a2f24.apk",
+    "size": 230008641,
+    "sha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "reason": "LOCAL_ONLY build/cache/runtime configuration; preserved in place, not uploaded"
+  },
+  {
+    "path": "build/native-today/S01-BY/gradle/app/outputs/apk/debug/app-debug.apk",
+    "sha256": "1b24b3225fd19f3467b465c3f338d33381c63e9d95692b6d666cafa504355f18"
+  }
+]

@@ -405,6 +405,41 @@ final class LearningUseCases {
   /// Schedules a bounded durable replay batch without delaying this answer.
   final void Function(String ownerId)? onSideEffectsPending;
 
+  final Object _commitNotificationKey = Object();
+
+  /// Ordinary recovery owns an outer authority transaction. Dispatch only
+  /// after that transaction commits, outside Drift's transaction zone.
+  /// Rollback discards notifications; nested scopes join the outer buffer.
+  Future<T> deferNotificationsUntilCommit<T>(
+    Future<T> Function() transaction,
+  ) async {
+    final parent =
+        Zone.current[_commitNotificationKey] as List<void Function()>?;
+    final pending = <void Function()>[];
+    final result = await runZoned(
+      transaction,
+      zoneValues: {_commitNotificationKey: pending},
+    );
+    if (parent != null) {
+      parent.addAll(pending);
+    } else {
+      for (final notify in pending) {
+        notify();
+      }
+    }
+    return result;
+  }
+
+  void _notifyAfterCommit(void Function() notify) {
+    final pending =
+        Zone.current[_commitNotificationKey] as List<void Function()>?;
+    if (pending == null) {
+      notify();
+    } else {
+      pending.add(notify);
+    }
+  }
+
   /// Optional bounded scheduling boundary. Authority failures propagate;
   /// recoverable scheduling availability is handled by the injected refresh.
   final Future<void> Function(String expectedOwnerId)? beforeSessionStart;
@@ -883,7 +918,7 @@ final class LearningUseCases {
           ownerId: pinnedOwnerId,
           checkpoint: checkpoint,
         );
-    onLocalMutation?.call();
+    _notifyAfterCommit(() => onLocalMutation?.call());
   }
 
   Future<QuizSession> startDueReview({
@@ -1372,7 +1407,7 @@ final class LearningUseCases {
         ),
       );
     }
-    onLocalMutation?.call();
+    _notifyAfterCommit(() => onLocalMutation?.call());
 
     // Shadow V2 reward pipeline — runs after production succeeds.
     // Errors are swallowed: shadow mode must never break production.
@@ -1387,7 +1422,7 @@ final class LearningUseCases {
 
     // Persistence is the durable handoff. Without an injected scheduler,
     // startup reconciliation owns replay and no side effect runs inline.
-    onSideEffectsPending?.call(ownerId);
+    _notifyAfterCommit(() => onSideEffectsPending?.call(ownerId));
 
     final committedContext = contrastiveFeedback;
     if (committedContext == null) return result;

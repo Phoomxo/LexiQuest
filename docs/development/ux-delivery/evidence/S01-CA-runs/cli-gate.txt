@@ -1,0 +1,5 @@
+PASS: 23 CA multi-phase contract cases
+PASS: 23 CA multi-phase contract cases
+PASS: native isolation source contract (merged APK inspection still required)
+PASS: separate output, explicit plugin registration and four protected packages
+PASS: 6 executable runner cases including denied storage and delayed receipt/OS restart (stub adb/aapt only)
