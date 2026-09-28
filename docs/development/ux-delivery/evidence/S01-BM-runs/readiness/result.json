@@ -1,0 +1,138 @@
+{
+  "commands": [
+    {
+      "durationMs": 37.0316,
+      "arguments": [
+        "get-state"
+      ],
+      "atUtc": "2026-09-27T00:54:39.7273492Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 86.3165,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.product.model"
+      ],
+      "atUtc": "2026-09-27T00:54:39.7731426Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 76.5245,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.build.version.sdk"
+      ],
+      "atUtc": "2026-09-27T00:54:39.8596889Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 85.7028,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.kernel.qemu"
+      ],
+      "atUtc": "2026-09-27T00:54:39.9364335Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 115.6971,
+      "arguments": [
+        "shell",
+        "pm",
+        "list",
+        "packages",
+        "com.lexiquest"
+      ],
+      "atUtc": "2026-09-27T00:54:40.0246582Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 141.0488,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "atUtc": "2026-09-27T00:54:40.1496300Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 143.3792,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "atUtc": "2026-09-27T00:54:40.3074385Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 95.72,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "atUtc": "2026-09-27T00:54:40.4640390Z",
+      "exitCode": 0
+    },
+    {
+      "durationMs": 95.5375,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "atUtc": "2026-09-27T00:54:40.5688301Z",
+      "exitCode": 0
+    }
+  ],
+  "apkId": "com.lexiquest.app.nativeBaselineBm",
+  "runId": "bm-synthetic-01",
+  "packageId": "com.lexiquest.app.nativeBaselineBm",
+  "deviceId": "9582188822004C6",
+  "protectedAfter": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  },
+  "apkSha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+  "phases": [],
+  "isolationVerified": true,
+  "status": "READINESS_PASS",
+  "protectedBefore": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  }
+}

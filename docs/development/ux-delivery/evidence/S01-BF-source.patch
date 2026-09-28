@@ -1,0 +1,216 @@
+--- a/lib/screens/offline_content_manager_screen.dart
++++ b/lib/screens/offline_content_manager_screen.dart
+@@ -34,6 +34,8 @@
+   AppDependencies? _dependencies;
+   int _generation = 0;
+   int _loadSerial = 0;
++  // Catalog refreshes may overlap operations within the same visible visit.
++  int _visibilityEpoch = 0;
+   bool _loading = false;
+   bool _foreground = true;
+   bool _visible = false;
+@@ -65,6 +67,7 @@
+     final visible = _foreground && ModalRoute.of(context)?.isCurrent != false;
+     if (_visible == visible) return;
+     _visible = visible;
++    _visibilityEpoch++;
+     // Retire displayed callbacks and reads, without abandoning in-flight work.
+     _loadSerial++;
+     if (visible) _states = _load()..ignore();
+@@ -134,10 +137,11 @@
+       _busy.add(identity);
+       if (download) _downloads.add(identity);
+     });
++    final visibilityEpoch = _visibilityEpoch;
+     try {
+       await operation();
+     } on Object {
+-      if (_canAct(generation)) {
++      if (_canAct(generation) && visibilityEpoch == _visibilityEpoch) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+             content: Text('จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'),
+@@ -168,16 +172,19 @@
+       return;
+     }
+     setState(() => _cancelling.add(identity));
++    final visibilityEpoch = _visibilityEpoch;
+     try {
+       final cancelled = await (manager as OfflineContentDownloadControl)
+           .cancelDownload(identity);
+-      if (!cancelled && _canAct(generation)) {
++      if (!cancelled &&
++          _canAct(generation) &&
++          visibilityEpoch == _visibilityEpoch) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว')),
+         );
+       }
+     } on Object {
+-      if (_canAct(generation)) {
++      if (_canAct(generation) && visibilityEpoch == _visibilityEpoch) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('ยกเลิกไม่สำเร็จ ลองใหม่ได้')),
+         );
+--- a/test/screens/offline_content_manager_screen_test.dart
++++ b/test/screens/offline_content_manager_screen_test.dart
+@@ -28,6 +28,132 @@
+ import '../support/test_quest_use_cases.dart';
+ 
+ void main() {
++  testWidgets('BF unrelated catalog refresh preserves current failure feedback',
++      (tester) async {
++    const other = ContentIdentity(
++      type: ContentType.offlineArtifact,
++      id: 'pack-b',
++      revision: 1,
++    );
++    final manager = _FakeManager([
++      _state(OfflineContentStatus.interrupted),
++      _state(OfflineContentStatus.notDownloaded, identity: other),
++    ]);
++    await tester.pumpWidget(MaterialApp(
++      home: OfflineContentManagerScreen(
++        manager: manager,
++        canInvoke: () => true,
++      ),
++    ));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const ValueKey('offline-content/repair/pack-a')));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(const ValueKey('offline-content/download/pack-b')));
++    await tester.pumpAndSettle();
++    expect(manager.catalogCalls, 2);
++    expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
++    manager.repairCompleter.completeError(StateError('synthetic repair'));
++    await tester.pumpAndSettle();
++    expect(find.text('จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'), findsOneWidget);
++    expect(manager.repaired, [_identity]);
++    expect(manager.downloaded, [other]);
++    expect(tester.takeException(), isNull);
++  });
++
++  for (final transition in ['none', 'app', 'route']) {
++    for (final result in ['repair-error', 'cancel-error', 'cancel-false']) {
++      testWidgets('BF pending $result feedback after $transition', (tester) async {
++        final repair = result == 'repair-error';
++        final manager = _FakeManager([
++          _state(repair
++              ? OfflineContentStatus.interrupted
++              : OfflineContentStatus.downloading),
++        ])..cancelPending = Completer<bool>();
++        final navigator = GlobalKey<NavigatorState>();
++        await tester.pumpWidget(MaterialApp(
++          navigatorKey: navigator,
++          home: OfflineContentManagerScreen(
++            manager: manager,
++            canInvoke: () => true,
++          ),
++        ));
++        await tester.pumpAndSettle();
++        final action = find.byKey(ValueKey(
++          'offline-content/${repair ? 'repair' : 'cancel'}/pack-a',
++        ));
++        await tester.tap(action);
++        await tester.pumpAndSettle();
++        await _feedbackVisibilityTransition(tester, navigator, transition);
++        // Returning must not abandon the manager operation or admit a duplicate.
++        if (repair) {
++          expect(action, findsNothing);
++          expect(manager.repaired, [_identity]);
++          manager.repairCompleter.completeError(StateError('synthetic repair'));
++        } else {
++          expect(tester.widget<TextButton>(action).onPressed, isNull);
++          expect(manager.cancelled, [_identity]);
++          if (result == 'cancel-error') {
++            manager.cancelPending!.completeError(StateError('synthetic cancel'));
++          } else {
++            manager.cancelPending!.complete(false);
++          }
++        }
++        await tester.pumpAndSettle();
++        final message = repair
++            ? 'จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'
++            : result == 'cancel-error'
++                ? 'ยกเลิกไม่สำเร็จ ลองใหม่ได้'
++                : 'ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว';
++        expect(find.text(message),
++            transition == 'none' ? findsOneWidget : findsNothing);
++        expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsNothing);
++        if (repair) {
++          expect(action, findsOneWidget);
++          expect(manager.repaired, [_identity]);
++        } else {
++          expect(tester.widget<TextButton>(action).onPressed, isNotNull);
++          expect(manager.cancelled, [_identity]);
++        }
++        expect(tester.takeException(), isNull);
++      });
++    }
++  }
++
++  for (final transition in ['app', 'route']) {
++    testWidgets('BF pending repair success remains truthful after $transition',
++        (tester) async {
++      final manager = _FakeManager([_state(OfflineContentStatus.interrupted)]);
++      final navigator = GlobalKey<NavigatorState>();
++      await tester.pumpWidget(MaterialApp(
++        navigatorKey: navigator,
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ));
++      await tester.pumpAndSettle();
++      final repair = find.byKey(const ValueKey('offline-content/repair/pack-a'));
++      final retired = tester.widget<FilledButton>(repair).onPressed!;
++      await tester.tap(repair);
++      await tester.pumpAndSettle();
++      await _feedbackVisibilityTransition(tester, navigator, transition);
++      retired();
++      await tester.pumpAndSettle();
++      expect(manager.repaired, [_identity]);
++      expect(manager.cancelled, isEmpty);
++      expect(repair, findsNothing);
++      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsNothing);
++      manager.repairCompleter.complete(_state(OfflineContentStatus.verified));
++      await tester.pumpAndSettle();
++      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
++      expect(find.byKey(const ValueKey('offline-content/remove/pack-a')),
++          findsOneWidget);
++      expect(manager.repaired, [_identity]);
++      expect(manager.cancelled, isEmpty);
++      expect(tester.takeException(), isNull);
++    });
++  }
++
+   for (final routeCover in [false, true]) {
+     testWidgets(
+       'BE retired remove stays retired after return route=$routeCover',
+@@ -1184,6 +1310,25 @@
+   );
+ }
+ 
++Future<void> _feedbackVisibilityTransition(
++  WidgetTester tester,
++  GlobalKey<NavigatorState> navigator,
++  String transition,
++) async {
++  if (transition == 'route') {
++    navigator.currentState!.push(MaterialPageRoute<void>(
++      builder: (_) => const Scaffold(body: Text('synthetic cover')),
++    ));
++    await tester.pumpAndSettle();
++    navigator.currentState!.pop();
++  } else if (transition == 'app') {
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++  }
++  await tester.pumpAndSettle();
++}
++
+ const _identity = ContentIdentity(
+   type: ContentType.offlineArtifact,
+   id: 'pack-a',
+

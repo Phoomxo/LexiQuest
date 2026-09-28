@@ -1,0 +1,14 @@
+{
+  "preservedPinsVerified": 283,
+  "branch": "codex/ux-current-after-s01-bc",
+  "authority": "Controller assignment after BP RELEASED state141; no successor dispatch",
+  "threadId": "01a0e0f5-20cf-7781-b9d3-4d80d71c6329",
+  "writerStatus": "RELEASED",
+  "recordedAtUtc": "2026-09-27T04:15:41.0555823Z",
+  "package": "S01-BQ",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/login/quota/ledger changes",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessorCheckpointSha256": "b65f819e3bb724ad940eb52e4c1d9bec54b8321fd6716860ec72ea0722f1caaa"
+}

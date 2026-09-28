@@ -1,0 +1,231 @@
+{
+  "native": "NOT_RUN",
+  "fullResume": "NOT_IMPLEMENTED",
+  "schemaVersion": 1,
+  "userTrials": "DEFERRED",
+  "releaseAccepted": false,
+  "schemaChanged": false,
+  "status": "BOUNDED_HOST_PASS_WITH_BS_OPEN_RED",
+  "package": "S01-BU-frozen-meaning-admission",
+  "gatePrePost": [
+    {
+      "status": "Failed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-initial-bt-red.json",
+      "pre": "799a128fe15fa3e3cb16fdd695779609bcc947bba39d99a1121f22ac363a3194",
+      "name": "initial-bt-red",
+      "post": "799a128fe15fa3e3cb16fdd695779609bcc947bba39d99a1121f22ac363a3194",
+      "exitCode": 1
+    },
+    {
+      "status": "Passed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "final-targeted",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 0
+    },
+    {
+      "status": "Failed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-route-red.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "final-route-red",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 1
+    },
+    {
+      "status": "Passed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "analyzer-final",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 0
+    }
+  ],
+  "hostTests": {
+    "finalTargetedPassed": 132,
+    "initialBTPassed": 9,
+    "initialBTFailed": 1,
+    "finalTargetedFailed": 0,
+    "finalBSRouteFailed": 1,
+    "finalBSRoutePassed": 0
+  },
+  "analyzerCommand": "dart analyze lib/features/learning/domain/ordinary_meaning_plan.dart lib/features/learning/domain/meaning_quiz_composition.dart lib/features/learning/application/meaning_quiz_mode_adapter.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/domain/learning_models.dart lib/features/learning/domain/learning_repository.dart lib/screens/quiz_screen.dart test/features/learning/ordinary_quiz_checkpoint_contract_test.dart test/screens/quiz_screen_test.dart test/support/today_quiz_resume_contract_test.dart",
+  "fieldDailyContinuityChanged": false,
+  "sourcePins": [
+    {
+      "path": "lib/features/learning/domain/meaning_quiz_composition.dart",
+      "sha256": "982e47da4ddc0834bd1fb9e622bc91be244a1d3b3f23fd9b81f8b281a726679c"
+    },
+    {
+      "path": "lib/features/learning/domain/ordinary_meaning_plan.dart",
+      "sha256": "a7392361e69fbe7f6f9fd9485603c3b81ada53aa291ae757f17e174176500556"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_models.dart",
+      "sha256": "a9dc5ec7c065241a498d8a908f84c73a84104c63c3a5a610002b388edf02c465"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "sha256": "4fcb42ad9e838833839eee155fc6b185a25df9b99c290423160b19b5ff85408a"
+    },
+    {
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "sha256": "2144d053e671c1e770f6068874e47d68496c83da2e938a749432648ec76bf56e"
+    },
+    {
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "sha256": "6079797be34925ec5d8c90f4c183509c884b40e68daf1140abd74502e3b7dcc9"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "059c02d237d59c0f7636dc0e0acfad05986cbd249dceaaf5f39609368cb396f5"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "98df60432b89dd44e0e7ae89af854ef48fd98767b13502509ec8951a0c425e3f"
+    },
+    {
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "sha256": "b48ddd8077aa0497d8701c960cfa5ac21ee916da7bcc85fed76b12c59d78a238"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "2b57d17619474845c44ed5eb4b3e0577a903d24752bfd69b988b1b1d5892999e"
+    },
+    {
+      "path": "test/support/today_quiz_resume_contract_test.dart",
+      "sha256": "74ad06d19f8a49c9691c3d882a3777af5803977039099f7074c13575abefc00f"
+    }
+  ],
+  "routing": "Current-model deterministic fallback; Standard/default requested, effective tier unverified; no Jev/billing/quota/USD5 ledger writes",
+  "artifactPins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.json",
+      "sha256": "a15a9968b0ffa194bd395c95e340c28287416a1fd531b7fa1f8b235eb9caa8e7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.log",
+      "sha256": "3dc00a68f18b489a37336c8e6483882113b331fc56f55073b7c375e7847c0090"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/baseline.json",
+      "sha256": "0ed982e64a4661f14295d894bdc79c39824b9415e90dddcab1c3f5291321d6cd"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-route-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-route-red.stdout.log",
+      "sha256": "98573e385dddf6b8819a41408a58eec0244a416a99a1b35fc0261efd0062473e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-targeted.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-targeted.stdout.log",
+      "sha256": "93fa21664955482a303d19fa8839e23f5582f3b4fb657c206d837ade50f679b5"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-route-red.json",
+      "sha256": "1f12b8152cd9481b76aff4eded1a8aaac18729c88cc92d57d8bb1175035d7701"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+      "sha256": "d80ae32d7c11445ee5ce1e326d0a3f5c9328545278f9c44d4d6cc7254bc5fba8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-initial-bt-red.json",
+      "sha256": "d6f7dc7edcb790b128409bcce2b7b77484cdaa5a3ce71b68926486c18db69ece"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-bt-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-bt-red.stdout.log",
+      "sha256": "0faa3b3df8b333a814327cbaba419e6b9c0c09097371def8d574470441d7620a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-targeted-learning-0cbcbfe53ec4fa0a3d4200ef4e22b9ad4d914f3c133fc55e5a5d9c22b6ab73b4.json",
+      "sha256": "d6f7dc7edcb790b128409bcce2b7b77484cdaa5a3ce71b68926486c18db69ece"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/preservation-final.json",
+      "sha256": "1595ef8d517e7040b914f3064418cd024995790ea86c39e672850740cd8f8d6b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BU-runs/source-paths.json",
+      "sha256": "a399b718ffc649c28fb44fb3a2bc30bec29d7f6d7c7c54555b154c8d4aed97e6"
+    },
+    {
+      "path": "docs/development/ux-delivery/README.md",
+      "sha256": "e142f2951c43ead17367e4bf2443e78f754d5bce81265247182e00049d6b50ac"
+    },
+    {
+      "path": "docs/development/ux-delivery/ready-backlog.md",
+      "sha256": "5cfe2ab6d2fd94aeecf94982edd7bba2e447926eec878b1d78d1fda623e02edc"
+    },
+    {
+      "path": "docs/development/ux-delivery/S01-BU.md",
+      "sha256": "4df016613a172692ad99b19eef4f7004254ff780a7efbbd8834a437f628fc148"
+    },
+    {
+      "path": "docs/development/ux-delivery/state.json",
+      "sha256": "f2284bb9917209dab2a23a172de1ce00fdf7889b8e8af1ff6007668ce58ac0f9"
+    }
+  ],
+  "successorDispatched": false,
+  "bsResume": "OPEN_RED_QUIZSCREEN_EXPECTED_1_ACTUAL_0",
+  "analyzer": "NO_ISSUES_TOUCHED_FILES",
+  "acceptance": "INITIAL_ADMISSION_ONLY",
+  "preservation": {
+    "predecessorValidationPinMismatches": 0,
+    "finalClosureMismatches": 0,
+    "immutableBDThroughBTEvidencePreserved": true,
+    "unexpectedChanges": [],
+    "predecessorValidationPinsCheckedAgainstBaseline": 21,
+    "baselineFiles": 5116,
+    "changedBaselineFiles": [
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/ready-backlog.md",
+      "docs/development/ux-delivery/state.json",
+      "lib/features/learning/application/learning_use_cases.dart",
+      "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "lib/features/learning/data/drift_learning_repository.dart",
+      "lib/features/learning/domain/learning_models.dart",
+      "lib/features/learning/domain/learning_repository.dart",
+      "lib/screens/quiz_screen.dart",
+      "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "test/screens/quiz_screen_test.dart",
+      "test/support/today_quiz_resume_contract_test.dart"
+    ],
+    "allowedChangedFiles": [
+      "lib/features/learning/domain/meaning_quiz_composition.dart",
+      "lib/features/learning/domain/ordinary_meaning_plan.dart",
+      "lib/features/learning/domain/learning_models.dart",
+      "lib/features/learning/domain/learning_repository.dart",
+      "lib/features/learning/application/learning_use_cases.dart",
+      "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "lib/features/learning/data/drift_learning_repository.dart",
+      "lib/screens/quiz_screen.dart",
+      "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "test/screens/quiz_screen_test.dart",
+      "test/support/today_quiz_resume_contract_test.dart",
+      "docs/development/ux-delivery/state.json",
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/ready-backlog.md"
+    ],
+    "generatedPreserved": true,
+    "runningTaskTestProcesses": [],
+    "predecessorInitialClosureVerified": 1580,
+    "predecessorInitialClosureMismatches": 0,
+    "preservedBaselineFiles": 5104,
+    "finalClosureEntries": 1582
+  }
+}

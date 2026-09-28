@@ -1,0 +1,114 @@
+{
+  "command": "dart analyze (13 touched source/test files)",
+  "post": [
+    {
+      "path": "lib/features/learning/application/ordinary_meaning_recovery.dart",
+      "sha256": "f122d1067d8d6969f7ed0bf4664f84ef64f7728f8647d182b500894a03dd72c6"
+    },
+    {
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "sha256": "d038c57663ee1ab725ca5889f806df237c702dfb915a9f06078d1eb61e87b363"
+    },
+    {
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "sha256": "cde832dce9ef64bb154c398c0f4086a8e211491cdf055e853cd2a8d95111e409"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "4dc62638eacc08f2b34e4f25896d9d2c7c928ca7966a2c7d06857ff79ddee855"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "sha256": "1a1c9cd439f0152abbd29b32ddb7f7dcc90a31201bd04f38c8e9669776cd2b33"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+      "sha256": "56ac93e8c39b8b1d7b33a7a27e304ae945ba4e22501f4224fc4903b77a6c3897"
+    },
+    {
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "sha256": "ebcc64fcb7bfb9e415d3db2e9eb3672a6dc6dc02c21428e4edc67e06a96f02e0"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "ea50565220f1a8325d592e79fd42506570e0ee9e35afca17fe070802b0e93c4a"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "b276ef69572b7d1d62c2e03c3e92cbba36591eec51ff6ef687742b90fee90885"
+    },
+    {
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "sha256": "5d8167f42327d032764038f60f3cbb9b19719ce7100ea03b0e5ae47af6fc5cff"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "6b3ed4206b345e5592e2f28f00e28f37a317bb6f45b77343659bd93d77c11730"
+    },
+    {
+      "path": "test/support/today_quiz_resume_contract_test.dart",
+      "sha256": "5c0ef21fea9fa420c26cf70b1cefb1ac2a3a9ae572eef4dd586d7007bd42e925"
+    },
+    {
+      "path": "test/support/today_preview_route_audit_test.dart",
+      "sha256": "b30522f5ee62a67828e267eb47af7929dcb59f75e2838eb635233b136a76f1dc"
+    }
+  ],
+  "pre": [
+    {
+      "path": "lib/features/learning/application/ordinary_meaning_recovery.dart",
+      "sha256": "f122d1067d8d6969f7ed0bf4664f84ef64f7728f8647d182b500894a03dd72c6"
+    },
+    {
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "sha256": "d038c57663ee1ab725ca5889f806df237c702dfb915a9f06078d1eb61e87b363"
+    },
+    {
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "sha256": "cde832dce9ef64bb154c398c0f4086a8e211491cdf055e853cd2a8d95111e409"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "4dc62638eacc08f2b34e4f25896d9d2c7c928ca7966a2c7d06857ff79ddee855"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "sha256": "1a1c9cd439f0152abbd29b32ddb7f7dcc90a31201bd04f38c8e9669776cd2b33"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+      "sha256": "56ac93e8c39b8b1d7b33a7a27e304ae945ba4e22501f4224fc4903b77a6c3897"
+    },
+    {
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "sha256": "ebcc64fcb7bfb9e415d3db2e9eb3672a6dc6dc02c21428e4edc67e06a96f02e0"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "ea50565220f1a8325d592e79fd42506570e0ee9e35afca17fe070802b0e93c4a"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "b276ef69572b7d1d62c2e03c3e92cbba36591eec51ff6ef687742b90fee90885"
+    },
+    {
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "sha256": "5d8167f42327d032764038f60f3cbb9b19719ce7100ea03b0e5ae47af6fc5cff"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "6b3ed4206b345e5592e2f28f00e28f37a317bb6f45b77343659bd93d77c11730"
+    },
+    {
+      "path": "test/support/today_quiz_resume_contract_test.dart",
+      "sha256": "5c0ef21fea9fa420c26cf70b1cefb1ac2a3a9ae572eef4dd586d7007bd42e925"
+    },
+    {
+      "path": "test/support/today_preview_route_audit_test.dart",
+      "sha256": "b30522f5ee62a67828e267eb47af7929dcb59f75e2838eb635233b136a76f1dc"
+    }
+  ],
+  "finishedAtUtc": "2026-09-28T02:33:44.2935859Z",
+  "exitCode": 0,
+  "startedAtUtc": "2026-09-28T02:33:36.0757155Z"
+}

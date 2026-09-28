@@ -1,0 +1,13 @@
+{
+  "package": "S01-BN-host-ui-audit",
+  "threadId": "01a0e097-c108-7210-8faa-37c82a53c0ff",
+  "writerStatus": "ACTIVE",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessorCheckpointSha256": "6e9efe1cab50e85b0e32dc331a47bb462913054b9059d2b4cad2e87806ad3b30",
+  "scope": "Four canonical tabs, Settings/offline host rendering, semantics and keyboard gaps; synthetic BM composition. No native UI automation or device changes.",
+  "preservation": "BD-BM dirty files, generated7 and evidence retained",
+  "routing": "Current model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev inference/billing/login or ledger changes",
+  "userParticipation": "DEFERRED by latest 2026-09-27 authorization; independent engineering continues"
+}

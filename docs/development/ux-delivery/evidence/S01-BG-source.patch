@@ -1,0 +1,135 @@
+diff --git a/docs/development/ux-delivery/evidence/S01-BG-runs/before-screen.dart b/lib/screens/offline_content_manager_screen.dart
+index e61fc23b..235b7f6e 100644
+--- a/docs/development/ux-delivery/evidence/S01-BG-runs/before-screen.dart
++++ b/lib/screens/offline_content_manager_screen.dart
+@@ -190,7 +190,14 @@ final class _OfflineContentManagerScreenState
+         );
+       }
+     } finally {
+-      if (_current(generation)) setState(() => _cancelling.remove(identity));
++      if (_current(generation)) {
++        setState(() {
++          _cancelling.remove(identity);
++          // Downloads may have started elsewhere; cancellation does not imply
++          // a status. Read the manager even when it returns false or throws.
++          if (_canAct(generation)) _states = _load()..ignore();
++        });
++      }
+     }
+   }
+ 
+diff --git a/docs/development/ux-delivery/evidence/S01-BG-runs/before-test.dart b/test/screens/offline_content_manager_screen_test.dart
+index 7efd0b74..8588aef1 100644
+--- a/docs/development/ux-delivery/evidence/S01-BG-runs/before-test.dart
++++ b/test/screens/offline_content_manager_screen_test.dart
+@@ -28,6 +28,110 @@ import '../support/inert_research_dependencies.dart';
+ import '../support/test_quest_use_cases.dart';
+ 
+ void main() {
++  for (final result in ['true', 'false', 'error']) {
++    testWidgets('BG external cancel refreshes actual catalog after $result',
++        (tester) async {
++      final manager = _FakeManager([_state(OfflineContentStatus.downloading)])
++        ..cancelPending = Completer<bool>();
++      await tester.pumpWidget(MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ));
++      await tester.pumpAndSettle();
++      final cancel = find.byKey(const ValueKey('offline-content/cancel/pack-a'));
++      final stale = tester.widget<TextButton>(cancel).onPressed!;
++      stale();
++      stale();
++      await tester.pumpAndSettle();
++      expect(manager.cancelled, [_identity]);
++      expect(tester.widget<TextButton>(cancel).onPressed, isNull);
++      // The external operation publishes its real state before cancel resolves.
++      manager.values[0] = _state(result == 'false'
++          ? OfflineContentStatus.verified
++          : OfflineContentStatus.interrupted);
++      if (result == 'error') {
++        manager.cancelPending!.completeError(StateError('synthetic cancel'));
++      } else {
++        manager.cancelPending!.complete(result == 'true');
++      }
++      await tester.pumpAndSettle();
++      expect(find.byKey(ValueKey('offline-content/${result == 'false' ? 'remove' : 'repair'}/pack-a')),
++          findsOneWidget);
++      expect(cancel, findsNothing);
++      expect(manager.catalogCalls, 2);
++      stale();
++      await tester.pumpAndSettle();
++      expect(manager.cancelled, [_identity]);
++      expect(manager.downloaded, isEmpty);
++      expect(manager.repaired, isEmpty);
++      if (result != 'true') {
++        expect(find.text(result == 'false'
++            ? 'ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว'
++            : 'ยกเลิกไม่สำเร็จ ลองใหม่ได้'), findsOneWidget);
++      }
++      expect(tester.takeException(), isNull);
++    });
++  }
++
++  for (final boundary in ['owner', 'gate', 'app', 'route', 'disposed']) {
++    testWidgets('BG pending external cancel respects $boundary boundary',
++        (tester) async {
++      final old = _FakeManager([_state(OfflineContentStatus.downloading)])
++        ..cancelPending = Completer<bool>();
++      final next = _FakeManager([]);
++      var allowed = true;
++      final navigator = GlobalKey<NavigatorState>();
++      Widget screen(_FakeManager manager) => MaterialApp(
++        navigatorKey: navigator,
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => allowed,
++        ),
++      );
++      await tester.pumpWidget(screen(old));
++      await tester.pumpAndSettle();
++      await tester.tap(find.byKey(const ValueKey('offline-content/cancel/pack-a')));
++      await tester.pumpAndSettle();
++      if (boundary == 'owner') {
++        await tester.pumpWidget(screen(next));
++      } else if (boundary == 'gate') {
++        allowed = false;
++      } else if (boundary == 'app') {
++        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
++      } else if (boundary == 'route') {
++        navigator.currentState!.push(MaterialPageRoute<void>(
++          builder: (_) => const Scaffold(body: Text('Cover')),
++        ));
++      } else {
++        await tester.pumpWidget(const SizedBox());
++      }
++      await tester.pumpAndSettle();
++      old.values[0] = _state(OfflineContentStatus.interrupted);
++      old.cancelPending!.complete(true);
++      await tester.pumpAndSettle();
++      expect(old.catalogCalls, 1);
++      expect(old.cancelled, [_identity]);
++      expect(next.cancelled, isEmpty);
++      if (boundary == 'owner') expect(next.catalogCalls, 1);
++      if (boundary == 'app' || boundary == 'route' || boundary == 'gate') {
++        allowed = true;
++        if (boundary == 'route') {
++          navigator.currentState!.pop();
++        } else {
++          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
++          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++        }
++        await tester.pumpAndSettle();
++        expect(find.byKey(const ValueKey('offline-content/repair/pack-a')),
++            findsOneWidget);
++        expect(old.catalogCalls, 2);
++      }
++      expect(tester.takeException(), isNull);
++    });
++  }
++
+   testWidgets('BF unrelated catalog refresh preserves current failure feedback',
+       (tester) async {
+     const other = ContentIdentity(

@@ -1,0 +1,41 @@
+
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart                                                                              
+00:01 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart                                                                              
+00:02 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart                                                                              
+00:03 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart                                                                              
+00:03 +0: BW verify rejects absent seed and traversal                                                                                                                                                  
+00:04 +0: BW verify rejects absent seed and traversal                                                                                                                                                  
+00:04 +1: BW verify rejects absent seed and traversal                                                                                                                                                  
+00:04 +1: BW disk close reopen restores exact feedback with every table unchanged                                                                                                                      
+00:05 +1: BW disk close reopen restores exact feedback with every table unchanged                                                                                                                      
+00:05 +1: BW disk close reopen restores exact feedback with every table unchanged                                                                                                                      
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: Owner mismatch
+
+When the exception was thrown, this was the stack:
+#0      baselineAwait (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_baseline_cases.dart:120:24)
+<asynchronous suspension>
+#1      runResumePhase (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_resume_cases.dart:20:31)
+<asynchronous suspension>
+#2      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart:17:5)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  BW disk close reopen restores exact feedback with every table unchanged
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+00:05 +1 -1: BW disk close reopen restores exact feedback with every table unchanged [E]                                                                                                               
+  Test failed. See exception logs above.
+  The test description was: BW disk close reopen restores exact feedback with every table unchanged
+  
+
+To run this test again: C:\Users\Phet\AppData\Local\Programs\flutter\bin\cache\dart-sdk\bin\dart.exe test C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart -p vm --plain-name "BW disk close reopen restores exact feedback with every table unchanged"
+
+00:05 +1 -1: Some tests failed.                                                                                                                                                                        

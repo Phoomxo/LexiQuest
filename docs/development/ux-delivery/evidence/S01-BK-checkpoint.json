@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BK-offline-settings-entry-lifetime",
+  "atUtc": "2026-09-26T23:36:39.6929164Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "threadId": "01a0e00b-c36a-7901-a381-42796b559bcf",
+  "hostTests": 236,
+  "newTests": 8,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "sha256": "256a8a3c2892a5fb27fd7cd5c107e0beed5071d148e0effd5e87b851737bc42e",
+      "path": "lib/screens/setting_screen.dart"
+    },
+    {
+      "sha256": "3ea556eb818849b1b85d09751b1dbbf789103b67f7f564fda49c690c80dc1cbf",
+      "path": "test/screens/offline_content_settings_entry_test.dart"
+    },
+    {
+      "sha256": "57412c8b85a1e5613ae9d751ecd8d4c870e7cbbd4e6ee92e922f600e359cff0f",
+      "path": "docs/development/ux-delivery/evidence/S01-BK-source.patch"
+    }
+  ],
+  "writerStatus": "RELEASED",
+  "status": "READY_FOR_CONTROLLER",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "validation": "docs/development/ux-delivery/evidence/S01-BK-validation.json",
+  "report": "docs/development/ux-delivery/S01-BK.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BK-claim.json",
+  "inputClosure": {
+    "mismatches": 0,
+    "count": 1563,
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/final-verification.json"
+  },
+  "changedFiles": [
+    "lib/screens/setting_screen.dart",
+    "test/screens/offline_content_settings_entry_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BK.md",
+    "docs/development/ux-delivery/evidence/S01-BK-*"
+  ],
+  "sourceState": "Uncommitted BD-BJ plus BK; seven generated files unchanged. No commit/push/cleanup.",
+  "runningProcesses": [],
+  "nextExecutableStep": "Controller reviews BK checkpoint/source/gate. No new implementation package selected in bounded cross-group reassessment; use concrete findings or newly available native/user/media/trial prerequisites. Do not expand offline coverage without a finding or dispatch automatically."
+}

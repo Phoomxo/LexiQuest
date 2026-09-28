@@ -1,0 +1,5 @@
+Analyzing ordinary_quiz_checkpoint_contract_test.dart...
+
+   info - ordinary_quiz_checkpoint_contract_test.dart:161:13 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+1 issue found.

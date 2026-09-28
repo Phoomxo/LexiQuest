@@ -1,0 +1,57 @@
+{
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/login/quota/ledger changes",
+  "package": "S01-BQ-populated-profile-host-audit",
+  "readmeSha256": "455b39bab1d4df98abbbf849ff6f7ba7107456c83a0ff7327ae0e6f464c65e69",
+  "nextExecutableStep": "Controller review BQ checkpoint. Populated Profile host gap closed for representative synthetic data. Today routed success stays gated; native IME/TalkBack NOT_RUN; actual-user trials DEFERRED. No new host package or successor selected without a concrete finding.",
+  "changedFiles": [
+    "test/support/populated_profile_host_ui_audit_test.dart",
+    "docs/development/ux-delivery/S01-BQ.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/ready-backlog.md",
+    "docs/development/ux-delivery/evidence/S01-BQ-*"
+  ],
+  "stateRevision": 142,
+  "engineering": "COMPLETE_BOUNDED_HOST_AUDIT",
+  "branch": "codex/ux-current-after-s01-bc",
+  "reportSha256": "c1a646c8483a10d86b51df137b5dd60391f5c187c8536345c9b603cb384ba52c",
+  "predecessorCheckpointSha256": "b65f819e3bb724ad940eb52e4c1d9bec54b8321fd6716860ec72ea0722f1caaa",
+  "openPrototypeDefects": "UX-D01-D25 remain OPEN",
+  "writerStatus": "RELEASED",
+  "productionSourceChanged": false,
+  "readyBacklogSha256": "9a1d9a0a0c3b35a4d3cf971c360cdc3e1ca748df6f167833da061f9db1306a00",
+  "remaining": [
+    "Today route gated",
+    "Native IME/TalkBack current snapshot",
+    "Actual-user trials deferred",
+    "Reviewed media/qualified trials",
+    "Provider/device/budget and frozen release prerequisites"
+  ],
+  "status": "READY_FOR_CONTROLLER",
+  "sourceClosureVerified": 1577,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "claimSha256": "2eddfd64e4fd8c1e4198e9674df173a6cc6c173dd72bc4fbb93e3d0e054a0466",
+  "hostTests": 5,
+  "validationSha256": "17f4bd0f821dd08df70198334d59f69cc295ed3b4e2378267e7810206df8bb94",
+  "renderCount": 20,
+  "schemaVersion": 1,
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "nativeDelta": "NOT_RUN",
+  "stateSha256": "c99e54390b800379d1459c37ce1a6d96ccf6e17df002ec19c229fa68ff31dc43",
+  "gateFingerprint": "1364cf977f9e3d5ecc4ee5c49785248bf8811bf3e28640e51d3e271478a0a2d0",
+  "sourcePins": [
+    {
+      "path": "test/support/populated_profile_host_ui_audit_test.dart",
+      "sha256": "a1bc8c7322783d285a8597c6a83581642e9db02f913b3e8048596edd0f5dc2e4"
+    }
+  ],
+  "threadId": "01a0e0f5-20cf-7781-b9d3-4d80d71c6329",
+  "hostBuildTestProcesses": [],
+  "atUtc": "2026-09-27T04:15:41.0555823Z",
+  "report": "docs/development/ux-delivery/S01-BQ.md",
+  "validation": "docs/development/ux-delivery/evidence/S01-BQ-validation.json",
+  "userTrials": "DEFERRED",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "nativeProcess": "Not observed or changed",
+  "preExistingPinsVerified": 283
+}

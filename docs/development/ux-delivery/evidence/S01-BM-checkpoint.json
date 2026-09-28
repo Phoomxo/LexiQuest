@@ -1,0 +1,122 @@
+{
+  "status": "READY_FOR_CONTROLLER",
+  "openDefects": "UX-D01-D25",
+  "writerStatus": "RELEASED",
+  "validation": "docs/development/ux-delivery/evidence/S01-BM-validation.json",
+  "sprintAccepted": false,
+  "successorDispatched": false,
+  "hostBuildTestProcesses": [],
+  "apkSha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+  "runningProcesses": [
+    {
+      "platform": "Android",
+      "packageId": "com.lexiquest.app.nativeBaselineBm",
+      "pid": 634,
+      "databaseClosed": true
+    }
+  ],
+  "installedPackage": "com.lexiquest.app.nativeBaselineBm",
+  "stateRevision": 136,
+  "changedFiles": [
+    "android/app/build.gradle.kts",
+    "android/app/src/nativeBaseline/AndroidManifest.xml",
+    "android/app/src/nativeBaseline/kotlin/com/lexiquest/app/NativeBaselineActivity.kt",
+    "integration_test/native_baseline_acceptance_test.dart",
+    "integration_test/support/native_baseline_cases.dart",
+    "integration_test/support/native_baseline_fixture.dart",
+    "test/support/native_baseline_fixture_test.dart",
+    "test/support/native_baseline_navigation_test.dart",
+    "tool/cli/native-baseline-contract.ps1",
+    "tool/cli/run-native-baseline-acceptance.ps1",
+    "tool/cli/tests/native-baseline-contract.tests.ps1",
+    "tool/cli/tests/native-baseline-isolation.tests.ps1",
+    "tool/cli/tests/native-baseline-runner.tests.ps1",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BM.md",
+    "docs/development/ux-delivery/evidence/S01-BM-*"
+  ],
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "package": "S01-BM-native-harness",
+  "nextExecutableStep": "Controller reviews receipts; route to permitted N05 observation or another concrete ready UX-v5 item. Do not reinstall existing test package or repeat closed offline matrix.",
+  "remaining": [
+    "N05 permitted visual/keyboard/TalkBack",
+    "user review",
+    "reviewed media/qualified trial",
+    "frozen-source release"
+  ],
+  "validationSha256": "0d2b5b0a5b3327a081ccc3fe01dcfc7fb183121d554570b3baea10b993748ae0",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/login/billing probe",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "report": "docs/development/ux-delivery/S01-BM.md",
+  "apkPath": "build/native-baseline/S01-BM/app-debug-e10429750a94.apk",
+  "recovery": "Diagnose recoverable failures and continue within scope; never blind retry, weaken criteria, install over existing packages, or stop solely because an error occurred.",
+  "hostFlutterTests": 8,
+  "hostCliCasesAndChecks": 24,
+  "processRestart": "PASS",
+  "reportSha256": "212b110bf149eaca4935d8b7cbf45bd29d4a35ac42dad6d4d99a087571441302",
+  "native": "PASS_N01_N04",
+  "branch": "codex/ux-current-after-s01-bc",
+  "sourceState": "Dirty BD-BK + BL docs + generated7 preserved; BM Android debug config/new harness/tests and docs uncommitted; ready-backlog untouched",
+  "stateSha256": "4b2b4972bc7c43b0cf14ff10dd8557826f75eba88f9977e6d43c91fa0780cea2",
+  "schemaVersion": 1,
+  "threadId": "01a0e035-ea22-7621-a9f0-8c6f0b4578d1",
+  "engineering": "COMPLETE_BOUNDED_HARNESS",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "sourcePins": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "1deda3796b3bed77298d150a85499880cb3f7de386e9e543a05bc262c2bd8a52"
+    },
+    {
+      "path": "android/app/src/nativeBaseline/AndroidManifest.xml",
+      "sha256": "03ae0733bf61c0f5bccfb5c0b7b691b564b668f928900f64368bf4e26539d25c"
+    },
+    {
+      "path": "android/app/src/nativeBaseline/kotlin/com/lexiquest/app/NativeBaselineActivity.kt",
+      "sha256": "40d02962dccee32c02c84806840a8207ba0ce81d00dada8cfaca18e3be9cb7f6"
+    },
+    {
+      "path": "integration_test/native_baseline_acceptance_test.dart",
+      "sha256": "3dfba3d454d7e844abb763f4dcd5c7defa8dc900f6bb0d666779c3b52e9e3b5a"
+    },
+    {
+      "path": "integration_test/support/native_baseline_cases.dart",
+      "sha256": "80b0140ef32de43d5820cd3f3b2fbb9f688389eafe8071ce2a1f0041af9b0138"
+    },
+    {
+      "path": "integration_test/support/native_baseline_fixture.dart",
+      "sha256": "8fc8e64473b2b67073ed7ed69ccd1ef1cd33f799c8d79b88ac5fba26d9ed9405"
+    },
+    {
+      "path": "test/support/native_baseline_fixture_test.dart",
+      "sha256": "eb2e1f22bb59b2bc89675d451b5163b3abdff50137f1a3053c9e7d27ca2cc28d"
+    },
+    {
+      "path": "test/support/native_baseline_navigation_test.dart",
+      "sha256": "df69135bb47ada9bd2162f200e407abddb51311deb128d1bd8d0097a87629035"
+    },
+    {
+      "path": "tool/cli/native-baseline-contract.ps1",
+      "sha256": "a931b3e8d67db5b57d4e0bed5a093ea7b4fd27c6704806c663b1f8ed56d09ac3"
+    },
+    {
+      "path": "tool/cli/run-native-baseline-acceptance.ps1",
+      "sha256": "bb725868ab264cf80175c33439421ca3c141518af115490ec35e6a94a4a1af9e"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-contract.tests.ps1",
+      "sha256": "0a994ea32b5dbf44f29d90d00757c5ce14eda2cdf75c1d41f4ff6eddd127c839"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-isolation.tests.ps1",
+      "sha256": "15887b5de483cd3f7725a869b6f1873bb7f37c9cff6abf547b8584c9153f5b66"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-runner.tests.ps1",
+      "sha256": "d25997a7c9c3f3d8970c3086e254257cdaa20820798a0448f3252eff5763ef37"
+    }
+  ],
+  "syntheticRunId": "bm-synthetic-01",
+  "atUtc": "2026-09-27T01:04:14.415Z"
+}

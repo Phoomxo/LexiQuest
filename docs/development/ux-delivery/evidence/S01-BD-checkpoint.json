@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BD-offline-control-snapshot",
+  "atUtc": "2026-09-26T17:25:35.6273492Z",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "writerThreadId": "01a0deb6-099b-7010-a49b-3ff84a2c62e1",
+  "writerStatus": "RELEASED",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "sourceState": "Uncommitted bounded source/test delta plus new documentation/evidence; no user edits existed at claim",
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "ac7ad8330d482d7efdf864f0cc55467fb237c6fc7ead40cc0a09f055121dba90"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "0fd363d4b9765781542863c2c8b960a0809f37fc014941697764d5b5ba69b67e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BD-source.patch",
+      "sha256": "5fa15433ef944b8e563a71597a24d46ef3ae6fe1c68d70b54793f900a2fddfa6"
+    }
+  ],
+  "inputClosure": {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/final-verification.json",
+    "count": 1563,
+    "mismatches": 0,
+    "verifiedAtUtc": "2026-09-26T17:25:35.6273492Z"
+  },
+  "validation": "docs/development/ux-delivery/evidence/S01-BD-validation.json",
+  "report": "docs/development/ux-delivery/S01-BD.md",
+  "runningProcesses": [],
+  "hostTests": 66,
+  "newTests": 6,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "permitted visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "changedFiles": [
+    "lib/screens/offline_content_manager_screen.dart",
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BD.md",
+    "docs/development/ux-delivery/evidence/S01-BD-claim.json",
+    "docs/development/ux-delivery/evidence/S01-BD-validation.json",
+    "docs/development/ux-delivery/evidence/S01-BD-checkpoint.json",
+    "docs/development/ux-delivery/evidence/S01-BD-source.patch",
+    "docs/development/ux-delivery/evidence/S01-BD-runs/"
+  ],
+  "generatedLineEndingOnly": [
+    "linux/flutter/generated_plugin_registrant.cc",
+    "linux/flutter/generated_plugin_registrant.h",
+    "linux/flutter/generated_plugins.cmake",
+    "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "windows/flutter/generated_plugin_registrant.cc",
+    "windows/flutter/generated_plugin_registrant.h",
+    "windows/flutter/generated_plugins.cmake"
+  ],
+  "preservation": "Generated line-ending changes left intact, semantic git diff empty. Existing backup and all old worktrees untouched. No copy of historical archive, cleanup, commit/push or successor dispatch.",
+  "nextExecutableStep": "Controller reads this receipt and current state, verifies HEAD/source pins, then selects one further proven existing-feature issue. No cleanup dependency; BD did not exhaustively assess all twelve groups.",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BD-claim.json"
+}

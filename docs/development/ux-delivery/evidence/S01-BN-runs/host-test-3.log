@@ -1,0 +1,98 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: BN canonical phone render and actions at 1.0x
+BN action home/today
+BN captured 1-today-1.0x
+BN action home/learn
+BN captured 2-learn-1.0x
+BN action learn-show-all-modes
+BN action learn-show-all-modes
+BN action home/vocabulary
+BN captured 3-vocabulary-1.0x
+BN action home/profile
+BN captured 4-profile-1.0x
+BN action home/today
+BN action today-unavailable-practice
+BN action legacy-drawer-button
+BN action drawer/settings
+BN captured 5-settings-1.0x
+BN action settings/offline-content
+BN captured 6-offline-1.0x
+BN action home/vocabulary
+BN action add-category
+BN action save-category
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart:132:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart line 132
+The test description was:
+  BN canonical phone render and actions at 1.0x
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:14 +0 -1: BN canonical phone render and actions at 1.0x [E]
+  Test failed. See exception logs above.
+  The test description was: BN canonical phone render and actions at 1.0x
+  
+00:14 +0 -1: BN canonical phone render and actions at 2.0x
+BN action home/today
+BN captured 1-today-2.0x
+BN action home/learn
+BN captured 2-learn-2.0x
+BN action learn-show-all-modes
+BN action learn-show-all-modes
+BN action home/vocabulary
+BN captured 3-vocabulary-2.0x
+BN action home/profile
+BN captured 4-profile-2.0x
+BN action home/today
+BN action today-unavailable-practice
+BN action legacy-drawer-button
+BN action drawer/settings
+BN captured 5-settings-2.0x
+BN action settings/offline-content
+BN captured 6-offline-2.0x
+BN action home/vocabulary
+BN action add-category
+BN action save-category
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart:132:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart line 132
+The test description was:
+  BN canonical phone render and actions at 2.0x
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:25 +0 -2: BN canonical phone render and actions at 2.0x [E]
+  Test failed. See exception logs above.
+  The test description was: BN canonical phone render and actions at 2.0x
+  
+00:25 +0 -2: (tearDownAll)
+00:26 +0 -2: Some tests failed.
+
+Failing tests:
+  C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart: BN canonical phone render and actions at 1.0x
+  C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/baseline_host_ui_audit_test.dart: BN canonical phone render and actions at 2.0x

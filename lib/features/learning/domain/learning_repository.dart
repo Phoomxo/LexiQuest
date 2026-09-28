@@ -1,7 +1,25 @@
 import '../../learning_packs/domain/content_manifest.dart';
 import 'learning_models.dart';
+import '../../vocabulary/domain/vocabulary_word.dart';
+
 import 'associative_reading_checkpoint.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
+
+abstract interface class OrdinaryMeaningContentRepository {
+  Future<List<VocabularyWord>> readMeaningLexicalWords(List<String> ids);
+}
+
+/// Runs the existing evidence/close command under exact checkpoint validation.
+/// This supplies a transaction boundary, never a separate scoring writer.
+abstract interface class OrdinaryMeaningOperationRepository {
+  Future<void> requireOrdinaryOwner(String ownerId);
+  Future<T> runOrdinaryOperation<T>({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+    required bool Function() acceptsOperation,
+    required Future<T> Function() operation,
+  });
+}
 
 abstract interface class PairPinnedLearningActivityRepository {
   Future<void> startMeasuredPinnedPairSession({

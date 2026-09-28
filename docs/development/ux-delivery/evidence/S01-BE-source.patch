@@ -1,0 +1,631 @@
+diff --git a/lib/screens/offline_content_manager_screen.dart b/lib/screens/offline_content_manager_screen.dart
+index 1925d6a5..d5e3500d 100644
+--- a/lib/screens/offline_content_manager_screen.dart
++++ b/lib/screens/offline_content_manager_screen.dart
+@@ -24,7 +24,8 @@ final class OfflineContentManagerScreen extends StatefulWidget {
+ }
+ 
+ final class _OfflineContentManagerScreenState
+-    extends State<OfflineContentManagerScreen> {
++    extends State<OfflineContentManagerScreen>
++    with WidgetsBindingObserver {
+   Future<List<_OfflineContentEntry>>? _states;
+   final Set<ContentIdentity> _busy = <ContentIdentity>{};
+   final Set<ContentIdentity> _downloads = <ContentIdentity>{};
+@@ -34,6 +35,40 @@ final class _OfflineContentManagerScreenState
+   int _generation = 0;
+   int _loadSerial = 0;
+   bool _loading = false;
++  bool _foreground = true;
++  bool _visible = false;
++
++  @override
++  void initState() {
++    super.initState();
++    WidgetsBinding.instance.addObserver(this);
++    final lifecycle = WidgetsBinding.instance.lifecycleState;
++    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
++  }
++
++  @override
++  void dispose() {
++    WidgetsBinding.instance.removeObserver(this);
++    super.dispose();
++  }
++
++  @override
++  void didChangeAppLifecycleState(AppLifecycleState state) {
++    if (!mounted) return;
++    setState(() {
++      _foreground = state == AppLifecycleState.resumed;
++      _bindVisibility();
++    });
++  }
++
++  void _bindVisibility() {
++    final visible = _foreground && ModalRoute.of(context)?.isCurrent != false;
++    if (_visible == visible) return;
++    _visible = visible;
++    // Retire displayed callbacks and reads, without abandoning in-flight work.
++    _loadSerial++;
++    if (visible) _states = _load()..ignore();
++  }
+ 
+   // Observe failures before the next frame; FutureBuilder still receives them.
+ 
+@@ -49,6 +84,8 @@ final class _OfflineContentManagerScreenState
+ 
+   bool _canAct(int generation) =>
+       _current(generation) &&
++      _foreground &&
++      _visible &&
+       ModalRoute.of(context)?.isCurrent != false &&
+       widget.canInvoke();
+ 
+@@ -65,7 +102,10 @@ final class _OfflineContentManagerScreenState
+     final dependencies = AppDependenciesScope.maybeOf(context);
+     if (_states == null || !identical(dependencies, _dependencies)) {
+       _dependencies = dependencies;
++      _visible = _foreground && ModalRoute.of(context)?.isCurrent != false;
+       _reset();
++    } else {
++      _bindVisibility();
+     }
+   }
+ 
+@@ -79,11 +119,17 @@ final class _OfflineContentManagerScreenState
+ 
+   Future<void> _perform<T>(
+     int generation,
++    int serial,
+     ContentIdentity identity,
+     Future<T> Function() operation, {
+     bool download = false,
+   }) async {
+-    if (!_canAct(generation) || _busy.contains(identity)) return;
++    if (!_canAct(generation) ||
++        serial != _loadSerial ||
++        _loading ||
++        _busy.contains(identity)) {
++      return;
++    }
+     setState(() {
+       _busy.add(identity);
+       if (download) _downloads.add(identity);
+@@ -109,8 +155,12 @@ final class _OfflineContentManagerScreenState
+     }
+   }
+ 
+-  Future<void> _cancel(int generation, ContentIdentity identity) async {
+-    if (!_canAct(generation)) return;
++  Future<void> _cancel(
++    int generation,
++    int serial,
++    ContentIdentity identity,
++  ) async {
++    if (!_canAct(generation) || serial != _loadSerial || _loading) return;
+     final manager = widget.manager;
+     if (!widget.canInvoke() ||
+         manager is! OfflineContentDownloadControl ||
+@@ -326,6 +376,9 @@ final class _OfflineContentManagerScreenState
+ 
+   Widget _action(_OfflineContentEntry entry) {
+     final generation = _generation;
++    // A callback belongs to the displayed catalog snapshot, not just the
++    // manager. A completed action can replace these bytes under the same ID.
++    final serial = _loadSerial;
+     final manager = widget.manager;
+     final state = entry.state;
+     final identity = state.identity;
+@@ -346,7 +399,7 @@ final class _OfflineContentManagerScreenState
+               key: ValueKey('offline-content/cancel/${identity.id}'),
+               onPressed: _cancelling.contains(identity)
+                   ? null
+-                  : () => _cancel(generation, identity),
++                  : () => _cancel(generation, serial, identity),
+               child: Text(
+                 _cancelling.contains(identity)
+                     ? 'กำลังยกเลิกหลังขั้นตอนปัจจุบัน'
+@@ -363,6 +416,7 @@ final class _OfflineContentManagerScreenState
+                 key: ValueKey<String>('offline-content/remove/${identity.id}'),
+                 onPressed: () => _perform(
+                   generation,
++                  serial,
+                   identity,
+                   () => manager.removeBytes(identity),
+                 ),
+@@ -374,6 +428,7 @@ final class _OfflineContentManagerScreenState
+         key: ValueKey<String>('offline-content/repair/${identity.id}'),
+         onPressed: () => _perform(
+           generation,
++          serial,
+           identity,
+           () async => manager.repair(identity),
+           download: true,
+@@ -384,6 +439,7 @@ final class _OfflineContentManagerScreenState
+         key: ValueKey<String>('offline-content/download/${identity.id}'),
+         onPressed: () => _perform(
+           generation,
++          serial,
+           identity,
+           () async => manager.download(identity),
+           download: true,
+diff --git a/test/screens/offline_content_manager_screen_test.dart b/test/screens/offline_content_manager_screen_test.dart
+index 99e64697..8457719d 100644
+--- a/test/screens/offline_content_manager_screen_test.dart
++++ b/test/screens/offline_content_manager_screen_test.dart
+@@ -28,6 +28,466 @@ import '../support/inert_research_dependencies.dart';
+ import '../support/test_quest_use_cases.dart';
+ 
+ void main() {
++  for (final routeCover in [false, true]) {
++    testWidgets(
++      'BE retired remove stays retired after return route=$routeCover',
++      (tester) async {
++        final manager = _FakeManager([_state(OfflineContentStatus.verified)]);
++        final navigator = GlobalKey<NavigatorState>();
++        await tester.pumpWidget(
++          MaterialApp(
++            navigatorKey: navigator,
++            home: OfflineContentManagerScreen(
++              manager: manager,
++              canInvoke: () => true,
++            ),
++          ),
++        );
++        await tester.pumpAndSettle();
++        final remove = find.byKey(
++          const ValueKey('offline-content/remove/pack-a'),
++        );
++        final retired = tester.widget<OutlinedButton>(remove).onPressed!;
++        if (routeCover) {
++          navigator.currentState!.push(
++            MaterialPageRoute<void>(
++              builder: (_) => const Scaffold(body: Text('cover')),
++            ),
++          );
++          await tester.pumpAndSettle();
++          navigator.currentState!.pop();
++        } else {
++          tester.binding.handleAppLifecycleStateChanged(
++            AppLifecycleState.inactive,
++          );
++          tester.binding.handleAppLifecycleStateChanged(
++            AppLifecycleState.paused,
++          );
++          tester.binding.handleAppLifecycleStateChanged(
++            AppLifecycleState.resumed,
++          );
++        }
++        await tester.pumpAndSettle();
++        retired();
++        await tester.pumpAndSettle();
++        expect(manager.removed, isEmpty);
++        await tester.tap(remove);
++        await tester.pumpAndSettle();
++        expect(manager.removed, [_identity]);
++        expect(tester.takeException(), isNull);
++      },
++    );
++  }
++
++  testWidgets('BE background callback cannot mutate', (tester) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.verified)]);
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    final retired = tester
++        .widget<OutlinedButton>(
++          find.byKey(const ValueKey('offline-content/remove/pack-a')),
++        )
++        .onPressed!;
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++    retired();
++    await tester.pump();
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++    await tester.pumpAndSettle();
++    expect(manager.removed, isEmpty);
++  });
++
++  for (final repair in [false, true]) {
++    testWidgets('BE transfer callback retires on resume repair=$repair', (
++      tester,
++    ) async {
++      final manager = _FakeManager([
++        _state(
++          repair
++              ? OfflineContentStatus.interrupted
++              : OfflineContentStatus.notDownloaded,
++        ),
++      ]);
++      await tester.pumpWidget(
++        MaterialApp(
++          home: OfflineContentManagerScreen(
++            manager: manager,
++            canInvoke: () => true,
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++      final action = find.byKey(
++        ValueKey('offline-content/${repair ? 'repair' : 'download'}/pack-a'),
++      );
++      final retired = tester.widget<FilledButton>(action).onPressed!;
++      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++      await tester.pumpAndSettle();
++      retired();
++      await tester.pumpAndSettle();
++      expect(manager.downloaded, isEmpty);
++      expect(manager.repaired, isEmpty);
++      await tester.tap(action);
++      if (repair) {
++        manager.repairCompleter.complete(_state(OfflineContentStatus.verified));
++      }
++      await tester.pumpAndSettle();
++      expect(repair ? manager.repaired : manager.downloaded, [_identity]);
++      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
++    });
++  }
++
++  testWidgets('BE ongoing download survives resume with fresh cancellation', (
++    tester,
++  ) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.notDownloaded)])
++      ..waitDownload = true;
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++    );
++    await tester.pumpAndSettle();
++    final cancel = find.byKey(const ValueKey('offline-content/cancel/pack-a'));
++    final retired = tester.widget<TextButton>(cancel).onPressed!;
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++    await tester.pumpAndSettle();
++    retired();
++    await tester.pumpAndSettle();
++    expect(manager.cancelled, isEmpty);
++    expect(manager.downloaded, [_identity]);
++    expect(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++      findsNothing,
++    );
++    await tester.tap(cancel);
++    await tester.pumpAndSettle();
++    expect(manager.cancelled, [_identity]);
++    expect(
++      find.byKey(const ValueKey('offline-content/repair/pack-a')),
++      findsOneWidget,
++    );
++  });
++
++  testWidgets('BE resume refresh failure retires retry and needs fresh retry', (
++    tester,
++  ) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.notDownloaded)])
++      ..catalogFailures = 2;
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    final retry = find.byKey(const ValueKey('offline-content/retry'));
++    final retired = tester.widget<FilledButton>(retry).onPressed!;
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++    await tester.pumpAndSettle();
++    expect(manager.catalogCalls, 2);
++    retired();
++    await tester.pumpAndSettle();
++    expect(manager.catalogCalls, 2);
++    expect(retry, findsOneWidget);
++    await tester.tap(retry);
++    await tester.pumpAndSettle();
++    expect(manager.catalogCalls, 3);
++    expect(manager.downloaded, isEmpty);
++    expect(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++      findsOneWidget,
++    );
++  });
++
++  testWidgets('BE pending catalog after resume fences old and fresh actions', (
++    tester,
++  ) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.verified)]);
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    final retired = tester
++        .widget<OutlinedButton>(
++          find.byKey(const ValueKey('offline-content/remove/pack-a')),
++        )
++        .onPressed!;
++    manager.catalogPending = Completer<List<OfflineContentState>>();
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++    retired();
++    await tester.pump();
++    expect(manager.removed, isEmpty);
++    expect(find.byType(CircularProgressIndicator), findsOneWidget);
++    manager.catalogPending!.complete([
++      _state(OfflineContentStatus.notDownloaded),
++    ]);
++    await tester.pumpAndSettle();
++    retired();
++    await tester.pumpAndSettle();
++    expect(manager.removed, isEmpty);
++    expect(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++      findsOneWidget,
++    );
++  });
++
++  testWidgets(
++    'BD failed refresh retires actions until explicit read recovery',
++    (tester) async {
++      final manager = _FakeManager([_state(OfflineContentStatus.verified)]);
++      await tester.pumpWidget(
++        MaterialApp(
++          home: OfflineContentManagerScreen(
++            manager: manager,
++            canInvoke: () => true,
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++      final retiredRemove = tester
++          .widget<OutlinedButton>(
++            find.byKey(const ValueKey('offline-content/remove/pack-a')),
++          )
++          .onPressed!;
++      manager.catalogFailures = 1;
++      retiredRemove();
++      await tester.pumpAndSettle();
++      expect(find.text('อ่านสถานะเนื้อหาออฟไลน์ไม่ได้'), findsOneWidget);
++      retiredRemove();
++      await tester.pumpAndSettle();
++      expect(manager.removed, [_identity]);
++      expect(manager.catalogCalls, 2);
++      await tester.tap(find.byKey(const ValueKey('offline-content/retry')));
++      await tester.pumpAndSettle();
++      expect(manager.catalogCalls, 3);
++      expect(manager.downloaded, isEmpty);
++      await tester.tap(
++        find.byKey(const ValueKey('offline-content/download/pack-a')),
++      );
++      await tester.pumpAndSettle();
++      expect(manager.downloaded, [_identity]);
++      expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
++      expect(tester.takeException(), isNull);
++    },
++  );
++
++  testWidgets('BD refreshed cancel still controls its ongoing download', (
++    tester,
++  ) async {
++    const second = ContentIdentity(
++      type: ContentType.learningPack,
++      id: 'pack-b',
++      revision: 1,
++    );
++    final manager = _FakeManager([
++      _state(OfflineContentStatus.notDownloaded),
++      _state(OfflineContentStatus.verified, identity: second),
++    ])..waitDownload = true;
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++    );
++    await tester.pump();
++    final retiredCancel = tester
++        .widget<TextButton>(
++          find.byKey(const ValueKey('offline-content/cancel/pack-a')),
++        )
++        .onPressed!;
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/remove/pack-b')),
++    );
++    await tester.pump();
++    await tester.pump();
++    retiredCancel();
++    await tester.pump();
++    expect(manager.cancelled, isEmpty);
++    expect(manager.removed, [second]);
++    expect(manager.values.map((state) => state.identity), [_identity, second]);
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/cancel/pack-a')),
++    );
++    await tester.pumpAndSettle();
++    expect(manager.downloaded, [_identity]);
++    expect(manager.cancelled, [_identity]);
++    expect(find.text('การดาวน์โหลดถูกขัดจังหวะ'), findsOneWidget);
++    expect(tester.takeException(), isNull);
++  });
++
++  for (final repair in [false, true]) {
++    testWidgets(
++      'BD retired transfer cannot restart after removal repair=$repair',
++      (tester) async {
++        final manager = _FakeManager([
++          _state(
++            repair
++                ? OfflineContentStatus.quarantined
++                : OfflineContentStatus.notDownloaded,
++          ),
++        ]);
++        await tester.pumpWidget(
++          MaterialApp(
++            home: OfflineContentManagerScreen(
++              manager: manager,
++              canInvoke: () => true,
++            ),
++          ),
++        );
++        await tester.pumpAndSettle();
++        final retiredTransfer = tester
++            .widget<FilledButton>(
++              find.byKey(
++                ValueKey(
++                  'offline-content/${repair ? 'repair' : 'download'}/pack-a',
++                ),
++              ),
++            )
++            .onPressed!;
++        retiredTransfer();
++        if (repair) {
++          manager.repairCompleter.complete(
++            _state(OfflineContentStatus.verified),
++          );
++        }
++        await tester.pumpAndSettle();
++        await tester.tap(
++          find.byKey(const ValueKey('offline-content/remove/pack-a')),
++        );
++        await tester.pumpAndSettle();
++        retiredTransfer();
++        await tester.pumpAndSettle();
++        expect(repair ? manager.repaired : manager.downloaded, [_identity]);
++        expect(
++          manager.values.single.status,
++          OfflineContentStatus.notDownloaded,
++        );
++        expect(find.text('ยังไม่ได้ดาวน์โหลด'), findsOneWidget);
++        await tester.tap(
++          find.byKey(const ValueKey('offline-content/download/pack-a')),
++        );
++        await tester.pumpAndSettle();
++        expect(manager.values.single.status, OfflineContentStatus.verified);
++        expect(manager.downloaded.length, repair ? 1 : 2);
++      },
++    );
++  }
++
++  testWidgets('BD retired cancel cannot cancel a later repair', (tester) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.notDownloaded)])
++      ..waitDownload = true;
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++    );
++    await tester.pump();
++    final retiredCancel = tester
++        .widget<TextButton>(
++          find.byKey(const ValueKey('offline-content/cancel/pack-a')),
++        )
++        .onPressed!;
++    retiredCancel();
++    await tester.pumpAndSettle();
++    expect(find.text('การดาวน์โหลดถูกขัดจังหวะ'), findsOneWidget);
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/repair/pack-a')),
++    );
++    await tester.pump();
++    manager.cancelPending = Completer<bool>();
++    retiredCancel();
++    await tester.pump();
++    expect(manager.cancelled, [_identity]);
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/cancel/pack-a')),
++    );
++    await tester.pump();
++    expect(manager.cancelled, [_identity, _identity]);
++    manager.cancelPending!.complete(true);
++    manager.repairCompleter.complete(_state(OfflineContentStatus.interrupted));
++    await tester.pumpAndSettle();
++    expect(tester.takeException(), isNull);
++  });
++
++  testWidgets('BD retired remove cannot delete a fresh installation', (
++    tester,
++  ) async {
++    final manager = _FakeManager([_state(OfflineContentStatus.verified)]);
++    await tester.pumpWidget(
++      MaterialApp(
++        home: OfflineContentManagerScreen(
++          manager: manager,
++          canInvoke: () => true,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++    final retiredRemove = tester
++        .widget<OutlinedButton>(
++          find.byKey(const ValueKey('offline-content/remove/pack-a')),
++        )
++        .onPressed!;
++    retiredRemove();
++    await tester.pumpAndSettle();
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/download/pack-a')),
++    );
++    await tester.pumpAndSettle();
++    expect(manager.downloaded, [_identity]);
++    expect(manager.values.single.status, OfflineContentStatus.verified);
++
++    retiredRemove();
++    await tester.pumpAndSettle();
++    expect(manager.removed, [_identity]);
++    expect(manager.values.single.status, OfflineContentStatus.verified);
++    expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsOneWidget);
++
++    await tester.tap(
++      find.byKey(const ValueKey('offline-content/remove/pack-a')),
++    );
++    await tester.pumpAndSettle();
++    expect(manager.removed, [_identity, _identity]);
++    expect(manager.values.single.status, OfflineContentStatus.notDownloaded);
++  });
++
+   testWidgets(
+     'AC dependency replacement refreshes pinned title with same manager',
+     (tester) async {
+@@ -919,6 +1379,7 @@ final class _FakeManager
+     final index = values.indexWhere((state) => state.identity == identity);
+     final next = _state(
+       status,
++      identity: identity,
+       localPath: status == OfflineContentStatus.verified
+           ? '${List<String>.filled(64, 'a').join()}.content'
+           : null,

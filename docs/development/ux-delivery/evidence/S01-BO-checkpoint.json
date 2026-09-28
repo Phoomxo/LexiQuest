@@ -1,0 +1,100 @@
+{
+  "remaining": [
+    "Fully routed Today success/resume; parent flags/composition remain closed",
+    "Profile with populated learning evidence",
+    "Quest child and vocabulary add/edit form host routes",
+    "Native visual/TalkBack/IME",
+    "Actual user trials DEFERRED",
+    "Reviewed-media/qualified-trial/full-release"
+  ],
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "validation": "docs/development/ux-delivery/evidence/S01-BO-validation.json",
+  "threadId": "01a0e0ac-217f-7c42-82f1-1a4248174abd",
+  "hostBuildTestProcesses": [],
+  "claimSha256": "55c294cafe810c700d70469cf7bbd251b350afa465f44a8df40d136936873e45",
+  "changedFiles": [
+    "test/support/composed_host_ui_audit_test.dart",
+    "docs/development/ux-delivery/S01-BO.md",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/evidence/S01-BO-*"
+  ],
+  "productionSourceChanged": false,
+  "successorDispatched": false,
+  "renderCount": 18,
+  "gateFingerprint": "2baa24f77784fd061ae4d9e0b10179a1fb0b94da314ed8be29b87b194031e859",
+  "package": "S01-BO-host-composition-audit",
+  "openPrototypeDefects": "UX-D01-D25 remain OPEN",
+  "preExistingPinsVerified": 172,
+  "sprintAccepted": false,
+  "schemaVersion": 1,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "reportSha256": "19c54d2dc0f0a6ef0b104cc6a967bafdc3afe6af48dfba9470ff1d08478736b0",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime unverified; no Jev/billing/login/ledger changes",
+  "report": "docs/development/ux-delivery/S01-BO.md",
+  "hostTests": 4,
+  "sourceClosureVerified": 1575,
+  "sourcePins": [
+    {
+      "area": "Runtime",
+      "path": "lib/features/learning/application/lesson_mode_registry.dart",
+      "sha256": "A741F433F9885A283D4A84C0A922C997C6AC2B00EE4D5A730504E62800244E6B"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "8D9309F83657975D3ABFB08F952453086292950E986BCB6523EAA9F16C45D7AC"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "543CD306761930AD79FC31E10ECB66344622DBE95157700392A934D2D8C2F348"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/choose_mode_screen.dart",
+      "sha256": "373EFB4ECD239DC78F97A5CC96D321D804423D1B9DCDFDC9718B56A4010C1406"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "41FE78932C401341198DC0A71175822D601F3EC24B8CB7CF74170FAD6619BD34"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/profile_settings_screen.dart",
+      "sha256": "2CD56D6DB640F192C67ECFDD8B97A17F308E655713004E00E7A17717BC79CC6C"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/today_hub_screen.dart",
+      "sha256": "D06175D7A27B5AAA8EF6D1C76169BB7A48EB544BA57C98710EE1103A0BA370C9"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/today_hub_view.dart",
+      "sha256": "F3AE296BCD9CD457BB504146C0ABAAA17F01887F77F08B344A14FEA2796A611D"
+    },
+    {
+      "area": "Runtime",
+      "path": "test/support/composed_host_ui_audit_test.dart",
+      "sha256": "245035FE925628F79FD3FC9D15BED395E1E6E0868B9F7431CCAF61C8FEDB01A8"
+    }
+  ],
+  "nativeDelta": "NOT_RUN",
+  "stateRevision": 139,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "engineering": "COMPLETE_BOUNDED_HOST_AUDIT_WITH_EXPLICIT_ROUTE_LIMIT",
+  "branch": "codex/ux-current-after-s01-bc",
+  "validationSha256": "3dd085bd1f962ce1a7b635df725154d49de15dedf41346d30ac998e7c675ec2c",
+  "readmeSha256": "08155b2b1927c1a84d74623a07157cfe4c27f21411c5cf982c76b63c6594c8d8",
+  "releaseNote": "BO released after final metadata; controller chooses next task; BO does not dispatch",
+  "status": "READY_FOR_CONTROLLER",
+  "nextExecutableStep": "Inventory quest child and vocabulary add/edit form tests; host-only synthetic visual/keyboard/navigation gaps, without reopening closed owner/offline matrices. Fully routed Today remains gated/NOT_RUN.",
+  "nativeProcess": "Not observed or changed; all installed packages preserved",
+  "todayRoutedSuccess": "NOT_RUN_GATED",
+  "atUtc": "2026-09-27T02:42:13.9174774Z",
+  "userParticipation": "DEFERRED",
+  "writerStatus": "RELEASED",
+  "stateSha256": "88b1e73ba76cb047d54e898cdeb19d634fc101bef19e718d2b66fe78c887a1ec"
+}

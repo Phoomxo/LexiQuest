@@ -1,0 +1,174 @@
+{
+  "threadId": "01a0e02d-c10d-7243-a9af-98f884dc8ac4",
+  "native": "NOT_RUN",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "package": "S01-BL-native-readiness",
+  "acceptance": "READINESS_ONLY",
+  "openDefects": "UX-D01-D25",
+  "sourcePins": [
+    {
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "d4d0f1acbd24fad519670ae0079fe77ff73bc7ef6418e7fe9be9b16f263642ea"
+    },
+    {
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+    },
+    {
+      "path": "tool/cli/tests/run-android-smoke.tests.ps1",
+      "sha256": "560aad32fff9bb2b2b4fcfce5849e1a7c79d1c79baa1c23acfc6c7ad43280678"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "4fa939cfae175dfe1d50ee112dccc727f8a9b4a7c8a4d7983a6389727b715d8a"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "sha256": "079f80660cbc41f043e8e8ee98ea760d775380f217bc6c037197e6ba94168869"
+    },
+    {
+      "path": "integration_test/field_trial_core_journey_test.dart",
+      "sha256": "306dfbf8a5fb00f53f0ea08ad24a1c1887e5d1a6194cdf579af9f970a931f09f"
+    },
+    {
+      "path": "integration_test/support/persistent_manual_qa_storage.dart",
+      "sha256": "adaf48d6546117b7f31f4322806a42b4643b1c27b2647ed8f8d38f009c479108"
+    },
+    {
+      "path": "integration_test/support/autonomous_service_receipt.dart",
+      "sha256": "2802c2d42f734f668919a7470deaebd70dd9cc2cbdbcc09a21265b8644fdb8ea"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34"
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "sha256": "256a8a3c2892a5fb27fd7cd5c107e0beed5071d148e0effd5e87b851737bc42e"
+    },
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "docs/design/worksheet-to-play-blueprint.md",
+      "sha256": "798d5ddfac4cfe70bbf15ebd763b11c398bc1569b666af1dcd12f3e53c0ff16d"
+    }
+  ],
+  "sprintAccepted": false,
+  "nextTaskCard": "docs/development/ux-delivery/S01-BL-next-harness.md",
+  "branch": "codex/ux-current-after-s01-bc",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "routing": "Current model deterministic fallback; Standard/default requested; actual tier unverified; no Jev/provider/login/billing probes",
+  "cases": [
+    {
+      "id": "BL-N01",
+      "status": "NOT_RUN",
+      "artifact": null
+    },
+    {
+      "id": "BL-N02",
+      "status": "NOT_RUN",
+      "artifact": null
+    },
+    {
+      "id": "BL-N03",
+      "status": "NOT_RUN",
+      "artifact": null
+    },
+    {
+      "id": "BL-N04",
+      "status": "NOT_RUN",
+      "artifact": null
+    },
+    {
+      "id": "BL-N05",
+      "status": "NOT_RUN",
+      "artifact": null
+    }
+  ],
+  "remainingEngineering": [
+    "New isolated debug package identity",
+    "Bounded native navigation/offline/persistence fixture",
+    "OS process restart runner with verify-only phase"
+  ],
+  "recovery": {
+    "attemptsAfterFailure": 1,
+    "correction": "Search existing integration_test/support directory with -g *.dart",
+    "operation": "rg integration_test/support/*.dart",
+    "error": "Windows literal wildcard path os error 123",
+    "resolved": true
+  },
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/S01-BL.md",
+      "bytes": 8228,
+      "sha256": "d6c04a9b4bf3c106a6cf1c6ba5d55db236e7abb55497c775ff07f5b47ca8ce48"
+    },
+    {
+      "path": "docs/development/ux-delivery/S01-BL-next-harness.md",
+      "bytes": 7565,
+      "sha256": "ef71c0cc41ec986b327cb19ea1ed9170e2f46f9abb8ba1dc44b981e8e8ee299e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-claim.json",
+      "bytes": 758,
+      "sha256": "4e2ef1ec66c85de3c29fd7c552c69a7e5b4442bc3b8db8cb0d0e309fb5b31026"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/device-readiness.json",
+      "bytes": 1353,
+      "sha256": "5117c5ecd42dd6ececdd01d2048e1ee5751e6c2f98cbc52af5bcb3cd5b111027"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/initial-dirty-pins.json",
+      "bytes": 15205,
+      "sha256": "23ab7583d6e0f749b29a7498d8666bc61799c7650ef7368732d7e1c837090a93"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/initial-status.txt",
+      "bytes": 3585,
+      "sha256": "366e7434479ca67b1174c2f63a93c1d1de2d3be07990dbfdb024eea24263fdfe"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/inspected-source-pins.json",
+      "bytes": 1814,
+      "sha256": "fec6cba168ddbe92870dba6823e017be47539523bac91c7a1cc218d03f4a9d37"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/predecessor-verification.json",
+      "bytes": 360,
+      "sha256": "fea6263df9c1ee5c4a9f264c0540b1b3dcfe9c4b834c51d465cf6dc8f3749e19"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BL-runs/preservation.json",
+      "bytes": 291,
+      "sha256": "06727bf29e192d80ced8cb4c0740e4c44bb1bcaeaa14c69a6a65ee9c5a7c58d5"
+    }
+  ],
+  "processRestart": "NOT_RUN",
+  "externalPending": [
+    "Permitted visual/keyboard/screen-reader observation",
+    "Real user review",
+    "Reviewed media/qualified trial",
+    "Frozen release gates"
+  ],
+  "notRun": [
+    "Android install/build/test",
+    "Device interaction or process restart",
+    "Full Flutter/backend/release",
+    "Real participant/research/provider",
+    "Browser or native UI automation"
+  ],
+  "hostTestsRun": 0,
+  "schemaVersion": 1,
+  "atUtc": "2026-09-27T00:11:40.0860015Z",
+  "predecessorHostEvidence": {
+    "closureCount": 1563,
+    "mismatches": 0,
+    "package": "BK",
+    "tests": 236,
+    "reusedOnlyForUnchangedInputs": true,
+    "fingerprint": "8ce05f691048da7e3240c64fb7ce07eedc031c2a71a9acd9259d79a2dc699abe"
+  }
+}

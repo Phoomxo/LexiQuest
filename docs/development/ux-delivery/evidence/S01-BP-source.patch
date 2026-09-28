@@ -1,0 +1,12 @@
+diff --git a/lib/screens/add_vocab_screen.dart b/lib/screens/add_vocab_screen.dart
+index 10d4e6b0..75381e55 100644
+--- a/lib/screens/add_vocab_screen.dart
++++ b/lib/screens/add_vocab_screen.dart
+@@ -411,6 +411,7 @@ class _AddWordScreenState extends State<AddWordScreen>
+                 initialValue: _cefrLevel,
+                 decoration: const InputDecoration(
+                   labelText: 'ระดับ CEFR (ไม่บังคับ)',
++                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                   border: OutlineInputBorder(),
+                 ),
+                 items: _cefrOptions

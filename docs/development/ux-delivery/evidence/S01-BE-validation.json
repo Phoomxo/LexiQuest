@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BE-offline-callback-lifetime",
+  "atUtc": "2026-09-26T17:39:21.976Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0dec5-b093-7f20-b0c0-f5318ab6ccba",
+  "hostTests": 74,
+  "newTests": 8,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "e5ea72a8a441ba89a91857b2942d4929a0a6822dbb58af0f0b5ff1ca5804c132"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "96e802e338cc1f302bf1e95c081522058b863a7fa13e18edec1841fd23d0938d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BE-source.patch",
+      "sha256": "cd8bd9c3af59d65fafeda8c1f2ead6d00a9beddf57a639036c68ab45af0dc697"
+    }
+  ],
+  "acceptance": "HOST_PASS",
+  "confirmedOriginalSourceRed": 3,
+  "implementation": "Retire catalog serial across visibility transitions; fence background action admission; refresh on return while retaining in-flight manager operation tracking.",
+  "verification": {
+    "command": "./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/screens/offline_content_manager_screen_test.dart,test/screens/offline_content_settings_entry_test.dart,test/features/offline_content/offline_content_manager_test.dart -Resume",
+    "status": "Passed",
+    "exitCode": 0,
+    "fingerprint": "63f7435a2042ebf0338dcfdc8ea4914ba6d1ed3da81a257fa559502066a943ab",
+    "postFingerprint": "63f7435a2042ebf0338dcfdc8ea4914ba6d1ed3da81a257fa559502066a943ab",
+    "receipt": "docs/development/ux-delivery/evidence/S01-BE-runs/final-verification.json",
+    "inputClosureCount": 1563,
+    "closureMismatches": 0
+  },
+  "analysis": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 3,
+    "rule": "use_build_context_synchronously",
+    "lines": [
+      141,
+      175,
+      181
+    ],
+    "assessment": "Existing info patterns, no suppression"
+  },
+  "artifacts": [
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final.stderr.log"
+    },
+    {
+      "sha256": "fdc048c7b467914d17ba7b639eb0c0ad3d2d675f3210c9aefcc4f70f9c542a5c",
+      "bytes": 56154,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final.stdout.log"
+    },
+    {
+      "sha256": "d10ec40a846f1863202d4a31df0a80cbf5aec7374c5699bc1ebdc0bb658617fc",
+      "bytes": 313219,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final-verification.json"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red.stderr.log"
+    },
+    {
+      "sha256": "053b6909ef29498a22619a095af7e6c02aac9f1ea9fc7cb76b998fb0f590c9cb",
+      "bytes": 27956,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red.stdout.log"
+    },
+    {
+      "sha256": "785702e97b4c8686ad4a015f6b2f0ece88af0128d72c236e60b09d2afad8fcac",
+      "bytes": 313028,
+      "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red-verification.json"
+    }
+  ],
+  "recovery": [
+    "Initial test compile error: await on void lifecycle API; removed await, reran with three actual assertion failures. Not counted as RED.",
+    "Default git diff --check flags pre-existing CRLF; explicit cr-at-eol whitespace check passed without modifying source bytes.",
+    "Final test lint braces corrected and full bounded suite rerun on final source.",
+    "Patch context mismatch was read and corrected; metadata command completed before JS output-wrapper TypeError; reconciled file state read-only without duplicate write."
+  ],
+  "review": "Self-reviewed production and test diff; no subagents",
+  "sourcePatchMeaning": "Cumulative BD+BE against HEAD. Original BD patch/evidence retained.",
+  "notRun": [
+    "Full Flutter/backend release",
+    "Native/device/user trials",
+    "Browser/provider/paid inference",
+    "Deployment/research activation",
+    "Cleanup/archive"
+  ],
+  "nextCandidate": {
+    "scope": "Pending offline operation feedback across visibility transitions",
+    "reason": "_perform/_cancel feedback checks generation/current route; no visibility token",
+    "status": "SOURCE_HYPOTHESIS_NOT_REPRODUCED"
+  }
+}

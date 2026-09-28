@@ -1,0 +1,13 @@
+{
+  "exitCode": 0,
+  "finishedAtUtc": "2026-09-28T01:08:28.0958835Z",
+  "sourceClosure": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+  "stdout": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.log",
+  "gate": "dart analyze touched production and test files",
+  "preMismatches": 0,
+  "preFingerprint": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+  "inputClosureEntries": 1582,
+  "postFingerprint": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+  "postMismatches": 0,
+  "startedAtUtc": "2026-09-28T01:08:21.2345589Z"
+}

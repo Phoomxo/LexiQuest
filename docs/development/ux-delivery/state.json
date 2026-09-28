@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "revision": 116,
+  "revision": 149,
   "planVersion": 5,
   "planPath": "docs/design/worksheet-to-play-blueprint.md",
-  "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain.",
+  "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain. 2026-09-27: Actual-user participation/trials deferred; autonomous bounded engineering/UI audit authorized without waiting for user trials.",
   "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
   "originWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
   "originBranch": "feature/ari-app-device-integration",
   "originHead": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
   "stateRole": "CURRENT_AFTER_BACKUP",
-  "status": "BACKUP_ORGANIZATION",
+  "status": "ACTIVE",
   "sprint": {
     "id": "S01",
     "goal": "ต้นแบบสองเส้นทางที่เริ่ม ขอช่วย พัก และกลับมาได้ พร้อมชุดเนื้อหาที่มีสถานะตรวจครบถ้วน",
@@ -18,8 +18,69 @@
     "startedAtUtc": "2026-09-24T05:52:58.6746244Z",
     "reviewDueAtUtc": "2026-10-22T05:52:58.6746244Z"
   },
-  "currentItem": "S01-BC-logout-recovery",
+  "currentItem": "S01-BW-native-ordinary-meaning-resume",
   "items": [
+    {
+      "id": "S01-BW-native-ordinary-meaning-resume",
+      "status": "COMPLETE",
+      "acceptance": "PASS_NATIVE_SYNTHETIC_FEEDBACK_RESUME",
+      "acceptanceScope": "Physical V2041/API33; isolated nativeResumeBw installed once; canonical ordinary admission and committed-feedback QuizScreen recovery after force-stop/relaunch. Same owner/session/plan/progress and all 58 tables unchanged. 11 HOST tests, 29 CLI cases/checks, analyzer clean. Not full Today bootstrap, all BV native cases, visual/TalkBack/IME, user or release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BW.md"
+    },
+    {
+      "id": "S01-BV-exact-ordinary-meaning-recovery",
+      "status": "COMPLETE",
+      "acceptance": "PASS_HOST_SYNTHETIC_EXACT_RESUME",
+      "acceptanceScope": "283 targeted tests; 13-file analyzer clean; stable gate fingerprint. Durable draft/feedback/pending answer/close, exact Today attached-session resume and stale authority/route guards. BS-RESUME-01 closed only in host synthetic scope; no native/user/release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BV.md"
+    },
+    {
+      "id": "S01-BU-frozen-meaning-admission",
+      "status": "COMPLETE",
+      "acceptance": "PASS_HOST_SYNTHETIC_INITIAL_ADMISSION_ONLY",
+      "acceptanceScope": "132 targeted tests; touched analyzer clean. Frozen ordinary meaning plan/codec, exact atomic admission/retry and initial rendered-plan equivalence. BS-RESUME-01 remains OPEN/RED; no native/user/release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BU.md"
+    },
+    {
+      "id": "S01-BT-ordinary-quiz-checkpoint-admission",
+      "historicalSnapshot": true,
+      "prerequisiteImplementedBy": "S01-BU-frozen-meaning-admission",
+      "status": "OPEN",
+      "acceptance": "RED_CANONICAL_MEANING_ADMISSION_CONTRACT_MISSING",
+      "acceptanceScope": "Allowed concrete-gap fallback; generic atomic storage characterization only. Ordinary checkpoint absent; actual prompt/options composed after start. No production edit. BS-RESUME-01 remains OPEN/RED.",
+      "report": "docs/development/ux-delivery/S01-BT.md"
+    },
+    {
+      "id": "S01-BS-ordinary-quiz-exact-resume",
+      "latestBURecheck": "OPEN/RED: new ordinary frozen admission succeeds; actual-bootstrap Today still finds 0 QuizScreen instead of 1. Route/controller restore remains unimplemented.",
+      "latestBVRecheck": "PASS: actual-bootstrap exact admitted quiz resume, draft/feedback/next/pending/close and stale feature/dependency/route tests; historical BS/BU receipts unchanged.",
+      "resolvedBy": "S01-BV-exact-ordinary-meaning-recovery",
+      "status": "COMPLETE",
+      "acceptance": "PASS_HOST_SYNTHETIC_EXACT_RESUME",
+      "acceptanceScope": "BS-RESUME-01 resolved by BV host synthetic implementation and tests; no native/user/release acceptance. Original BS report remains historical RED evidence.",
+      "report": "docs/development/ux-delivery/S01-BS.md"
+    },
+    {
+      "id": "S01-BR-today-preview-route-audit",
+      "status": "COMPLETE",
+      "acceptance": "PASS_HOST_SYNTHETIC_ONLY",
+      "acceptanceScope": "7 targeted tests; real bootstrap field/preview gates, Today review/history/Back and ordinary resume to Learning; no quiz rehydration/native/visual/user/release acceptance",
+      "report": "docs/development/ux-delivery/S01-BR.md"
+    },
+    {
+      "acceptance": "PASS_HOST_SYNTHETIC_ONLY",
+      "id": "S01-BQ-populated-profile-host-audit",
+      "acceptanceScope": "5 tests, 20 inspected host renders; populated Profile/details/overview; no production edits or native/user acceptance",
+      "report": "docs/development/ux-delivery/S01-BQ.md",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "S01-BP-host-quest-vocabulary-audit",
+      "status": "COMPLETE",
+      "acceptance": "PASS_HOST_SYNTHETIC_ONLY",
+      "acceptanceScope": "Quest child and vocabulary forms: 5 tests, 24 inspected host renders; BP-A11Y-01 fixed with RED/GREEN. No native/user/release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BP.md"
+    },
     {
       "id": "S01-A",
       "status": "COMPLETE",
@@ -724,40 +785,158 @@
         "real keyboard/screen-reader/visual/user",
         "learning/trial/release"
       ]
+    },
+    {
+      "id": "S01-BH-cancel-catalog-recovery",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 100,
+      "newTests": 6,
+      "evidence": "docs/development/ux-delivery/evidence/S01-BH-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "visual/keyboard/screen-reader/user",
+        "reviewed media/qualified trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-BI-cancel-download-overlapping-catalog",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 104,
+      "newTests": 4,
+      "evidence": "docs/development/ux-delivery/evidence/S01-BI-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "visual/keyboard/screen-reader/user",
+        "reviewed media/qualified trial",
+        "release"
+      ]
+    },
+    {
+      "hostBehavior": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-BJ-validation.json",
+      "pending": [
+        "native/device/real restart",
+        "visual/keyboard/screen-reader/user",
+        "reviewed media/qualified trial",
+        "release"
+      ],
+      "status": "WAITING",
+      "id": "S01-BJ-local-erasure-confirmation-lifetime",
+      "newTests": 19,
+      "hostTests": 157,
+      "acceptance": "HOST_PASS",
+      "independentImplementation": "COMPLETE"
+    },
+    {
+      "id": "S01-BK-offline-settings-entry-lifetime",
+      "status": "WAITING",
+      "acceptance": "HOST_PASS",
+      "hostBehavior": "PASS",
+      "independentImplementation": "COMPLETE",
+      "hostTests": 236,
+      "newTests": 8,
+      "pending": [
+        "native/device/real restart",
+        "visual/keyboard/screen-reader/user",
+        "reviewed media/qualified trial",
+        "release"
+      ]
+    },
+    {
+      "id": "S01-BL-native-readiness",
+      "status": "COMPLETE",
+      "acceptance": "READINESS_ONLY",
+      "nativeAcceptance": "NOT_RUN",
+      "processRestartAcceptance": "NOT_RUN",
+      "report": "docs/development/ux-delivery/S01-BL.md",
+      "evidence": "docs/development/ux-delivery/evidence/S01-BL-validation.json",
+      "nextTaskCard": "docs/development/ux-delivery/S01-BL-next-harness.md"
+    },
+    {
+      "id": "S01-BM-native-harness",
+      "status": "COMPLETE",
+      "acceptance": "BOUNDED_NATIVE_PASS",
+      "independentImplementation": "COMPLETE",
+      "hostFlutterTests": 8,
+      "hostCliCasesAndChecks": 24,
+      "nativeAcceptance": "PASS_N01_N04",
+      "processRestartAcceptance": "PASS",
+      "evidence": "docs/development/ux-delivery/evidence/S01-BM-validation.json",
+      "pending": [
+        "N05 visual/keyboard/TalkBack",
+        "user review",
+        "reviewed media/qualified trial",
+        "frozen-source release"
+      ]
+    },
+    {
+      "id": "S01-BN",
+      "status": "COMPLETE",
+      "acceptance": "BOUNDED_HOST_PASS",
+      "acceptanceScope": "41 host tests; 22 host renders; one search semantics defect fixed. No native/user/trial/release acceptance.",
+      "report": "docs/development/ux-delivery/S01-BN.md"
+    },
+    {
+      "acceptanceScope": "4 host tests;18 inspected renders;no production changes;Today success component only, routed success NOT_RUN",
+      "id": "S01-BO",
+      "report": "docs/development/ux-delivery/S01-BO.md",
+      "status": "COMPLETE",
+      "acceptance": "BOUNDED_HOST_PASS"
     }
   ],
+  "BDCompletedAtUtc": "2026-09-26T17:25:35.6273492Z",
+  "boundedCheckpoint": {
+    "id": "S01-BW-native-ordinary-meaning-resume",
+    "status": "COMPLETE",
+    "acceptance": "PASS_NATIVE_SYNTHETIC_FEEDBACK_RESUME",
+    "backlogAssessment": "Controller reviews immutable BW native receipt; no successor dispatched. Retain isolated BW package and synthetic evidence; never reseed/reinstall.",
+    "hostFlutterTests": 11,
+    "hostCliCasesAndChecks": 29,
+    "hostRenderedImages": 0,
+    "evidence": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
+    "nativeAcceptance": "PASS_ISOLATED_CANONICAL_FEEDBACK_OS_RESTART_ONLY",
+    "pending": [
+      "Native Today full bootstrap and other BV recovery cases",
+      "Native visual/TalkBack/IME",
+      "Actual-user participation/trials DEFERRED",
+      "Reviewed media/qualified trials",
+      "Frozen-source release"
+    ]
+  },
   "writer": {
-    "status": "RELEASED",
-    "holderThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
-    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\s01-bc-logout\\LexiQuest",
-    "branch": "feature/ux-s01-bc-logout-01a0de13",
-    "claimedAtUtc": "2026-09-26T14:19:33.778101+00:00",
-    "currentItem": "S01-BC-logout-recovery",
-    "dispatchId": "ux-s01-bc-20260926-0684",
-    "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-BC-source-receipt.json",
     "predecessorReleased": true,
-    "routing": "Astra/medium deterministic fallback; not Jev-selected; Standard/default requested; runtime tier unexposed",
-    "releasedAtUtc": "2026-09-26T14:49:59.794924+00:00",
-    "releaseReason": "BC host checkpoint complete; latest user instruction stops successor dispatch"
+    "threadId": "01a0e601-db27-7ea2-8d77-a84f4be685a4",
+    "currentItem": "S01-BW-native-ordinary-meaning-resume",
+    "status": "RELEASED",
+    "releaseReason": "BW scoped native feedback resume passed on physical Android with source/APK/isolation/protected-package/process/sealed-state evidence. No successor dispatched; immutable receipt publishes release.",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
+    "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/quota/ledger changes"
   },
   "dispatch": {
-    "id": "ux-s01-bc-20260926-0684",
-    "status": "CLAIMED",
-    "successorThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944"
+    "id": "ux-s01-bw-01a0e601",
+    "status": "RELEASED_TO_CONTROLLER",
+    "successorThreadId": null
   },
-  "latestHandoff": "docs/development/ux-delivery/handoffs/S01-BC-controller-checkpoint.json",
-  "sourceManifest": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
+  "latestHandoff": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
+  "sourceManifest": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
   "evidence": {
     "planConsistency": "PASS",
     "originalChangePreservation": "PASS",
-    "reportPath": "docs/development/ux-delivery/S01.md",
+    "reportPath": "docs/development/ux-delivery/S01-BW.md",
     "transferVerificationRecord": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
-    "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-BC-source-receipt.json",
-    "latestValidation": "docs/development/ux-delivery/evidence/S01-BC-validation.json",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
+    "latestValidation": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
     "jevRouting": "docs/development/ux-delivery/evidence/S01-E-routing.json",
     "interfaceReadiness": "docs/development/ux-delivery/evidence/S01-Z-source-review.json",
     "personalExportRecovery": "docs/development/ux-delivery/evidence/S01-AD-validation.json",
-    "latestBacklogReassessment": "docs/development/ux-delivery/evidence/S01-BC-backlog-reassessment.json",
+    "latestBacklogReassessment": "docs/development/ux-delivery/S01-BW.md",
     "reviewQueueRecovery": "docs/development/ux-delivery/evidence/S01-AE-validation.json",
     "personalProgressRecovery": "docs/development/ux-delivery/evidence/S01-AF-validation.json",
     "learningGoalsRecovery": "docs/development/ux-delivery/evidence/S01-AK-validation.json",
@@ -788,10 +967,11 @@
     },
     {
       "id": "actual-participants",
-      "status": "UNCONFIRMED",
+      "status": "DEFERRED_BY_USER",
       "blocks": [
         "S01-D"
-      ]
+      ],
+      "reason": "2026-09-27: defer actual-user participation/trials; does not block independent engineering"
     },
     {
       "id": "ai-provider-budget-age-readiness",
@@ -1033,17 +1213,20 @@
     "fullReleaseVerifierRequiresFrozenSha": true,
     "prototypeDoesNotProveNativeOrLearning": true
   },
-  "nextAction": "Finish verified retirement of historical worktrees before application continuation.",
+  "nextAction": "Controller 01a0ce9e-23a6-7931-88e6-6390da748f39 reviews BW immutable receipt and selects next bounded scope. Preserve field gates; native PASS is isolated canonical committed-feedback resume only. Native full Today/bootstrap, other BV cases, N05 visual/IME/TalkBack, user and release prerequisites remain. No successor dispatched; retain all four packages and never reseed/reinstall BW.",
   "checkpoint": {
-    "atUtc": "2026-09-26T14:49:59.794924+00:00",
-    "kind": "BC_HOST_COMPLETE_USER_REQUESTED_STOP",
+    "kind": "BW_NATIVE_SYNTHETIC_FEEDBACK_RESUME_PASS",
+    "hostFlutterTests": 11,
+    "hostCliCasesAndChecks": 29,
+    "passed": 11,
+    "failed": 0,
     "writerRetained": false,
     "sprintAccepted": false,
-    "hostTests": 570,
-    "runningProcesses": []
+    "runningHostProcesses": [],
+    "nativeProcessObservation": "BW 30948 -> absent -> 31845; final receipt closed SQLite. Synthetic package retained; verify process may remain."
   },
   "continuation": {
-    "enabled": false,
+    "enabled": true,
     "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
     "heartbeatId": "lexiquest-r3",
     "duplicateAutomationAllowed": false,
@@ -1051,13 +1234,13 @@
     "standardDefaultOnly": true,
     "sharedTrancheUsd": 5,
     "writerRetained": false,
-    "currentThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
-    "currentItem": "S01-BC-logout-recovery",
+    "currentThreadId": "01a0e601-db27-7ea2-8d77-a84f4be685a4",
+    "currentItem": "S01-BW-native-ordinary-meaning-resume",
     "nextReadyPackage": null,
-    "stopReason": "Latest user instruction: no successor after BC; controller backup only"
+    "stopReason": "Bounded BW native feedback recovery complete; immutable writer release for controller review. No successor dispatched. Wider native/visual/user/release acceptance remains open."
   },
   "nextDispatch": {
-    "status": "DISABLED_BY_USER_AFTER_BC",
+    "status": "READY_FOR_CONTROLLER_REVIEW",
     "successorThreadId": null
   },
   "jevControllerUpdate": {
@@ -1068,37 +1251,154 @@
   },
   "backlogReassessment": "docs/development/ux-delivery/readiness-12-groups.md",
   "remainingRed": [],
-  "AACompletedAtUtc": "2026-09-24T11:53:12.528172+00:00",
-  "ABCompletedAtUtc": "2026-09-24T12:18:51.789023+00:00",
-  "ACCompletedAtUtc": "2026-09-24T12:36:45.621897+00:00",
-  "AECompletedAtUtc": "2026-09-24T13:13:39.947323+00:00",
-  "AFCompletedAtUtc": "2026-09-24T13:32:16.218881+00:00",
-  "AGCompletedAtUtc": "2026-09-24T13:50:03.550624+00:00",
-  "AICompletedAtUtc": "2026-09-24T14:29:36.346612+00:00",
-  "AJCompletedAtUtc": "2026-09-24T14:56:28.728461+00:00",
-  "AKCompletedAtUtc": "2026-09-24T15:27:17.596261+00:00",
-  "ALCompletedAtUtc": "2026-09-24T15:57:16.399530+00:00",
-  "ANCompletedAtUtc": "2026-09-24T16:35:17.919147+00:00",
-  "AOCompletedAtUtc": "2026-09-24T16:52:52.552335+00:00",
-  "APCompletedAtUtc": "2026-09-24T17:13:09.583917+00:00",
-  "AQCompletedAtUtc": "2026-09-24T17:41:36.465982+00:00",
-  "ARCompletedAtUtc": "2026-09-24T18:16:30.744355+00:00",
-  "ASCompletedAtUtc": "2026-09-24T18:39:26.959759+00:00",
-  "ATCompletedAtUtc": "2026-09-24T19:06:45.510482+00:00",
-  "AUCompletedAtUtc": "2026-09-24T19:38:51.233592+00:00",
-  "AVCompletedAtUtc": "2026-09-24T20:07:48.344322+00:00",
-  "AWCompletedAtUtc": "2026-09-24T21:02:24.125996+00:00",
-  "AXCompletedAtUtc": "2026-09-24T21:41:14.087034+00:00",
-  "AYCompletedAtUtc": "2026-09-24T22:25:32.640448+00:00",
-  "AZCompletedAtUtc": "2026-09-24T23:01:52.445810+00:00",
+  "AACompletedAtUtc": "2026-09-24T18:53:12.528172+07:00",
+  "ABCompletedAtUtc": "2026-09-24T19:18:51.789023+07:00",
+  "ACCompletedAtUtc": "2026-09-24T19:36:45.621897+07:00",
+  "AECompletedAtUtc": "2026-09-24T20:13:39.947323+07:00",
+  "AFCompletedAtUtc": "2026-09-24T20:32:16.218881+07:00",
+  "AGCompletedAtUtc": "2026-09-24T20:50:03.550624+07:00",
+  "AICompletedAtUtc": "2026-09-24T21:29:36.346612+07:00",
+  "AJCompletedAtUtc": "2026-09-24T21:56:28.728461+07:00",
+  "AKCompletedAtUtc": "2026-09-24T22:27:17.596261+07:00",
+  "ALCompletedAtUtc": "2026-09-24T22:57:16.39953+07:00",
+  "ANCompletedAtUtc": "2026-09-24T23:35:17.919147+07:00",
+  "AOCompletedAtUtc": "2026-09-24T23:52:52.552335+07:00",
+  "APCompletedAtUtc": "2026-09-25T00:13:09.583917+07:00",
+  "AQCompletedAtUtc": "2026-09-25T00:41:36.465982+07:00",
+  "ARCompletedAtUtc": "2026-09-25T01:16:30.744355+07:00",
+  "ASCompletedAtUtc": "2026-09-25T01:39:26.959759+07:00",
+  "ATCompletedAtUtc": "2026-09-25T02:06:45.510482+07:00",
+  "AUCompletedAtUtc": "2026-09-25T02:38:51.233592+07:00",
+  "AVCompletedAtUtc": "2026-09-25T03:07:48.344322+07:00",
+  "AWCompletedAtUtc": "2026-09-25T04:02:24.125996+07:00",
+  "AXCompletedAtUtc": "2026-09-25T04:41:14.087034+07:00",
+  "AYCompletedAtUtc": "2026-09-25T05:25:32.640448+07:00",
+  "AZCompletedAtUtc": "2026-09-25T06:01:52.44581+07:00",
   "nextReadyPackage": null,
-  "BACompletedAtUtc": "2026-09-24T23:34:34.604133+00:00",
-  "BBCompletedAtUtc": "2026-09-26T14:13:19.554166+00:00",
-  "BCCompletedAtUtc": "2026-09-26T14:49:59.794924+00:00",
+  "BACompletedAtUtc": "2026-09-25T06:34:34.604133+07:00",
+  "BBCompletedAtUtc": "2026-09-26T21:13:19.554166+07:00",
+  "BCCompletedAtUtc": "2026-09-26T21:49:59.794924+07:00",
   "backup": {
     "branch": "codex/backup/ux-v5-through-s01-bc-20260926",
     "commit": "c22cdaa3a11b83c8e3ce84151672ed8dab11a4e1",
     "localArchive": "C:/Users/Phet/LexiQuest-Backups/2026-09-26-S01-BC",
     "historicalPaths": "Resolve missing historical delivery files at backup commit; do not scan prior worktrees."
+  },
+  "BECompletedAtUtc": "2026-09-26T17:39:21.976Z",
+  "BFCompletedAtUtc": "2026-09-26T17:49:58.505Z",
+  "BGCompletedAtUtc": "2026-09-26T18:23:43Z",
+  "BHCompletedAtUtc": "2026-09-26T23:02:41.555Z",
+  "BICompletedAtUtc": "2026-09-26T23:09:21.9563812Z",
+  "BIBacklogReassessment": {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-validation.json",
+    "selectedPackage": null,
+    "assessment": "BI closes the bounded same-owner download/cancel overlapping-catalog matrix. BD-BI cover retained callbacks, lifecycle, current-operation feedback, external cancellation and catalog recovery. No further offline edge-case package selected without a concrete new finding."
+  },
+  "BJCompletedAtUtc": "2026-09-26T23:23:56.826986Z",
+  "BLReadiness": {
+    "status": "READINESS_COMPLETE_NATIVE_NOT_RUN",
+    "device": "Physical V2041 / Android 13 API33 / android-arm64",
+    "existingPackagesPreserved": [
+      "com.lexiquest.app",
+      "com.lexiquest.app.ariTest"
+    ],
+    "nativeAcceptance": "NOT_RUN",
+    "processRestartAcceptance": "NOT_RUN",
+    "taskCard": "docs/development/ux-delivery/S01-BL-next-harness.md",
+    "evidence": "docs/development/ux-delivery/evidence/S01-BL-validation.json",
+    "engineeringGap": "Existing smoke is broad; no safe new package identity or true process-restart harness. Not an external-only blocker.",
+    "supersededBy": "S01-BM-native-harness; historical BL NOT_RUN values remain unchanged"
+  },
+  "BKCompletedAtUtc": "2026-09-26T23:36:39.6929164Z",
+  "BKBacklogReassessment": {
+    "path": "docs/development/ux-delivery/S01-BK.md",
+    "selectedPackage": null,
+    "assessment": "Controller reviews BK checkpoint/source/gate. No new implementation package selected in bounded cross-group reassessment; use concrete findings or newly available native/user/media/trial prerequisites. Do not expand offline coverage without a finding or dispatch automatically."
+  },
+  "BNCompletedAtUtc": "2026-09-27T02:21:03.628Z",
+  "BNAudit": {
+    "host": "PASS_41_TESTS_22_RENDERS",
+    "native": "NOT_RUN",
+    "fixedDefect": "BN-A11Y-01: merged vocabulary search semantics tap bounds; host fixed",
+    "userParticipation": "DEFERRED_BY_USER_2026_09_27",
+    "pending": "Existing Today/Profile success and composed learning catalog absent from BM fixture; no full-baseline readiness claim",
+    "report": "docs/development/ux-delivery/S01-BN.md"
+  },
+  "BOCompletedAtUtc": "2026-09-27T02:41:41.4989264Z",
+  "BOAudit": {
+    "native": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "report": "docs/development/ux-delivery/S01-BO.md",
+    "productionChanges": 0,
+    "host": "PASS_4_TESTS_18_RENDERS",
+    "todayComponent": "PASS_SYNTHETIC_PREREQUISITE",
+    "todayRoutedSuccess": "NOT_RUN_GATED"
+  },
+  "BPCompletedAtUtc": "2026-09-27T03:20:24Z",
+  "BPAudit": {
+    "host": "PASS_5_TESTS_24_RENDERS",
+    "native": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "report": "docs/development/ux-delivery/S01-BP.md",
+    "fixedDefect": "BP-A11Y-01: optional CEFR label clipped before selection at Thai 2x; RED/GREEN verified",
+    "productionChangedFiles": [
+      "lib/screens/add_vocab_screen.dart"
+    ],
+    "productionChangedLines": 1,
+    "protectedSyntheticTables": 56,
+    "todayRoutedSuccess": "NOT_RUN_GATED",
+    "successorDispatched": false
+  },
+  "BRAudit": {
+    "report": "docs/development/ux-delivery/S01-BR.md",
+    "host": "PASS_7_TARGETED_TESTS",
+    "actualBootstrapComposition": "PASS_FIELD_AND_PREVIEW",
+    "previewReviewHistoryRoutes": "PASS",
+    "ordinaryQuizResumeToLearningTab": "PASS",
+    "exactQuizRehydration": "NOT_RUN",
+    "fieldRoutedSuccess": "NOT_RUN_FIELD_GATE",
+    "native": "NOT_RUN",
+    "visual": "NOT_RUN",
+    "userParticipation": "DEFERRED",
+    "allTablesUnchangedByUi": 58,
+    "productionChangedFiles": [],
+    "successorDispatched": false
+  },
+  "BQCompletedAtUtc": "2026-09-27T04:15:41.0555823Z",
+  "BQAudit": {
+    "userParticipation": "DEFERRED",
+    "native": "NOT_RUN",
+    "successorDispatched": false,
+    "report": "docs/development/ux-delivery/S01-BQ.md",
+    "remainingChecklist": [
+      "Today route gated",
+      "Native IME/TalkBack current snapshot",
+      "Actual-user trials deferred",
+      "Reviewed media/qualified trials",
+      "Provider/device/budget and frozen release prerequisites"
+    ],
+    "todayRoutedSuccess": "NOT_RUN_GATED",
+    "productionChangedFiles": [],
+    "allTablesUnchangedByUi": 58,
+    "seedChangedOnly": [
+      "learning_sessions",
+      "answer_attempts",
+      "learning_time_segments"
+    ],
+    "host": "PASS_5_TESTS_20_RENDERS"
+  },
+  "BWAudit": {
+    "report": "docs/development/ux-delivery/S01-BW.md",
+    "host": "PASS_11_TARGETED_TESTS_29_CLI_CHECKS",
+    "native": "PASS_ISOLATED_CANONICAL_FEEDBACK_OS_RESTART",
+    "nativePackage": "com.lexiquest.app.nativeResumeBw",
+    "apkSha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+    "allTablesUnchangedAcrossResume": 58,
+    "productionLibChangedFiles": [],
+    "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+    "userParticipation": "DEFERRED",
+    "visualImeTalkBack": "NOT_RUN",
+    "releaseAccepted": false,
+    "successorDispatched": false
   }
 }

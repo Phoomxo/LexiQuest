@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BI-cancel-download-overlapping-catalog",
+  "atUtc": "2026-09-26T23:09:21.9563812Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "threadId": "01a0dff6-033c-7600-ba8d-26a97d19ef7a",
+  "writerStatus": "RELEASED",
+  "status": "READY_FOR_CONTROLLER",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "hostTests": 104,
+  "newTests": 4,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "bc8f536f7a6b0502495d4facc715bbddf49901fbeb2cfdace985904f4d6bbec8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BI-source.patch",
+      "sha256": "1bf7fd9d6d29224098534236fa660f5e2353f6992c97af5ed2e7e96fffd637c4"
+    }
+  ],
+  "validation": "docs/development/ux-delivery/evidence/S01-BI-validation.json",
+  "report": "docs/development/ux-delivery/S01-BI.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BI-claim.json",
+  "inputClosure": {
+    "mismatches": 0,
+    "count": 1563,
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final-verification.json"
+  },
+  "sourceState": "Uncommitted cumulative BD-BH plus BI coverage. Seven inherited generated files preserved. No commit/push/cleanup.",
+  "changedFiles": [
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BI.md",
+    "docs/development/ux-delivery/evidence/S01-BI-*"
+  ],
+  "runningProcesses": [],
+  "nextExecutableStep": "Controller reviews BI receipt, then selects a concrete ready scope from UX01/UX04/UX08 or other approved group using current source and pending evidence. Do not dispatch an empty successor or invent a defect. UX02/03 instructional work remains gated; no external verification claimed.",
+  "backlogReassessment": {
+    "status": "RETURN_TO_BACKLOG_SELECTION",
+    "selectedPackage": null,
+    "assessment": "BI closes the bounded same-owner download/cancel overlapping-catalog matrix. BD-BI cover retained callbacks, lifecycle, current-operation feedback, external cancellation and catalog recovery. No further offline edge-case package selected without a concrete new finding.",
+    "sources": [
+      "docs/design/worksheet-to-play-blueprint.md#15.4",
+      "docs/development/ux-delivery/ready-backlog.md",
+      "docs/development/ux-delivery/readiness-12-groups.md",
+      "docs/development/ux-delivery/evidence/S01-BC-backlog-reassessment.json"
+    ],
+    "inventoryCheck": {
+      "paths": 61,
+      "matchingHistoricalHashes": 58,
+      "otherPaths": [
+        "lib/screens/offline_content_manager_screen.dart",
+        "lib/screens/shadowing_challenge_screen.dart",
+        "docs/development/ux-delivery/instructional-evidence-contract-v1.md"
+      ],
+      "interpretation": "Historical BC hashes are not a current acceptance claim. All current BH closure pins matched before BI. The latter two paths have no current Git delta; preserve them."
+    },
+    "nextExecutableStep": "Controller reviews BI receipt, then selects a concrete ready scope from UX01/UX04/UX08 or other approved group using current source and pending evidence. Do not dispatch an empty successor or invent a defect. UX02/03 instructional work remains gated; no external verification claimed."
+  },
+  "successorThreadId": null
+}

@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BJ-local-erasure-confirmation-lifetime",
+  "atUtc": "2026-09-26T23:23:56.8269860Z",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0dffd-be7c-7ca0-b83b-6f16f09fefe1",
+  "acceptance": "HOST_PASS",
+  "hostTests": 157,
+  "newTests": 19,
+  "originalSourceRed": 14,
+  "intermediateCallbackRed": 2,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "sha256": "03e138cbf29f3448b96422e26c2d78b6e3312c1d387fef0cd347bf1b937e9633",
+      "path": "lib/screens/setting_screen.dart"
+    },
+    {
+      "sha256": "73d451492be0706a12ebb2335d9a2633e8c9dee887ca3c8e40e5db471aa6c894",
+      "path": "test/screens/setting_screen_data_erasure_test.dart"
+    },
+    {
+      "sha256": "aec2a7fb7cfb1d852232316cb59fc714c85807b7dbb9ab62c666d67ca40a22a9",
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-source.patch"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/after-screen.dart",
+      "sha256": "03e138cbf29f3448b96422e26c2d78b6e3312c1d387fef0cd347bf1b937e9633",
+      "bytes": 62525
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/after-test.dart",
+      "sha256": "73d451492be0706a12ebb2335d9a2633e8c9dee887ca3c8e40e5db471aa6c894",
+      "bytes": 10340
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/analysis.log",
+      "sha256": "c3bd8a4a5af20259b6d99fb073948b19e53b045cdc93d1eb8f63ec4386f2ffad",
+      "bytes": 91
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/before-screen.dart",
+      "sha256": "adbadda813e962293735f65514effc7e589dac73a75279fe24607abe7fe3e27b",
+      "bytes": 59591
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/before-test.dart",
+      "sha256": "8387f11e534369993ce98802d6f53dc7693adbf53ee4b912d8781cec19f2c2a7",
+      "bytes": 3830
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/callback-red.stdout.log",
+      "sha256": "567bee01b1eb10bdad3873c8bdadcf7d1a63399d0136f017952d8884c2808e5a",
+      "bytes": 23646
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/callback-red-verification.json",
+      "sha256": "981ed68e3b7d67f9bce5d6b6b18c604630bef8001aefba0149c7997aea2d0e16",
+      "bytes": 313039
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-status.txt",
+      "sha256": "bc59e3d74e89068694961d76f893cf97554b06bcf3bb73546d6a521e2e554b47",
+      "bytes": 2942
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final.stdout.log",
+      "sha256": "f89dbe0b3b8b87380d5c2e25b0c0df658814357157a74530ae66ef0fde4bdeb1",
+      "bytes": 78818
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-verification.json",
+      "sha256": "68647ec238f8c71339b4a07a9f1fb1379a465e226f78ed8f66d24ca72cc6aa4d",
+      "bytes": 313434
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/initial-status.txt",
+      "sha256": "eae5c2201d664577bae6f8fd78c34132dea0d71517586b2d29178bcf8a26eed4",
+      "bytes": 2631
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected.stdout.log",
+      "sha256": "af9ffc705906cc3287ccb36db51047ac74034c384026c8dfef329493a2e98427",
+      "bytes": 95528
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected-verification.json",
+      "sha256": "5c6b208ee02f58d5365ee0b40844ce53112ebd4c3bb4f69e48f01b222beadac0",
+      "bytes": 313024
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red.stdout.log",
+      "sha256": "4a76cebf83d99b67aaa6fd7659cbddd16a4a38f42d33933d2a598b221cd4334b",
+      "bytes": 100952
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-verification.json",
+      "sha256": "4257a2a2801c034ce247ba05d2ba411a7a0eb0a856bb23d43e8810f859cdc906",
+      "bytes": 313024
+    }
+  ],
+  "verification": {
+    "command": "./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/screens/setting_screen_data_erasure_test.dart,test/screens/setting_screen_test.dart,test/screens/setting_display_recovery_test.dart,test/screens/setting_logout_recovery_test.dart,test/screens/setting_password_recovery_test.dart,test/screens/offline_content_settings_entry_test.dart,test/features/account/local_data_deletion_test.dart -Resume",
+    "exitCode": 0,
+    "closureMismatches": 0,
+    "status": "Passed",
+    "fingerprint": "81841f41be6f3d84f139fa029a44c5a0bd944e5409a9ac52163eeb0899a38666",
+    "inputClosureCount": 1563,
+    "postFingerprint": "81841f41be6f3d84f139fa029a44c5a0bd944e5409a9ac52163eeb0899a38666",
+    "receipt": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-verification.json"
+  },
+  "analysis": {
+    "issues": 0,
+    "log": "docs/development/ux-delivery/evidence/S01-BJ-runs/analysis.log",
+    "exitCode": 0
+  },
+  "review": "Self-review of final two-file delta; canonical eraser unchanged; prior test bodies preserved; generated pins and BD-BI source/artifacts unchanged. Existing Drift dependency warning retained in stdout; stderr contains PowerShell module progress only.",
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested; effective runtime tier unverified. No billing/provider/login probes.",
+  "notRun": [
+    "full release/build",
+    "native/device/user/trial",
+    "provider/browser/billing",
+    "deployment/research/cleanup"
+  ],
+  "nextExecutableStep": "Controller reviews BJ checkpoint. Next source hypothesis: SettingScreen._openOfflineContent lacks display lifetime guard and canInvoke captures the old dependency object. Reproduce retained entry/dependency replacement offline before selecting a new package; preserve canonical offline semantics and all gates. Do not expand BD-BI catalog matrix or dispatch automatically."
+}

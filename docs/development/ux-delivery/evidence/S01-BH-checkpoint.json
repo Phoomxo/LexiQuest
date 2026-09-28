@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BH-cancel-catalog-recovery",
+  "atUtc": "2026-09-26T23:02:41.555Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "threadId": "01a0dfee-ddd1-7993-a2a1-02671c278a95",
+  "writerStatus": "RELEASED",
+  "status": "READY_FOR_CONTROLLER",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "hostTests": 100,
+  "newTests": 6,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "bd995f261327d0825c556e45316e79b943b5825114ddbf28857d0fca03ca31a0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BH-source.patch",
+      "sha256": "08b1507934fc106847d6cc1ae92981169b34c454262ee32e78b7b6116a8d6674"
+    }
+  ],
+  "validation": "docs/development/ux-delivery/evidence/S01-BH-validation.json",
+  "report": "docs/development/ux-delivery/S01-BH.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BH-claim.json",
+  "inputClosure": {
+    "mismatches": 0,
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/final-verification.json",
+    "count": 1563
+  },
+  "sourceState": "Uncommitted cumulative BD-BG plus BH test coverage. Seven inherited generated files retained. No commit/push/cleanup.",
+  "changedFiles": [
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BH.md",
+    "docs/development/ux-delivery/evidence/S01-BH-*"
+  ],
+  "runningProcesses": [],
+  "nextExecutableStep": "Controller verifies BH receipt then creates exactly one fresh BI successor; current writer must not dispatch another.",
+  "nextCandidate": {
+    "id": "S01-BI-cancel-download-overlapping-catalog",
+    "status": "COVERAGE_CANDIDATE_NOT_REPRODUCED",
+    "sourceBasis": "_perform finally and _cancel finally each invoke _load for the same download. _load fences by serial. Existing BD refreshed-cancel test resolves reads immediately; BH covers owner replacement but not two same-owner reads completing out of order.",
+    "scope": "Offline fake: pending local download and cancellation finish in both orders; complete older/newer catalog reads in reversed order including stale error. Assert latest canonical view, busy/cancelling retirement and no duplicate mutations; preserve original semantics. If behavior passes, coverage only.",
+    "limits": "No production change without reproduced defect; no instructional units, real providers, deployment, research, cleanup, browser automation or parallel writers."
+  },
+  "successorThreadId": null
+}

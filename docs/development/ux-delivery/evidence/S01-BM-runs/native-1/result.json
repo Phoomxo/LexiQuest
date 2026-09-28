@@ -1,0 +1,890 @@
+{
+  "phases": [
+    {
+      "receipt": {
+        "packageId": "com.lexiquest.app.nativeBaselineBm",
+        "runId": "bm-synthetic-01",
+        "phase": "seed",
+        "status": "PASS",
+        "closed": true,
+        "cases": {
+          "N01": "PASS",
+          "N02": "PASS",
+          "N03": "PASS"
+        },
+        "viewport": {
+          "width": 1080.0,
+          "height": 2292.0,
+          "pixelRatio": 2.75
+        },
+        "fixtureDigest": "c0048dd14dbff7c717532c1177b19d8498dec059266fbf11c82a9ce17e11aceb",
+        "ownerId": "local:synthetic-bm-synthetic-01-owner",
+        "wordId": "word:synthetic-bm-synthetic-01-1",
+        "externalCalls": 0,
+        "researchRows": 0,
+        "outboxRows": 0,
+        "ordinaryVocabularyOutboxRows": 2
+      },
+      "atUtc": "2026-09-27T00:57:26.5784001Z",
+      "durationMs": 48730.7233,
+      "phase": "seed"
+    },
+    {
+      "receipt": {
+        "packageId": "com.lexiquest.app.nativeBaselineBm",
+        "runId": "bm-synthetic-01",
+        "phase": "verify",
+        "status": "PASS",
+        "closed": true,
+        "cases": {
+          "N04": "PASS"
+        },
+        "viewport": {
+          "width": 1080.0,
+          "height": 2292.0,
+          "pixelRatio": 2.75
+        },
+        "fixtureDigest": "c0048dd14dbff7c717532c1177b19d8498dec059266fbf11c82a9ce17e11aceb",
+        "ownerId": "local:synthetic-bm-synthetic-01-owner",
+        "wordId": "word:synthetic-bm-synthetic-01-1",
+        "externalCalls": 0,
+        "researchRows": 0,
+        "outboxRows": 0,
+        "ordinaryVocabularyOutboxRows": 2
+      },
+      "atUtc": "2026-09-27T00:57:30.1618552Z",
+      "durationMs": 68.3763,
+      "phase": "verify"
+    }
+  ],
+  "isolationVerified": true,
+  "pid_verify": "634",
+  "packageId": "com.lexiquest.app.nativeBaselineBm",
+  "apkId": "com.lexiquest.app.nativeBaselineBm",
+  "contract": {
+    "apkSha": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+    "verify": {
+      "ownerId": "local:synthetic-bm-synthetic-01-owner",
+      "outboxRows": 0,
+      "researchRows": 0,
+      "packageId": "com.lexiquest.app.nativeBaselineBm",
+      "cases": {
+        "N04": "PASS"
+      },
+      "externalCalls": 0,
+      "wordId": "word:synthetic-bm-synthetic-01-1",
+      "status": "PASS",
+      "viewport": {
+        "width": 1080.0,
+        "height": 2292.0,
+        "pixelRatio": 2.75
+      },
+      "ordinaryVocabularyOutboxRows": 2,
+      "runId": "bm-synthetic-01",
+      "phase": "verify",
+      "fixtureDigest": "c0048dd14dbff7c717532c1177b19d8498dec059266fbf11c82a9ce17e11aceb",
+      "closed": true
+    },
+    "status": "PASS",
+    "seed": {
+      "ownerId": "local:synthetic-bm-synthetic-01-owner",
+      "outboxRows": 0,
+      "researchRows": 0,
+      "packageId": "com.lexiquest.app.nativeBaselineBm",
+      "cases": {
+        "N02": "PASS",
+        "N01": "PASS",
+        "N03": "PASS"
+      },
+      "externalCalls": 0,
+      "wordId": "word:synthetic-bm-synthetic-01-1",
+      "status": "PASS",
+      "viewport": {
+        "width": 1080.0,
+        "height": 2292.0,
+        "pixelRatio": 2.75
+      },
+      "ordinaryVocabularyOutboxRows": 2,
+      "runId": "bm-synthetic-01",
+      "phase": "seed",
+      "fixtureDigest": "c0048dd14dbff7c717532c1177b19d8498dec059266fbf11c82a9ce17e11aceb",
+      "closed": true
+    },
+    "runId": "bm-synthetic-01"
+  },
+  "commands": [
+    {
+      "exitCode": 0,
+      "arguments": [
+        "get-state"
+      ],
+      "durationMs": 32.5399,
+      "atUtc": "2026-09-27T00:56:17.3701687Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.product.model"
+      ],
+      "durationMs": 90.2414,
+      "atUtc": "2026-09-27T00:56:17.4095382Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.build.version.sdk"
+      ],
+      "durationMs": 77.788,
+      "atUtc": "2026-09-27T00:56:17.5000317Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.kernel.qemu"
+      ],
+      "durationMs": 86.3603,
+      "atUtc": "2026-09-27T00:56:17.5780436Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "pm",
+        "list",
+        "packages",
+        "com.lexiquest"
+      ],
+      "durationMs": 152.1587,
+      "atUtc": "2026-09-27T00:56:17.6670586Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "durationMs": 123.6543,
+      "atUtc": "2026-09-27T00:56:17.8278511Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "durationMs": 101.5597,
+      "atUtc": "2026-09-27T00:56:17.9677690Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "install",
+        "-t",
+        "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\build\\app\\outputs\\flutter-apk\\app-debug.apk"
+      ],
+      "durationMs": 10831.3106,
+      "atUtc": "2026-09-27T00:56:18.4087541Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "am",
+        "start",
+        "-W",
+        "-n",
+        "com.lexiquest.app.nativeBaselineBm/com.lexiquest.app.NativeBaselineActivity",
+        "--es",
+        "baselineRun",
+        "bm-synthetic-01",
+        "--es",
+        "baselinePhase",
+        "seed"
+      ],
+      "durationMs": 8606.8689,
+      "atUtc": "2026-09-27T00:56:29.2417967Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 170.4416,
+      "atUtc": "2026-09-27T00:56:37.8490320Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 68.8713,
+      "atUtc": "2026-09-27T00:56:39.0260705Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 64.2524,
+      "atUtc": "2026-09-27T00:56:40.0955679Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 59.1804,
+      "atUtc": "2026-09-27T00:56:41.1631451Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 98.4164,
+      "atUtc": "2026-09-27T00:56:42.2287035Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 95.7045,
+      "atUtc": "2026-09-27T00:56:43.3336836Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 94.8668,
+      "atUtc": "2026-09-27T00:56:44.4429488Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 106.1575,
+      "atUtc": "2026-09-27T00:56:45.5506886Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 79.1552,
+      "atUtc": "2026-09-27T00:56:46.6645463Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 74.6478,
+      "atUtc": "2026-09-27T00:56:47.7574648Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 108.6954,
+      "atUtc": "2026-09-27T00:56:48.8450038Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 98.9677,
+      "atUtc": "2026-09-27T00:56:49.9535358Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 92.5742,
+      "atUtc": "2026-09-27T00:56:51.0669104Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 97.747,
+      "atUtc": "2026-09-27T00:56:52.1751607Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 108.5489,
+      "atUtc": "2026-09-27T00:56:53.2798284Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 102.8283,
+      "atUtc": "2026-09-27T00:56:54.3912434Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 92.596,
+      "atUtc": "2026-09-27T00:56:55.4992432Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 105.5581,
+      "atUtc": "2026-09-27T00:56:56.5963181Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 89.2683,
+      "atUtc": "2026-09-27T00:56:57.7098976Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 134.1499,
+      "atUtc": "2026-09-27T00:56:58.8112438Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 113.5123,
+      "atUtc": "2026-09-27T00:56:59.9554456Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 106.6227,
+      "atUtc": "2026-09-27T00:57:01.0716975Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 77.1745,
+      "atUtc": "2026-09-27T00:57:02.1798420Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 75.8651,
+      "atUtc": "2026-09-27T00:57:03.2697329Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 96.9596,
+      "atUtc": "2026-09-27T00:57:04.3517789Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 79.8663,
+      "atUtc": "2026-09-27T00:57:05.4636208Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 101.7742,
+      "atUtc": "2026-09-27T00:57:06.5468717Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 102.9062,
+      "atUtc": "2026-09-27T00:57:07.6526252Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 104.4343,
+      "atUtc": "2026-09-27T00:57:08.7594484Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 96.003,
+      "atUtc": "2026-09-27T00:57:09.8753410Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 98.4117,
+      "atUtc": "2026-09-27T00:57:10.9740452Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 102.4417,
+      "atUtc": "2026-09-27T00:57:12.0772724Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 106.2897,
+      "atUtc": "2026-09-27T00:57:13.1810293Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 99.737,
+      "atUtc": "2026-09-27T00:57:14.2915478Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 108.6615,
+      "atUtc": "2026-09-27T00:57:15.3914988Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 106.6669,
+      "atUtc": "2026-09-27T00:57:16.5013121Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 76.9386,
+      "atUtc": "2026-09-27T00:57:17.6145933Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 102.4594,
+      "atUtc": "2026-09-27T00:57:18.7066058Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 97.2499,
+      "atUtc": "2026-09-27T00:57:19.8148451Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 97.49,
+      "atUtc": "2026-09-27T00:57:20.9214788Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 104.0817,
+      "atUtc": "2026-09-27T00:57:22.0306413Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 98.6986,
+      "atUtc": "2026-09-27T00:57:23.1361752Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 108.3898,
+      "atUtc": "2026-09-27T00:57:24.2421464Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 100.0507,
+      "atUtc": "2026-09-27T00:57:25.3648651Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-seed.json"
+      ],
+      "durationMs": 97.9927,
+      "atUtc": "2026-09-27T00:57:26.4796790Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 95.453,
+      "atUtc": "2026-09-27T00:57:26.6002128Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "am",
+        "force-stop",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 217.282,
+      "atUtc": "2026-09-27T00:57:26.6979318Z"
+    },
+    {
+      "exitCode": 1,
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 65.5801,
+      "atUtc": "2026-09-27T00:57:26.9154388Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "am",
+        "start",
+        "-W",
+        "-n",
+        "com.lexiquest.app.nativeBaselineBm/com.lexiquest.app.NativeBaselineActivity",
+        "--es",
+        "baselineRun",
+        "bm-synthetic-01",
+        "--es",
+        "baselinePhase",
+        "verify"
+      ],
+      "durationMs": 2717.7065,
+      "atUtc": "2026-09-27T00:57:27.3756183Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeBaselineBm",
+        "cat",
+        "files/bm-synthetic-01-verify.json"
+      ],
+      "durationMs": 68.0046,
+      "atUtc": "2026-09-27T00:57:30.0935261Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "durationMs": 56.0961,
+      "atUtc": "2026-09-27T00:57:30.1677817Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "durationMs": 64.482,
+      "atUtc": "2026-09-27T00:57:30.2256495Z"
+    },
+    {
+      "exitCode": 0,
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "durationMs": 57.2504,
+      "atUtc": "2026-09-27T00:57:30.2932887Z"
+    }
+  ],
+  "apkSha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+  "pid_seed": "31935",
+  "protectedBefore": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  },
+  "status": "PASS",
+  "deviceId": "9582188822004C6",
+  "protectedAfter": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  },
+  "runId": "bm-synthetic-01",
+  "pid_stopped": ""
+}

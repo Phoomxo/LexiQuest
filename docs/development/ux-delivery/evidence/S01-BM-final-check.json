@@ -1,0 +1,16 @@
+{
+  "checkpointSha256": "6e9efe1cab50e85b0e32dc331a47bb462913054b9059d2b4cad2e87806ad3b30",
+  "preservedPins": 99,
+  "atUtc": "2026-09-27T01:04:52.9413307Z",
+  "writerStatus": "RELEASED",
+  "processRestart": "PASS",
+  "native": "PASS_N01_N04",
+  "sourcePins": 13,
+  "artifactPins": 17,
+  "validationSha256": "0d2b5b0a5b3327a081ccc3fe01dcfc7fb183121d554570b3baea10b993748ae0",
+  "status": "PASS",
+  "nativeBuildClosurePins": 781,
+  "noSuccessorDispatched": true,
+  "scope": "BM source/artifact/checkpoint consistency and pre-existing-work preservation; no additional behavior acceptance",
+  "stateRevision": 136
+}

@@ -1,0 +1,221 @@
+{
+  "externalCalls": 0,
+  "researchRows": 0,
+  "hostAuditTests": 2,
+  "preExistingPinsVerified": 99,
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis-accepted.log",
+      "sha256": "a7fe09d5ccb95f4df98ca85f72cd5f9b9834c9a230aa29fd5c65c9d52db10ddc"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis-final.log",
+      "sha256": "a7fe09d5ccb95f4df98ca85f72cd5f9b9834c9a230aa29fd5c65c9d52db10ddc"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis.log",
+      "sha256": "2cb4a4321d1a3b2cd0db59d59ae9f80d51cb2f2f08e72bf532817a58ba8e660e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.json",
+      "sha256": "4bef529b4b863cbc6d4b4d437f1b97d5ac6b87c70be57cf748c1ad05a2fe8f91"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.stdout.log",
+      "sha256": "fc6c724bb9bf114d08d9d8a6424175ae4c4542589c3e30b22aaf885e56a3bab8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-3.log",
+      "sha256": "986084471436e15a770eef8f4caa130e5cc7beac5e00288245be3bcab43fd948"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-4.log",
+      "sha256": "dca52913a8e3270cc72bdf043886354e06fb237ec8e1372e5d74cc4b848abb8e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-5.log",
+      "sha256": "f846d4d087217c70bc2ab9b5507d14a42b02559ea249a03ab18ca6a2020dd9fb"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-6.log",
+      "sha256": "94416dfacff518cb586939f181bf9023dd74fd18903b9970016f695ba24f08c3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/search-diagnostic.log",
+      "sha256": "ae56bc95798f1347d974f8a530905235e871e60e32629969e1a8d33f70d4a547"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-2.log",
+      "sha256": "4ed3f922f2e165b947c55f4a06567abcc21e225283a393d357ab7ed9a8c8306c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-accepted.log",
+      "sha256": "1d4e847803b1038dfcfc62eeb5f24f6995bbd994419b3f748c1ff39d182bfbfb"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-final.log",
+      "sha256": "1d4e847803b1038dfcfc62eeb5f24f6995bbd994419b3f748c1ff39d182bfbfb"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope.log",
+      "sha256": "0ee3c9fd3719d6c01c2c9cb256daf77a75e857cdbe6e88c8c74099fe4c0e87e2"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-render-final.log",
+      "sha256": "bc120c4bd9084f2ba0d524f946d6d0ccd96923a1bafcf2d865fc18faac836a72"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/10-vocabulary-words-1.0x.png",
+      "sha256": "466bf73104c5b5c0cbd64d33a3c1e67c6c21f9fe6337b74c7616c5833d9b2498"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/10-vocabulary-words-2.0x.png",
+      "sha256": "67e817b635e5ddf3f380e3c22bc9dfd42307896947314140cc7e04511c2b1931"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/11-search-empty-1.0x.png",
+      "sha256": "89fd0871babcd49590785abdf2671089985393728dd7b52542d93888fb1c7806"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/11-search-empty-2.0x.png",
+      "sha256": "0e1a60726d5ff6055405ca78b7c2d35b8f94db7583ab843e3fdd6a00dd88d2a5"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/1-today-1.0x.png",
+      "sha256": "2da1aa4e6bcd58e70db55e673274867a52e3a4d54548a2c8ad1269ba3e3e4122"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/1-today-2.0x.png",
+      "sha256": "4f0f5ac25d984559f3b20ebe5390899b80ea82729e1abcb4e2a9199a684bdffc"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/2-learn-1.0x.png",
+      "sha256": "8ae4e5823dacd02f62ea8588c7b9a68ac30dadc51fafd2ee7f7140ebe8330ec1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/2-learn-2.0x.png",
+      "sha256": "d632586be41fcf266e542a8775132632190e541767073d3dc210ad77300dfc16"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/3-vocabulary-1.0x.png",
+      "sha256": "f4da11c4341398ae851675a076873c02624435a80e1f9097951a6d64b39c5601"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/3-vocabulary-2.0x.png",
+      "sha256": "3573b0ec742da9055973871a5dff15fb63ee7436c8450a3bcfc3602c2b53b0db"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/4-profile-1.0x.png",
+      "sha256": "b4c76cdea00319cba61354674ec4213aa18cbc0b0310d3eec523ad2315fe6286"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/4-profile-2.0x.png",
+      "sha256": "7cc499fde4d0c578e277076e4b3efbc949c73f90349e67551bb1117cd0965f06"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/5-settings-1.0x.png",
+      "sha256": "86d0e3f7775481ab6d557a77ff719e0b40838e78816cbe892131c57d1b07654f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/5-settings-2.0x.png",
+      "sha256": "54b693c5bfd6f5b3af9fd3e0262180ca4f15073fe366bca18fd6dcd8cc1cf429"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/6-offline-1.0x.png",
+      "sha256": "a1d4ffb28faa64a89ff0be9c561592ce360043fdc75f5a4253d1aeed4f3c8d3d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/6-offline-2.0x.png",
+      "sha256": "28490e48a970754bb59a14cbb291dd592b3d63b657096f63aaae77706d5fd0d3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/7-category-dialog-1.0x.png",
+      "sha256": "86f811e03a591bb4b40046636e9c76647c184dbd6190571955c3e1c5ac54fa31"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/7-category-dialog-2.0x.png",
+      "sha256": "192d61ec7336888b180ddf8f2a822026b85eaa406a00c94cc9c57773b6b4af6f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/8-settings-lower-1.0x.png",
+      "sha256": "86d0e3f7775481ab6d557a77ff719e0b40838e78816cbe892131c57d1b07654f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/8-settings-lower-2.0x.png",
+      "sha256": "6424207f79612ee6d376764a21b7dfef7ad2df1af2f688c767d5107f2ffba8bd"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/9-offline-details-1.0x.png",
+      "sha256": "7740c7ba008277f804a7a860eae4085c155f8f2595d0a7865c97ff14c2bc3db3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/9-offline-details-2.0x.png",
+      "sha256": "88e538a4e4a44039bfd71ec6f50686762ad0f2af6f7f47d450cd1826df34b767"
+    }
+  ],
+  "routing": "Current model deterministic fallback; Standard/default requested; runtime unverified; no Jev/billing/login/ledger changes",
+  "imageReview": "All 22 PNGs inspected using view_image; no device screenshot claim",
+  "atUtc": "2026-09-27T02:20:09.4338934Z",
+  "vocabularyRegressionTests": 39,
+  "sprintAccepted": false,
+  "gateFingerprint": "a2bcc60b026086fcd7bbde29b58407a431ccb4bf1151823a80e602e3ce02c7e6",
+  "renderMethod": "Flutter host raster; 360x800 DPR1; 1x and 2x; NotoSansThai + MaterialIcons + actual shadows",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "bmSourcePinsVerified": 13,
+  "package": "S01-BN-host-ui-audit",
+  "generated7Preserved": true,
+  "report": "docs/development/ux-delivery/S01-BN.md",
+  "sourcePins": [
+    {
+      "path": "lib/screens/vocab_list_screen.dart",
+      "sha256": "9f60c1bcf30f9a024d85a20618ad9c2d044cbb2e4c1974eaaf27a67ae0ded929"
+    },
+    {
+      "path": "test/support/baseline_host_ui_audit_test.dart",
+      "sha256": "fe31deb7b8ec9a369e9a77034682b2dc89a11faef2d562d6ce4ba8e53847de0e"
+    }
+  ],
+  "schemaVersion": 1,
+  "ordinaryOutboxRows": 2,
+  "analysis": {
+    "interpretation": "Existing lines outside focused diff; no baseline analyzer rerun; not clean",
+    "warnings": 2,
+    "errors": 0,
+    "infos": 11,
+    "exitCode": 2
+  },
+  "sourceFrozen": true,
+  "renderCount": 22,
+  "reportSha256": "4262e1c75b5c7029a7ccb72dc8f85922145bd181bc4c6c762f9e342383907c57",
+  "hostTests": 41,
+  "notRun": [
+    "Actual device visual/TalkBack/IME",
+    "Actual user trials deferred",
+    "Loaded Today/Profile and composed learning catalog",
+    "Quest child and vocabulary mutation forms",
+    "Full release/provider/research/deployment"
+  ],
+  "writer": "01a0e097-c108-7210-8faa-37c82a53c0ff",
+  "nextReadyScope": "Host-only synthetic existing Today/Profile success and composed existing learning catalog using production authorities; then bound concrete remaining child routes",
+  "preservationMismatches": 0,
+  "branch": "codex/ux-current-after-s01-bc",
+  "nativeDelta": "NOT_RUN; existing packages untouched; BM remains historical snapshot evidence",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "postGateSourcePinMismatches": 0,
+  "acceptance": "BOUNDED_HOST_PASS",
+  "gateSourcePins": 1574,
+  "fixedDefects": [
+    {
+      "status": "HOST_FIXED",
+      "issue": "Search field semantics tap region 272x24 at 1x",
+      "native": "NOT_RUN",
+      "id": "BN-A11Y-01",
+      "red": "S01-BN-runs/host-test-5.log",
+      "fix": "MergeSemantics around existing SearchBar; full surface 328x56"
+    }
+  ]
+}

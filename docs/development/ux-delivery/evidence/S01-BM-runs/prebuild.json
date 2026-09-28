@@ -1,0 +1,9 @@
+{
+  "status": "NEW_PACKAGE_ABSENT",
+  "device": "9582188822004C6",
+  "atUtc": "2026-09-27T00:40:20.0197597Z",
+  "packages": [
+    "package:com.lexiquest.app.ariTest",
+    "package:com.lexiquest.app"
+  ]
+}

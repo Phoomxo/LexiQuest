@@ -1,0 +1,5 @@
+Analyzing composed_host_ui_audit_test.dart...
+
+   info - composed_host_ui_audit_test.dart:273:17 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+1 issue found.

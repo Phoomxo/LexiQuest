@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BF-offline-operation-feedback",
+  "atUtc": "2026-09-26T17:49:58.505Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0decf-4e77-70a3-a358-e6743faaa6f5",
+  "hostTests": 86,
+  "newTests": 12,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "50704ca93ed37f230aa9a81e183e584257788dec1801c756f9b3349e2d87dbd7"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "31a5d4e57bd8e9e56d96a0bc1e44c8d2c102dbd4fcfe8214234cba6403a64bfa"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BF-source.patch",
+      "sha256": "3c4ab4d57c8acd36d203bffc199c2244f60b81be5973e03d106d40082f1b8ca0"
+    }
+  ],
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "writerStatus": "RELEASED",
+  "validation": "docs/development/ux-delivery/evidence/S01-BF-validation.json",
+  "report": "docs/development/ux-delivery/S01-BF.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BF-claim.json",
+  "sourceState": "Uncommitted cumulative BD+BE+BF code; BF-only patch retained separately. Seven inherited generated files not edited by this task.",
+  "inputClosure": {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/final-verification.json",
+    "count": 1563,
+    "mismatches": 0
+  },
+  "runningProcesses": [],
+  "changedFiles": [
+    "lib/screens/offline_content_manager_screen.dart",
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BF.md",
+    "docs/development/ux-delivery/evidence/S01-BF-*"
+  ],
+  "nextCandidate": {
+    "scope": "Catalog refresh after cancelling a download started outside this screen",
+    "status": "SOURCE_HYPOTHESIS_NOT_REPRODUCED",
+    "reason": "_cancel finally only clears _cancelling; it does not refresh _states. _perform refreshes only operations started in this screen. VerifiedOfflineContentManager marks interrupted on cancellation before resolving cancelDownload. Screen can render downloading entries from catalog.",
+    "nextExecutableStep": "Reproduce with offline fake: catalog initially downloading, cancel changes canonical state to interrupted and returns true without a screen-owned _perform; assert repair appears from refreshed state. Also cover false/error and owner/gate/visibility boundaries before any fix."
+  },
+  "nextExecutableStep": "Controller validates BF pins, artifacts and closure, then selects and dispatches one fresh bounded chat. No successor dispatched here.",
+  "preservation": "BD/BE evidence and cumulative source retained; no primary/old-worktree/archive/cleanup/commit/push/provider work."
+}

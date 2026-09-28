@@ -1,0 +1,14 @@
+warning: in the working copy of 'android/app/build.gradle.kts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/development/ux-delivery/ready-backlog.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/development/ux-delivery/state.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/screens/add_vocab_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'macos/Flutter/GeneratedPluginRegistrant.swift', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/screens/offline_content_manager_screen_test.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/screens/offline_content_settings_entry_test.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/screens/setting_screen_data_erasure_test.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it

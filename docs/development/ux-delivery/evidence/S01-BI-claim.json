@@ -1,0 +1,14 @@
+{
+  "package": "S01-BI-cancel-download-overlapping-catalog",
+  "threadId": "01a0dff6-033c-7600-ba8d-26a97d19ef7a",
+  "identitySource": "CODEX_THREAD_ID",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessor": "01a0dfee-ddd1-7993-a2a1-02671c278a95",
+  "predecessorReleased": true,
+  "predecessorPins": "BH checkpoint source pins and all validation artifact hashes verified before writing",
+  "soleWriter": true,
+  "routing": "Current model deterministic fallback, not Jev-selected. Standard/default requested; runtime tier unverified. No billing/login/inference probes.",
+  "scope": "Offline fake download/cancel completions in both orders, overlapping same-owner catalog responses, stale success/error, canonical UI and mutation retirement. Coverage candidate; no assumed defect. Reassess backlog after bounded matrix."
+}

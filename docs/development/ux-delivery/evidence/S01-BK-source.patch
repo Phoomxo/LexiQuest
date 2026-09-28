@@ -1,0 +1,374 @@
+diff --git a/docs/development/ux-delivery/evidence/S01-BK-runs/before-screen.dart b/lib/screens/setting_screen.dart
+index 86622f7a..492e2668 100644
+--- a/docs/development/ux-delivery/evidence/S01-BK-runs/before-screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -51,6 +51,29 @@ class _SettingScreenState extends State<SettingScreen>
+   LocalOwnerRepository? _localOwners;
+   DisplayPreferencesController? _displayPreferences;
+   OfflineContentManager? _offlineContent;
++  AppDependencies? _offlineDependencies;
++  int _offlineEntryGeneration = 0;
++  bool _offlineEntryVisible = false;
++  bool _offlineEntryEnabled = false;
++  bool _offlineOpening = false;
++
++  void _syncOfflineEntry() {
++    final dependencies = AppDependenciesScope.maybeOf(context);
++    final visible = _displayActive;
++    final enabled =
++        dependencies?.features.isEnabled(Feature.offlineContent) == true &&
++        dependencies?.hasComposedDependencyFor(Feature.offlineContent) == true;
++    if (!identical(dependencies, _offlineDependencies) ||
++        visible != _offlineEntryVisible ||
++        enabled != _offlineEntryEnabled) {
++      _offlineEntryGeneration++;
++    }
++    _offlineDependencies = dependencies;
++    _offlineContent = dependencies?.offlineContent;
++    _offlineEntryVisible = visible;
++    _offlineEntryEnabled = enabled;
++  }
++
+   FeatureRegistry? _featureRegistry;
+   Listenable? _featureChanges;
+   bool _busy = false;
+@@ -209,6 +232,7 @@ class _SettingScreenState extends State<SettingScreen>
+     if (!mounted) return;
+     setState(() {
+       _displayForeground = state == AppLifecycleState.resumed;
++      _offlineEntryGeneration++;
+       _retireDisplay();
+       _retirePassword();
+       _logoutGeneration++;
+@@ -286,7 +310,7 @@ class _SettingScreenState extends State<SettingScreen>
+     _researchConsent ??=
+         widget.researchConsent ?? dependencies?.researchConsent;
+     _consentStatus ??= _researchConsent?.load();
+-    _offlineContent ??= dependencies?.offlineContent;
++    _syncOfflineEntry();
+     _bindFeatureRegistry(dependencies?.features);
+     _bindDisplayPreferences(
+       widget.displayPreferences ?? dependencies?.displayPreferences,
+@@ -347,7 +371,7 @@ class _SettingScreenState extends State<SettingScreen>
+   }
+ 
+   void _onFeatureRegistryChanged() {
+-    if (mounted) setState(() {});
++    if (mounted) setState(_syncOfflineEntry);
+   }
+ 
+   @override
+@@ -363,7 +387,12 @@ class _SettingScreenState extends State<SettingScreen>
+     super.dispose();
+   }
+ 
+-  Future<void> _openOfflineContent() async {
++  Future<void> _openOfflineContent(int generation) async {
++    if (!_displayActive ||
++        generation != _offlineEntryGeneration ||
++        _offlineOpening) {
++      return;
++    }
+     final manager = _offlineContent;
+     final registry = _featureRegistry;
+     final dependencies = AppDependenciesScope.maybeOf(context);
+@@ -375,22 +404,46 @@ class _SettingScreenState extends State<SettingScreen>
+         !dependencies.hasComposedDependencyFor(Feature.offlineContent)) {
+       return;
+     }
+-    await AppNavigator.pushPage<void>(
+-      context,
+-      AppPage<void>(
+-        name: 'settings/offline-content',
+-        builder: (_) => ProductionFeatureGate(
+-          feature: Feature.offlineContent,
+-          registry: registry,
+-          builder: (_) => OfflineContentManagerScreen(
+-            manager: manager,
+-            canInvoke: () =>
++    _offlineOpening = true;
++    _offlineEntryGeneration++;
++    var retired = false;
++    try {
++      await AppNavigator.pushPage<void>(
++        context,
++        AppPage<void>(
++          name: 'settings/offline-content',
++          builder: (routeContext) {
++            bool canInvoke() =>
++                !retired &&
++                mounted &&
++                routeContext.mounted &&
++                identical(
++                  AppDependenciesScope.maybeOf(routeContext),
++                  dependencies,
++                ) &&
+                 registry.isEnabled(Feature.offlineContent) &&
+-                identical(dependencies.offlineContent, manager),
+-          ),
++                dependencies.hasComposedDependencyFor(Feature.offlineContent);
++            if (!canInvoke()) {
++              retired = true;
++              return const ProductionFeatureUnavailable(
++                feature: Feature.offlineContent,
++                reason: ProductionFeatureUnavailableReason.missingDependency,
++              );
++            }
++            return ProductionFeatureGate(
++              feature: Feature.offlineContent,
++              registry: registry,
++              builder: (_) => OfflineContentManagerScreen(
++                manager: manager,
++                canInvoke: canInvoke,
++              ),
++            );
++          },
+         ),
+-      ),
+-    );
++      );
++    } finally {
++      _offlineOpening = false;
++    }
+   }
+ 
+   Future<void> _changeDisplay(
+@@ -710,6 +763,10 @@ class _SettingScreenState extends State<SettingScreen>
+     _syncLogout();
+     _syncErasure();
+     final erasureGeneration = _erasureGeneration;
++    _syncOfflineEntry();
++    final offlineEntryGeneration = _offlineEntryGeneration;
++    void openOfflineContent() =>
++        unawaited(_openOfflineContent(offlineEntryGeneration));
+     final erasureReady = !_busy && !_erasureConfirming && _erasureActive;
+     void eraseLocalData() => unawaited(_eraseLocalData(erasureGeneration));
+     final logoutAccount = _logoutAccount;
+@@ -1122,13 +1179,13 @@ class _SettingScreenState extends State<SettingScreen>
+                   child: MenuActionBinding(
+                     id: offlineContentEntry.id,
+                     label: offlineContentEntry.fullThaiLabel,
+-                    onInvoke: _openOfflineContent,
++                    onInvoke: openOfflineContent,
+                     child: Semantics(
+                       button: true,
+                       enabled: true,
+                       label: offlineContentEntry.semanticsLabel,
+                       hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+-                      onTap: _openOfflineContent,
++                      onTap: openOfflineContent,
+                       excludeSemantics: true,
+                       child: Card(
+                         child: ListTile(
+@@ -1141,7 +1198,7 @@ class _SettingScreenState extends State<SettingScreen>
+                           subtitle: const Text(
+                             'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                           ),
+-                          onTap: _openOfflineContent,
++                          onTap: openOfflineContent,
+                         ),
+                       ),
+                     ),
+diff --git a/docs/development/ux-delivery/evidence/S01-BK-runs/before-test.dart b/test/screens/offline_content_settings_entry_test.dart
+index 8ecb5c5c..9a371ea9 100644
+--- a/docs/development/ux-delivery/evidence/S01-BK-runs/before-test.dart
++++ b/test/screens/offline_content_settings_entry_test.dart
+@@ -20,6 +20,198 @@ import '../support/inert_research_dependencies.dart';
+ import '../support/test_quest_use_cases.dart';
+ 
+ void main() {
++  for (final departure in ['route', 'tab', 'pause', 'dispose']) {
++    testWidgets('BK retained offline entry expires after $departure', (
++      tester,
++    ) async {
++      final database = AppDatabase(NativeDatabase.memory());
++      addTearDown(database.close);
++      final manager = _SettingsManager();
++      final dependencies = _dependencies(
++        database,
++        const BuildFeatureRegistry.allEnabled(),
++        manager,
++      );
++      final navigator = GlobalKey<NavigatorState>();
++      var visible = true;
++      var present = true;
++      late StateSetter update;
++      await tester.pumpWidget(
++        AppDependenciesScope(
++          dependencies: dependencies,
++          child: MaterialApp(
++            navigatorKey: navigator,
++            home: StatefulBuilder(
++              builder: (context, setState) {
++                update = setState;
++                return present
++                    ? TickerMode(enabled: visible, child: const SettingScreen())
++                    : const Scaffold(body: Text('departed'));
++              },
++            ),
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++      final entry = find.byKey(const ValueKey('settings/offline-content'));
++      final stale = tester.widget<ListTile>(entry).onTap!;
++      switch (departure) {
++        case 'route':
++          navigator.currentState!.push(
++            MaterialPageRoute<void>(
++              builder: (_) => const Scaffold(body: Text('cover')),
++            ),
++          );
++        case 'tab':
++          update(() => visible = false);
++        case 'pause':
++          tester.binding.handleAppLifecycleStateChanged(
++            AppLifecycleState.paused,
++          );
++        case 'dispose':
++          update(() => present = false);
++      }
++      await tester.pumpAndSettle();
++      stale();
++      await tester.pump();
++      expect(manager.catalogCalls, 0);
++      expect(tester.takeException(), isNull);
++      if (departure == 'dispose') return;
++      switch (departure) {
++        case 'route':
++          navigator.currentState!.pop();
++        case 'tab':
++          update(() => visible = true);
++        case 'pause':
++          tester.binding.handleAppLifecycleStateChanged(
++            AppLifecycleState.resumed,
++          );
++      }
++      await tester.pumpAndSettle();
++      stale();
++      await tester.pumpAndSettle();
++      expect(manager.catalogCalls, 0, reason: 'expired entry stays expired');
++      await tester.tap(entry);
++      await tester.pumpAndSettle();
++      expect(manager.catalogCalls, 1, reason: 'fresh entry recovers');
++    });
++  }
++
++  for (final replacement in ['manager', 'absent', 'disabled']) {
++    testWidgets(
++      'BK offline route rejects $replacement dependency replacement',
++      (tester) async {
++        final database = AppDatabase(NativeDatabase.memory());
++        addTearDown(database.close);
++        final original = _SettingsManager()..failCatalog = true;
++        final next = _SettingsManager();
++        final features = RuntimeFeatureRegistry(
++          const BuildFeatureRegistry.allEnabled(),
++        );
++        addTearDown(features.dispose);
++        var dependencies = _dependencies(database, features, original);
++        final navigator = GlobalKey<NavigatorState>();
++        late StateSetter update;
++        await tester.pumpWidget(
++          StatefulBuilder(
++            builder: (context, setState) {
++              update = setState;
++              return AppDependenciesScope(
++                dependencies: dependencies,
++                child: MaterialApp(
++                  navigatorKey: navigator,
++                  home: const SettingScreen(),
++                ),
++              );
++            },
++          ),
++        );
++        await tester.pumpAndSettle();
++        final entry = find.byKey(const ValueKey('settings/offline-content'));
++        final staleEntry = tester.widget<ListTile>(entry).onTap!;
++        await tester.tap(entry);
++        await tester.pumpAndSettle();
++        final oldScreen = tester.widget<OfflineContentManagerScreen>(
++          find.byType(OfflineContentManagerScreen),
++        );
++        final staleRetry = tester
++            .widget<FilledButton>(
++              find.byKey(const ValueKey('offline-content/retry')),
++            )
++            .onPressed!;
++        final newFeatures = RuntimeFeatureRegistry(
++          const BuildFeatureRegistry.allEnabled(),
++        );
++        addTearDown(newFeatures.dispose);
++        if (replacement == 'disabled') {
++          newFeatures.emergencyOff(Feature.offlineContent);
++        }
++        update(
++          () => dependencies = _dependencies(
++            database,
++            newFeatures,
++            replacement == 'absent'
++                ? null
++                : replacement == 'manager'
++                ? next
++                : original,
++          ),
++        );
++        await tester.pumpAndSettle();
++        expect(oldScreen.canInvoke(), isFalse);
++        staleRetry();
++        await tester.pumpAndSettle();
++        expect(original.catalogCalls, 1);
++        expect(next.catalogCalls, 0);
++        navigator.currentState!.pop();
++        await tester.pumpAndSettle();
++        staleEntry();
++        await tester.pumpAndSettle();
++        expect(original.catalogCalls, 1);
++        if (replacement == 'manager') {
++          expect(next.catalogCalls, 0);
++          await tester.tap(entry);
++          await tester.pumpAndSettle();
++          expect(next.catalogCalls, 1);
++        } else {
++          expect(find.byType(OfflineContentManagerScreen), findsNothing);
++          if (replacement == 'absent') expect(entry, findsNothing);
++        }
++        expect(tester.takeException(), isNull);
++      },
++    );
++  }
++
++  testWidgets('BK duplicate entry cannot stack offline routes', (tester) async {
++    final database = AppDatabase(NativeDatabase.memory());
++    addTearDown(database.close);
++    final manager = _SettingsManager();
++    await tester.pumpWidget(
++      AppDependenciesScope(
++        dependencies: _dependencies(
++          database,
++          const BuildFeatureRegistry.allEnabled(),
++          manager,
++        ),
++        child: const MaterialApp(home: SettingScreen()),
++      ),
++    );
++    await tester.pumpAndSettle();
++    final invoke = tester
++        .widget<ListTile>(
++          find.byKey(const ValueKey('settings/offline-content')),
++        )
++        .onTap!;
++    invoke();
++    invoke();
++    await tester.pumpAndSettle();
++    expect(
++      find.byType(OfflineContentManagerScreen, skipOffstage: false),
++      findsOneWidget,
++    );
++    expect(manager.catalogCalls, 1);
++  });
++
+   testWidgets(
+     'AC settings menu opens retryable catalog and revocation fences stale retry',
+     (tester) async {

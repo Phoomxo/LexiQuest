@@ -1,0 +1,12 @@
+{
+  "package": "com.lexiquest.app.nativeBaselineBm",
+  "providers": 0,
+  "permissions": [
+    "android.permission.READ_EXTERNAL_STORAGE"
+  ],
+  "services": 0,
+  "activities": [
+    "com.lexiquest.app.NativeBaselineActivity"
+  ],
+  "receivers": 0
+}

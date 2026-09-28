@@ -1,0 +1,20 @@
+{
+  "package": "S01-BR-today-preview-route-audit",
+  "status": "PASS_HOST_SYNTHETIC_ONLY",
+  "productionChanges": 0,
+  "hostTests": 7,
+  "renderCount": 0,
+  "assertion": "Actual AppBootstrap field/preview composition; preview Today review/history route and ordinary resume to Learning only",
+  "excluded": [
+    "quiz rehydration",
+    "review answers/completion",
+    "history replay",
+    "native visual/IME/TalkBack",
+    "user trials",
+    "full release acceptance"
+  ],
+  "validation": {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-validation.json",
+    "sha256": "ec0fc02b3deb55d0c0bf98baa9b1da8e4d16cd85652420979b71604fe1c68015"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "soleWriter": true,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "predecessorPinsVerified": 1563,
+  "predecessor": "01a0dff6-033c-7600-ba8d-26a97d19ef7a",
+  "atUtc": "2026-09-26T23:14:23.5160733Z",
+  "package": "S01-BJ-local-erasure-confirmation-lifetime",
+  "threadId": "01a0dffd-be7c-7ca0-b83b-6f16f09fefe1",
+  "predecessorReleased": true,
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested, effective runtime tier unverified. No provider/billing/login probes."
+}

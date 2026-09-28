@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../domain/meaning_quiz_composition.dart';
+import '../domain/ordinary_meaning_plan.dart';
 
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
@@ -22,6 +24,25 @@ typedef LearningActivityInitialState =
     FutureOr<Map<String, Object?>> Function(QuizSession session);
 
 const int maxReviewDistractorCount = 20;
+
+/// Retains the exact command across a lost acknowledgement; never reselects.
+final class PendingOrdinaryMeaningAdmission {
+  PendingOrdinaryMeaningAdmission._(this.plan, this._commit);
+  final OrdinaryMeaningPlan plan;
+  final Future<void> Function() _commit;
+  Future<QuizSession> admit() async {
+    await _commit();
+    final s = plan.session;
+    return QuizSession(
+      id: s.id,
+      ownerId: s.ownerId,
+      questions: s.questions,
+      startedAtUtc: s.startedAtUtc,
+      sessionConfiguration: s.sessionConfiguration,
+      ordinaryMeaningPlan: plan,
+    );
+  }
+}
 
 /// Immutable response semantics captured by the UI before any provider wait.
 final class FrozenLearningEvidenceCommand {
@@ -107,11 +128,16 @@ final class PendingLearningSessionClose {
     required this.sessionId,
     required this.completedAtUtc,
     this._ownerId,
+    this.runOperation,
   });
 
   final LearningUseCases _learning;
   final String sessionId;
   final DateTime completedAtUtc;
+  final Future<LearningSessionSummary> Function(
+    Future<LearningSessionSummary> Function(),
+  )?
+  runOperation;
 
   PendingLearningSessionCloseStatus _status =
       PendingLearningSessionCloseStatus.captured;
@@ -179,11 +205,13 @@ final class PendingLearningSessionClose {
       _status = PendingLearningSessionCloseStatus.bindingOwner;
       final ownerId = await _bindOwnerOnce();
       _status = PendingLearningSessionCloseStatus.writing;
-      final result = await _learning._finishCapturedSessionClose(
-        ownerId: ownerId,
-        sessionId: sessionId,
-        completedAtUtc: completedAtUtc,
-      );
+      Future<LearningSessionSummary> finish() =>
+          _learning._finishCapturedSessionClose(
+            ownerId: ownerId,
+            sessionId: sessionId,
+            completedAtUtc: completedAtUtc,
+          );
+      final result = await (runOperation?.call(finish) ?? finish());
       _result = result;
       _status = PendingLearningSessionCloseStatus.committed;
       return result;
@@ -394,11 +422,16 @@ final class LearningUseCases {
     }
   }
 
+  /// Quiz-shaped callers retain their own contracts. Ordinary meaning callers
+  /// opt into atomic frozen presentation with [ordinaryMeaning].
   Future<QuizSession> startQuiz({
     String? categoryId,
     int limit = 10,
     List<String>? pinnedWordIds,
     SessionConfiguration? sessionConfiguration,
+    bool ordinaryMeaning = false,
+    List<PinnedQuizContent>? expectedContent,
+    void Function(PendingOrdinaryMeaningAdmission)? onMeaningAdmissionPrepared,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
     _requireSessionConfiguration(
@@ -437,6 +470,19 @@ final class LearningUseCases {
     if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    if (expectedContent != null &&
+        (expectedContent.length != words.length ||
+            words.indexed.any((entry) {
+              final pin = expectedContent[entry.$1];
+              return pin.identity.type != ContentType.lexicalMetadata ||
+                  pin.identity.id != entry.$2.id ||
+                  pin.identity.revision != entry.$2.contentRevision ||
+                  pin.checksumSha256 != entry.$2.contentChecksumSha256;
+            }))) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.packDrift,
+      );
+    }
     await _beforeSessionAdmission(owner.id);
     final now = _now();
     if (now.millisecondsSinceEpoch < 0) {
@@ -447,6 +493,99 @@ final class LearningUseCases {
       );
     }
     final sessionId = 'session:${_nextId()}';
+    if (ordinaryMeaning) {
+      if (repository is! ExactPinnedLearningActivityRepository ||
+          repository is! OrdinaryMeaningContentRepository) {
+        throw StateError('Ordinary meaning admission authority unavailable');
+      }
+      final selected = QuizSession(
+        id: sessionId,
+        ownerId: owner.id,
+        startedAtUtc: now,
+        questions: _questions(words),
+        sessionConfiguration: sessionConfiguration,
+      );
+      final direction =
+          sessionConfiguration?.direction ?? SessionDirection.mixed;
+      var distractors = const <QuizWord>[];
+      if (composeMeaningQuiz(
+        selected,
+        direction: direction,
+      ).any((q) => q.options.length < 2)) {
+        distractors = await readReviewDistractors(
+          ownerId: owner.id,
+          excludingWordIds: words.map((w) => w.id),
+        );
+      }
+      final lexical = await (repository as OrdinaryMeaningContentRepository)
+          .readMeaningLexicalWords(words.map((w) => w.id).toList());
+      final questions = composeMeaningQuiz(
+        selected,
+        direction: direction,
+        lexicalWords: lexical,
+        distractorWords: distractors,
+      );
+      if (questions.any((q) => q.options.length < 2)) {
+        throw const InsufficientMeaningQuizOptions();
+      }
+      final used = {
+        for (final q in questions)
+          ...q.options.map((o) => q.optionIdentity(o)!),
+      };
+      final plan = OrdinaryMeaningPlan.freeze(
+        session: selected,
+        content: [...words, ...distractors.where((w) => used.contains(w.id))],
+        questions: questions,
+      );
+      final draft = LearningSessionDraft(
+        id: sessionId,
+        ownerId: owner.id,
+        activityType: 'quiz',
+        startedAtUtc: now,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+        sessionConfiguration: sessionConfiguration,
+      );
+      final pending = PendingOrdinaryMeaningAdmission._(plan, () async {
+        await _requireAdmissionOwner(owner.id);
+        await (repository as ExactPinnedLearningActivityRepository)
+            .startExactPinnedSessionWithCheckpoint(
+              session: draft,
+              content: plan.pins,
+              checkpoint: LearningActivityCheckpoint(
+                sessionId: sessionId,
+                activityType: 'quiz',
+                revision: 1,
+                occurredAtUtc: now,
+                state: plan.toJson(),
+              ),
+            );
+        onLocalMutation?.call();
+      });
+      onMeaningAdmissionPrepared?.call(pending);
+      try {
+        return await pending.admit();
+      } catch (_) {
+        // A lost acknowledgement may follow a committed transaction. Reconcile
+        // the exact identity before replaying; never select a replacement run.
+        final recoveryRepository = repository;
+        if (recoveryRepository is! LearningActivityRecoveryRepository) rethrow;
+        LearningActivityRecovery? accepted;
+        try {
+          accepted =
+              await (recoveryRepository as LearningActivityRecoveryRepository)
+                  .loadExactActivityRecovery(
+                    ownerId: owner.id,
+                    sessionId: sessionId,
+                    activityType: 'quiz',
+                  );
+        } catch (_) {
+          rethrow;
+        }
+        if (accepted == null) rethrow;
+        return pending.admit();
+      }
+    }
     await repository.startSession(
       LearningSessionDraft(
         id: sessionId,
@@ -1339,12 +1478,17 @@ final class LearningUseCases {
     required String sessionId,
     required DateTime completedAtUtc,
     String? ownerId,
+    Future<LearningSessionSummary> Function(
+      Future<LearningSessionSummary> Function(),
+    )?
+    runOperation,
   }) {
     return PendingLearningSessionClose._(
       learning: this,
       sessionId: _requiredId(sessionId, 'sessionId'),
       completedAtUtc: _requiredUtc(completedAtUtc, 'completedAtUtc'),
       ownerId: ownerId == null ? null : _requiredId(ownerId, 'ownerId'),
+      runOperation: runOperation,
     );
   }
 

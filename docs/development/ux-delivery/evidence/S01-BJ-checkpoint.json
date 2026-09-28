@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BJ-local-erasure-confirmation-lifetime",
+  "atUtc": "2026-09-26T23:23:56.8269860Z",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "threadId": "01a0dffd-be7c-7ca0-b83b-6f16f09fefe1",
+  "writerStatus": "RELEASED",
+  "status": "READY_FOR_CONTROLLER",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "hostTests": 157,
+  "newTests": 19,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "sha256": "03e138cbf29f3448b96422e26c2d78b6e3312c1d387fef0cd347bf1b937e9633",
+      "path": "lib/screens/setting_screen.dart"
+    },
+    {
+      "sha256": "73d451492be0706a12ebb2335d9a2633e8c9dee887ca3c8e40e5db471aa6c894",
+      "path": "test/screens/setting_screen_data_erasure_test.dart"
+    },
+    {
+      "sha256": "aec2a7fb7cfb1d852232316cb59fc714c85807b7dbb9ab62c666d67ca40a22a9",
+      "path": "docs/development/ux-delivery/evidence/S01-BJ-source.patch"
+    }
+  ],
+  "validation": "docs/development/ux-delivery/evidence/S01-BJ-validation.json",
+  "report": "docs/development/ux-delivery/S01-BJ.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BJ-claim.json",
+  "inputClosure": {
+    "mismatches": 0,
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-verification.json",
+    "count": 1563
+  },
+  "changedFiles": [
+    "lib/screens/setting_screen.dart",
+    "test/screens/setting_screen_data_erasure_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BJ.md",
+    "docs/development/ux-delivery/evidence/S01-BJ-*"
+  ],
+  "sourceState": "Uncommitted BD-BI plus BJ; seven generated files unchanged. No commit/push/cleanup.",
+  "runningProcesses": [],
+  "nextExecutableStep": "Controller reviews BJ checkpoint. Next source hypothesis: SettingScreen._openOfflineContent lacks display lifetime guard and canInvoke captures the old dependency object. Reproduce retained entry/dependency replacement offline before selecting a new package; preserve canonical offline semantics and all gates. Do not expand BD-BI catalog matrix or dispatch automatically."
+}

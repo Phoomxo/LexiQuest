@@ -1,0 +1,82 @@
+{
+  "threadId": "01a0e02d-c10d-7243-a9af-98f884dc8ac4",
+  "sourceState": "Dirty BD-BK and generated7 unchanged; controller ready-backlog preserved; no commit/push/cleanup",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "package": "S01-BL-native-readiness",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "successorDispatched": false,
+  "sourcePins": [
+    {
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "d4d0f1acbd24fad519670ae0079fe77ff73bc7ef6418e7fe9be9b16f263642ea"
+    },
+    {
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "694812cfb621b563f2ad2c3d2a36e651f805f96f953f7fd5a2a809c254a294c8"
+    },
+    {
+      "path": "tool/cli/tests/run-android-smoke.tests.ps1",
+      "sha256": "560aad32fff9bb2b2b4fcfce5849e1a7c79d1c79baa1c23acfc6c7ad43280678"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "4fa939cfae175dfe1d50ee112dccc727f8a9b4a7c8a4d7983a6389727b715d8a"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "sha256": "079f80660cbc41f043e8e8ee98ea760d775380f217bc6c037197e6ba94168869"
+    },
+    {
+      "path": "integration_test/field_trial_core_journey_test.dart",
+      "sha256": "306dfbf8a5fb00f53f0ea08ad24a1c1887e5d1a6194cdf579af9f970a931f09f"
+    },
+    {
+      "path": "integration_test/support/persistent_manual_qa_storage.dart",
+      "sha256": "adaf48d6546117b7f31f4322806a42b4643b1c27b2647ed8f8d38f009c479108"
+    },
+    {
+      "path": "integration_test/support/autonomous_service_receipt.dart",
+      "sha256": "2802c2d42f734f668919a7470deaebd70dd9cc2cbdbcc09a21265b8644fdb8ea"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34"
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "sha256": "256a8a3c2892a5fb27fd7cd5c107e0beed5071d148e0effd5e87b851737bc42e"
+    },
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "docs/design/worksheet-to-play-blueprint.md",
+      "sha256": "798d5ddfac4cfe70bbf15ebd763b11c398bc1569b666af1dcd12f3e53c0ff16d"
+    }
+  ],
+  "stateRevision": 134,
+  "validationSha256": "ab8fbde7f803f809bbe0f2784d0e3d6fd389f116b5dff0be5ced3d8aa4db55e5",
+  "branch": "codex/ux-current-after-s01-bc",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "nextTaskCard": "docs/development/ux-delivery/S01-BL-next-harness.md",
+  "nextExecutableStep": "Controller review then sole-writer isolated native baseline harness engineering. Physical device available; no install over existing production/ariTest. Follow task card and preserve external acceptance gates.",
+  "runningProcesses": [],
+  "openDefects": "UX-D01-D25",
+  "native": "NOT_RUN",
+  "report": "docs/development/ux-delivery/S01-BL.md",
+  "sprintAccepted": false,
+  "validation": "docs/development/ux-delivery/evidence/S01-BL-validation.json",
+  "status": "READY_FOR_CONTROLLER",
+  "schemaVersion": 1,
+  "atUtc": "2026-09-27T00:11:40.0860015Z",
+  "writerStatus": "RELEASED",
+  "processRestart": "NOT_RUN",
+  "changedFiles": [
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BL.md",
+    "docs/development/ux-delivery/S01-BL-next-harness.md",
+    "docs/development/ux-delivery/evidence/S01-BL-*"
+  ]
+}

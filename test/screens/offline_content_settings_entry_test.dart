@@ -20,6 +20,198 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  for (final departure in ['route', 'tab', 'pause', 'dispose']) {
+    testWidgets('BK retained offline entry expires after $departure', (
+      tester,
+    ) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final manager = _SettingsManager();
+      final dependencies = _dependencies(
+        database,
+        const BuildFeatureRegistry.allEnabled(),
+        manager,
+      );
+      final navigator = GlobalKey<NavigatorState>();
+      var visible = true;
+      var present = true;
+      late StateSetter update;
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(
+            navigatorKey: navigator,
+            home: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return present
+                    ? TickerMode(enabled: visible, child: const SettingScreen())
+                    : const Scaffold(body: Text('departed'));
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final entry = find.byKey(const ValueKey('settings/offline-content'));
+      final stale = tester.widget<ListTile>(entry).onTap!;
+      switch (departure) {
+        case 'route':
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('cover')),
+            ),
+          );
+        case 'tab':
+          update(() => visible = false);
+        case 'pause':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+        case 'dispose':
+          update(() => present = false);
+      }
+      await tester.pumpAndSettle();
+      stale();
+      await tester.pump();
+      expect(manager.catalogCalls, 0);
+      expect(tester.takeException(), isNull);
+      if (departure == 'dispose') return;
+      switch (departure) {
+        case 'route':
+          navigator.currentState!.pop();
+        case 'tab':
+          update(() => visible = true);
+        case 'pause':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+      }
+      await tester.pumpAndSettle();
+      stale();
+      await tester.pumpAndSettle();
+      expect(manager.catalogCalls, 0, reason: 'expired entry stays expired');
+      await tester.tap(entry);
+      await tester.pumpAndSettle();
+      expect(manager.catalogCalls, 1, reason: 'fresh entry recovers');
+    });
+  }
+
+  for (final replacement in ['manager', 'absent', 'disabled']) {
+    testWidgets(
+      'BK offline route rejects $replacement dependency replacement',
+      (tester) async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final original = _SettingsManager()..failCatalog = true;
+        final next = _SettingsManager();
+        final features = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.allEnabled(),
+        );
+        addTearDown(features.dispose);
+        var dependencies = _dependencies(database, features, original);
+        final navigator = GlobalKey<NavigatorState>();
+        late StateSetter update;
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              update = setState;
+              return AppDependenciesScope(
+                dependencies: dependencies,
+                child: MaterialApp(
+                  navigatorKey: navigator,
+                  home: const SettingScreen(),
+                ),
+              );
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+        final entry = find.byKey(const ValueKey('settings/offline-content'));
+        final staleEntry = tester.widget<ListTile>(entry).onTap!;
+        await tester.tap(entry);
+        await tester.pumpAndSettle();
+        final oldScreen = tester.widget<OfflineContentManagerScreen>(
+          find.byType(OfflineContentManagerScreen),
+        );
+        final staleRetry = tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('offline-content/retry')),
+            )
+            .onPressed!;
+        final newFeatures = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.allEnabled(),
+        );
+        addTearDown(newFeatures.dispose);
+        if (replacement == 'disabled') {
+          newFeatures.emergencyOff(Feature.offlineContent);
+        }
+        update(
+          () => dependencies = _dependencies(
+            database,
+            newFeatures,
+            replacement == 'absent'
+                ? null
+                : replacement == 'manager'
+                ? next
+                : original,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(oldScreen.canInvoke(), isFalse);
+        staleRetry();
+        await tester.pumpAndSettle();
+        expect(original.catalogCalls, 1);
+        expect(next.catalogCalls, 0);
+        navigator.currentState!.pop();
+        await tester.pumpAndSettle();
+        staleEntry();
+        await tester.pumpAndSettle();
+        expect(original.catalogCalls, 1);
+        if (replacement == 'manager') {
+          expect(next.catalogCalls, 0);
+          await tester.tap(entry);
+          await tester.pumpAndSettle();
+          expect(next.catalogCalls, 1);
+        } else {
+          expect(find.byType(OfflineContentManagerScreen), findsNothing);
+          if (replacement == 'absent') expect(entry, findsNothing);
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('BK duplicate entry cannot stack offline routes', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final manager = _SettingsManager();
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(
+          database,
+          const BuildFeatureRegistry.allEnabled(),
+          manager,
+        ),
+        child: const MaterialApp(home: SettingScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final invoke = tester
+        .widget<ListTile>(
+          find.byKey(const ValueKey('settings/offline-content')),
+        )
+        .onTap!;
+    invoke();
+    invoke();
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(OfflineContentManagerScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(manager.catalogCalls, 1);
+  });
+
   testWidgets(
     'AC settings menu opens retryable catalog and revocation fences stale retry',
     (tester) async {

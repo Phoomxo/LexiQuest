@@ -1,0 +1,4902 @@
+[
+  {
+    "path": "android/app/build.gradle.kts",
+    "size": 6740,
+    "sha256": "9c2023106b522a7815e09758c98bc5ce8e3aed57b7df9ea73e25b8d42a9fb2cd",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "android/app/src/nativeBaseline/AndroidManifest.xml",
+    "size": 3628,
+    "sha256": "03ae0733bf61c0f5bccfb5c0b7b691b564b668f928900f64368bf4e26539d25c",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "android/app/src/nativeBaseline/kotlin/com/lexiquest/app/NativeBaselineActivity.kt",
+    "size": 1709,
+    "sha256": "40d02962dccee32c02c84806840a8207ba0ce81d00dada8cfaca18e3be9cb7f6",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "android/app/src/nativeResume/AndroidManifest.xml",
+    "size": 3626,
+    "sha256": "cfa57242d6c4b036921d5cb3dae0b5c1373e674060f2ff29aa0580c5b47e2006",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "android/app/src/nativeResume/kotlin/com/lexiquest/app/NativeResumeActivity.kt",
+    "size": 1701,
+    "sha256": "8eb36ae7a4c362e55ec3616eb560e6d6d4934befd451c4e6a21670d291904092",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/README.md",
+    "size": 4657,
+    "sha256": "f27d048d9a87e6c08e9395c80b0a3281a92d98e425d90958401d0b2cc36a74f1",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BD.md",
+    "size": 4112,
+    "sha256": "7cec553ea6e3962c9ae5dc80a10bf241ebc7981909d08f995a9a2d366cfefdf8",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BE.md",
+    "size": 3919,
+    "sha256": "63bbc5c55f238e32bc3545d6c828e13e46a1eaa411b03c1fb7cf4f338fe86aea",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BF.md",
+    "size": 3909,
+    "sha256": "ef0ea477f38419fee0496af61a3e89c8b3eeb56c3763769abef054d02bd963a3",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BG.md",
+    "size": 4018,
+    "sha256": "fe532a0fac74bc9c2881a3e36b5c95d655a195d65e983194a15c103e237b0f67",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BH.md",
+    "size": 3551,
+    "sha256": "c577218a7fcbf1a87bd23be820422746393e86fe2bc84573e3a64b086ec35875",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BI.md",
+    "size": 3637,
+    "sha256": "cec0500c607c795e7da8c6f93bd89168708cc9bceb960759d93775166f84a1ae",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BJ.md",
+    "size": 6073,
+    "sha256": "39f9ede053bc3cbd5e91b16eb649f293ba059f6dd70d723871edcd9eefb158a3",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BK.md",
+    "size": 5978,
+    "sha256": "3a95d4c6c1a18308961a8eb73df1490566930a60daf8dd4a3da54f2248439379",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BL-next-harness.md",
+    "size": 7565,
+    "sha256": "ef71c0cc41ec986b327cb19ea1ed9170e2f46f9abb8ba1dc44b981e8e8ee299e",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BL.md",
+    "size": 8228,
+    "sha256": "d6c04a9b4bf3c106a6cf1c6ba5d55db236e7abb55497c775ff07f5b47ca8ce48",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BM.md",
+    "size": 8723,
+    "sha256": "212b110bf149eaca4935d8b7cbf45bd29d4a35ac42dad6d4d99a087571441302",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BN.md",
+    "size": 13406,
+    "sha256": "4262e1c75b5c7029a7ccb72dc8f85922145bd181bc4c6c762f9e342383907c57",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BO.md",
+    "size": 11322,
+    "sha256": "19c54d2dc0f0a6ef0b104cc6a967bafdc3afe6af48dfba9470ff1d08478736b0",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BP.md",
+    "size": 9408,
+    "sha256": "29662d781c854afd18ed6c0f2fb8d3571ecf07b9f2f35f2ea1c3b51725a5ed4c",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BQ.md",
+    "size": 7908,
+    "sha256": "c1a646c8483a10d86b51df137b5dd60391f5c187c8536345c9b603cb384ba52c",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BR.md",
+    "size": 7594,
+    "sha256": "bd390ed52bd212f882ec769e6911a7bcfa4ed5faee181282f79123c711c17b7f",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BS.md",
+    "size": 9473,
+    "sha256": "902d675765270a8fcd2575d337b8c388a01033540e50c619fad3f86dd34a7177",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BT.md",
+    "size": 10614,
+    "sha256": "6e7b528b91bf880d1be4e133763f848e9aa376c3aebd686b657e4781486722bd",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BU.md",
+    "size": 7052,
+    "sha256": "4df016613a172692ad99b19eef4f7004254ff780a7efbbd8834a437f628fc148",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BV.md",
+    "size": 9332,
+    "sha256": "cd81ef2c30c76b80031285785fcf96c343df048ffabbf169d71d5de49dec729c",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BW.md",
+    "size": 8123,
+    "sha256": "2ac7b5988721f6d920b753eb5db5ddcb6f7fc2661b51c6f7679c6d71eb43894c",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-checkpoint.json",
+    "size": 3252,
+    "sha256": "6f0f3c4066eed797bda9a220daca937b554e76cc3c442b4ff3b4c4c1b2be3876",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-claim.json",
+    "size": 1224,
+    "sha256": "cdd565ae57854f9c0e9da5aa5b2161246d9189585f1ae2f34cebf3a505c25004",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/bootstrap-input-drift.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/bootstrap-input-drift.stdout.log",
+    "size": 23110,
+    "sha256": "34918fbaff3bb720e514dd874e77cdb68388e387dcca108e0b77b2e6f0252a87",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "91fd8f53cf2b20c8e9409fd4b6895bf716987a6b91d82c2aaefe6567e53ec851",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/final.stdout.log",
+    "size": 48514,
+    "sha256": "3f39b52e0f156297fd7e0171360c73949c118e2373f3277e35ee5545906e02f9",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/fixture-failure.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/fixture-failure.stdout.log",
+    "size": 54392,
+    "sha256": "b1ac2c16ee15a59cca58db8e75a9c506f27f349d0fddf79ccf134cffa35598d6",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/red-four.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-runs/red-four.stdout.log",
+    "size": 34146,
+    "sha256": "4577677b3d1fdb9e330b2dfd4840d19bc259a1f61ffb2a0715e5f71f6052c5b8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-source.patch",
+    "size": 12380,
+    "sha256": "5fa15433ef944b8e563a71597a24d46ef3ae6fe1c68d70b54793f900a2fddfa6",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BD-validation.json",
+    "size": 6772,
+    "sha256": "634a790e75568acd59c1847b6899fa0a5a899f9ffde4cee3c679dc07a5d298e5",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-checkpoint.json",
+    "size": 2505,
+    "sha256": "c43527117304367c60e7cd0cd321d4312e52e73cc2817afc422fbf231eceacbc",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-claim.json",
+    "size": 1114,
+    "sha256": "f0d667955b5eb8fb3e217ba5812e99849a2bc4b42f465ab2b2becd0213ea3929",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "d10ec40a846f1863202d4a31df0a80cbf5aec7374c5699bc1ebdc0bb658617fc",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final.stdout.log",
+    "size": 56154,
+    "sha256": "fdc048c7b467914d17ba7b639eb0c0ad3d2d675f3210c9aefcc4f70f9c542a5c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red-verification.json",
+    "size": 313028,
+    "sha256": "785702e97b4c8686ad4a015f6b2f0ece88af0128d72c236e60b09d2afad8fcac",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/red.stdout.log",
+    "size": 27956,
+    "sha256": "053b6909ef29498a22619a095af7e6c02aac9f1ea9fc7cb76b998fb0f590c9cb",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-source.patch",
+    "size": 22577,
+    "sha256": "cd8bd9c3af59d65fafeda8c1f2ead6d00a9beddf57a639036c68ab45af0dc697",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-validation.json",
+    "size": 4703,
+    "sha256": "d7feafb86a6111a35d8baab3e5a079e54cf913478b3e0996950af1c176c9a9b4",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-checkpoint.json",
+    "size": 3173,
+    "sha256": "ac449d0e3ffe7821dec96f21be693d78fbebc1f4f5d079840544ce060e45a690",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-claim.json",
+    "size": 1128,
+    "sha256": "87aabf18e5fb8e9e0bc9c13a6e3c039eb284c96c0d7a52f6788684a5ceb5a834",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "2fe2819c5648c81537ac66aeccedd27308ec48c6e22439a4bf18e7de3e6781d2",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/final.stdout.log",
+    "size": 68214,
+    "sha256": "bee672b9fa0cac6d3ee85c128cf2ad3357337dfae56a095057894d118c5fb2b2",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/red-verification.json",
+    "size": 313028,
+    "sha256": "bb0698cbe8ba726956d272652d3b6dfa287941295169f6ee126e7cb311ac99e3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-runs/red.stdout.log",
+    "size": 51924,
+    "sha256": "9dd9a62246a77fd422887fc29fd705c75d6ea230f1bc4f1c07b5bb054ad18a48",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-source.patch",
+    "size": 9138,
+    "sha256": "3c4ab4d57c8acd36d203bffc199c2244f60b81be5973e03d106d40082f1b8ca0",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BF-validation.json",
+    "size": 5510,
+    "sha256": "4775300e02c3b06b170d7f4b3807a3c4b28addb176c0103325ea35994631faa5",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-checkpoint.json",
+    "size": 2717,
+    "sha256": "324683064d195535ff9232b3ec15544f8198c4963f3d5fa8e828079c349a4026",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-claim.json",
+    "size": 879,
+    "sha256": "635099f93742616b88950edf66c9cf81ef0bdd72a699dbd6fcd8a06d903cfe82",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/before-screen.dart",
+    "size": 20432,
+    "sha256": "50704ca93ed37f230aa9a81e183e584257788dec1801c756f9b3349e2d87dbd7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/before-test.dart",
+    "size": 55124,
+    "sha256": "31a5d4e57bd8e9e56d96a0bc1e44c8d2c102dbd4fcfe8214234cba6403a64bfa",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "4902d5ae3420316911fda4b0a6c0dd83ac4666e77caac60201e8854e139ab516",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final.stdout.log",
+    "size": 75852,
+    "sha256": "76f6af6ae539b53d14379fb09c5890de6c286ffe605eedd7ad691daa19c87cfd",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/initial-status.txt",
+    "size": 1696,
+    "sha256": "4f942229f12f46beb770b89dec6dcb2708e5fe57514fb5f8f70cf0f7fe6b43c3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red-verification.json",
+    "size": 313028,
+    "sha256": "c5ec0223c5562bc871351a64b8572f25e0d1f1f9ddf24aa2487560a987b27340",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red.stdout.log",
+    "size": 32864,
+    "sha256": "acd2e060e02ac7d536bd9e110b161b57b9065f7f04419cdd284f1ec65487290a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-source.patch",
+    "size": 5983,
+    "sha256": "f84e2d0fab25a8c7745c8808194aaa8cc927593a3b42bf26bf5b23a338b9477c",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BG-validation.json",
+    "size": 5547,
+    "sha256": "cdaa830f4f33b9024ccfb1004b854f500946c369b3b3e11acb21d44d827f17af",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-checkpoint.json",
+    "size": 3141,
+    "sha256": "121f7ccb6f60b5d74ddb82781256bac2e01ffaf0a199264b05ad830745ac51e2",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-claim.json",
+    "size": 906,
+    "sha256": "45f377f460f5e6102d82daf61026f78b3fb108ce63a0d5b6b057bf01ff029b63",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/analysis.log",
+    "size": 839,
+    "sha256": "fdb51948cab9f08e80526884f4faeab08719bbd4a164a46c2def8b304485dce4",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/before-test.dart",
+    "size": 59450,
+    "sha256": "986e5e8920244d7ccec7247f3aea4bcfb58594d14a21ea86727ce346435e22d0",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "783057ebcfe8cf0ce584dea6d4a568253698a40e6f1f59f3cde360d0022f04b7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/final.log",
+    "size": 314,
+    "sha256": "1ac234b78787372ed24a6d2d3f6b62eb8f4d7cbf08f3f50af7d0c4ac4f9bea60",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/final.stdout.log",
+    "size": 79872,
+    "sha256": "99b3d662d126e92b7e4e8815a2c6bae3f84682110e1e4b94d0595cae69eb0598",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/focused-verification.json",
+    "size": 313118,
+    "sha256": "e163c5b9906e830025d008fdb372e39d57d1c525f0edf29d531e41389fc05acf",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/focused.log",
+    "size": 314,
+    "sha256": "c5d3c2e8628a46c4c995cb0482a1648ca54c86888e3945c183aef80e7e3ac045",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/focused.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/focused.stdout.log",
+    "size": 17714,
+    "sha256": "ea344acabc1c4b153a325628fc0e892151e9cb54bf955e35e1d0d4fabeaa5a9f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/generated-pins.json",
+    "size": 1536,
+    "sha256": "a321703672d7e412f47b7db6af210694436f5e021e30db4e47f135d7f6cdd513",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-runs/initial-status.txt",
+    "size": 2046,
+    "sha256": "b08286250967b088cfddc7d6b210fd6d01d50a63474d2bc13c6bb86b027f698c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-source.patch",
+    "size": 7175,
+    "sha256": "08b1507934fc106847d6cc1ae92981169b34c454262ee32e78b7b6116a8d6674",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BH-validation.json",
+    "size": 6478,
+    "sha256": "99e50ef22d3b76f3cbc47c9306f06856619598b13018e4a43996935986e93735",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-checkpoint.json",
+    "size": 3915,
+    "sha256": "3b3c26d3ddecb72a340e36b090a09838716b89e7e271c9713eb57a9fd534b8e7",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-claim.json",
+    "size": 959,
+    "sha256": "218e84aaeaca94874cf2f4e0901f4028bb13afcb79ab328b0119b86dfecd4217",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/analysis.log",
+    "size": 839,
+    "sha256": "fdb51948cab9f08e80526884f4faeab08719bbd4a164a46c2def8b304485dce4",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/before-test.dart",
+    "size": 65852,
+    "sha256": "bd995f261327d0825c556e45316e79b943b5825114ddbf28857d0fca03ca31a0",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final-verification.json",
+    "size": 313219,
+    "sha256": "136f665a334f77e8be2bf0640efc666aa6a4ef648b14c3ab2b6bd9098b92f796",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final.stdout.log",
+    "size": 83492,
+    "sha256": "0cb4092c99a25bb8f15cdea09863ebde888325e2fbf1deca118f495b6343240c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/generated-pins.json",
+    "size": 1536,
+    "sha256": "a321703672d7e412f47b7db6af210694436f5e021e30db4e47f135d7f6cdd513",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused-verification.json",
+    "size": 313137,
+    "sha256": "8424e03df32b2378834238bbd192c313a8986b413d7c3d3ba0ff04f5a35b170b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused.stdout.log",
+    "size": 16106,
+    "sha256": "2ecf8dbfb4f8d73b2628b0ae3336e810f383eb93cf3241d5c67c1ddcda5eb429",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-status.txt",
+    "size": 2396,
+    "sha256": "08914f9751f81face76b9171b74e3e1968b345111cf75ca1fe846a6427d4855a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-source.patch",
+    "size": 5656,
+    "sha256": "1bf7fd9d6d29224098534236fa660f5e2353f6992c97af5ed2e7e96fffd637c4",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BI-validation.json",
+    "size": 6798,
+    "sha256": "d446dc9f7abb3e1097eedf8d93a4c99f112aaaabaa95c8562d36de04af8d2b0a",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-checkpoint.json",
+    "size": 2535,
+    "sha256": "b3646564f0cb2f12bbe500076707093956a4e7be297ddf522abcd7485ce9c4f0",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-claim.json",
+    "size": 566,
+    "sha256": "ef67caef7b86f19afbc1374b45dab61c9acc6467ea6f847ab33766ebd3d2ec9a",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/after-screen.dart",
+    "size": 62525,
+    "sha256": "03e138cbf29f3448b96422e26c2d78b6e3312c1d387fef0cd347bf1b937e9633",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/after-test.dart",
+    "size": 10340,
+    "sha256": "73d451492be0706a12ebb2335d9a2633e8c9dee887ca3c8e40e5db471aa6c894",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/analysis.log",
+    "size": 91,
+    "sha256": "c3bd8a4a5af20259b6d99fb073948b19e53b045cdc93d1eb8f63ec4386f2ffad",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/before-screen.dart",
+    "size": 59591,
+    "sha256": "adbadda813e962293735f65514effc7e589dac73a75279fe24607abe7fe3e27b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/before-test.dart",
+    "size": 3830,
+    "sha256": "8387f11e534369993ce98802d6f53dc7693adbf53ee4b912d8781cec19f2c2a7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/callback-red-verification.json",
+    "size": 313039,
+    "sha256": "981ed68e3b7d67f9bce5d6b6b18c604630bef8001aefba0149c7997aea2d0e16",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/callback-red.stdout.log",
+    "size": 23646,
+    "sha256": "567bee01b1eb10bdad3873c8bdadcf7d1a63399d0136f017952d8884c2808e5a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-status.txt",
+    "size": 2942,
+    "sha256": "bc59e3d74e89068694961d76f893cf97554b06bcf3bb73546d6a521e2e554b47",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final-verification.json",
+    "size": 313434,
+    "sha256": "68647ec238f8c71339b4a07a9f1fb1379a465e226f78ed8f66d24ca72cc6aa4d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/final.stdout.log",
+    "size": 78818,
+    "sha256": "f89dbe0b3b8b87380d5c2e25b0c0df658814357157a74530ae66ef0fde4bdeb1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/initial-status.txt",
+    "size": 2631,
+    "sha256": "eae5c2201d664577bae6f8fd78c34132dea0d71517586b2d29178bcf8a26eed4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected-verification.json",
+    "size": 313024,
+    "sha256": "5c6b208ee02f58d5365ee0b40844ce53112ebd4c3bb4f69e48f01b222beadac0",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-corrected.stdout.log",
+    "size": 95528,
+    "sha256": "af9ffc705906cc3287ccb36db51047ac74034c384026c8dfef329493a2e98427",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red-verification.json",
+    "size": 313024,
+    "sha256": "4257a2a2801c034ce247ba05d2ba411a7a0eb0a856bb23d43e8810f859cdc906",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-runs/red.stdout.log",
+    "size": 100952,
+    "sha256": "4a76cebf83d99b67aaa6fd7659cbddd16a4a38f42d33933d2a598b221cd4334b",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-source.patch",
+    "size": 19432,
+    "sha256": "aec2a7fb7cfb1d852232316cb59fc714c85807b7dbb9ab62c666d67ca40a22a9",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BJ-validation.json",
+    "size": 7039,
+    "sha256": "1f075dd8b3c5a43d06b109dfafe3250a01c6287527804e09c8b4b21c1e3a940b",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-checkpoint.json",
+    "size": 2379,
+    "sha256": "53e70558738ae5e1af02c8d37e6323654857c4427aa5630eb6c989acd9ed31e2",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-claim.json",
+    "size": 504,
+    "sha256": "556d785e8eb0d7690a030aaab2db08d2e364e987727f4bc8f03f82e1489f553b",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/after-screen.dart",
+    "size": 64564,
+    "sha256": "256a8a3c2892a5fb27fd7cd5c107e0beed5071d148e0effd5e87b851737bc42e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/after-test.dart",
+    "size": 14398,
+    "sha256": "3ea556eb818849b1b85d09751b1dbbf789103b67f7f564fda49c690c80dc1cbf",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/analysis.log",
+    "size": 94,
+    "sha256": "1626cf23ed7d65c43f8b46f34ca3ce1c9d190e1a39541b5e74b9d024dde10073",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/before-screen.dart",
+    "size": 62525,
+    "sha256": "03e138cbf29f3448b96422e26c2d78b6e3312c1d387fef0cd347bf1b937e9633",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/before-test.dart",
+    "size": 7704,
+    "sha256": "c478111d49147d0aaa0df08ebc62447156fc6bde4a7c6d4b76e86cef8db8a9c8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/final-status.txt",
+    "size": 3480,
+    "sha256": "009eedbcbcbaab52d95a135e0c4076a9d95894326fe1be2cc7c140ef9780a0a4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/final-verification.json",
+    "size": 313500,
+    "sha256": "abe2e247a10675fead756e6dfa75b4c35f2ac620e15372ce64d0ecf9c4dcdea1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/final.stdout.log",
+    "size": 120074,
+    "sha256": "990c9fdcbf713298a72887d95295e6e8ad1acbd04ca336308a5f45a6bcdc334d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/focused-verification.json",
+    "size": 313077,
+    "sha256": "79b6551ee8e5b5f699ecaabaccebc683fd1b2743f7f8fdf9860382d6cbf0234e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/focused.stdout.log",
+    "size": 21734,
+    "sha256": "beeb0368b7a6fbaf8d0a1c5e407f261569c68bf67cd41950594c00fc454d9c29",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/initial-dirty-pins.json",
+    "size": 923,
+    "sha256": "15c5b92fba9b0a123d3f0b3eae8272ebbce14d24aedb685de827fe614fbe86df",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/initial-status.txt",
+    "size": 3072,
+    "sha256": "8065fdcd5d4d0ff943d39a4b2c0e56af1170695a9ff1a8544b8d980a3aace172",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/intermediate-verification.json",
+    "size": 312987,
+    "sha256": "6fc2c75dde8cd7e85e9a9d32a06316b4b38ac9aff05f5e9d97803dc4cb0582b0",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/intermediate.stdout.log",
+    "size": 26328,
+    "sha256": "fa04b3322b865701a2b2ff2a76904548b7ed06032de2f236bce8b7e2c8cf555c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/red-verification.json",
+    "size": 312987,
+    "sha256": "9c679bae95274b2f6ebedc59f73fa0bfd7933f75f798a83a906abbd90af316ab",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-runs/red.stdout.log",
+    "size": 56942,
+    "sha256": "bee762bcd089a370996a7e3e94f30cefb45aa5b952e5700cb6d0c19e31bf606d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-source.patch",
+    "size": 14492,
+    "sha256": "57412c8b85a1e5613ae9d751ecd8d4c870e7cbbd4e6ee92e922f600e359cff0f",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BK-validation.json",
+    "size": 6575,
+    "sha256": "b1ee3dae8c0b903b7c2c1fc9c176d5b01e4b5a9dfee940cd0ff3973984947cad",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-checkpoint.json",
+    "size": 3555,
+    "sha256": "ed208b0bbfd831f3e461c7fe469d1825556e71aa79a2b2f15ea7a523cfc68ba3",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-claim.json",
+    "size": 758,
+    "sha256": "4e2ef1ec66c85de3c29fd7c552c69a7e5b4442bc3b8db8cb0d0e309fb5b31026",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-final-check.json",
+    "size": 346,
+    "sha256": "5f244143db7b67c2d4b72faae57e0413e6fd32cf9b34f2ed269b4fedb48d36cd",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/device-readiness.json",
+    "size": 1353,
+    "sha256": "5117c5ecd42dd6ececdd01d2048e1ee5751e6c2f98cbc52af5bcb3cd5b111027",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/initial-dirty-pins.json",
+    "size": 15205,
+    "sha256": "23ab7583d6e0f749b29a7498d8666bc61799c7650ef7368732d7e1c837090a93",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/initial-status.txt",
+    "size": 3585,
+    "sha256": "366e7434479ca67b1174c2f63a93c1d1de2d3be07990dbfdb024eea24263fdfe",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/inspected-source-pins.json",
+    "size": 1814,
+    "sha256": "fec6cba168ddbe92870dba6823e017be47539523bac91c7a1cc218d03f4a9d37",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/predecessor-verification.json",
+    "size": 360,
+    "sha256": "fea6263df9c1ee5c4a9f264c0540b1b3dcfe9c4b834c51d465cf6dc8f3749e19",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-runs/preservation.json",
+    "size": 291,
+    "sha256": "06727bf29e192d80ced8cb4c0740e4c44bb1bcaeaa14c69a6a65ee9c5a7c58d5",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BL-validation.json",
+    "size": 6139,
+    "sha256": "ab8fbde7f803f809bbe0f2784d0e3d6fd389f116b5dff0be5ced3d8aa4db55e5",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-checkpoint.json",
+    "size": 5640,
+    "sha256": "6e9efe1cab50e85b0e32dc331a47bb462913054b9059d2b4cad2e87806ad3b30",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-claim.json",
+    "size": 18722,
+    "sha256": "57869e5665c6c73d2719d327ab9e37e59e91490f7a2238903c01b61d78778592",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-controller-receipt.json",
+    "size": 527,
+    "sha256": "f65c9cc90aeeb5b246b5b0c76341fe7b08a9d5fc30dce7a7ecab295936dab915",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-final-check.json",
+    "size": 629,
+    "sha256": "76e04157e8929c6d187fa54c4b27275d7bd3842f57933e899fd043bf94e69f3b",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-run-artifact-pins.json",
+    "size": 7098,
+    "sha256": "33f35e86e310a803248b55e7c721089947e44d1b99c749e1ad5acefac7f1ca56",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/Explicit-Flutter-tests.stdout.log",
+    "size": 24146,
+    "sha256": "8a13c6b8ebc91427be4401fe8ce38b9854f5ded0ba6d2d806623246ddff43fdf",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-1-rejected.json",
+    "size": 317,
+    "sha256": "82c3ca7e2c5d610f05fb6bb0bfe0a72f1883514197221f67cafa418d14815820",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-2-exit.json",
+    "size": 67,
+    "sha256": "41bd618b51fc5a8c4309863ac964c6e4124bcd104b30a3eeae4998a0369e501e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-2.log",
+    "size": 1378,
+    "sha256": "c235113052eb4b41199a4a71e19b44fdfed9ef20ace7b84f469e57e8ea8cbdc2",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-3-exit.json",
+    "size": 67,
+    "sha256": "75192254066a5e0337ecd9fd3679614ef98a3ebb517a27ed4855834914458557",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-3.log",
+    "size": 1022,
+    "sha256": "e21c55dadbf75f2a5edc18d9d1bb9515f544c870f4477fdccae28daa67565a86",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-4-exit.json",
+    "size": 67,
+    "sha256": "a30efa5a50014e9be5dc68ac60ec37a7cc0259a8050d700df731dc46e455f171",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-4.log",
+    "size": 1022,
+    "sha256": "63e7d03dcfd1a6f7a6bcb59ce2ea40a9438f2034428df027e41396bf79914d99",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-exit.json",
+    "size": 67,
+    "sha256": "03296567c5291b22c76284b922c252ddd0f8db3e33d47797af0b6fa66b042fe1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-source.json",
+    "size": 132326,
+    "sha256": "fde9dbd3f9d56e0213b04b0dbbaff183f48a5040f3d790e5a718f68599ebb240",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build.log",
+    "size": 1649,
+    "sha256": "4870a0835813127453c00fa2973678014ff1c5e2da3c3248da03afec714d03ef",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/dart-analysis.txt",
+    "size": 200,
+    "sha256": "56b96da496beb24f135f570009085effe1bc69c274fe65c7dfe48313e9263aab",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/gradle-debug-dry-run.log",
+    "size": 43874,
+    "sha256": "ab48f366c678333c3755b3ef5d1964e973cb2ec2bbea633e3e5ea0bec13079c9",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-cli-gate.json",
+    "size": 1077481,
+    "sha256": "6f736071aea1344c390540d24cd4f282188507ca47dbebc9f0def93b4d60d0dc",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-flutter-gate.json",
+    "size": 313484,
+    "sha256": "c48b5e3799cea79705b54144cdf0bec8f5aa3ef4fccada8664a1a57a1ec840b6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-correction.log",
+    "size": 18233,
+    "sha256": "f5db2370e4451e2513d3f9c8a47bf84d75f5c3e5e260bd5a29382f2a2b4b232c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-final.json",
+    "size": 260,
+    "sha256": "bad0751bc19622e9c4fca96303889758c63dbae5de9e5036371e5d626af3e5a4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-final.log",
+    "size": 18233,
+    "sha256": "f5db2370e4451e2513d3f9c8a47bf84d75f5c3e5e260bd5a29382f2a2b4b232c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/merged-manifest.txt",
+    "size": 5571,
+    "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/result.json",
+    "size": 22222,
+    "sha256": "9fe62b47a4aca3d08015f7f6f8dfec71c607c54d1c64a192a35b4eded99f1747",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/seed-receipt.json",
+    "size": 494,
+    "sha256": "5c5a26f668f40dbf4faa44235f154a266f95136903fc287ee54dfda8d0a419c7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/verify-receipt.json",
+    "size": 470,
+    "sha256": "d36d1287aebc9a07dc3e8937eea62ee0b7160b1929844849aebbf8333d21b112",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-contract.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-contract.tests.ps1.stdout.log",
+    "size": 88,
+    "sha256": "c7f936c60d9485963ecd4c9af2668b960c306f1cfe013e3f25306b4007151100",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-isolation.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-isolation.tests.ps1.stdout.log",
+    "size": 160,
+    "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-runner.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-runner.tests.ps1.stdout.log",
+    "size": 192,
+    "sha256": "9bc9257a18331508570da0c2067f8cb60d33cca822d4d7750d9f897c2634f6f7",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/prebuild.json",
+    "size": 214,
+    "sha256": "44fac1f5564390b287696ee588c3bff2ae691dab63d5a6fb033eb73471900897",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/merged-manifest.txt",
+    "size": 5571,
+    "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/result.json",
+    "size": 3427,
+    "sha256": "5f13ea602d7d06929d69d7e81dc25579fe4efd907875da682163a6d2c1af7727",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BM-validation.json",
+    "size": 8385,
+    "sha256": "0d2b5b0a5b3327a081ccc3fe01dcfc7fb183121d554570b3baea10b993748ae0",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-checkpoint.json",
+    "size": 2753,
+    "sha256": "ecb97dce18cf78678cebc952a2fed9cb9f1416c9af5e95981f1d1dad2700fac9",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-claim.json",
+    "size": 898,
+    "sha256": "116d16e1531da69d511979bbc30af1b49773b5044fec8189d546bda613eb250a",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis-accepted.log",
+    "size": 2438,
+    "sha256": "a7fe09d5ccb95f4df98ca85f72cd5f9b9834c9a230aa29fd5c65c9d52db10ddc",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis-final.log",
+    "size": 2438,
+    "sha256": "a7fe09d5ccb95f4df98ca85f72cd5f9b9834c9a230aa29fd5c65c9d52db10ddc",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/analysis.log",
+    "size": 2632,
+    "sha256": "2cb4a4321d1a3b2cd0db59d59ae9f80d51cb2f2f08e72bf532817a58ba8e660e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.json",
+    "size": 313733,
+    "sha256": "4bef529b4b863cbc6d4b4d437f1b97d5ac6b87c70be57cf748c1ad05a2fe8f91",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-gate.stdout.log",
+    "size": 51822,
+    "sha256": "fc6c724bb9bf114d08d9d8a6424175ae4c4542589c3e30b22aaf885e56a3bab8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/1-today-1.0x.png",
+    "size": 15461,
+    "sha256": "2da1aa4e6bcd58e70db55e673274867a52e3a4d54548a2c8ad1269ba3e3e4122",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/1-today-2.0x.png",
+    "size": 21358,
+    "sha256": "4f0f5ac25d984559f3b20ebe5390899b80ea82729e1abcb4e2a9199a684bdffc",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/10-vocabulary-words-1.0x.png",
+    "size": 20707,
+    "sha256": "466bf73104c5b5c0cbd64d33a3c1e67c6c21f9fe6337b74c7616c5833d9b2498",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/10-vocabulary-words-2.0x.png",
+    "size": 26833,
+    "sha256": "67e817b635e5ddf3f380e3c22bc9dfd42307896947314140cc7e04511c2b1931",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/11-search-empty-1.0x.png",
+    "size": 20441,
+    "sha256": "89fd0871babcd49590785abdf2671089985393728dd7b52542d93888fb1c7806",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/11-search-empty-2.0x.png",
+    "size": 25735,
+    "sha256": "0e1a60726d5ff6055405ca78b7c2d35b8f94db7583ab843e3fdd6a00dd88d2a5",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/2-learn-1.0x.png",
+    "size": 13068,
+    "sha256": "8ae4e5823dacd02f62ea8588c7b9a68ac30dadc51fafd2ee7f7140ebe8330ec1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/2-learn-2.0x.png",
+    "size": 16333,
+    "sha256": "d632586be41fcf266e542a8775132632190e541767073d3dc210ad77300dfc16",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/3-vocabulary-1.0x.png",
+    "size": 20359,
+    "sha256": "f4da11c4341398ae851675a076873c02624435a80e1f9097951a6d64b39c5601",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/3-vocabulary-2.0x.png",
+    "size": 26518,
+    "sha256": "3573b0ec742da9055973871a5dff15fb63ee7436c8450a3bcfc3602c2b53b0db",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/4-profile-1.0x.png",
+    "size": 24377,
+    "sha256": "b4c76cdea00319cba61354674ec4213aa18cbc0b0310d3eec523ad2315fe6286",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/4-profile-2.0x.png",
+    "size": 35370,
+    "sha256": "7cc499fde4d0c578e277076e4b3efbc949c73f90349e67551bb1117cd0965f06",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/5-settings-1.0x.png",
+    "size": 40503,
+    "sha256": "86d0e3f7775481ab6d557a77ff719e0b40838e78816cbe892131c57d1b07654f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/5-settings-2.0x.png",
+    "size": 43140,
+    "sha256": "54b693c5bfd6f5b3af9fd3e0262180ca4f15073fe366bca18fd6dcd8cc1cf429",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/6-offline-1.0x.png",
+    "size": 16905,
+    "sha256": "a1d4ffb28faa64a89ff0be9c561592ce360043fdc75f5a4253d1aeed4f3c8d3d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/6-offline-2.0x.png",
+    "size": 25283,
+    "sha256": "28490e48a970754bb59a14cbb291dd592b3d63b657096f63aaae77706d5fd0d3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/7-category-dialog-1.0x.png",
+    "size": 33588,
+    "sha256": "86f811e03a591bb4b40046636e9c76647c184dbd6190571955c3e1c5ac54fa31",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/7-category-dialog-2.0x.png",
+    "size": 42835,
+    "sha256": "192d61ec7336888b180ddf8f2a822026b85eaa406a00c94cc9c57773b6b4af6f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/8-settings-lower-1.0x.png",
+    "size": 40503,
+    "sha256": "86d0e3f7775481ab6d557a77ff719e0b40838e78816cbe892131c57d1b07654f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/8-settings-lower-2.0x.png",
+    "size": 47634,
+    "sha256": "6424207f79612ee6d376764a21b7dfef7ad2df1af2f688c767d5107f2ffba8bd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/9-offline-details-1.0x.png",
+    "size": 21543,
+    "sha256": "7740c7ba008277f804a7a860eae4085c155f8f2595d0a7865c97ff14c2bc3db3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-renders/9-offline-details-2.0x.png",
+    "size": 36661,
+    "sha256": "88e538a4e4a44039bfd71ec6f50686762ad0f2af6f7f47d450cd1826df34b767",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-3.log",
+    "size": 5024,
+    "sha256": "986084471436e15a770eef8f4caa130e5cc7beac5e00288245be3bcab43fd948",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-4.log",
+    "size": 1502,
+    "sha256": "dca52913a8e3270cc72bdf043886354e06fb237ec8e1372e5d74cc4b848abb8e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-5.log",
+    "size": 4271,
+    "sha256": "f846d4d087217c70bc2ab9b5507d14a42b02559ea249a03ab18ca6a2020dd9fb",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/host-test-6.log",
+    "size": 1862,
+    "sha256": "94416dfacff518cb586939f181bf9023dd74fd18903b9970016f695ba24f08c3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/search-diagnostic.log",
+    "size": 1622,
+    "sha256": "ae56bc95798f1347d974f8a530905235e871e60e32629969e1a8d33f70d4a547",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-2.log",
+    "size": 453,
+    "sha256": "4ed3f922f2e165b947c55f4a06567abcc21e225283a393d357ab7ed9a8c8306c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-accepted.log",
+    "size": 312,
+    "sha256": "1d4e847803b1038dfcfc62eeb5f24f6995bbd994419b3f748c1ff39d182bfbfb",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-final.log",
+    "size": 312,
+    "sha256": "1d4e847803b1038dfcfc62eeb5f24f6995bbd994419b3f748c1ff39d182bfbfb",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope-render-final.log",
+    "size": 453,
+    "sha256": "bc120c4bd9084f2ba0d524f946d6d0ccd96923a1bafcf2d865fc18faac836a72",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-runs/verify-scope.log",
+    "size": 453,
+    "sha256": "0ee3c9fd3719d6c01c2c9cb256daf77a75e857cdbe6e88c8c74099fe4c0e87e2",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BN-validation.json",
+    "size": 10239,
+    "sha256": "1d1065d922d9e9c3837564301f9857d58c35291a47ef7f9cc7ac1d5ceb1ecec9",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-checkpoint.json",
+    "size": 4505,
+    "sha256": "4cec2ba357ad29747ab484b90c754212c56d653989d306b3a624c7aab9b55595",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-claim.json",
+    "size": 31928,
+    "sha256": "55c294cafe810c700d70469cf7bbd251b350afa465f44a8df40d136936873e45",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted-gate.json",
+    "size": 313799,
+    "sha256": "a260d09a0a5344d2855f75ee5d8948c7f20eca05dd3846aa784a83e02166c2b8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted-source.dart",
+    "size": 15673,
+    "sha256": "245035fe925628f79fd3fc9d15bed395e1e6e0868b9f7431ccaf61c8fedb01a8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted.stdout.log",
+    "size": 20254,
+    "sha256": "a267103c5fac829685be3bb6f8c9f83fb92b95a7feca5140266ff94831837f13",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/analysis-final.log",
+    "size": 65,
+    "sha256": "59f4136961857c640f5729134106599d02e8bab3bc16ae77f1e2177fbf85f758",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/analysis.log",
+    "size": 252,
+    "sha256": "36e3b1e6aa79f917884887dc3877d16ac226c7f7145ad52fdfb47ad7c63b528b",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/01-today-component-loaded-1.0x.png",
+    "size": 19230,
+    "sha256": "47785b905f29e7d63d99c8037981c46db8b662d4c0d58c1259b1cd955975776a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/01-today-component-loaded-2.0x.png",
+    "size": 28194,
+    "sha256": "fc84cc383136d5b866f16818f31eb2b8e41e6144732690826d3ce64ac363b7c7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/02-learn-starter-1.0x.png",
+    "size": 20466,
+    "sha256": "2f743384b4bb4d4e28920fa61498e16f791bf089cff352581eeee89ab30f7394",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/02-learn-starter-2.0x.png",
+    "size": 28573,
+    "sha256": "c96d48a36de8e961c7ff32fcb12506acfb34a2fb0a4509c8d5f52c9cb6e73532",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/03-learn-catalog-1.0x.png",
+    "size": 34924,
+    "sha256": "744446669f46c45b528aa2d606c93702300a815bc25a9a70feb364e3b12d6373",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/03-learn-catalog-2.0x.png",
+    "size": 37055,
+    "sha256": "8ed1a710685fef9e74212a46ffb48a74aee32786c115ceb8d2350e6c0e1f4425",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/04-mode-entry-1.0x.png",
+    "size": 38202,
+    "sha256": "84ce525b94d1884f8e2756ab0067e4c820e41c5d7fbb73117c6ac3907824aa1d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/04-mode-entry-2.0x.png",
+    "size": 38429,
+    "sha256": "70dd14264ccc52c4e8027644d30b9aa0b619055069ace66949252261c56971de",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/05-profile-loaded-1.0x.png",
+    "size": 39597,
+    "sha256": "a5582637f51730fb8c35cb9c7b94747e3dc3bbba9da6a8c93add719ae7646f86",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/05-profile-loaded-2.0x.png",
+    "size": 41726,
+    "sha256": "6e996aa203244f47956e97cd34ae60e8bddda7ce941853b692322e0437197127",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/06-profile-details-1.0x.png",
+    "size": 36769,
+    "sha256": "c901744c767e8f6e53de8525430e92c5ce38fe52bbe27f5a6beac5f94efc4267",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/06-profile-details-2.0x.png",
+    "size": 42372,
+    "sha256": "705f1cab06bffc3c1fc5b1b9c29e89a7f6cc68fafd3b5fb0187e81d03bec9169",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/07-profile-overview-1.0x.png",
+    "size": 52065,
+    "sha256": "781f350ad01afa6be71ee18b64996c3d2a285784834b2d6707557e4a9bc7b17d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/07-profile-overview-2.0x.png",
+    "size": 45127,
+    "sha256": "21386c31c7849ca1b1b6bd2277aa1efce80b08e2b6f17d712ecb58a5e53ae060",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/08-today-component-lower-1.0x.png",
+    "size": 19230,
+    "sha256": "47785b905f29e7d63d99c8037981c46db8b662d4c0d58c1259b1cd955975776a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/08-today-component-lower-2.0x.png",
+    "size": 28194,
+    "sha256": "fc84cc383136d5b866f16818f31eb2b8e41e6144732690826d3ce64ac363b7c7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/09-today-component-error-1.0x.png",
+    "size": 10815,
+    "sha256": "8895921d4727262b340e155aee6e52bd0faf7f0f1147de079c0baab33d244692",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/09-today-component-error-2.0x.png",
+    "size": 14930,
+    "sha256": "71ee53b14789e1ae551ac5c95b820cf14ae8045a9670af860630ab53ab2c08f4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard-gate.json",
+    "size": 313890,
+    "sha256": "ebbe4b8d7b6512791755809b14e45528c9840d6a643b33e0eaea39fd07c4e010",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard.stdout.log",
+    "size": 14096,
+    "sha256": "8d63a4cecb7c91874859515f11bc7e21aae76bc26f2dd6b3a7d670963a2869d8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile-gate.json",
+    "size": 313896,
+    "sha256": "18ff71ac413adead33f2b9715d3809526bece6f3ff5fe4cac499dded4982092a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile.stdout.log",
+    "size": 13292,
+    "sha256": "e231fa59dce2530a8ae7dd242f9a3eac221949c9b906014bcd5a73127bdfec24",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-1.stderr.log",
+    "size": 1914,
+    "sha256": "af539965d638526b228dec9e71f7f555914077c1cba063d51b7252c4972fcdb3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-1.stdout.log",
+    "size": 13778,
+    "sha256": "7cb50c1c0450d867013e3e6a6d70cde6718c03da20ba72cc622755b090e77e82",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-2.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-2.stdout.log",
+    "size": 24742,
+    "sha256": "d68abb796107f2b62981efb6b1c706ba689c360148510b35ac6f5fec4b4a8a10",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-3.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-3.stdout.log",
+    "size": 28630,
+    "sha256": "262edc9ca6ed598deb9182c1fb53445b2d4b44dfcd95cc6041160d787aa4e7d6",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-4.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-4.stdout.log",
+    "size": 26782,
+    "sha256": "324fe6164059600c0313caf6bb48a816cbb574ee49d02db53af2ed0314076b61",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-5.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-5.stdout.log",
+    "size": 12308,
+    "sha256": "5b1e2e0d0af8b433827686c912644564daffd57315da913f94713378da7f7dd3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-6.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-6.stdout.log",
+    "size": 27386,
+    "sha256": "5e3f9fa321db081ce1a2719fc1cdf94cf0d13bc52db0f5a1fe6c9202e3b2313e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-7.stdout.log",
+    "size": 20254,
+    "sha256": "a267103c5fac829685be3bb6f8c9f83fb92b95a7feca5140266ff94831837f13",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/selection-failure.stdout.log",
+    "size": 13294,
+    "sha256": "efccecfb77612e116c15e66cf0d6b55e61c41ff14e1b4e07edd2db6915b21ed9",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-1.log",
+    "size": 453,
+    "sha256": "cb3e0f27cb3c47256b5ff334b711f3ec1817b741921ca44582b24d668203e5be",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-2.log",
+    "size": 453,
+    "sha256": "41ed1f2a577a551c13fc418113f19c44c56e6adb96dc63b619d2f8fdbebd1e5d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-3.log",
+    "size": 453,
+    "sha256": "e530b681a2377c19b86a7116708a818614177ff13e9abcfafc20b9399422844c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-4.log",
+    "size": 453,
+    "sha256": "99671526c7b3f90169cd0a8fa07deada7be656e3209cd07da1ee454f37894090",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-5.log",
+    "size": 453,
+    "sha256": "98988f4ac7519d7b538fffd55955ddfdee6aeb93d2d2e69b2b5803adf937bf07",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-6.log",
+    "size": 453,
+    "sha256": "e3cc6ba9f9dd3d67058d2c0d43384750cfc37012a0406d3ed9526bb4566fe3c1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-7.log",
+    "size": 312,
+    "sha256": "4e8e194e7570dce788f09c5824bc1fa0f3e3408a7918f23b5e5b55feeeecf61e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-accepted.log",
+    "size": 312,
+    "sha256": "4e8e194e7570dce788f09c5824bc1fa0f3e3408a7918f23b5e5b55feeeecf61e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-final.log",
+    "size": 453,
+    "sha256": "f64676c08bf0eeb109fdcc8223399bb0e62b20a0b2d4551ad2205b325e293fa0",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-keyboard.log",
+    "size": 312,
+    "sha256": "eba110fa6a7c7ffaaa7fdfc5a68827e4e4030756db3a0308f9af5517de26441e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-profile.log",
+    "size": 312,
+    "sha256": "149095fb2b17c6598123f0da5bc402f25a8d754b7f498df48ddbdd376ebc87e5",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BO-validation.json",
+    "size": 14204,
+    "sha256": "3dd085bd1f962ce1a7b635df725154d49de15dedf41346d30ac998e7c675ec2c",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-checkpoint.json",
+    "size": 4894,
+    "sha256": "b65f819e3bb724ad940eb52e4c1d9bec54b8321fd6716860ec72ea0722f1caaa",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-claim.json",
+    "size": 37331,
+    "sha256": "f41fdc89ea236d0308bb19c73a4c05ec8b50d46ef435a28bcd0179b02e8c9334",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/analysis-final.log",
+    "size": 85,
+    "sha256": "f534183f55276be6686509a5d4b398411f2c811f266c2b33ae87cb16c5e2fc5c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/diff-check.log",
+    "size": 2048,
+    "sha256": "f6ab7c1013494ddbae3e260c068ac0a8428b815ae1c98b2c99b5d26f79191002",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/01-quest-empty-1.0x.png",
+    "size": 6935,
+    "sha256": "d653de3d07c9109c857955c9dca41a04c4aadd3632299f3f8cf434690386f473",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/01-quest-empty-2.0x.png",
+    "size": 8534,
+    "sha256": "ece42618362c6d4e928b15d812061124c71106ef7fb5d7317cfd618b57c01c68",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/02-add-empty-1.0x.png",
+    "size": 14636,
+    "sha256": "f80cc16dc9076de951f477029ffc7a8cf12394b305eb712ddfc175adbca8f2d6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/02-add-empty-2.0x.png",
+    "size": 22192,
+    "sha256": "8e99d063a4e043c0231c171b5dd6862deae9e11d3eb810fbb17a2f5e21754e35",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/03-add-validation-1.0x.png",
+    "size": 18952,
+    "sha256": "988a5d0c817b3158403139f4530401e5dba21d48ffd7831ea6aa350af9c2f22c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/03-add-validation-2.0x.png",
+    "size": 30347,
+    "sha256": "bd0736c9edeb9265bf1b5da9ab024df74aae107d86ab19df64f4322c1ff05dcd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/04-add-focused-1.0x.png",
+    "size": 19095,
+    "sha256": "17f7f8451d902037c641ab4a8585761b42fcf8656ceece661538745a61478fce",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/04-add-focused-2.0x.png",
+    "size": 29339,
+    "sha256": "ed1ad9354bcfdaeeb38be51391b7f7533eecbe22cc98adb5122b18f1d74d9236",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/05-cefr-chooser-1.0x.png",
+    "size": 19428,
+    "sha256": "73c85e90073c992966ced0e545df36852b883b4a4b09ff5bdcd5db51d40c8200",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/05-cefr-chooser-2.0x.png",
+    "size": 28070,
+    "sha256": "4ff3c08487c820574c6f278ccecfdbb0c0c18df97bb0924ac4af61f340c59082",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/06-add-ready-1.0x.png",
+    "size": 19487,
+    "sha256": "8e479e187bbe463f2e593404a103f397293ccf76fb78bdfc22f8eb76904ae819",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/06-add-ready-2.0x.png",
+    "size": 29990,
+    "sha256": "8798d9be8cae8cedbea8517f0a5121883b12de09d6d73e88a851852cef27b0ca",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/07-list-added-1.0x.png",
+    "size": 26428,
+    "sha256": "d52db8a7f8e1f308514fb90676b0025c3b0ce9d664faab481eee2644d641f7be",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/07-list-added-2.0x.png",
+    "size": 38225,
+    "sha256": "56efe5f50cf282cbd29e5e461546dd5c25534727541a2b4571bb6143bb4a11dd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/08-edit-loaded-1.0x.png",
+    "size": 19833,
+    "sha256": "a8da66dce455445fe2bc623c307bbbb6517d5a17cd9978678ecce179fa8a2aa3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/08-edit-loaded-2.0x.png",
+    "size": 30518,
+    "sha256": "5bd0aa72d3b518caaa38748ed76222688444ad2577ef425e3622b5fd7c9e1b29",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/09-list-edited-1.0x.png",
+    "size": 25383,
+    "sha256": "12abc0b0944af7309799d4013c0c27b3ef3823712b93e9e31458fd096e886b55",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/09-list-edited-2.0x.png",
+    "size": 35391,
+    "sha256": "404b8cf3097ddcf10c35e3b37d691d25efc9d61662e0e6d7f527aab01e7608b9",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/10-quest-active-1.0x.png",
+    "size": 17757,
+    "sha256": "5114979a69b14704105dce916e69eca1e7e019d8ddf49b8b7ea9b57146ced8b8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/10-quest-active-2.0x.png",
+    "size": 28388,
+    "sha256": "e04e946703b1b379b367a23b7e9fc215b915eb25350a90d17c2f8f4cd7ddc19e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/11-quest-details-1.0x.png",
+    "size": 35784,
+    "sha256": "35e512d7507075f02d96dc3988eda3d30190e731a1c28463916d3d3868d5b6e1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/11-quest-details-2.0x.png",
+    "size": 48856,
+    "sha256": "8bcd9696615b651d158da6de1038c08513506828b5cd22d877aa36d6ea4f0e05",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/12-quest-expired-1.0x.png",
+    "size": 18623,
+    "sha256": "035d26309e1be5210e141028e169bcad51acd1ee0e1be1e4858005ae871bb334",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/host-renders/12-quest-expired-2.0x.png",
+    "size": 29981,
+    "sha256": "da7f392b90befd692845f95249e73a616798d1b283a1c2140ff6b884b55b4df1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-gate.json",
+    "size": 313982,
+    "sha256": "9c88872b28b7327792412c15f1f71df9de29a308d11e28f7cc6a043a04e46ab6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/01-quest-empty-1.0x.png",
+    "size": 6935,
+    "sha256": "d653de3d07c9109c857955c9dca41a04c4aadd3632299f3f8cf434690386f473",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/01-quest-empty-2.0x.png",
+    "size": 8534,
+    "sha256": "ece42618362c6d4e928b15d812061124c71106ef7fb5d7317cfd618b57c01c68",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/02-add-empty-1.0x.png",
+    "size": 15305,
+    "sha256": "c4b8dba9e24052afef22cbefc6238842b333a50d077eab92a42051b553ccbc84",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/02-add-empty-2.0x.png",
+    "size": 22617,
+    "sha256": "957597fe09e30e785bfa823139e2a974bc6cd70834898f2be08a3a30eb37241f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/03-add-validation-1.0x.png",
+    "size": 19585,
+    "sha256": "012eb1d36004ab6d865f111448460e02654de998c42cc3231b3242b8f14ee18a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/03-add-validation-2.0x.png",
+    "size": 30756,
+    "sha256": "1687732da46154447124f8ea672ea3c8ce368f4dc8f98fc61753b517a5ef164a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/04-add-focused-1.0x.png",
+    "size": 19227,
+    "sha256": "b7dba79269f5c850f961509018f7510763eb2311d401aade529c6d93ccca03a8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/04-add-focused-2.0x.png",
+    "size": 28909,
+    "sha256": "17920118243c9a01679950e77107d2155495e88fd260d7f344a21860668e9c08",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/05-cefr-chooser-1.0x.png",
+    "size": 19101,
+    "sha256": "78073cb7fce90bcab7a41f5723fff1185e3185c344db9a8b609ae1b02a77cde7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/05-cefr-chooser-2.0x.png",
+    "size": 28070,
+    "sha256": "4ff3c08487c820574c6f278ccecfdbb0c0c18df97bb0924ac4af61f340c59082",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/06-add-ready-1.0x.png",
+    "size": 19504,
+    "sha256": "a7e2babe2ca3dd9d390506f51e20b559bd693fadfa6717d06f177f3a3ef9fe94",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/06-add-ready-2.0x.png",
+    "size": 30008,
+    "sha256": "7d586157907f726e3a69c6b668de6b332dac82c15cecf83a4f526cca5185efa9",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/07-list-added-1.0x.png",
+    "size": 26428,
+    "sha256": "d52db8a7f8e1f308514fb90676b0025c3b0ce9d664faab481eee2644d641f7be",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/07-list-added-2.0x.png",
+    "size": 38225,
+    "sha256": "56efe5f50cf282cbd29e5e461546dd5c25534727541a2b4571bb6143bb4a11dd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/08-edit-loaded-1.0x.png",
+    "size": 19833,
+    "sha256": "a8da66dce455445fe2bc623c307bbbb6517d5a17cd9978678ecce179fa8a2aa3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/08-edit-loaded-2.0x.png",
+    "size": 30518,
+    "sha256": "5bd0aa72d3b518caaa38748ed76222688444ad2577ef425e3622b5fd7c9e1b29",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/09-list-edited-1.0x.png",
+    "size": 25383,
+    "sha256": "12abc0b0944af7309799d4013c0c27b3ef3823712b93e9e31458fd096e886b55",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/initial-renders/09-list-edited-2.0x.png",
+    "size": 35391,
+    "sha256": "404b8cf3097ddcf10c35e3b37d691d25efc9d61662e0e6d7f527aab01e7608b9",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/isolation-1.0x.json",
+    "size": 339,
+    "sha256": "7812282a316389f33a5472c092cceca4e1a8c07ae49d14c3da8f2cc19ca5c3f4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/isolation-2.0x.json",
+    "size": 340,
+    "sha256": "d32caa75d9681737957b12db1e824a2056ceb365c4e1a9fb2d092775d33cc43f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/label-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/label-red.stdout.log",
+    "size": 20118,
+    "sha256": "04362112742434a731e498e3c2f6156da7adc2fd835a73d9f0bf7c6ce6982025",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-accepted.log",
+    "size": 312,
+    "sha256": "ef8c82d3bcd9de0e1b9bf21546f7c2aae2ba946a88feb0bd8e7e1d020dbdc78e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-final-host.log",
+    "size": 312,
+    "sha256": "ef8c82d3bcd9de0e1b9bf21546f7c2aae2ba946a88feb0bd8e7e1d020dbdc78e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-form-regression-gate.json",
+    "size": 314080,
+    "sha256": "c2e9087973ca94ee01b08905db581090d27c663486af303f111893236be602a8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-form-regression.log",
+    "size": 312,
+    "sha256": "4cded687d4515855bfc212b6f6a3f194d1a41277b39c4be5870e338baa8ea275",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-form-regression.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-form-regression.stdout.log",
+    "size": 14900,
+    "sha256": "8eceaf4fdfe27fe60975daa369fd2c8b80c6af4672f94efee7aa2a2ab25cd1e1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-host-1x-gate.json",
+    "size": 314068,
+    "sha256": "7b1481773a5ad58e9854dc778d50a155d76549e0a5b43a4ef22fc8a36fb3e8c2",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-host-1x.log",
+    "size": 312,
+    "sha256": "491894b07637b47a3c2af15edbec3192ddde6774d78f72b397ff2e3dded19c58",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-host-1x.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-host-1x.stdout.log",
+    "size": 17672,
+    "sha256": "84bf324fffe2046b66c1692a2d076c8dbd0340aa035a7117611ec9af932d29c8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-initial.log",
+    "size": 312,
+    "sha256": "ef8c82d3bcd9de0e1b9bf21546f7c2aae2ba946a88feb0bd8e7e1d020dbdc78e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-label-red.log",
+    "size": 453,
+    "sha256": "cd6f2a53e35497cf92b7b5ad0ab50a808ae7b67352be64c7812cf41101ec8afa",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-phone-gate.json",
+    "size": 314068,
+    "sha256": "a8d8bdf378889b51d57dcf886d6cef7c81332e6642171368cc25a8d918e26ae7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-phone.log",
+    "size": 312,
+    "sha256": "d816dcaf3aa5d0683ff7f01da79044c0d9bee83d4b0ded123872e51b71f7afe2",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-phone.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-phone.stdout.log",
+    "size": 17672,
+    "sha256": "06ee42f909d9ab87137c3faf77e239ff34a881a7b36805e9d947e56047e357b6",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-regression-gate.json",
+    "size": 314077,
+    "sha256": "d9d19cdf4e74954bd9c7d2b0486f8f5c92505358a166f0f9df6020cdd552f38a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-regression.log",
+    "size": 312,
+    "sha256": "2672566b04f1f95e70039dfbd5acbcbf16ad953ad60bb493bbcf86e13bbf0d43",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-regression.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-quest-regression.stdout.log",
+    "size": 14096,
+    "sha256": "bd2f5ae5bc340e259a8a42a628287eecab62c44e4b6067de2c4bd46d20d1897e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-vocab-regression-gate.json",
+    "size": 314064,
+    "sha256": "ebcb4166faecb078a7271037a9e349f08a949ec9e76c2f764f22cccfcc55fcee",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-vocab-regression.log",
+    "size": 312,
+    "sha256": "ac5a5270209eb90abd9f13316a30f313bbae3d93f3e811308a6543c951426f24",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-vocab-regression.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-runs/verify-vocab-regression.stdout.log",
+    "size": 14498,
+    "sha256": "50988392d9a529c16fb8f4374bc0e09d2a0bff16f0389dc54c13b60684a0bf8f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-source.patch",
+    "size": 639,
+    "sha256": "9a33c1af68485005f6df4743e214bd1f1a31aba13703b222ec8973f830a6edab",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BP-validation.json",
+    "size": 375460,
+    "sha256": "fc38d049cec5f7a800d88f9325743d70756c402fe7713b7c736cb61f21b3c2f5",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-checkpoint.json",
+    "size": 2972,
+    "sha256": "241978b3054a94d1e0b61926626aa65357edbae3f9e56ec35c91c638a0150c68",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-claim.json",
+    "size": 785,
+    "sha256": "2eddfd64e4fd8c1e4198e9674df173a6cc6c173dd72bc4fbb93e3d0e054a0466",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/analysis.log",
+    "size": 74,
+    "sha256": "b51a31cc60c3797f6ea663408081c17bd7ea2d80bf3ee11a6135b6402b6607b8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/diff-check.log",
+    "size": 2048,
+    "sha256": "f6ab7c1013494ddbae3e260c068ac0a8428b815ae1c98b2c99b5d26f79191002",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/final.stdout.log",
+    "size": 16612,
+    "sha256": "3b17c1d3f92cc428e9bb24c3331086f29e9dc32105da8b08ac111f5d1070abba",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/finalize.ps1",
+    "size": 9688,
+    "sha256": "752922c57339f1deab0df43131976739b05ba4f9b564866bd7d657072f2cab16",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/gate-final.json",
+    "size": 314192,
+    "sha256": "5c3ac5f2797cef727bcffd3b3580bcf6ca6fa8837029f7a89707e4da06a00758",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/gate-overview.json",
+    "size": 314268,
+    "sha256": "6f55879c4ff3fadea466a3c3559c4b188fb4abd3d4de12e9ca829d185e361c72",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/gate-profile.json",
+    "size": 314292,
+    "sha256": "96b18bf70e1a728ac1c1256791ed5fbb66fb6120f6b5aa658dc8022c79ad81cb",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/gate-reader.json",
+    "size": 314290,
+    "sha256": "0777e7a9a561f5310a74acbd9b7e85cbe3d44c161ef7c937d8bd04f97cf9456b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/01-profile-1.0x.png",
+    "size": 36624,
+    "sha256": "dac95cb08b49c9984ab43f8c5b0259e2073d503d5aee2f28d9dd35a447dd4593",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/01-profile-2.0x.png",
+    "size": 41726,
+    "sha256": "6e996aa203244f47956e97cd34ae60e8bddda7ce941853b692322e0437197127",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/02-effort-1.0x.png",
+    "size": 36224,
+    "sha256": "50d131d25b91b0b225832415bc2ac7ec59e0d9fcc4366e158ea99ccb1c7e7c2e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/02-effort-2.0x.png",
+    "size": 40842,
+    "sha256": "7ef1cdfdf4c9f2d6a75d435834dcad021e35b34ecaa2aa77414f2a962febe109",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/03-accuracy-1.0x.png",
+    "size": 36282,
+    "sha256": "1371e094d539a23a0568851e14118c6f5b705a2d19efe2ccc72dc3aaf002af3d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/03-accuracy-2.0x.png",
+    "size": 43691,
+    "sha256": "99ace8db37a5db548d5172709ab78377dcdab232240b93f205cfc0441138fe02",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/04-details-1.0x.png",
+    "size": 36282,
+    "sha256": "1371e094d539a23a0568851e14118c6f5b705a2d19efe2ccc72dc3aaf002af3d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/04-details-2.0x.png",
+    "size": 43691,
+    "sha256": "99ace8db37a5db548d5172709ab78377dcdab232240b93f205cfc0441138fe02",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/05-overview-1.0x.png",
+    "size": 53072,
+    "sha256": "1a24d9eebf3097f59bc3aec04500c0e9ae16a8a8f708ef85442e13ffe7737d4b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/05-overview-2.0x.png",
+    "size": 42974,
+    "sha256": "905faa4632d1681376da72aeb18e9d1ac3d207015e113767492bbb048f2c0ad4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-0-1.0x.png",
+    "size": 41845,
+    "sha256": "f0f5135a9fc277f8eff65b8ef645a9e23fd46ecfa6fdebc379fe83384faacc46",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-0-2.0x.png",
+    "size": 51937,
+    "sha256": "1d5545e51efb421867ae8651fc545dab6e1144ffbecb2d8aa650e01e55c0151e",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-1-1.0x.png",
+    "size": 35886,
+    "sha256": "109d9b7ab83b9b53906871ca660ba212c7eba1df9f9c7a8c14053bc21e7423fc",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-1-2.0x.png",
+    "size": 47080,
+    "sha256": "208f3f5516e17bee94ab41b56e1bccd1a0c0f0897f9957b6ca97794f34d21926",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-2-1.0x.png",
+    "size": 34284,
+    "sha256": "aae7a0ed18f9d884c93709fa8eca90710ebb82ecade19a36dca65b47b19ee937",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-2-2.0x.png",
+    "size": 32169,
+    "sha256": "f6242a76d39a054a0b6c866c333339412c7882ed549be5f6c93954168d4bbf7c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-3-2.0x.png",
+    "size": 37986,
+    "sha256": "2b5309bc28ac30997ea445e22367800b45a798343961800c1a5ddf01bd04c3a7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-4-2.0x.png",
+    "size": 37267,
+    "sha256": "bab038028c47f987f478a8c8cbf494293d544b109fa8bb7e67187a4674b54987",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-5-2.0x.png",
+    "size": 29333,
+    "sha256": "f0b840dba1584e7e5e6de2c8c608ea41890a3220e787f24e48953be0c5cbb6f5",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/host-renders/06-overview-6-2.0x.png",
+    "size": 31027,
+    "sha256": "5f1f57722eb2ebce5d1cb9d41ab3b9ee0b38a7f07303a4280def025dc6e85cab",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/initial-2x.log",
+    "size": 312,
+    "sha256": "b40da719eaba07d1d91785d62fc599abde0ee8577d5589c285fec69776547e4c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/isolation-1.0x.json",
+    "size": 225,
+    "sha256": "dff754b02caa2a2ae34bb9865ccd0f6367526bbdda513dd71f16da14b1d8123d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/isolation-2.0x.json",
+    "size": 225,
+    "sha256": "dff754b02caa2a2ae34bb9865ccd0f6367526bbdda513dd71f16da14b1d8123d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/overview.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/overview.stdout.log",
+    "size": 13292,
+    "sha256": "f5a780a5f7ce7bf03fa7bb86952bcccfe2b37f0275f8037885b6cd80584234d4",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/profile.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/profile.stdout.log",
+    "size": 13292,
+    "sha256": "d15a7f717be42d2a54b506e1d1d20f99b09509053d3de4f9ec97c2d2710754a0",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/reader.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/reader.stdout.log",
+    "size": 14096,
+    "sha256": "97e35f8d96254943178489dc130495a1ca0a9daa4cca9b75c9b0f8b4e82d5b83",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/selection-failed.stderr.log",
+    "size": 1862,
+    "sha256": "6f968b66aafbb52b31b2f6decbddb17ab3d1b9b7b7cb6e6e824764f2712d4701",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/selection-failed.stdout.log",
+    "size": 13294,
+    "sha256": "b4787e7d6343fc3c5661419247ab5b2f8686387690a0ba03a4f410c09b1c1ca1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-2x.log",
+    "size": 312,
+    "sha256": "b40da719eaba07d1d91785d62fc599abde0ee8577d5589c285fec69776547e4c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-final.log",
+    "size": 312,
+    "sha256": "44132937ddd9489600768a67d8caf1dcd45ea41a891fc27d3c7f61a593465eaf",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-overview.log",
+    "size": 312,
+    "sha256": "acd15231740fbc2844ad864c4549adc61a06e37ac290308bbc6de8196093431c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-profile.log",
+    "size": 312,
+    "sha256": "0196a9f956fc17488f39985e52cf793f47245da0da44e8f2291d64c00f6cbd0c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-reader.log",
+    "size": 312,
+    "sha256": "25b27330479129dd27c525bbcff1f43d4177cb476e032c84945729f4acbae10a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-runs/verify-regression.log",
+    "size": 453,
+    "sha256": "0b91285d1bcbf02d4dc51cf4f0c11178bc5404971317387cf9632038a191f2ee",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BQ-validation.json",
+    "size": 382670,
+    "sha256": "17f4bd0f821dd08df70198334d59f69cc295ed3b4e2378267e7810206df8bb94",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-checkpoint.json",
+    "size": 4931,
+    "sha256": "424e3cbb2cd655a21e75ab35b44d58ba840247921a4623b4b01acca884739623",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-checkpoint.sha256",
+    "size": 90,
+    "sha256": "a8820a8bdf9486ce2ab07bfe715229e922cccf994ce137360a9dd9af702741cc",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-claim.json",
+    "size": 676,
+    "sha256": "1bfebb5ed65a9f1b4a1b8f06d739d3cabba58eb2060ccb4fd05be787fe24fa45",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/analysis-final.log",
+    "size": 68,
+    "sha256": "c6301520abffcfc189578a903013ad2d18851548bb40cd87ad67cf665a92476c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/analysis.log",
+    "size": 68,
+    "sha256": "c6301520abffcfc189578a903013ad2d18851548bb40cd87ad67cf665a92476c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/diff-check.log",
+    "size": 1916,
+    "sha256": "49493885c7bd0791b49abf8722635b14b7a8783a55ba0eab130bdce8c11f773c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final-integrity.json",
+    "size": 460,
+    "sha256": "d6c06b77774457317bce6b630aab4e3cb1aa2762408e2c59bf2c11c8bf2beffd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final.stdout.log",
+    "size": 16200,
+    "sha256": "1d0836fa7d56e409366c6b1e9b5ad3fb74e924b52fb943b07fb65016a420086a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-final.json",
+    "size": 314378,
+    "sha256": "7033e39d30f018016fe8c2fc00b214f3a7dd8eb1747e3f35429245abe3da2b74",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-initial-final.json",
+    "size": 314442,
+    "sha256": "dd1c6b08507eda2466fbb7f8edb344b9f01070f7cab42c299d3d0688cf5d898b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-owner-final.json",
+    "size": 314475,
+    "sha256": "81cc6413cffc08aef7c7ca4ecbede5a1e9cde7749656dfaa2e699ad576ad9f55",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-secondary-final.json",
+    "size": 314479,
+    "sha256": "6b42af703e19559437d34fe54e441f242d8fd47f078d80994c086cf9fce9d41a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-summary.json",
+    "size": 989,
+    "sha256": "f18d8ec93eb203701ed441be49a78819730970001a7ddadcfd6a130fa72c4ac9",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/initial-final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/initial-final.stdout.log",
+    "size": 16508,
+    "sha256": "b9a43c23c207c0fd345b20562e2ee0a12b8a649df85f4c879cf09117421c19bf",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/owner-final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/owner-final.stdout.log",
+    "size": 14096,
+    "sha256": "40700b6060723121bd09963cf7a4d1b13949aaacaf38cd48e633dddc2e13f751",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/pre-existing-pins.json",
+    "size": 933765,
+    "sha256": "122a1ce860ac91d71084048337bbac8ce1d52dc23e491956a2202ded3775b63b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-241a26cc3058-935515d9.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-241a26cc3058-935515d9.stdout.log",
+    "size": 32010,
+    "sha256": "9a00d04a8b7c7dfc393045bbb7afb96048f83f974edf3104baf120ea0f90d65a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-24692bf39446-db7c23b3.stderr.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-24692bf39446-db7c23b3.stdout.log",
+    "size": 29678,
+    "sha256": "81399fabcbba08c9b986d4c38117ccb128ac52c9176996b2073939d5c550a04d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-false.json",
+    "size": 398,
+    "sha256": "6fc09733c8bd13b86445b427e9470d68152c049a7bc9b7b6a513e0897584691f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-true.json",
+    "size": 369,
+    "sha256": "70f081eb4cb545c10d99d9c7b829ae6a8db0cbf827a81a532d7a0c6b4ce617e5",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/secondary-final.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/secondary-final.stdout.log",
+    "size": 14498,
+    "sha256": "434dbd2aaa18e023b6a6f4387daace583de315581b7083c64c1c84e2f5c54cf3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/status-before.txt",
+    "size": 6533,
+    "sha256": "08cb2cae58c5fae8f5f98c2050cc3bb41d8492e5490e76929837761826562a19",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/today_preview_route_audit_test.dart.snapshot",
+    "size": 10107,
+    "sha256": "cd0359295970d176695ee95b8b5c01fad202592b366db5ee6d5f006aff48f595",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-final.log",
+    "size": 312,
+    "sha256": "528e2e1eb1a952f3ac7bfd15f8767ea0f17cddc80e9ad52fd5445378b609528b",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial-final.log",
+    "size": 312,
+    "sha256": "c5ffcc6c4c3d2006abdf4c9085cf678fd73e662f5ae745cfe431d08e480f075c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial-result-before-assertions.json",
+    "size": 314442,
+    "sha256": "f4196929886274a16e357b30954d1e0e1d26271f6f2c6e22daa6de616a07e344",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial.log",
+    "size": 312,
+    "sha256": "c5ffcc6c4c3d2006abdf4c9085cf678fd73e662f5ae745cfe431d08e480f075c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-network-fixture-result-before-assertions.json",
+    "size": 314378,
+    "sha256": "c4f13cba630435789b078ff02fd50c0ed5ed3a91c2f7809e2212e8241cb8f95b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-network-fixture.log",
+    "size": 312,
+    "sha256": "528e2e1eb1a952f3ac7bfd15f8767ea0f17cddc80e9ad52fd5445378b609528b",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner-final.log",
+    "size": 312,
+    "sha256": "578afaabc201416b722520aa2b0d25f7bcf0f385193d95b59032d125116f887e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner-result-before-assertions.json",
+    "size": 314475,
+    "sha256": "f3d6a667de78ce19c6e3f3c1fece17ada45b9ec5c6f88e8a547c518214cd8c7f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner.log",
+    "size": 312,
+    "sha256": "578afaabc201416b722520aa2b0d25f7bcf0f385193d95b59032d125116f887e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-recovery.log",
+    "size": 453,
+    "sha256": "c6bdf51a065858f5150dbcc6a89ce6c27fa901c1e42c4820ca50359577ea6661",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary-final.log",
+    "size": 312,
+    "sha256": "b592a522847b3571311997ab2948027b6e98cfeb9b4decadb592c7fdf9db2c1a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary-result-before-assertions.json",
+    "size": 314479,
+    "sha256": "f0a779ea1edd854e8a095484d93da525b17a114d35509823a54e00714f177e1d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary.log",
+    "size": 312,
+    "sha256": "b592a522847b3571311997ab2948027b6e98cfeb9b4decadb592c7fdf9db2c1a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-validation.json",
+    "size": 11936,
+    "sha256": "ec0fc02b3deb55d0c0bf98baa9b1da8e4d16cd85652420979b71604fe1c68015",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-artifact-receipt.json",
+    "size": 2151,
+    "sha256": "39fb97cdc28f5e402546ffefc6a457342b40320278150d31bbb79d9719d94651",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-checkpoint.json",
+    "size": 12214,
+    "sha256": "5349f30515d46f6fa392c1391d71bafc6802b5dcbbbb6a53e50ccd4e532e22f8",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-checkpoint.sha256",
+    "size": 66,
+    "sha256": "c4bc75e09142134cb10992696b129b9a442e13379a0ce6a728457802cc7971b0",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/acceptance-red.log",
+    "size": 453,
+    "sha256": "320573be46702a5c86f1c9e51a71ab4e382726f8a53462cba27b13bf81064437",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/acceptance-route-red.log",
+    "size": 453,
+    "sha256": "491678cb41a69180c484805828a37040363c1b5ad599ece9ec1fcb92d870d006",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/analysis.log",
+    "size": 69,
+    "sha256": "b3373cc2b9273555a4ffa22bc5e707f10b5741160dd10474cd669feec110fcd0",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/baseline.json",
+    "size": 986334,
+    "sha256": "1f21c1204a14cedbc7d2cd4fdc4b0eac6117815f8a99c9a10f6fa6b86b0ddfbe",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/checkpoint-red.stdout.log",
+    "size": 18312,
+    "sha256": "47a9a7e0d386ef1f8c4535f2214cc21c6054458d8766d34b11fc016371437115",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/final-integrity.json",
+    "size": 8442,
+    "sha256": "c574590511b8f6e57b179a9fe03f6ef6e0901103712be9116aeef27867797ff4",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/gate-checkpoint-red.json",
+    "size": 314482,
+    "sha256": "4ac64c80911680e854c8752a154455865f53b33858777911fc49328c0a9d7632",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/gate-route-red.json",
+    "size": 314482,
+    "sha256": "81710de0af3b022b08eb0f9c31d637ed3db9d59cd134beaeb33397b87ba28733",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/route-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-runs/route-red.stdout.log",
+    "size": 19232,
+    "sha256": "e9e59fab9fad5365cd99a9e22d783e49a0927f5d4668091eb1dc03d6957b40e1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BS-validation.json",
+    "size": 11566,
+    "sha256": "d84765b9fb3397db433ffa237282e59ac50ae3fa3274a06671544fb08e535783",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-checkpoint.json",
+    "size": 11669,
+    "sha256": "9db65abe9436b1e975711bdc503f02220cb00c833b66caf93e8815551b3def3e",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-checkpoint.sha256",
+    "size": 66,
+    "sha256": "db8bf79dad860a19be0398e571316a217022ec86b37d3724262c5c537debffa8",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/analysis-final.log",
+    "size": 76,
+    "sha256": "6be50801cb4d26413cd238650dfe9298efcc671570f1b7f88888915d2a9a9a57",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/analysis.log",
+    "size": 274,
+    "sha256": "a5f535cea6b6b42b2590a427d31fce47036f65df7353946225bf15620916c7c7",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/baseline.json",
+    "size": 980390,
+    "sha256": "595f6b174093d4781b3021a591f34a88602b42fe86c6e8ede61a1d1be108cbba",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/contract-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/contract-red.stdout.log",
+    "size": 22002,
+    "sha256": "312f7e3822a9883bf3f4a906a9af6ed30a00e91f948c63d43966b79ba357c250",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-integrity.json",
+    "size": 8956,
+    "sha256": "59a9b0c9bdb4c0332cd11bb79c72ce987a981add88296645fd4a6ac0e7104d30",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-red.stdout.log",
+    "size": 27958,
+    "sha256": "27cdfb58c81447f864d4d2367ca95e45d6075c46c0e195212c953620ef97a934",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-contract-red.json",
+    "size": 316292,
+    "sha256": "cbf5be223e85e6c3a06d47193e2500d0314e2a1a2f09a0872439761908ef9fb3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-final-red.json",
+    "size": 316354,
+    "sha256": "7202d4d9db7c267c883ffa501cc8e57021a6a5ebbefe7b8f0cc6da5a397179e1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-route-red.json",
+    "size": 314692,
+    "sha256": "41659e7678c2361169c6038842c851706a2146a55992ce8c152e6bfdf40bdb05",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-red.stdout.log",
+    "size": 20036,
+    "sha256": "107f4220541902e77e0d298a306eb0418d84ca8e9b48681a0ffca06bfff132ed",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-targeted.log",
+    "size": 453,
+    "sha256": "5381d1ff0f2ae8c7b255365b7474ba6e43cb2a714536d5b1bf406a9cbb1cd81a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/targeted-final.log",
+    "size": 453,
+    "sha256": "e3e793c6e9046f36121b35639660e1a8cac968f964037ff8ae1ddd9507eb72f8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-runs/targeted.log",
+    "size": 453,
+    "sha256": "9f3ad3607dd1e0eafa4573636a6ece1b676931bf7384891d0996d5726a4848d4",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BT-validation.json",
+    "size": 14723,
+    "sha256": "ebe1220fd31ba5fef72bbd395addcd09cfd8a11be9066a50246601217a5c7174",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-checkpoint.json",
+    "size": 3665,
+    "sha256": "b70177732d424b796c6c231310fa6ef7a296b1bb803010ca4c1d0699f2eb0fd9",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-checkpoint.sha256",
+    "size": 64,
+    "sha256": "b9e16701b4bbb30726f21eb09587d578fdd7a59afd75bf2aedbb6e22151c43cb",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.json",
+    "size": 628,
+    "sha256": "a15a9968b0ffa194bd395c95e340c28287416a1fd531b7fa1f8b235eb9caa8e7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.log",
+    "size": 351,
+    "sha256": "3dc00a68f18b489a37336c8e6483882113b331fc56f55073b7c375e7847c0090",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/baseline.json",
+    "size": 941009,
+    "sha256": "0ed982e64a4661f14295d894bdc79c39824b9415e90dddcab1c3f5291321d6cd",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/diff-check.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-route-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-route-red.stdout.log",
+    "size": 20036,
+    "sha256": "98573e385dddf6b8819a41408a58eec0244a416a99a1b35fc0261efd0062473e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-targeted.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/final-targeted.stdout.log",
+    "size": 103144,
+    "sha256": "93fa21664955482a303d19fa8839e23f5582f3b4fb657c206d837ade50f679b5",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-route-red.json",
+    "size": 316678,
+    "sha256": "1f12b8152cd9481b76aff4eded1a8aaac18729c88cc92d57d8bb1175035d7701",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+    "size": 317041,
+    "sha256": "d80ae32d7c11445ee5ce1e326d0a3f5c9328545278f9c44d4d6cc7254bc5fba8",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-initial-bt-red.json",
+    "size": 316292,
+    "sha256": "d6f7dc7edcb790b128409bcce2b7b77484cdaa5a3ce71b68926486c18db69ece",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-bt-red.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-bt-red.stdout.log",
+    "size": 21600,
+    "sha256": "0faa3b3df8b333a814327cbaba419e6b9c0c09097371def8d574470441d7620a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/initial-targeted-learning-0cbcbfe53ec4fa0a3d4200ef4e22b9ad4d914f3c133fc55e5a5d9c22b6ab73b4.json",
+    "size": 316292,
+    "sha256": "d6f7dc7edcb790b128409bcce2b7b77484cdaa5a3ce71b68926486c18db69ece",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/preservation-final.json",
+    "size": 2039,
+    "sha256": "1595ef8d517e7040b914f3064418cd024995790ea86c39e672850740cd8f8d6b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/source-paths.json",
+    "size": 652,
+    "sha256": "a399b718ffc649c28fb44fb3a2bc30bec29d7f6d7c7c54555b154c8d4aed97e6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-validation.json",
+    "size": 10712,
+    "sha256": "5d82cb5d0e076a2f2fbdbe4e86675ba261303616333fb96fe3624c58359ac459",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-checkpoint.json",
+    "size": 28379,
+    "sha256": "3733ecf0b511132782bf9c650a136b6503dfa1aae3a95c0e4bcae9f79d3262cd",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-checkpoint.sha256",
+    "size": 89,
+    "sha256": "97b68e6955f443944ffb17f1ce73d928dbff422170f7a96eb9a2a691fae2a3ad",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-60b479559adf-48217146/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-60b479559adf-48217146/Explicit-Flutter-tests.stdout.log",
+    "size": 12890,
+    "sha256": "09fc89d8d0ad157b901ab83f406f6d9c9ec230bd7b5f95d7c250a005fcf0aabe",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-6514450b73da-6ca45569/Explicit-Flutter-tests.stderr.log",
+    "size": 2156,
+    "sha256": "8d359b3705b4b656a19e55ada85d2b05ba72e591d3a9cdb9baed222e875afab3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-6514450b73da-6ca45569/Explicit-Flutter-tests.stdout.log",
+    "size": 14188,
+    "sha256": "a7a220a279a167c6d63c04e08631daa938c5e5454605c87dad8df1db297704c1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-9c462270dc87-2a51b617/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-9c462270dc87-2a51b617/Explicit-Flutter-tests.stdout.log",
+    "size": 14716,
+    "sha256": "57862df1106108e41b546bf634a604666990a914a5e4881091d1764e5aca4c0e",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/56896ed5ba04-3198653df935-f78cbf1d/Explicit-Flutter-tests.stderr.log",
+    "size": 1568,
+    "sha256": "006c98ebbdbce08c0e5b06fe759412b64f88522d09d20124a8d186efaa9d32ec",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/56896ed5ba04-3198653df935-f78cbf1d/Explicit-Flutter-tests.stdout.log",
+    "size": 12490,
+    "sha256": "46bcc8ad5b571d41e2f540ae7e2a1f9aabdda916c8943f429b2aaa8de596dc42",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-7f5d7492a41b-cff65863/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-7f5d7492a41b-cff65863/Explicit-Flutter-tests.stdout.log",
+    "size": 20034,
+    "sha256": "a1bb354a30618edf705126c55f62784b21768adb2ac4ba853aaf3c1488caf2be",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-c2ea0e8ef8f3-4f3bc431/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-c2ea0e8ef8f3-4f3bc431/Explicit-Flutter-tests.stdout.log",
+    "size": 22242,
+    "sha256": "0421cb61560c67839aa6b3136c775eca8ef422ec2f6484a3b81024095294140c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-0c5e6f7529b8-75928926/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-0c5e6f7529b8-75928926/Explicit-Flutter-tests.stdout.log",
+    "size": 14710,
+    "sha256": "85094f730541724ff3655f1574aa4241478ed5a74931efa828a9a011ebb1617f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-4cb0bd4f8a72-b07be9bb/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-4cb0bd4f8a72-b07be9bb/Explicit-Flutter-tests.stdout.log",
+    "size": 13292,
+    "sha256": "47de9dd3dea9d5999e693233a130ca75d34fdc35cb7ca92f2a3bb1b990515d14",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5cf18e0ba246-6de1ab6f4fa3-7e801e4f/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5cf18e0ba246-6de1ab6f4fa3-7e801e4f/Explicit-Flutter-tests.stdout.log",
+    "size": 29170,
+    "sha256": "7fd253df26f853a6895dc4ce512fa84e7d281225051137041b01eb84614fd03d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/64cee1890c48-e061f78484ee-63ec007d/Explicit-Flutter-tests.stderr.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/64cee1890c48-e061f78484ee-63ec007d/Explicit-Flutter-tests.stdout.log",
+    "size": 72522,
+    "sha256": "f3e724933b95680f5142debf935beea4866238d391081f2597d23088f02abf01",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/6e784d872fe7-6307508a4978-3c01e3c3/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/6e784d872fe7-6307508a4978-3c01e3c3/Explicit-Flutter-tests.stdout.log",
+    "size": 233336,
+    "sha256": "3801d132bc6f8e42f9ad97add4488c4c48fc479094be45c0410b264e284f1e1d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-0f3231bee9b9-8cfb2c6c/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-0f3231bee9b9-8cfb2c6c/Explicit-Flutter-tests.stdout.log",
+    "size": 13292,
+    "sha256": "2360f1e5b156bd34abea891e98905a7b72b4525af7b0df3dc9be3b6b74284f47",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-3198653df935-5a47d579/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-3198653df935-5a47d579/Explicit-Flutter-tests.stdout.log",
+    "size": 14598,
+    "sha256": "9fe606d3dfe10026ef91fb95f4564639ea100eb5d70363be5c93a7c98a84eeaf",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/97349adc4357-8b6caff3e453-2196e3fe/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/97349adc4357-8b6caff3e453-2196e3fe/Explicit-Flutter-tests.stdout.log",
+    "size": 59918,
+    "sha256": "57f5c49636f2a02fa3f1906bcca4b6144d0857eaf9f2e83779eba07110c240d3",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/BR-preservation-repair.json",
+    "size": 786,
+    "sha256": "bda38110b600af863cce6e9824d7ed6f6a7b07172afd53ce9ca9a6032f57f992",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-5fb7397b412e-de34ffe6/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-5fb7397b412e-de34ffe6/Explicit-Flutter-tests.stdout.log",
+    "size": 356930,
+    "sha256": "446556a1e0cbd5f212db710b75088cfc2436703887a342741668deb10e4a0a6f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-e50a7b53676d-b5181a70/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-e50a7b53676d-b5181a70/Explicit-Flutter-tests.stdout.log",
+    "size": 352936,
+    "sha256": "fb6c547fcb8ab58c747748a3e500ac05bd9ee0ef96bb2f29d0721673aa757085",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/analyzer-final.json",
+    "size": 4652,
+    "sha256": "1adb92772463fd67d087e02eb2e7fe65a352eb0e81faf2776028f26285fdac92",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/analyzer-final.log",
+    "size": 437,
+    "sha256": "5f7d5b3f7b892add53c80b4d05d314c187068cf82eb3ce6cd23fcb466c4c149d",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/baseline.json",
+    "size": 984681,
+    "sha256": "ceaaa7a7653737a4c68dd7195b7a1f2488ec825fd1fdd32beae84bf0eae19798",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-6d1c7321a31b-906d21d2/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-6d1c7321a31b-906d21d2/Explicit-Flutter-tests.stdout.log",
+    "size": 29534,
+    "sha256": "4327448d3991e81465e7c7896fb61ba36729339ea70eaef72d4930800855f267",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-e6ebd766512f-e25e27ec/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-e6ebd766512f-e25e27ec/Explicit-Flutter-tests.stdout.log",
+    "size": 100214,
+    "sha256": "a440f776d52a30c3e426ae9b6d36c74605457a19595cc99abd996d45169c871b",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/diff-check.log",
+    "size": 139,
+    "sha256": "986a72af4fc2490827f1d71af0047fd5d08664848c78b2546a05b1cb89553cd6",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/dirty-manifest-before-publication.txt",
+    "size": 28957,
+    "sha256": "d68a94ed1aff2f98196ad8c54955676d87cf2e6a529fec41fd15388280ac69a5",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-5fbdc542d7cb-beabb60a/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-5fbdc542d7cb-beabb60a/Explicit-Flutter-tests.stdout.log",
+    "size": 15488,
+    "sha256": "611818e7508d444b84a602548bc8af65ab62f4a15f2a493c78ab154877be9d93",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-60756bbfaac6-ac0126f7/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-60756bbfaac6-ac0126f7/Explicit-Flutter-tests.stdout.log",
+    "size": 23822,
+    "sha256": "5c048fce2fb3091d061d60bad3c47fcf43f59a226195c767e78b6a2cc23c8dfe",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-a49f83ea8627-a9ee9203/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-a49f83ea8627-a9ee9203/Explicit-Flutter-tests.stdout.log",
+    "size": 17554,
+    "sha256": "09423feca775f7c52b6652de5d667c189b9fa1b2861eb8ba5e272322d5f190b6",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-0f3231bee9b9-40b5ea57/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-0f3231bee9b9-40b5ea57/Explicit-Flutter-tests.stdout.log",
+    "size": 12488,
+    "sha256": "fabb106af9c5a140bd37a2dffc64421c4e9583b8eefbe6f454d2daf76ba0c27a",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-3198653df935-6353b836/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-3198653df935-6353b836/Explicit-Flutter-tests.stdout.log",
+    "size": 14596,
+    "sha256": "a4410053b0a3dd910b43518c6f695f201c89c1d3112e537236929f1e318888fa",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-2f9d56f16a57-1f64691b/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-2f9d56f16a57-1f64691b/Explicit-Flutter-tests.stdout.log",
+    "size": 78550,
+    "sha256": "5ebfe8af7a6bc70dbd7cd3ab725081e360bd1823f249d53d9ea340936ef189ce",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-f508cea03654-fa54aaaf/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-f508cea03654-fa54aaaf/Explicit-Flutter-tests.stdout.log",
+    "size": 60046,
+    "sha256": "e5b8533e99560b29fc452379f4200eb33cd51a58d29a16070eeb5b12e0ac0ced",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/fb414398a1e0-af78a1fc18aa-e6f2abac/Explicit-Flutter-tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/fb414398a1e0-af78a1fc18aa-e6f2abac/Explicit-Flutter-tests.stdout.log",
+    "size": 18830,
+    "sha256": "d6f44d308cf528b1ed23db4b3cdb75fccbc20fbaf8b56463c081a4f1fcd37725",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/final-consistency.json",
+    "size": 585,
+    "sha256": "2e8c6c4e28607036790ad769a5c0f074060012d276a14c29935678558df64a7f",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-final-targeted.json",
+    "size": 315960,
+    "sha256": "24047e867d383b64855a63e345ab630116f4866abe7251378b6b1444d648f10b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-pre-final.json",
+    "size": 315960,
+    "sha256": "670a5e7c08e7eab3179eae44ed1ed5f57eb0a9ec87a5ce8144b51696157594ba",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/predecessor-check.json",
+    "size": 144,
+    "sha256": "c1e5703502ec5dab3e0d801fdc9d16903402ceeb728f3ac755f125404cda3a6d",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/preservation-final.json",
+    "size": 6331,
+    "sha256": "970ec50d54c07932acac675703e17872890d3b4dc16cab8d384bdc1a9bd93d57",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/routes-false.json",
+    "size": 414,
+    "sha256": "3b870931b19455b6b451e50751275046656a4bcff1fe87043b132b855bcd3e86",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/routes-true.json",
+    "size": 385,
+    "sha256": "fdca73ed09ead8c767c229420707c6c3a3546c6d99ca109ddbe3b89b67c7a084",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/source-closure-final.json",
+    "size": 305,
+    "sha256": "f18e903c372bf249596b1a0133cd03eba74309217b3d939f13ca340d739155b9",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-21bdb116cd2d190504ab8475265b2479d95f86ed465abf824de7f9e95e452038.json",
+    "size": 317050,
+    "sha256": "ce1df7f675dc1c13303f90d6e9bc94e6139ec41b5fdda75b8d594a9b50fcbb4a",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-2d4ad93d0ac0c578b2430695f36fbab87b5ab40bc2ea8ebde8a9334a9effbe73.json",
+    "size": 316951,
+    "sha256": "01056af50a632b0bd1405796174a6924ce2f066a3aae71fed55f562c72c360d2",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-3d7a1850f9adf892b1ecba3af27c83ba819ffe967698098d943a5063f2795659.json",
+    "size": 316971,
+    "sha256": "be31e3f9a51ccb47953a3f17b85255cfb0e71d361c34f8f08f6c9c9ea5e94575",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-50e7ab6a2aefe5b0c10f58a4a322c62fc2ddf8c73999554cfa1ae3e417b026dd.json",
+    "size": 317097,
+    "sha256": "89bcd93e5ad3c265d262436470a6de141595d948972e273b84f6214d1eed0c56",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-887d46893c95ee4e0acc5a965b5d493367fc2b8f0f894faa1f0705f6f5eb6b9b.json",
+    "size": 317042,
+    "sha256": "b76711efc81d792b97cb439201908160c4d7373f91587dc3d8a55f4b499525ae",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-a49f10d3e2177d77efc3f770305cdd61ef43dbc47328b814044db9242b4284ac.json",
+    "size": 316945,
+    "sha256": "d62d1d6c9261364f164a022b329fc72fed737ed2d1c6753564ba93fcc2acc9ec",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-b1161832ec4f39a125751a8c4c0b6f003bad13fb3b2f6a114c0ae10c33261d07.json",
+    "size": 317049,
+    "sha256": "265f5d416d37a5f460a03921175a3ab7541f3e6f738fefdf963ec28119b8c8e7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-bea9d9d8933b9ac721f6ef0195d7d3091a376ab7634db6d7a199b0a24a756e22.json",
+    "size": 316967,
+    "sha256": "df084a4a834f0f0ba63417f746e9d474736052792706bf230365b9f2d4be43cc",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-00d011e4771440799f6426278509691bbf96b94834362505bbca41fd505412cd.json",
+    "size": 315546,
+    "sha256": "b0036d97a1739f383cc5d0980f7f8baa5703c5d576bf778b8779e2c8aaf33ca7",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-243ff6488904f439369568825efe57a18d09ba65dbc07cf074835481420f9319.json",
+    "size": 315093,
+    "sha256": "3fd900f308a43365dc376e23f1161acce5c4223340a4e0989de4d9a2d2cdb5b0",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-39b0380e55c1137ed61828260e14439a75e9323df3ad983991352f5d7090d374.json",
+    "size": 315470,
+    "sha256": "699eaf54bcb3d3c7ab86c3284673c7a4105065f9008fa8d4618ca7421a1ce20c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-a5228b448c6553f9c03c99fbec2feb170db08e3c9a32491bdbe92615fb90d9a8.json",
+    "size": 315452,
+    "sha256": "dd9fde689cb8c2dc4a4cedbfbeb0ed030e13439aa60b6aef873213623f3ad9da",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-cb4db0a6bfa7e23ae893ff2e0daa2fccaa0c5219e103b05ad0fa45c4c2fd1c83.json",
+    "size": 315845,
+    "sha256": "74ff34aeb54c2b435091a5495c6ce96432fa1c14049230ca073977dcc0e60adb",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-ee1664506166c169e90c79109ce7046887457385329cac5b98c571d0fad05436.json",
+    "size": 315517,
+    "sha256": "ff0661d8e80d65ca1192293ad5ea7fccc95f3a6557506a6f924bfe06911efd9c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BV-validation.json",
+    "size": 28519,
+    "sha256": "18957be288f8dadbcda8929dc16af5ef834d1f28970737a473ac2394b4ebce88",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
+    "size": 153473,
+    "sha256": "6f5cd06fe227606e03cce4d813e4fe6c130ee5e6f097c7c241281e4aae12b6a7",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.sha256",
+    "size": 89,
+    "sha256": "7ee2d014cea359cfee337523cb6153d1913cc11fa219721b12d4baa8074940c9",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer-clean.log",
+    "size": 98,
+    "sha256": "d5e1f9d780b05d7aed7391cb89f9a18d123633081e44b2ff58ee1c4bbabd2d8f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer-final.log",
+    "size": 1916,
+    "sha256": "46c80b6cae62de9fce7fac7693fb4c44ceb244ab00cbf3e169fe80f776e3d9f8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer.log",
+    "size": 2321,
+    "sha256": "a7fcf7c7e6fa0731d7753d2ef22946cbced1d12270bd9b972adc5c4439661bca",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/bm-isolation-preserved.log",
+    "size": 79,
+    "sha256": "4f5eca6c895842d76b86d5ad4971ce0e2965fb5c4a1ceaa24eddb088a2c2bf55",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build-manifest.json",
+    "size": 135574,
+    "sha256": "7e4bf51c69477b45882df79c2f24736ebef9028db57e599c196b5381edf683f3",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build-source-pre.json",
+    "size": 135379,
+    "sha256": "1052f917a12e078eccb49c47b4296aab106b396a3a1cb97ef54fafb91fdec2b1",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build.log",
+    "size": 1273,
+    "sha256": "8bdfe9427fd78ed077825ae0e46eb175c757f25fe8e0ade93a846acb5f4debe1",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-corrected.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-final.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-ledger-final.json",
+    "size": 1135767,
+    "sha256": "e70c6be9bfc47a81c524f149d0f6e679444d444822ff68d325f5e1c876cd1f3c",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-ledger-final.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate.json",
+    "size": 1133214,
+    "sha256": "6804cbab71b4123d4513131b8633913e836d92e9c538ff698ea169a17cbff3c6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-contract.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-contract.tests.ps1.stdout.log",
+    "size": 88,
+    "sha256": "21eb313d97e28f644a181470b0f21fda6f93e5947768cc2698e8228cedf20334",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-isolation.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-isolation.tests.ps1.stdout.log",
+    "size": 160,
+    "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-runner.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-runner.tests.ps1.stdout.log",
+    "size": 192,
+    "sha256": "9bc9257a18331508570da0c2067f8cb60d33cca822d4d7750d9f897c2634f6f7",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/final-check.json",
+    "size": 2777,
+    "sha256": "6b8dd54ee49db19786d83c7494a7d07ec8035ddbf314614e496f189b72917e4b",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-2.log",
+    "size": 2189,
+    "sha256": "f6aca160a9ecb7d565e36f52629789d764f517529af2e84a91f48fe1e00510a0",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-3.log",
+    "size": 3855,
+    "sha256": "a717e57beff0ad2a88aa27da50ee67458046bd333e2c1a9a8b6cc74562118186",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-4.log",
+    "size": 5052,
+    "sha256": "7e081558dbf39b7a72e0e7dc6015ca8d4e4ec40c86d71a34b6d82f6bd7d72a5c",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-5.log",
+    "size": 290,
+    "sha256": "199d0d3bd5fd6b24c56e74d5eeba09d2f5909617eefe7f01020b685c445c28a8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery.log",
+    "size": 4494,
+    "sha256": "8e0df0210484a5a496f7bf8f61ebca909f62ca1da3041b4537f778561bf27c67",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-Explicit Flutter tests.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-Explicit Flutter tests.stdout.log",
+    "size": 28966,
+    "sha256": "543fcab43231bb930ba20042945d964add0fb402412f0742718caf9896a6a4e8",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate-final.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate.json",
+    "size": 317155,
+    "sha256": "6b791864bf4b8571618654c2fdc79a1b9d6c3b03e3f30c1da3f92b0c261f2373",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/installed-apk.json",
+    "size": 768,
+    "sha256": "deb5eeb54874ce446aeb4052ec2015218ba1555786f07a64605aade1f13e08ff",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-contract.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-contract.tests.ps1.stdout.log",
+    "size": 88,
+    "sha256": "21eb313d97e28f644a181470b0f21fda6f93e5947768cc2698e8228cedf20334",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-isolation.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-isolation.tests.ps1.stdout.log",
+    "size": 160,
+    "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-runner.tests.ps1.stderr.log",
+    "size": 392,
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-runner.tests.ps1.stdout.log",
+    "size": 192,
+    "sha256": "9bc9257a18331508570da0c2067f8cb60d33cca822d4d7750d9f897c2634f6f7",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/merged-manifest.txt",
+    "size": 5559,
+    "sha256": "76ca1c67d8b2e61af315b7954d249c6526b1c827533dc403d678d0519eda7778",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/result.json",
+    "size": 22683,
+    "sha256": "8d85c8cc807fc7579c4bfa55861cb768edc26cd5ed1ca1f207ae294155978d27",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/seed-receipt.json",
+    "size": 2043,
+    "sha256": "366b26acd5364407cb1ef68a297c4cb960f397e839c2b0001ed1ba66bae2cd09",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/verify-receipt.json",
+    "size": 2019,
+    "sha256": "641a0dc430dbef93730765d430aa237323d3d0f0767cb430fd663f21a44d51a6",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-run.log",
+    "size": 69,
+    "sha256": "5ed82aed07955c576eb1aa5a5ddd78b2b2f474c958ef63cc6de318eaf6a4a181",
+    "category": "historical-output",
+    "wasIgnored": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/preflight/merged-manifest.txt",
+    "size": 5559,
+    "sha256": "76ca1c67d8b2e61af315b7954d249c6526b1c827533dc403d678d0519eda7778",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/preflight/result.json",
+    "size": 4462,
+    "sha256": "52ea144e858b114795c85511510f076003a1d8b870139431445c62c3db82a6b2",
+    "category": "historical-output",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
+    "size": 161881,
+    "sha256": "0794bc249e0220e9368f0d02f2ca79e9f8818be03b32edc4a2134fe08e33a873",
+    "category": "checkpoint-receipt",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/ready-backlog.md",
+    "size": 4994,
+    "sha256": "ded8482bbf2916708f85ee5e472e58e2396a5f3c4f1b89bfab4d04e5093d7e78",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "docs/development/ux-delivery/state.json",
+    "size": 54652,
+    "sha256": "fe9ab9e5829fcd43b4477bb8c1a30b654b4150e2e0e23fe68fc1cea3dd8d49f9",
+    "category": "active-docs",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/native_baseline_acceptance_test.dart",
+    "size": 3576,
+    "sha256": "3dfba3d454d7e844abb763f4dcd5c7defa8dc900f6bb0d666779c3b52e9e3b5a",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/native_resume_acceptance_test.dart",
+    "size": 3183,
+    "sha256": "e7ff43f604dec4aadc4e5042de98e0ce3a6723c4871e8b51027ca12ab7e2d26d",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/support/native_baseline_cases.dart",
+    "size": 7597,
+    "sha256": "80b0140ef32de43d5820cd3f3b2fbb9f688389eafe8071ce2a1f0041af9b0138",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/support/native_baseline_fixture.dart",
+    "size": 11743,
+    "sha256": "8fc8e64473b2b67073ed7ed69ccd1ef1cd33f799c8d79b88ac5fba26d9ed9405",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/support/native_resume_cases.dart",
+    "size": 2458,
+    "sha256": "1d893c8d901318966f4333c1d21eee8d5bbddc164cacc3c1d218623c48fe0866",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "integration_test/support/native_resume_fixture.dart",
+    "size": 9324,
+    "sha256": "612f38ae4e6f3b07ac35b0458c0c23eea34745a8fb7760c8b0ffd364fdd44189",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/application/learning_use_cases.dart",
+    "size": 64071,
+    "sha256": "cde832dce9ef64bb154c398c0f4086a8e211491cdf055e853cd2a8d95111e409",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+    "size": 22068,
+    "sha256": "d038c57663ee1ab725ca5889f806df237c702dfb915a9f06078d1eb61e87b363",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/application/ordinary_meaning_recovery.dart",
+    "size": 12816,
+    "sha256": "f122d1067d8d6969f7ed0bf4664f84ef64f7728f8647d182b500894a03dd72c6",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/data/drift_learning_repository.dart",
+    "size": 148006,
+    "sha256": "4dc62638eacc08f2b34e4f25896d9d2c7c928ca7966a2c7d06857ff79ddee855",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+    "size": 546,
+    "sha256": "56ac93e8c39b8b1d7b33a7a27e304ae945ba4e22501f4224fc4903b77a6c3897",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/domain/learning_models.dart",
+    "size": 14342,
+    "sha256": "a9dc5ec7c065241a498d8a908f84c73a84104c63c3a5a610002b388edf02c465",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/domain/learning_repository.dart",
+    "size": 9028,
+    "sha256": "1a1c9cd439f0152abbd29b32ddb7f7dcc90a31201bd04f38c8e9669776cd2b33",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/domain/meaning_quiz_composition.dart",
+    "size": 7539,
+    "sha256": "982e47da4ddc0834bd1fb9e622bc91be244a1d3b3f23fd9b81f8b281a726679c",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/learning/domain/ordinary_meaning_plan.dart",
+    "size": 12546,
+    "sha256": "a7392361e69fbe7f6f9fd9485603c3b81ada53aa291ae757f17e174176500556",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+    "size": 22877,
+    "sha256": "ebcc64fcb7bfb9e415d3db2e9eb3672a6dc6dc02c21428e4edc67e06a96f02e0",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/add_vocab_screen.dart",
+    "size": 25219,
+    "sha256": "800717b9f7ddbf1a61ac1927d206634a3c23d1ce8f6ffba5a9938afecba5624c",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/main_navigation_screen.dart",
+    "size": 99499,
+    "sha256": "ea50565220f1a8325d592e79fd42506570e0ee9e35afca17fe070802b0e93c4a",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/offline_content_manager_screen.dart",
+    "size": 20690,
+    "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/quiz_screen.dart",
+    "size": 38801,
+    "sha256": "b276ef69572b7d1d62c2e03c3e92cbba36591eec51ff6ef687742b90fee90885",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/setting_screen.dart",
+    "size": 64564,
+    "sha256": "256a8a3c2892a5fb27fd7cd5c107e0beed5071d148e0effd5e87b851737bc42e",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "lib/screens/vocab_list_screen.dart",
+    "size": 21845,
+    "sha256": "9f60c1bcf30f9a024d85a20618ad9c2d044cbb2e4c1974eaaf27a67ae0ded929",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+    "size": 42148,
+    "sha256": "5d8167f42327d032764038f60f3cbb9b19719ce7100ea03b0e5ae47af6fc5cff",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/screens/offline_content_manager_screen_test.dart",
+    "size": 69548,
+    "sha256": "bc8f536f7a6b0502495d4facc715bbddf49901fbeb2cfdace985904f4d6bbec8",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/screens/offline_content_settings_entry_test.dart",
+    "size": 14398,
+    "sha256": "3ea556eb818849b1b85d09751b1dbbf789103b67f7f564fda49c690c80dc1cbf",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/screens/quiz_screen_test.dart",
+    "size": 97887,
+    "sha256": "6b3ed4206b345e5592e2f28f00e28f37a317bb6f45b77343659bd93d77c11730",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/screens/setting_screen_data_erasure_test.dart",
+    "size": 10340,
+    "sha256": "73d451492be0706a12ebb2335d9a2633e8c9dee887ca3c8e40e5db471aa6c894",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/baseline_host_ui_audit_test.dart",
+    "size": 12145,
+    "sha256": "fe31deb7b8ec9a369e9a77034682b2dc89a11faef2d562d6ce4ba8e53847de0e",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/composed_host_ui_audit_test.dart",
+    "size": 15673,
+    "sha256": "245035fe925628f79fd3fc9d15bed395e1e6e0868b9f7431ccaf61c8fedb01a8",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/forms_host_ui_audit_test.dart",
+    "size": 17319,
+    "sha256": "98df93281b885741554fd6759fda1809c823387bb064b54982010e852cbe4216",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/native_baseline_fixture_test.dart",
+    "size": 2609,
+    "sha256": "eb2e1f22bb59b2bc89675d451b5163b3abdff50137f1a3053c9e7d27ca2cc28d",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/native_baseline_navigation_test.dart",
+    "size": 1545,
+    "sha256": "df69135bb47ada9bd2162f200e407abddb51311deb128d1bd8d0097a87629035",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/native_resume_fixture_test.dart",
+    "size": 2147,
+    "sha256": "0d5ceee085dd5adf90ad162e8b9673c6c9633f9cdcc9a0d100fb6a0741e05b6f",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/populated_profile_host_ui_audit_test.dart",
+    "size": 12686,
+    "sha256": "a1bc8c7322783d285a8597c6a83581642e9db02f913b3e8048596edd0f5dc2e4",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/today_preview_route_audit_test.dart",
+    "size": 10186,
+    "sha256": "b30522f5ee62a67828e267eb47af7929dcb59f75e2838eb635233b136a76f1dc",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "test/support/today_quiz_resume_contract_test.dart",
+    "size": 16155,
+    "sha256": "5c0ef21fea9fa420c26cf70b1cefb1ac2a3a9ae572eef4dd586d7007bd42e925",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/native-baseline-contract.ps1",
+    "size": 3566,
+    "sha256": "a931b3e8d67db5b57d4e0bed5a093ea7b4fd27c6704806c663b1f8ed56d09ac3",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/native-resume-contract.ps1",
+    "size": 4381,
+    "sha256": "02d7d2981ff2c09f266c6c578500af77653e0118f962ffd283034845f43fde75",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/run-native-baseline-acceptance.ps1",
+    "size": 8755,
+    "sha256": "bb725868ab264cf80175c33439421ca3c141518af115490ec35e6a94a4a1af9e",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/run-native-resume-acceptance.ps1",
+    "size": 8811,
+    "sha256": "d03894f80f315625b295e056be578ea9a1614173b9a41efad466a78ade5933f3",
+    "category": "source",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-baseline-contract.tests.ps1",
+    "size": 4009,
+    "sha256": "0a994ea32b5dbf44f29d90d00757c5ce14eda2cdf75c1d41f4ff6eddd127c839",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-baseline-isolation.tests.ps1",
+    "size": 1515,
+    "sha256": "15887b5de483cd3f7725a869b6f1873bb7f37c9cff6abf547b8584c9153f5b66",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-baseline-runner.tests.ps1",
+    "size": 5172,
+    "sha256": "d25997a7c9c3f3d8970c3086e254257cdaa20820798a0448f3252eff5763ef37",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-resume-contract.tests.ps1",
+    "size": 5462,
+    "sha256": "106d277054a0154d4e633839e368b6f6d25d25f515d824b22a52da438e31fea6",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-resume-isolation.tests.ps1",
+    "size": 1505,
+    "sha256": "dd14277e2cf602ea881dc1d1270cce48b25310aa829797fddfd1efcb9c667c10",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "tool/cli/tests/native-resume-runner.tests.ps1",
+    "size": 5297,
+    "sha256": "769a04b57d2c2962518cb04786bfd4a2c6399ff0a906333c32df882d9d0b2139",
+    "category": "tests",
+    "wasIgnored": false
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.cc",
+    "size": 1810,
+    "sha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.h",
+    "size": 303,
+    "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "linux/flutter/generated_plugins.cmake",
+    "size": 878,
+    "sha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "size": 1857,
+    "sha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.cc",
+    "size": 2416,
+    "sha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.h",
+    "size": 302,
+    "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  },
+  {
+    "path": "windows/flutter/generated_plugins.cmake",
+    "size": 1075,
+    "sha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "category": "generated-source-line-endings",
+    "wasIgnored": false
+  }
+]

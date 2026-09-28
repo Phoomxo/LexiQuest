@@ -1,0 +1,15 @@
+{
+  "package": "S01-BE-offline-callback-lifetime",
+  "threadId": "01a0dec5-b093-7f20-b0c0-f5318ab6ccba",
+  "identitySource": "CODEX_THREAD_ID and CODEX_SESSION_ID",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessor": "01a0deb6-099b-7010-a49b-3ff84a2c62e1",
+  "predecessorReleased": true,
+  "predecessorPins": "All three BD source pins and all nine artifact hashes verified before claim",
+  "preserved": "Entire BD dirty delta and seven generated line-ending-only files",
+  "writeSet": ["lib/screens/offline_content_manager_screen.dart", "test/screens/offline_content_manager_screen_test.dart", "docs/development/ux-delivery/README.md", "docs/development/ux-delivery/state.json", "docs/development/ux-delivery/S01-BE.md", "docs/development/ux-delivery/evidence/S01-BE-*"],
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested; runtime model/effort/tier not exposed. No external inference or billing probe.",
+  "soleWriter": true
+}

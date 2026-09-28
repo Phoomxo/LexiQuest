@@ -1,5 +1,7 @@
 # Backup categories and recovery
 
+Current BD–BW source checkpoint: see `S01-BX.md` and `evidence/S01-BX-checkpoint.json` for the exact Git snapshot and verification. `evidence/S01-BX-local-only-inventory.json` inventories current ignored bytes retained in the canonical checkout; these are local-only, not part of any remote ref. The historical BC backup below remains unchanged.
+
 1. Source and version history: remote backup branch and local source-history.bundle. Snapshot is through S01-BC; earlier checkpoints retain their actual names, not invented v1-v5 releases.
 2. Historical delivery reports, receipts and test records: original paths at backup commit c22cdaa3a11b83c8e3ce84151672ed8dab11a4e1. Use git show COMMIT:path for a specific record.
 3. Ignored evidence, media and byte-exact dirty overlay: preserved-overlay/ under C:/Users/Phet/LexiQuest-Backups/2026-09-26-S01-BC. Inventory includes each path, size and SHA256. This evidence backup is local, not uploaded to GitHub.

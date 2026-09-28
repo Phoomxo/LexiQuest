@@ -1,0 +1,15 @@
+{
+  "package": "S01-BH-cancel-catalog-recovery",
+  "threadId": "01a0dfee-ddd1-7993-a2a1-02671c278a95",
+  "identitySource": "CODEX_THREAD_ID",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessor": "01a0ded7-eed6-7ae1-9070-e518e56a7cd6",
+  "predecessorReleased": true,
+  "predecessorPins": "BG source pins and validation artifacts verified against actual SHA256 before claim",
+  "soleWriter": true,
+  "routing": "Current model deterministic fallback; not Jev-selected. Model/effort/runtime tier not exposed in environment. Standard/default requested; no external inference.",
+  "scope": "Offline fake cancellation-triggered catalog failure/retry and pending read across owner replacement. Coverage candidate; no defect assumed.",
+  "atUtc": "2026-09-26T22:57:36.845Z"
+}

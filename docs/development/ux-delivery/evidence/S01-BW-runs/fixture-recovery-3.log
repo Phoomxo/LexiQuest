@@ -1,0 +1,47 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart
+00:00 +0: BW verify rejects absent seed and traversal
+00:00 +1: BW disk close reopen restores exact feedback with every table unchanged
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: Isolation counters: research=0 outbox=3 network=0; synthetic outbox=[{operation_id:
+achievementUnlock:achievement:local:synthetic-bw-host-owner:first_answer:1:1, owner_id:
+local:synthetic-bw-host-owner, entity_type: achievementUnlock, entity_id:
+achievement:local:synthetic-bw-host-owner:first_answer:1, operation_kind: upsert, payload_version:
+1, base_revision: 0, state: pending, attempt_count: 0, next_attempt_at_utc_ms: null, lease_token:
+null, lease_expires_at_utc_ms: null, last_attempt_at_utc_ms: null, created_at_utc_ms: 1790553600000,
+acknowledged_at_utc_ms: null, failure_code: null, attempted_mutation_json: null}, {operation_id:
+achievementUnlock:achievement:local:synthetic-bw-host-owner:first_correct:1:1, owner_id:
+local:synthetic-bw-host-owner, entity_type: achievementUnlock, entity_id:
+achievement:local:synthetic-bw-host-owner:first_correct:1, operation_kind: upsert, payload_version:
+1, base_revision: 0, state: pending, attempt_count: 0, next_attempt_at_utc_ms: null, lease_token:
+null, lease_expires_at_utc_ms: null, last_attempt_at_utc_ms: null, created_at_utc_ms: 1790553600000,
+acknowledged_at_utc_ms: null, failure_code: null, attempted_mutation_json: null}, {operation_id:
+attempt:attempt:synthetic-bw-host-session:1, owner_id: local:synthetic-bw-host-owner, entity_type:
+attempt, entity_id: attempt:synthetic-bw-host-session, operation_kind: upsert, payload_version: 1,
+base_revision: 0, state: pending, attempt_count: 0, next_attempt_at_utc_ms: null, lease_token: null,
+lease_expires_at_utc_ms: null, last_attempt_at_utc_ms: null, created_at_utc_ms: 1790553600000,
+acknowledged_at_utc_ms: null, failure_code: null, attempted_mutation_json: null}]
+
+When the exception was thrown, this was the stack:
+#0      baselineAwait (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_baseline_cases.dart:120:24)
+<asynchronous suspension>
+#1      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart:18:22)
+<asynchronous suspension>
+#2      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#3      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  BW disk close reopen restores exact feedback with every table unchanged
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +1 -1: BW disk close reopen restores exact feedback with every table unchanged [E]
+  Test failed. See exception logs above.
+  The test description was: BW disk close reopen restores exact feedback with every table unchanged
+  
+00:05 +1 -1: Some tests failed.
+
+Failing tests:
+  C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart: BW disk close reopen restores exact feedback with every table unchanged

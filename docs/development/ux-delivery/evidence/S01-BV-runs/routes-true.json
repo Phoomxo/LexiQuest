@@ -1,0 +1,16 @@
+{
+  "scope": "HOST_SYNTHETIC_REAL_BOOTSTRAP",
+  "preview": true,
+  "composition": true,
+  "seedChangedOnly": [
+    "learning_sessions"
+  ],
+  "tablesUnchangedByNavigation": 58,
+  "networkCalls": 0,
+  "reviewHistoryRoutes": "PASS",
+  "legacyResumeRejectedWithoutMutation": "PASS",
+  "quizRehydration": "NOT_RUN",
+  "native": "NOT_RUN",
+  "userTrials": "DEFERRED",
+  "fallback": "PASS"
+}

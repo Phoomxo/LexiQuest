@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BG-offline-cancel-refresh",
+  "atUtc": "2026-09-26T18:25:40.2530230Z",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0ded7-eed6-7ae1-9070-e518e56a7cd6",
+  "writerStatus": "RELEASED",
+  "status": "PAUSED_BY_USER",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "hostTests": 94,
+  "newTests": 8,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "986e5e8920244d7ccec7247f3aea4bcfb58594d14a21ea86727ce346435e22d0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-source.patch",
+      "sha256": "f84e2d0fab25a8c7745c8808194aaa8cc927593a3b42bf26bf5b23a338b9477c"
+    }
+  ],
+  "validation": "docs/development/ux-delivery/evidence/S01-BG-validation.json",
+  "report": "docs/development/ux-delivery/S01-BG.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BG-claim.json",
+  "inputClosure": {
+    "mismatches": 0,
+    "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final-verification.json",
+    "count": 1563
+  },
+  "sourceState": "Uncommitted cumulative BD+BE+BF+BG. Seven inherited generated files retained; no cleanup/commit/push.",
+  "changedFiles": [
+    "lib/screens/offline_content_manager_screen.dart",
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BG.md",
+    "docs/development/ux-delivery/evidence/S01-BG-*"
+  ],
+  "runningProcesses": [],
+  "nextExecutableStep": "Wait for explicit user resume. No package start or successor dispatch.",
+  "nextCandidate": {
+    "sourceBasis": "_cancel now invokes _load; _load uses generation/serial and existing retry UI, but this trigger has no dedicated catalog fault-injection test",
+    "status": "COVERAGE_CANDIDATE_NOT_REPRODUCED",
+    "executeOnlyAfter": "Explicit user resume",
+    "scope": "Cancellation-triggered catalog recovery when catalog fails or remains pending across owner replacement"
+  },
+  "successorThreadId": null
+}

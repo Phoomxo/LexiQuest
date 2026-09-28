@@ -1,0 +1,76 @@
+{
+  "statePin": {
+    "path": "docs/development/ux-delivery/state.json",
+    "sha256": "f2284bb9917209dab2a23a172de1ce00fdf7889b8e8af1ff6007668ce58ac0f9"
+  },
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "preservationPin": {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/preservation-final.json",
+    "sha256": "1595ef8d517e7040b914f3064418cd024995790ea86c39e672850740cd8f8d6b"
+  },
+  "engineering": "INITIAL_ADMISSION_IMPLEMENTED_HOST_VERIFIED",
+  "bsResume": "OPEN_RED_QUIZSCREEN_EXPECTED_1_ACTUAL_0",
+  "gatePrePost": [
+    {
+      "status": "Failed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-initial-bt-red.json",
+      "pre": "799a128fe15fa3e3cb16fdd695779609bcc947bba39d99a1121f22ac363a3194",
+      "name": "initial-bt-red",
+      "post": "799a128fe15fa3e3cb16fdd695779609bcc947bba39d99a1121f22ac363a3194",
+      "exitCode": 1
+    },
+    {
+      "status": "Passed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "final-targeted",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 0
+    },
+    {
+      "status": "Failed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-route-red.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "final-route-red",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 1
+    },
+    {
+      "status": "Passed",
+      "record": "docs/development/ux-delivery/evidence/S01-BU-runs/analyzer-final.json",
+      "pre": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "name": "analyzer-final",
+      "post": "7005252282961944432e430ddcbbfa53ae5ff9d79bfcca4717095580e0fc9c03",
+      "exitCode": 0
+    }
+  ],
+  "successorThreadId": null,
+  "receiptPolicy": "Immutable writer release for bounded initial-admission engineering only. No source/artifact writes after publication; controller review stored separately.",
+  "writerStatus": "RELEASED",
+  "status": "READY_FOR_CONTROLLER_BOUNDED_PASS_BS_OPEN_RED",
+  "sourceClosureMismatches": 0,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "nextExecutableStep": "Controller reviews BU receipt. Next package: controller draft/feedback/pending identity restore and Today reopening the exact admitted plan/session; preserve BS required RED until end-to-end passes. No successor dispatched.",
+  "schemaVersion": 1,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "runningTestProcesses": [],
+  "sourceClosurePin": {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-runs/gate-final-targeted.json",
+    "sha256": "d80ae32d7c11445ee5ce1e326d0a3f5c9328545278f9c44d4d6cc7254bc5fba8"
+  },
+  "branch": "codex/ux-current-after-s01-bc",
+  "package": "S01-BU-frozen-meaning-admission",
+  "stateRevision": 147,
+  "reportPin": {
+    "path": "docs/development/ux-delivery/S01-BU.md",
+    "sha256": "4df016613a172692ad99b19eef4f7004254ff780a7efbbd8834a437f628fc148"
+  },
+  "acceptance": "132_TARGETED_PASS_ANALYZER_CLEAN_NOT_FULL_RESUME",
+  "validationPin": {
+    "path": "docs/development/ux-delivery/evidence/S01-BU-validation.json",
+    "sha256": "5d82cb5d0e076a2f2fbdbe4e86675ba261303616333fb96fe3624c58359ac459"
+  },
+  "writerThreadId": "01a0e574-5343-76d1-80c0-0819c996b2a0",
+  "sourceClosureEntries": 1582,
+  "releasedAtUtc": "2026-09-28T01:12:56.6435247Z"
+}

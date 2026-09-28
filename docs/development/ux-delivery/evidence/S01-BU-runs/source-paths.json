@@ -1,0 +1,13 @@
+[
+  "lib/features/learning/domain/meaning_quiz_composition.dart",
+  "lib/features/learning/domain/ordinary_meaning_plan.dart",
+  "lib/features/learning/domain/learning_models.dart",
+  "lib/features/learning/domain/learning_repository.dart",
+  "lib/features/learning/application/learning_use_cases.dart",
+  "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+  "lib/features/learning/data/drift_learning_repository.dart",
+  "lib/screens/quiz_screen.dart",
+  "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+  "test/screens/quiz_screen_test.dart",
+  "test/support/today_quiz_resume_contract_test.dart"
+]

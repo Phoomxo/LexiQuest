@@ -1,0 +1,15 @@
+{
+  "package": "S01-BF-offline-operation-feedback",
+  "threadId": "01a0decf-4e77-70a3-a358-e6743faaa6f5",
+  "identitySource": "CODEX_THREAD_ID and CODEX_SESSION_ID",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessor": "01a0dec5-b093-7f20-b0c0-f5318ab6ccba",
+  "predecessorReleased": true,
+  "predecessorPins": "Three source pins and six artifact hashes independently verified before claim; controller verified HOST_PASS74 closure.",
+  "preserved": "Cumulative BD+BE changes and seven inherited generated files",
+  "writeSet": ["lib/screens/offline_content_manager_screen.dart", "test/screens/offline_content_manager_screen_test.dart", "docs/development/ux-delivery/README.md", "docs/development/ux-delivery/state.json", "docs/development/ux-delivery/S01-BF.md", "docs/development/ux-delivery/evidence/S01-BF-*"],
+  "routing": "Current model deterministic fallback, not Jev-selected. Standard/default requested; runtime tier unverified. No billing/provider probe.",
+  "soleWriter": true
+}

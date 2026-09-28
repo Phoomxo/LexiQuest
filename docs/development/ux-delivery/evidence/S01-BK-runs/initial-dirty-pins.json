@@ -1,0 +1,26 @@
+[
+  {
+    "path": "docs/development/ux-delivery/README.md",
+    "sha256": "C070406FA719049D5CF5086DC18CFD1F2F62EEF73540DCA87B01B81AFA4FD00E"
+  },
+  {
+    "path": "docs/development/ux-delivery/state.json",
+    "sha256": "695C8230E9CC67EBF544DC4176BDBE82520E9051C4AA45ACFE4B7898BD55055A"
+  },
+  {
+    "path": "lib/screens/offline_content_manager_screen.dart",
+    "sha256": "7880B182411B23EEFB48F5A3C5EAFC067C2796EDC1E29F5B4780D27E17292271"
+  },
+  {
+    "path": "lib/screens/setting_screen.dart",
+    "sha256": "03E138CBF29F3448B96422E26C2D78B6E3312C1D387FEF0CD347BF1B937E9633"
+  },
+  {
+    "path": "test/screens/offline_content_manager_screen_test.dart",
+    "sha256": "BC8F536F7A6B0502495D4FACC715BBDDF49901FBEB2CFDACE985904F4D6BBEC8"
+  },
+  {
+    "path": "test/screens/setting_screen_data_erasure_test.dart",
+    "sha256": "73D451492BE0706A12EBB2335D9A2633E8C9DEE887CA3C8E40E5DB471AA6C894"
+  }
+]

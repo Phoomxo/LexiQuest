@@ -9,6 +9,9 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val ariLocalTest = providers.gradleProperty("ariLocalTest").orNull == "true"
+val nativeBaselineTest = providers.gradleProperty("nativeBaselineTest").orNull == "true"
+val nativeResumeTest = providers.gradleProperty("nativeResumeTest").orNull == "true"
+check(listOf(ariLocalTest, nativeBaselineTest, nativeResumeTest).count { it } <= 1) { "Choose one isolated debug identity." }
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -41,6 +44,18 @@ val releaseProvenanceReady =
 
 android {
     namespace = "com.lexiquest.app"
+    if (nativeResumeTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeResume/AndroidManifest.xml")
+            java.srcDir("src/nativeResume/kotlin")
+        }
+    }
+    if (nativeBaselineTest) {
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/nativeBaseline/AndroidManifest.xml")
+            java.srcDir("src/nativeBaseline/kotlin")
+        }
+    }
     compileSdk = 36
     // Pinned because the APK integrity gate verifies locally compiled LiteRT
     // custom ops with build-id-descriptor-insensitive canonical hashing while
@@ -82,6 +97,8 @@ android {
             if (ariLocalTest) {
                 applicationIdSuffix = ".ariTest"
             }
+            if (nativeBaselineTest) applicationIdSuffix = ".nativeBaselineBm"
+            if (nativeResumeTest) applicationIdSuffix = ".nativeResumeBw"
         }
         release {
             signingConfig = signingConfigs.getByName("release")
@@ -107,6 +124,13 @@ gradle.taskGraph.whenReady {
     if (ariLocalTest && allTasks.any { it.name.contains("Release") }) {
         throw GradleException("Ari local test is debug-only.")
     }
+    // Debug builds also contain mergeDebugArtProfile/StartupProfile tasks.
+    // Match the artifact variant, not any occurrence of the word Profile.
+    if ((nativeBaselineTest || nativeResumeTest) && allTasks.any {
+        Regex("^(assemble|bundle|package|compileFlutterBuild)(Release|Profile).*").matches(it.name)
+    }) {
+        throw GradleException("Native baseline is debug-only.")
+    }
     val isReleaseArtifact = allTasks.any { task ->
         task.name.startsWith("packageRelease") ||
             task.name.startsWith("bundleRelease")
@@ -129,7 +153,7 @@ gradle.taskGraph.whenReady {
 
 tasks.configureEach {
     // The isolated test package never initializes Firebase or cloud services.
-    if (ariLocalTest && name == "processDebugGoogleServices") enabled = false
+    if ((ariLocalTest || nativeBaselineTest || nativeResumeTest) && name == "processDebugGoogleServices") enabled = false
 }
 
 kotlin {

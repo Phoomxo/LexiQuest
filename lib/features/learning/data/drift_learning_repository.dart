@@ -1,4 +1,7 @@
 import 'dart:convert';
+import '../domain/ordinary_meaning_plan.dart';
+import '../application/ordinary_meaning_recovery.dart';
+import '../domain/meaning_quiz_composition.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -44,6 +47,7 @@ import '../application/current_activity_evidence.dart'
 final class DriftLearningRepository
     implements
         LearningRepository,
+        OrdinaryMeaningContentRepository,
         PagedQuizWordRepository,
         LearningEvidenceReplayRepository,
         LearningSessionLifecycleRepository,
@@ -54,6 +58,7 @@ final class DriftLearningRepository
         LearningActivitySessionHistoryRepository,
         PinnedLearningContentRepository,
         ExactPinnedLearningActivityRepository,
+        OrdinaryMeaningOperationRepository,
         PairPinnedLearningActivityRepository,
         PairMatchingSessionPurposeReader,
         ReviewSessionLearningRepository {
@@ -83,6 +88,12 @@ final class DriftLearningRepository
        );
 
   final db.AppDatabase database;
+  @override
+  Future<List<VocabularyWord>> readMeaningLexicalWords(
+    List<String> ids,
+  ) async => lexicalVocabulary == null
+      ? const []
+      : await lexicalVocabulary!.readPinnedByIds(ids);
   @override
   Future<PairMatchingSessionPurpose> read({
     required String ownerId,
@@ -586,6 +597,27 @@ final class DriftLearningRepository
           throw StateError('Pinned checkpoint content is no longer exact.');
         }
       }
+      if (canonicalCheckpoint.state['kind'] == OrdinaryMeaningPlan.kind) {
+        final plan = OrdinaryMeaningPlan.decode(canonicalCheckpoint.state);
+        plan.validateBinding(session, frozenContent);
+        final current = [
+          for (final pin in frozenContent)
+            _quizWordFromRow(byId[pin.identity.id]!),
+        ];
+        final lexical = await readMeaningLexicalWords(
+          plan.questions.map((q) => q.word.id).toList(),
+        );
+        plan.validateCurrentContent(
+          current,
+          composeMeaningQuiz(
+            plan.session,
+            direction:
+                plan.session.sessionConfiguration?.direction ??
+                SessionDirection.mixed,
+            lexicalWords: lexical,
+          ),
+        );
+      }
       if (session.id.startsWith('reading:')) {
         final reading = AssociativeReadingCheckpoint.fromJson(
           canonicalCheckpoint.state,
@@ -986,12 +1018,16 @@ final class DriftLearningRepository
     final requiredOwnerId = _required(ownerId, 'ownerId');
     final sessionId = _required(checkpoint.sessionId, 'sessionId');
     final activityType = _required(checkpoint.activityType, 'activityType');
-    if (checkpoint.revision < 1 ||
-        checkpoint.revision > maxActivityRecoveryCheckpoints) {
+    final checkpointLimit =
+        activityType == 'quiz' &&
+            checkpoint.state['kind'] == OrdinaryMeaningPlan.kind
+        ? LearningActivityRecoveryLimits.maximumOrdinaryMeaningCheckpoints
+        : maxActivityRecoveryCheckpoints;
+    if (checkpoint.revision < 1 || checkpoint.revision > checkpointLimit) {
       throw RangeError.range(
         checkpoint.revision,
         1,
-        maxActivityRecoveryCheckpoints,
+        checkpointLimit,
         'revision',
       );
     }
@@ -1041,6 +1077,15 @@ final class DriftLearningRepository
       ownerId: requiredOwnerId,
       session: session,
     );
+    if (canonicalState['kind'] == OrdinaryMeaningPlan.kind ||
+        latest?.state['kind'] == OrdinaryMeaningPlan.kind) {
+      await _validateOrdinaryProgress(
+        requiredOwnerId,
+        session,
+        checkpoint,
+        latest,
+      );
+    }
     if (activityType == 'associativeReading' &&
         (sessionId.startsWith('reading:') ||
             canonicalState['kind'] == 'associativeReading' ||
@@ -1168,6 +1213,117 @@ final class DriftLearningRepository
       throw StateError('Reading owner is no longer active');
     }
   }
+
+  Future<void> _validateOrdinaryProgress(
+    String ownerId,
+    db.LearningSession session,
+    LearningActivityCheckpoint checkpoint,
+    LearningActivityCheckpoint? latest,
+  ) async {
+    await _requireReadingOwner(ownerId);
+    final next = OrdinaryMeaningProgress.decode(checkpoint.state);
+    final plan = next.plan;
+    if (checkpoint.state['version'] == 1 && checkpoint.revision != 1) {
+      throw StateError('Ordinary admission cannot replace progress');
+    }
+    if (session.activityType != 'quiz' ||
+        plan.session.id != session.id ||
+        plan.session.ownerId != ownerId ||
+        plan.session.startedAtUtc?.millisecondsSinceEpoch !=
+            session.startedAtUtcMs ||
+        plan.session.sessionConfiguration?.stableSerialization !=
+            _rowToSummary(session).sessionConfiguration?.stableSerialization ||
+        next.closeAt != checkpoint.terminalAtUtc) {
+      throw StateError('Ordinary checkpoint binding changed');
+    }
+    if (latest != null) {
+      final previous = OrdinaryMeaningProgress.decode(latest.state);
+      if (jsonEncode(previous.plan.toJson()) != jsonEncode(plan.toJson()) ||
+          next.index < previous.index ||
+          next.index > previous.index + 1 ||
+          (next.index > previous.index &&
+              !{'answered', 'skipped'}.contains(previous.phase)) ||
+          (previous.phase == 'closing' &&
+              jsonEncode(previous.toJson()) != jsonEncode(next.toJson()))) {
+        throw StateError('Ordinary checkpoint transition changed');
+      }
+      if (next.index == previous.index &&
+          latest.revision != checkpoint.revision) {
+        final allowed = switch (previous.phase) {
+          'awaitingAnswer' => {'awaitingAnswer', 'pending', 'skipped'},
+          'pending' => {'pending', 'answered'},
+          'answered' || 'skipped' => {'closing'},
+          'closing'
+              when checkpoint.terminalAcknowledged &&
+                  !latest.terminalAcknowledged =>
+            {'closing'},
+          _ => <String>{},
+        };
+        if (!allowed.contains(next.phase) ||
+            (previous.evidence != null &&
+                jsonEncode(previous.evidence!.toJson()) !=
+                    jsonEncode(next.evidence?.toJson()))) {
+          throw StateError('Ordinary checkpoint phase or occurrence changed');
+        }
+      }
+    } else if (checkpoint.revision != 1 || checkpoint.state['version'] != 1) {
+      throw StateError('Ordinary checkpoint requires frozen admission');
+    }
+    final content = await listExactPinnedQuizWords(
+      ownerId: ownerId,
+      content: plan.pins,
+    );
+    final lexical = await readMeaningLexicalWords(
+      plan.questions.map((q) => q.word.id).toList(),
+    );
+    plan.validateCurrentContent(
+      content,
+      composeMeaningQuiz(
+        plan.session,
+        direction:
+            plan.session.sessionConfiguration?.direction ??
+            SessionDirection.mixed,
+        lexicalWords: lexical,
+      ),
+    );
+    await _requireReadingOwner(ownerId);
+  }
+
+  @override
+  Future<T> runOrdinaryOperation<T>({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+    required bool Function() acceptsOperation,
+    required Future<T> Function() operation,
+  }) => database.transaction(() async {
+    if (!acceptsOperation()) throw StateError('Ordinary route retired');
+    final session =
+        await (database.select(database.learningSessions)..where(
+              (r) =>
+                  r.id.equals(checkpoint.sessionId) & r.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (session == null || !{'active', 'completed'}.contains(session.state)) {
+      throw StateError('Ordinary session retired');
+    }
+    final latest = await _latestActivityCheckpoint(
+      ownerId: ownerId,
+      session: session,
+      strictExactIdentity: true,
+    );
+    if (latest == null ||
+        latest.revision != checkpoint.revision ||
+        jsonEncode(latest.state) != jsonEncode(checkpoint.state)) {
+      throw StateError('Ordinary operation checkpoint changed');
+    }
+    await _validateOrdinaryProgress(ownerId, session, checkpoint, latest);
+    if (!acceptsOperation()) throw StateError('Ordinary route retired');
+    return operation();
+  });
+
+  @override
+  Future<void> requireOrdinaryOwner(String ownerId) =>
+      _requireReadingOwner(ownerId);
 
   Future<void> _validateReadingPins(
     String ownerId,
@@ -1459,14 +1615,13 @@ LIMIT 1
     required db.LearningSession session,
     bool strictExactIdentity = false,
   }) async {
+    final queryLimit = session.activityType == 'quiz'
+        ? LearningActivityRecoveryLimits.maximumOrdinaryMeaningCheckpoints
+        : maxActivityRecoveryCheckpoints;
     final query = database.select(database.eventsV2);
     if (strictExactIdentity) {
       final expectedKeys = <String>[
-        for (
-          var revision = 1;
-          revision <= maxActivityRecoveryCheckpoints;
-          revision += 1
-        )
+        for (var revision = 1; revision <= queryLimit; revision += 1)
           _activityCheckpointKey(
             ownerId: ownerId,
             sessionId: session.id,
@@ -1491,9 +1646,9 @@ LIMIT 1
             row.aggregateId.equals(session.id),
       );
     }
-    query.limit(maxActivityRecoveryCheckpoints + 1);
+    query.limit(queryLimit + 1);
     final rows = await query.get();
-    if (rows.length > maxActivityRecoveryCheckpoints) {
+    if (rows.length > queryLimit) {
       throw StateError('activity checkpoint recovery bound exceeded');
     }
     LearningActivityCheckpoint? latest;
@@ -1575,7 +1730,14 @@ LIMIT 1
         (decoded['state']! as Map<String, dynamic>).cast<String, Object?>(),
       );
       if (revision < 1 ||
-          revision > maxActivityRecoveryCheckpoints ||
+          revision >
+              (session.activityType == 'quiz' &&
+                      canonicalState['kind'] == OrdinaryMeaningPlan.kind
+                  ? LearningActivityRecoveryLimits
+                        .maximumOrdinaryMeaningCheckpoints
+                  : maxActivityRecoveryCheckpoints) ||
+          (rows.length > maxActivityRecoveryCheckpoints &&
+              canonicalState['kind'] != OrdinaryMeaningPlan.kind) ||
           utf8.encode(jsonEncode(canonicalState)).length > 65536) {
         throw StateError('activity checkpoint is corrupt');
       }

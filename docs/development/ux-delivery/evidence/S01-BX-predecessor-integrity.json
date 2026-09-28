@@ -1,0 +1,4252 @@
+[
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/README.md",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer-clean.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer-final.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/analyzer.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/bm-isolation-preserved.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build-manifest.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/build-source-pre.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-corrected.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-final.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-ledger-final.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate-ledger-final.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-gate.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-contract.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-contract.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-isolation.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-isolation.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-runner.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/cli-native-resume-runner.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/final-check.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-2.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-3.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-4.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery-5.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/fixture-recovery.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-Explicit Flutter tests.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-Explicit Flutter tests.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate-final.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/host-gate.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/installed-apk.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-contract.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-contract.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-isolation.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-isolation.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-runner.tests.ps1.stderr.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/ledger-cli-native-resume-runner.tests.ps1.stdout.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/merged-manifest.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/result.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/seed-receipt.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-1/verify-receipt.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/native-run.log",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/preflight/merged-manifest.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BW-runs/preflight/result.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "build/native-resume/S01-BW/app-debug-e271910a2f24.apk",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/S01-BW.md",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/build.gradle.kts",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/google-services.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/proguard-rules.pro",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/debug/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/debug/res/xml/network_security_config.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/kotlin/com/example/vocab_learning_app/MainActivity.kt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/kotlin/com/lexiquest/app/NativeExportSession.kt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/drawable/ic_stat_lexiquest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/drawable/launch_background.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/raw/keep.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/values-night/styles.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/main/res/values/styles.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/nativeBaseline/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/nativeBaseline/kotlin/com/lexiquest/app/NativeBaselineActivity.kt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/nativeResume/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/nativeResume/kotlin/com/lexiquest/app/NativeResumeActivity.kt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/profile/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/app/src/release/AndroidManifest.xml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/build.gradle.kts",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/.gitignore",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/gradle.properties",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/gradle/wrapper/gradle-wrapper.properties",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/key.properties.example",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "android/settings.gradle.kts",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/batch-1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/batch-2.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/batch-3.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/complete-1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/complete-2.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/complete-3.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/NOTICE.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/sense-review-1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/sense-review-2.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_editorial/sense-review-3.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_expanded/advanced-profile.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_expanded/advanced-translations.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_expanded/core-extension.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_expanded/NOTICE.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_expanded/octanove-source.csv",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_starter/catalog.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_starter/LICENSE-th.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_starter/LICENSE.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/cefr_starter/NOTICE.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-bag/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-book/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-bottle/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-chair/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-clock/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-cup/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-door/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-key/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-pencil/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-plate/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-spoon/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/lexical_metadata/starter-window/r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/content/sense_crosswalk/starter-r1.json",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/fonts/NotoSansThai-Variable.ttf",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/fonts/OFL-NotoSansThai.txt",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "assets/index.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/adventure_performance_profile_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/autonomous_device_faults_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/e7_quiz_resource_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/field_trial_core_journey_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/field_trial_feature_controls_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/field_trial_media_smoke_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/native_baseline_acceptance_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/native_resume_acceptance_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/attach_autonomous_fixture.py",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/autonomous_service_receipt.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/field_trial_external_fakes.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/native_baseline_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/native_baseline_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/native_resume_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/native_resume_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "integration_test/support/persistent_manual_qa_storage.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/add_default_categories.js",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/ai/ai_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/ai/ai_service_factory.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/ai/content_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/ai/generated_reading_content_source.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/ai/local_content_fallback.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/adventure_research_runtime_config.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/app_config.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/learning_feedback_theme.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/m3_theme.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/remote_economy_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/config/research_runtime_config.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/app_database.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/app_database.g.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/app_database_native_path.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/app_database_open_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/app_database_stub_path.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/legacy_learning_import.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/research_schema_guards.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/ai_usage_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/associative_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/audio_lesson_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/content_download_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/content_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/event_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/guided_repair_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/identity_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/learning_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/model_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/motivation_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/personal_set_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/planning_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/preference_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/progress_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/quest_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/research_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/review_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/runtime_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/speaking_practice_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/speech_evidence_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/study_plan_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/sync_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/time_tracking_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/vocabulary_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/data/local/tables/written_practice_tables.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/accessibility/domain/accessibility_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/accessibility/presentation/accessibility_scope.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/account/application/account_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/account/application/local_data_deletion.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/account/data/firebase_account_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/account/domain/account_contracts.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/achievements/application/achievement_share_card_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/achievements/data/file_selector_share_card_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/achievements/presentation/achievement_share_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_diagnostics.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_entry_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_journey_fact_readers.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_journey_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_learning_bridge.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_mixed_review_prompt_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_motivation_projection_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_presentation_preferences.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_reaction_selector.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_recovery_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_repair_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_result_next_action_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_rollout_gate.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/adventure_session_composer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/application/dialogue_mission_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/data/adventure_catalog_download_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/data/adventure_world_catalog_validator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/data/drift_adventure_achievement_receipt_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/data/packaged_adventure_world_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_entry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_journey.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_reaction.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_result.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_session_plan.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/adventure_world_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/domain/dialogue_mission.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_hub_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_mission_sheet.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_pair_experience.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_pair_renderer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_result_lifecycle_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_result_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/dialogue_mission_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/today_experience_host.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/widgets/adventure_map.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/widgets/adventure_map_list.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/widgets/adventure_standard_switch.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/adventure/presentation/widgets/adventure_status_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/managed_tutor_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/managed_tutor_host.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/managed_tutor_runtime.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/menu_action_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/application/owner_operation_coordinator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/abortable_ai_http.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/ai_credential_version_index.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/ai_tutor_settings_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/anthropic_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/local_bridge_pairing.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/local_login_bridge.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/data/openai_responses_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/domain/managed_tutor_transport.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/presentation/lesson_assistance_context.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/presentation/managed_practice_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/presentation/managed_tutor_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/ai_tutor/presentation/menu_action_binding.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/application/assessment_comparison.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/application/assessment_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/data/drift_assessment_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/domain/assessment_instrument_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/domain/assessment_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/assessment/domain/assessment_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/companion/application/companion_reaction_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/companion/domain/companion_reaction_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/companion/domain/companion_reaction.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/companion/presentation/contextual_companion_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/consent/application/research_consent_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/consent/data/drift_research_consent_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/consent/domain/research_consent.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/application/device_model_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/application/model_benchmark.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/application/model_download_manager.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/data/drift_model_download_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/data/http_model_byte_source.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/data/litert_image_classifier.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/domain/model_lifecycle.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/device_model/domain/model_manifest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/events/application/event_v1_to_v2_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/events/domain/event_envelope_v2.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/events/domain/today_experience_event_payload_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/application/export_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/application/owner_lifecycle_archive.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/data/drift_export_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/data/file_selector_export_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/data/research_lifecycle_export_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/export/domain/export_contracts.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/gemini/application/gemini_tutor_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/gemini/data/gemini_rest_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/gemini/data/retry_gemini_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/gemini/data/secure_gemini_settings_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/gemini/domain/gemini_contracts.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/application/learning_goal_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/application/study_plan_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/data/drift_learning_goal_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/data/drift_study_plan_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/domain/learning_goal.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/domain/learning_goal_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/goals/domain/study_plan.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/history/application/learning_history_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/history/data/drift_learning_history_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/history/domain/learning_history_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/application/owner_generation.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/application/upgrade_guest_owner.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/data/drift_local_owner_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/data/drift_owner_generation.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/domain/identity_mapping.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/domain/local_owner.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/domain/local_owner_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/identity/domain/owner_upgrade.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/cloze_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/context_practice_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/current_activity_evidence.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/definition_quiz_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/flashcard_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/guided_repair_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/handwriting_self_check_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/hint_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/learning_layer_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/learning_side_effect_reconciler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/learning_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/legacy_lesson_mode_adapters.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/lesson_mode_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/matching_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/native_mode_adapters.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/ordinary_meaning_recovery.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/session_configuration_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/typed_recall_mode_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/unified_lesson_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/application/written_practice_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/data/drift_associative_learning_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/data/drift_learning_event_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/data/drift_learning_projection_rebuilder.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/data/drift_learning_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/data/drift_session_configuration_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/answer_feedback.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/associative_reading_checkpoint.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/context_practice.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/contrastive_explanation.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/evidence_context.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/evidence_policy_rollout.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/first_answer_accuracy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/guided_repair.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/hint_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/learning_event_context.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/learning_evidence_contract.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/learning_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/learning_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/lesson_mode.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/lesson_session_state.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/lexical_prompt_artifact_identity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/meaning_quiz_composition.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/ordinary_meaning_plan.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/reading_cue_fading.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/session_configuration.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/srs_operation_identity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/srs_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/domain/written_rubric.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/application/learning_pack_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/application/personal_set_activities.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/application/personal_sets_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/data/drift_content_manifest_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/data/drift_learning_pack_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/data/drift_personal_set_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/data/packaged_sense_crosswalk.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/content_manifest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/learning_pack.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/learning_pack_detail.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/learning_pack_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/personal_set_archive.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/personal_sets.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/sense_crosswalk.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning_packs/domain/sense_crosswalk_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/application/pair_matching_atomic_start.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/application/pair_matching_source_composer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/application/pair_matching_unavailable_session.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/application/pair_practice_replay.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_active_clock.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_engine.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_launch.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_plan.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_matching_session_purpose.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_repair_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_star_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/domain/pair_support_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/presentation/pair_board_view.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/presentation/pair_feedback_episode.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/presentation/pair_matching_copy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/pair_matching/presentation/pair_matching_result_view.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/answer_feedback_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/context_practice_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/contrastive_feedback_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/guided_repair_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/handwriting_scratchpad.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/hint_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/legacy_matching_mode_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/sentence_practice_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/session_configuration_sheet.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/unified_lesson_shell.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/learning/presentation/written_practice_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/application/image_preprocessor.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/application/speaking_capture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/application/speaking_scenario_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/data/drift_speech_evidence_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/data/plugin_camera_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/data/plugin_speech_recognition_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/domain/media_practice_contracts.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/domain/speaking_scenario.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/domain/speech_evidence_contract.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/domain/speech_evidence_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/media_practice/presentation/speaking_scenario_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/motivation/application/streak_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/motivation/data/drift_streak_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/motivation/domain/streak_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/motivation/domain/timezone_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/application/offline_content_manager.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/data/drift_offline_content_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/data/learning_pack_download_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/data/model_download_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/data/voice_pack_download_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/domain/offline_content_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/offline_content/domain/offline_content_state.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/preferences/application/display_preferences_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/preferences/domain/learner_preferences.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/preferences/domain/learner_preferences_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/application/learning_calendar_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/application/progress_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/data/drift_learning_calendar_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/data/drift_personal_learning_profile_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/data/drift_progress_queries.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/domain/achievement_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/domain/learning_calendar.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/domain/personal_learning_profile.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/progress/domain/progress_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/application/quest_catalog_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/application/quest_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/data/drift_quest_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/domain/quest_definition_codec.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/domain/quest_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/domain/quest_period.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/quest/domain/quest_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/application/recall_ladder_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/application/recommendation_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/data/drift_recommendation_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/domain/active_recall_ladder.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/domain/recommendation_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/recommendation/domain/recommendation_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/data/drift_study_reminder_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/data/platform_reminder_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/domain/reminder_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/domain/study_reminder.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/reminders/domain/study_reminder_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/application/adventure_research_runtime.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/application/assigned_learning_event_context_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/application/experiment_assignment_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/application/motivation_measurement_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/application/research_participation_permit_validator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_experiment_assignment_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_measurement_opportunity_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_motivation_measurement_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_research_participation_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/drift_research_sync_authorizer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/firestore_research_receipt_authority.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/data/research_p256_signature_verifier.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/experiment_assignment.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/measurement_opportunity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/motivation_instrument.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/motivation_measurement.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/motivation_measurement_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/motivation_study_protocol.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/research_event_identity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/research_participation_permit.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/research_permit_document.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/research_protocol_mode_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/domain/research_session_proof.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/presentation/motivation_measurement_form.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/presentation/research_participation_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/research/presentation/research_participation_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/application/content_report_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/application/learner_intent_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/application/pair_review_deferral.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/application/review_center_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/application/transfer_probe_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/data/drift_content_quality_report_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/data/drift_learner_intent_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/data/drift_review_center_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/content_quality_report.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/content_quality_report_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/learner_intent.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/learner_intent_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/review_mutation_context.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/review_queue_item.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/domain/transfer_probe.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/presentation/bookmark_learning_item_button.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/presentation/content_report_sheet.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/presentation/review_mutation_state.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/review/presentation/transfer_probe_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/application/reward_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/application/shadow_reward_orchestrator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/data/drift_avatar_progression_eligibility.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/data/drift_economy_cutover.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/data/drift_reward_projection_rebuilder.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/data/drift_reward_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/domain/avatar_progression_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/domain/economy_transaction_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/domain/reward_eligibility.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/domain/reward_grant_request.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/rewards/domain/reward_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/session/data/shared_preferences_app_entry_state_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/session/domain/app_entry_state.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/application/sync_backoff.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/application/sync_engine.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/application/sync_mutex.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/application/sync_trigger.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/data/drift_cloud_policy_cache.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/data/drift_owner_operation_gate.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/data/drift_sync_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/data/firestore_sync_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/cloud_sync_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/owner_operation_gate.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/research_sync.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_entity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_failure.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_result.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/platform/background_sync_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/sync/platform/workmanager_sync_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/application/active_learning_time_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/application/focus_timer_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/application/focus_timer_rollout.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/application/learning_time_capture_rollout.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/data/drift_learning_time_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/domain/focus_timer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/domain/learning_time_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/domain/learning_time_segment.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/time_tracking/presentation/focus_timer_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/today_hub/application/today_hub_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/today_hub/domain/today_hub_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/application/cefr_catalog_import.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/application/cefr_practice_examples.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/application/import_vocabulary.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/cefr_sense_review.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/cefr_vocabulary_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/drift_vocabulary_import_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/packaged_starter_access.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/data/packaged_starter_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/packaged_starter_identity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_category.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_failure.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_import.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_import_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/vocabulary/domain/vocabulary_word.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/voice/application/audio_lesson_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/voice/application/voice_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/voice/domain/audio_lesson.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/voice/presentation/audio_lesson_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/features/voice/presentation/route_voice_session_mixin.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/firebase_options.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/img/img1.webp",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/adaptive_associative_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/association_record.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/learning_event.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/local_learning_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/memory_state.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/reading_session.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/recall_attempt.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/learning/vocabulary_mixer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/main_ari_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/main.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/achievement_badge.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/background_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/card_theme.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/category_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/cefr_word.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/phrasal_verb.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/sentence_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/srs_item.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/suggestion_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/user_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/user_rank.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/vocab_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/models/word_model.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/navigation/app_route_factory.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/navigation/app_routes.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/navigation/navigation_glossary.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/product/feature_contract/compatibility_profiles.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/product/feature_contract/feature_contract_digest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/product/feature_contract/feature_contract_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/firebase_progress_remote_writer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/firebase_purchase_remote_writer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/local_progress_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/progress_remote_writer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/progress_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/progress_sync_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/progress/purchase_remote_writer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/app_bootstrap.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/app_build_info.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/app_dependencies.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/app_runtime_status.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/app_start_route_resolver.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/ari_preview_feature_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/central_cost_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/circuit_breaker.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/download_counter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/field_feature.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/field_feature_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/learning_dependencies.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/learning_feature_flags.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/learning_preview_feature_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/local_storage_readiness_app.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/production_feature_contract.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/production_feature_gate.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/consent_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/drift_consent_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/entitlement_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/experiment_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/feature.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/registries/feature_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/resource_disposer_stack.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/runtime_feature_override_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/runtime_flag_namespaces.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/runtime/supabase_client_config.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/achievements_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/add_multiple_words_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/add_vocab_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/ai_tutor_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/ai_tutor_settings_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/associative_reading_launcher_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/associative_reading_session_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/avatar_equipment_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/boss_battle_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/categories_page.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/cefr_article_reader_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/cefr_diagnostic_test_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/cefr_selection_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/cefr_vocabulary_catalog_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/cefr_vocabulary_detail_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/choose_mode_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/definition_quiz_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/dictation_quiz_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/email_action_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/export_center_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/fill_in_the_blanks_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/game_launcher_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/gemini_settings_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/ghost_shadow_duel_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_calendar_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_goals_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_history_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_pack_catalog_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_pack_detail_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_preference_quiz_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/learning_world_map_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/local_reading_library_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/login_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/main_navigation_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/mastery_dashboard_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/matching_mode_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/media_dependency_unavailable.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/object_scanner_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/offline_content_manager_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/otp_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/pair_matching_learn_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/password_change_dialog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/personal_sets_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/phonetic_explorer_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/pre_post_assessment_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/profile_settings_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/quest_status_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/quiz_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/register_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/result_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/review_center_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/reviewed_sentence_scramble_loader.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/score_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/select_category_for_quiz.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/select_wallpaper_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/sentence_scramble_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/setting_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/shadowing_challenge_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/shop_page.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/smart_audio_playlist_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/speak_to_text_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/srs_flashcards_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/study_planning_hub_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/study_plan_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/study_reminder_settings_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/thesis_chart_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/today_hub_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/today_hub_view.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/vocab_list_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/vocabulary_browse_lifetime.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/weakness_clinic_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/wordbook_import_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/word_delete_dialog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/screens/word_scramble_screen.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/adaptive_daily_quest_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/adaptive_decay_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/ai_reading_content_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/anki_dictionary_exporter_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/apriori_error_miner_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/associative_memory_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/background_audio_player_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/brahmawong_research_analytics_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/cefr_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/cognitive_attention_analyzer_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/collocation_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/cosine_similarity_evaluator_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/crisp_dm_analytics_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/custom_wordbook_importer.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/dataset_partitioning_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/dynamic_story_contextualizer_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/ghost_model_trainer_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/ghost_shadow_duel_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/guest_session_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/interleaved_srs_scheduler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/kmeans_learner_profiler_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/lexical_diversity_evaluator_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/local_reading_catalog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/local_user_progress_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/object_vocabulary_database.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/pdf_glossary_exporter_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/phrasal_verb_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/rank_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/rapid_naming_speed_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/research_data_exporter_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/research_experiment_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/research_export_errors.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/research_report_pdf_exporter_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/sentence_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/spaced_review_reminder_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/srs_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/streak_and_daily_quest_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/suggestion_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/thesis_appendix_exporter_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/voice_reading_adapter.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/weakness_clinic_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/services/word_service.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/utils/index.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/utils/local_study_datetime.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/utils/pronunciation_evaluator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/utils/response_time_tracker.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/bundled_voice_asset_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/file_standard_voice_pack_store.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/firestore_voice_telemetry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/http_standard_voice_pack_source.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/installed_voice_pack_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/lesson_audio_cache.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/native_tts_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/native_voice_route_handler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/omni_voice_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/platform_filesystem_capacity.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/reading_voice_enrichment.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/standard_voice_pack_download_manager.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/standard_voice_pack_manifest.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/synthesized_voice_route_handler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_audio_cache.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_audio_player.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_auth_token_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_capability.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_http_operation.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_mirror_gateway.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_mirror_recorder.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_mirror_session_controller.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_models.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_orchestrator.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_policy.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_provider_descriptor.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_provider_registry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_request_quota.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_route_handler.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_service_factory.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_synthesis_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/voice_telemetry.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/vox_cpm_mirror_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/voice/vox_cpm_standard_provider.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/accent_selector_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/association_dialog_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/cefr_collocation_tree_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/cefr_practice_example.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/gentle_streak_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/index.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/learning_summary_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/live_audio_waveform_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/local_study_datetime_field.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/permission_error_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/recommendation_panel.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/research_consent_dialog.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/reward_avatar_preview.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/rich_lexical_card.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/study_heatmap_widget.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "lib/widgets/study_time_picker.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "pubspec.lock",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "pubspec.yaml",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/accessibility_semantics_test_support.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/ari_catalog_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/baseline_host_ui_audit_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/composed_host_ui_audit_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/current_database_contract.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/fail_once_learning_test_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/fail_once_session_close_repository.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/forms_host_ui_audit_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/inert_research_dependencies.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/legacy_learning_v1.sql",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/motivation_research_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/native_baseline_fixture_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/native_baseline_navigation_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/native_resume_fixture_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/pair_measurement_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/pair_purpose_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/persistent_manual_qa_storage_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/populated_profile_host_ui_audit_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/production_accessibility_surface_matrix.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/r15_visual_capture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/schema_v25_fixture.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/test_quest_use_cases.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/today_preview_route_audit_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "test/support/today_quiz_resume_contract_test.dart",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/native-baseline-contract.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/native-resume-contract.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/run-native-baseline-acceptance.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/run-native-resume-acceptance.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/tests/native-resume-contract.tests.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/tests/native-resume-isolation.tests.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "tool/cli/tests/native-resume-runner.tests.ps1",
+    "exists": true,
+    "matches": true
+  },
+  {
+    "path": "docs/development/ux-delivery/state.json",
+    "exists": true,
+    "matches": true
+  }
+]

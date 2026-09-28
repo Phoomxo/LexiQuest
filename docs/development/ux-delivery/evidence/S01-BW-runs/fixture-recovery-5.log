@@ -1,0 +1,4 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart
+00:00 +0: BW verify rejects absent seed and traversal
+00:00 +1: BW disk close reopen restores exact feedback with every table unchanged
+00:06 +2: All tests passed!

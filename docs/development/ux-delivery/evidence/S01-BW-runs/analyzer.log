@@ -1,0 +1,15 @@
+Analyzing 4 items...                                            
+
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\native_resume_acceptance_test.dart:47:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:58:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:71:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:80:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:155:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:165:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:188:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:192:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:195:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:197:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block. Try wrapping the statement in a block - integration_test\support\native_resume_fixture.dart:227:7 - curly_braces_in_flow_control_structures
+
+11 issues found. (ran in 9.3s)

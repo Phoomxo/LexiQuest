@@ -226,14 +226,18 @@ class _VocabListScreenState extends State<VocabListScreen>
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: SearchBar(
-                    controller: _searchController,
-                    hintText: 'ค้นหาคำศัพท์',
-                    leading: const Icon(Icons.search),
-                    onChanged: (value) {
-                      if (!_current(generation, revision)) return;
-                      setState(() => _query = value.trim().toLowerCase());
-                    },
+                  // The editable field and its surrounding tappable search
+                  // surface are one control, including its full hit area.
+                  child: MergeSemantics(
+                    child: SearchBar(
+                      controller: _searchController,
+                      hintText: 'ค้นหาคำศัพท์',
+                      leading: const Icon(Icons.search),
+                      onChanged: (value) {
+                        if (!_current(generation, revision)) return;
+                        setState(() => _query = value.trim().toLowerCase());
+                      },
+                    ),
                   ),
                 ),
                 Expanded(

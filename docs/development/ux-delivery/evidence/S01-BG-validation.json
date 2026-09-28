@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BG-offline-cancel-refresh",
+  "atUtc": "2026-09-26T18:25:40.2530230Z",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0ded7-eed6-7ae1-9070-e518e56a7cd6",
+  "acceptance": "HOST_PASS",
+  "hostTests": 94,
+  "newTests": 8,
+  "confirmedOriginalSourceRed": 3,
+  "passedRedControls": 5,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "986e5e8920244d7ccec7247f3aea4bcfb58594d14a21ea86727ce346435e22d0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-source.patch",
+      "sha256": "f84e2d0fab25a8c7745c8808194aaa8cc927593a3b42bf26bf5b23a338b9477c"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/before-screen.dart",
+      "bytes": 20432,
+      "sha256": "50704ca93ed37f230aa9a81e183e584257788dec1801c756f9b3349e2d87dbd7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/before-test.dart",
+      "bytes": 55124,
+      "sha256": "31a5d4e57bd8e9e56d96a0bc1e44c8d2c102dbd4fcfe8214234cba6403a64bfa"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final.stderr.log",
+      "bytes": 392,
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final.stdout.log",
+      "bytes": 75852,
+      "sha256": "76f6af6ae539b53d14379fb09c5890de6c286ffe605eedd7ad691daa19c87cfd"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/final-verification.json",
+      "bytes": 313219,
+      "sha256": "4902d5ae3420316911fda4b0a6c0dd83ac4666e77caac60201e8854e139ab516"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/initial-status.txt",
+      "bytes": 1696,
+      "sha256": "4f942229f12f46beb770b89dec6dcb2708e5fe57514fb5f8f70cf0f7fe6b43c3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red.stderr.log",
+      "bytes": 392,
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red.stdout.log",
+      "bytes": 32864,
+      "sha256": "acd2e060e02ac7d536bd9e110b161b57b9065f7f04419cdd284f1ec65487290a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BG-runs/red-verification.json",
+      "bytes": 313028,
+      "sha256": "c5ec0223c5562bc871351a64b8572f25e0d1f1f9ddf24aa2487560a987b27340"
+    }
+  ],
+  "red": {
+    "receipt": "docs/development/ux-delivery/evidence/S01-BG-runs/red-verification.json",
+    "fingerprint": "a8149c2f08d867566eefdb31b21b2a6778906c9a40239f26f2a019ae14c82edf",
+    "postFingerprint": "a8149c2f08d867566eefdb31b21b2a6778906c9a40239f26f2a019ae14c82edf",
+    "productionPin": "50704ca93ed37f230aa9a81e183e584257788dec1801c756f9b3349e2d87dbd7"
+  },
+  "verification": {
+    "command": "./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/screens/offline_content_manager_screen_test.dart,test/screens/offline_content_settings_entry_test.dart,test/features/offline_content/offline_content_manager_test.dart -Resume",
+    "status": "Passed",
+    "gatePassed": true,
+    "exitCode": 0,
+    "fingerprint": "02061fcda0148f04a0a68e82238d371c2911c3e7e510b58dbe663ae66aa26d31",
+    "postFingerprint": "02061fcda0148f04a0a68e82238d371c2911c3e7e510b58dbe663ae66aa26d31",
+    "receipt": "docs/development/ux-delivery/evidence/S01-BG-runs/final-verification.json",
+    "inputClosureCount": 1563,
+    "closureMismatches": 0
+  },
+  "analysis": {
+    "command": "C:/Users/Phet/AppData/Local/Programs/flutter/bin/dart.bat analyze lib/screens/offline_content_manager_screen.dart test/screens/offline_content_manager_screen_test.dart",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 3,
+    "rule": "use_build_context_synchronously",
+    "lines": [
+      145,
+      182,
+      188
+    ],
+    "assessment": "Same three existing infos as BF; no suppression"
+  },
+  "implementation": "Refresh canonical catalog in _cancel finally only for current owner/generation and live gate/visibility; retain operation sets and canonical semantics",
+  "review": "Manual BG-only diff review; cr-at-eol diff check passed; source delta adds 104 test lines and replaces one production line with eight. Existing Drift warning. No subagents.",
+  "sourcePatchMeaning": "BG-only diff against byte-exact before-screen.dart and before-test.dart matching BF pins; cumulative BD+BE+BF preserved",
+  "notRun": [
+    "full release suites/build",
+    "native/device/user/trial",
+    "provider/browser/billing probes",
+    "deployment/research/cleanup"
+  ],
+  "pauseReason": "PAUSED_BY_USER",
+  "routing": "Current model deterministic fallback; Standard/default requested; runtime tier unverified; not Jev-selected"
+}

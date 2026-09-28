@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BE-offline-callback-lifetime",
+  "atUtc": "2026-09-26T17:39:21.976Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0dec5-b093-7f20-b0c0-f5318ab6ccba",
+  "hostTests": 74,
+  "newTests": 8,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "e5ea72a8a441ba89a91857b2942d4929a0a6822dbb58af0f0b5ff1ca5804c132"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "96e802e338cc1f302bf1e95c081522058b863a7fa13e18edec1841fd23d0938d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BE-source.patch",
+      "sha256": "cd8bd9c3af59d65fafeda8c1f2ead6d00a9beddf57a639036c68ab45af0dc697"
+    }
+  ],
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "writerStatus": "RELEASED",
+  "validation": "docs/development/ux-delivery/evidence/S01-BE-validation.json",
+  "report": "docs/development/ux-delivery/S01-BE.md",
+  "routingReceipt": "docs/development/ux-delivery/evidence/S01-BE-claim.json",
+  "sourceState": "Uncommitted cumulative BD+BE source/test delta and documentation/evidence; seven inherited generated line-ending changes untouched.",
+  "inputClosure": {
+    "path": "docs/development/ux-delivery/evidence/S01-BE-runs/final-verification.json",
+    "count": 1563,
+    "mismatches": 0
+  },
+  "runningProcesses": [],
+  "changedFiles": [
+    "lib/screens/offline_content_manager_screen.dart",
+    "test/screens/offline_content_manager_screen_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/S01-BE.md",
+    "docs/development/ux-delivery/evidence/S01-BE-*"
+  ],
+  "nextExecutableStep": "Controller verifies receipt, pins and closure; starts one fresh chat for next bounded source-grounded issue. Candidate pending operation feedback needs reproduction before any fix. No successor dispatched here.",
+  "preservation": "BD source patch, receipts and all original evidence retained. No primary/old worktree/backup writes, no cleanup/archive/commit/push."
+}

@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BR-today-preview-route-audit",
+  "status": "PASS_HOST_SYNTHETIC_ONLY",
+  "atUtc": "2026-09-27T23:14:53.7613828+00:00",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "productionChangedFiles": [],
+  "hostTests": 7,
+  "gatePrePost": [
+    {
+      "name": "final",
+      "status": "Passed",
+      "pre": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "post": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "closure": 1578
+    },
+    {
+      "name": "owner-final",
+      "status": "Passed",
+      "pre": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "post": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "closure": 1578
+    },
+    {
+      "name": "initial-final",
+      "status": "Passed",
+      "pre": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "post": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "closure": 1578
+    },
+    {
+      "name": "secondary-final",
+      "status": "Passed",
+      "pre": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "post": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+      "closure": 1578
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "test/support/today_preview_route_audit_test.dart",
+      "sha256": "cd0359295970d176695ee95b8b5c01fad202592b366db5ee6d5f006aff48f595"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "04740ec0b9a66bdd5c3e164b5adf380546db519946be6a4ab31f705b64f4ee17"
+    },
+    {
+      "path": "lib/runtime/learning_preview_feature_registry.dart",
+      "sha256": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7"
+    },
+    {
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348"
+    },
+    {
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "8d9309f83657975d3abfb08f952453086292950e986bcb6523eaa9f16c45d7ac"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34"
+    },
+    {
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "sha256": "e3a01beffc653358f8d315c37f0b6b0a0aedb50b384cd5a6252897d4451a3ca4"
+    }
+  ],
+  "sourceClosureManifest": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-final.json",
+  "integrity": {
+    "atUtc": "2026-09-28T06:14:09.5585025+07:00",
+    "preExistingPins": 5075,
+    "preserved": 5072,
+    "authorizedChanged": [
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/ready-backlog.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "sourceClosureVerified": 1578,
+    "gateFingerprint": "e59d975a2148f83891cdb31ab0230b25c32c26d009895a38e4c13bca1c3c3abe",
+    "runningTestProcesses": [],
+    "status": "PASS"
+  },
+  "artifactPins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/analysis-final.log",
+      "sha256": "c6301520abffcfc189578a903013ad2d18851548bb40cd87ad67cf665a92476c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/analysis.log",
+      "sha256": "c6301520abffcfc189578a903013ad2d18851548bb40cd87ad67cf665a92476c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/diff-check.log",
+      "sha256": "49493885c7bd0791b49abf8722635b14b7a8783a55ba0eab130bdce8c11f773c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final-integrity.json",
+      "sha256": "d6c06b77774457317bce6b630aab4e3cb1aa2762408e2c59bf2c11c8bf2beffd"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/final.stdout.log",
+      "sha256": "1d0836fa7d56e409366c6b1e9b5ad3fb74e924b52fb943b07fb65016a420086a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-final.json",
+      "sha256": "7033e39d30f018016fe8c2fc00b214f3a7dd8eb1747e3f35429245abe3da2b74"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-initial-final.json",
+      "sha256": "dd1c6b08507eda2466fbb7f8edb344b9f01070f7cab42c299d3d0688cf5d898b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-owner-final.json",
+      "sha256": "81cc6413cffc08aef7c7ca4ecbede5a1e9cde7749656dfaa2e699ad576ad9f55"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-secondary-final.json",
+      "sha256": "6b42af703e19559437d34fe54e441f242d8fd47f078d80994c086cf9fce9d41a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/gate-summary.json",
+      "sha256": "f18d8ec93eb203701ed441be49a78819730970001a7ddadcfd6a130fa72c4ac9"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/initial-final.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/initial-final.stdout.log",
+      "sha256": "b9a43c23c207c0fd345b20562e2ee0a12b8a649df85f4c879cf09117421c19bf"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/owner-final.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/owner-final.stdout.log",
+      "sha256": "40700b6060723121bd09963cf7a4d1b13949aaacaf38cd48e633dddc2e13f751"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/pre-existing-pins.json",
+      "sha256": "122a1ce860ac91d71084048337bbac8ce1d52dc23e491956a2202ded3775b63b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-241a26cc3058-935515d9.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-241a26cc3058-935515d9.stdout.log",
+      "sha256": "9a00d04a8b7c7dfc393045bbb7afb96048f83f974edf3104baf120ea0f90d65a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-24692bf39446-db7c23b3.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/recovery-6680c6bb10e6-24692bf39446-db7c23b3.stdout.log",
+      "sha256": "81399fabcbba08c9b986d4c38117ccb128ac52c9176996b2073939d5c550a04d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-false.json",
+      "sha256": "6fc09733c8bd13b86445b427e9470d68152c049a7bc9b7b6a513e0897584691f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-true.json",
+      "sha256": "70f081eb4cb545c10d99d9c7b829ae6a8db0cbf827a81a532d7a0c6b4ce617e5"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/secondary-final.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/secondary-final.stdout.log",
+      "sha256": "434dbd2aaa18e023b6a6f4387daace583de315581b7083c64c1c84e2f5c54cf3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/status-before.txt",
+      "sha256": "08cb2cae58c5fae8f5f98c2050cc3bb41d8492e5490e76929837761826562a19"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/today_preview_route_audit_test.dart.snapshot",
+      "sha256": "cd0359295970d176695ee95b8b5c01fad202592b366db5ee6d5f006aff48f595"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-final.log",
+      "sha256": "528e2e1eb1a952f3ac7bfd15f8767ea0f17cddc80e9ad52fd5445378b609528b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial-final.log",
+      "sha256": "c5ffcc6c4c3d2006abdf4c9085cf678fd73e662f5ae745cfe431d08e480f075c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial.log",
+      "sha256": "c5ffcc6c4c3d2006abdf4c9085cf678fd73e662f5ae745cfe431d08e480f075c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-initial-result-before-assertions.json",
+      "sha256": "f4196929886274a16e357b30954d1e0e1d26271f6f2c6e22daa6de616a07e344"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-network-fixture.log",
+      "sha256": "528e2e1eb1a952f3ac7bfd15f8767ea0f17cddc80e9ad52fd5445378b609528b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-network-fixture-result-before-assertions.json",
+      "sha256": "c4f13cba630435789b078ff02fd50c0ed5ed3a91c2f7809e2212e8241cb8f95b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner-final.log",
+      "sha256": "578afaabc201416b722520aa2b0d25f7bcf0f385193d95b59032d125116f887e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner.log",
+      "sha256": "578afaabc201416b722520aa2b0d25f7bcf0f385193d95b59032d125116f887e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-owner-result-before-assertions.json",
+      "sha256": "f3d6a667de78ce19c6e3f3c1fece17ada45b9ec5c6f88e8a547c518214cd8c7f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-recovery.log",
+      "sha256": "c6bdf51a065858f5150dbcc6a89ce6c27fa901c1e42c4820ca50359577ea6661"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary-final.log",
+      "sha256": "b592a522847b3571311997ab2948027b6e98cfeb9b4decadb592c7fdf9db2c1a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary.log",
+      "sha256": "b592a522847b3571311997ab2948027b6e98cfeb9b4decadb592c7fdf9db2c1a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BR-runs/verify-secondary-result-before-assertions.json",
+      "sha256": "f0a779ea1edd854e8a095484d93da525b17a114d35509823a54e00714f177e1d"
+    }
+  ],
+  "routes": {
+    "ordinaryQuizResumeToLearningTab": "PASS",
+    "previewReviewHistory": "PASS",
+    "native": "NOT_RUN",
+    "quizRehydration": "NOT_RUN",
+    "visual": "NOT_RUN",
+    "userTrials": "DEFERRED",
+    "fieldRoutedSuccess": "NOT_RUN_FIELD_GATE"
+  },
+  "fixture": {
+    "supportDirectory": "isolated temporary br-host-synthetic-*; retained, no cleanup",
+    "seedChangedOnly": [
+      "learning_sessions"
+    ],
+    "guestLogin": "test service rejects",
+    "database": "SQLite memory, synthetic",
+    "httpOperations": 0,
+    "navigationTablesUnchanged": 58,
+    "cloudSync": false
+  },
+  "recovery": [
+    "Interrupted initial harness filesystem wait; runAsync correction; original stdout retained",
+    "Fixture rejected HTTP client construction, no request; inert client now rejects/counts every operation; failed stdout/stderr retained"
+  ],
+  "routing": "Current-model deterministic fallback; Standard/default requested; effective tier unverified; no Jev/billing/quota/login/ledger probe",
+  "releaseAcceptance": false,
+  "successorDispatched": false
+}

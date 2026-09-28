@@ -1,17 +1,17 @@
+export '../domain/meaning_quiz_composition.dart';
+import '../domain/meaning_quiz_composition.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
-import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/evidence_context.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/contrastive_explanation.dart';
 import '../domain/learning_models.dart';
-import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
+import 'ordinary_meaning_recovery.dart';
 
 typedef MeaningQuizSessionCompleter =
     Future<LearningSessionSummary> Function(PendingLearningSessionClose close);
@@ -21,38 +21,6 @@ typedef MeaningQuizEvidenceOperation =
     Future<AnswerRecordResult> Function(
       Future<AnswerRecordResult> Function() operation,
     );
-
-enum MeaningQuizDirection { wordToMeaning, meaningToWord }
-
-final class InsufficientMeaningQuizOptions implements Exception {
-  const InsufficientMeaningQuizOptions();
-}
-
-final class MeaningQuizQuestion {
-  const MeaningQuizQuestion({
-    required this.word,
-    required this.direction,
-    required this.prompt,
-    required this.correctOption,
-    required this.options,
-    this.optionIdentities = const <String, String>{},
-    this.contrastiveIdentity,
-    this.contrastiveChecksumSha256,
-    this.evidenceChecksumSha256,
-  });
-
-  final QuizWord word;
-  final MeaningQuizDirection direction;
-  final String prompt;
-  final String correctOption;
-  final List<String> options;
-  final Map<String, String> optionIdentities;
-  final ContentIdentity? contrastiveIdentity;
-  final String? contrastiveChecksumSha256;
-  final String? evidenceChecksumSha256;
-
-  String? optionIdentity(String option) => optionIdentities[option];
-}
 
 enum MeaningQuizReviewPhase {
   awaitingAnswer,
@@ -140,98 +108,17 @@ final class MeaningQuizModeAdapter
     Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
     Iterable<QuizWord> distractorWords = const <QuizWord>[],
   }) {
-    final lexicalById = <String, VocabularyWord>{
-      for (final word in lexicalWords) word.id: word,
-    };
-    final words = session.questions
-        .map((question) => question.word)
-        .toList(growable: false);
-    final optionWords = <QuizWord>[...words, ...distractorWords];
-    final questions = List<MeaningQuizQuestion>.unmodifiable(
-      words.indexed.map((entry) {
-        final index = entry.$1;
-        final word = entry.$2;
-        final questionDirection = switch (direction) {
-          SessionDirection.forward => MeaningQuizDirection.wordToMeaning,
-          SessionDirection.reverse => MeaningQuizDirection.meaningToWord,
-          SessionDirection.mixed =>
-            index.isEven
-                ? MeaningQuizDirection.wordToMeaning
-                : MeaningQuizDirection.meaningToWord,
-        };
-        final correctOption =
-            questionDirection == MeaningQuizDirection.wordToMeaning
-            ? word.meaning
-            : word.spelling;
-        final pool = _equivalentDistinctDistractors(
-          words: optionWords,
-          word: word,
-          direction: questionDirection,
-        );
-        final lexical = lexicalById[word.id];
-        final rich = lexical?.richMetadata;
-        final promptMode =
-            questionDirection == MeaningQuizDirection.wordToMeaning
-            ? 'meaningChoice'
-            : 'wordChoice';
-        final artifactIdentity = lexical == null
-            ? null
-            : LexicalPromptArtifactResolver.resolveForAdapter(
-                promptMode: promptMode,
-                wordId: word.id,
-                coreRevision: word.contentRevision ?? 0,
-                coreChecksumSha256: word.contentChecksumSha256,
-                verifiedArtifactRevision: rich?.verifiedContentRevision,
-                verifiedArtifactChecksumSha256:
-                    rich?.verifiedArtifactChecksumSha256,
-              );
-        final hasVerifiedLexicalMetadata =
-            lexical != null &&
-            lexical.isGlobal &&
-            lexical.contentProvenance == ContentProvenance.packaged &&
-            lexical.contentReviewState == ContentReviewState.approved &&
-            lexical.contentPublicationState ==
-                ContentPublicationState.published &&
-            lexical.contentRevision == word.contentRevision &&
-            rich?.verifiedContentRevision == lexical.contentRevision &&
-            artifactIdentity != null;
-        return MeaningQuizQuestion(
-          word: word,
-          direction: questionDirection,
-          prompt: questionDirection == MeaningQuizDirection.wordToMeaning
-              ? word.spelling
-              : word.meaning,
-          correctOption: correctOption,
-          options: _pinOptions(
-            correctOption: correctOption,
-            candidates: pool.map((candidate) => candidate.label).toList(),
-            seed: _stableSeed('${word.id}:${questionDirection.name}'),
-          ),
-          optionIdentities: <String, String>{
-            correctOption: word.id,
-            for (final candidate in pool) candidate.label: candidate.wordId,
-          },
-          contrastiveIdentity: hasVerifiedLexicalMetadata
-              ? ContentIdentity(
-                  type: ContentType.lexicalMetadata,
-                  id: word.id,
-                  revision: lexical.contentRevision,
-                )
-              : null,
-          contrastiveChecksumSha256: hasVerifiedLexicalMetadata
-              ? artifactIdentity.verifiedArtifactChecksumSha256
-              : null,
-          evidenceChecksumSha256: hasVerifiedLexicalMetadata
-              ? artifactIdentity.checksumSha256
-              : null,
-        );
-      }),
-    );
-    if (distractorWords.isNotEmpty &&
-        questions.any((question) => question.options.length < 2)) {
-      throw const InsufficientMeaningQuizOptions();
+    final admitted = session.ordinaryMeaningPlan;
+    if (admitted != null) {
+      admitted.validatePresentation(session);
+      return admitted.questions;
     }
-    return questions;
+    return composeMeaningQuiz(
+      session,
+      direction: direction,
+      lexicalWords: lexicalWords,
+      distractorWords: distractorWords,
+    );
   }
 
   @override
@@ -260,75 +147,6 @@ final class MeaningQuizModeAdapter
     StateError('MeaningQuizReviewController owns pinned item selection.'),
   );
 }
-
-List<({String wordId, String label})> _equivalentDistinctDistractors({
-  required List<QuizWord> words,
-  required QuizWord word,
-  required MeaningQuizDirection direction,
-}) {
-  final promptKey = direction == MeaningQuizDirection.wordToMeaning
-      ? _spellingKey(word)
-      : _meaningKey(word);
-  final answerKey = direction == MeaningQuizDirection.wordToMeaning
-      ? _meaningKey(word)
-      : _spellingKey(word);
-  final byAnswerKey = <String, ({String wordId, String label})>{};
-  for (final candidate in words) {
-    final candidatePromptKey = direction == MeaningQuizDirection.wordToMeaning
-        ? _spellingKey(candidate)
-        : _meaningKey(candidate);
-    final candidateAnswerKey = direction == MeaningQuizDirection.wordToMeaning
-        ? _meaningKey(candidate)
-        : _spellingKey(candidate);
-    if (candidatePromptKey == promptKey || candidateAnswerKey == answerKey) {
-      continue;
-    }
-    byAnswerKey.putIfAbsent(
-      candidateAnswerKey,
-      () => (
-        wordId: candidate.id,
-        label: direction == MeaningQuizDirection.wordToMeaning
-            ? candidate.meaning
-            : candidate.spelling,
-      ),
-    );
-  }
-  final keys = byAnswerKey.keys.toList()..sort();
-  return keys.map((key) => byAnswerKey[key]!).toList(growable: false);
-}
-
-String _spellingKey(QuizWord word) =>
-    normalizeVocabularyText(word.normalizedSpelling ?? word.spelling);
-
-String _meaningKey(QuizWord word) =>
-    normalizeVocabularyText(word.normalizedMeaning ?? word.meaning);
-
-List<String> _pinOptions({
-  required String correctOption,
-  required List<String> candidates,
-  required int seed,
-}) {
-  final distractors = candidates
-      .where((candidate) => candidate != correctOption)
-      .toList(growable: false);
-  final rotatedDistractors = distractors.isEmpty
-      ? const <String>[]
-      : <String>[
-          ...distractors.skip(seed % distractors.length),
-          ...distractors.take(seed % distractors.length),
-        ];
-  final options = <String>[correctOption, ...rotatedDistractors.take(3)];
-  final offset = seed % options.length;
-  return List<String>.unmodifiable(<String>[
-    ...options.skip(offset),
-    ...options.take(offset),
-  ]);
-}
-
-int _stableSeed(String value) => value.codeUnits.fold<int>(
-  17,
-  (hash, unit) => ((hash * 31) + unit) & 0x7fffffff,
-);
 
 final class MeaningQuizReviewController extends ChangeNotifier {
   MeaningQuizReviewController._({
@@ -359,6 +177,84 @@ final class MeaningQuizReviewController extends ChangeNotifier {
   AnswerFeedback? _feedback;
   String? _selectedOption;
   bool _disposed = false;
+  OrdinaryMeaningRecovery? _durable;
+  FrozenPendingCurrentActivityEvidence? _frozen;
+
+  bool get _acceptsDurable => !_disposed && _acceptsOperation();
+
+  Future<void> initializeDurable() async {
+    if (session.ordinaryMeaningPlan == null || _durable != null) return;
+    final durable = await OrdinaryMeaningRecovery.load(
+      learning: _learning,
+      ownerId: session.ownerId!,
+      sessionId: session.id,
+      acceptsOperation: () => _acceptsDurable,
+    );
+    _requireOperationAccepted();
+    final p = durable.progress;
+    p.plan.validatePresentation(session);
+    _durable = durable;
+    _index = p.index;
+    _selectedOption = p.selected;
+    _frozen = p.evidence;
+    if (p.evidence != null) {
+      _pendingEvidence = _evidence.restore(p.evidence!);
+      _pendingFeedbackContext = AnswerFeedbackContext(
+        canonicalCorrectAnswer: currentQuestion.correctOption,
+      ).freeze();
+      _phase = MeaningQuizReviewPhase.evidenceRetryRequired;
+      if (p.phase == 'answered' || p.phase == 'closing') {
+        // Canonical replay recovers committed feedback without a new identity.
+        final result = await durable.run(
+          _pendingEvidence!.retry,
+          () => _acceptsDurable,
+        );
+        await durable.requireCurrent(() => _acceptsDurable);
+        _requireOperationAccepted();
+        _feedback = AnswerFeedback.fromFrozenCommittedResult(
+          result: result,
+          context: _pendingFeedbackContext!,
+        );
+        _pendingEvidence = null;
+        _pendingFeedbackContext = null;
+        _phase = MeaningQuizReviewPhase.answered;
+      }
+    }
+    if (p.phase == 'closing') {
+      _pendingClose = _learning.restoreSessionClose(
+        sessionId: session.id,
+        ownerId: session.ownerId,
+        completedAtUtc: p.closeAt!,
+        runOperation: (operation) =>
+            durable.run(operation, () => _acceptsDurable),
+      );
+      _phase = MeaningQuizReviewPhase.completionRetryRequired;
+    } else if (p.phase == 'skipped') {
+      _phase = MeaningQuizReviewPhase.skipped;
+    }
+  }
+
+  Future<void> _persist(String phase, {int? index, DateTime? closeAt}) async {
+    final durable = _durable;
+    if (durable == null) return;
+    await durable.save(
+      OrdinaryMeaningProgress(
+        plan: session.ordinaryMeaningPlan!,
+        index: index ?? _index,
+        phase: phase,
+        selected: phase == 'awaitingAnswer' || phase == 'skipped'
+            ? null
+            : _selectedOption,
+        evidence:
+            phase == 'pending' || phase == 'answered' || phase == 'closing'
+            ? _frozen
+            : null,
+        closeAt: closeAt,
+      ),
+      () => _acceptsDurable,
+    );
+    _requireOperationAccepted();
+  }
 
   int get index => _index;
   MeaningQuizReviewPhase get phase => _phase;
@@ -385,10 +281,25 @@ final class MeaningQuizReviewController extends ChangeNotifier {
           _phase != MeaningQuizReviewPhase.answered &&
           _phase != MeaningQuizReviewPhase.skipped);
 
-  void skip() {
+  Future<void> skip() async {
     _requireOperationAccepted();
     _requirePhase(MeaningQuizReviewPhase.awaitingAnswer, 'skip');
+    if (session.ordinaryMeaningPlan != null && _durable == null) {
+      await initializeDurable();
+      _requireOperationAccepted();
+      _requirePhase(MeaningQuizReviewPhase.awaitingAnswer, 'skip');
+    }
     _recordInteraction();
+    if (session.ordinaryMeaningPlan != null) {
+      _setPhase(MeaningQuizReviewPhase.savingEvidence);
+      try {
+        await _persist('skipped');
+      } catch (_) {
+        _setPhase(MeaningQuizReviewPhase.awaitingAnswer);
+        rethrow;
+      }
+    }
+    _selectedOption = null;
     _setPhase(MeaningQuizReviewPhase.skipped);
   }
 
@@ -492,7 +403,8 @@ final class MeaningQuizReviewController extends ChangeNotifier {
       'retry evidence',
     );
     final pending = _pendingEvidence;
-    if (pending == null || !pending.requiresRetry) {
+    if (pending == null ||
+        (!pending.requiresRetry && session.ordinaryMeaningPlan == null)) {
       throw StateError('Exact meaning recognition retry is unavailable.');
     }
     final feedbackContext = _pendingFeedbackContext;
@@ -513,9 +425,59 @@ final class MeaningQuizReviewController extends ChangeNotifier {
     required bool retry,
   }) async {
     try {
-      final result = await _runEvidenceOperation(
-        () => retry ? pending.retry() : pending.record(),
-      );
+      if (session.ordinaryMeaningPlan != null) {
+        // Initial attachment must precede capture; a restore never captures again.
+        if (_durable == null) {
+          final loaded = await OrdinaryMeaningRecovery.load(
+            learning: _learning,
+            ownerId: session.ownerId!,
+            sessionId: session.id,
+            acceptsOperation: () => _acceptsDurable,
+          );
+          _requireOperationAccepted();
+          if (loaded.recovery.checkpoint!.revision != 1 ||
+              loaded.progress.index != _index ||
+              loaded.progress.phase != 'awaitingAnswer') {
+            throw StateError(
+              'Restore the accepted ordinary controller before answering',
+            );
+          }
+          _durable = loaded;
+        }
+        _requireOperationAccepted();
+        if (_frozen == null && _durable!.progress.phase == 'awaitingAnswer') {
+          await _durable!.save(
+            OrdinaryMeaningProgress(
+              plan: session.ordinaryMeaningPlan!,
+              index: _index,
+              selected: _selectedOption,
+            ),
+            () => _acceptsDurable,
+          );
+          _requireOperationAccepted();
+        }
+        _frozen ??= await pending.freezeForRecovery();
+        _requireOperationAccepted();
+        await _durable!.reconcilePending(() => _acceptsDurable);
+        _requireOperationAccepted();
+        if (_durable!.progress.phase == 'answered' &&
+            _durable!.progress.evidence?.sourceEvidenceId !=
+                pending.sourceEvidenceId) {
+          throw StateError('Ordinary answer identity changed');
+        }
+        if (_durable!.progress.phase != 'answered') await _persist('pending');
+      }
+      final result = await _runEvidenceOperation(() {
+        Future<AnswerRecordResult> record() =>
+            pending.requiresRetry ? pending.retry() : pending.record();
+        return _durable == null
+            ? record()
+            : _durable!.run(record, () => _acceptsDurable);
+      });
+      if (session.ordinaryMeaningPlan != null) {
+        _requireOperationAccepted();
+        await _persist('answered');
+      }
       final feedback = AnswerFeedback.fromFrozenCommittedResult(
         result: result,
         context: feedbackContext,
@@ -526,7 +488,10 @@ final class MeaningQuizReviewController extends ChangeNotifier {
       _setPhase(MeaningQuizReviewPhase.answered);
       return result;
     } catch (_) {
-      if (pending.requiresRetry) {
+      if (pending.requiresRetry || session.ordinaryMeaningPlan != null) {
+        if (_frozen != null && session.ordinaryMeaningPlan != null) {
+          _pendingEvidence = _evidence.restore(_frozen!);
+        }
         _setPhase(MeaningQuizReviewPhase.evidenceRetryRequired);
       } else {
         _pendingEvidence = null;
@@ -545,7 +510,19 @@ final class MeaningQuizReviewController extends ChangeNotifier {
       throw StateError('Cannot advance meaning quiz from ${_phase.name}.');
     }
     if (_index < questions.length - 1) {
+      if (session.ordinaryMeaningPlan != null) {
+        final previousPhase = _phase;
+        _setPhase(MeaningQuizReviewPhase.savingEvidence);
+        try {
+          await _persist('awaitingAnswer', index: _index + 1);
+        } catch (_) {
+          _setPhase(previousPhase);
+          rethrow;
+        }
+        _requireOperationAccepted();
+      }
       _index += 1;
+      _frozen = null;
       _selectedOption = null;
       _feedback = null;
       _setPhase(MeaningQuizReviewPhase.awaitingAnswer);
@@ -565,13 +542,33 @@ final class MeaningQuizReviewController extends ChangeNotifier {
 
   Future<LearningSessionSummary> _complete() async {
     _requireOperationAccepted();
-    final close = _pendingClose ??= _learning.captureSessionClose(
-      sessionId: session.id,
-      ownerId: session.ownerId,
-    );
+    final close = _pendingClose ??= session.ordinaryMeaningPlan == null
+        ? _learning.captureSessionClose(
+            sessionId: session.id,
+            ownerId: session.ownerId,
+          )
+        : _learning.restoreSessionClose(
+            sessionId: session.id,
+            ownerId: session.ownerId,
+            runOperation: (operation) =>
+                _durable!.run(operation, () => _acceptsDurable),
+            completedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+              _learning.nowUtc().millisecondsSinceEpoch,
+              isUtc: true,
+            ),
+          );
     _setPhase(MeaningQuizReviewPhase.completing);
     try {
+      if (session.ordinaryMeaningPlan != null) {
+        await _persist('closing', closeAt: close.completedAtUtc);
+        _requireOperationAccepted();
+      }
       final summary = await _completeSession(close);
+      if (session.ordinaryMeaningPlan != null) {
+        _requireOperationAccepted();
+        await _durable!.acknowledgeClose(() => _acceptsDurable);
+        _requireOperationAccepted();
+      }
       _pendingClose = null;
       _setPhase(MeaningQuizReviewPhase.completed);
       return summary;

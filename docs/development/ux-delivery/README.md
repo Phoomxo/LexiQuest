@@ -1,8 +1,19 @@
 # Current UX delivery
 
-Read this file, current state.json summary, and S01-BC.md first. Do not enumerate historical worktrees or archives.
+Read this file, current state.json summary, and S01-BW.md first. Do not enumerate historical worktrees or archives.
 
-- Current checkpoint: S01-BC, host-only acceptance; native/user/trial/release pending.
+- Latest: S01-BW PASS_NATIVE_SYNTHETIC_FEEDBACK_RESUME on physical V2041/API33. New isolated package nativeResumeBw installed once; PID 30948 → absent → 31845; exact owner/session/frozen plan/answered progress and all 58 tables unchanged across force-stop/relaunch. 11 targeted HOST tests, 29 CLI cases/checks, clean 4-file analyzer; APK isolation and installed hash verified. Existing three packages preserved. Native scope is canonical attached QuizScreen committed-feedback recovery only, not full Today bootstrap, all BV cases, visual/IME/TalkBack, user or release acceptance. Receipt: evidence/S01-BW-checkpoint.json. Writer released; no successor dispatched; retain package/evidence and never reseed/reinstall it.
+
+- Latest: S01-BV implements durable ordinary meaning progress and exact Today resume of the admitted session, including draft/feedback/pending answer/close and stale owner/content/feature/dependency/route rejection. Final 283 targeted PASS; touched analyzer clean; gate pre/post fingerprint identical. BS-RESUME-01 closed in HOST SYNTHETIC scope only. Field dailyContinuity stays hidden; native/UAT/user/release acceptance unchanged. Immutable writer release: evidence/S01-BV-checkpoint.json. No successor dispatched. BU/BT/BS and BR paragraphs below are historical snapshots, superseded only for the tested exact-resume engineering gap.
+
+- Latest: S01-BU implements frozen ordinary meaning composition/strict codec, canonical atomic admission/retry and initial QuizScreen consumption. Final host targeted 132 PASS; touched analyzer clean. Actual-bootstrap BS resume remains OPEN/RED (QuizScreen expected 1 / actual 0), even with the newly admitted plan. No full-resume/native/user/release acceptance. Receipt: evidence/S01-BU-checkpoint.json. No successor dispatched; BT/BS descriptions below describe their historical snapshots.
+
+- Latest handoff: S01-BT OPEN/RED, allowed concrete-gap fallback. Generic exact checkpoint transaction passes bounded rollback/replay/owner/drift/budget characterization, but ordinary start has no checkpoint, and actual meaning options/metadata are composed after session commit. No production edit; requires canonical frozen meaning admission plan/codec and initial presentation consumption before exact checkpoint can be claimed. BS-RESUME-01 remains OPEN/RED. Immutable writer release: evidence/S01-BT-checkpoint.json. No successor dispatched.
+
+- Latest handoff: S01-BS exact ordinary quiz resume remains OPEN/RED. Real preview bootstrap + canonical startQuiz reproduces no QuizScreen; exact recovery rejects missing checkpoint. No production fix. See S01-BS.md for the concrete checkpoint/controller restore prerequisite and evidence/S01-BS-checkpoint.json for immutable writer release. BR results below retain their historical scope. No successor dispatched.
+
+- Current checkpoint: S01-BR HOST SYNTHETIC actual AppBootstrap composition and Today routes. 7 targeted tests; preview Today → review/history/Back and ordinary resume → Learning tab PASS; field feature remains hidden. No production edits, no visual/native claim. Navigation preserves all 58 tables; BD–BQ/generated7 preserved. Exact checks: S01-BR.md and evidence/S01-BR-validation.json. BQ Profile evidence retains its original scope.
+- BR writer 01a0e51a-4359-7893-b240-ba050ac5efe6 releases via evidence/S01-BR-checkpoint.json. No successor selected/dispatched. BO fixture lacked review/history; actual bootstrap composes both. Quiz rehydration and field routed success remain NOT_RUN; native IME/TalkBack NOT_RUN; actual-user trials DEFERRED. S01/UX-D01–25 remain OPEN; no full-baseline/native/user/trial/release acceptance. Preserve installed packages; no reinstall or cleanup.
 - Current source: C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest
 - Branch: codex/ux-current-after-s01-bc
 - Full historical source and documents: backup branch codex/backup/ux-v5-through-s01-bc-20260926, commit c22cdaa3a11b83c8e3ce84151672ed8dab11a4e1.

@@ -1,0 +1,14 @@
+{
+  "package": "S01-BG-offline-cancel-refresh",
+  "threadId": "01a0ded7-eed6-7ae1-9070-e518e56a7cd6",
+  "identitySource": "CODEX_THREAD_ID",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "predecessor": "01a0decf-4e77-70a3-a358-e6743faaa6f5",
+  "predecessorReleased": true,
+  "predecessorPins": "Three BF source pins verified; artifact/closure validation already performed by controller",
+  "soleWriter": true,
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested, runtime tier unverified; no provider/billing probes",
+  "scope": "Reproduce external cancellation stale catalog; false/error owner/gate/visibility controls; preserve canonical manager semantics and in-flight tracking"
+}

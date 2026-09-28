@@ -1,0 +1,766 @@
+{
+  "phases": [
+    {
+      "atUtc": "2026-09-28T03:33:53.2224142Z",
+      "receipt": {
+        "packageId": "com.lexiquest.app.nativeResumeBw",
+        "runId": "bw-synthetic-01",
+        "phase": "seed",
+        "status": "PASS",
+        "closed": true,
+        "cases": {
+          "N01": "PASS",
+          "N02": "PASS",
+          "N03": "PASS"
+        },
+        "fixtureDigest": "56ee5fdae39eaf555a90ae49eef017cec9f3e4dde1854fbd926a372c9407f767",
+        "planDigest": "fa6b2426b9b3b8d3bd7634ed9d73fecd141c85bdd6d940f6dd435953d57ef68c",
+        "progressDigest": "8a08585cc8290fba60316a496969d39b7e4328403a05e0724aa48208132fd1a2",
+        "ownerId": "local:synthetic-bw-synthetic-01-owner",
+        "sessionId": "session:synthetic-bw-synthetic-01-session",
+        "index": 0,
+        "progressPhase": "answered",
+        "tableCounts": {
+          "achievement_unlocks": 2,
+          "active_plan_pointers": 0,
+          "ai_usage_events": 0,
+          "answer_attempts": 1,
+          "assessment_runs": 0,
+          "association_records": 0,
+          "associative_memory_states": 0,
+          "audio_lesson_checkpoints": 0,
+          "content_download_states": 0,
+          "content_manifests": 0,
+          "content_quality_reports": 0,
+          "equipped_reward_items": 0,
+          "events_v2": 7,
+          "experiment_assignments": 0,
+          "guided_repair_operations": 0,
+          "learner_preferences": 0,
+          "learning_day_log": 0,
+          "learning_goals": 0,
+          "learning_pack_items": 0,
+          "learning_packs": 0,
+          "learning_sessions": 1,
+          "learning_time_segments": 0,
+          "legacy_learning_records": 0,
+          "local_owners": 1,
+          "measurement_opportunities": 0,
+          "model_downloads": 0,
+          "motivation_measurement_runs": 0,
+          "motivation_responses": 0,
+          "outbox_operations": 3,
+          "owned_reward_items": 0,
+          "personal_set_members": 0,
+          "personal_set_revisions": 0,
+          "points_ledger_entries": 1,
+          "quest_definitions": 0,
+          "quest_instances": 0,
+          "quest_objective_progress": 0,
+          "reading_events": 0,
+          "reading_progress_entries": 0,
+          "research_consents": 0,
+          "research_participation_permits": 0,
+          "research_session_proofs": 0,
+          "reward_transactions": 0,
+          "runtime_flags": 0,
+          "saved_learning_items": 0,
+          "session_configurations": 0,
+          "speaking_practice_results": 0,
+          "speech_evidence": 0,
+          "srs_states": 0,
+          "streak_states": 0,
+          "study_plan_revisions": 0,
+          "study_reminders": 0,
+          "sync_checkpoints": 0,
+          "sync_conflicts": 0,
+          "vocabulary_categories": 1,
+          "vocabulary_import_rows": 0,
+          "vocabulary_imports": 0,
+          "vocabulary_words": 2,
+          "written_practice_results": 0
+        },
+        "externalCalls": 0,
+        "researchRows": 0,
+        "outboxRows": 0,
+        "ordinaryLocalOutboxRows": 3
+      },
+      "phase": "seed",
+      "durationMs": 7809.9344
+    },
+    {
+      "atUtc": "2026-09-28T03:34:01.8808211Z",
+      "receipt": {
+        "packageId": "com.lexiquest.app.nativeResumeBw",
+        "runId": "bw-synthetic-01",
+        "phase": "verify",
+        "status": "PASS",
+        "closed": true,
+        "cases": {
+          "N04": "PASS"
+        },
+        "fixtureDigest": "56ee5fdae39eaf555a90ae49eef017cec9f3e4dde1854fbd926a372c9407f767",
+        "planDigest": "fa6b2426b9b3b8d3bd7634ed9d73fecd141c85bdd6d940f6dd435953d57ef68c",
+        "progressDigest": "8a08585cc8290fba60316a496969d39b7e4328403a05e0724aa48208132fd1a2",
+        "ownerId": "local:synthetic-bw-synthetic-01-owner",
+        "sessionId": "session:synthetic-bw-synthetic-01-session",
+        "index": 0,
+        "progressPhase": "answered",
+        "tableCounts": {
+          "achievement_unlocks": 2,
+          "active_plan_pointers": 0,
+          "ai_usage_events": 0,
+          "answer_attempts": 1,
+          "assessment_runs": 0,
+          "association_records": 0,
+          "associative_memory_states": 0,
+          "audio_lesson_checkpoints": 0,
+          "content_download_states": 0,
+          "content_manifests": 0,
+          "content_quality_reports": 0,
+          "equipped_reward_items": 0,
+          "events_v2": 7,
+          "experiment_assignments": 0,
+          "guided_repair_operations": 0,
+          "learner_preferences": 0,
+          "learning_day_log": 0,
+          "learning_goals": 0,
+          "learning_pack_items": 0,
+          "learning_packs": 0,
+          "learning_sessions": 1,
+          "learning_time_segments": 0,
+          "legacy_learning_records": 0,
+          "local_owners": 1,
+          "measurement_opportunities": 0,
+          "model_downloads": 0,
+          "motivation_measurement_runs": 0,
+          "motivation_responses": 0,
+          "outbox_operations": 3,
+          "owned_reward_items": 0,
+          "personal_set_members": 0,
+          "personal_set_revisions": 0,
+          "points_ledger_entries": 1,
+          "quest_definitions": 0,
+          "quest_instances": 0,
+          "quest_objective_progress": 0,
+          "reading_events": 0,
+          "reading_progress_entries": 0,
+          "research_consents": 0,
+          "research_participation_permits": 0,
+          "research_session_proofs": 0,
+          "reward_transactions": 0,
+          "runtime_flags": 0,
+          "saved_learning_items": 0,
+          "session_configurations": 0,
+          "speaking_practice_results": 0,
+          "speech_evidence": 0,
+          "srs_states": 0,
+          "streak_states": 0,
+          "study_plan_revisions": 0,
+          "study_reminders": 0,
+          "sync_checkpoints": 0,
+          "sync_conflicts": 0,
+          "vocabulary_categories": 1,
+          "vocabulary_import_rows": 0,
+          "vocabulary_imports": 0,
+          "vocabulary_words": 2,
+          "written_practice_results": 0
+        },
+        "externalCalls": 0,
+        "researchRows": 0,
+        "outboxRows": 0,
+        "ordinaryLocalOutboxRows": 3
+      },
+      "phase": "verify",
+      "durationMs": 4525.1379
+    }
+  ],
+  "status": "PASS",
+  "apkSha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+  "contract": {
+    "verify": {
+      "ordinaryLocalOutboxRows": 3,
+      "progressDigest": "8a08585cc8290fba60316a496969d39b7e4328403a05e0724aa48208132fd1a2",
+      "cases": {
+        "N04": "PASS"
+      },
+      "fixtureDigest": "56ee5fdae39eaf555a90ae49eef017cec9f3e4dde1854fbd926a372c9407f767",
+      "ownerId": "local:synthetic-bw-synthetic-01-owner",
+      "planDigest": "fa6b2426b9b3b8d3bd7634ed9d73fecd141c85bdd6d940f6dd435953d57ef68c",
+      "sessionId": "session:synthetic-bw-synthetic-01-session",
+      "index": 0,
+      "externalCalls": 0,
+      "runId": "bw-synthetic-01",
+      "packageId": "com.lexiquest.app.nativeResumeBw",
+      "status": "PASS",
+      "tableCounts": {
+        "achievement_unlocks": 2,
+        "active_plan_pointers": 0,
+        "ai_usage_events": 0,
+        "answer_attempts": 1,
+        "assessment_runs": 0,
+        "association_records": 0,
+        "associative_memory_states": 0,
+        "audio_lesson_checkpoints": 0,
+        "content_download_states": 0,
+        "content_manifests": 0,
+        "content_quality_reports": 0,
+        "equipped_reward_items": 0,
+        "events_v2": 7,
+        "experiment_assignments": 0,
+        "guided_repair_operations": 0,
+        "learner_preferences": 0,
+        "learning_day_log": 0,
+        "learning_goals": 0,
+        "learning_pack_items": 0,
+        "learning_packs": 0,
+        "learning_sessions": 1,
+        "learning_time_segments": 0,
+        "legacy_learning_records": 0,
+        "local_owners": 1,
+        "measurement_opportunities": 0,
+        "model_downloads": 0,
+        "motivation_measurement_runs": 0,
+        "motivation_responses": 0,
+        "outbox_operations": 3,
+        "owned_reward_items": 0,
+        "personal_set_members": 0,
+        "personal_set_revisions": 0,
+        "points_ledger_entries": 1,
+        "quest_definitions": 0,
+        "quest_instances": 0,
+        "quest_objective_progress": 0,
+        "reading_events": 0,
+        "reading_progress_entries": 0,
+        "research_consents": 0,
+        "research_participation_permits": 0,
+        "research_session_proofs": 0,
+        "reward_transactions": 0,
+        "runtime_flags": 0,
+        "saved_learning_items": 0,
+        "session_configurations": 0,
+        "speaking_practice_results": 0,
+        "speech_evidence": 0,
+        "srs_states": 0,
+        "streak_states": 0,
+        "study_plan_revisions": 0,
+        "study_reminders": 0,
+        "sync_checkpoints": 0,
+        "sync_conflicts": 0,
+        "vocabulary_categories": 1,
+        "vocabulary_import_rows": 0,
+        "vocabulary_imports": 0,
+        "vocabulary_words": 2,
+        "written_practice_results": 0
+      },
+      "phase": "verify",
+      "researchRows": 0,
+      "progressPhase": "answered",
+      "outboxRows": 0,
+      "closed": true
+    },
+    "runId": "bw-synthetic-01",
+    "status": "PASS",
+    "seed": {
+      "ordinaryLocalOutboxRows": 3,
+      "progressDigest": "8a08585cc8290fba60316a496969d39b7e4328403a05e0724aa48208132fd1a2",
+      "cases": {
+        "N03": "PASS",
+        "N02": "PASS",
+        "N01": "PASS"
+      },
+      "fixtureDigest": "56ee5fdae39eaf555a90ae49eef017cec9f3e4dde1854fbd926a372c9407f767",
+      "ownerId": "local:synthetic-bw-synthetic-01-owner",
+      "planDigest": "fa6b2426b9b3b8d3bd7634ed9d73fecd141c85bdd6d940f6dd435953d57ef68c",
+      "sessionId": "session:synthetic-bw-synthetic-01-session",
+      "index": 0,
+      "externalCalls": 0,
+      "runId": "bw-synthetic-01",
+      "packageId": "com.lexiquest.app.nativeResumeBw",
+      "status": "PASS",
+      "tableCounts": {
+        "achievement_unlocks": 2,
+        "active_plan_pointers": 0,
+        "ai_usage_events": 0,
+        "answer_attempts": 1,
+        "assessment_runs": 0,
+        "association_records": 0,
+        "associative_memory_states": 0,
+        "audio_lesson_checkpoints": 0,
+        "content_download_states": 0,
+        "content_manifests": 0,
+        "content_quality_reports": 0,
+        "equipped_reward_items": 0,
+        "events_v2": 7,
+        "experiment_assignments": 0,
+        "guided_repair_operations": 0,
+        "learner_preferences": 0,
+        "learning_day_log": 0,
+        "learning_goals": 0,
+        "learning_pack_items": 0,
+        "learning_packs": 0,
+        "learning_sessions": 1,
+        "learning_time_segments": 0,
+        "legacy_learning_records": 0,
+        "local_owners": 1,
+        "measurement_opportunities": 0,
+        "model_downloads": 0,
+        "motivation_measurement_runs": 0,
+        "motivation_responses": 0,
+        "outbox_operations": 3,
+        "owned_reward_items": 0,
+        "personal_set_members": 0,
+        "personal_set_revisions": 0,
+        "points_ledger_entries": 1,
+        "quest_definitions": 0,
+        "quest_instances": 0,
+        "quest_objective_progress": 0,
+        "reading_events": 0,
+        "reading_progress_entries": 0,
+        "research_consents": 0,
+        "research_participation_permits": 0,
+        "research_session_proofs": 0,
+        "reward_transactions": 0,
+        "runtime_flags": 0,
+        "saved_learning_items": 0,
+        "session_configurations": 0,
+        "speaking_practice_results": 0,
+        "speech_evidence": 0,
+        "srs_states": 0,
+        "streak_states": 0,
+        "study_plan_revisions": 0,
+        "study_reminders": 0,
+        "sync_checkpoints": 0,
+        "sync_conflicts": 0,
+        "vocabulary_categories": 1,
+        "vocabulary_import_rows": 0,
+        "vocabulary_imports": 0,
+        "vocabulary_words": 2,
+        "written_practice_results": 0
+      },
+      "phase": "seed",
+      "researchRows": 0,
+      "progressPhase": "answered",
+      "outboxRows": 0,
+      "closed": true
+    },
+    "apkSha": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4"
+  },
+  "protectedAfter": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.nativeBaselineBm": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  },
+  "protectedBefore": {
+    "com.lexiquest.app": [
+      "versionCode=23 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-13 08:14:41",
+      "firstInstallTime=2026-09-01 00:27:20",
+      "firstInstallTime=2026-09-01 00:27:20"
+    ],
+    "com.lexiquest.app.nativeBaselineBm": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28",
+      "firstInstallTime=2026-09-27 07:56:28"
+    ],
+    "com.lexiquest.app.ariTest": [
+      "versionCode=14 minSdk=26 targetSdk=36",
+      "versionName=1.0.0",
+      "lastUpdateTime=2026-09-24 05:38:40",
+      "firstInstallTime=2026-09-21 00:24:50",
+      "firstInstallTime=2026-09-21 00:24:50"
+    ]
+  },
+  "pid_stopped": "",
+  "runId": "bw-synthetic-01",
+  "pid_verify": "31845",
+  "deviceId": "9582188822004C6",
+  "apkId": "com.lexiquest.app.nativeResumeBw",
+  "pid_seed": "30948",
+  "packageId": "com.lexiquest.app.nativeResumeBw",
+  "commands": [
+    {
+      "atUtc": "2026-09-28T03:33:18.4618214Z",
+      "arguments": [
+        "get-state"
+      ],
+      "exitCode": 0,
+      "durationMs": 32.2959
+    },
+    {
+      "atUtc": "2026-09-28T03:33:18.5025655Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.product.model"
+      ],
+      "exitCode": 0,
+      "durationMs": 97.4288
+    },
+    {
+      "atUtc": "2026-09-28T03:33:18.6002363Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.build.version.sdk"
+      ],
+      "exitCode": 0,
+      "durationMs": 90.1074
+    },
+    {
+      "atUtc": "2026-09-28T03:33:18.6905966Z",
+      "arguments": [
+        "shell",
+        "getprop",
+        "ro.kernel.qemu"
+      ],
+      "exitCode": 0,
+      "durationMs": 80.0018
+    },
+    {
+      "atUtc": "2026-09-28T03:33:18.7726389Z",
+      "arguments": [
+        "shell",
+        "pm",
+        "list",
+        "packages",
+        "com.lexiquest"
+      ],
+      "exitCode": 0,
+      "durationMs": 141.0134
+    },
+    {
+      "atUtc": "2026-09-28T03:33:18.9223328Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "exitCode": 0,
+      "durationMs": 137.0771
+    },
+    {
+      "atUtc": "2026-09-28T03:33:19.0749121Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "exitCode": 0,
+      "durationMs": 101.7657
+    },
+    {
+      "atUtc": "2026-09-28T03:33:19.1843208Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "exitCode": 0,
+      "durationMs": 96.2159
+    },
+    {
+      "atUtc": "2026-09-28T03:33:19.6110093Z",
+      "arguments": [
+        "install",
+        "-t",
+        "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\build\\native-resume\\S01-BW\\app-debug-e271910a2f24.apk"
+      ],
+      "exitCode": 0,
+      "durationMs": 19014.0608
+    },
+    {
+      "atUtc": "2026-09-28T03:33:38.6267301Z",
+      "arguments": [
+        "shell",
+        "am",
+        "start",
+        "-W",
+        "-n",
+        "com.lexiquest.app.nativeResumeBw/com.lexiquest.app.NativeResumeActivity",
+        "--es",
+        "baselineRun",
+        "bw-synthetic-01",
+        "--es",
+        "baselinePhase",
+        "seed"
+      ],
+      "exitCode": 0,
+      "durationMs": 6786.7401
+    },
+    {
+      "atUtc": "2026-09-28T03:33:45.4138100Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 147.4283
+    },
+    {
+      "atUtc": "2026-09-28T03:33:46.5698007Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 66.2022
+    },
+    {
+      "atUtc": "2026-09-28T03:33:47.6501481Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 82.1613
+    },
+    {
+      "atUtc": "2026-09-28T03:33:48.7415236Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 91.4129
+    },
+    {
+      "atUtc": "2026-09-28T03:33:49.8349082Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 100.4302
+    },
+    {
+      "atUtc": "2026-09-28T03:33:50.9470916Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 92.9008
+    },
+    {
+      "atUtc": "2026-09-28T03:33:52.0469197Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 95.9475
+    },
+    {
+      "atUtc": "2026-09-28T03:33:53.1548545Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-seed.json"
+      ],
+      "exitCode": 0,
+      "durationMs": 66.8793
+    },
+    {
+      "atUtc": "2026-09-28T03:33:53.2449491Z",
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "exitCode": 0,
+      "durationMs": 58.8695
+    },
+    {
+      "atUtc": "2026-09-28T03:33:53.3061861Z",
+      "arguments": [
+        "shell",
+        "am",
+        "force-stop",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "exitCode": 0,
+      "durationMs": 128.754
+    },
+    {
+      "atUtc": "2026-09-28T03:33:53.4351489Z",
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "exitCode": 1,
+      "durationMs": 73.2592
+    },
+    {
+      "atUtc": "2026-09-28T03:33:53.8135493Z",
+      "arguments": [
+        "shell",
+        "am",
+        "start",
+        "-W",
+        "-n",
+        "com.lexiquest.app.nativeResumeBw/com.lexiquest.app.NativeResumeActivity",
+        "--es",
+        "baselineRun",
+        "bw-synthetic-01",
+        "--es",
+        "baselinePhase",
+        "verify"
+      ],
+      "exitCode": 0,
+      "durationMs": 3541.95
+    },
+    {
+      "atUtc": "2026-09-28T03:33:57.3557483Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-verify.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 82.4574
+    },
+    {
+      "atUtc": "2026-09-28T03:33:58.4439498Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-verify.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 60.6603
+    },
+    {
+      "atUtc": "2026-09-28T03:33:59.5147275Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-verify.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 119.7639
+    },
+    {
+      "atUtc": "2026-09-28T03:34:00.6352585Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-verify.json"
+      ],
+      "exitCode": 1,
+      "durationMs": 133.1426
+    },
+    {
+      "atUtc": "2026-09-28T03:34:01.7715666Z",
+      "arguments": [
+        "shell",
+        "run-as",
+        "com.lexiquest.app.nativeResumeBw",
+        "cat",
+        "files/bw-synthetic-01-verify.json"
+      ],
+      "exitCode": 0,
+      "durationMs": 108.7346
+    },
+    {
+      "atUtc": "2026-09-28T03:34:01.8844867Z",
+      "arguments": [
+        "shell",
+        "pidof",
+        "com.lexiquest.app.nativeResumeBw"
+      ],
+      "exitCode": 0,
+      "durationMs": 71.9186
+    },
+    {
+      "atUtc": "2026-09-28T03:34:01.9583548Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app"
+      ],
+      "exitCode": 0,
+      "durationMs": 91.9781
+    },
+    {
+      "atUtc": "2026-09-28T03:34:02.0531108Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.ariTest"
+      ],
+      "exitCode": 0,
+      "durationMs": 139.9355
+    },
+    {
+      "atUtc": "2026-09-28T03:34:02.1965681Z",
+      "arguments": [
+        "shell",
+        "dumpsys",
+        "package",
+        "com.lexiquest.app.nativeBaselineBm"
+      ],
+      "exitCode": 0,
+      "durationMs": 140.7949
+    }
+  ],
+  "isolationVerified": true
+}

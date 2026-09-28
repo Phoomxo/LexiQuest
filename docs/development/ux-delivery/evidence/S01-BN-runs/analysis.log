@@ -1,0 +1,18 @@
+Analyzing vocab_list_screen.dart, baseline_host_ui_audit_test.dart...
+
+  error - test\support\baseline_host_ui_audit_test.dart:207:42 - The argument type 'Finder' can't be assigned to the parameter type 'FinderBase<SemanticsNode>'.  - argument_type_not_assignable
+warning - lib\screens\vocab_list_screen.dart:58:20 - The member 'notifyListeners' can only be used within 'package:flutter/src/foundation/change_notifier.dart' or a test. - invalid_use_of_visible_for_testing_member
+warning - lib\screens\vocab_list_screen.dart:58:20 - The member 'notifyListeners' can only be used within instance members of subclasses of 'ChangeNotifier'. - invalid_use_of_protected_member
+   info - lib\screens\vocab_list_screen.dart:65:27 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+   info - lib\screens\vocab_list_screen.dart:66:22 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+   info - lib\screens\vocab_list_screen.dart:90:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\screens\vocab_list_screen.dart:161:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\screens\vocab_list_screen.dart:162:41 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\screens\vocab_list_screen.dart:266:25 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\screens\vocab_list_screen.dart:539:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\screens\vocab_list_screen.dart:558:9 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\screens\vocab_list_screen.dart:558:18 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+   info - lib\screens\vocab_list_screen.dart:570:26 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\screens\vocab_list_screen.dart:570:26 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+
+14 issues found.

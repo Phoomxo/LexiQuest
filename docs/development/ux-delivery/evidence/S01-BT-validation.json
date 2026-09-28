@@ -1,0 +1,283 @@
+{
+  "preservation": {
+    "runningTestProcesses": [],
+    "productionChangedFiles": [],
+    "baselineFiles": 5106,
+    "preservedBaselineFiles": 5103,
+    "sourceClosureMismatches": 0,
+    "allowedChangedFiles": [
+      "docs/development/ux-delivery/README.md",
+      "docs/development/ux-delivery/ready-backlog.md",
+      "docs/development/ux-delivery/state.json"
+    ],
+    "unexpectedChanges": [],
+    "generatedPreserved": true,
+    "dirty": [
+      " M android/app/build.gradle.kts",
+      " M docs/development/ux-delivery/README.md",
+      " M docs/development/ux-delivery/ready-backlog.md",
+      " M docs/development/ux-delivery/state.json",
+      " M lib/screens/add_vocab_screen.dart",
+      " M lib/screens/offline_content_manager_screen.dart",
+      " M lib/screens/setting_screen.dart",
+      " M lib/screens/vocab_list_screen.dart",
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M test/screens/offline_content_manager_screen_test.dart",
+      " M test/screens/offline_content_settings_entry_test.dart",
+      " M test/screens/setting_screen_data_erasure_test.dart",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake",
+      "?? android/app/src/nativeBaseline/",
+      "?? docs/development/ux-delivery/S01-BD.md",
+      "?? docs/development/ux-delivery/S01-BE.md",
+      "?? docs/development/ux-delivery/S01-BF.md",
+      "?? docs/development/ux-delivery/S01-BG.md",
+      "?? docs/development/ux-delivery/S01-BH.md",
+      "?? docs/development/ux-delivery/S01-BI.md",
+      "?? docs/development/ux-delivery/S01-BJ.md",
+      "?? docs/development/ux-delivery/S01-BK.md",
+      "?? docs/development/ux-delivery/S01-BL-next-harness.md",
+      "?? docs/development/ux-delivery/S01-BL.md",
+      "?? docs/development/ux-delivery/S01-BM.md",
+      "?? docs/development/ux-delivery/S01-BN.md",
+      "?? docs/development/ux-delivery/S01-BO.md",
+      "?? docs/development/ux-delivery/S01-BP.md",
+      "?? docs/development/ux-delivery/S01-BQ.md",
+      "?? docs/development/ux-delivery/S01-BR.md",
+      "?? docs/development/ux-delivery/S01-BS.md",
+      "?? docs/development/ux-delivery/S01-BT.md",
+      "?? docs/development/ux-delivery/evidence/S01-BD-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BD-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BD-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BD-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BD-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BE-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BE-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BE-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BE-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BE-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BF-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BF-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BF-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BF-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BF-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BG-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BG-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BG-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BG-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BG-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BH-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BH-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BH-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BH-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BH-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BI-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BI-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BI-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BI-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BI-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BJ-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BJ-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BJ-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BJ-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BJ-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BK-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BK-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BK-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BK-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BK-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BL-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BL-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BL-final-check.json",
+      "?? docs/development/ux-delivery/evidence/S01-BL-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BL-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-controller-receipt.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-final-check.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-run-artifact-pins.json",
+      "?? docs/development/ux-delivery/evidence/S01-BM-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BM-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BN-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BN-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BN-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BN-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BO-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BO-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BO-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BO-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BP-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BP-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BP-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BP-source.patch",
+      "?? docs/development/ux-delivery/evidence/S01-BP-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BQ-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BQ-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BQ-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BQ-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BR-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BR-checkpoint.sha256",
+      "?? docs/development/ux-delivery/evidence/S01-BR-claim.json",
+      "?? docs/development/ux-delivery/evidence/S01-BR-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BR-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BS-artifact-receipt.json",
+      "?? docs/development/ux-delivery/evidence/S01-BS-checkpoint.json",
+      "?? docs/development/ux-delivery/evidence/S01-BS-checkpoint.sha256",
+      "?? docs/development/ux-delivery/evidence/S01-BS-runs/",
+      "?? docs/development/ux-delivery/evidence/S01-BS-validation.json",
+      "?? docs/development/ux-delivery/evidence/S01-BT-runs/",
+      "?? integration_test/native_baseline_acceptance_test.dart",
+      "?? integration_test/support/native_baseline_cases.dart",
+      "?? integration_test/support/native_baseline_fixture.dart",
+      "?? test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "?? test/support/baseline_host_ui_audit_test.dart",
+      "?? test/support/composed_host_ui_audit_test.dart",
+      "?? test/support/forms_host_ui_audit_test.dart",
+      "?? test/support/native_baseline_fixture_test.dart",
+      "?? test/support/native_baseline_navigation_test.dart",
+      "?? test/support/populated_profile_host_ui_audit_test.dart",
+      "?? test/support/today_preview_route_audit_test.dart",
+      "?? test/support/today_quiz_resume_contract_test.dart",
+      "?? tool/cli/native-baseline-contract.ps1",
+      "?? tool/cli/run-native-baseline-acceptance.ps1",
+      "?? tool/cli/tests/native-baseline-contract.tests.ps1",
+      "?? tool/cli/tests/native-baseline-isolation.tests.ps1",
+      "?? tool/cli/tests/native-baseline-runner.tests.ps1"
+    ],
+    "bsEvidencePreserved": true,
+    "sourceClosureEntries": 1580
+  },
+  "sourceClosureManifest": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-final-red.json",
+  "productionChangedFiles": [],
+  "package": "S01-BT-ordinary-quiz-checkpoint-admission",
+  "pins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/analysis-final.log",
+      "sha256": "6be50801cb4d26413cd238650dfe9298efcc671570f1b7f88888915d2a9a9a57"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/analysis.log",
+      "sha256": "a5f535cea6b6b42b2590a427d31fce47036f65df7353946225bf15620916c7c7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/baseline.json",
+      "sha256": "595f6b174093d4781b3021a591f34a88602b42fe86c6e8ede61a1d1be108cbba"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/contract-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/contract-red.stdout.log",
+      "sha256": "312f7e3822a9883bf3f4a906a9af6ed30a00e91f948c63d43966b79ba357c250"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-integrity.json",
+      "sha256": "59a9b0c9bdb4c0332cd11bb79c72ce987a981add88296645fd4a6ac0e7104d30"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/final-red.stdout.log",
+      "sha256": "27cdfb58c81447f864d4d2367ca95e45d6075c46c0e195212c953620ef97a934"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-contract-red.json",
+      "sha256": "cbf5be223e85e6c3a06d47193e2500d0314e2a1a2f09a0872439761908ef9fb3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-final-red.json",
+      "sha256": "7202d4d9db7c267c883ffa501cc8e57021a6a5ebbefe7b8f0cc6da5a397179e1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/gate-route-red.json",
+      "sha256": "41659e7678c2361169c6038842c851706a2146a55992ce8c152e6bfdf40bdb05"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-red.stdout.log",
+      "sha256": "107f4220541902e77e0d298a306eb0418d84ca8e9b48681a0ffca06bfff132ed"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/route-targeted.log",
+      "sha256": "5381d1ff0f2ae8c7b255365b7474ba6e43cb2a714536d5b1bf406a9cbb1cd81a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/targeted-final.log",
+      "sha256": "e3e793c6e9046f36121b35639660e1a8cac968f964037ff8ae1ddd9507eb72f8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BT-runs/targeted.log",
+      "sha256": "9f3ad3607dd1e0eafa4573636a6ece1b676931bf7384891d0996d5726a4848d4"
+    },
+    {
+      "path": "docs/development/ux-delivery/S01-BT.md",
+      "sha256": "6e7b528b91bf880d1be4e133763f848e9aa376c3aebd686b657e4781486722bd"
+    },
+    {
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "sha256": "acb9c4514e0ec8e856a86944885377938a0ba734c970d14631ac195e57d8b85b"
+    },
+    {
+      "path": "docs/development/ux-delivery/README.md",
+      "sha256": "5a13c144a624df7d397324829d6ae51e2485dec5d84fe977019982832ac96e23"
+    },
+    {
+      "path": "docs/development/ux-delivery/ready-backlog.md",
+      "sha256": "20955fbd4799e0c7c415a7fd00c62d9821d7bc278afd77ff94133b56fb10b6f0"
+    },
+    {
+      "path": "docs/development/ux-delivery/state.json",
+      "sha256": "51b3587b8e29901c734990dc2eb1a9f341a8a983a393e5ed0ccbdd96b44b57b2"
+    }
+  ],
+  "ordinaryAnswerCompletionReplay": "NOT_RUN",
+  "trials": "DEFERRED",
+  "hostTests": {
+    "passed": 9,
+    "total": 11,
+    "failed": 2
+  },
+  "bsResume": "OPEN_RED",
+  "status": "OPEN_RED",
+  "toolRecovery": "Final gate lookup corrected once from raw-string scan to exact selection arguments; no test retry without source change.",
+  "analyzer": "PASS_NO_ISSUES_EXIT_0",
+  "predecessorMismatches": 0,
+  "schemaVersion": 1,
+  "predecessorPinChecks": 1598,
+  "releaseAccepted": false,
+  "gatePrePost": [
+    {
+      "status": "Failed",
+      "post": "0a9171bba1d26f11e7ea5effa1f79b9771410edc7ac704ec5b47e6654bde455c",
+      "exitCode": 1,
+      "name": "contract-red",
+      "pre": "0a9171bba1d26f11e7ea5effa1f79b9771410edc7ac704ec5b47e6654bde455c"
+    },
+    {
+      "status": "Failed",
+      "post": "ed1bf0815d42543ec4f72c29529359b0598cabf718b662d1299dc3a1fb7c9fc7",
+      "exitCode": 1,
+      "name": "route-red",
+      "pre": "ed1bf0815d42543ec4f72c29529359b0598cabf718b662d1299dc3a1fb7c9fc7"
+    },
+    {
+      "status": "Failed",
+      "post": "8eb0325a6c31343491d25cd94fdd75716e0bda2d677174eff159b469bfe444cc",
+      "exitCode": 1,
+      "name": "final-red",
+      "pre": "8eb0325a6c31343491d25cd94fdd75716e0bda2d677174eff159b469bfe444cc"
+    }
+  ],
+  "genericAdmissionReplay": "PASS_CHARACTERIZATION_ONLY",
+  "acceptance": "NOT_MET_CANONICAL_MEANING_ADMISSION_CONTRACT_MISSING"
+}

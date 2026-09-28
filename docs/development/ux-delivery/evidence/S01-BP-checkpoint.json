@@ -1,0 +1,105 @@
+{
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "hostBuildTestProcesses": [],
+  "renderCount": 24,
+  "branch": "codex/ux-current-after-s01-bc",
+  "reportSha256": "29662d781c854afd18ed6c0f2fb8d3571ecf07b9f2f35f2ea1c3b51725a5ed4c",
+  "remaining": [
+    "Today fully routed success/resume gated",
+    "Profile with populated learning evidence not audited",
+    "Native IME/TalkBack/visual acceptance",
+    "Actual user trials DEFERRED",
+    "Reviewed media/qualified trial/full release"
+  ],
+  "nextExecutableStep": "Controller review S01-BP checkpoint. Assigned quest/form host audit complete. Today routed success remains gated; populated-learning Profile unverified; native IME/TalkBack NOT_RUN; user trials DEFERRED. No successor selected/dispatched; choose further work only from concrete remaining gaps.",
+  "preExistingPinsVerified": 198,
+  "sourceClosureVerified": 1576,
+  "sourcePins": [
+    {
+      "sha256": "800717b9f7ddbf1a61ac1927d206634a3c23d1ce8f6ffba5a9938afecba5624c",
+      "path": "lib/screens/add_vocab_screen.dart"
+    },
+    {
+      "sha256": "a95d8f434c15360caaf97c4b1c7ef1568fa3530413114dcf0556644bc1e1d47f",
+      "path": "lib/screens/quest_status_screen.dart"
+    },
+    {
+      "sha256": "9f60c1bcf30f9a024d85a20618ad9c2d044cbb2e4c1974eaaf27a67ae0ded929",
+      "path": "lib/screens/vocab_list_screen.dart"
+    },
+    {
+      "sha256": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34",
+      "path": "lib/screens/main_navigation_screen.dart"
+    },
+    {
+      "sha256": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348",
+      "path": "lib/runtime/registries/feature_registry.dart"
+    },
+    {
+      "sha256": "8d9309f83657975d3abfb08f952453086292950e986bcb6523eaa9f16c45d7ac",
+      "path": "lib/runtime/app_dependencies.dart"
+    },
+    {
+      "sha256": "98df93281b885741554fd6759fda1809c823387bb064b54982010e852cbe4216",
+      "path": "test/support/forms_host_ui_audit_test.dart"
+    },
+    {
+      "sha256": "e8a7d7321ee0b4bb32c679b07a93db0a7eb4ae076472f25af1d4971b7fb29ee1",
+      "path": "test/screens/word_form_recovery_test.dart"
+    },
+    {
+      "sha256": "51209cd5e9a578b53b92ea677af05c4cbea74d6214946e872b28b2d16232dd8b",
+      "path": "test/screens/quest_status_screen_test.dart"
+    },
+    {
+      "sha256": "5340d5de65d8e31670cfdaaa837ea90e35f44716b03f77aded6ed79059e4c1c2",
+      "path": "test/screens/vocab_list_screen_test.dart"
+    },
+    {
+      "sha256": "80b0140ef32de43d5820cd3f3b2fbb9f688389eafe8071ce2a1f0041af9b0138",
+      "path": "integration_test/support/native_baseline_cases.dart"
+    },
+    {
+      "sha256": "8fc8e64473b2b67073ed7ed69ccd1ef1cd33f799c8d79b88ac5fba26d9ed9405",
+      "path": "integration_test/support/native_baseline_fixture.dart"
+    }
+  ],
+  "threadId": "01a0e0be-f3e1-7ab0-9d33-f3d7c6ddc7ae",
+  "userParticipation": "DEFERRED",
+  "validationSha256": "fc38d049cec5f7a800d88f9325743d70756c402fe7713b7c736cb61f21b3c2f5",
+  "todayRoutedSuccess": "NOT_RUN_GATED",
+  "sprintAccepted": false,
+  "successorDispatched": false,
+  "stateRevision": 141,
+  "productionSourceChanged": true,
+  "stateSha256": "ae08f7af518db21f7b44743857843b649a9709b3493681c9cd2fb3ae1145e192",
+  "writerStatus": "RELEASED",
+  "readmeSha256": "9e79bfd8ff87a77d9f079eca0d1ec1db92d973d7699cdd02501408690e3e7e32",
+  "validation": "docs/development/ux-delivery/evidence/S01-BP-validation.json",
+  "openPrototypeDefects": "UX-D01-D25 remain OPEN",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/login/ledger changes",
+  "gateFingerprint": "a82659db25fe587c358c9b1092e6008af4bb019d7040c08e4cf3c1b06be365b1",
+  "hostTests": 5,
+  "atUtc": "2026-09-27T03:31:04.8413922Z",
+  "claimSha256": "f41fdc89ea236d0308bb19c73a4c05ec8b50d46ef435a28bcd0179b02e8c9334",
+  "status": "READY_FOR_CONTROLLER",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "engineering": "COMPLETE_BOUNDED_HOST_AUDIT",
+  "nativeProcess": "Not observed or changed; installed packages preserved",
+  "readyBacklogSha256": "0690557cd530097f6d5e1d033636d8941a76b5525579c86d16e2e2604515e58f",
+  "nativeDelta": "NOT_RUN",
+  "changedFiles": [
+    "lib/screens/add_vocab_screen.dart",
+    "test/support/forms_host_ui_audit_test.dart",
+    "docs/development/ux-delivery/S01-BP.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/ready-backlog.md",
+    "docs/development/ux-delivery/evidence/S01-BP-*"
+  ],
+  "report": "docs/development/ux-delivery/S01-BP.md",
+  "productionDiff": "One optional CEFR floating label line",
+  "package": "S01-BP-host-quest-vocabulary-audit",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "schemaVersion": 1
+}

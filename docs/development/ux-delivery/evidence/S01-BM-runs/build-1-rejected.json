@@ -1,0 +1,7 @@
+{
+  "reason": "Environment property did not select isolated build; use verified Flutter --android-project-arg",
+  "atUtc": "2026-09-27T00:50:23.5132669Z",
+  "apkSha256": "db997f68a43f72ea14a09be41cd8eb2d8a8b99b4d43cba6e358aff43c6cc52c3",
+  "status": "REJECTED_BEFORE_INSTALL",
+  "apkId": "com.lexiquest.app"
+}

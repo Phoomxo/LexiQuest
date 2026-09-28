@@ -1,0 +1,48 @@
+{
+  "pins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/route-red.stdout.log",
+      "sha256": "e9e59fab9fad5365cd99a9e22d783e49a0927f5d4668091eb1dc03d6957b40e1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/route-red.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/gate-route-red.json",
+      "sha256": "81710de0af3b022b08eb0f9c31d637ed3db9d59cd134beaeb33397b87ba28733"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/gate-checkpoint-red.json",
+      "sha256": "4ac64c80911680e854c8752a154455865f53b33858777911fc49328c0a9d7632"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/final-integrity.json",
+      "sha256": "c574590511b8f6e57b179a9fe03f6ef6e0901103712be9116aeef27867797ff4"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/checkpoint-red.stdout.log",
+      "sha256": "47a9a7e0d386ef1f8c4535f2214cc21c6054458d8766d34b11fc016371437115"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/baseline.json",
+      "sha256": "1f21c1204a14cedbc7d2cd4fdc4b0eac6117815f8a99c9a10f6fa6b86b0ddfbe"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/analysis.log",
+      "sha256": "b3373cc2b9273555a4ffa22bc5e707f10b5741160dd10474cd669feec110fcd0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/acceptance-route-red.log",
+      "sha256": "491678cb41a69180c484805828a37040363c1b5ad599ece9ec1fcb92d870d006"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BS-runs/acceptance-red.log",
+      "sha256": "320573be46702a5c86f1c9e51a71ab4e382726f8a53462cba27b13bf81064437"
+    }
+  ],
+  "checkpointSha256": "5349f30515d46f6fa392c1391d71bafc6802b5dcbbbb6a53e50ccd4e532e22f8",
+  "purpose": "Supplemental immutable artifact inventory including ignored verification logs",
+  "schemaVersion": 1,
+  "atUtc": "2026-09-27T23:45:17.7222522Z"
+}

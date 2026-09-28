@@ -51,6 +51,29 @@ class _SettingScreenState extends State<SettingScreen>
   LocalOwnerRepository? _localOwners;
   DisplayPreferencesController? _displayPreferences;
   OfflineContentManager? _offlineContent;
+  AppDependencies? _offlineDependencies;
+  int _offlineEntryGeneration = 0;
+  bool _offlineEntryVisible = false;
+  bool _offlineEntryEnabled = false;
+  bool _offlineOpening = false;
+
+  void _syncOfflineEntry() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final visible = _displayActive;
+    final enabled =
+        dependencies?.features.isEnabled(Feature.offlineContent) == true &&
+        dependencies?.hasComposedDependencyFor(Feature.offlineContent) == true;
+    if (!identical(dependencies, _offlineDependencies) ||
+        visible != _offlineEntryVisible ||
+        enabled != _offlineEntryEnabled) {
+      _offlineEntryGeneration++;
+    }
+    _offlineDependencies = dependencies;
+    _offlineContent = dependencies?.offlineContent;
+    _offlineEntryVisible = visible;
+    _offlineEntryEnabled = enabled;
+  }
+
   FeatureRegistry? _featureRegistry;
   Listenable? _featureChanges;
   bool _busy = false;
@@ -209,29 +232,85 @@ class _SettingScreenState extends State<SettingScreen>
     if (!mounted) return;
     setState(() {
       _displayForeground = state == AppLifecycleState.resumed;
+      _offlineEntryGeneration++;
       _retireDisplay();
       _retirePassword();
       _logoutGeneration++;
+      _retireErasure();
       _syncDisplayVisibility();
     });
   }
 
   bool _erasureConfirming = false;
+  int _erasureGeneration = 0;
+  bool _erasureVisible = false;
+  DialogRoute<bool>? _erasureRoute;
+
+  bool get _erasureActive =>
+      mounted &&
+      !_displayExited &&
+      _displayForeground &&
+      TickerMode.valuesOf(context).enabled &&
+      (_erasureRoute != null
+          ? _erasureRoute!.isCurrent &&
+                ModalRoute.of(context)?.isActive != false
+          : ModalRoute.of(context)?.isCurrent != false);
+
+  void _retireErasure() {
+    _erasureGeneration++;
+    final route = _erasureRoute;
+    if (route != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (route.isActive) route.navigator?.removeRoute(route);
+      });
+    }
+  }
+
+  void _syncErasure() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final eraser = widget.localDataEraser ?? dependencies?.localDataEraser;
+    final owners = widget.localOwners ?? dependencies?.localOwners;
+    final visible = _erasureActive;
+    if (!identical(eraser, _localDataEraser) ||
+        !identical(owners, _localOwners) ||
+        visible != _erasureVisible) {
+      _retireErasure();
+    }
+    _localDataEraser = eraser;
+    _localOwners = owners;
+    _erasureVisible = visible;
+  }
+
+  bool _erasureCurrent(
+    int generation,
+    LocalDataEraser eraser,
+    LocalOwnerRepository owners,
+  ) =>
+      generation == _erasureGeneration &&
+      _erasureActive &&
+      identical(
+        eraser,
+        widget.localDataEraser ??
+            AppDependenciesScope.maybeOf(context)?.localDataEraser,
+      ) &&
+      identical(
+        owners,
+        widget.localOwners ??
+            AppDependenciesScope.maybeOf(context)?.localOwners,
+      );
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncDisplayVisibility();
     _syncPassword();
+    _syncErasure();
     final dependencies = AppDependenciesScope.maybeOf(context);
     _account = widget.account ?? dependencies?.account;
     _researchConsent ??=
         widget.researchConsent ?? dependencies?.researchConsent;
     _consentStatus ??= _researchConsent?.load();
-    _localDataEraser ??=
-        widget.localDataEraser ?? dependencies?.localDataEraser;
-    _localOwners ??= widget.localOwners ?? dependencies?.localOwners;
-    _offlineContent ??= dependencies?.offlineContent;
+    _syncOfflineEntry();
     _bindFeatureRegistry(dependencies?.features);
     _bindDisplayPreferences(
       widget.displayPreferences ?? dependencies?.displayPreferences,
@@ -242,6 +321,7 @@ class _SettingScreenState extends State<SettingScreen>
   void didUpdateWidget(covariant SettingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncPassword();
+    _syncErasure();
     if (!identical(oldWidget.researchConsent, widget.researchConsent)) {
       _researchConsent =
           widget.researchConsent ??
@@ -291,12 +371,13 @@ class _SettingScreenState extends State<SettingScreen>
   }
 
   void _onFeatureRegistryChanged() {
-    if (mounted) setState(() {});
+    if (mounted) setState(_syncOfflineEntry);
   }
 
   @override
   void dispose() {
     _displayExited = true;
+    _retireErasure();
     unawaited(_passwordSessionSubscription?.cancel());
     _retirePassword();
     _retireDisplay();
@@ -306,7 +387,12 @@ class _SettingScreenState extends State<SettingScreen>
     super.dispose();
   }
 
-  Future<void> _openOfflineContent() async {
+  Future<void> _openOfflineContent(int generation) async {
+    if (!_displayActive ||
+        generation != _offlineEntryGeneration ||
+        _offlineOpening) {
+      return;
+    }
     final manager = _offlineContent;
     final registry = _featureRegistry;
     final dependencies = AppDependenciesScope.maybeOf(context);
@@ -318,22 +404,46 @@ class _SettingScreenState extends State<SettingScreen>
         !dependencies.hasComposedDependencyFor(Feature.offlineContent)) {
       return;
     }
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'settings/offline-content',
-        builder: (_) => ProductionFeatureGate(
-          feature: Feature.offlineContent,
-          registry: registry,
-          builder: (_) => OfflineContentManagerScreen(
-            manager: manager,
-            canInvoke: () =>
+    _offlineOpening = true;
+    _offlineEntryGeneration++;
+    var retired = false;
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'settings/offline-content',
+          builder: (routeContext) {
+            bool canInvoke() =>
+                !retired &&
+                mounted &&
+                routeContext.mounted &&
+                identical(
+                  AppDependenciesScope.maybeOf(routeContext),
+                  dependencies,
+                ) &&
                 registry.isEnabled(Feature.offlineContent) &&
-                identical(dependencies.offlineContent, manager),
-          ),
+                dependencies.hasComposedDependencyFor(Feature.offlineContent);
+            if (!canInvoke()) {
+              retired = true;
+              return const ProductionFeatureUnavailable(
+                feature: Feature.offlineContent,
+                reason: ProductionFeatureUnavailableReason.missingDependency,
+              );
+            }
+            return ProductionFeatureGate(
+              feature: Feature.offlineContent,
+              registry: registry,
+              builder: (_) => OfflineContentManagerScreen(
+                manager: manager,
+                canInvoke: canInvoke,
+              ),
+            );
+          },
         ),
-      ),
-    );
+      );
+    } finally {
+      _offlineOpening = false;
+    }
   }
 
   Future<void> _changeDisplay(
@@ -458,12 +568,13 @@ class _SettingScreenState extends State<SettingScreen>
     }
   }
 
-  Future<void> _eraseLocalData() async {
+  Future<void> _eraseLocalData(int generation) async {
     final eraser = _localDataEraser;
     final owners = _localOwners;
     if (!mounted ||
         eraser == null ||
         owners == null ||
+        !_erasureCurrent(generation, eraser, owners) ||
         _busy ||
         _erasureConfirming) {
       return;
@@ -472,42 +583,70 @@ class _SettingScreenState extends State<SettingScreen>
     try {
       // Bind the confirmation to the owner presented, before opening the dialog.
       final owner = await owners.getOrCreateActiveOwner();
-      if (!mounted) return;
-      final confirmed = await showDialog<bool>(
+      if (!mounted || !_erasureCurrent(generation, eraser, owners)) return;
+      final route = DialogRoute<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('ลบข้อมูลในเครื่องทั้งหมดหรือไม่?'),
-          content: const Text(
-            'ข้อมูลการเรียน คำศัพท์ ความยินยอม ประวัติการใช้ AI และกุญแจ API '
-            'ที่บันทึกไว้ในเครื่องของผู้เรียนปัจจุบันจะถูกลบถาวร',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('ยกเลิก'),
+        builder: (dialogContext) {
+          // Observe this dialog's route as well as the settings route: a new
+          // route can cover the dialog while settings was already non-current.
+          if (ModalRoute.of(dialogContext)?.isCurrent == false) {
+            _retireErasure();
+          }
+          return AlertDialog(
+            title: const Text('ลบข้อมูลในเครื่องทั้งหมดหรือไม่?'),
+            content: const Text(
+              'ข้อมูลการเรียน คำศัพท์ ความยินยอม ประวัติการใช้ AI และกุญแจ API '
+              'ที่บันทึกไว้ในเครื่องของผู้เรียนปัจจุบันจะถูกลบถาวร',
             ),
-            FilledButton(
-              key: const ValueKey<String>('confirm-local-erasure'),
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('ลบข้อมูลในเครื่อง'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (_erasureCurrent(generation, eraser, owners)) {
+                    Navigator.pop(dialogContext, false);
+                  }
+                },
+                child: const Text('ยกเลิก'),
+              ),
+              FilledButton(
+                key: const ValueKey<String>('confirm-local-erasure'),
+                onPressed: () {
+                  if (_erasureCurrent(generation, eraser, owners)) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
+                child: const Text('ลบข้อมูลในเครื่อง'),
+              ),
+            ],
+          );
+        },
       );
-      if (confirmed != true || !mounted) return;
+      _erasureRoute = route;
+      final confirmed = await Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(route);
+      if (identical(_erasureRoute, route)) _erasureRoute = null;
+      if (confirmed != true || !_erasureCurrent(generation, eraser, owners)) {
+        return;
+      }
       setState(() => _busy = true);
       final currentOwner = await owners.getOrCreateActiveOwner();
-      if (!mounted) return;
+      if (!_erasureCurrent(generation, eraser, owners)) return;
       if (currentOwner.id != owner.id) {
         _show('ผู้เรียนเปลี่ยนแล้ว กรุณาเปิดการยืนยันลบข้อมูลอีกครั้ง');
         return;
       }
       await eraser.eraseAll(ownerId: owner.id);
-      if (mounted) _show('ลบข้อมูลในเครื่องแล้ว');
+      if (_erasureCurrent(generation, eraser, owners)) {
+        _show('ลบข้อมูลในเครื่องแล้ว');
+      }
     } on Object {
-      if (mounted) _show('ลบข้อมูลในเครื่องได้ไม่ครบ กรุณาลองอีกครั้ง');
+      if (_erasureCurrent(generation, eraser, owners)) {
+        _show('ลบข้อมูลในเครื่องได้ไม่ครบ กรุณาลองอีกครั้ง');
+      }
     } finally {
       _erasureConfirming = false;
+      _erasureGeneration++;
       if (mounted) {
         final consent = _researchConsent;
         if (consent != null) _reloadConsent(consent);
@@ -622,6 +761,14 @@ class _SettingScreenState extends State<SettingScreen>
     final dependencies = AppDependenciesScope.maybeOf(context);
     _syncPassword();
     _syncLogout();
+    _syncErasure();
+    final erasureGeneration = _erasureGeneration;
+    _syncOfflineEntry();
+    final offlineEntryGeneration = _offlineEntryGeneration;
+    void openOfflineContent() =>
+        unawaited(_openOfflineContent(offlineEntryGeneration));
+    final erasureReady = !_busy && !_erasureConfirming && _erasureActive;
+    void eraseLocalData() => unawaited(_eraseLocalData(erasureGeneration));
     final logoutAccount = _logoutAccount;
     final logoutIdentity = _logoutSessionIdentity;
     final logoutGeneration = _logoutGeneration;
@@ -686,6 +833,7 @@ class _SettingScreenState extends State<SettingScreen>
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
           _displayExited = true;
+          _retireErasure();
           _retirePassword();
           _retireDisplay();
         }
@@ -1031,13 +1179,13 @@ class _SettingScreenState extends State<SettingScreen>
                   child: MenuActionBinding(
                     id: offlineContentEntry.id,
                     label: offlineContentEntry.fullThaiLabel,
-                    onInvoke: _openOfflineContent,
+                    onInvoke: openOfflineContent,
                     child: Semantics(
                       button: true,
                       enabled: true,
                       label: offlineContentEntry.semanticsLabel,
                       hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
-                      onTap: _openOfflineContent,
+                      onTap: openOfflineContent,
                       excludeSemantics: true,
                       child: Card(
                         child: ListTile(
@@ -1050,7 +1198,7 @@ class _SettingScreenState extends State<SettingScreen>
                           subtitle: const Text(
                             'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
                           ),
-                          onTap: _openOfflineContent,
+                          onTap: openOfflineContent,
                         ),
                       ),
                     ),
@@ -1292,17 +1440,13 @@ class _SettingScreenState extends State<SettingScreen>
                   child: MenuActionBinding(
                     id: eraseLocalDataEntry.id,
                     label: eraseLocalDataEntry.fullThaiLabel,
-                    onInvoke: _busy
-                        ? null
-                        : () {
-                            unawaited(_eraseLocalData());
-                          },
+                    onInvoke: erasureReady ? eraseLocalData : null,
                     child: Semantics(
                       button: true,
-                      enabled: !_busy,
+                      enabled: erasureReady,
                       label: eraseLocalDataEntry.semanticsLabel,
                       hint: eraseLocalDataEntry.tooltip,
-                      onTap: _busy ? null : _eraseLocalData,
+                      onTap: erasureReady ? eraseLocalData : null,
                       excludeSemantics: true,
                       child: Card(
                         child: ListTile(
@@ -1311,7 +1455,7 @@ class _SettingScreenState extends State<SettingScreen>
                           leading: Icon(eraseLocalDataEntry.icon),
                           title: Text(eraseLocalDataEntry.fullThaiLabel),
                           subtitle: Text(eraseLocalDataEntry.tooltip),
-                          onTap: _busy ? null : _eraseLocalData,
+                          onTap: erasureReady ? eraseLocalData : null,
                         ),
                       ),
                     ),

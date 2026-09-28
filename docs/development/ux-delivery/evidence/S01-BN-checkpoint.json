@@ -1,0 +1,57 @@
+{
+  "package": "S01-BN-host-ui-audit",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "reportSha256": "4262e1c75b5c7029a7ccb72dc8f85922145bd181bc4c6c762f9e342383907c57",
+  "nextExecutableStep": "Host-only synthetic existing Today/Profile success and composed existing learning catalog using production authorities; then bound concrete remaining child routes",
+  "gateFingerprint": "a2bcc60b026086fcd7bbde29b58407a431ccb4bf1151823a80e602e3ce02c7e6",
+  "validationSha256": "1d1065d922d9e9c3837564301f9857d58c35291a47ef7f9cc7ac1d5ceb1ecec9",
+  "openPrototypeDefects": "UX-D01-D25 remain OPEN",
+  "schemaVersion": 1,
+  "threadId": "01a0e097-c108-7210-8faa-37c82a53c0ff",
+  "stateRevision": 137,
+  "successorDispatched": false,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "changedFiles": [
+    "lib/screens/vocab_list_screen.dart",
+    "test/support/baseline_host_ui_audit_test.dart",
+    "docs/development/ux-delivery/S01-BN.md",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/state.json",
+    "docs/development/ux-delivery/evidence/S01-BN-*"
+  ],
+  "userParticipation": "DEFERRED",
+  "nativeDelta": "NOT_RUN",
+  "sourceState": "BD-BM/generated7/evidence preserved; BN focused search semantics + host test uncommitted",
+  "routing": "Current model deterministic fallback; Standard/default requested; runtime unverified; no Jev/billing/login/ledger changes",
+  "report": "docs/development/ux-delivery/S01-BN.md",
+  "validation": "docs/development/ux-delivery/evidence/S01-BN-validation.json",
+  "branch": "codex/ux-current-after-s01-bc",
+  "hostTests": 41,
+  "status": "READY_FOR_CONTROLLER",
+  "renderCount": 22,
+  "releaseNote": "Final README/state write records revision137; no further source edits or dispatch",
+  "sourcePins": [
+    {
+      "path": "lib/screens/vocab_list_screen.dart",
+      "sha256": "9f60c1bcf30f9a024d85a20618ad9c2d044cbb2e4c1974eaaf27a67ae0ded929"
+    },
+    {
+      "path": "test/support/baseline_host_ui_audit_test.dart",
+      "sha256": "fe31deb7b8ec9a369e9a77034682b2dc89a11faef2d562d6ce4ba8e53847de0e"
+    }
+  ],
+  "nativeProcess": "BM last-known PID634 not observed or changed by BN",
+  "engineering": "COMPLETE_BOUNDED_HOST_UI_AUDIT",
+  "hostBuildTestProcesses": [],
+  "sprintAccepted": false,
+  "atUtc": "2026-09-27T02:20:09.4566828Z",
+  "writerStatus": "RELEASED",
+  "remaining": [
+    "Actual device visual/TalkBack/IME",
+    "Actual user trials deferred",
+    "Loaded Today/Profile and composed learning catalog",
+    "Quest child and vocabulary mutation forms",
+    "Full release/provider/research/deployment"
+  ],
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1"
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-26T17:15:50.8771938Z",
+  "threadId": "01a0deb6-099b-7010-a49b-3ff84a2c62e1",
+  "threadIdEvidence": "CODEX_THREAD_ID environment",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "initialGitStatus": "clean",
+  "writer": "sole application writer; predecessor released",
+  "selection": "Investigate existing offline-content controls under UX12; confirm a reproduction before implementation",
+  "authorization": "UX v5 continuation; cleanup waiting superseded; preserve all old worktrees; no successor dispatch by this writer",
+  "routing": {
+    "selection": "current-model deterministic fallback",
+    "jevSelected": false,
+    "externalInference": false,
+    "requestedTier": "Standard/default",
+    "observedModel": null,
+    "observedEffort": null,
+    "observedTier": null,
+    "limitation": "Runtime model, effort and tier are not exposed by the inspected environment; no billing/login retry or paid action"
+  },
+  "preservedAcceptance": "BC historical host570/new46/pins1563; native/user/trial/release pending; UX-D01-D25 OPEN; S01 IN_PROGRESS"
+}

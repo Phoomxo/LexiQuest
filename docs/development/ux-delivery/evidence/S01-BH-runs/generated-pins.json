@@ -1,0 +1,30 @@
+[
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\linux\\flutter\\generated_plugin_registrant.cc",
+    "Hash": "BEEBFDB222262C8DE5C3E6C87D886A6A14E8CBF7F1047636358C1090A7850512"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\linux\\flutter\\generated_plugin_registrant.h",
+    "Hash": "00F93BB5B1FAEFDEDE8F6065DF327522900FB0B8EFEE86BACF424FD947ED14BB"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\linux\\flutter\\generated_plugins.cmake",
+    "Hash": "D578D23FC0F2DBAC6B2BE33BF00CADC3043D992760862ECDAE65E78D7DDF53FA"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\macos\\Flutter\\GeneratedPluginRegistrant.swift",
+    "Hash": "2E4067E01F7EFB16EEB0C2A477A5DC4797D383A26617DC30F90122CD71C9E015"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\windows\\flutter\\generated_plugin_registrant.cc",
+    "Hash": "6DA2D71920C70EB7B26626007EF7A137BA05E1BFB326C30C9D2E2D265D14493B"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\windows\\flutter\\generated_plugin_registrant.h",
+    "Hash": "DBC11635D7B1BA1887ADF40DF5B83D634E9C3AB0BEE34510C71528BB4D73602A"
+  },
+  {
+    "Path": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest\\windows\\flutter\\generated_plugins.cmake",
+    "Hash": "A9EBC121801B0F511ADA437608ADC3B34A0D03F152D0B633854F8A5F12E9D424"
+  }
+]

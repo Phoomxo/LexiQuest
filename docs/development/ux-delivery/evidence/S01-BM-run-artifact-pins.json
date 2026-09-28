@@ -1,0 +1,167 @@
+{
+  "scope": "Supplementary pins including ignored build/test logs; immutable checkpoint unchanged",
+  "checkpointSha256": "6e9efe1cab50e85b0e32dc331a47bb462913054b9059d2b4cad2e87806ad3b30",
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-1-rejected.json",
+      "sha256": "82c3ca7e2c5d610f05fb6bb0bfe0a72f1883514197221f67cafa418d14815820",
+      "bytes": 317
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-2-exit.json",
+      "sha256": "41bd618b51fc5a8c4309863ac964c6e4124bcd104b30a3eeae4998a0369e501e",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-2.log",
+      "sha256": "c235113052eb4b41199a4a71e19b44fdfed9ef20ace7b84f469e57e8ea8cbdc2",
+      "bytes": 1378
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-3-exit.json",
+      "sha256": "75192254066a5e0337ecd9fd3679614ef98a3ebb517a27ed4855834914458557",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-3.log",
+      "sha256": "e21c55dadbf75f2a5edc18d9d1bb9515f544c870f4477fdccae28daa67565a86",
+      "bytes": 1022
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-4-exit.json",
+      "sha256": "a30efa5a50014e9be5dc68ac60ec37a7cc0259a8050d700df731dc46e455f171",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-4.log",
+      "sha256": "63e7d03dcfd1a6f7a6bcb59ce2ea40a9438f2034428df027e41396bf79914d99",
+      "bytes": 1022
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-exit.json",
+      "sha256": "03296567c5291b22c76284b922c252ddd0f8db3e33d47797af0b6fa66b042fe1",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build.log",
+      "sha256": "4870a0835813127453c00fa2973678014ff1c5e2da3c3248da03afec714d03ef",
+      "bytes": 1649
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-source.json",
+      "sha256": "fde9dbd3f9d56e0213b04b0dbbaff183f48a5040f3d790e5a718f68599ebb240",
+      "bytes": 132326
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/dart-analysis.txt",
+      "sha256": "56b96da496beb24f135f570009085effe1bc69c274fe65c7dfe48313e9263aab",
+      "bytes": 200
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/Explicit-Flutter-tests.stdout.log",
+      "sha256": "8a13c6b8ebc91427be4401fe8ce38b9854f5ded0ba6d2d806623246ddff43fdf",
+      "bytes": 24146
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/gradle-debug-dry-run.log",
+      "sha256": "ab48f366c678333c3755b3ef5d1964e973cb2ec2bbea633e3e5ea0bec13079c9",
+      "bytes": 43874
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-cli-gate.json",
+      "sha256": "6f736071aea1344c390540d24cd4f282188507ca47dbebc9f0def93b4d60d0dc",
+      "bytes": 1077481
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-flutter-gate.json",
+      "sha256": "c48b5e3799cea79705b54144cdf0bec8f5aa3ef4fccada8664a1a57a1ec840b6",
+      "bytes": 313484
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-correction.log",
+      "sha256": "f5db2370e4451e2513d3f9c8a47bf84d75f5c3e5e260bd5a29382f2a2b4b232c",
+      "bytes": 18233
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-final.json",
+      "sha256": "bad0751bc19622e9c4fca96303889758c63dbae5de9e5036371e5d626af3e5a4",
+      "bytes": 260
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-final.log",
+      "sha256": "f5db2370e4451e2513d3f9c8a47bf84d75f5c3e5e260bd5a29382f2a2b4b232c",
+      "bytes": 18233
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/merged-manifest.txt",
+      "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+      "bytes": 5571
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/result.json",
+      "sha256": "9fe62b47a4aca3d08015f7f6f8dfec71c607c54d1c64a192a35b4eded99f1747",
+      "bytes": 22222
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/seed-receipt.json",
+      "sha256": "5c5a26f668f40dbf4faa44235f154a266f95136903fc287ee54dfda8d0a419c7",
+      "bytes": 494
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/verify-receipt.json",
+      "sha256": "d36d1287aebc9a07dc3e8937eea62ee0b7160b1929844849aebbf8333d21b112",
+      "bytes": 470
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-contract.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-contract.tests.ps1.stdout.log",
+      "sha256": "c7f936c60d9485963ecd4c9af2668b960c306f1cfe013e3f25306b4007151100",
+      "bytes": 88
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-isolation.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-isolation.tests.ps1.stdout.log",
+      "sha256": "371030b759f607e9fcd1a0cb8ccd245a09db5feaf8aa72bc68df57a046993970",
+      "bytes": 160
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-runner.tests.ps1.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-baseline-runner.tests.ps1.stdout.log",
+      "sha256": "9bc9257a18331508570da0c2067f8cb60d33cca822d4d7750d9f897c2634f6f7",
+      "bytes": 192
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/prebuild.json",
+      "sha256": "44fac1f5564390b287696ee588c3bff2ae691dab63d5a6fb033eb73471900897",
+      "bytes": 214
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/merged-manifest.txt",
+      "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+      "bytes": 5571
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/result.json",
+      "sha256": "5f13ea602d7d06929d69d7e81dc25579fe4efd907875da682163a6d2c1af7727",
+      "bytes": 3427
+    }
+  ]
+}

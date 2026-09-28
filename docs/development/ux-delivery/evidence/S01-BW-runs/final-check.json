@@ -1,0 +1,73 @@
+{
+  "currentPinMismatches": [],
+  "supplementalBmSourceIsolation": "PASS",
+  "finalNativePid": "31845",
+  "nativeTables": 58,
+  "activeTaskTestBuildProcesses": [],
+  "status": "PASS",
+  "native": "PASS_FEEDBACK_SCOPE_ONLY",
+  "installCount": 1,
+  "currentHostClosurePins": 1592,
+  "installedHashMatches": true,
+  "preexistingUnexpectedMismatches": [],
+  "fieldDailyContinuity": "HIDDEN_UNCHANGED",
+  "cliCasesAndChecks": 29,
+  "currentCliClosurePins": 5184,
+  "forceStopCount": 1,
+  "libChangesByBW": 0,
+  "databaseClosed": true,
+  "currentNativeSourcePins": 801,
+  "hostTests": 11,
+  "launchCount": 2,
+  "protectedPackageCount": 3,
+  "atUtc": "2026-09-28T03:44:32.0515262Z",
+  "generated7": [
+    {
+      "path": "linux/flutter/generated_plugin_registrant.cc",
+      "sha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512"
+    },
+    {
+      "path": "linux/flutter/generated_plugin_registrant.h",
+      "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+    },
+    {
+      "path": "linux/flutter/generated_plugins.cmake",
+      "sha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa"
+    },
+    {
+      "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "sha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.cc",
+      "sha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.h",
+      "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+    },
+    {
+      "path": "windows/flutter/generated_plugins.cmake",
+      "sha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424"
+    }
+  ],
+  "cliSnapshotPolicy": "Stable on final code/docs; only new append-only BW evidence and receipt added after gate. No existing verified input changed.",
+  "allowedChanges": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "before": "1deda3796b3bed77298d150a85499880cb3f7de386e9e543a05bc262c2bd8a52",
+      "after": "9c2023106b522a7815e09758c98bc5ce8e3aed57b7df9ea73e25b8d42a9fb2cd"
+    },
+    {
+      "path": "docs/development/ux-delivery/state.json",
+      "before": "28537fab3cafd02a7bf946fc9040a08f7f695ca5ea6ed37815bf05c076896b3a",
+      "after": "fe9ab9e5829fcd43b4477bb8c1a30b654b4150e2e0e23fe68fc1cea3dd8d49f9"
+    },
+    {
+      "path": "docs/development/ux-delivery/README.md",
+      "before": "0dcc9a87f8998a88c7ded1f14cf14492f9feb0b8ee8d39f269eeaec6f8801ad0",
+      "after": "f27d048d9a87e6c08e9395c80b0a3281a92d98e425d90958401d0b2cc36a74f1"
+    }
+  ],
+  "preexistingPinsChecked": 5213
+}

@@ -24,6 +24,7 @@ import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
+import '../features/learning/application/ordinary_meaning_recovery.dart';
 import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
@@ -90,11 +91,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   String? _selectedEntryId;
   bool _selectionInitialized = false;
   Listenable? _featureChanges;
+  int _ordinaryResumeGeneration = 0;
+  AppDependencies? _ordinaryDependencyIdentity;
   final Map<String, String> _dialogueLaunchOperations = {};
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (!identical(dependencies, _ordinaryDependencyIdentity)) {
+      _ordinaryDependencyIdentity = dependencies;
+      _ordinaryResumeGeneration++;
+    }
     final features = _features(context);
     _observeFeatureChanges(features);
     _refreshEntries(features);
@@ -104,6 +112,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void didUpdateWidget(MainNavigationScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.featureRegistry, widget.featureRegistry)) {
+      _ordinaryResumeGeneration++;
       final features = _features(context);
       _observeFeatureChanges(features);
       _refreshEntries(features);
@@ -122,6 +131,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onFeatureChanged() {
     if (!mounted) return;
+    _ordinaryResumeGeneration++;
     setState(() => _refreshEntries(_features(context)));
   }
 
@@ -1116,10 +1126,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (isCurrent?.call() == false ||
         !await _todayOwnerMatches(ownerId) ||
         !mounted ||
-        isCurrent?.call() == false)
+        isCurrent?.call() == false) {
       return;
-    if (!_secondaryAvailable(Feature.studyPlanning, requireComposition: true))
+    }
+    if (!_secondaryAvailable(Feature.studyPlanning, requireComposition: true)) {
       return;
+    }
     _openPlanning();
   }
 
@@ -1179,6 +1191,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     VoidCallback? returnToLearning,
     bool Function()? isCurrent,
   }) async {
+    final ordinaryDependencies = AppDependenciesScope.maybeOf(context);
+    final ordinaryGeneration = ++_ordinaryResumeGeneration;
+    bool ordinaryCurrent() =>
+        mounted &&
+        isCurrent?.call() != false &&
+        ordinaryGeneration == _ordinaryResumeGeneration &&
+        identical(
+          AppDependenciesScope.maybeOf(context),
+          ordinaryDependencies,
+        ) &&
+        _secondaryAvailable(
+          Feature.dailyContinuity,
+          requireComposition: true,
+        ) &&
+        _features(context)?.isEnabled(Feature.quiz) == true;
     if (isCurrent?.call() == false) return;
     if (!await _todayOwnerMatches(session.ownerId) ||
         (!mounted || isCurrent?.call() == false)) {
@@ -1220,8 +1247,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ],
           ),
         );
-        if (end == true && isCurrent?.call() != false)
+        if (end == true && isCurrent?.call() != false) {
           await service.abandon(owner, session.id);
+        }
       }
       return;
     }
@@ -1271,6 +1299,57 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         catalog: catalog,
         rewardOwnership: null,
         catalogVersion: null,
+      );
+      return;
+    }
+    if (session.activityType == 'quiz') {
+      final learning = ordinaryDependencies?.learning;
+      final evidence = ordinaryDependencies?.currentActivityEvidence;
+      final adapter = ordinaryDependencies?.lessonModes
+          ?.resolve(LessonMode.meaningQuiz)
+          ?.adapter;
+      if (!ordinaryCurrent() ||
+          learning == null ||
+          evidence == null ||
+          adapter is! MeaningQuizModeAdapter ||
+          !identical(evidence.learning, learning)) {
+        throw StateError('Ordinary recovery authority unavailable');
+      }
+      final recovered = await OrdinaryMeaningRecovery.load(
+        learning: learning,
+        ownerId: session.ownerId,
+        sessionId: session.id,
+        acceptsOperation: ordinaryCurrent,
+      );
+      if (!mounted || !ordinaryCurrent()) return;
+      (returnToLearning ?? _selectLearningFromToday)();
+      unawaited(
+        AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'learning/quiz/resume',
+            builder: (_) => QuizScreen(
+              learning: learning,
+              evidenceAdapter: evidence,
+              modeAdapter: adapter,
+              attachedSession: recovered.progress.session,
+              ordinaryAcceptance: () =>
+                  mounted &&
+                  ordinaryGeneration == _ordinaryResumeGeneration &&
+                  identical(
+                    AppDependenciesScope.maybeOf(context),
+                    ordinaryDependencies,
+                  ) &&
+                  _features(context)?.isEnabled(Feature.quiz) == true &&
+                  _secondaryAvailable(
+                    Feature.dailyContinuity,
+                    requireComposition: true,
+                  ),
+              sessionConfiguration:
+                  recovered.progress.session.sessionConfiguration,
+            ),
+          ),
+        ),
       );
       return;
     }

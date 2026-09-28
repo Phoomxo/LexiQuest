@@ -1,6 +1,10 @@
 # Content manifests pin exact UTF-8 bytes and SHA-256, including line endings.
 assets/content/**/*.json text eol=lf
 
+# BD-BX receipts pin original bytes, including historical CRLF and logs.
+docs/development/ux-delivery/evidence/S01-B[D-X]* -text
+docs/development/ux-delivery/evidence/S01-B[D-X]*/** -text
+
 # B07 verification receipts must survive worktree checkout byte-for-byte.
 docs/development/full-system/evidence/bundles/B07/**/*.log binary
 docs/development/full-system/evidence/bundles/B07/**/*.json text eol=lf

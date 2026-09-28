@@ -5,6 +5,7 @@ import 'contrastive_explanation.dart';
 import 'learning_evidence_contract.dart';
 import 'learning_event_context.dart';
 import 'session_configuration.dart';
+import 'ordinary_meaning_plan.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -93,6 +94,7 @@ final class QuizSession {
     required this.startedAtUtc,
     this.ownerId,
     this.sessionConfiguration,
+    this.ordinaryMeaningPlan,
   });
 
   final String id;
@@ -100,6 +102,7 @@ final class QuizSession {
   final DateTime? startedAtUtc;
   final String? ownerId;
   final SessionConfiguration? sessionConfiguration;
+  final OrdinaryMeaningPlan? ordinaryMeaningPlan;
 
   bool get isEmpty => questions.isEmpty;
 }

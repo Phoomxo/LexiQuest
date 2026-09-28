@@ -1,0 +1,10 @@
+{
+  "package": "S01-BK-offline-settings-entry-lifetime",
+  "predecessorPinsVerified": 1563,
+  "soleWriter": true,
+  "atUtc": "2026-09-26T23:29:04.1634790Z",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "predecessorReleased": true,
+  "threadId": "01a0e00b-c36a-7901-a381-42796b559bcf",
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested; effective runtime tier unverified. No billing/provider/login probes."
+}

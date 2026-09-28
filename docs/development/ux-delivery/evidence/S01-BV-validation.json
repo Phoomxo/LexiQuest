@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BV-exact-ordinary-meaning-recovery",
+  "status": "PASS_HOST_SYNTHETIC_EXACT_RESUME",
+  "hostTests": 283,
+  "failed": 0,
+  "analyzer": "13 files; No issues found; exit 0",
+  "gatePrePost": [
+    {
+      "command": {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/support/today_quiz_resume_contract_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "fb414398a1e029eed77c7b252c15a23cc9883b08d94b57f63c96953941cae337"
+      },
+      "record": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-243ff6488904f439369568825efe57a18d09ba65dbc07cf074835481420f9319.json",
+      "post": "af78a1fc18aa7fcc065bf8e700cd240db029a0a19e64754fcae6197e12b5170b",
+      "name": "initial-BS-unchanged-RED",
+      "status": "Failed",
+      "pre": "af78a1fc18aa7fcc065bf8e700cd240db029a0a19e64754fcae6197e12b5170b",
+      "exitCode": 1
+    },
+    {
+      "command": {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "BV committed close"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "84fdf8caab51b70a383a346e26d339787210de0a79cac72b36e929f289a112df"
+      },
+      "record": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-21bdb116cd2d190504ab8475265b2479d95f86ed465abf824de7f9e95e452038.json",
+      "post": "0f3231bee9b9f94201ec482699d4b852f20d83a3fb31741d3ef1e9964229f48d",
+      "name": "close-feedback-GREEN",
+      "status": "Passed",
+      "pre": "0f3231bee9b9f94201ec482699d4b852f20d83a3fb31741d3ef1e9964229f48d",
+      "exitCode": 0
+    },
+    {
+      "command": {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+          "--reporter",
+          "compact",
+          "--plain-name",
+          "BV skipped"
+        ],
+        "SourceArea": "Learning",
+        "commandKey": "e70789f1676e9a9ffcec4c57a6ef0d12e663de5e9543b4cf6ee0060ea6af786c"
+      },
+      "record": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-887d46893c95ee4e0acc5a965b5d493367fc2b8f0f894faa1f0705f6f5eb6b9b.json",
+      "post": "0f3231bee9b9f94201ec482699d4b852f20d83a3fb31741d3ef1e9964229f48d",
+      "name": "skip-recreation-GREEN",
+      "status": "Passed",
+      "pre": "0f3231bee9b9f94201ec482699d4b852f20d83a3fb31741d3ef1e9964229f48d",
+      "exitCode": 0
+    },
+    {
+      "command": {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/support/today_quiz_resume_contract_test.dart",
+          "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+          "test/screens/quiz_screen_test.dart",
+          "test/screens/main_navigation_screen_test.dart",
+          "test/support/today_preview_route_audit_test.dart",
+          "test/features/learning/learning_use_cases_test.dart",
+          "test/features/learning/contrastive_feedback_test.dart",
+          "test/features/learning/session_configuration_mode_matrix_test.dart",
+          "test/features/today_hub/today_hub_reader_test.dart",
+          "test/screens/today_hub_screen_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "Runtime",
+        "commandKey": "ab27fb9d93f3a439c735805525ae413541e5cd5acf1a49d149c5153565b64da0"
+      },
+      "record": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-final-targeted.json",
+      "post": "e50a7b53676d26861762406642791a1efa8530b58cf472603d1da92bc704bcc7",
+      "name": "final-targeted-283",
+      "status": "Passed",
+      "pre": "e50a7b53676d26861762406642791a1efa8530b58cf472603d1da92bc704bcc7",
+      "exitCode": 0
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/features/learning/application/ordinary_meaning_recovery.dart",
+      "sha256": "f122d1067d8d6969f7ed0bf4664f84ef64f7728f8647d182b500894a03dd72c6"
+    },
+    {
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "sha256": "d038c57663ee1ab725ca5889f806df237c702dfb915a9f06078d1eb61e87b363"
+    },
+    {
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "sha256": "cde832dce9ef64bb154c398c0f4086a8e211491cdf055e853cd2a8d95111e409"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "4dc62638eacc08f2b34e4f25896d9d2c7c928ca7966a2c7d06857ff79ddee855"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "sha256": "1a1c9cd439f0152abbd29b32ddb7f7dcc90a31201bd04f38c8e9669776cd2b33"
+    },
+    {
+      "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+      "sha256": "56ac93e8c39b8b1d7b33a7a27e304ae945ba4e22501f4224fc4903b77a6c3897"
+    },
+    {
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "sha256": "ebcc64fcb7bfb9e415d3db2e9eb3672a6dc6dc02c21428e4edc67e06a96f02e0"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "ea50565220f1a8325d592e79fd42506570e0ee9e35afca17fe070802b0e93c4a"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "b276ef69572b7d1d62c2e03c3e92cbba36591eec51ff6ef687742b90fee90885"
+    },
+    {
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "sha256": "5d8167f42327d032764038f60f3cbb9b19719ce7100ea03b0e5ae47af6fc5cff"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "6b3ed4206b345e5592e2f28f00e28f37a317bb6f45b77343659bd93d77c11730"
+    },
+    {
+      "path": "test/support/today_quiz_resume_contract_test.dart",
+      "sha256": "5c0ef21fea9fa420c26cf70b1cefb1ac2a3a9ae572eef4dd586d7007bd42e925"
+    },
+    {
+      "path": "test/support/today_preview_route_audit_test.dart",
+      "sha256": "b30522f5ee62a67828e267eb47af7929dcb59f75e2838eb635233b136a76f1dc"
+    }
+  ],
+  "artifactPins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-60b479559adf-48217146/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-60b479559adf-48217146/Explicit-Flutter-tests.stdout.log",
+      "sha256": "09fc89d8d0ad157b901ab83f406f6d9c9ec230bd7b5f95d7c250a005fcf0aabe"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-6514450b73da-6ca45569/Explicit-Flutter-tests.stderr.log",
+      "sha256": "8d359b3705b4b656a19e55ada85d2b05ba72e591d3a9cdb9baed222e875afab3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-6514450b73da-6ca45569/Explicit-Flutter-tests.stdout.log",
+      "sha256": "a7a220a279a167c6d63c04e08631daa938c5e5454605c87dad8df1db297704c1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-9c462270dc87-2a51b617/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/368306c67bd9-9c462270dc87-2a51b617/Explicit-Flutter-tests.stdout.log",
+      "sha256": "57862df1106108e41b546bf634a604666990a914a5e4881091d1764e5aca4c0e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/56896ed5ba04-3198653df935-f78cbf1d/Explicit-Flutter-tests.stderr.log",
+      "sha256": "006c98ebbdbce08c0e5b06fe759412b64f88522d09d20124a8d186efaa9d32ec"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/56896ed5ba04-3198653df935-f78cbf1d/Explicit-Flutter-tests.stdout.log",
+      "sha256": "46bcc8ad5b571d41e2f540ae7e2a1f9aabdda916c8943f429b2aaa8de596dc42"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-7f5d7492a41b-cff65863/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-7f5d7492a41b-cff65863/Explicit-Flutter-tests.stdout.log",
+      "sha256": "a1bb354a30618edf705126c55f62784b21768adb2ac4ba853aaf3c1488caf2be"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-c2ea0e8ef8f3-4f3bc431/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/582ffe37ac72-c2ea0e8ef8f3-4f3bc431/Explicit-Flutter-tests.stdout.log",
+      "sha256": "0421cb61560c67839aa6b3136c775eca8ef422ec2f6484a3b81024095294140c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-0c5e6f7529b8-75928926/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-0c5e6f7529b8-75928926/Explicit-Flutter-tests.stdout.log",
+      "sha256": "85094f730541724ff3655f1574aa4241478ed5a74931efa828a9a011ebb1617f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-4cb0bd4f8a72-b07be9bb/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5b9a2f81a9c0-4cb0bd4f8a72-b07be9bb/Explicit-Flutter-tests.stdout.log",
+      "sha256": "47de9dd3dea9d5999e693233a130ca75d34fdc35cb7ca92f2a3bb1b990515d14"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5cf18e0ba246-6de1ab6f4fa3-7e801e4f/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/5cf18e0ba246-6de1ab6f4fa3-7e801e4f/Explicit-Flutter-tests.stdout.log",
+      "sha256": "7fd253df26f853a6895dc4ce512fa84e7d281225051137041b01eb84614fd03d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/64cee1890c48-e061f78484ee-63ec007d/Explicit-Flutter-tests.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/64cee1890c48-e061f78484ee-63ec007d/Explicit-Flutter-tests.stdout.log",
+      "sha256": "f3e724933b95680f5142debf935beea4866238d391081f2597d23088f02abf01"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/6e784d872fe7-6307508a4978-3c01e3c3/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/6e784d872fe7-6307508a4978-3c01e3c3/Explicit-Flutter-tests.stdout.log",
+      "sha256": "3801d132bc6f8e42f9ad97add4488c4c48fc479094be45c0410b264e284f1e1d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-0f3231bee9b9-8cfb2c6c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-0f3231bee9b9-8cfb2c6c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "2360f1e5b156bd34abea891e98905a7b72b4525af7b0df3dc9be3b6b74284f47"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-3198653df935-5a47d579/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/84fdf8caab51-3198653df935-5a47d579/Explicit-Flutter-tests.stdout.log",
+      "sha256": "9fe606d3dfe10026ef91fb95f4564639ea100eb5d70363be5c93a7c98a84eeaf"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/97349adc4357-8b6caff3e453-2196e3fe/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/97349adc4357-8b6caff3e453-2196e3fe/Explicit-Flutter-tests.stdout.log",
+      "sha256": "57f5c49636f2a02fa3f1906bcca4b6144d0857eaf9f2e83779eba07110c240d3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-5fb7397b412e-de34ffe6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-5fb7397b412e-de34ffe6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "446556a1e0cbd5f212db710b75088cfc2436703887a342741668deb10e4a0a6f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-e50a7b53676d-b5181a70/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/ab27fb9d93f3-e50a7b53676d-b5181a70/Explicit-Flutter-tests.stdout.log",
+      "sha256": "fb6c547fcb8ab58c747748a3e500ac05bd9ee0ef96bb2f29d0721673aa757085"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/analyzer-final.json",
+      "sha256": "1adb92772463fd67d087e02eb2e7fe65a352eb0e81faf2776028f26285fdac92"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/analyzer-final.log",
+      "sha256": "5f7d5b3f7b892add53c80b4d05d314c187068cf82eb3ce6cd23fcb466c4c149d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/baseline.json",
+      "sha256": "ceaaa7a7653737a4c68dd7195b7a1f2488ec825fd1fdd32beae84bf0eae19798"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/BR-preservation-repair.json",
+      "sha256": "bda38110b600af863cce6e9824d7ed6f6a7b07172afd53ce9ca9a6032f57f992"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-6d1c7321a31b-906d21d2/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-6d1c7321a31b-906d21d2/Explicit-Flutter-tests.stdout.log",
+      "sha256": "4327448d3991e81465e7c7896fb61ba36729339ea70eaef72d4930800855f267"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-e6ebd766512f-e25e27ec/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/d7f3c8a66f42-e6ebd766512f-e25e27ec/Explicit-Flutter-tests.stdout.log",
+      "sha256": "a440f776d52a30c3e426ae9b6d36c74605457a19595cc99abd996d45169c871b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/diff-check.log",
+      "sha256": "986a72af4fc2490827f1d71af0047fd5d08664848c78b2546a05b1cb89553cd6"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/dirty-manifest-before-publication.txt",
+      "sha256": "d68a94ed1aff2f98196ad8c54955676d87cf2e6a529fec41fd15388280ac69a5"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-5fbdc542d7cb-beabb60a/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-5fbdc542d7cb-beabb60a/Explicit-Flutter-tests.stdout.log",
+      "sha256": "611818e7508d444b84a602548bc8af65ab62f4a15f2a493c78ab154877be9d93"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-60756bbfaac6-ac0126f7/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-60756bbfaac6-ac0126f7/Explicit-Flutter-tests.stdout.log",
+      "sha256": "5c048fce2fb3091d061d60bad3c47fcf43f59a226195c767e78b6a2cc23c8dfe"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-a49f83ea8627-a9ee9203/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e5e0781dd39b-a49f83ea8627-a9ee9203/Explicit-Flutter-tests.stdout.log",
+      "sha256": "09423feca775f7c52b6652de5d667c189b9fa1b2861eb8ba5e272322d5f190b6"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-0f3231bee9b9-40b5ea57/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-0f3231bee9b9-40b5ea57/Explicit-Flutter-tests.stdout.log",
+      "sha256": "fabb106af9c5a140bd37a2dffc64421c4e9583b8eefbe6f454d2daf76ba0c27a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-3198653df935-6353b836/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/e70789f1676e-3198653df935-6353b836/Explicit-Flutter-tests.stdout.log",
+      "sha256": "a4410053b0a3dd910b43518c6f695f201c89c1d3112e537236929f1e318888fa"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-2f9d56f16a57-1f64691b/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-2f9d56f16a57-1f64691b/Explicit-Flutter-tests.stdout.log",
+      "sha256": "5ebfe8af7a6bc70dbd7cd3ab725081e360bd1823f249d53d9ea340936ef189ce"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-f508cea03654-fa54aaaf/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/f5058cb67a9a-f508cea03654-fa54aaaf/Explicit-Flutter-tests.stdout.log",
+      "sha256": "e5b8533e99560b29fc452379f4200eb33cd51a58d29a16070eeb5b12e0ac0ced"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/fb414398a1e0-af78a1fc18aa-e6f2abac/Explicit-Flutter-tests.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/fb414398a1e0-af78a1fc18aa-e6f2abac/Explicit-Flutter-tests.stdout.log",
+      "sha256": "d6f44d308cf528b1ed23db4b3cdb75fccbc20fbaf8b56463c081a4f1fcd37725"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/final-consistency.json",
+      "sha256": "2e8c6c4e28607036790ad769a5c0f074060012d276a14c29935678558df64a7f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-final-targeted.json",
+      "sha256": "24047e867d383b64855a63e345ab630116f4866abe7251378b6b1444d648f10b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-pre-final.json",
+      "sha256": "670a5e7c08e7eab3179eae44ed1ed5f57eb0a9ec87a5ce8144b51696157594ba"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/predecessor-check.json",
+      "sha256": "c1e5703502ec5dab3e0d801fdc9d16903402ceeb728f3ac755f125404cda3a6d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/preservation-final.json",
+      "sha256": "970ec50d54c07932acac675703e17872890d3b4dc16cab8d384bdc1a9bd93d57"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/routes-false.json",
+      "sha256": "3b870931b19455b6b451e50751275046656a4bcff1fe87043b132b855bcd3e86"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/routes-true.json",
+      "sha256": "fdca73ed09ead8c767c229420707c6c3a3546c6d99ca109ddbe3b89b67c7a084"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/source-closure-final.json",
+      "sha256": "f18e903c372bf249596b1a0133cd03eba74309217b3d939f13ca340d739155b9"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-21bdb116cd2d190504ab8475265b2479d95f86ed465abf824de7f9e95e452038.json",
+      "sha256": "ce1df7f675dc1c13303f90d6e9bc94e6139ec41b5fdda75b8d594a9b50fcbb4a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-2d4ad93d0ac0c578b2430695f36fbab87b5ab40bc2ea8ebde8a9334a9effbe73.json",
+      "sha256": "01056af50a632b0bd1405796174a6924ce2f066a3aae71fed55f562c72c360d2"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-3d7a1850f9adf892b1ecba3af27c83ba819ffe967698098d943a5063f2795659.json",
+      "sha256": "be31e3f9a51ccb47953a3f17b85255cfb0e71d361c34f8f08f6c9c9ea5e94575"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-50e7ab6a2aefe5b0c10f58a4a322c62fc2ddf8c73999554cfa1ae3e417b026dd.json",
+      "sha256": "89bcd93e5ad3c265d262436470a6de141595d948972e273b84f6214d1eed0c56"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-887d46893c95ee4e0acc5a965b5d493367fc2b8f0f894faa1f0705f6f5eb6b9b.json",
+      "sha256": "b76711efc81d792b97cb439201908160c4d7373f91587dc3d8a55f4b499525ae"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-a49f10d3e2177d77efc3f770305cdd61ef43dbc47328b814044db9242b4284ac.json",
+      "sha256": "d62d1d6c9261364f164a022b329fc72fed737ed2d1c6753564ba93fcc2acc9ec"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-b1161832ec4f39a125751a8c4c0b6f003bad13fb3b2f6a114c0ae10c33261d07.json",
+      "sha256": "265f5d416d37a5f460a03921175a3ab7541f3e6f738fefdf963ec28119b8c8e7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-learning-bea9d9d8933b9ac721f6ef0195d7d3091a376ab7634db6d7a199b0a24a756e22.json",
+      "sha256": "df084a4a834f0f0ba63417f746e9d474736052792706bf230365b9f2d4be43cc"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-00d011e4771440799f6426278509691bbf96b94834362505bbca41fd505412cd.json",
+      "sha256": "b0036d97a1739f383cc5d0980f7f8baa5703c5d576bf778b8779e2c8aaf33ca7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-243ff6488904f439369568825efe57a18d09ba65dbc07cf074835481420f9319.json",
+      "sha256": "3fd900f308a43365dc376e23f1161acce5c4223340a4e0989de4d9a2d2cdb5b0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-39b0380e55c1137ed61828260e14439a75e9323df3ad983991352f5d7090d374.json",
+      "sha256": "699eaf54bcb3d3c7ab86c3284673c7a4105065f9008fa8d4618ca7421a1ce20c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-a5228b448c6553f9c03c99fbec2feb170db08e3c9a32491bdbe92615fb90d9a8.json",
+      "sha256": "dd9fde689cb8c2dc4a4cedbfbeb0ed030e13439aa60b6aef873213623f3ad9da"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-cb4db0a6bfa7e23ae893ff2e0daa2fccaa0c5219e103b05ad0fa45c4c2fd1c83.json",
+      "sha256": "74ff34aeb54c2b435091a5495c6ce96432fa1c14049230ca073977dcc0e60adb"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BV-runs/targeted-runtime-ee1664506166c169e90c79109ce7046887457385329cac5b98c571d0fad05436.json",
+      "sha256": "ff0661d8e80d65ca1192293ad5ea7fccc95f3a6557506a6f924bfe06911efd9c"
+    },
+    {
+      "path": "docs/development/ux-delivery/README.md",
+      "sha256": "0dcc9a87f8998a88c7ded1f14cf14492f9feb0b8ee8d39f269eeaec6f8801ad0"
+    },
+    {
+      "path": "docs/development/ux-delivery/ready-backlog.md",
+      "sha256": "ded8482bbf2916708f85ee5e472e58e2396a5f3c4f1b89bfab4d04e5093d7e78"
+    },
+    {
+      "path": "docs/development/ux-delivery/S01-BV.md",
+      "sha256": "cd81ef2c30c76b80031285785fcf96c343df048ffabbf169d71d5de49dec729c"
+    },
+    {
+      "path": "docs/development/ux-delivery/state.json",
+      "sha256": "28537fab3cafd02a7bf946fc9040a08f7f695ca5ea6ed37815bf05c076896b3a"
+    }
+  ],
+  "sourceClosure": {
+    "verification": "docs/development/ux-delivery/evidence/S01-BV-runs/source-closure-final.json",
+    "record": "docs/development/ux-delivery/evidence/S01-BV-runs/gate-final-targeted.json",
+    "entries": 1583,
+    "mismatches": 0,
+    "fingerprint": "e50a7b53676d26861762406642791a1efa8530b58cf472603d1da92bc704bcc7"
+  },
+  "analyzerEvidence": "docs/development/ux-delivery/evidence/S01-BV-runs/analyzer-final.json",
+  "preservation": {
+    "buArtifactPins": 20,
+    "record": "docs/development/ux-delivery/evidence/S01-BV-runs/preservation-final.json",
+    "baselineEntries": 5130,
+    "predecessorAdmissionVerification": "docs/development/ux-delivery/evidence/S01-BV-runs/predecessor-check.json",
+    "unexpectedMismatches": 0,
+    "generatedFiles": 7
+  },
+  "acceptance": [
+    "Exact admitted owner/session/configuration/prompt/options/content pins",
+    "Durable draft, skipped, next, feedback, frozen pending answer and close acknowledgement",
+    "Canonical idempotent replay; no duplicate attempts/score/SRS/rewards",
+    "Actual bootstrap Today -> same QuizScreen; all 58 tables preserved during navigation",
+    "Owner/content/feature/dependency/covered-route and late callback rejection",
+    "100-question checkpoint capacity"
+  ],
+  "redEvidence": {
+    "skipped": "Expected true / actual false: e70789f1676e-3198653df935-6353b836",
+    "closeFeedback": "Expected true / actual null: 84fdf8caab51-3198653df935-5a47d579",
+    "selectorRecovery": "Regex used against plain-name ran zero tests; corrected selectors then genuine RED/GREEN. Not counted as product RED.",
+    "originalBsQuizScreen": "Expected 1 / actual 0 before source edits"
+  },
+  "evidenceRepair": {
+    "record": "docs/development/ux-delivery/evidence/S01-BV-runs/BR-preservation-repair.json",
+    "result": "Both BR JSON files restored to exact pre-write hashes; audit output now mutable build path; BV owns copies."
+  },
+  "bsResume": "BS-RESUME-01_CLOSED_HOST_SYNTHETIC_ONLY",
+  "ordinaryResume": "IMPLEMENTED_HOST_VERIFIED",
+  "native": "NOT_RUN",
+  "userTrials": "DEFERRED",
+  "releaseAccepted": false,
+  "sprintAccepted": false,
+  "schemaChanged": false,
+  "fieldDailyContinuityChanged": false,
+  "researchActivated": false,
+  "successorDispatched": false,
+  "runningTestProcesses": [],
+  "routing": "Current-model deterministic fallback; Standard/default requested, effective tier unverified; no Jev/billing/quota probes or USD5 ledger changes",
+  "notRun": [
+    "Full release verifier requires frozen release SHA",
+    "Native visual/IME/TalkBack/device acceptance",
+    "Actual-user/UAT/learning trials",
+    "Deployment or real research enrollment/upload"
+  ],
+  "changedFileScope": "13 source/test files (12 existing at BV baseline + new ordinary_meaning_recovery.dart), current README/backlog/state and BV-owned report/evidence only; inherited BD–BU changes preserved."
+}

@@ -1,0 +1,15 @@
+{
+  "diffCheckExitCode": 0,
+  "sourceClosureMismatches": [],
+  "branch": "codex/ux-current-after-s01-bc",
+  "analyzerMismatches": [],
+  "stateConsistency": "PASS",
+  "note": "Git diff check covers tracked files; new Dart recovery source and existing untracked tests covered by analyzer/final tests.",
+  "stateRevision": 148,
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0e5ac-44de-7793-8a8a-278274d559f9",
+  "newSourceFiles": [
+    "lib/features/learning/application/ordinary_meaning_recovery.dart"
+  ],
+  "sourceClosureEntries": 1583
+}

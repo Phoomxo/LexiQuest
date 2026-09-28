@@ -1,0 +1,133 @@
+{
+  "predecessorArtifactEntries": 20,
+  "predecessorArtifactMismatches": [],
+  "allowedWriteSet": [
+    "lib/features/learning/application/ordinary_meaning_recovery.dart",
+    "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+    "lib/features/learning/application/learning_use_cases.dart",
+    "lib/features/learning/data/drift_learning_repository.dart",
+    "lib/features/learning/domain/learning_repository.dart",
+    "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+    "lib/features/today_hub/data/drift_today_hub_reader.dart",
+    "lib/screens/main_navigation_screen.dart",
+    "lib/screens/quiz_screen.dart",
+    "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+    "test/screens/quiz_screen_test.dart",
+    "test/support/today_quiz_resume_contract_test.dart",
+    "test/support/today_preview_route_audit_test.dart",
+    "docs/development/ux-delivery/README.md",
+    "docs/development/ux-delivery/ready-backlog.md",
+    "docs/development/ux-delivery/state.json"
+  ],
+  "baselineEntries": 5130,
+  "checkedAtUtc": "2026-09-28T02:42:19.2884995Z",
+  "expectedChanges": [
+    {
+      "after": "0dcc9a87f8998a88c7ded1f14cf14492f9feb0b8ee8d39f269eeaec6f8801ad0",
+      "path": "docs/development/ux-delivery/README.md",
+      "before": "e142f2951c43ead17367e4bf2443e78f754d5bce81265247182e00049d6b50ac"
+    },
+    {
+      "after": "ded8482bbf2916708f85ee5e472e58e2396a5f3c4f1b89bfab4d04e5093d7e78",
+      "path": "docs/development/ux-delivery/ready-backlog.md",
+      "before": "5cfe2ab6d2fd94aeecf94982edd7bba2e447926eec878b1d78d1fda623e02edc"
+    },
+    {
+      "after": "28537fab3cafd02a7bf946fc9040a08f7f695ca5ea6ed37815bf05c076896b3a",
+      "path": "docs/development/ux-delivery/state.json",
+      "before": "f2284bb9917209dab2a23a172de1ce00fdf7889b8e8af1ff6007668ce58ac0f9"
+    },
+    {
+      "after": "cde832dce9ef64bb154c398c0f4086a8e211491cdf055e853cd2a8d95111e409",
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "before": "2144d053e671c1e770f6068874e47d68496c83da2e938a749432648ec76bf56e"
+    },
+    {
+      "after": "d038c57663ee1ab725ca5889f806df237c702dfb915a9f06078d1eb61e87b363",
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "before": "6079797be34925ec5d8c90f4c183509c884b40e68daf1140abd74502e3b7dcc9"
+    },
+    {
+      "after": "4dc62638eacc08f2b34e4f25896d9d2c7c928ca7966a2c7d06857ff79ddee855",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "before": "059c02d237d59c0f7636dc0e0acfad05986cbd249dceaaf5f39609368cb396f5"
+    },
+    {
+      "after": "56ac93e8c39b8b1d7b33a7a27e304ae945ba4e22501f4224fc4903b77a6c3897",
+      "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+      "before": "8f6a5cf0132f51c07a64d25c5d437145265686dd83f149d7559e930606cc4538"
+    },
+    {
+      "after": "1a1c9cd439f0152abbd29b32ddb7f7dcc90a31201bd04f38c8e9669776cd2b33",
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "before": "4fcb42ad9e838833839eee155fc6b185a25df9b99c290423160b19b5ff85408a"
+    },
+    {
+      "after": "ebcc64fcb7bfb9e415d3db2e9eb3672a6dc6dc02c21428e4edc67e06a96f02e0",
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "before": "e3a01beffc653358f8d315c37f0b6b0a0aedb50b384cd5a6252897d4451a3ca4"
+    },
+    {
+      "after": "ea50565220f1a8325d592e79fd42506570e0ee9e35afca17fe070802b0e93c4a",
+      "path": "lib/screens/main_navigation_screen.dart",
+      "before": "41fe78932c401341198dc0a71175822d601f3ec24b8cb7cf74170fad6619bd34"
+    },
+    {
+      "after": "b276ef69572b7d1d62c2e03c3e92cbba36591eec51ff6ef687742b90fee90885",
+      "path": "lib/screens/quiz_screen.dart",
+      "before": "98df60432b89dd44e0e7ae89af854ef48fd98767b13502509ec8951a0c425e3f"
+    },
+    {
+      "after": "5d8167f42327d032764038f60f3cbb9b19719ce7100ea03b0e5ae47af6fc5cff",
+      "path": "test/features/learning/ordinary_quiz_checkpoint_contract_test.dart",
+      "before": "b48ddd8077aa0497d8701c960cfa5ac21ee916da7bcc85fed76b12c59d78a238"
+    },
+    {
+      "after": "6b3ed4206b345e5592e2f28f00e28f37a317bb6f45b77343659bd93d77c11730",
+      "path": "test/screens/quiz_screen_test.dart",
+      "before": "2b57d17619474845c44ed5eb4b3e0577a903d24752bfd69b988b1b1d5892999e"
+    },
+    {
+      "after": "b30522f5ee62a67828e267eb47af7929dcb59f75e2838eb635233b136a76f1dc",
+      "path": "test/support/today_preview_route_audit_test.dart",
+      "before": "cd0359295970d176695ee95b8b5c01fad202592b366db5ee6d5f006aff48f595"
+    },
+    {
+      "after": "5c0ef21fea9fa420c26cf70b1cefb1ac2a3a9ae572eef4dd586d7007bd42e925",
+      "path": "test/support/today_quiz_resume_contract_test.dart",
+      "before": "74ad06d19f8a49c9691c3d882a3777af5803977039099f7074c13575abefc00f"
+    }
+  ],
+  "generated7": [
+    {
+      "path": "linux/flutter/generated_plugin_registrant.cc",
+      "sha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512"
+    },
+    {
+      "path": "linux/flutter/generated_plugin_registrant.h",
+      "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+    },
+    {
+      "path": "linux/flutter/generated_plugins.cmake",
+      "sha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa"
+    },
+    {
+      "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "sha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.cc",
+      "sha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.h",
+      "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+    },
+    {
+      "path": "windows/flutter/generated_plugins.cmake",
+      "sha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424"
+    }
+  ],
+  "unexpectedMismatches": [],
+  "scope": "All baseline Git-visible bytes outside explicit BV write set; BU artifact pins also checked directly including ignored logs. Earlier baseline source preservation of BU closure: predecessor-check.json."
+}

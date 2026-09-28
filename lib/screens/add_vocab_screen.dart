@@ -411,6 +411,7 @@ class _AddWordScreenState extends State<AddWordScreen>
                 initialValue: _cefrLevel,
                 decoration: const InputDecoration(
                   labelText: 'ระดับ CEFR (ไม่บังคับ)',
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
                   border: OutlineInputBorder(),
                 ),
                 items: _cefrOptions

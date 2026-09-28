@@ -1,0 +1,15 @@
+{
+  "branch": "codex/ux-current-after-s01-bc",
+  "sourceMismatches": 0,
+  "verifiedSourcePins": 1563,
+  "predecessorReleased": true,
+  "atUtc": "2026-09-27T00:07:37.7720057Z",
+  "scope": "Read-only device readiness; bounded acceptance checklist/evidence; no application or device writes",
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested; effective tier unverified. No billing/provider/login probes.",
+  "package": "S01-BL-native-readiness",
+  "predecessor": "S01-BK",
+  "threadId": "01a0e02d-c10d-7243-a9af-98f884dc8ac4",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "predecessorStateRevision": 132
+}

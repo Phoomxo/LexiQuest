@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BI-cancel-download-overlapping-catalog",
+  "atUtc": "2026-09-26T23:09:21.9563812Z",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "writerThreadId": "01a0dff6-033c-7600-ba8d-26a97d19ef7a",
+  "acceptance": "HOST_PASS",
+  "hostTests": 104,
+  "newTests": 4,
+  "focusedTests": 4,
+  "confirmedOriginalSourceRed": 0,
+  "remainingRed": [],
+  "sprintAccepted": false,
+  "openPrototypeDefects": "UX-D01-D25",
+  "pending": [
+    "native/device/real restart",
+    "visual/keyboard/screen-reader/user",
+    "reviewed media/qualified trial",
+    "release"
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "7880b182411b23eefb48f5a3c5eafc067c2796edc1e29f5b4780d27e17292271"
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "bc8f536f7a6b0502495d4facc715bbddf49901fbeb2cfdace985904f4d6bbec8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BI-source.patch",
+      "sha256": "1bf7fd9d6d29224098534236fa660f5e2353f6992c97af5ed2e7e96fffd637c4"
+    }
+  ],
+  "artifacts": [
+    {
+      "sha256": "fdb51948cab9f08e80526884f4faeab08719bbd4a164a46c2def8b304485dce4",
+      "bytes": 839,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/analysis.log"
+    },
+    {
+      "sha256": "bd995f261327d0825c556e45316e79b943b5825114ddbf28857d0fca03ca31a0",
+      "bytes": 65852,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/before-test.dart"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final.stderr.log"
+    },
+    {
+      "sha256": "0cb4092c99a25bb8f15cdea09863ebde888325e2fbf1deca118f495b6343240c",
+      "bytes": 83492,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final.stdout.log"
+    },
+    {
+      "sha256": "136f665a334f77e8be2bf0640efc666aa6a4ef648b14c3ab2b6bd9098b92f796",
+      "bytes": 313219,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/final-verification.json"
+    },
+    {
+      "sha256": "a321703672d7e412f47b7db6af210694436f5e021e30db4e47f135d7f6cdd513",
+      "bytes": 1536,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/generated-pins.json"
+    },
+    {
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+      "bytes": 392,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused.stderr.log"
+    },
+    {
+      "sha256": "2ecf8dbfb4f8d73b2628b0ae3336e810f383eb93cf3241d5c67c1ddcda5eb429",
+      "bytes": 16106,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused.stdout.log"
+    },
+    {
+      "sha256": "8424e03df32b2378834238bbd192c313a8986b413d7c3d3ba0ff04f5a35b170b",
+      "bytes": 313137,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-focused-verification.json"
+    },
+    {
+      "sha256": "08914f9751f81face76b9171b74e3e1968b345111cf75ca1fe846a6427d4855a",
+      "bytes": 2396,
+      "path": "docs/development/ux-delivery/evidence/S01-BI-runs/initial-status.txt"
+    }
+  ],
+  "verification": {
+    "command": "./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/screens/offline_content_manager_screen_test.dart,test/screens/offline_content_settings_entry_test.dart,test/features/offline_content/offline_content_manager_test.dart -Resume",
+    "status": "Passed",
+    "exitCode": 0,
+    "fingerprint": "bf6f7467a2c425804f27050615c2b991ad549ebca669e97e03114ea47fd8ce15",
+    "postFingerprint": "bf6f7467a2c425804f27050615c2b991ad549ebca669e97e03114ea47fd8ce15",
+    "receipt": "docs/development/ux-delivery/evidence/S01-BI-runs/final-verification.json",
+    "inputClosureCount": 1563,
+    "closureMismatches": 0
+  },
+  "analysis": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 3,
+    "lines": [
+      145,
+      182,
+      188
+    ],
+    "rule": "use_build_context_synchronously",
+    "assessment": "Unchanged production source; inherited infos. Existing Drift warning retained."
+  },
+  "review": "BI-only delta: 118 added lines, previous test body preserved after formatter-only churn was removed. Final 104-test run includes all four BI cases on the final source. Seven generated file pins unchanged; cr-at-eol diff checks pass.",
+  "implementation": "Coverage only; no production or fake implementation change. Tests assert latest canonical interrupted status despite verified operation return, stale success/error suppression, no stale metadata reads, busy/cancelling retirement, no duplicate mutations, and fresh explicit repair.",
+  "initialFocusedEvidence": "Initial 4-case pass preceded removal of unrelated formatting. It is historical evidence; final 104-case gate is authoritative for final source.",
+  "routing": "Current model deterministic fallback; not Jev-selected. Standard/default requested; runtime tier unverified. No billing/provider/login probes.",
+  "notRun": [
+    "full release/build",
+    "native/device/user/trial",
+    "provider/browser/billing",
+    "deployment/research/cleanup"
+  ],
+  "backlogReassessment": {
+    "status": "RETURN_TO_BACKLOG_SELECTION",
+    "selectedPackage": null,
+    "assessment": "BI closes the bounded same-owner download/cancel overlapping-catalog matrix. BD-BI cover retained callbacks, lifecycle, current-operation feedback, external cancellation and catalog recovery. No further offline edge-case package selected without a concrete new finding.",
+    "sources": [
+      "docs/design/worksheet-to-play-blueprint.md#15.4",
+      "docs/development/ux-delivery/ready-backlog.md",
+      "docs/development/ux-delivery/readiness-12-groups.md",
+      "docs/development/ux-delivery/evidence/S01-BC-backlog-reassessment.json"
+    ],
+    "inventoryCheck": {
+      "paths": 61,
+      "matchingHistoricalHashes": 58,
+      "otherPaths": [
+        "lib/screens/offline_content_manager_screen.dart",
+        "lib/screens/shadowing_challenge_screen.dart",
+        "docs/development/ux-delivery/instructional-evidence-contract-v1.md"
+      ],
+      "interpretation": "Historical BC hashes are not a current acceptance claim. All current BH closure pins matched before BI. The latter two paths have no current Git delta; preserve them."
+    },
+    "nextExecutableStep": "Controller reviews BI receipt, then selects a concrete ready scope from UX01/UX04/UX08 or other approved group using current source and pending evidence. Do not dispatch an empty successor or invent a defect. UX02/03 instructional work remains gated; no external verification claimed."
+  }
+}

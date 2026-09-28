@@ -1,0 +1,304 @@
+
+> Configure project :gradle
+WARNING: Unsupported Kotlin plugin version.
+The `embedded-kotlin` and `kotlin-dsl` plugins rely on features of Kotlin `2.2.0` that might work differently than in the requested version `2.2.20`.
+
+> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle:compileKotlin UP-TO-DATE
+> Task :gradle:compileJava NO-SOURCE
+> Task :gradle:compileGroovy NO-SOURCE
+> Task :gradle:pluginDescriptors UP-TO-DATE
+> Task :gradle:processResources UP-TO-DATE
+> Task :gradle:classes UP-TO-DATE
+> Task :gradle:jar UP-TO-DATE
+
+> Configure project :app
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The multidex library is included as a dependency, but it is not needed for apps
+with minSdk >= 21. Please remove dependency 'androidx.multidex:multidex:2.0.1' from ':app'.
+See https://developer.android.com/build/multidex for more information.
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :app_links
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':app_links' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :audioplayers_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':audioplayers_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :camera_android_camerax
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':camera_android_camerax' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :cloud_firestore
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':cloud_firestore' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :file_selector_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':file_selector_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_app_check
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_app_check' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_auth
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_auth' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_core
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_core' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_litert
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_litert' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_local_notifications
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_local_notifications' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_plugin_android_lifecycle
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_plugin_android_lifecycle' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_secure_storage
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_secure_storage' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_tts
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_tts' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :integration_test
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':integration_test' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :jni
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':jni' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :jni_flutter
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':jni_flutter' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :permission_handler_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':permission_handler_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :record_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':record_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :shared_preferences_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':shared_preferences_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :speech_to_text
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':speech_to_text' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :url_launcher_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':url_launcher_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :workmanager_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':workmanager_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): firebase_app_check, flutter_tts, speech_to_text, workmanager_android
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing 
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:processDebugGoogleServices SKIPPED
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app_links:preBuild UP-TO-DATE
+> Task :app_links:preDebugBuild UP-TO-DATE
+> Task :app_links:extractDeepLinksDebug UP-TO-DATE
+> Task :app_links:processDebugManifest UP-TO-DATE
+> Task :audioplayers_android:preBuild UP-TO-DATE
+> Task :audioplayers_android:preDebugBuild UP-TO-DATE
+> Task :audioplayers_android:extractDeepLinksDebug UP-TO-DATE
+> Task :audioplayers_android:processDebugManifest UP-TO-DATE
+> Task :camera_android_camerax:preBuild UP-TO-DATE
+> Task :camera_android_camerax:preDebugBuild UP-TO-DATE
+> Task :camera_android_camerax:extractDeepLinksDebug UP-TO-DATE
+> Task :camera_android_camerax:processDebugManifest UP-TO-DATE
+> Task :cloud_firestore:preBuild UP-TO-DATE
+> Task :cloud_firestore:preDebugBuild UP-TO-DATE
+> Task :cloud_firestore:extractDeepLinksDebug UP-TO-DATE
+> Task :cloud_firestore:processDebugManifest UP-TO-DATE
+> Task :file_selector_android:preBuild UP-TO-DATE
+> Task :file_selector_android:preDebugBuild UP-TO-DATE
+> Task :file_selector_android:extractDeepLinksDebug UP-TO-DATE
+> Task :file_selector_android:processDebugManifest UP-TO-DATE
+> Task :firebase_app_check:preBuild UP-TO-DATE
+> Task :firebase_app_check:preDebugBuild UP-TO-DATE
+> Task :firebase_app_check:extractDeepLinksDebug UP-TO-DATE
+> Task :firebase_app_check:processDebugManifest UP-TO-DATE
+> Task :firebase_auth:preBuild UP-TO-DATE
+> Task :firebase_auth:preDebugBuild UP-TO-DATE
+> Task :firebase_auth:extractDeepLinksDebug UP-TO-DATE
+> Task :firebase_auth:processDebugManifest UP-TO-DATE
+> Task :firebase_core:preBuild UP-TO-DATE
+> Task :firebase_core:preDebugBuild UP-TO-DATE
+> Task :firebase_core:extractDeepLinksDebug UP-TO-DATE
+> Task :firebase_core:processDebugManifest UP-TO-DATE
+> Task :flutter_litert:preBuild UP-TO-DATE
+> Task :flutter_litert:preDebugBuild UP-TO-DATE
+> Task :flutter_litert:extractDeepLinksDebug UP-TO-DATE
+> Task :flutter_litert:processDebugManifest UP-TO-DATE
+> Task :flutter_local_notifications:preBuild UP-TO-DATE
+> Task :flutter_local_notifications:preDebugBuild UP-TO-DATE
+> Task :flutter_local_notifications:extractDeepLinksDebug UP-TO-DATE
+> Task :flutter_local_notifications:processDebugManifest UP-TO-DATE
+> Task :flutter_plugin_android_lifecycle:preBuild UP-TO-DATE
+> Task :flutter_plugin_android_lifecycle:preDebugBuild UP-TO-DATE
+> Task :flutter_plugin_android_lifecycle:extractDeepLinksDebug UP-TO-DATE
+> Task :flutter_plugin_android_lifecycle:processDebugManifest UP-TO-DATE
+> Task :flutter_secure_storage:preBuild UP-TO-DATE
+> Task :flutter_secure_storage:preDebugBuild UP-TO-DATE
+> Task :flutter_secure_storage:extractDeepLinksDebug UP-TO-DATE
+> Task :flutter_secure_storage:processDebugManifest UP-TO-DATE
+> Task :flutter_tts:preBuild UP-TO-DATE
+> Task :flutter_tts:preDebugBuild UP-TO-DATE
+> Task :flutter_tts:extractDeepLinksDebug UP-TO-DATE
+> Task :flutter_tts:processDebugManifest UP-TO-DATE
+> Task :integration_test:preBuild UP-TO-DATE
+> Task :integration_test:preDebugBuild UP-TO-DATE
+> Task :integration_test:extractDeepLinksDebug UP-TO-DATE
+> Task :integration_test:processDebugManifest UP-TO-DATE
+> Task :jni:preBuild UP-TO-DATE
+> Task :jni:preDebugBuild UP-TO-DATE
+> Task :jni:extractDeepLinksDebug UP-TO-DATE
+> Task :jni:processDebugManifest UP-TO-DATE
+> Task :jni_flutter:preBuild UP-TO-DATE
+> Task :jni_flutter:preDebugBuild UP-TO-DATE
+> Task :jni_flutter:extractDeepLinksDebug UP-TO-DATE
+> Task :jni_flutter:processDebugManifest UP-TO-DATE
+> Task :permission_handler_android:preBuild UP-TO-DATE
+> Task :permission_handler_android:preDebugBuild UP-TO-DATE
+> Task :permission_handler_android:extractDeepLinksDebug UP-TO-DATE
+> Task :permission_handler_android:processDebugManifest UP-TO-DATE
+> Task :record_android:preBuild UP-TO-DATE
+> Task :record_android:preDebugBuild UP-TO-DATE
+> Task :record_android:extractDeepLinksDebug UP-TO-DATE
+> Task :record_android:processDebugManifest UP-TO-DATE
+> Task :shared_preferences_android:preBuild UP-TO-DATE
+> Task :shared_preferences_android:preDebugBuild UP-TO-DATE
+> Task :shared_preferences_android:extractDeepLinksDebug UP-TO-DATE
+> Task :shared_preferences_android:processDebugManifest UP-TO-DATE
+> Task :speech_to_text:preBuild UP-TO-DATE
+> Task :speech_to_text:preDebugBuild UP-TO-DATE
+> Task :speech_to_text:extractDeepLinksDebug UP-TO-DATE
+> Task :speech_to_text:processDebugManifest UP-TO-DATE
+> Task :url_launcher_android:preBuild UP-TO-DATE
+> Task :url_launcher_android:preDebugBuild UP-TO-DATE
+> Task :url_launcher_android:extractDeepLinksDebug UP-TO-DATE
+> Task :url_launcher_android:processDebugManifest UP-TO-DATE
+> Task :workmanager_android:preBuild UP-TO-DATE
+> Task :workmanager_android:preDebugBuild UP-TO-DATE
+> Task :workmanager_android:extractDeepLinksDebug UP-TO-DATE
+> Task :workmanager_android:processDebugManifest UP-TO-DATE
+
+> Task :app:processDebugMainManifest
+C:\Users\Phet\.codex\worktrees\lexiquest-current\LexiQuest\android\app\src\debug\AndroidManifest.xml Warning:
+	provider was tagged at AndroidManifest.xml:0 to remove other declarations but no other declaration present
+
+> Task :app:outputDebugAppLinkSettings
+> Task :app:processDebugManifest
+
+[Incubating] Problems report is available at: file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 6s
+53 actionable tasks: 3 executed, 50 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html

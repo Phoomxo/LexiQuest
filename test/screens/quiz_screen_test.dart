@@ -22,6 +22,9 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/ordinary_meaning_plan.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart'
+    as vocabulary;
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
@@ -125,6 +128,59 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  testWidgets(
+    'BU initial rendered prompt and ordered options equal durable admission',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      final owner = await owners.getOrCreateActiveOwner();
+      final recovery = await learning.loadActivityRecovery(
+        activityType: 'quiz',
+        ownerId: owner.id,
+      );
+      final plan = OrdinaryMeaningPlan.decode(recovery!.checkpoint!.state);
+      final q = plan.questions.single;
+      expect(find.text(q.prompt), findsOneWidget);
+      final displayed = tester
+          .widgetList<FilledButton>(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is FilledButton &&
+                  widget.key is ValueKey<String> &&
+                  (widget.key! as ValueKey<String>).value.startsWith(
+                    'meaning-quiz-option-${q.word.id}-',
+                  ),
+            ),
+          )
+          .map((button) => (button.child! as Text).data)
+          .toList();
+      for (var i = 0; i < q.options.length; i++) {
+        final button = find.byKey(
+          ValueKey('meaning-quiz-option-${q.word.id}-${q.options[i]}'),
+        );
+        expect(button, findsOneWidget);
+        expect(
+          find.descendant(of: button, matching: find.text(q.options[i])),
+          findsOneWidget,
+        );
+      }
+      expect(displayed, q.options);
+      expect(plan.pins.map((p) => p.identity.id).toSet(), {
+        'word-1',
+        'word-z-distractor',
+      });
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    },
+  );
 
   for (final typed in [false, true]) {
     testWidgets('native header counts commits, not skips (typed=$typed)', (
@@ -630,16 +686,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ออก'));
     await _pumpUntilFound(tester, find.text('Open unavailable quiz'));
-    expect(
-      (await database.select(database.learningSessions).getSingle()).state,
-      'abandoned',
-    );
+    expect(await database.select(database.learningSessions).get(), isEmpty);
     expect(await database.select(database.answerAttempts).get(), isEmpty);
   });
 
-  testWidgets('pinned checksum drift abandons the created session', (
+  testWidgets('BU pinned checksum drift rejects before creating a session', (
     tester,
   ) async {
     late String ownerId;
@@ -687,11 +739,7 @@ void main() {
       find.byKey(const ValueKey('session-configuration-reset-prompt')),
     );
 
-    late LearningSession session;
-    await tester.runAsync(() async {
-      session = await database.select(database.learningSessions).getSingle();
-    });
-    expect(session.state, 'abandoned');
+    expect(await database.select(database.learningSessions).get(), isEmpty);
   });
 
   testWidgets(
@@ -2375,7 +2423,14 @@ void main() {
   );
 }
 
-final class _FailFirstLearningRepository implements LearningRepository {
+final class _FailFirstLearningRepository
+    implements
+        LearningRepository,
+        OrdinaryMeaningContentRepository,
+        LearningActivityRecoveryRepository,
+        OrdinaryMeaningOperationRepository,
+        PinnedLearningContentRepository,
+        ExactPinnedLearningActivityRepository {
   _FailFirstLearningRepository(
     this.delegate, {
     this.failAnswerOnce = true,
@@ -2388,6 +2443,84 @@ final class _FailFirstLearningRepository implements LearningRepository {
   });
 
   final LearningRepository delegate;
+  bool _insideOrdinaryOperation = false;
+  @override
+  Future<void> requireOrdinaryOwner(String ownerId) =>
+      (delegate as OrdinaryMeaningOperationRepository).requireOrdinaryOwner(
+        ownerId,
+      );
+  bool _loseOrdinaryAck = false;
+  @override
+  Future<T> runOrdinaryOperation<T>({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+    required bool Function() acceptsOperation,
+    required Future<T> Function() operation,
+  }) async {
+    _insideOrdinaryOperation = true;
+    late T result;
+    try {
+      result = await (delegate as OrdinaryMeaningOperationRepository)
+          .runOrdinaryOperation(
+            ownerId: ownerId,
+            checkpoint: checkpoint,
+            acceptsOperation: acceptsOperation,
+            operation: operation,
+          );
+    } finally {
+      _insideOrdinaryOperation = false;
+    }
+    if (_loseOrdinaryAck) {
+      _loseOrdinaryAck = false;
+      throw StateError(
+        'simulated acknowledgement loss after outer transaction commit',
+      );
+    }
+    return result;
+  }
+
+  @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) => (delegate as PinnedLearningContentRepository).listExactPinnedQuizWords(
+    ownerId: ownerId,
+    content: content,
+  );
+  @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .loadExactActivityRecovery(
+        ownerId: ownerId,
+        sessionId: sessionId,
+        activityType: activityType,
+      );
+  @override
+  Future<void> appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
+  @override
+  Future<List<vocabulary.VocabularyWord>> readMeaningLexicalWords(
+    List<String> ids,
+  ) => (delegate as OrdinaryMeaningContentRepository).readMeaningLexicalWords(
+    ids,
+  );
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) => (delegate as ExactPinnedLearningActivityRepository)
+      .startExactPinnedSessionWithCheckpoint(
+        session: session,
+        content: content,
+        checkpoint: checkpoint,
+      );
   final bool failAnswerOnce;
   final bool failFinishOnce;
   final bool commitThenLoseAckOnce;
@@ -2427,7 +2560,11 @@ final class _FailFirstLearningRepository implements LearningRepository {
         (commitThenLoseAckPromptMode == null ||
             command.promptMode == commitThenLoseAckPromptMode)) {
       _answerFailed = true;
-      await delegate.recordAnswer(command);
+      final result = await delegate.recordAnswer(command);
+      if (_insideOrdinaryOperation) {
+        _loseOrdinaryAck = true;
+        return result;
+      }
       throw StateError('simulated acknowledgement loss after commit');
     }
     if (failAnswerOnce && !_answerFailed) {

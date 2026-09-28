@@ -1,0 +1,41 @@
+{
+  "platform": "android-arm64",
+  "processRestartStatus": "NOT_RUN",
+  "api": 33,
+  "deviceWrites": [],
+  "packages": [
+    {
+      "lastUpdateTime": "2026-09-13 08:14:41",
+      "dataDir": "/data/user/0/com.lexiquest.app",
+      "id": "com.lexiquest.app",
+      "versionName": "1.0.0",
+      "versionCode": 23
+    },
+    {
+      "lastUpdateTime": "2026-09-24 05:38:40",
+      "dataDir": "/data/user/0/com.lexiquest.app.ariTest",
+      "id": "com.lexiquest.app.ariTest",
+      "versionName": "1.0.0",
+      "versionCode": 14
+    }
+  ],
+  "adbDaemonStartedByController": true,
+  "commands": [
+    "adb.exe devices -l",
+    "flutter.bat devices --machine",
+    "adb.exe -s 9582188822004C6 shell getprop ro.kernel.qemu",
+    "adb.exe -s 9582188822004C6 shell pm list packages com.lexiquest",
+    "adb.exe -s 9582188822004C6 shell dumpsys package com.lexiquest.app",
+    "adb.exe -s 9582188822004C6 shell dumpsys package com.lexiquest.app.ariTest"
+  ],
+  "os": "Android 13",
+  "deviceId": "9582188822004C6",
+  "product": "2041T",
+  "model": "V2041",
+  "observationKind": "Transcribed from successful read-only tool results during BL; not a new device run",
+  "observedAtUtc": "2026-09-27T00:10:53.0889590Z",
+  "privateDataRead": false,
+  "nativeTestStatus": "NOT_RUN",
+  "emulator": false,
+  "adbState": "device"
+}

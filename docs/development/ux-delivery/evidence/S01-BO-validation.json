@@ -1,0 +1,308 @@
+{
+  "sourcePins": [
+    {
+      "area": "Runtime",
+      "path": "lib/features/learning/application/lesson_mode_registry.dart",
+      "sha256": "A741F433F9885A283D4A84C0A922C997C6AC2B00EE4D5A730504E62800244E6B"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "8D9309F83657975D3ABFB08F952453086292950E986BCB6523EAA9F16C45D7AC"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "543CD306761930AD79FC31E10ECB66344622DBE95157700392A934D2D8C2F348"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/choose_mode_screen.dart",
+      "sha256": "373EFB4ECD239DC78F97A5CC96D321D804423D1B9DCDFDC9718B56A4010C1406"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "41FE78932C401341198DC0A71175822D601F3EC24B8CB7CF74170FAD6619BD34"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/profile_settings_screen.dart",
+      "sha256": "2CD56D6DB640F192C67ECFDD8B97A17F308E655713004E00E7A17717BC79CC6C"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/today_hub_screen.dart",
+      "sha256": "D06175D7A27B5AAA8EF6D1C76169BB7A48EB544BA57C98710EE1103A0BA370C9"
+    },
+    {
+      "area": "Runtime",
+      "path": "lib/screens/today_hub_view.dart",
+      "sha256": "F3AE296BCD9CD457BB504146C0ABAAA17F01887F77F08B344A14FEA2796A611D"
+    },
+    {
+      "area": "Runtime",
+      "path": "test/support/composed_host_ui_audit_test.dart",
+      "sha256": "245035FE925628F79FD3FC9D15BED395E1E6E0868B9F7431CCAF61C8FEDB01A8"
+    }
+  ],
+  "hostBuildTestProcesses": [],
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "sourceClosureVerified": 1575,
+  "todayRoutedSuccess": "NOT_RUN: feature hidden and parent composition incomplete",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime unverified; no Jev/billing/login/ledger changes",
+  "nextReadyScope": "Inventory quest child and vocabulary add/edit form tests; host-only synthetic visual/keyboard/navigation gaps, without reopening closed owner/offline matrices. Fully routed Today remains gated/NOT_RUN.",
+  "learningRows": 0,
+  "status": "BOUNDED_HOST_PASS",
+  "failuresRetained": [
+    "run-1 enum",
+    "run-2 parent gate expectation",
+    "run-3 localized pageBack selector",
+    "run-4 disabled component callback prerequisite",
+    "run-5 missing closing brace",
+    "run-6 Focus ancestor selector",
+    "verify-final plain-name selection"
+  ],
+  "renderReview": "All 18 final PNGs inspected with view_image; HOST SYNTHETIC 360x800 DPR1 1x/2x; real fonts/icons/shadows",
+  "postFingerprint": "2baa24f77784fd061ae4d9e0b10179a1fb0b94da314ed8be29b87b194031e859",
+  "preExistingPinsVerified": 172,
+  "researchRows": 0,
+  "hostTests": 4,
+  "native": "NOT_RUN",
+  "productionSourceChanged": false,
+  "userParticipation": "DEFERRED",
+  "renderCount": 18,
+  "fingerprint": "2baa24f77784fd061ae4d9e0b10179a1fb0b94da314ed8be29b87b194031e859",
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted-gate.json",
+      "sha256": "a260d09a0a5344d2855f75ee5d8948c7f20eca05dd3846aa784a83e02166c2b8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted-source.dart",
+      "sha256": "245035fe925628f79fd3fc9d15bed395e1e6e0868b9f7431ccaf61c8fedb01a8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/accepted.stdout.log",
+      "sha256": "a267103c5fac829685be3bb6f8c9f83fb92b95a7feca5140266ff94831837f13"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/analysis-final.log",
+      "sha256": "59f4136961857c640f5729134106599d02e8bab3bc16ae77f1e2177fbf85f758"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/analysis.log",
+      "sha256": "36e3b1e6aa79f917884887dc3877d16ac226c7f7145ad52fdfb47ad7c63b528b"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard-gate.json",
+      "sha256": "ebbe4b8d7b6512791755809b14e45528c9840d6a643b33e0eaea39fd07c4e010"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/keyboard.stdout.log",
+      "sha256": "8d63a4cecb7c91874859515f11bc7e21aae76bc26f2dd6b3a7d670963a2869d8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile-gate.json",
+      "sha256": "18ff71ac413adead33f2b9715d3809526bece6f3ff5fe4cac499dded4982092a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/profile.stdout.log",
+      "sha256": "e231fa59dce2530a8ae7dd242f9a3eac221949c9b906014bcd5a73127bdfec24"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-1.stderr.log",
+      "sha256": "af539965d638526b228dec9e71f7f555914077c1cba063d51b7252c4972fcdb3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-1.stdout.log",
+      "sha256": "7cb50c1c0450d867013e3e6a6d70cde6718c03da20ba72cc622755b090e77e82"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-2.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-2.stdout.log",
+      "sha256": "d68abb796107f2b62981efb6b1c706ba689c360148510b35ac6f5fec4b4a8a10"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-3.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-3.stdout.log",
+      "sha256": "262edc9ca6ed598deb9182c1fb53445b2d4b44dfcd95cc6041160d787aa4e7d6"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-4.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-4.stdout.log",
+      "sha256": "324fe6164059600c0313caf6bb48a816cbb574ee49d02db53af2ed0314076b61"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-5.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-5.stdout.log",
+      "sha256": "5b1e2e0d0af8b433827686c912644564daffd57315da913f94713378da7f7dd3"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-6.stderr.log",
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-6.stdout.log",
+      "sha256": "5e3f9fa321db081ce1a2719fc1cdf94cf0d13bc52db0f5a1fe6c9202e3b2313e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/run-7.stdout.log",
+      "sha256": "a267103c5fac829685be3bb6f8c9f83fb92b95a7feca5140266ff94831837f13"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/selection-failure.stdout.log",
+      "sha256": "efccecfb77612e116c15e66cf0d6b55e61c41ff14e1b4e07edd2db6915b21ed9"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-1.log",
+      "sha256": "cb3e0f27cb3c47256b5ff334b711f3ec1817b741921ca44582b24d668203e5be"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-2.log",
+      "sha256": "41ed1f2a577a551c13fc418113f19c44c56e6adb96dc63b619d2f8fdbebd1e5d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-3.log",
+      "sha256": "e530b681a2377c19b86a7116708a818614177ff13e9abcfafc20b9399422844c"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-4.log",
+      "sha256": "99671526c7b3f90169cd0a8fa07deada7be656e3209cd07da1ee454f37894090"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-5.log",
+      "sha256": "98988f4ac7519d7b538fffd55955ddfdee6aeb93d2d2e69b2b5803adf937bf07"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-6.log",
+      "sha256": "e3cc6ba9f9dd3d67058d2c0d43384750cfc37012a0406d3ed9526bb4566fe3c1"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-7.log",
+      "sha256": "4e8e194e7570dce788f09c5824bc1fa0f3e3408a7918f23b5e5b55feeeecf61e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-accepted.log",
+      "sha256": "4e8e194e7570dce788f09c5824bc1fa0f3e3408a7918f23b5e5b55feeeecf61e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-final.log",
+      "sha256": "f64676c08bf0eeb109fdcc8223399bb0e62b20a0b2d4551ad2205b325e293fa0"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-keyboard.log",
+      "sha256": "eba110fa6a7c7ffaaa7fdfc5a68827e4e4030756db3a0308f9af5517de26441e"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/verify-profile.log",
+      "sha256": "149095fb2b17c6598123f0da5bc402f25a8d754b7f498df48ddbdd376ebc87e5"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/01-today-component-loaded-1.0x.png",
+      "sha256": "47785b905f29e7d63d99c8037981c46db8b662d4c0d58c1259b1cd955975776a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/01-today-component-loaded-2.0x.png",
+      "sha256": "fc84cc383136d5b866f16818f31eb2b8e41e6144732690826d3ce64ac363b7c7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/02-learn-starter-1.0x.png",
+      "sha256": "2f743384b4bb4d4e28920fa61498e16f791bf089cff352581eeee89ab30f7394"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/02-learn-starter-2.0x.png",
+      "sha256": "c96d48a36de8e961c7ff32fcb12506acfb34a2fb0a4509c8d5f52c9cb6e73532"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/03-learn-catalog-1.0x.png",
+      "sha256": "744446669f46c45b528aa2d606c93702300a815bc25a9a70feb364e3b12d6373"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/03-learn-catalog-2.0x.png",
+      "sha256": "8ed1a710685fef9e74212a46ffb48a74aee32786c115ceb8d2350e6c0e1f4425"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/04-mode-entry-1.0x.png",
+      "sha256": "84ce525b94d1884f8e2756ab0067e4c820e41c5d7fbb73117c6ac3907824aa1d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/04-mode-entry-2.0x.png",
+      "sha256": "70dd14264ccc52c4e8027644d30b9aa0b619055069ace66949252261c56971de"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/05-profile-loaded-1.0x.png",
+      "sha256": "a5582637f51730fb8c35cb9c7b94747e3dc3bbba9da6a8c93add719ae7646f86"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/05-profile-loaded-2.0x.png",
+      "sha256": "6e996aa203244f47956e97cd34ae60e8bddda7ce941853b692322e0437197127"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/06-profile-details-1.0x.png",
+      "sha256": "c901744c767e8f6e53de8525430e92c5ce38fe52bbe27f5a6beac5f94efc4267"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/06-profile-details-2.0x.png",
+      "sha256": "705f1cab06bffc3c1fc5b1b9c29e89a7f6cc68fafd3b5fb0187e81d03bec9169"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/07-profile-overview-1.0x.png",
+      "sha256": "781f350ad01afa6be71ee18b64996c3d2a285784834b2d6707557e4a9bc7b17d"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/07-profile-overview-2.0x.png",
+      "sha256": "21386c31c7849ca1b1b6bd2277aa1efce80b08e2b6f17d712ecb58a5e53ae060"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/08-today-component-lower-1.0x.png",
+      "sha256": "47785b905f29e7d63d99c8037981c46db8b662d4c0d58c1259b1cd955975776a"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/08-today-component-lower-2.0x.png",
+      "sha256": "fc84cc383136d5b866f16818f31eb2b8e41e6144732690826d3ce64ac363b7c7"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/09-today-component-error-1.0x.png",
+      "sha256": "8895921d4727262b340e155aee6e52bd0faf7f0f1147de079c0baab33d244692"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BO-runs/host-renders/09-today-component-error-2.0x.png",
+      "sha256": "71ee53b14789e1ae551ac5c95b820cf14ae8045a9670af860630ab53ab2c08f4"
+    }
+  ],
+  "analyzer": "New harness only: no issues; repository-wide NOT_RUN; previous BN warnings remain historical",
+  "ordinaryVocabularyOutbox": 2,
+  "externalCalls": 0,
+  "hostAuditTests": 2,
+  "schemaVersion": 1,
+  "atUtc": "2026-09-27T02:41:41.4989264Z",
+  "regressionTests": 2,
+  "package": "S01-BO-host-composition-audit",
+  "preservationMismatches": [],
+  "todayComponent": "PASS: canonical loader, isolated enabled widget-test prerequisite only; no runtime flag writes"
+}

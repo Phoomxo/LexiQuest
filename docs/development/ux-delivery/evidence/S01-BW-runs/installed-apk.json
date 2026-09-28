@@ -1,0 +1,16 @@
+{
+  "matchesBuild": true,
+  "metadata": [
+    "versionCode=14 minSdk=26 targetSdk=36",
+    "versionName=1.0.0",
+    "lastUpdateTime=2026-09-28 10:33:31",
+    "firstInstallTime=2026-09-28 10:33:31",
+    "android.permission.READ_EXTERNAL_STORAGE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_INSTALLER_EXEMPT]",
+    "firstInstallTime=2026-09-28 10:33:31",
+    "android.permission.READ_EXTERNAL_STORAGE: granted=false, flags=[ RESTRICTION_INSTALLER_EXEMPT|RESTRICTION_UPGRADE_EXEMPT]"
+  ],
+  "installedApkSha256": "e271910a2f24c63e127286af7375682411341d00f1b1df474868ae4588e205d4",
+  "deviceId": "9582188822004C6",
+  "atUtc": "2026-09-28T03:35:15.1637972Z",
+  "packageId": "com.lexiquest.app.nativeResumeBw"
+}

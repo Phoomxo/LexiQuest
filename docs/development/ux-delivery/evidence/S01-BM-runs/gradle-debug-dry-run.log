@@ -1,0 +1,815 @@
+
+> Configure project :gradle
+WARNING: Unsupported Kotlin plugin version.
+The `embedded-kotlin` and `kotlin-dsl` plugins rely on features of Kotlin `2.2.0` that might work differently than in the requested version `2.2.20`.
+
+> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle:compileKotlin UP-TO-DATE
+> Task :gradle:compileJava NO-SOURCE
+> Task :gradle:compileGroovy NO-SOURCE
+> Task :gradle:pluginDescriptors UP-TO-DATE
+> Task :gradle:processResources UP-TO-DATE
+> Task :gradle:classes UP-TO-DATE
+> Task :gradle:jar UP-TO-DATE
+
+> Configure project :app
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+w: file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/android/app/build.gradle.kts:44:1: 'fun Project.android(configure: Action<BaseAppModuleExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.ApplicationExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+WARNING: The multidex library is included as a dependency, but it is not needed for apps
+with minSdk >= 21. Please remove dependency 'androidx.multidex:multidex:2.0.1' from ':app'.
+See https://developer.android.com/build/multidex for more information.
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :app_links
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':app_links' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :audioplayers_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':audioplayers_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :camera_android_camerax
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':camera_android_camerax' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :cloud_firestore
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':cloud_firestore' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :file_selector_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':file_selector_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_app_check
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_app_check' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_auth
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_auth' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :firebase_core
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':firebase_core' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_litert
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_litert' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_local_notifications
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_local_notifications' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_plugin_android_lifecycle
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_plugin_android_lifecycle' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_secure_storage
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_secure_storage' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :flutter_tts
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_tts' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :integration_test
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':integration_test' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :jni
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':jni' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :jni_flutter
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':jni_flutter' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :permission_handler_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':permission_handler_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :record_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':record_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :shared_preferences_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':shared_preferences_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :speech_to_text
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':speech_to_text' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :url_launcher_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':url_launcher_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+
+> Configure project :workmanager_android
+w: Deprecated 'org.jetbrains.kotlin.android' plugin usage
+The 'org.jetbrains.kotlin.android' plugin in project ':workmanager_android' is no longer required for Kotlin support since AGP 9.0.
+Solution: Remove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.
+See https://kotl.in/gradle/agp-built-in-kotlin for more details.
+
+WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): firebase_app_check, flutter_tts, speech_to_text, workmanager_android
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing 
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+:app:DebugMinSdkCheck SKIPPED
+:app:preBuild SKIPPED
+:app:preDebugBuild SKIPPED
+:app:mergeDebugNativeDebugMetadata SKIPPED
+:app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:app:cleanMergeDebugAssets SKIPPED
+:app:compileFlutterBuildDebug SKIPPED
+:app:generateDebugAssets SKIPPED
+:app_links:generateDebugAssets SKIPPED
+:app_links:preBuild SKIPPED
+:app_links:preDebugBuild SKIPPED
+:app_links:mergeDebugAssets SKIPPED
+:audioplayers_android:generateDebugAssets SKIPPED
+:audioplayers_android:preBuild SKIPPED
+:audioplayers_android:preDebugBuild SKIPPED
+:audioplayers_android:mergeDebugAssets SKIPPED
+:camera_android_camerax:generateDebugAssets SKIPPED
+:camera_android_camerax:preBuild SKIPPED
+:camera_android_camerax:preDebugBuild SKIPPED
+:camera_android_camerax:mergeDebugAssets SKIPPED
+:cloud_firestore:generateDebugAssets SKIPPED
+:cloud_firestore:preBuild SKIPPED
+:cloud_firestore:preDebugBuild SKIPPED
+:cloud_firestore:mergeDebugAssets SKIPPED
+:file_selector_android:generateDebugAssets SKIPPED
+:file_selector_android:preBuild SKIPPED
+:file_selector_android:preDebugBuild SKIPPED
+:file_selector_android:mergeDebugAssets SKIPPED
+:firebase_app_check:generateDebugAssets SKIPPED
+:firebase_app_check:preBuild SKIPPED
+:firebase_app_check:preDebugBuild SKIPPED
+:firebase_app_check:mergeDebugAssets SKIPPED
+:firebase_auth:generateDebugAssets SKIPPED
+:firebase_auth:preBuild SKIPPED
+:firebase_auth:preDebugBuild SKIPPED
+:firebase_auth:mergeDebugAssets SKIPPED
+:firebase_core:generateDebugAssets SKIPPED
+:firebase_core:preBuild SKIPPED
+:firebase_core:preDebugBuild SKIPPED
+:firebase_core:mergeDebugAssets SKIPPED
+:flutter_litert:generateDebugAssets SKIPPED
+:flutter_litert:preBuild SKIPPED
+:flutter_litert:preDebugBuild SKIPPED
+:flutter_litert:mergeDebugAssets SKIPPED
+:flutter_local_notifications:generateDebugAssets SKIPPED
+:flutter_local_notifications:preBuild SKIPPED
+:flutter_local_notifications:preDebugBuild SKIPPED
+:flutter_local_notifications:mergeDebugAssets SKIPPED
+:flutter_plugin_android_lifecycle:generateDebugAssets SKIPPED
+:flutter_plugin_android_lifecycle:preBuild SKIPPED
+:flutter_plugin_android_lifecycle:preDebugBuild SKIPPED
+:flutter_plugin_android_lifecycle:mergeDebugAssets SKIPPED
+:flutter_secure_storage:generateDebugAssets SKIPPED
+:flutter_secure_storage:preBuild SKIPPED
+:flutter_secure_storage:preDebugBuild SKIPPED
+:flutter_secure_storage:mergeDebugAssets SKIPPED
+:flutter_tts:generateDebugAssets SKIPPED
+:flutter_tts:preBuild SKIPPED
+:flutter_tts:preDebugBuild SKIPPED
+:flutter_tts:mergeDebugAssets SKIPPED
+:integration_test:generateDebugAssets SKIPPED
+:integration_test:preBuild SKIPPED
+:integration_test:preDebugBuild SKIPPED
+:integration_test:mergeDebugAssets SKIPPED
+:jni:generateDebugAssets SKIPPED
+:jni:preBuild SKIPPED
+:jni:preDebugBuild SKIPPED
+:jni:mergeDebugAssets SKIPPED
+:jni_flutter:generateDebugAssets SKIPPED
+:jni_flutter:preBuild SKIPPED
+:jni_flutter:preDebugBuild SKIPPED
+:jni_flutter:mergeDebugAssets SKIPPED
+:permission_handler_android:generateDebugAssets SKIPPED
+:permission_handler_android:preBuild SKIPPED
+:permission_handler_android:preDebugBuild SKIPPED
+:permission_handler_android:mergeDebugAssets SKIPPED
+:record_android:generateDebugAssets SKIPPED
+:record_android:preBuild SKIPPED
+:record_android:preDebugBuild SKIPPED
+:record_android:mergeDebugAssets SKIPPED
+:shared_preferences_android:generateDebugAssets SKIPPED
+:shared_preferences_android:preBuild SKIPPED
+:shared_preferences_android:preDebugBuild SKIPPED
+:shared_preferences_android:mergeDebugAssets SKIPPED
+:speech_to_text:generateDebugAssets SKIPPED
+:speech_to_text:preBuild SKIPPED
+:speech_to_text:preDebugBuild SKIPPED
+:speech_to_text:mergeDebugAssets SKIPPED
+:url_launcher_android:generateDebugAssets SKIPPED
+:url_launcher_android:preBuild SKIPPED
+:url_launcher_android:preDebugBuild SKIPPED
+:url_launcher_android:mergeDebugAssets SKIPPED
+:workmanager_android:generateDebugAssets SKIPPED
+:workmanager_android:preBuild SKIPPED
+:workmanager_android:preDebugBuild SKIPPED
+:workmanager_android:mergeDebugAssets SKIPPED
+:app:mergeDebugAssets SKIPPED
+:app:copyFlutterAssetsDebug SKIPPED
+:app:generateDebugResources SKIPPED
+:app:processDebugGoogleServices SKIPPED
+:app:packageDebugResources SKIPPED
+:app_links:processDebugNavigationResources SKIPPED
+:audioplayers_android:processDebugNavigationResources SKIPPED
+:camera_android_camerax:processDebugNavigationResources SKIPPED
+:cloud_firestore:processDebugNavigationResources SKIPPED
+:file_selector_android:processDebugNavigationResources SKIPPED
+:firebase_app_check:processDebugNavigationResources SKIPPED
+:firebase_auth:processDebugNavigationResources SKIPPED
+:firebase_core:processDebugNavigationResources SKIPPED
+:flutter_litert:processDebugNavigationResources SKIPPED
+:flutter_local_notifications:processDebugNavigationResources SKIPPED
+:flutter_plugin_android_lifecycle:processDebugNavigationResources SKIPPED
+:flutter_secure_storage:processDebugNavigationResources SKIPPED
+:flutter_tts:processDebugNavigationResources SKIPPED
+:integration_test:processDebugNavigationResources SKIPPED
+:jni:processDebugNavigationResources SKIPPED
+:jni_flutter:processDebugNavigationResources SKIPPED
+:permission_handler_android:processDebugNavigationResources SKIPPED
+:record_android:processDebugNavigationResources SKIPPED
+:shared_preferences_android:processDebugNavigationResources SKIPPED
+:speech_to_text:processDebugNavigationResources SKIPPED
+:url_launcher_android:processDebugNavigationResources SKIPPED
+:workmanager_android:processDebugNavigationResources SKIPPED
+:app:processDebugNavigationResources SKIPPED
+:app:parseDebugLocalResources SKIPPED
+:app:generateDebugRFile SKIPPED
+:app_links:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:app_links:generateDebugResources SKIPPED
+:app_links:packageDebugResources SKIPPED
+:app_links:parseDebugLocalResources SKIPPED
+:app_links:generateDebugRFile SKIPPED
+:app_links:compileDebugKotlin SKIPPED
+:app_links:javaPreCompileDebug SKIPPED
+:app_links:compileDebugJavaWithJavac SKIPPED
+:app_links:bundleLibCompileToJarDebug SKIPPED
+:audioplayers_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:audioplayers_android:generateDebugResources SKIPPED
+:audioplayers_android:packageDebugResources SKIPPED
+:audioplayers_android:parseDebugLocalResources SKIPPED
+:audioplayers_android:generateDebugRFile SKIPPED
+:audioplayers_android:compileDebugKotlin SKIPPED
+:audioplayers_android:javaPreCompileDebug SKIPPED
+:audioplayers_android:compileDebugJavaWithJavac SKIPPED
+:audioplayers_android:bundleLibCompileToJarDebug SKIPPED
+:camera_android_camerax:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:camera_android_camerax:generateDebugResources SKIPPED
+:camera_android_camerax:packageDebugResources SKIPPED
+:camera_android_camerax:parseDebugLocalResources SKIPPED
+:camera_android_camerax:generateDebugRFile SKIPPED
+:camera_android_camerax:compileDebugKotlin SKIPPED
+:camera_android_camerax:javaPreCompileDebug SKIPPED
+:camera_android_camerax:compileDebugJavaWithJavac SKIPPED
+:camera_android_camerax:bundleLibCompileToJarDebug SKIPPED
+:cloud_firestore:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:cloud_firestore:generateDebugBuildConfig SKIPPED
+:cloud_firestore:generateDebugResources SKIPPED
+:cloud_firestore:packageDebugResources SKIPPED
+:cloud_firestore:parseDebugLocalResources SKIPPED
+:cloud_firestore:generateDebugRFile SKIPPED
+:firebase_core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:firebase_core:generateDebugBuildConfig SKIPPED
+:firebase_core:generateDebugResources SKIPPED
+:firebase_core:packageDebugResources SKIPPED
+:firebase_core:parseDebugLocalResources SKIPPED
+:firebase_core:generateDebugRFile SKIPPED
+:firebase_core:compileDebugKotlin SKIPPED
+:firebase_core:javaPreCompileDebug SKIPPED
+:firebase_core:compileDebugJavaWithJavac SKIPPED
+:firebase_core:bundleLibCompileToJarDebug SKIPPED
+:cloud_firestore:compileDebugKotlin SKIPPED
+:cloud_firestore:javaPreCompileDebug SKIPPED
+:cloud_firestore:compileDebugJavaWithJavac SKIPPED
+:cloud_firestore:bundleLibCompileToJarDebug SKIPPED
+:file_selector_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:file_selector_android:generateDebugResources SKIPPED
+:file_selector_android:packageDebugResources SKIPPED
+:file_selector_android:parseDebugLocalResources SKIPPED
+:file_selector_android:generateDebugRFile SKIPPED
+:file_selector_android:compileDebugKotlin SKIPPED
+:file_selector_android:javaPreCompileDebug SKIPPED
+:file_selector_android:compileDebugJavaWithJavac SKIPPED
+:file_selector_android:bundleLibCompileToJarDebug SKIPPED
+:firebase_app_check:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:firebase_app_check:generateDebugBuildConfig SKIPPED
+:firebase_app_check:generateDebugResources SKIPPED
+:firebase_app_check:packageDebugResources SKIPPED
+:firebase_app_check:parseDebugLocalResources SKIPPED
+:firebase_app_check:generateDebugRFile SKIPPED
+:firebase_app_check:compileDebugKotlin SKIPPED
+:firebase_app_check:javaPreCompileDebug SKIPPED
+:firebase_app_check:compileDebugJavaWithJavac SKIPPED
+:firebase_app_check:bundleLibCompileToJarDebug SKIPPED
+:firebase_auth:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:firebase_auth:generateDebugBuildConfig SKIPPED
+:firebase_auth:generateDebugResources SKIPPED
+:firebase_auth:packageDebugResources SKIPPED
+:firebase_auth:parseDebugLocalResources SKIPPED
+:firebase_auth:generateDebugRFile SKIPPED
+:firebase_auth:compileDebugKotlin SKIPPED
+:firebase_auth:javaPreCompileDebug SKIPPED
+:firebase_auth:compileDebugJavaWithJavac SKIPPED
+:firebase_auth:bundleLibCompileToJarDebug SKIPPED
+:flutter_litert:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:flutter_litert:generateDebugResources SKIPPED
+:flutter_litert:packageDebugResources SKIPPED
+:flutter_litert:parseDebugLocalResources SKIPPED
+:flutter_litert:generateDebugRFile SKIPPED
+:flutter_litert:compileDebugKotlin SKIPPED
+:flutter_litert:javaPreCompileDebug SKIPPED
+:flutter_litert:compileDebugJavaWithJavac SKIPPED
+:flutter_litert:bundleLibCompileToJarDebug SKIPPED
+:flutter_local_notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:flutter_local_notifications:generateDebugResources SKIPPED
+:flutter_local_notifications:packageDebugResources SKIPPED
+:flutter_local_notifications:parseDebugLocalResources SKIPPED
+:flutter_local_notifications:generateDebugRFile SKIPPED
+:flutter_local_notifications:compileDebugKotlin SKIPPED
+:flutter_local_notifications:javaPreCompileDebug SKIPPED
+:flutter_local_notifications:compileDebugJavaWithJavac SKIPPED
+:flutter_local_notifications:bundleLibCompileToJarDebug SKIPPED
+:flutter_plugin_android_lifecycle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:flutter_plugin_android_lifecycle:generateDebugResources SKIPPED
+:flutter_plugin_android_lifecycle:packageDebugResources SKIPPED
+:flutter_plugin_android_lifecycle:parseDebugLocalResources SKIPPED
+:flutter_plugin_android_lifecycle:generateDebugRFile SKIPPED
+:flutter_plugin_android_lifecycle:compileDebugKotlin SKIPPED
+:flutter_plugin_android_lifecycle:javaPreCompileDebug SKIPPED
+:flutter_plugin_android_lifecycle:compileDebugJavaWithJavac SKIPPED
+:flutter_plugin_android_lifecycle:bundleLibCompileToJarDebug SKIPPED
+:flutter_secure_storage:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:flutter_secure_storage:generateDebugBuildConfig SKIPPED
+:flutter_secure_storage:generateDebugResources SKIPPED
+:flutter_secure_storage:packageDebugResources SKIPPED
+:flutter_secure_storage:parseDebugLocalResources SKIPPED
+:flutter_secure_storage:generateDebugRFile SKIPPED
+:flutter_secure_storage:compileDebugKotlin SKIPPED
+:flutter_secure_storage:javaPreCompileDebug SKIPPED
+:flutter_secure_storage:compileDebugJavaWithJavac SKIPPED
+:flutter_secure_storage:bundleLibCompileToJarDebug SKIPPED
+:flutter_tts:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:flutter_tts:generateDebugResources SKIPPED
+:flutter_tts:packageDebugResources SKIPPED
+:flutter_tts:parseDebugLocalResources SKIPPED
+:flutter_tts:generateDebugRFile SKIPPED
+:flutter_tts:compileDebugKotlin SKIPPED
+:flutter_tts:javaPreCompileDebug SKIPPED
+:flutter_tts:compileDebugJavaWithJavac SKIPPED
+:flutter_tts:bundleLibCompileToJarDebug SKIPPED
+:integration_test:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:integration_test:generateDebugResources SKIPPED
+:integration_test:packageDebugResources SKIPPED
+:integration_test:parseDebugLocalResources SKIPPED
+:integration_test:generateDebugRFile SKIPPED
+:integration_test:compileDebugKotlin SKIPPED
+:integration_test:javaPreCompileDebug SKIPPED
+:integration_test:compileDebugJavaWithJavac SKIPPED
+:integration_test:bundleLibCompileToJarDebug SKIPPED
+:jni:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:jni:generateDebugResources SKIPPED
+:jni:packageDebugResources SKIPPED
+:jni:parseDebugLocalResources SKIPPED
+:jni:generateDebugRFile SKIPPED
+:jni:compileDebugKotlin SKIPPED
+:jni:javaPreCompileDebug SKIPPED
+:jni:compileDebugJavaWithJavac SKIPPED
+:jni:bundleLibCompileToJarDebug SKIPPED
+:jni_flutter:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:jni_flutter:generateDebugResources SKIPPED
+:jni_flutter:packageDebugResources SKIPPED
+:jni_flutter:parseDebugLocalResources SKIPPED
+:jni_flutter:generateDebugRFile SKIPPED
+:jni_flutter:compileDebugKotlin SKIPPED
+:jni_flutter:javaPreCompileDebug SKIPPED
+:jni_flutter:compileDebugJavaWithJavac SKIPPED
+:jni_flutter:bundleLibCompileToJarDebug SKIPPED
+:permission_handler_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:permission_handler_android:generateDebugResources SKIPPED
+:permission_handler_android:packageDebugResources SKIPPED
+:permission_handler_android:parseDebugLocalResources SKIPPED
+:permission_handler_android:generateDebugRFile SKIPPED
+:permission_handler_android:compileDebugKotlin SKIPPED
+:permission_handler_android:javaPreCompileDebug SKIPPED
+:permission_handler_android:compileDebugJavaWithJavac SKIPPED
+:permission_handler_android:bundleLibCompileToJarDebug SKIPPED
+:record_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:record_android:generateDebugResources SKIPPED
+:record_android:packageDebugResources SKIPPED
+:record_android:parseDebugLocalResources SKIPPED
+:record_android:generateDebugRFile SKIPPED
+:record_android:compileDebugKotlin SKIPPED
+:record_android:javaPreCompileDebug SKIPPED
+:record_android:compileDebugJavaWithJavac SKIPPED
+:record_android:bundleLibCompileToJarDebug SKIPPED
+:shared_preferences_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:shared_preferences_android:generateDebugResources SKIPPED
+:shared_preferences_android:packageDebugResources SKIPPED
+:shared_preferences_android:parseDebugLocalResources SKIPPED
+:shared_preferences_android:generateDebugRFile SKIPPED
+:shared_preferences_android:compileDebugKotlin SKIPPED
+:shared_preferences_android:javaPreCompileDebug SKIPPED
+:shared_preferences_android:compileDebugJavaWithJavac SKIPPED
+:shared_preferences_android:bundleLibCompileToJarDebug SKIPPED
+:speech_to_text:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:speech_to_text:generateDebugResources SKIPPED
+:speech_to_text:packageDebugResources SKIPPED
+:speech_to_text:parseDebugLocalResources SKIPPED
+:speech_to_text:generateDebugRFile SKIPPED
+:speech_to_text:compileDebugKotlin SKIPPED
+:speech_to_text:javaPreCompileDebug SKIPPED
+:speech_to_text:compileDebugJavaWithJavac SKIPPED
+:speech_to_text:bundleLibCompileToJarDebug SKIPPED
+:url_launcher_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:url_launcher_android:generateDebugBuildConfig SKIPPED
+:url_launcher_android:generateDebugResources SKIPPED
+:url_launcher_android:packageDebugResources SKIPPED
+:url_launcher_android:parseDebugLocalResources SKIPPED
+:url_launcher_android:generateDebugRFile SKIPPED
+:url_launcher_android:compileDebugKotlin SKIPPED
+:url_launcher_android:javaPreCompileDebug SKIPPED
+:url_launcher_android:compileDebugJavaWithJavac SKIPPED
+:url_launcher_android:bundleLibCompileToJarDebug SKIPPED
+:workmanager_android:checkKotlinGradlePluginConfigurationErrors SKIPPED
+:workmanager_android:generateDebugResources SKIPPED
+:workmanager_android:packageDebugResources SKIPPED
+:workmanager_android:parseDebugLocalResources SKIPPED
+:workmanager_android:generateDebugRFile SKIPPED
+:workmanager_android:compileDebugKotlin SKIPPED
+:workmanager_android:javaPreCompileDebug SKIPPED
+:workmanager_android:compileDebugJavaWithJavac SKIPPED
+:workmanager_android:bundleLibCompileToJarDebug SKIPPED
+:app:compileDebugKotlin SKIPPED
+:app:javaPreCompileDebug SKIPPED
+:app:compileDebugJavaWithJavac SKIPPED
+:app:compressDebugAssets SKIPPED
+:app:l8DexDesugarLibDebug SKIPPED
+:app_links:bundleLibRuntimeToJarDebug SKIPPED
+:audioplayers_android:bundleLibRuntimeToJarDebug SKIPPED
+:camera_android_camerax:bundleLibRuntimeToJarDebug SKIPPED
+:cloud_firestore:bundleLibRuntimeToJarDebug SKIPPED
+:file_selector_android:bundleLibRuntimeToJarDebug SKIPPED
+:firebase_app_check:bundleLibRuntimeToJarDebug SKIPPED
+:firebase_auth:bundleLibRuntimeToJarDebug SKIPPED
+:firebase_core:bundleLibRuntimeToJarDebug SKIPPED
+:flutter_litert:bundleLibRuntimeToJarDebug SKIPPED
+:flutter_local_notifications:bundleLibRuntimeToJarDebug SKIPPED
+:flutter_plugin_android_lifecycle:bundleLibRuntimeToJarDebug SKIPPED
+:flutter_secure_storage:bundleLibRuntimeToJarDebug SKIPPED
+:flutter_tts:bundleLibRuntimeToJarDebug SKIPPED
+:integration_test:bundleLibRuntimeToJarDebug SKIPPED
+:jni_flutter:bundleLibRuntimeToJarDebug SKIPPED
+:jni:bundleLibRuntimeToJarDebug SKIPPED
+:permission_handler_android:bundleLibRuntimeToJarDebug SKIPPED
+:record_android:bundleLibRuntimeToJarDebug SKIPPED
+:shared_preferences_android:bundleLibRuntimeToJarDebug SKIPPED
+:speech_to_text:bundleLibRuntimeToJarDebug SKIPPED
+:url_launcher_android:bundleLibRuntimeToJarDebug SKIPPED
+:workmanager_android:bundleLibRuntimeToJarDebug SKIPPED
+:app:desugarDebugFileDependencies SKIPPED
+:app_links:writeDebugAarMetadata SKIPPED
+:audioplayers_android:writeDebugAarMetadata SKIPPED
+:camera_android_camerax:writeDebugAarMetadata SKIPPED
+:cloud_firestore:writeDebugAarMetadata SKIPPED
+:file_selector_android:writeDebugAarMetadata SKIPPED
+:firebase_app_check:writeDebugAarMetadata SKIPPED
+:firebase_auth:writeDebugAarMetadata SKIPPED
+:firebase_core:writeDebugAarMetadata SKIPPED
+:flutter_litert:writeDebugAarMetadata SKIPPED
+:flutter_local_notifications:writeDebugAarMetadata SKIPPED
+:flutter_plugin_android_lifecycle:writeDebugAarMetadata SKIPPED
+:flutter_secure_storage:writeDebugAarMetadata SKIPPED
+:flutter_tts:writeDebugAarMetadata SKIPPED
+:integration_test:writeDebugAarMetadata SKIPPED
+:jni:writeDebugAarMetadata SKIPPED
+:jni_flutter:writeDebugAarMetadata SKIPPED
+:permission_handler_android:writeDebugAarMetadata SKIPPED
+:record_android:writeDebugAarMetadata SKIPPED
+:shared_preferences_android:writeDebugAarMetadata SKIPPED
+:speech_to_text:writeDebugAarMetadata SKIPPED
+:url_launcher_android:writeDebugAarMetadata SKIPPED
+:workmanager_android:writeDebugAarMetadata SKIPPED
+:app:checkDebugAarMetadata SKIPPED
+:app:compileDebugNavigationResources SKIPPED
+:app:mapDebugSourceSetPaths SKIPPED
+:app:mergeDebugResources SKIPPED
+:app:createDebugCompatibleScreenManifests SKIPPED
+:app:extractDeepLinksDebug SKIPPED
+:app_links:extractDeepLinksDebug SKIPPED
+:app_links:processDebugManifest SKIPPED
+:audioplayers_android:extractDeepLinksDebug SKIPPED
+:audioplayers_android:processDebugManifest SKIPPED
+:camera_android_camerax:extractDeepLinksDebug SKIPPED
+:camera_android_camerax:processDebugManifest SKIPPED
+:cloud_firestore:extractDeepLinksDebug SKIPPED
+:cloud_firestore:processDebugManifest SKIPPED
+:file_selector_android:extractDeepLinksDebug SKIPPED
+:file_selector_android:processDebugManifest SKIPPED
+:firebase_app_check:extractDeepLinksDebug SKIPPED
+:firebase_app_check:processDebugManifest SKIPPED
+:firebase_auth:extractDeepLinksDebug SKIPPED
+:firebase_auth:processDebugManifest SKIPPED
+:firebase_core:extractDeepLinksDebug SKIPPED
+:firebase_core:processDebugManifest SKIPPED
+:flutter_litert:extractDeepLinksDebug SKIPPED
+:flutter_litert:processDebugManifest SKIPPED
+:flutter_local_notifications:extractDeepLinksDebug SKIPPED
+:flutter_local_notifications:processDebugManifest SKIPPED
+:flutter_plugin_android_lifecycle:extractDeepLinksDebug SKIPPED
+:flutter_plugin_android_lifecycle:processDebugManifest SKIPPED
+:flutter_secure_storage:extractDeepLinksDebug SKIPPED
+:flutter_secure_storage:processDebugManifest SKIPPED
+:flutter_tts:extractDeepLinksDebug SKIPPED
+:flutter_tts:processDebugManifest SKIPPED
+:integration_test:extractDeepLinksDebug SKIPPED
+:integration_test:processDebugManifest SKIPPED
+:jni:extractDeepLinksDebug SKIPPED
+:jni:processDebugManifest SKIPPED
+:jni_flutter:extractDeepLinksDebug SKIPPED
+:jni_flutter:processDebugManifest SKIPPED
+:permission_handler_android:extractDeepLinksDebug SKIPPED
+:permission_handler_android:processDebugManifest SKIPPED
+:record_android:extractDeepLinksDebug SKIPPED
+:record_android:processDebugManifest SKIPPED
+:shared_preferences_android:extractDeepLinksDebug SKIPPED
+:shared_preferences_android:processDebugManifest SKIPPED
+:speech_to_text:extractDeepLinksDebug SKIPPED
+:speech_to_text:processDebugManifest SKIPPED
+:url_launcher_android:extractDeepLinksDebug SKIPPED
+:url_launcher_android:processDebugManifest SKIPPED
+:workmanager_android:extractDeepLinksDebug SKIPPED
+:workmanager_android:processDebugManifest SKIPPED
+:app:processDebugMainManifest SKIPPED
+:app:outputDebugAppLinkSettings SKIPPED
+:app:processDebugManifest SKIPPED
+:app:processDebugManifestForPackage SKIPPED
+:app_links:compileDebugLibraryResources SKIPPED
+:audioplayers_android:compileDebugLibraryResources SKIPPED
+:camera_android_camerax:compileDebugLibraryResources SKIPPED
+:cloud_firestore:compileDebugLibraryResources SKIPPED
+:file_selector_android:compileDebugLibraryResources SKIPPED
+:firebase_app_check:compileDebugLibraryResources SKIPPED
+:firebase_auth:compileDebugLibraryResources SKIPPED
+:firebase_core:compileDebugLibraryResources SKIPPED
+:flutter_litert:compileDebugLibraryResources SKIPPED
+:flutter_local_notifications:compileDebugLibraryResources SKIPPED
+:flutter_plugin_android_lifecycle:compileDebugLibraryResources SKIPPED
+:flutter_secure_storage:compileDebugLibraryResources SKIPPED
+:flutter_tts:compileDebugLibraryResources SKIPPED
+:integration_test:compileDebugLibraryResources SKIPPED
+:jni:compileDebugLibraryResources SKIPPED
+:jni_flutter:compileDebugLibraryResources SKIPPED
+:permission_handler_android:compileDebugLibraryResources SKIPPED
+:record_android:compileDebugLibraryResources SKIPPED
+:shared_preferences_android:compileDebugLibraryResources SKIPPED
+:speech_to_text:compileDebugLibraryResources SKIPPED
+:url_launcher_android:compileDebugLibraryResources SKIPPED
+:workmanager_android:compileDebugLibraryResources SKIPPED
+:app:processDebugResources SKIPPED
+:app:dexBuilderDebug SKIPPED
+:app:mergeDebugGlobalSynthetics SKIPPED
+:app:processDebugJavaRes SKIPPED
+:app_links:processDebugJavaRes SKIPPED
+:audioplayers_android:processDebugJavaRes SKIPPED
+:camera_android_camerax:processDebugJavaRes SKIPPED
+:cloud_firestore:processDebugJavaRes SKIPPED
+:file_selector_android:processDebugJavaRes SKIPPED
+:firebase_app_check:processDebugJavaRes SKIPPED
+:firebase_auth:processDebugJavaRes SKIPPED
+:firebase_core:processDebugJavaRes SKIPPED
+:flutter_litert:processDebugJavaRes SKIPPED
+:flutter_local_notifications:processDebugJavaRes SKIPPED
+:flutter_plugin_android_lifecycle:processDebugJavaRes SKIPPED
+:flutter_secure_storage:processDebugJavaRes SKIPPED
+:flutter_tts:processDebugJavaRes SKIPPED
+:integration_test:processDebugJavaRes SKIPPED
+:jni:processDebugJavaRes SKIPPED
+:jni_flutter:processDebugJavaRes SKIPPED
+:permission_handler_android:processDebugJavaRes SKIPPED
+:record_android:processDebugJavaRes SKIPPED
+:shared_preferences_android:processDebugJavaRes SKIPPED
+:speech_to_text:processDebugJavaRes SKIPPED
+:url_launcher_android:processDebugJavaRes SKIPPED
+:workmanager_android:processDebugJavaRes SKIPPED
+:app:mergeDebugJavaResource SKIPPED
+:app:checkDebugDuplicateClasses SKIPPED
+:app:mergeExtDexDebug SKIPPED
+:app_links:bundleLibRuntimeToDirDebug SKIPPED
+:audioplayers_android:bundleLibRuntimeToDirDebug SKIPPED
+:camera_android_camerax:bundleLibRuntimeToDirDebug SKIPPED
+:cloud_firestore:bundleLibRuntimeToDirDebug SKIPPED
+:file_selector_android:bundleLibRuntimeToDirDebug SKIPPED
+:firebase_app_check:bundleLibRuntimeToDirDebug SKIPPED
+:firebase_auth:bundleLibRuntimeToDirDebug SKIPPED
+:firebase_core:bundleLibRuntimeToDirDebug SKIPPED
+:flutter_litert:bundleLibRuntimeToDirDebug SKIPPED
+:flutter_local_notifications:bundleLibRuntimeToDirDebug SKIPPED
+:flutter_plugin_android_lifecycle:bundleLibRuntimeToDirDebug SKIPPED
+:flutter_secure_storage:bundleLibRuntimeToDirDebug SKIPPED
+:flutter_tts:bundleLibRuntimeToDirDebug SKIPPED
+:integration_test:bundleLibRuntimeToDirDebug SKIPPED
+:jni_flutter:bundleLibRuntimeToDirDebug SKIPPED
+:jni:bundleLibRuntimeToDirDebug SKIPPED
+:permission_handler_android:bundleLibRuntimeToDirDebug SKIPPED
+:record_android:bundleLibRuntimeToDirDebug SKIPPED
+:shared_preferences_android:bundleLibRuntimeToDirDebug SKIPPED
+:speech_to_text:bundleLibRuntimeToDirDebug SKIPPED
+:url_launcher_android:bundleLibRuntimeToDirDebug SKIPPED
+:workmanager_android:bundleLibRuntimeToDirDebug SKIPPED
+:app:mergeLibDexDebug SKIPPED
+:app:mergeProjectDexDebug SKIPPED
+:app:configureCMakeDebug[arm64-v8a] SKIPPED
+:app:buildCMakeDebug[arm64-v8a] SKIPPED
+:app:configureCMakeDebug[armeabi-v7a] SKIPPED
+:app:buildCMakeDebug[armeabi-v7a] SKIPPED
+:app:configureCMakeDebug[x86_64] SKIPPED
+:app:buildCMakeDebug[x86_64] SKIPPED
+:app:copyJniLibsflutterBuildDebug SKIPPED
+:app:mergeDebugJniLibFolders SKIPPED
+:app_links:mergeDebugJniLibFolders SKIPPED
+:app_links:mergeDebugNativeLibs SKIPPED
+:app_links:copyDebugJniLibsProjectOnly SKIPPED
+:audioplayers_android:mergeDebugJniLibFolders SKIPPED
+:audioplayers_android:mergeDebugNativeLibs SKIPPED
+:audioplayers_android:copyDebugJniLibsProjectOnly SKIPPED
+:camera_android_camerax:mergeDebugJniLibFolders SKIPPED
+:camera_android_camerax:mergeDebugNativeLibs SKIPPED
+:camera_android_camerax:copyDebugJniLibsProjectOnly SKIPPED
+:cloud_firestore:mergeDebugJniLibFolders SKIPPED
+:cloud_firestore:mergeDebugNativeLibs SKIPPED
+:cloud_firestore:copyDebugJniLibsProjectOnly SKIPPED
+:file_selector_android:mergeDebugJniLibFolders SKIPPED
+:file_selector_android:mergeDebugNativeLibs SKIPPED
+:file_selector_android:copyDebugJniLibsProjectOnly SKIPPED
+:firebase_app_check:mergeDebugJniLibFolders SKIPPED
+:firebase_app_check:mergeDebugNativeLibs SKIPPED
+:firebase_app_check:copyDebugJniLibsProjectOnly SKIPPED
+:firebase_auth:mergeDebugJniLibFolders SKIPPED
+:firebase_auth:mergeDebugNativeLibs SKIPPED
+:firebase_auth:copyDebugJniLibsProjectOnly SKIPPED
+:firebase_core:mergeDebugJniLibFolders SKIPPED
+:firebase_core:mergeDebugNativeLibs SKIPPED
+:firebase_core:copyDebugJniLibsProjectOnly SKIPPED
+:flutter_litert:preProfileBuild SKIPPED
+:flutter_litert:configureCMakeDebug[arm64-v8a] SKIPPED
+:flutter_litert:buildCMakeDebug[arm64-v8a] SKIPPED
+:flutter_litert:configureCMakeDebug[armeabi-v7a] SKIPPED
+:flutter_litert:buildCMakeDebug[armeabi-v7a] SKIPPED
+:flutter_litert:configureCMakeDebug[x86] SKIPPED
+:flutter_litert:buildCMakeDebug[x86] SKIPPED
+:flutter_litert:configureCMakeDebug[x86_64] SKIPPED
+:flutter_litert:buildCMakeDebug[x86_64] SKIPPED
+:flutter_litert:downloadLitertJni SKIPPED
+:flutter_litert:mergeDebugJniLibFolders SKIPPED
+:flutter_litert:mergeDebugNativeLibs SKIPPED
+:flutter_litert:copyDebugJniLibsProjectOnly SKIPPED
+:flutter_local_notifications:mergeDebugJniLibFolders SKIPPED
+:flutter_local_notifications:mergeDebugNativeLibs SKIPPED
+:flutter_local_notifications:copyDebugJniLibsProjectOnly SKIPPED
+:flutter_plugin_android_lifecycle:mergeDebugJniLibFolders SKIPPED
+:flutter_plugin_android_lifecycle:mergeDebugNativeLibs SKIPPED
+:flutter_plugin_android_lifecycle:copyDebugJniLibsProjectOnly SKIPPED
+:flutter_secure_storage:mergeDebugJniLibFolders SKIPPED
+:flutter_secure_storage:mergeDebugNativeLibs SKIPPED
+:flutter_secure_storage:copyDebugJniLibsProjectOnly SKIPPED
+:flutter_tts:mergeDebugJniLibFolders SKIPPED
+:flutter_tts:mergeDebugNativeLibs SKIPPED
+:flutter_tts:copyDebugJniLibsProjectOnly SKIPPED
+:integration_test:mergeDebugJniLibFolders SKIPPED
+:integration_test:mergeDebugNativeLibs SKIPPED
+:integration_test:copyDebugJniLibsProjectOnly SKIPPED
+:jni:preProfileBuild SKIPPED
+:jni:configureCMakeDebug[arm64-v8a] SKIPPED
+:jni:buildCMakeDebug[arm64-v8a] SKIPPED
+:jni:configureCMakeDebug[armeabi-v7a] SKIPPED
+:jni:buildCMakeDebug[armeabi-v7a] SKIPPED
+:jni:configureCMakeDebug[x86] SKIPPED
+:jni:buildCMakeDebug[x86] SKIPPED
+:jni:configureCMakeDebug[x86_64] SKIPPED
+:jni:buildCMakeDebug[x86_64] SKIPPED
+:jni:mergeDebugJniLibFolders SKIPPED
+:jni:mergeDebugNativeLibs SKIPPED
+:jni:copyDebugJniLibsProjectOnly SKIPPED
+:jni_flutter:mergeDebugJniLibFolders SKIPPED
+:jni_flutter:mergeDebugNativeLibs SKIPPED
+:jni_flutter:copyDebugJniLibsProjectOnly SKIPPED
+:permission_handler_android:mergeDebugJniLibFolders SKIPPED
+:permission_handler_android:mergeDebugNativeLibs SKIPPED
+:permission_handler_android:copyDebugJniLibsProjectOnly SKIPPED
+:record_android:mergeDebugJniLibFolders SKIPPED
+:record_android:mergeDebugNativeLibs SKIPPED
+:record_android:copyDebugJniLibsProjectOnly SKIPPED
+:shared_preferences_android:mergeDebugJniLibFolders SKIPPED
+:shared_preferences_android:mergeDebugNativeLibs SKIPPED
+:shared_preferences_android:copyDebugJniLibsProjectOnly SKIPPED
+:speech_to_text:mergeDebugJniLibFolders SKIPPED
+:speech_to_text:mergeDebugNativeLibs SKIPPED
+:speech_to_text:copyDebugJniLibsProjectOnly SKIPPED
+:url_launcher_android:mergeDebugJniLibFolders SKIPPED
+:url_launcher_android:mergeDebugNativeLibs SKIPPED
+:url_launcher_android:copyDebugJniLibsProjectOnly SKIPPED
+:workmanager_android:mergeDebugJniLibFolders SKIPPED
+:workmanager_android:mergeDebugNativeLibs SKIPPED
+:workmanager_android:copyDebugJniLibsProjectOnly SKIPPED
+:app:mergeDebugNativeLibs SKIPPED
+:app:stripDebugDebugSymbols SKIPPED
+:app:validateSigningDebug SKIPPED
+:app:writeDebugAppMetadata SKIPPED
+:app:writeDebugSigningConfigVersions SKIPPED
+:app:packageDebug SKIPPED
+:app:createDebugApkListingFileRedirect SKIPPED
+:app:assembleDebug SKIPPED
+
+[Incubating] Problems report is available at: file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 11s
+4 actionable tasks: 4 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html

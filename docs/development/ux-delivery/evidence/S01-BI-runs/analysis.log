@@ -1,0 +1,7 @@
+Analyzing offline_content_manager_screen.dart, offline_content_manager_screen_test.dart...
+
+   info - lib\screens\offline_content_manager_screen.dart:145:30 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\screens\offline_content_manager_screen.dart:182:30 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - lib\screens\offline_content_manager_screen.dart:188:30 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+
+3 issues found.

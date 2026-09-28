@@ -1,0 +1,201 @@
+{
+  "nextExecutableStep": "Controller reviews receipts; route to permitted N05 observation or another concrete ready UX-v5 item. Do not reinstall existing test package or repeat closed offline matrix.",
+  "acceptance": "BOUNDED_NATIVE_PASS",
+  "sprintAccepted": false,
+  "apkPath": "build/native-baseline/S01-BM/app-debug-e10429750a94.apk",
+  "preservedPreExistingPinMismatches": 0,
+  "atUtc": "2026-09-27T01:02:37.4193515Z",
+  "existingPackagesPreserved": true,
+  "hostCliCasesAndChecks": 24,
+  "processIds": {
+    "stopped": "",
+    "verify": "634",
+    "seed": "31935"
+  },
+  "notRun": [
+    "N05 visual/keyboard/TalkBack",
+    "real user review",
+    "reviewed media/qualified trial",
+    "full Flutter/backend/release verification",
+    "provider/research/participant/deployment"
+  ],
+  "hostFlutterTests": 8,
+  "externalCalls": 0,
+  "researchRows": 0,
+  "engineering": "COMPLETE_FOR_BL_TASK_CARD_N01_N04",
+  "preservedPreExistingPinCount": 99,
+  "preExistingFullDiffWhitespace": "Retained unchanged in BD-BK files",
+  "nativeBuildInputPins": 781,
+  "apkSha256": "e10429750a946171a34ca367639d4e1a26394ffe3152e9f3a73ceaca76f53ee2",
+  "head": "4e70a26b0bf3c44c269bbcbaf9d6d37a273b4dd1",
+  "nativeResult": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/result.json",
+  "schemaVersion": 1,
+  "hostFlutterFingerprint": "5bb51d7ff1de163ec19201c760c649ca66aeccd8ac264b3c75cedde7be45643f",
+  "hostCliFingerprint": "429be6fd9bab78d599939697a2d2f198e4c41d5e06c7c22bfd74e634f6d5fff0",
+  "nativeBuildPinMismatches": 0,
+  "branch": "codex/ux-current-after-s01-bc",
+  "ordinaryOwnerCutoverEvents": 1,
+  "package": "S01-BM-native-harness",
+  "openDefects": "UX-D01-D25",
+  "postGateCliNonDocumentationPinMismatches": 0,
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\lexiquest-current\\LexiQuest",
+  "threadId": "01a0e035-ea22-7621-a9f0-8c6f0b4578d1",
+  "postGateFlutterPinMismatches": 0,
+  "ordinaryLocalVocabularyOutboxRows": 2,
+  "documentationChangesAfterGates": "Final receipts/report/state only; pre-native CLI snapshot stored verbatim",
+  "processRestart": "PASS",
+  "privateProductionDataRead": false,
+  "researchOrAttemptedOutboxRows": 0,
+  "artifacts": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-1-rejected.json",
+      "sha256": "82c3ca7e2c5d610f05fb6bb0bfe0a72f1883514197221f67cafa418d14815820",
+      "bytes": 317
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-2-exit.json",
+      "sha256": "41bd618b51fc5a8c4309863ac964c6e4124bcd104b30a3eeae4998a0369e501e",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-3-exit.json",
+      "sha256": "75192254066a5e0337ecd9fd3679614ef98a3ebb517a27ed4855834914458557",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-4-exit.json",
+      "sha256": "a30efa5a50014e9be5dc68ac60ec37a7cc0259a8050d700df731dc46e455f171",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-exit.json",
+      "sha256": "03296567c5291b22c76284b922c252ddd0f8db3e33d47797af0b6fa66b042fe1",
+      "bytes": 67
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/build-source.json",
+      "sha256": "fde9dbd3f9d56e0213b04b0dbbaff183f48a5040f3d790e5a718f68599ebb240",
+      "bytes": 132326
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/dart-analysis.txt",
+      "sha256": "56b96da496beb24f135f570009085effe1bc69c274fe65c7dfe48313e9263aab",
+      "bytes": 200
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-cli-gate.json",
+      "sha256": "6f736071aea1344c390540d24cd4f282188507ca47dbebc9f0def93b4d60d0dc",
+      "bytes": 1077481
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/host-flutter-gate.json",
+      "sha256": "c48b5e3799cea79705b54144cdf0bec8f5aa3ef4fccada8664a1a57a1ec840b6",
+      "bytes": 313484
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/manifest-final.json",
+      "sha256": "bad0751bc19622e9c4fca96303889758c63dbae5de9e5036371e5d626af3e5a4",
+      "bytes": 260
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/merged-manifest.txt",
+      "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+      "bytes": 5571
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/result.json",
+      "sha256": "9fe62b47a4aca3d08015f7f6f8dfec71c607c54d1c64a192a35b4eded99f1747",
+      "bytes": 22222
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/seed-receipt.json",
+      "sha256": "5c5a26f668f40dbf4faa44235f154a266f95136903fc287ee54dfda8d0a419c7",
+      "bytes": 494
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/native-1/verify-receipt.json",
+      "sha256": "d36d1287aebc9a07dc3e8937eea62ee0b7160b1929844849aebbf8333d21b112",
+      "bytes": 470
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/prebuild.json",
+      "sha256": "44fac1f5564390b287696ee588c3bff2ae691dab63d5a6fb033eb73471900897",
+      "bytes": 214
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/merged-manifest.txt",
+      "sha256": "932a6a26b3945b779b68cc65b58927a4e9a36f9c977049a00de37022f2312b5f",
+      "bytes": 5571
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BM-runs/readiness/result.json",
+      "sha256": "5f13ea602d7d06929d69d7e81dc25579fe4efd907875da682163a6d2c1af7727",
+      "bytes": 3427
+    }
+  ],
+  "native": "PASS_N01_N04",
+  "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/login/billing probe",
+  "hostFlutterInputPins": 1573,
+  "focusedDiffCheck": "PASS",
+  "analysis": "NO_ISSUES_5_DART_FILES",
+  "generated7Preserved": true,
+  "viewport": {
+    "width": 1080.0,
+    "height": 2292.0,
+    "pixelRatio": 2.75
+  },
+  "sourcePins": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "1deda3796b3bed77298d150a85499880cb3f7de386e9e543a05bc262c2bd8a52"
+    },
+    {
+      "path": "android/app/src/nativeBaseline/AndroidManifest.xml",
+      "sha256": "03ae0733bf61c0f5bccfb5c0b7b691b564b668f928900f64368bf4e26539d25c"
+    },
+    {
+      "path": "android/app/src/nativeBaseline/kotlin/com/lexiquest/app/NativeBaselineActivity.kt",
+      "sha256": "40d02962dccee32c02c84806840a8207ba0ce81d00dada8cfaca18e3be9cb7f6"
+    },
+    {
+      "path": "integration_test/native_baseline_acceptance_test.dart",
+      "sha256": "3dfba3d454d7e844abb763f4dcd5c7defa8dc900f6bb0d666779c3b52e9e3b5a"
+    },
+    {
+      "path": "integration_test/support/native_baseline_cases.dart",
+      "sha256": "80b0140ef32de43d5820cd3f3b2fbb9f688389eafe8071ce2a1f0041af9b0138"
+    },
+    {
+      "path": "integration_test/support/native_baseline_fixture.dart",
+      "sha256": "8fc8e64473b2b67073ed7ed69ccd1ef1cd33f799c8d79b88ac5fba26d9ed9405"
+    },
+    {
+      "path": "test/support/native_baseline_fixture_test.dart",
+      "sha256": "eb2e1f22bb59b2bc89675d451b5163b3abdff50137f1a3053c9e7d27ca2cc28d"
+    },
+    {
+      "path": "test/support/native_baseline_navigation_test.dart",
+      "sha256": "df69135bb47ada9bd2162f200e407abddb51311deb128d1bd8d0097a87629035"
+    },
+    {
+      "path": "tool/cli/native-baseline-contract.ps1",
+      "sha256": "a931b3e8d67db5b57d4e0bed5a093ea7b4fd27c6704806c663b1f8ed56d09ac3"
+    },
+    {
+      "path": "tool/cli/run-native-baseline-acceptance.ps1",
+      "sha256": "bb725868ab264cf80175c33439421ca3c141518af115490ec35e6a94a4a1af9e"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-contract.tests.ps1",
+      "sha256": "0a994ea32b5dbf44f29d90d00757c5ce14eda2cdf75c1d41f4ff6eddd127c839"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-isolation.tests.ps1",
+      "sha256": "15887b5de483cd3f7725a869b6f1873bb7f37c9cff6abf547b8584c9153f5b66"
+    },
+    {
+      "path": "tool/cli/tests/native-baseline-runner.tests.ps1",
+      "sha256": "d25997a7c9c3f3d8970c3086e254257cdaa20820798a0448f3252eff5763ef37"
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/registries/feature_registry.dart';
 import 'score_screen.dart';
 
 typedef QuizCompletionPageBuilder =
@@ -44,6 +45,7 @@ class QuizScreen extends StatefulWidget {
     this.adventureDiagnostics,
     this.allowSkip = false,
     this.attachedSession,
+    this.ordinaryAcceptance,
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -62,6 +64,7 @@ class QuizScreen extends StatefulWidget {
     this.attachedSession,
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
+       ordinaryAcceptance = null,
        typedRecall = true;
 
   final String? categoryId;
@@ -77,6 +80,7 @@ class QuizScreen extends StatefulWidget {
   final AdventureDiagnostics? adventureDiagnostics;
   final bool allowSkip;
   final QuizSession? attachedSession;
+  final bool Function()? ordinaryAcceptance;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -100,6 +104,21 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _completionCommitted = false;
   bool _loadSettled = false;
   bool _abandoning = false;
+  AppDependencies? _ordinaryDependencies;
+
+  bool _acceptsMeaningOperation() =>
+      mounted &&
+      (_lessonLifecycle?.acceptsOperations ?? true) &&
+      (ModalRoute.of(context)?.isCurrent ?? true) &&
+      (_session?.ordinaryMeaningPlan == null ||
+          (widget.ordinaryAcceptance?.call() != false &&
+              identical(
+                AppDependenciesScope.maybeOf(context),
+                _ordinaryDependencies,
+              ) &&
+              (_ordinaryDependencies == null ||
+                  (_ordinaryDependencies!.features.isEnabled(Feature.quiz) &&
+                      identical(_ordinaryDependencies!.learning, _learning)))));
 
   bool get _persistenceLocked =>
       _abandoning ||
@@ -135,6 +154,7 @@ class _QuizScreenState extends State<QuizScreen> {
     super.didChangeDependencies();
     if (_load != null) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _ordinaryDependencies = dependencies;
     _lessonLifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     final lifecycleConfiguration = _lessonLifecycle?.configuration;
     if (widget.sessionConfiguration != null &&
@@ -214,7 +234,10 @@ class _QuizScreenState extends State<QuizScreen> {
   ) async {
     final configuration = _sessionConfiguration;
     if (configuration == null) {
-      return learning.startQuiz(categoryId: widget.categoryId);
+      return learning.startQuiz(
+        categoryId: widget.categoryId,
+        ordinaryMeaning: !widget.typedRecall,
+      );
     }
     if (configuration.mode !=
             (widget.typedRecall
@@ -239,10 +262,21 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
       final session = await learning.startQuiz(
+        ordinaryMeaning: !widget.typedRecall,
         limit: configuration.itemCount,
         pinnedWordIds: widget.pinnedContent
             .map((identity) => identity.id)
             .toList(growable: false),
+        expectedContent: widget.typedRecall
+            ? null
+            : [
+                for (final identity in widget.pinnedContent)
+                  PinnedQuizContent(
+                    identity: identity,
+                    checksumSha256:
+                        widget.pinnedContentChecksumsSha256[identity.id]!,
+                  ),
+              ],
         sessionConfiguration: configuration,
       );
       if (!_matchesPinnedContent(session)) {
@@ -263,6 +297,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final pack = configuration.packIdentity;
     if (pack == null) {
       return learning.startQuiz(
+        ordinaryMeaning: !widget.typedRecall,
         categoryId: widget.categoryId,
         limit: configuration.itemCount,
         sessionConfiguration: configuration,
@@ -287,6 +322,7 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
       final session = await learning.startQuiz(
+        ordinaryMeaning: !widget.typedRecall,
         limit: configuration.itemCount,
         pinnedWordIds: detail.vocabularyWordIds,
         sessionConfiguration: configuration,
@@ -341,7 +377,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   : _sessionConfiguration?.direction ?? SessionDirection.mixed,
             )
             .any((question) => question.options.length < 2);
-        if (widget.attachedSession != null || needsDistractors) {
+        if (session.ordinaryMeaningPlan == null &&
+            (widget.attachedSession != null || needsDistractors)) {
           final sessionOwnerId = session.ownerId;
           if (sessionOwnerId == null) {
             throw StateError('Review distractor authority is unavailable.');
@@ -380,7 +417,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 : (operation) => lifecycle.runAcceptedOperation(operation),
           )..addListener(_onReviewChanged);
         } else {
-          final lexicalWords = loadLexicalWords == null
+          final lexicalWords =
+              session.ordinaryMeaningPlan != null || loadLexicalWords == null
               ? const <VocabularyWord>[]
               : await loadLexicalWords(
                   session.questions.map((question) => question.word.id),
@@ -396,7 +434,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 ? null
                 : (close) => lifecycle.complete(close),
             recordInteraction: () => lifecycle?.recordInteraction(),
-            acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
+            acceptsOperation: _acceptsMeaningOperation,
             runEvidenceOperation: lifecycle == null
                 ? null
                 : (operation) => lifecycle.runAcceptedOperation(operation),
@@ -405,6 +443,15 @@ class _QuizScreenState extends State<QuizScreen> {
             lexicalWords: lexicalWords,
             distractorWords: distractorWords,
           );
+          try {
+            await meaningReview.initializeDurable();
+            if (!_acceptsMeaningOperation()) {
+              throw StateError('Ordinary quiz route retired during recovery');
+            }
+          } catch (_) {
+            meaningReview.dispose();
+            rethrow;
+          }
           if (meaningReview.questions.any(
             (question) => question.options.length < 2,
           )) {
@@ -701,7 +748,11 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Color? _answerColor(String option) {
-    if (!_isAnswered) return null;
+    if (!_isAnswered) {
+      return _session?.ordinaryMeaningPlan != null && option == _selectedOption
+          ? Theme.of(context).colorScheme.primaryContainer
+          : null;
+    }
     if (option == _currentQuestion.correctOption) {
       return Colors.green.shade100;
     }
@@ -790,7 +841,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  void _skip() {
+  Future<void> _skip() async {
     if (!widget.allowSkip || _actionLocked || _isAnswered || _isSkipped) {
       return;
     }
@@ -798,7 +849,12 @@ class _QuizScreenState extends State<QuizScreen> {
     if (review is TypedRecallQuizReviewController) {
       review.skip();
     } else if (review is MeaningQuizReviewController) {
-      review.skip();
+      try {
+        await review.skip();
+      } catch (_) {
+        _showSaveFailure();
+        return;
+      }
     } else {
       return;
     }

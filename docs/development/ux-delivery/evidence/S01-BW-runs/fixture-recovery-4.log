@@ -1,0 +1,66 @@
+00:00 +0: loading C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart
+00:00 +0: BW verify rejects absent seed and traversal
+00:00 +1: BW disk close reopen restores exact feedback with every table unchanged
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+Guarded function conflict.
+You must use "await" with all Future-returning test APIs.
+The guarded method "pump" from class WidgetTester was called from
+file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_baseline_cases.dart
+on line 112.
+Then, the "expectLater" function was called from
+file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart
+on line 22.
+The first method (WidgetTester.pump) had not yet finished executing at the time that the second
+function (expectLater) was called. Since both are guarded, and the second was not a nested call
+inside the first, the first must complete its execution before the second can be called. Typically,
+this is achieved by putting an "await" statement in front of the call to the first.
+
+When the first method (WidgetTester.pump) was called, this was the stack:
+#0      TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:72:42)
+#1      WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#2      baselineAwait (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_baseline_cases.dart:112:18)
+#3      resumeAwait (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_resume_cases.dart:9:79)
+#4      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart:22:23)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+When the exception was thrown, this was the stack:
+#0      TestAsyncUtils.guardSync (package:flutter_test/src/test_async_utils.dart:312:5)
+#1      expectLater (package:flutter_test/src/widget_tester.dart:505:18)
+#2      main.<anonymous closure> (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart:22:11)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  BW disk close reopen restores exact feedback with every table unchanged
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +1 -1: BW disk close reopen restores exact feedback with every table unchanged [E]
+  Test failed. See exception logs above.
+  The test description was: BW disk close reopen restores exact feedback with every table unchanged
+  
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test (but after the test had completed):
+Bad state: Verify-only forbids seed
+
+When the exception was thrown, this was the stack:
+#0      baselineAwait (file:///C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/integration_test/support/native_baseline_cases.dart:120:24)
+<asynchronous suspension>
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  Test failed. See exception logs above.
+  The test description was: BW disk close reopen restores exact feedback with every table unchanged
+  
+00:05 +1 -1: Some tests failed.
+
+Failing tests:
+  C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest/test/support/native_resume_fixture_test.dart: BW disk close reopen restores exact feedback with every table unchanged

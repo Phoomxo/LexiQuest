@@ -1,0 +1,14 @@
+[
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-true.json",
+    "expected": "70f081eb4cb545c10d99d9c7b829ae6a8db0cbf827a81a532d7a0c6b4ce617e5",
+    "actual": "70f081eb4cb545c10d99d9c7b829ae6a8db0cbf827a81a532d7a0c6b4ce617e5",
+    "reason": "Restored exact pre-write bytes after historical test output overwrite; original Dart JSON has no final newline"
+  },
+  {
+    "path": "docs/development/ux-delivery/evidence/S01-BR-runs/routes-false.json",
+    "expected": "6fc09733c8bd13b86445b427e9470d68152c049a7bc9b7b6a513e0897584691f",
+    "actual": "6fc09733c8bd13b86445b427e9470d68152c049a7bc9b7b6a513e0897584691f",
+    "reason": "Restored exact pre-write bytes after historical test output overwrite; original Dart JSON has no final newline"
+  }
+]

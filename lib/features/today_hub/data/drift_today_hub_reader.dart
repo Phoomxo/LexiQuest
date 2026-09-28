@@ -5,6 +5,8 @@ import '../../assessment/data/drift_assessment_repository.dart';
 import '../../assessment/domain/assessment_models.dart';
 import '../../goals/domain/learning_goal.dart';
 import '../../learning/data/drift_learning_repository.dart';
+import '../../learning/application/ordinary_meaning_recovery.dart';
+import '../../learning/domain/ordinary_meaning_plan.dart';
 import '../../learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import '../../learning/domain/learning_models.dart';
 import '../../learning_packs/domain/content_manifest.dart';
@@ -167,7 +169,31 @@ final class DriftTodayHubReader implements TodayHubReader {
                   (row) => OrderingTerm.asc(row.id),
                 ]))
               .get();
-      if (candidates.isEmpty) return const _ValueResult.empty();
+      if (candidates.isEmpty) {
+        final repository = DriftLearningRepository(database);
+        final recovered = await repository.loadLatestActivityRecovery(
+          ownerId: ownerId,
+          activityType: 'quiz',
+        );
+        final checkpoint = recovered?.checkpoint;
+        if (recovered?.session.state != 'completed' ||
+            checkpoint == null ||
+            checkpoint.state['kind'] != OrdinaryMeaningPlan.kind ||
+            checkpoint.terminalAcknowledged) {
+          return const _ValueResult.empty();
+        }
+        final exact = await repository.loadExactActivityRecovery(
+          ownerId: ownerId,
+          sessionId: recovered!.session.id,
+          activityType: 'quiz',
+        );
+        if (exact == null ||
+            OrdinaryMeaningProgress.decode(exact.checkpoint!.state).phase !=
+                'closing') {
+          return const _ValueResult.corrupt();
+        }
+        return _ValueResult.ready(exact.session);
+      }
       db.LearningSession? selected;
       for (final candidate in candidates) {
         final purpose = await DriftPairMatchingSessionPurposeReader(

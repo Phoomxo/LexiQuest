@@ -24,7 +24,8 @@ final class OfflineContentManagerScreen extends StatefulWidget {
 }
 
 final class _OfflineContentManagerScreenState
-    extends State<OfflineContentManagerScreen> {
+    extends State<OfflineContentManagerScreen>
+    with WidgetsBindingObserver {
   Future<List<_OfflineContentEntry>>? _states;
   final Set<ContentIdentity> _busy = <ContentIdentity>{};
   final Set<ContentIdentity> _downloads = <ContentIdentity>{};
@@ -33,7 +34,44 @@ final class _OfflineContentManagerScreenState
   AppDependencies? _dependencies;
   int _generation = 0;
   int _loadSerial = 0;
+  // Catalog refreshes may overlap operations within the same visible visit.
+  int _visibilityEpoch = 0;
   bool _loading = false;
+  bool _foreground = true;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    setState(() {
+      _foreground = state == AppLifecycleState.resumed;
+      _bindVisibility();
+    });
+  }
+
+  void _bindVisibility() {
+    final visible = _foreground && ModalRoute.of(context)?.isCurrent != false;
+    if (_visible == visible) return;
+    _visible = visible;
+    _visibilityEpoch++;
+    // Retire displayed callbacks and reads, without abandoning in-flight work.
+    _loadSerial++;
+    if (visible) _states = _load()..ignore();
+  }
 
   // Observe failures before the next frame; FutureBuilder still receives them.
 
@@ -49,6 +87,8 @@ final class _OfflineContentManagerScreenState
 
   bool _canAct(int generation) =>
       _current(generation) &&
+      _foreground &&
+      _visible &&
       ModalRoute.of(context)?.isCurrent != false &&
       widget.canInvoke();
 
@@ -65,7 +105,10 @@ final class _OfflineContentManagerScreenState
     final dependencies = AppDependenciesScope.maybeOf(context);
     if (_states == null || !identical(dependencies, _dependencies)) {
       _dependencies = dependencies;
+      _visible = _foreground && ModalRoute.of(context)?.isCurrent != false;
       _reset();
+    } else {
+      _bindVisibility();
     }
   }
 
@@ -79,19 +122,26 @@ final class _OfflineContentManagerScreenState
 
   Future<void> _perform<T>(
     int generation,
+    int serial,
     ContentIdentity identity,
     Future<T> Function() operation, {
     bool download = false,
   }) async {
-    if (!_canAct(generation) || _busy.contains(identity)) return;
+    if (!_canAct(generation) ||
+        serial != _loadSerial ||
+        _loading ||
+        _busy.contains(identity)) {
+      return;
+    }
     setState(() {
       _busy.add(identity);
       if (download) _downloads.add(identity);
     });
+    final visibilityEpoch = _visibilityEpoch;
     try {
       await operation();
     } on Object {
-      if (_canAct(generation)) {
+      if (_canAct(generation) && visibilityEpoch == _visibilityEpoch) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('จัดการเนื้อหาออฟไลน์ไม่สำเร็จ ลองใหม่ได้'),
@@ -109,8 +159,12 @@ final class _OfflineContentManagerScreenState
     }
   }
 
-  Future<void> _cancel(int generation, ContentIdentity identity) async {
-    if (!_canAct(generation)) return;
+  Future<void> _cancel(
+    int generation,
+    int serial,
+    ContentIdentity identity,
+  ) async {
+    if (!_canAct(generation) || serial != _loadSerial || _loading) return;
     final manager = widget.manager;
     if (!widget.canInvoke() ||
         manager is! OfflineContentDownloadControl ||
@@ -118,22 +172,32 @@ final class _OfflineContentManagerScreenState
       return;
     }
     setState(() => _cancelling.add(identity));
+    final visibilityEpoch = _visibilityEpoch;
     try {
       final cancelled = await (manager as OfflineContentDownloadControl)
           .cancelDownload(identity);
-      if (!cancelled && _canAct(generation)) {
+      if (!cancelled &&
+          _canAct(generation) &&
+          visibilityEpoch == _visibilityEpoch) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว')),
         );
       }
     } on Object {
-      if (_canAct(generation)) {
+      if (_canAct(generation) && visibilityEpoch == _visibilityEpoch) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ยกเลิกไม่สำเร็จ ลองใหม่ได้')),
         );
       }
     } finally {
-      if (_current(generation)) setState(() => _cancelling.remove(identity));
+      if (_current(generation)) {
+        setState(() {
+          _cancelling.remove(identity);
+          // Downloads may have started elsewhere; cancellation does not imply
+          // a status. Read the manager even when it returns false or throws.
+          if (_canAct(generation)) _states = _load()..ignore();
+        });
+      }
     }
   }
 
@@ -326,6 +390,9 @@ final class _OfflineContentManagerScreenState
 
   Widget _action(_OfflineContentEntry entry) {
     final generation = _generation;
+    // A callback belongs to the displayed catalog snapshot, not just the
+    // manager. A completed action can replace these bytes under the same ID.
+    final serial = _loadSerial;
     final manager = widget.manager;
     final state = entry.state;
     final identity = state.identity;
@@ -346,7 +413,7 @@ final class _OfflineContentManagerScreenState
               key: ValueKey('offline-content/cancel/${identity.id}'),
               onPressed: _cancelling.contains(identity)
                   ? null
-                  : () => _cancel(generation, identity),
+                  : () => _cancel(generation, serial, identity),
               child: Text(
                 _cancelling.contains(identity)
                     ? 'กำลังยกเลิกหลังขั้นตอนปัจจุบัน'
@@ -363,6 +430,7 @@ final class _OfflineContentManagerScreenState
                 key: ValueKey<String>('offline-content/remove/${identity.id}'),
                 onPressed: () => _perform(
                   generation,
+                  serial,
                   identity,
                   () => manager.removeBytes(identity),
                 ),
@@ -374,6 +442,7 @@ final class _OfflineContentManagerScreenState
         key: ValueKey<String>('offline-content/repair/${identity.id}'),
         onPressed: () => _perform(
           generation,
+          serial,
           identity,
           () async => manager.repair(identity),
           download: true,
@@ -384,6 +453,7 @@ final class _OfflineContentManagerScreenState
         key: ValueKey<String>('offline-content/download/${identity.id}'),
         onPressed: () => _perform(
           generation,
+          serial,
           identity,
           () async => manager.download(identity),
           download: true,
