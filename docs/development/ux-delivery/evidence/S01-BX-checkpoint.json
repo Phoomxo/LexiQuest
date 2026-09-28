@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "package": "S01-BX-source-checkpoint",
+  "writerThreadId": "01a0e634-e153-7953-a19d-0f29cbd8762c",
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "writerStatus": "RELEASED",
+  "releasedAtUtc": "2026-09-28T04:19:12.737389+00:00",
+  "worktree": "C:/Users/Phet/.codex/worktrees/lexiquest-current/LexiQuest",
+  "branch": "codex/ux-current-after-s01-bc",
+  "sourceCommit": "18f7fd6d5a2ad9e15e328f1018cba241438c81ef",
+  "sourceTree": "41285465304aa804dba15fc961b86dd249775ee7",
+  "origin": "https://github.com/Phoomxo/LexiQuest.git",
+  "observedRemoteSourceRefs": [
+    "c22cdaa3a11b83c8e3ce84151672ed8dab11a4e1\trefs/heads/codex/backup/ux-v5-through-s01-bc-20260926",
+    "18f7fd6d5a2ad9e15e328f1018cba241438c81ef\trefs/heads/codex/ux-current-after-s01-bc"
+  ],
+  "finalSnapshotRef": "refs/heads/codex/backup/ux-v5-through-s01-bw-s01-bx-20260928",
+  "finalRemoteConfirmation": "build/S01-BX/remote-confirmation.json",
+  "selfReferenceBoundary": "This receipt is in a coordination child commit of sourceCommit. Exact final child commit and remote refs are observed after publication in the local-only immutable confirmation; never claim this receipt contains its own commit hash.",
+  "inventoryPins": [
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BX-included-inventory.json",
+      "sha256": "76546a10839d8e4d4ce21a5f8ad6158ddd758d7504e4563385962ef8b7221b81"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BX-local-only-inventory.json",
+      "sha256": "33c1f489d87e2c8d86a3d7175d399f55e4bd402f3d1e7c98f11aa2bdb2d65cd8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BX-predecessor-integrity.json",
+      "sha256": "8b6d2fbabdafd2db5f39199bab2c2891e4f013f743ad64a545fadd8c29ed9921"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BX-secret-review.json",
+      "sha256": "34144b037f42b85e7ddf7ebb141f78de09e7c41bf04c102f2ec9c596b13b62a8"
+    },
+    {
+      "path": "docs/development/ux-delivery/evidence/S01-BX-staged-integrity.json",
+      "sha256": "66e94d09290ce0e55d6c2f7fc9431e4cf00d9e5388b5ebce44e1e6e49bba8836"
+    }
+  ],
+  "BWPredecessorPinsVerified": 850,
+  "BWPredecessorMismatches": 0,
+  "includedInventoryCount": 700,
+  "sourceCommitChangedPaths": 701,
+  "localOnlyFiles": 5751,
+  "localOnlyBytes": 3594793522,
+  "localOnlyRecovery": "Preserved in-place at worktree/path, verify SHA256 using local-only inventory; not uploaded and not recoverable from remote after local disk loss. BX audit scripts/logs/confirmation live locally under build/S01-BX and are separate from pre-existing inventory.",
+  "sourceFingerprintSha256": "1a7db7b5200579dda1a1b6aec1356caad39afe3c7f89e3a20458545195b8d778",
+  "secretScan": {
+    "rawFindings": 179,
+    "reviewedCommandIdentityFalsePositives": 179,
+    "unresolved": 0,
+    "newMetadataScanFindings": 0
+  },
+  "checks": {
+    "indexEvidenceBytes": "MATCH",
+    "sourceCommitIndexWorktree": "CLEAN",
+    "focusedBXDiffCheck": "PASS",
+    "historicalWhitespace": "PRESERVED_NOT_CLEAN_139_DIAGNOSTIC_LINES_WITH_CR_AT_EOL",
+    "fullRegression": "NOT_RUN",
+    "releaseVerifier": "NOT_RUN",
+    "native": "NOT_RUN_BY_BX"
+  },
+  "stateRevision": 150,
+  "successorDispatched": false,
+  "runningTaskTestBuildProcesses": [],
+  "sprintAccepted": false,
+  "releaseAccepted": false,
+  "remainingAcceptance": [
+    "S01/UX-D01-25",
+    "native full Today/bootstrap and wider recovery cases",
+    "native visual/IME/TalkBack",
+    "actual-user/learning trials",
+    "release"
+  ],
+  "routing": "Current-model deterministic fallback; Standard/default requested, runtime tier unverified; no Jev fresh billing/probe/login/paid/quota/ledger mutation"
+}

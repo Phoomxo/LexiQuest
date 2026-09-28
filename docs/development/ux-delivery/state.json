@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 149,
+  "revision": 150,
   "planVersion": 5,
   "planPath": "docs/design/worksheet-to-play-blueprint.md",
   "authorization": "2026-09-24: User explicitly authorizes implementation of plan v5 and sequential new chats per sprint or bounded continuation, preserving all original changes and acceptance. Latest continuation: automatically progress ready plan-v5 backlog; Jev-assisted fresh next-task routing authorized, current-model deterministic fallback when unavailable; original Standard/default, budget, writer and learning gates remain. 2026-09-27: Actual-user participation/trials deferred; autonomous bounded engineering/UI audit authorized without waiting for user trials.",
@@ -18,8 +18,15 @@
     "startedAtUtc": "2026-09-24T05:52:58.6746244Z",
     "reviewDueAtUtc": "2026-10-22T05:52:58.6746244Z"
   },
-  "currentItem": "S01-BW-native-ordinary-meaning-resume",
+  "currentItem": "S01-BX-source-checkpoint",
   "items": [
+    {
+      "id": "S01-BX-source-checkpoint",
+      "status": "COMPLETE",
+      "acceptance": "ENGINEERING_SOURCE_SNAPSHOT_ONLY",
+      "acceptanceScope": "BD-BW source/evidence backup only; final matching remote refs recorded locally in build/S01-BX/remote-confirmation.json; no sprint or release acceptance",
+      "report": "docs/development/ux-delivery/S01-BX.md"
+    },
     {
       "id": "S01-BW-native-ordinary-meaning-resume",
       "status": "COMPLETE",
@@ -893,15 +900,12 @@
   ],
   "BDCompletedAtUtc": "2026-09-26T17:25:35.6273492Z",
   "boundedCheckpoint": {
-    "id": "S01-BW-native-ordinary-meaning-resume",
+    "id": "S01-BX-source-checkpoint",
     "status": "COMPLETE",
-    "acceptance": "PASS_NATIVE_SYNTHETIC_FEEDBACK_RESUME",
-    "backlogAssessment": "Controller reviews immutable BW native receipt; no successor dispatched. Retain isolated BW package and synthetic evidence; never reseed/reinstall.",
-    "hostFlutterTests": 11,
-    "hostCliCasesAndChecks": 29,
-    "hostRenderedImages": 0,
-    "evidence": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
-    "nativeAcceptance": "PASS_ISOLATED_CANONICAL_FEEDBACK_OS_RESTART_ONLY",
+    "acceptance": "ENGINEERING_SOURCE_SNAPSHOT_ONLY",
+    "hostFlutterTests": 0,
+    "hostCliCasesAndChecks": 0,
+    "evidence": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
     "pending": [
       "Native Today full bootstrap and other BV recovery cases",
       "Native visual/TalkBack/IME",
@@ -912,27 +916,27 @@
   },
   "writer": {
     "predecessorReleased": true,
-    "threadId": "01a0e601-db27-7ea2-8d77-a84f4be685a4",
-    "currentItem": "S01-BW-native-ordinary-meaning-resume",
+    "threadId": "01a0e634-e153-7953-a19d-0f29cbd8762c",
+    "currentItem": "S01-BX-source-checkpoint",
     "status": "RELEASED",
-    "releaseReason": "BW scoped native feedback resume passed on physical Android with source/APK/isolation/protected-package/process/sealed-state evidence. No successor dispatched; immutable receipt publishes release.",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
+    "releaseReason": "Source checkpoint pushed and verified. Final coordination ref confirmation is written once locally after final push. No application writes or successor dispatch after release.",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
     "routing": "Current-model deterministic fallback; Standard/default requested; runtime tier unverified; no Jev/billing/quota/ledger changes"
   },
   "dispatch": {
-    "id": "ux-s01-bw-01a0e601",
+    "id": "ux-s01-bx-01a0e634",
     "status": "RELEASED_TO_CONTROLLER",
     "successorThreadId": null
   },
-  "latestHandoff": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
-  "sourceManifest": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
+  "latestHandoff": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
+  "sourceManifest": "docs/development/ux-delivery/evidence/S01-BX-staged-integrity.json",
   "evidence": {
     "planConsistency": "PASS",
     "originalChangePreservation": "PASS",
-    "reportPath": "docs/development/ux-delivery/S01-BW.md",
+    "reportPath": "docs/development/ux-delivery/S01-BX.md",
     "transferVerificationRecord": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
-    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BW-checkpoint.json",
-    "latestValidation": "docs/development/ux-delivery/evidence/S01-BW-validation.json",
+    "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BX-checkpoint.json",
+    "latestValidation": "docs/development/ux-delivery/evidence/S01-BX-staged-integrity.json",
     "jevRouting": "docs/development/ux-delivery/evidence/S01-E-routing.json",
     "interfaceReadiness": "docs/development/ux-delivery/evidence/S01-Z-source-review.json",
     "personalExportRecovery": "docs/development/ux-delivery/evidence/S01-AD-validation.json",
@@ -1213,17 +1217,14 @@
     "fullReleaseVerifierRequiresFrozenSha": true,
     "prototypeDoesNotProveNativeOrLearning": true
   },
-  "nextAction": "Controller 01a0ce9e-23a6-7931-88e6-6390da748f39 reviews BW immutable receipt and selects next bounded scope. Preserve field gates; native PASS is isolated canonical committed-feedback resume only. Native full Today/bootstrap, other BV cases, N05 visual/IME/TalkBack, user and release prerequisites remain. No successor dispatched; retain all four packages and never reseed/reinstall BW.",
+  "nextAction": "Controller 01a0ce9e-23a6-7931-88e6-6390da748f39 reviews BX immutable checkpoint and local build/S01-BX/remote-confirmation.json for matching final canonical/backup refs. No successor dispatched. Preserve local-only bytes, all packages and gates. S01/UX-D01-25/native visual/user/trial/release remain open.",
   "checkpoint": {
-    "kind": "BW_NATIVE_SYNTHETIC_FEEDBACK_RESUME_PASS",
-    "hostFlutterTests": 11,
-    "hostCliCasesAndChecks": 29,
-    "passed": 11,
-    "failed": 0,
+    "kind": "BX_ENGINEERING_SOURCE_SNAPSHOT",
     "writerRetained": false,
     "sprintAccepted": false,
+    "releaseAccepted": false,
     "runningHostProcesses": [],
-    "nativeProcessObservation": "BW 30948 -> absent -> 31845; final receipt closed SQLite. Synthetic package retained; verify process may remain."
+    "testScope": "Snapshot integrity only; no Flutter/build/native/release rerun"
   },
   "continuation": {
     "enabled": true,
@@ -1234,10 +1235,10 @@
     "standardDefaultOnly": true,
     "sharedTrancheUsd": 5,
     "writerRetained": false,
-    "currentThreadId": "01a0e601-db27-7ea2-8d77-a84f4be685a4",
-    "currentItem": "S01-BW-native-ordinary-meaning-resume",
+    "currentThreadId": "01a0e634-e153-7953-a19d-0f29cbd8762c",
+    "currentItem": "S01-BX-source-checkpoint",
     "nextReadyPackage": null,
-    "stopReason": "Bounded BW native feedback recovery complete; immutable writer release for controller review. No successor dispatched. Wider native/visual/user/release acceptance remains open."
+    "stopReason": "Bounded BX source checkpoint only; release to controller without successor dispatch."
   },
   "nextDispatch": {
     "status": "READY_FOR_CONTROLLER_REVIEW",
@@ -1400,5 +1401,13 @@
     "visualImeTalkBack": "NOT_RUN",
     "releaseAccepted": false,
     "successorDispatched": false
+  },
+  "BXAudit": {
+    "sourceCommit": "18f7fd6d5a2ad9e15e328f1018cba241438c81ef",
+    "sourceTree": "41285465304aa804dba15fc961b86dd249775ee7",
+    "backupBranch": "codex/backup/ux-v5-through-s01-bw-s01-bx-20260928",
+    "localOnlyInventory": "docs/development/ux-delivery/evidence/S01-BX-local-only-inventory.json",
+    "finalRemoteConfirmation": "build/S01-BX/remote-confirmation.json",
+    "releaseAccepted": false
   }
 }

@@ -1,6 +1,8 @@
 # Current UX delivery
 
-Read this file, current state.json summary, and S01-BW.md first. Do not enumerate historical worktrees or archives.
+Read this file, current state.json summary, and S01-BX.md first. Do not enumerate historical worktrees or archives.
+
+- Latest: S01-BX engineering source snapshot of BD–BW. Source commit `18f7fd6d5a2ad9e15e328f1018cba241438c81ef` pushed to verified origin. Final coordination commit is identified by `codex/backup/ux-v5-through-s01-bw-s01-bx-20260928`; final remote hashes/read-only recovery checks are in local `build/S01-BX/remote-confirmation.json`. Immutable handoff: `evidence/S01-BX-checkpoint.json`. Local-only ignored bytes remain in this checkout and are explicitly inventoried, not uploaded. Writer released; no successor dispatched. No S01/UX-D01–25/native visual/user/trial/release acceptance.
 
 - Latest: S01-BW PASS_NATIVE_SYNTHETIC_FEEDBACK_RESUME on physical V2041/API33. New isolated package nativeResumeBw installed once; PID 30948 → absent → 31845; exact owner/session/frozen plan/answered progress and all 58 tables unchanged across force-stop/relaunch. 11 targeted HOST tests, 29 CLI cases/checks, clean 4-file analyzer; APK isolation and installed hash verified. Existing three packages preserved. Native scope is canonical attached QuizScreen committed-feedback recovery only, not full Today bootstrap, all BV cases, visual/IME/TalkBack, user or release acceptance. Receipt: evidence/S01-BW-checkpoint.json. Writer released; no successor dispatched; retain package/evidence and never reseed/reinstall it.
 
