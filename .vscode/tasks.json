@@ -1,0 +1,65 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "flutter: Clean",
+      "type": "shell",
+      "command": "flutter clean",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: Get Packages",
+      "type": "shell",
+      "command": "flutter pub get",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: Analyze",
+      "type": "shell",
+      "command": "flutter analyze",
+      "problemMatcher": [
+        "$dart-analyze"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "flutter: Format",
+      "type": "shell",
+      "command": "dart format lib/ test/",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: Run Tests",
+      "type": "shell",
+      "command": "flutter test",
+      "problemMatcher": [
+        "$dart-test"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "flutter: Build APK (Debug)",
+      "type": "shell",
+      "command": "flutter build apk --debug",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: Build APK (Release)",
+      "type": "shell",
+      "command": "flutter build apk --release",
+      "problemMatcher": []
+    },
+    {
+      "label": "drift: Generate Database",
+      "type": "shell",
+      "command": "dart run build_runner build --delete-conflicting-outputs",
+      "problemMatcher": []
+    }
+  ]
+}
