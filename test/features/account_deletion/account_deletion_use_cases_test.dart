@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 
 void main() {
   final now = DateTime.utc(2026, 10, 24, 12);
+  late DateTime clock;
   const key = 'delete:00000000-0000-4000-8000-000000000001';
   late _Owners owners;
   late _Exporter exporter;
@@ -26,10 +27,11 @@ void main() {
         cloud: cloud,
         local: local,
         journal: journal,
-        nowUtc: () => now,
+        nowUtc: () => clock,
       );
 
   setUp(() {
+    clock = now;
     owners = _Owners(_owner());
     session = _session();
     exporter = _Exporter(_exportReceipt(now));
@@ -68,6 +70,7 @@ void main() {
     reauthenticator.onCall = () => order.add('reauth');
     cloud.onCall = () => order.add('cloud');
     local.onCall = () => order.add('local');
+    journal.onSavePending = () => order.add('journal-pending');
     journal.onSaveCloud = () => order.add('journal-cloud');
     journal.onSaveLocal = () => order.add('journal-local');
 
@@ -76,6 +79,7 @@ void main() {
     expect(order, [
       'export',
       'reauth',
+      'journal-pending',
       'cloud',
       'journal-cloud',
       'local',
@@ -182,6 +186,57 @@ void main() {
     expect(local.calls, 0);
   });
 
+  test(
+    'reopens a persisted request after the privileged response is lost',
+    () async {
+      cloud.failure = StateError('synthetic response loss');
+
+      await expectLater(
+        useCases().deleteAccount(idempotencyKey: key),
+        throwsA(_failure(AccountDeletionFailureCode.cloudDeleteFailed)),
+      );
+      expect(journal.entry?.cloudReceipt, isNull);
+      expect(journal.entry?.idempotencyKey, key);
+      expect(journal.entry?.exportReceipt?.artifactSha256, 'a' * 64);
+      session = null;
+      cloud.failure = null;
+
+      final resumed = await useCases().resumePendingDeletion();
+
+      expect(resumed?.deletedOwnerId, 'owner-a');
+      expect(cloud.calls, 2);
+      expect(local.calls, 1);
+    },
+  );
+
+  test(
+    'durable recovery remains valid after the initial auth receipt is stale',
+    () async {
+      cloud.failure = StateError('synthetic response loss after server commit');
+
+      await expectLater(
+        useCases().deleteAccount(idempotencyKey: key),
+        throwsA(_failure(AccountDeletionFailureCode.cloudDeleteFailed)),
+      );
+      session = null;
+      clock = now.add(const Duration(minutes: 6));
+      cloud
+        ..failure = null
+        ..receipt = _cloudReceipt(clock, key);
+      local.receipt = LocalDeletionReceipt(
+        deletedOwnerId: 'owner-a',
+        newGuestOwnerId: 'local:new-guest',
+        completedAtUtc: clock,
+      );
+
+      final resumed = await useCases().resumePendingDeletion();
+
+      expect(resumed?.deletedOwnerId, 'owner-a');
+      expect(cloud.calls, 2);
+      expect(local.calls, 1);
+    },
+  );
+
   test('rejects a cloud receipt outside the bound owner operation', () async {
     cloud.receipt = _cloudReceipt(now, 'delete:other-operation');
 
@@ -204,9 +259,11 @@ void main() {
       } on AccountDeletionException catch (error) {
         expect(error.code, AccountDeletionFailureCode.localDeleteFailed);
         expect(error.retryable, isTrue);
-        expect(error.cloudReceipt, same(cloud.receipt));
+        expect(error.cloudReceipt?.receiptId, cloud.receipt.receiptId);
+        expect(error.cloudReceipt?.idempotencyKey, startsWith('sha256:'));
       }
-      expect(journal.entry?.cloudReceipt, same(cloud.receipt));
+      expect(journal.entry?.cloudReceipt?.receiptId, cloud.receipt.receiptId);
+      expect(journal.entry?.idempotencyKey, startsWith('sha256:'));
       expect(journal.entry?.localReceipt, isNull);
       local.failure = null;
 
@@ -447,6 +504,7 @@ final class _LocalDeleter implements LocalAccountDeletionGateway {
 final class _Journal implements AccountDeletionJournal {
   AccountDeletionJournalEntry? entry;
   bool loseNextLocalAcknowledgement = false;
+  void Function()? onSavePending;
   void Function()? onSaveCloud;
   void Function()? onSaveLocal;
 
@@ -454,10 +512,34 @@ final class _Journal implements AccountDeletionJournal {
   Future<AccountDeletionJournalEntry?> load() async => entry;
 
   @override
+  Future<void> savePendingOperation({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  }) async {
+    onSavePending?.call();
+    entry = AccountDeletionJournalEntry(
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      idempotencyKey: idempotencyKey,
+      exportReceipt: exportReceipt,
+      authenticationReceipt: authenticationReceipt,
+    );
+  }
+
+  @override
   Future<void> saveCloudReceipt(CloudDeletionReceipt receipt) async {
     onSaveCloud?.call();
-    if (entry?.cloudReceipt != receipt) {
-      entry = AccountDeletionJournalEntry(cloudReceipt: receipt);
+    final durableReceipt = receipt.durableMarker();
+    if (entry?.cloudReceipt != durableReceipt) {
+      entry = AccountDeletionJournalEntry(
+        ownerId: durableReceipt.ownerId,
+        firebaseUid: durableReceipt.firebaseUid,
+        idempotencyKey: durableReceipt.idempotencyKey,
+        cloudReceipt: durableReceipt,
+      );
     }
   }
 
@@ -468,6 +550,9 @@ final class _Journal implements AccountDeletionJournal {
   }) async {
     onSaveLocal?.call();
     entry = AccountDeletionJournalEntry(
+      ownerId: entry?.ownerId,
+      firebaseUid: entry?.firebaseUid,
+      idempotencyKey: entry?.idempotencyKey,
       cloudReceipt: cloudReceipt,
       localReceipt: localReceipt,
     );

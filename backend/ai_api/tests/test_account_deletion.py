@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from lexiquest_ai.account_deletion import (
     ACCOUNT_DELETION_SCOPES,
     AccountDeletionOperation,
+    AccountDeletionRequest,
     AccountDeletionReceipt,
     AccountDeletionService,
 )
@@ -60,11 +61,30 @@ class _Store:
         self.operations[operation.firebase_uid] = completed
         return receipt
 
+    def get(self, firebase_uid: str) -> AccountDeletionOperation | None:
+        return self.operations.get(firebase_uid)
+
+    def mark_server_export_completed(
+        self, operation: AccountDeletionOperation
+    ) -> AccountDeletionOperation:
+        completed = replace(operation, server_export_completed=True)
+        self.operations[operation.firebase_uid] = completed
+        return completed
+
+    def mark_identity_deleted(
+        self, operation: AccountDeletionOperation
+    ) -> AccountDeletionOperation:
+        completed = replace(operation, identity_deleted=True)
+        self.operations[operation.firebase_uid] = completed
+        return completed
+
 
 class _Deleter:
     def __init__(self, store: _Store) -> None:
         self.store = store
         self.calls: list[tuple[str, str, frozenset[str], str]] = []
+        self.identity_calls: list[tuple[str, str]] = []
+        self.fail_identity_once = False
 
     def delete_owned_data(
         self,
@@ -76,6 +96,33 @@ class _Deleter:
     ) -> None:
         assert self.store.claimed_before_delete
         self.calls.append((owner_id, firebase_uid, scopes, operation_id))
+
+    def delete_auth_identity(
+        self, *, firebase_uid: str, operation_id: str
+    ) -> None:
+        self.identity_calls.append((firebase_uid, operation_id))
+        if self.fail_identity_once:
+            self.fail_identity_once = False
+            raise RuntimeError("synthetic lost acknowledgement")
+
+
+class _ServerExportAuthority:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, str, str]] = []
+
+    def ensure_complete_export(
+        self,
+        *,
+        owner_id: str,
+        firebase_uid: str,
+        idempotency_key: str,
+        operation_id: str,
+        client_export_receipt,
+    ) -> None:  # type: ignore[no-untyped-def]
+        assert client_export_receipt.covered_scopes == ACCOUNT_DELETION_SCOPES
+        self.calls.append(
+            (owner_id, firebase_uid, idempotency_key, operation_id)
+        )
 
 
 def _body(key: str = KEY) -> dict[str, object]:
@@ -110,8 +157,18 @@ def _client(
     )
 
 
-def _service(store: _Store, deleter: _Deleter) -> AccountDeletionService:
-    return AccountDeletionService(store=store, deleter=deleter, now_utc=lambda: NOW)
+def _service(
+    store: _Store,
+    deleter: _Deleter,
+    authority: _ServerExportAuthority | None = None,
+) -> AccountDeletionService:
+    return AccountDeletionService(
+        store=store,
+        deleter=deleter,
+        server_export_authority=authority or _ServerExportAuthority(),
+        recovery_retention=timedelta(days=7),
+        now_utc=lambda: NOW,
+    )
 
 
 def test_account_deletion_is_disabled_by_default() -> None:
@@ -128,7 +185,8 @@ def test_account_deletion_is_disabled_by_default() -> None:
 def test_deletion_uses_server_identity_and_writes_tombstone_first() -> None:
     store = _Store()
     deleter = _Deleter(store)
-    response = _client(service=_service(store, deleter)).post(
+    authority = _ServerExportAuthority()
+    response = _client(service=_service(store, deleter, authority)).post(
         "/v1/account-deletions",
         headers={"Authorization": "Bearer valid-token"},
         json=_body(),
@@ -144,6 +202,109 @@ def test_deletion_uses_server_identity_and_writes_tombstone_first() -> None:
         "firebase-user",
         ACCOUNT_DELETION_SCOPES,
     )
+    assert authority.calls[0][:3] == (OWNER, "firebase-user", KEY)
+    assert store.operations["firebase-user"].server_export_completed is True
+
+
+def test_recovery_does_not_start_data_deletion_without_a_committed_receipt() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    operation = AccountDeletionOperation(
+        operation_id="operation-without-export",
+        owner_id=OWNER,
+        firebase_uid="firebase-user",
+        idempotency_key=KEY,
+        scopes=ACCOUNT_DELETION_SCOPES,
+        requested_at_utc=NOW,
+        server_export_completed=True,
+        recovery_expires_at_utc=NOW + timedelta(days=7),
+    )
+    store.operations[operation.firebase_uid] = operation
+
+    response = _client(service=_service(store, deleter)).post(
+        "/v1/account-deletions/recover",
+        json={
+            "ownerId": OWNER,
+            "firebaseUid": "firebase-user",
+            "idempotencyKey": KEY,
+        },
+    )
+
+    assert response.status_code == 404
+    assert not deleter.calls
+
+
+def test_disabled_new_deletions_still_finish_a_committed_recovery() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    receipt = AccountDeletionReceipt(
+        receipt_id="committed-operation",
+        owner_id=OWNER,
+        firebase_uid="firebase-user",
+        idempotency_key=KEY,
+        completed_at_utc=NOW,
+    )
+    committed = AccountDeletionOperation(
+        operation_id=receipt.receipt_id,
+        owner_id=OWNER,
+        firebase_uid="firebase-user",
+        idempotency_key=KEY,
+        scopes=ACCOUNT_DELETION_SCOPES,
+        requested_at_utc=NOW,
+        receipt=receipt,
+        server_export_completed=True,
+        recovery_expires_at_utc=NOW + timedelta(days=7),
+    )
+    store.operations[committed.firebase_uid] = committed
+
+    response = _client(enabled=False, service=_service(store, deleter)).post(
+        "/v1/account-deletions/recover",
+        json={
+            "ownerId": OWNER,
+            "firebaseUid": "firebase-user",
+            "idempotencyKey": KEY,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["receiptId"] == receipt.receipt_id
+    assert not deleter.calls
+    assert len(deleter.identity_calls) == 1
+
+
+def test_recovery_fails_closed_after_the_bounded_retention_window() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    expired = AccountDeletionOperation(
+        operation_id="expired-operation",
+        owner_id=OWNER,
+        firebase_uid="firebase-user",
+        idempotency_key=KEY,
+        scopes=ACCOUNT_DELETION_SCOPES,
+        requested_at_utc=NOW,
+        server_export_completed=True,
+        recovery_expires_at_utc=NOW + timedelta(days=7),
+    )
+    store.operations[expired.firebase_uid] = expired
+    service = AccountDeletionService(
+        store=store,
+        deleter=deleter,
+        server_export_authority=_ServerExportAuthority(),
+        recovery_retention=timedelta(days=7),
+        now_utc=lambda: NOW + timedelta(days=8),
+    )
+
+    response = _client(service=service).post(
+        "/v1/account-deletions/recover",
+        json={
+            "ownerId": OWNER,
+            "firebaseUid": "firebase-user",
+            "idempotencyKey": KEY,
+        },
+    )
+
+    assert response.status_code == 404
+    assert not deleter.calls
 
 
 def test_same_uid_and_key_replays_exact_receipt_without_deleting_twice() -> None:
@@ -164,6 +325,65 @@ def test_same_uid_and_key_replays_exact_receipt_without_deleting_twice() -> None
 
     assert first.json() == second.json()
     assert len(deleter.calls) == 1
+
+
+def test_secret_recovery_finishes_auth_after_a_lost_response() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    deleter.fail_identity_once = True
+    service = _service(store, deleter)
+
+    try:
+        service.delete(
+            AccountDeletionRequest.model_validate(_body()),
+            AuthenticatedUser(uid="firebase-user", authenticated_at_utc=NOW),
+        )
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("expected the first identity deletion to fail")
+
+    operation = store.operations["firebase-user"]
+    assert operation.receipt is not None
+    assert operation.identity_deleted is False
+
+    recovered = service.recover(
+        owner_id=OWNER,
+        firebase_uid="firebase-user",
+        idempotency_key=KEY,
+    )
+
+    assert recovered == operation.receipt
+    assert len(deleter.calls) == 1
+    assert len(deleter.identity_calls) == 2
+    assert store.operations["firebase-user"].identity_deleted is True
+
+
+def test_http_recovery_uses_the_secret_after_auth_deletion_ack_is_lost() -> None:
+    store = _Store()
+    deleter = _Deleter(store)
+    deleter.fail_identity_once = True
+    client = _client(service=_service(store, deleter))
+
+    first = client.post(
+        "/v1/account-deletions",
+        headers={"Authorization": "Bearer valid-token"},
+        json=_body(),
+    )
+    recovered = client.post(
+        "/v1/account-deletions/recover",
+        json={
+            "ownerId": OWNER,
+            "firebaseUid": "firebase-user",
+            "idempotencyKey": KEY,
+        },
+    )
+
+    assert first.status_code == 503
+    assert recovered.status_code == 200
+    assert recovered.json()["idempotencyKey"] == KEY
+    assert len(deleter.calls) == 1
+    assert len(deleter.identity_calls) == 2
 
 
 def test_same_uid_with_different_key_conflicts() -> None:

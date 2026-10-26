@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from lexiquest_ai.auth import TokenVerifier, extract_bearer_token
 from lexiquest_ai.account_deletion import (
     AccountDeletionConflict,
+    AccountDeletionRecoveryRequest,
     AccountDeletionRequest,
     AccountDeletionResponse,
     AccountDeletionService,
@@ -205,6 +206,51 @@ def create_app(
             ) from None
         except Exception as error:
             logger.error("Account deletion failed: %s", type(error).__name__)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_FAILED",
+                    "message": "Account deletion could not be completed.",
+                },
+                headers={"Retry-After": "5"},
+            ) from None
+        return receipt.response()
+
+    @app.post("/v1/account-deletions/recover")
+    def recover_account_deletion(
+        request: AccountDeletionRecoveryRequest,
+    ) -> AccountDeletionResponse:
+        # The high-entropy idempotency key is a one-operation continuation
+        # secret for the case where Firebase Auth was deleted before the
+        # original HTTP response reached the device.
+        if account_deletion_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_UNAVAILABLE",
+                    "message": "Account deletion is unavailable.",
+                },
+                headers={"Retry-After": "5"},
+            )
+        try:
+            receipt = account_deletion_service.recover(
+                owner_id=request.owner_id,
+                firebase_uid=request.firebase_uid,
+                idempotency_key=request.idempotency_key,
+            )
+        except AccountDeletionConflict:
+            # Do not disclose whether a UID, owner, or operation exists.
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "code": "ACCOUNT_DELETION_RECOVERY_NOT_FOUND",
+                    "message": "The deletion operation could not be recovered.",
+                },
+            ) from None
+        except Exception as error:
+            logger.error(
+                "Account deletion recovery failed: %s", type(error).__name__
+            )
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail={

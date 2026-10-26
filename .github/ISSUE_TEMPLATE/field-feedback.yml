@@ -11,14 +11,6 @@ body:
         API key, authentication token, vocabulary database, raw voice,
         camera image, or any other personal information.
   - type: input
-    id: participant_code
-    attributes:
-      label: Pseudonymous participant code
-      description: Use only the study code supplied by the coordinator.
-      placeholder: LQ-000
-    validations:
-      required: true
-  - type: input
     id: build
     attributes:
       label: Version and Build ID

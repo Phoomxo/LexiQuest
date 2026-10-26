@@ -4,56 +4,63 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>LexiQuest Field Support</title>
+  <title>ช่วยเหลือ · LexiQuest</title>
+  <link rel="canonical" href="https://vocab-learning-app-219ef.web.app/field-support/">
   <style>
-    body {
-      margin: 0 auto;
-      max-width: 48rem;
-      padding: 2rem 1.25rem;
-      font: 1rem/1.65 system-ui, sans-serif;
-    }
+    body { margin: 0 auto; max-width: 48rem; padding: 2rem 1.25rem; font: 1rem/1.65 system-ui, sans-serif; }
     a { overflow-wrap: anywhere; }
-    .warning {
-      border: 2px solid #b3261e;
-      border-radius: .75rem;
-      padding: 1rem;
-    }
-    .button {
-      display: inline-block;
-      min-height: 3rem;
-      padding: .75rem 1rem;
-      border-radius: .5rem;
-      background: #415f91;
-      color: white;
-      text-decoration: none;
-      box-sizing: border-box;
-    }
+    .card { border: 1px solid #7776; border-radius: .75rem; padding: 1rem; margin: 1rem 0; }
+    .button { display: inline-block; min-height: 3rem; padding: .75rem 1rem; border-radius: .5rem; background: #415f91; color: white; text-decoration: none; box-sizing: border-box; }
+    [aria-disabled="true"] { background: #777; pointer-events: none; }
+    .warning { border: 2px solid #b3261e; }
   </style>
 </head>
 <body>
   <main>
-    <h1>LexiQuest Field Support</h1>
-    <p>
-      ช่องทางนี้ใช้รายงานปัญหาทั่วไปของรุ่นทดลอง โดยระบุ Version, Build ID,
-      รุ่นมือถือ, Android, สถานะเครือข่าย และขั้นตอนที่ทำให้เกิดปัญหา
-    </p>
-    <div class="warning">
-      <strong>GitHub Issues เป็นพื้นที่สาธารณะ</strong>
-      ห้ามส่งชื่อ อีเมล รหัสผ่าน API key, token, ฐานคำศัพท์ ภาพกล้อง
-      เสียงดิบ หรือข้อมูลส่วนบุคคล หากเป็นปัญหาบัญชีหรือคำขอลบข้อมูล
-      ให้ใช้ช่องทางส่วนตัวที่ผู้ดูแลแนบมากับ APK
-    </div>
-    <p>
-      <a class="button"
-         href="https://github.com/Phoomxo/LexiQuest/issues/new?template=field-feedback.yml">
-        เปิดแบบฟอร์มรายงานปัญหา
-      </a>
-    </p>
-    <h2>เมื่อแอปยังเรียนได้</h2>
-    <p>
-      อย่าถอนการติดตั้งหรือล้างข้อมูล ให้เรียนออฟไลน์ต่อ บันทึก Build ID
-      และส่งออกรายงานที่ไม่มีข้อมูลลับเมื่อผู้ดูแลร้องขอ
-    </p>
+    <h1>ศูนย์ช่วยเหลือ LexiQuest</h1>
+    <p><strong>Support</strong></p>
+    <section class="card warning">
+      <h2>อย่าส่งข้อมูลส่วนตัวใน GitHub</h2>
+      <p>ห้ามส่งชื่อ อีเมล รหัสผ่าน API key โทเคน ฐานคำศัพท์ ภาพกล้อง หรือเสียงดิบผ่าน Issue สาธารณะ</p>
+    </section>
+    <section class="card">
+      <h2>ปัญหาทั่วไปที่ไม่มีข้อมูลส่วนบุคคล</h2>
+      <p><a class="button" href="https://github.com/Phoomxo/LexiQuest/issues/new?template=field-feedback.yml">เปิดแบบฟอร์มรายงานปัญหา</a></p>
+    </section>
+    <section class="card">
+      <h2>บัญชี ข้อมูลส่วนบุคคล และคำขอลบ</h2>
+      <p><a id="private-support-link" class="button" data-config-field="privateSupportUrl" aria-disabled="true">เปิดช่องทางส่วนตัว</a></p>
+      <p id="configuration-status" role="status">กำลังตรวจสอบช่องทางของรุ่นนี้</p>
+      <p><a href="/delete-account/">รายละเอียดการลบบัญชี</a> · <a href="/privacy/">ประกาศความเป็นส่วนตัว</a></p>
+    </section>
+    <h2>ข้อมูลที่ช่วยวิเคราะห์ปัญหา</h2>
+    <p>ระบุ Version, Build ID, รุ่นมือถือ, Android, สถานะเครือข่าย และขั้นตอนที่ทำให้เกิดปัญหา โดยตรวจภาพหน้าจอว่าไม่มีข้อมูลลับก่อนส่ง</p>
+    <section lang="en" class="card">
+      <h2>Support</h2>
+      <h3>Public reports</h3>
+      <p>Use the public issue form only for non-sensitive product problems. Remove names, email addresses, study identifiers, vocabulary content, credentials, camera images and raw voice before posting.</p>
+      <h3>Private support</h3>
+      <p>Account, privacy and deletion requests belong in the approved private channel above. If that button is unavailable, this build is not approved for real personal data collection.</p>
+    </section>
   </main>
+  <script>
+    (() => {
+      const secure = (value, hosts) => { try { const url = new URL(value); let path = url.pathname; for (let i = 0; i < 2; i++) { const decoded = decodeURIComponent(path); if (decoded === path) break; path = decoded; } return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash && !url.port && hosts.includes(url.hostname) && !/(token|secret|api[-_]?key|password)/i.test(path); } catch (_) { return false; } };
+      Promise.all([
+        fetch('/release-contact.json', { cache: 'no-store', credentials: 'same-origin' }),
+        fetch('/release-contact-policy.json', { cache: 'no-store', credentials: 'same-origin' })
+      ]).then(async responses => {
+        if (responses.some(response => !response.ok)) throw new Error('missing');
+        return Promise.all(responses.map(response => response.json()));
+      }).then(([config, policy]) => {
+          if (config.schemaVersion !== 1 || policy.schemaVersion !== 1 || !secure(config.privateSupportUrl, policy.privateSupportHosts || [])) throw new Error('invalid');
+          const link = document.getElementById('private-support-link');
+          link.href = config.privateSupportUrl;
+          link.removeAttribute('aria-disabled');
+          document.getElementById('configuration-status').textContent = 'ช่องทางส่วนตัวของรุ่นนี้พร้อมใช้งาน';
+        })
+        .catch(() => { document.getElementById('configuration-status').textContent = 'ยังไม่มีช่องทางส่วนตัวที่ยืนยันแล้ว กรุณายังไม่ส่งข้อมูลบัญชีหรือข้อมูลส่วนบุคคล'; });
+    })();
+  </script>
 </body>
 </html>

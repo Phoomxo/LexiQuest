@@ -5,9 +5,13 @@ const path = require("node:path");
 
 const projectId = "vocab-learning-app-219ef";
 const appId = "1:145034183638:android:2c492244dd68e77dbe5a77";
-const manifestPath = path.resolve(
-  process.argv[2] || "build/field-release/release-manifest.json",
-);
+if (!process.argv[2]) {
+  throw new Error(
+    "Usage: node tool/cli/configure-firebase-release-sha.cjs " +
+      "<versioned-release-manifest.json>",
+  );
+}
+const manifestPath = path.resolve(process.argv[2]);
 if (!fs.existsSync(manifestPath)) {
   throw new Error(`Release manifest is missing: ${manifestPath}`);
 }

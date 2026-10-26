@@ -37,10 +37,24 @@ final class HttpPrivilegedAccountDeletionGateway
     required FullAccountExportReceipt exportReceipt,
     required RecentAuthenticationReceipt authenticationReceipt,
   }) async {
-    final token = (await _idToken())?.trim();
+    String? token;
+    try {
+      token = (await _idToken())?.trim();
+    } catch (error) {
+      return _recover(
+        ownerId: ownerId,
+        firebaseUid: firebaseUid,
+        idempotencyKey: idempotencyKey,
+        missingIdentity: true,
+        cause: error,
+      );
+    }
     if (token == null || token.isEmpty) {
-      throw const AccountDeletionException(
-        AccountDeletionFailureCode.reauthenticationRequired,
+      return _recover(
+        ownerId: ownerId,
+        firebaseUid: firebaseUid,
+        idempotencyKey: idempotencyKey,
+        missingIdentity: true,
       );
     }
     try {
@@ -50,7 +64,6 @@ final class HttpPrivilegedAccountDeletionGateway
             headers: {
               'authorization': 'Bearer $token',
               'content-type': 'application/json',
-              'idempotency-key': idempotencyKey,
             },
             body: jsonEncode({
               'ownerId': ownerId,
@@ -69,34 +82,35 @@ final class HttpPrivilegedAccountDeletionGateway
           )
           .timeout(timeout);
       if (response.statusCode == 401 || response.statusCode == 403) {
-        throw const AccountDeletionException(
-          AccountDeletionFailureCode.reauthenticationRequired,
+        return _recover(
+          ownerId: ownerId,
+          firebaseUid: firebaseUid,
+          idempotencyKey: idempotencyKey,
+          missingIdentity: true,
         );
       }
       if (response.statusCode != 200) {
-        throw const AccountDeletionException(
-          AccountDeletionFailureCode.cloudDeleteFailed,
+        return _recover(
+          ownerId: ownerId,
+          firebaseUid: firebaseUid,
+          idempotencyKey: idempotencyKey,
         );
       }
-      final json = jsonDecode(response.body);
-      if (json is! Map<String, dynamic>) throw const FormatException();
-      return CloudDeletionReceipt(
-        receiptId: json['receiptId'] as String,
-        ownerId: json['ownerId'] as String,
-        firebaseUid: json['firebaseUid'] as String,
-        idempotencyKey: json['idempotencyKey'] as String,
-        completedAtUtc: DateTime.parse(json['completedAtUtc'] as String),
-      );
+      return _parseReceipt(response.body);
     } on AccountDeletionException {
       rethrow;
     } on TimeoutException catch (error) {
-      throw AccountDeletionException(
-        AccountDeletionFailureCode.cloudDeleteFailed,
+      return _recover(
+        ownerId: ownerId,
+        firebaseUid: firebaseUid,
+        idempotencyKey: idempotencyKey,
         cause: error,
       );
     } on http.ClientException catch (error) {
-      throw AccountDeletionException(
-        AccountDeletionFailureCode.cloudDeleteFailed,
+      return _recover(
+        ownerId: ownerId,
+        firebaseUid: firebaseUid,
+        idempotencyKey: idempotencyKey,
         cause: error,
       );
     } catch (error) {
@@ -105,5 +119,55 @@ final class HttpPrivilegedAccountDeletionGateway
         cause: error,
       );
     }
+  }
+
+  Future<CloudDeletionReceipt> _recover({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    bool missingIdentity = false,
+    Object? cause,
+  }) async {
+    try {
+      final response = await _client
+          .post(
+            _baseUri.resolve('/v1/account-deletions/recover'),
+            headers: {'content-type': 'application/json'},
+            body: jsonEncode({
+              'ownerId': ownerId,
+              'firebaseUid': firebaseUid,
+              'idempotencyKey': idempotencyKey,
+            }),
+          )
+          .timeout(timeout);
+      if (response.statusCode == 200) return _parseReceipt(response.body);
+      throw AccountDeletionException(
+        missingIdentity
+            ? AccountDeletionFailureCode.reauthenticationRequired
+            : AccountDeletionFailureCode.cloudDeleteFailed,
+        cause: cause,
+      );
+    } on AccountDeletionException {
+      rethrow;
+    } catch (error) {
+      throw AccountDeletionException(
+        missingIdentity
+            ? AccountDeletionFailureCode.reauthenticationRequired
+            : AccountDeletionFailureCode.cloudDeleteFailed,
+        cause: cause ?? error,
+      );
+    }
+  }
+
+  CloudDeletionReceipt _parseReceipt(String body) {
+    final json = jsonDecode(body);
+    if (json is! Map<String, dynamic>) throw const FormatException();
+    return CloudDeletionReceipt(
+      receiptId: json['receiptId'] as String,
+      ownerId: json['ownerId'] as String,
+      firebaseUid: json['firebaseUid'] as String,
+      idempotencyKey: json['idempotencyKey'] as String,
+      completedAtUtc: DateTime.parse(json['completedAtUtc'] as String),
+    );
   }
 }

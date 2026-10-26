@@ -1,37 +1,22 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$ReleaseManifestPath = 'build/field-release/release-manifest.json',
-    [string]$DeviceEvidenceDirectory = 'field/evidence/devices',
-    [string]$OutputPath = 'field/evidence/release-evidence.json',
     [Parameter(Mandatory)]
-    [string]$FeedbackChannelRef,
+    [string]$ReleaseManifestPath,
     [Parameter(Mandatory)]
-    [string]$SupportChannelRef,
+    [string]$EvidenceRootPath,
+    [string]$DeviceEvidenceDirectory = 'devices',
     [Parameter(Mandatory)]
-    [string]$ResearchProtocolRef,
-    [switch]$AppCheckConfigured,
-    [switch]$AppCheckValidTrafficObserved,
-    [switch]$AppCheckEnforced,
-    [switch]$BudgetAlertsConfigured,
-    [switch]$NoBillingAccount,
-    [switch]$AssetLinksVerified,
-    [switch]$CloudKillSwitchVerified,
-    [string]$AppCheckEvidenceRef = '',
-    [string]$BudgetAlertsEvidenceRef = '',
-    [string]$AssetLinksEvidenceRef = '',
-    [string]$CloudKillSwitchEvidenceRef = '',
-    [switch]$OwnerApproved,
-    [string]$OwnerApprovalEvidenceRef = ''
+    [string]$ControlRecordPath,
+    [Parameter(Mandatory)]
+    [string]$OwnerApprovalRecordPath,
+    [string]$OutputPath = 'release-evidence.json'
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-
-if ($BudgetAlertsConfigured -and $NoBillingAccount) {
-    throw 'Choose budget alerts or no-billing mode, not both.'
-}
+. (Join-Path $PSScriptRoot 'lib\field-release-evidence.ps1')
 
 function Resolve-RepositoryPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -43,81 +28,88 @@ function Resolve-RepositoryPath {
 }
 
 $manifestPath = Resolve-RepositoryPath $ReleaseManifestPath
-$deviceDirectory = Resolve-RepositoryPath $DeviceEvidenceDirectory
-$outputFile = Resolve-RepositoryPath $OutputPath
+$evidenceRoot = Resolve-RepositoryPath $EvidenceRootPath
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Release manifest is missing: $manifestPath"
 }
+if (-not (Test-Path -LiteralPath $evidenceRoot -PathType Container)) {
+    throw "Evidence root is missing: $evidenceRoot"
+}
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 |
     ConvertFrom-Json
-$devices = @()
+if ([int]$manifest.schemaVersion -ne 3) {
+    throw 'Release manifest schemaVersion must be 3.'
+}
+
+$controlReference = New-LexiQuestEvidenceReference `
+    -Path $ControlRecordPath `
+    -EvidenceRootPath $evidenceRoot
+$ownerReference = New-LexiQuestEvidenceReference `
+    -Path $OwnerApprovalRecordPath `
+    -EvidenceRootPath $evidenceRoot
+$controls = Read-LexiQuestEvidenceRecord `
+    -Reference $controlReference `
+    -EvidenceRootPath $evidenceRoot
+$approval = Read-LexiQuestEvidenceRecord `
+    -Reference $ownerReference `
+    -EvidenceRootPath $evidenceRoot
+if ([string]$controls.recordType -ne 'lexiquestReleaseControls') {
+    throw 'ControlRecordPath must contain a LexiQuest release-controls record.'
+}
+if ([string]$controls.releaseProfile -ne [string]$manifest.releaseProfile) {
+    throw 'Release controls profile does not match release-manifest.json.'
+}
+if ([string]$approval.recordType -ne 'lexiquestOwnerApproval') {
+    throw 'OwnerApprovalRecordPath must contain a LexiQuest owner approval record.'
+}
+
+$deviceDirectory = Get-LexiQuestContainedPath `
+    -Path $DeviceEvidenceDirectory `
+    -RootPath $evidenceRoot
+$deviceReferences = @()
 if (Test-Path -LiteralPath $deviceDirectory -PathType Container) {
-    $devices = @(
-        Get-ChildItem -LiteralPath $deviceDirectory -File -Filter '*.json' |
+    $deviceReferences = @(
+        Get-ChildItem -LiteralPath $deviceDirectory -File `
+            -Filter '*.device.json' |
             Sort-Object Name |
             ForEach-Object {
-                Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 |
-                    ConvertFrom-Json
+                $reference = New-LexiQuestEvidenceReference `
+                    -Path $_.FullName `
+                    -EvidenceRootPath $evidenceRoot
+                $device = Read-LexiQuestEvidenceRecord `
+                    -Reference $reference `
+                    -EvidenceRootPath $evidenceRoot
+                if ([string]$device.recordType -ne
+                    'lexiquestPhysicalDeviceEvidence') {
+                    throw "Invalid device evidence record: $($_.Name)"
+                }
+                $reference
             }
     )
 }
 
-$approvedAt = if ($OwnerApproved) {
-    [DateTime]::UtcNow.ToString('o')
-} else {
-    ''
-}
 $evidence = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 3
+    releaseProfile = [string]$manifest.releaseProfile
     releaseId = '{0}-{1}' -f
         $manifest.artifact.versionName,
         $manifest.artifact.buildId
     artifact = $manifest.artifact
-    cloudControls = [ordered]@{
-        appCheckConfigured = [bool]$AppCheckConfigured
-        appCheckValidTrafficObserved =
-            [bool]$AppCheckValidTrafficObserved
-        appCheckEnforced = [bool]$AppCheckEnforced
-        budgetAlertsConfigured = [bool]$BudgetAlertsConfigured
-        budgetAlertsNotApplicable = [bool]$NoBillingAccount
-        billingMode = if ($NoBillingAccount) {
-            'noBillingAccount'
-        } else {
-            'budgeted'
-        }
-        assetLinksVerified = [bool]$AssetLinksVerified
-        cloudKillSwitchVerified = [bool]$CloudKillSwitchVerified
-        appCheckEvidenceRef = $AppCheckEvidenceRef
-        budgetAlertsEvidenceRef = $BudgetAlertsEvidenceRef
-        assetLinksEvidenceRef = $AssetLinksEvidenceRef
-        cloudKillSwitchEvidenceRef = $CloudKillSwitchEvidenceRef
+    records = [ordered]@{
+        controls = $controlReference
+        ownerApproval = $ownerReference
     }
-    participantPackage = [ordered]@{
-        installGuide = 'docs/install-and-update.md'
-        privacyNotice = 'docs/privacy-and-consent-v1.md'
-        dataRightsGuide = 'docs/data-export-and-deletion.md'
-        knownLimitations = 'docs/known-limitations.md'
-        feedbackGuide = 'docs/feedback-and-support.md'
-        researchProtocol = 'docs/research-protocol-v1.md'
-        consentVersion = 1
-        feedbackChannelRef = $FeedbackChannelRef
-        supportChannelRef = $SupportChannelRef
-        researchProtocolRef = $ResearchProtocolRef
-    }
-    devices = $devices
-    ownerApproval = [ordered]@{
-        approved = [bool]$OwnerApproved
-        apkSha256 = $manifest.artifact.apkSha256
-        aabSha256 = $manifest.artifact.aabSha256
-        approvedAtUtc = $approvedAt
-        approverRole = 'owner'
-        evidenceRef = $OwnerApprovalEvidenceRef
-    }
+    devices = $deviceReferences
 }
-
+$outputFile = Get-LexiQuestContainedPath `
+    -Path $OutputPath `
+    -RootPath $evidenceRoot
 $parent = Split-Path -Parent $outputFile
 New-Item -ItemType Directory -Path $parent -Force | Out-Null
-$evidence | ConvertTo-Json -Depth 16 |
-    Set-Content -LiteralPath $outputFile -Encoding utf8
+[System.IO.File]::WriteAllText(
+    $outputFile,
+    (($evidence | ConvertTo-Json -Depth 12) + [Environment]::NewLine),
+    [System.Text.UTF8Encoding]::new($false)
+)
 Write-Host "Field release evidence assembled: $outputFile" `
     -ForegroundColor Yellow

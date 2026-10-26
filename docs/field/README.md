@@ -1,83 +1,105 @@
 # LexiQuest field release runbook
 
-กระบวนการนี้เป็น gate เดียวต่อ release candidate ไม่ใช่วงจรทดสอบไม่สิ้นสุด
-เมื่อขั้นใดไม่ผ่าน ให้แก้เฉพาะสาเหตุที่ gate รายงาน แล้วเริ่ม release candidate
-ใหม่หาก APK เปลี่ยน hash เท่านั้น ห้ามคัดลอกผลจาก APK รุ่นอื่น
+Gate นี้ผูก source, signed APK/AAB, เอกสาร และหลักฐานจริงเป็น release candidate
+เดียวกัน ห้ามคัดลอกผลจาก artifact รุ่นอื่นหรือเปลี่ยน `pending` เป็น `pass`
+โดยไม่ได้ทดสอบจริง
 
-## 1. เตรียมลายเซ็นและสร้างชุดติดตั้ง
+## 1. สร้าง versioned release package
 
-สร้าง release key หนึ่งครั้งด้วยคำสั่งด้านล่าง ระบบจะสุ่มรหัสผ่านด้วย
-cryptographic RNG เก็บ keystore แยกจาก repository และป้องกัน recovery secret
-ด้วย Windows DPAPI:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/initialize-release-signing.ps1
-```
-
-สำรองโฟลเดอร์ `%USERPROFILE%\.lexiquest\signing` แบบออฟไลน์ก่อนแจก APK
-จากนั้นรัน:
+สร้าง release key ครั้งเดียวด้วย `tool/cli/initialize-release-signing.ps1` และสำรอง
+`%USERPROFILE%\.lexiquest\signing` แบบออฟไลน์ จากนั้นใช้ path รุ่นที่ชัดเจน:
 
 ```powershell
+$version = '1.0.0+27'
+$releasePackage = "build/field-release/lexiquest-$version"
+$releaseManifest = "$releasePackage/release-manifest.json"
+$evidenceRoot = "field/evidence/lexiquest-$version"
+
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/package-field-release.ps1 -Version 1.0.0+1
+  tool/cli/package-field-release.ps1 `
+  -Version $version -ReleaseProfile fieldTrial
 ```
 
-คำสั่งจะไม่สร้าง key ปลอม ไม่ใช้ debug signing และจะหยุดหาก source Android
-ที่เกี่ยวข้องยังไม่ commit ผลลัพธ์อยู่ใน `build/field-release/` พร้อม hash
-และ certificate digest
+Packager ปฏิเสธ source ที่ยังไม่ checkpoint, staging ที่มีไฟล์เก่า, certificate
+ที่ไม่ตรง trust record, model pin ที่ไม่ตรง source, APK/AAB provenance ที่ไม่ตรง
+และ AAB ที่มี payload entry ไม่ถูก signed โดยอ่าน application ID/version จาก
+AAB manifest จริงผ่าน bundletool ใน Gradle cache + Android SDK เอกสารผู้เข้าร่วม
+ถูก allowlist และ hash ทีละไฟล์ใน manifest
 
-## 2. เก็บหลักฐานมือถือจริง
+## 2. เก็บ device evidence จริง
 
-เชื่อมต่อมือถือจริงครั้งละหนึ่งเครื่อง เปิด USB debugging แล้วรันให้ครบ
-low, mid และ high tier:
+เชื่อมต่ออุปกรณ์จริงครั้งละหนึ่งเครื่อง แล้วรัน low/mid/high ให้ครอบคลุม phone,
+tablet และ foldable:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
   tool/cli/collect-android-field-evidence.ps1 `
-  -Tier low -NetworkProfile offline-mixed
+  -Tier low -FormFactor phone -NetworkProfile offline-mixed `
+  -ReleaseManifestPath $releaseManifest `
+  -EvidenceRootPath $evidenceRoot
 ```
 
-ตัว collector จะปฏิเสธ emulator, hash serial ก่อนบันทึก, ติดตั้งและเปิด APK
-จริง และสร้างรายการอื่นเป็น `pending` โดยตั้งใจ ผู้ทดสอบต้องทำ journey
-ตาม `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`
-พร้อม evidence reference แล้วกรอกผลจริง ห้ามเปลี่ยน `pending` เป็น `pass`
-โดยไม่ได้ทำการทดสอบ
+Collector ตรวจ hash, package/version/build/model pin และ upload certificate ก่อนติดตั้ง
+แล้ววัด installed base APK, signer และ installer ซ้ำหลังติดตั้ง สำหรับ
+`publicProduction` จะไม่ sideload และต้องพบ installer `com.android.vending` จริง
+ค่า `-Tier`/`-FormFactor` เป็น expected assertions เท่านั้น: collector คำนวณ tier
+จาก RAM/API (`low` ≤4 GB + API 30–32, `high` ≥8 GB + API 34+, อื่น ๆ เป็น
+`mid`) และคำนวณ phone/tablet จาก physical smallest-width; Fold ต้องมี hinge
+sensor หรือ fold/window feature จริง ห้ามอนุมาน Fold จากขนาดจอ และ emulator
+หรือ label ที่ไม่ตรง measurement จะถูกปฏิเสธ
+ไฟล์ draft ลงท้าย `.device.json`; journey, orientation, text scale, TalkBack,
+Fold postures, UAT, benchmark และ endurance ยังคง `pending` จนมีผลจริง
 
-## 3. รวม evidence
+ทุก `*EvidenceRef` ต้องเป็น object ต่อไปนี้ และ path ต้องอยู่ใต้ `$evidenceRoot`:
 
-หลังตั้ง App Check, budget alert 50/80/100 (หรือยืนยันว่า Cloud Billing
-ไม่ได้เปิด), asset links, kill switch,
-ช่องทาง feedback/support และ owner smoke test จริงแล้ว ใช้:
+```json
+{"path":"records/example.json","sha256":"<64_HEX>"}
+```
+
+## 3. รวมหลักฐานที่ตรวจสอบย้อนกลับได้
+
+สร้าง JSON สอง record จากผลจริง ไม่ใช้ command-line switch เพื่ออ้างว่าอนุมัติแล้ว:
+
+- `release-controls.json`: `recordType=lexiquestReleaseControls`, profile และ artifact
+  เดียวกับ manifest พร้อม cloud/profile controls และ hashed evidence refs
+- `owner-approval.json`: `recordType=lexiquestOwnerApproval`, exact APK/AAB hashes,
+  เวลา บทบาท และ hashed approval evidence ref
+
+ฟิลด์เอกสารใน `participantPackage` ต้องเป็น `{path, sha256}` ที่ชี้ไปยัง
+`docs/...` ตาม allowlist แบบ exact เท่านั้น ไม่รับชื่อไฟล์อื่น absolute path หรือ
+hash ที่ไม่ตรงเนื้อหา
+
+สำหรับ public profile, control record ต้องผูก exact AAB hash/version/package,
+Play app-signing certificate และหลักฐาน Play acceptance/privacy/account deletion/
+Data Safety/rollback สำหรับ field trial ต้องมี ethics/protocol/trusted issuer/rollout
+record จริง ระบบจะ fail closed หาก record หรือ hash ใดหาไม่พบ
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
   tool/cli/new-field-release-evidence.ps1 `
-  -FeedbackChannelRef 'private:configured-feedback-record' `
-  -SupportChannelRef 'private:configured-support-record' `
-  -ResearchProtocolRef 'private:approved-research-protocol' `
-  -AppCheckConfigured -AppCheckValidTrafficObserved -AppCheckEnforced `
-  -NoBillingAccount -AssetLinksVerified `
-  -CloudKillSwitchVerified -OwnerApproved `
-  -AppCheckEvidenceRef 'private:app-check-record' `
-  -BudgetAlertsEvidenceRef 'private:budget-record' `
-  -AssetLinksEvidenceRef 'private:app-link-record' `
-  -CloudKillSwitchEvidenceRef 'private:kill-switch-record' `
-  -OwnerApprovalEvidenceRef 'private:owner-smoke-record'
+  -ReleaseManifestPath $releaseManifest `
+  -EvidenceRootPath $evidenceRoot `
+  -ControlRecordPath 'records/release-controls.json' `
+  -OwnerApprovalRecordPath 'records/owner-approval.json'
 ```
-
-ไฟล์ evidence อยู่ในโฟลเดอร์ที่ git ignore เพื่อไม่เผยข้อมูลการปฏิบัติการ
-หรือผู้เข้าร่วม
 
 ## 4. Final gate
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/verify-field-release.ps1
+  tool/cli/verify-field-release.ps1 `
+  -ParticipantPackagePath $releasePackage `
+  -EvidenceRootPath $evidenceRoot
 ```
 
-Final gate ตรวจลายเซ็นและ hash, ความตรงกันของ manifest, เอกสารผู้เข้าร่วม,
-หลักฐานสามเครื่อง, journey ทุกข้อ, benchmark CPU/XNNPACK, สถานะ GPU
-ที่ไม่กล่าวอ้างเกินจริง, endurance 30 นาที, Cloud controls และ owner approval
-จากนั้นรัน software regression gate หนึ่งครั้ง ถ้า APK เปลี่ยนแม้หนึ่ง byte
-หลักฐานอุปกรณ์และ owner approval เดิมใช้ต่อไม่ได้
+Firebase SHA และ hosted Asset Links ต้องรับ manifest รุ่นเดียวกันแบบ explicit:
+
+```powershell
+node tool/cli/configure-firebase-release-sha.cjs $releaseManifest
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  tool/cli/verify-hosted-asset-links.ps1 `
+  -ReleaseManifestPath $releaseManifest
+```
+
+Final gate ไม่ได้สร้าง ethics approval, Play acceptance, TalkBack/UAT หรือผลอุปกรณ์
+ที่ขาดอยู่ หาก APK/AAB หรือ record เปลี่ยน hash ต้องเก็บหลักฐานและอนุมัติใหม่

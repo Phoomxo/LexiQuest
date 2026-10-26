@@ -256,8 +256,31 @@ final class _Journal implements AccountDeletionJournal {
   Future<AccountDeletionJournalEntry?> load() async => entry;
 
   @override
+  Future<void> savePendingOperation({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  }) async {
+    entry = AccountDeletionJournalEntry(
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      idempotencyKey: idempotencyKey,
+      exportReceipt: exportReceipt,
+      authenticationReceipt: authenticationReceipt,
+    );
+  }
+
+  @override
   Future<void> saveCloudReceipt(CloudDeletionReceipt receipt) async {
-    entry = AccountDeletionJournalEntry(cloudReceipt: receipt);
+    final durableReceipt = receipt.durableMarker();
+    entry = AccountDeletionJournalEntry(
+      ownerId: durableReceipt.ownerId,
+      firebaseUid: durableReceipt.firebaseUid,
+      idempotencyKey: durableReceipt.idempotencyKey,
+      cloudReceipt: durableReceipt,
+    );
   }
 
   @override
@@ -266,6 +289,9 @@ final class _Journal implements AccountDeletionJournal {
     required LocalDeletionReceipt localReceipt,
   }) async {
     entry = AccountDeletionJournalEntry(
+      ownerId: entry?.ownerId,
+      firebaseUid: entry?.firebaseUid,
+      idempotencyKey: entry?.idempotencyKey,
       cloudReceipt: cloudReceipt,
       localReceipt: localReceipt,
     );

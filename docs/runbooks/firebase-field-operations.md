@@ -20,19 +20,19 @@ control below is disabled.
    `LEXIQUEST_CLOUD_SYNC_ENABLED=false`. Local learning and pending outbox
    records remain available.
 
-## Budget alerts
+## Billing mode
 
-The project owner must create a Google Cloud billing budget scoped to project
-`vocab-learning-app-219ef` with actual-spend alerts at exactly:
+Record exactly one mode in release evidence:
 
-- 50%
-- 80%
-- 100%
+- `noBillingAccount`: remain on Spark/no billing, set alerts to false and
+  not-applicable to true, and verify truthful quota-exhaustion behavior.
+- `budgeted`: attach billing only with explicit cost authority, configure
+  actual-spend alerts at 50%, 80% and 100%, and document quota/kill-switch
+  ownership. A budget sends alerts; it is not a hard spending cap.
 
-Route alerts to the owner-controlled billing notification channel. Do not put
-email addresses, webhook secrets, or billing credentials in this repository.
-Record screenshots or exported budget configuration in the private P8 owner
-evidence package; do not commit participant identifiers.
+Route any alerts to an owner-controlled private channel. Do not put email,
+webhook secrets or billing credentials in this repository. Gemini BYOK,
+Supabase and Play costs are separate from the Firebase billing record.
 
 ## Android App Link
 

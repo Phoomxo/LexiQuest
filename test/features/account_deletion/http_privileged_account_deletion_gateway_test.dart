@@ -43,6 +43,7 @@ void main() {
     expect(receipt.firebaseUid, 'uid-1');
     expect(request.url.path, '/v1/account-deletions');
     expect(request.headers['authorization'], 'Bearer synthetic-token');
+    expect(request.headers.containsKey('idempotency-key'), isFalse);
     final body = jsonDecode(request.body) as Map<String, dynamic>;
     expect(body.containsKey('firebaseUid'), isFalse);
     expect(body.containsKey('authenticatedAtUtc'), isFalse);
@@ -86,6 +87,70 @@ void main() {
       ),
     );
   });
+
+  test(
+    'recovers a completed deletion after the Firebase identity is gone',
+    () async {
+      late http.Request request;
+      final gateway = HttpPrivilegedAccountDeletionGateway(
+        client: MockClient((value) async {
+          request = value;
+          return http.Response(
+            jsonEncode({
+              'receiptId': 'receipt-recovered',
+              'ownerId': 'owner-1',
+              'firebaseUid': 'uid-1',
+              'idempotencyKey': 'delete:synthetic-operation',
+              'completedAtUtc': now.toIso8601String(),
+            }),
+            200,
+          );
+        }),
+        baseUri: Uri.parse('https://api.example.test/'),
+        idToken: () async => null,
+      );
+
+      final receipt = await _delete(gateway, now);
+
+      expect(receipt.receiptId, 'receipt-recovered');
+      expect(request.url.path, '/v1/account-deletions/recover');
+      expect(request.headers.containsKey('authorization'), isFalse);
+      expect(jsonDecode(request.body), {
+        'ownerId': 'owner-1',
+        'firebaseUid': 'uid-1',
+        'idempotencyKey': 'delete:synthetic-operation',
+      });
+    },
+  );
+
+  test(
+    'recovers when refreshing the token throws after server commit',
+    () async {
+      late http.Request request;
+      final gateway = HttpPrivilegedAccountDeletionGateway(
+        client: MockClient((value) async {
+          request = value;
+          return http.Response(
+            jsonEncode({
+              'receiptId': 'receipt-recovered',
+              'ownerId': 'owner-1',
+              'firebaseUid': 'uid-1',
+              'idempotencyKey': 'delete:synthetic-operation',
+              'completedAtUtc': now.toIso8601String(),
+            }),
+            200,
+          );
+        }),
+        baseUri: Uri.parse('https://api.example.test/'),
+        idToken: () async => throw StateError('Firebase Auth user is gone'),
+      );
+
+      final receipt = await _delete(gateway, now);
+
+      expect(receipt.receiptId, 'receipt-recovered');
+      expect(request.url.path, '/v1/account-deletions/recover');
+    },
+  );
 
   test(
     'classifies a network failure as retryable cloud deletion failure',

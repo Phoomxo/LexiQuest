@@ -1,8 +1,8 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$ReleaseManifestPath =
-        'build/field-release/release-manifest.json'
+    [Parameter(Mandatory)]
+    [string]$ReleaseManifestPath
 )
 
 Set-StrictMode -Version 3.0

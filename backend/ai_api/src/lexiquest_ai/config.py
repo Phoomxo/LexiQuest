@@ -108,6 +108,12 @@ class Settings(BaseSettings):
     max_text_length: int = Field(default=500, ge=1, le=MAX_TEXT_LENGTH_CEILING)
     request_timeout_seconds: int = Field(default=20, ge=1, le=120)
     account_deletion_enabled: bool = False
+    account_deletion_server_export_authority: str = Field(
+        default="", max_length=128
+    )
+    account_deletion_recovery_retention_seconds: int = Field(
+        default=0, ge=0, le=30 * 24 * 3600
+    )
 
     # --- Response cache (primary cost control) ---
     cache_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=1, le=365 * 24 * 3600)

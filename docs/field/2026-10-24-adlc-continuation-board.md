@@ -67,3 +67,49 @@ data operations disabled.
 2. Google Sign-In is enabled in the verified `final8` artifacts.
 3. Research enrollment/upload, production deletion, Play rollout, and App
    Check enforcement remain separate authority gates.
+
+## Cycle 12 production-test readiness continuation — 2026-10-26
+
+### Intent and fixed boundaries
+
+Prepare one source-bound Android release candidate that can be installed for
+real-device acceptance testing without claiming Play production readiness or
+research authority. Production research enrollment/upload remains disabled.
+No task may fabricate physical-device, human-UAT, Play, privacy-owner, or ethics
+evidence.
+
+Baseline for this continuation:
+
+- Worktree: `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`
+- Branch: `codex/cycle12-release`
+- HEAD before implementation: `bd4ec9083a290ad256ebd80c9d292359796bf6aa`
+- Fresh baseline: `flutter test --no-pub` passed 1758/1758 on 2026-10-26.
+- Pre-existing untracked critique snapshot is preserved and is not release
+  source.
+
+### Task graph
+
+| Card | Outcome | State | Exclusive write set | Acceptance |
+| --- | --- | --- | --- | --- |
+| `DEL-PROD` | Compose crash-resumable account deletion without enabling an unproven live endpoint | Done (engineering; production default-off) | account-deletion Flutter adapters/bootstrap, AI API Firebase deletion composition, focused tests | 74/74 Flutter account-deletion tests and 16/16 focused backend tests pass; recovery, owner/idempotency, export-before-delete, Auth-last deletion and kill-switch behavior independently reviewed; production export authority remains absent and fails closed |
+| `REL-GATE` | Bind artifacts to source and strengthen portable public/field evidence gates | Done (local gate) | `tool/cli` release scripts/tests, evidence template, signing trust and participant allowlist manifests | 209/209 field-release and 63/63 signing tests pass; independent review accepted measured APK/AAB identity, fixed certificate/model trust, reparse containment and physical-device classification |
+| `PUB-WEB` | Supply truthful privacy/deletion/support/store/rollback assets without inventing an owner contact | Done (local; deployment not authorized) | Firebase Hosting pages, store/runbook/privacy docs, public-page verifier, CI contract | Public-page 10/10, Hosting/loader 15/15, CI 65/65, Auth 3/3 and Firestore rules 33/33 pass; production contact policy intentionally fails closed until owner-approved endpoints exist |
+| `CAT-44` | Make the frozen 8-domain/44-capability identity machine-verifiable without implying rollout | Done | machine-readable design catalog and architecture contract test | RED missing-manifest test observed; GREEN verifies revision 1.3.0, exactly eight domains, ordered unique `f01-f44`, no inferred runtime state |
+| `INTEGRATE-RC` | Integrate the three cards on one snapshot and create a new signed candidate | Attest (source verified; packaging next) | root only; plan/checkpoint/build/evidence integration | Current source passes Flutter 1774/1774, backend 92/92, Auth 3/3, rules 33/33, analyze and all local release/public gates; signed `1.0.0+16` packaging remains the next serialized step |
+| `DEVICE-RC` | Exercise the new exact artifact on available Vivo/emulators | Ready after signed package | evidence only | Install without destructive uninstall; identity, cold/warm, account safety, offline/import/practice/settings, portrait/attempted landscape, 200%, logs and screenshots tied to exact hash |
+| `FIGMA-R12` | Make the current whole-app handoff unambiguous | Not verified (Starter quota) | Figma Cloud only | R11 Cloud `81:2` remains the verified authority and its representative prototype paths pass browser smoke; draft R12 `112:1819` is explicitly incomplete and is not treated as evidence |
+| `EXTERNAL-ACCEPTANCE` | Close Play, additional physical devices, human UAT and controlled cloud rollout | External dependency | no repository writer | Exact AAB accepted by Play; Play signing SHA propagated; valid App Check traffic/enforcement/rollback; distinct low/high/Fold/tablet and human TalkBack/UAT evidence |
+| `RESEARCH-PRODUCTION` | Permit real participant collection only under explicit authority | Disabled | no production writer | Ethics/protocol/instrument, trusted issuer/time, consent/withdrawal/export/delete and explicit rollout authority; otherwise fail closed |
+
+### Integration policy
+
+- Flutter tests/builds, dependency resolution and generators run only under the
+  root writer and are serialized.
+- Parallel cards use disjoint files. Root reviews every diff and reruns the
+  focused checks before integration.
+- Any production-code change after the `1.0.0+15` source requires a new
+  versionCode. The existing `+15` artifacts remain historical evidence only.
+- Public pages must not expose the project-login email as a support address
+  without an explicitly configured channel.
+- A locally complete candidate is not permission to publish, enroll research
+  participants, or alter live App Check/Firestore state.

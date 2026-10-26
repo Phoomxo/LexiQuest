@@ -276,6 +276,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final journal = SharedPreferencesAccountDeletionJournal(
       await SharedPreferences.getInstance(),
+      nowUtc: () => now,
+      recoveryRetention: const Duration(days: 7),
     );
     final cloudReceipt = _cloudReceipt(now);
     await journal.saveCloudReceipt(cloudReceipt);

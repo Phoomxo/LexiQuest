@@ -7,8 +7,9 @@ reviewed store and owner-isolated deleter before enabling the endpoint.
 from __future__ import annotations
 
 import re
+from hmac import compare_digest
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 from uuid import uuid4
@@ -108,6 +109,28 @@ class AccountDeletionRequest(BaseModel):
         return self
 
 
+class AccountDeletionRecoveryRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    owner_id: str = Field(alias="ownerId")
+    firebase_uid: str = Field(alias="firebaseUid", min_length=1, max_length=128)
+    idempotency_key: str = Field(alias="idempotencyKey")
+
+    @field_validator("owner_id")
+    @classmethod
+    def _validate_owner_id(cls, value: str) -> str:
+        if not _OWNER_PATTERN.fullmatch(value):
+            raise ValueError("ownerId is invalid")
+        return value
+
+    @field_validator("idempotency_key")
+    @classmethod
+    def _validate_idempotency_key(cls, value: str) -> str:
+        if not _KEY_PATTERN.fullmatch(value):
+            raise ValueError("idempotencyKey is invalid")
+        return value
+
+
 class AccountDeletionResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -145,6 +168,9 @@ class AccountDeletionOperation:
     scopes: frozenset[str]
     requested_at_utc: datetime
     receipt: AccountDeletionReceipt | None = None
+    identity_deleted: bool = False
+    server_export_completed: bool = False
+    recovery_expires_at_utc: datetime | None = None
 
 
 class AccountDeletionConflict(Exception):
@@ -170,6 +196,25 @@ class AccountDeletionOperationStore(Protocol):
 
         ...
 
+    def get(self, firebase_uid: str) -> AccountDeletionOperation | None:
+        """Return the durable operation for recovery without an Auth user."""
+
+        ...
+
+    def mark_server_export_completed(
+        self, operation: AccountDeletionOperation
+    ) -> AccountDeletionOperation:
+        """Persist proof that the server-complete export authority succeeded."""
+
+        ...
+
+    def mark_identity_deleted(
+        self, operation: AccountDeletionOperation
+    ) -> AccountDeletionOperation:
+        """Durably record that deleting the Firebase identity finished."""
+
+        ...
+
 
 class OwnerIsolatedAccountDeleter(Protocol):
     def delete_owned_data(
@@ -184,20 +229,55 @@ class OwnerIsolatedAccountDeleter(Protocol):
 
         ...
 
+    def delete_auth_identity(
+        self, *, firebase_uid: str, operation_id: str
+    ) -> None:
+        """Delete the exact Firebase user; repeated deletion must succeed."""
+
+        ...
+
+
+class ServerCompleteAccountExportAuthority(Protocol):
+    def ensure_complete_export(
+        self,
+        *,
+        owner_id: str,
+        firebase_uid: str,
+        idempotency_key: str,
+        operation_id: str,
+        client_export_receipt: FullExportReceipt,
+    ) -> None:
+        """Create/verify a durable export including server-only account data.
+
+        Implementations must be idempotent for ``operation_id`` and raise
+        unless the complete export is durably available before returning.
+        """
+
+        ...
 
 class AccountDeletionService:
     recent_authentication_window = timedelta(minutes=5)
     server_clock_skew = timedelta(minutes=5)
+    maximum_recovery_retention = timedelta(days=30)
 
     def __init__(
         self,
         *,
         store: AccountDeletionOperationStore,
         deleter: OwnerIsolatedAccountDeleter,
+        server_export_authority: ServerCompleteAccountExportAuthority,
+        recovery_retention: timedelta,
         now_utc: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
+        if (
+            recovery_retention <= timedelta(0)
+            or recovery_retention > self.maximum_recovery_retention
+        ):
+            raise ValueError("account deletion recovery retention is invalid")
         self._store = store
         self._deleter = deleter
+        self._server_export_authority = server_export_authority
+        self._recovery_retention = recovery_retention
         self._now_utc = now_utc
 
     def delete(
@@ -225,29 +305,89 @@ class AccountDeletionService:
             idempotency_key=request.idempotency_key,
             scopes=ACCOUNT_DELETION_SCOPES,
             requested_at_utc=now,
+            recovery_expires_at_utc=now + self._recovery_retention,
         )
         operation = self._store.claim(candidate)
         if (
             operation.firebase_uid != user.uid
-            or operation.idempotency_key != request.idempotency_key
+            or not compare_digest(
+                operation.idempotency_key, request.idempotency_key
+            )
             or operation.owner_id != request.owner_id
             or operation.scopes != ACCOUNT_DELETION_SCOPES
         ):
             raise AccountDeletionConflict
-        if operation.receipt is not None:
-            return operation.receipt
+        if not operation.server_export_completed:
+            self._server_export_authority.ensure_complete_export(
+                owner_id=operation.owner_id,
+                firebase_uid=operation.firebase_uid,
+                idempotency_key=operation.idempotency_key,
+                operation_id=operation.operation_id,
+                client_export_receipt=request.export_receipt,
+            )
+            operation = self._store.mark_server_export_completed(operation)
+        return self._finish(operation)
 
-        self._deleter.delete_owned_data(
-            owner_id=operation.owner_id,
-            firebase_uid=operation.firebase_uid,
-            scopes=operation.scopes,
-            operation_id=operation.operation_id,
-        )
-        receipt = AccountDeletionReceipt(
-            receipt_id=operation.operation_id,
-            owner_id=operation.owner_id,
-            firebase_uid=operation.firebase_uid,
-            idempotency_key=operation.idempotency_key,
-            completed_at_utc=self._now_utc(),
-        )
-        return self._store.complete(operation, receipt)
+    def recover(
+        self,
+        *,
+        owner_id: str,
+        firebase_uid: str,
+        idempotency_key: str,
+    ) -> AccountDeletionReceipt:
+        if (
+            not _OWNER_PATTERN.fullmatch(owner_id)
+            or not firebase_uid
+            or len(firebase_uid) > 128
+            or not _KEY_PATTERN.fullmatch(idempotency_key)
+        ):
+            raise AccountDeletionConflict
+        operation = self._store.get(firebase_uid)
+        if (
+            operation is None
+            or operation.owner_id != owner_id
+            or operation.firebase_uid != firebase_uid
+            or not compare_digest(operation.idempotency_key, idempotency_key)
+            or operation.scopes != ACCOUNT_DELETION_SCOPES
+            or not operation.server_export_completed
+            or operation.receipt is None
+        ):
+            raise AccountDeletionConflict
+        return self._finish(operation)
+
+    def _finish(
+        self, operation: AccountDeletionOperation
+    ) -> AccountDeletionReceipt:
+        now = self._now_utc()
+        if (
+            not operation.server_export_completed
+            or operation.recovery_expires_at_utc is None
+            or operation.recovery_expires_at_utc.tzinfo is None
+            or operation.recovery_expires_at_utc.utcoffset() != timedelta(0)
+            or now > operation.recovery_expires_at_utc
+        ):
+            raise AccountDeletionConflict
+        receipt = operation.receipt
+        if receipt is None:
+            self._deleter.delete_owned_data(
+                owner_id=operation.owner_id,
+                firebase_uid=operation.firebase_uid,
+                scopes=operation.scopes,
+                operation_id=operation.operation_id,
+            )
+            receipt = AccountDeletionReceipt(
+                receipt_id=operation.operation_id,
+                owner_id=operation.owner_id,
+                firebase_uid=operation.firebase_uid,
+                idempotency_key=operation.idempotency_key,
+                completed_at_utc=self._now_utc(),
+            )
+            receipt = self._store.complete(operation, receipt)
+            operation = replace(operation, receipt=receipt)
+        if not operation.identity_deleted:
+            self._deleter.delete_auth_identity(
+                firebase_uid=operation.firebase_uid,
+                operation_id=operation.operation_id,
+            )
+            self._store.mark_identity_deleted(operation)
+        return receipt

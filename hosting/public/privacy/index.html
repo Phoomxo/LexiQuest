@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>ประกาศความเป็นส่วนตัว · LexiQuest</title>
+  <link rel="canonical" href="https://vocab-learning-app-219ef.web.app/privacy/">
+  <style>
+    body { margin: 0 auto; max-width: 48rem; padding: 2rem 1.25rem; font: 1rem/1.65 system-ui, sans-serif; }
+    a { overflow-wrap: anywhere; }
+    .card { border: 1px solid #7776; border-radius: .75rem; padding: 1rem; margin: 1rem 0; }
+    .status { border-left: .3rem solid #b3261e; padding-left: .75rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ประกาศความเป็นส่วนตัว</h1>
+    <p><strong>Privacy notice</strong></p>
+    <p>LexiQuest เป็นแอปฝึกภาษาอังกฤษแบบ local-first ข้อมูลการเรียนอยู่บนอุปกรณ์ก่อน และซิงก์ Cloud เฉพาะเมื่อผู้ใช้เปิดใช้บัญชีและบริการนั้น</p>
+    <section class="card">
+      <h2>ข้อมูลและวัตถุประสงค์</h2>
+      <ul>
+        <li>บัญชีและรหัสผู้ใช้ ใช้ยืนยันเจ้าของข้อมูลและซิงก์</li>
+        <li>คำศัพท์ คำตอบ คะแนน และความก้าวหน้า ใช้จัดบทเรียนและการทบทวน</li>
+        <li>กล้องและไมโครโฟนใช้เมื่อผู้ใช้กดเริ่มเท่านั้น ภาพและเสียงดิบไม่เป็นข้อมูลงานวิจัยโดยค่าเริ่มต้น บริการรู้จำเสียงของ Android อาจประมวลผลผ่านผู้ให้บริการของอุปกรณ์และเครือข่าย</li>
+        <li>Gemini เป็น BYOK และส่งข้อมูลเมื่อผู้ใช้ยืนยันคำขอเท่านั้น</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>การเก็บรักษาและสิทธิของผู้ใช้</h2>
+      <p id="retention-summary">รายละเอียดระยะเวลาเก็บข้อมูลจะโหลดจากการตั้งค่ารุ่นที่ผู้ดูแลอนุมัติ</p>
+      <p>ผู้ใช้ส่งออกข้อมูล ถอนความยินยอม และขอลบบัญชีได้ โดยการถอนความยินยอมงานวิจัยไม่ขัดขวางการเรียนทั่วไป</p>
+      <p><a href="/delete-account/">วิธีขอลบบัญชีและข้อมูล</a></p>
+    </section>
+    <p>ผู้ควบคุมข้อมูล: <span id="data-controller">รอการตั้งค่ารุ่นเผยแพร่</span></p>
+    <p id="configuration-status" class="status" role="status">กำลังตรวจสอบช่องทางติดต่อของรุ่นนี้</p>
+    <p><a id="private-support-link" data-config-field="privateSupportUrl" aria-disabled="true">ติดต่อผู้ดูแลแบบส่วนตัว</a></p>
+    <section lang="en" class="card">
+      <h2>Privacy notice</h2>
+      <h3>What we process</h3>
+      <p>LexiQuest stores vocabulary, answers, progress and review schedules locally first. Account identifiers and supported learning records are sent to Firebase only when the user enables an account and Cloud services. Camera, microphone, Cloud and Gemini features start only after an explicit user action. Android speech recognition is not forced on-device and may use the platform provider and network.</p>
+      <h3>Your choices and data rights</h3>
+      <p>You can continue learning offline, export personal learning data, withdraw optional research consent and request account deletion. Research collection and upload remain disabled unless a separately approved study supplies current consent and authority.</p>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const secure = (value, hosts) => { try { const url = new URL(value); let path = url.pathname; for (let i = 0; i < 2; i++) { const decoded = decodeURIComponent(path); if (decoded === path) break; path = decoded; } return url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash && !url.port && hosts.includes(url.hostname) && !/(token|secret|api[-_]?key|password)/i.test(path); } catch (_) { return false; } };
+      Promise.all([
+        fetch('/release-contact.json', { cache: 'no-store', credentials: 'same-origin' }),
+        fetch('/release-contact-policy.json', { cache: 'no-store', credentials: 'same-origin' })
+      ]).then(async responses => {
+        if (responses.some(response => !response.ok)) throw new Error('missing');
+        return Promise.all(responses.map(response => response.json()));
+      }).then(([config, policy]) => {
+          if (config.schemaVersion !== 1 || policy.schemaVersion !== 1 || !secure(config.privateSupportUrl, policy.privateSupportHosts || []) || !config.dataControllerName || /@/.test(config.dataControllerName) || !config.retentionSummary) throw new Error('invalid');
+          const link = document.getElementById('private-support-link');
+          link.href = config.privateSupportUrl;
+          link.removeAttribute('aria-disabled');
+          document.getElementById('data-controller').textContent = config.dataControllerName;
+          document.getElementById('retention-summary').textContent = config.retentionSummary;
+          document.getElementById('configuration-status').textContent = 'ช่องทางติดต่อของรุ่นนี้พร้อมใช้งาน';
+        })
+        .catch(() => { document.getElementById('configuration-status').textContent = 'รุ่นนี้ยังไม่มีช่องทางส่วนตัวที่ยืนยันแล้ว กรุณายังไม่ส่งข้อมูลส่วนบุคคล'; });
+    })();
+  </script>
+</body>
+</html>

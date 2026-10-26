@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../../identity/domain/owner_upgrade.dart';
 
 const Set<String> requiredFullAccountExportScopes = <String>{
@@ -6,6 +10,13 @@ const Set<String> requiredFullAccountExportScopes = <String>{
   'quest_objective_progress',
   'local_owners',
 };
+
+String durableAccountDeletionBinding(String idempotencyKey) {
+  if (idempotencyKey.startsWith('sha256:') && idempotencyKey.length == 71) {
+    return idempotencyKey;
+  }
+  return 'sha256:${sha256.convert(utf8.encode(idempotencyKey))}';
+}
 
 enum AccountDeletionFailureCode {
   disabled,
@@ -19,6 +30,7 @@ enum AccountDeletionFailureCode {
   invalidCloudReceipt,
   localDeleteFailed,
   invalidLocalReceipt,
+  recoveryExpired,
   unavailable,
 }
 
@@ -82,6 +94,20 @@ final class CloudDeletionReceipt {
   final String firebaseUid;
   final String idempotencyKey;
   final DateTime completedAtUtc;
+
+  CloudDeletionReceipt durableMarker() {
+    final binding = durableAccountDeletionBinding(idempotencyKey);
+    if (binding == idempotencyKey) {
+      return this;
+    }
+    return CloudDeletionReceipt(
+      receiptId: receiptId,
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      idempotencyKey: binding,
+      completedAtUtc: completedAtUtc,
+    );
+  }
 }
 
 final class LocalDeletionReceipt {
@@ -97,13 +123,27 @@ final class LocalDeletionReceipt {
 }
 
 final class AccountDeletionJournalEntry {
-  const AccountDeletionJournalEntry({
-    required this.cloudReceipt,
+  AccountDeletionJournalEntry({
+    String? ownerId,
+    String? firebaseUid,
+    String? idempotencyKey,
+    this.exportReceipt,
+    this.authenticationReceipt,
+    this.cloudReceipt,
     this.localReceipt,
-  });
+    this.recoveryExpiresAtUtc,
+  }) : ownerId = ownerId ?? cloudReceipt?.ownerId ?? '',
+       firebaseUid = firebaseUid ?? cloudReceipt?.firebaseUid ?? '',
+       idempotencyKey = idempotencyKey ?? cloudReceipt?.idempotencyKey ?? '';
 
-  final CloudDeletionReceipt cloudReceipt;
+  final String ownerId;
+  final String firebaseUid;
+  final String idempotencyKey;
+  final FullAccountExportReceipt? exportReceipt;
+  final RecentAuthenticationReceipt? authenticationReceipt;
+  final CloudDeletionReceipt? cloudReceipt;
   final LocalDeletionReceipt? localReceipt;
+  final DateTime? recoveryExpiresAtUtc;
 }
 
 final class AccountDeletionReceipt {
@@ -155,6 +195,14 @@ abstract interface class LocalAccountDeletionGateway {
 
 abstract interface class AccountDeletionJournal {
   Future<AccountDeletionJournalEntry?> load();
+
+  Future<void> savePendingOperation({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  });
 
   Future<void> saveCloudReceipt(CloudDeletionReceipt receipt);
 

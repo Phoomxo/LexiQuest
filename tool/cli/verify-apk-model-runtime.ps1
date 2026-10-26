@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 param(
     [string]$ApkPath = 'build/app/outputs/flutter-apk/app-debug.apk',
+    [string]$ArchivePath = '',
     [string]$LiteRtNextAarPath =
         'build/flutter_litert/tmp/downloadLitertJni/litert-2.1.5.aar',
     [ValidateSet('Auto', 'Debug', 'Release')]
@@ -11,11 +12,20 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$resolvedApk = if ([System.IO.Path]::IsPathRooted($ApkPath)) {
-    [System.IO.Path]::GetFullPath($ApkPath)
+$selectedArchivePath = if ([string]::IsNullOrWhiteSpace($ArchivePath)) {
+    $ApkPath
 } else {
-    [System.IO.Path]::GetFullPath((Join-Path $repoRoot $ApkPath))
+    $ArchivePath
 }
+$resolvedApk = if ([System.IO.Path]::IsPathRooted($selectedArchivePath)) {
+    [System.IO.Path]::GetFullPath($selectedArchivePath)
+} else {
+    [System.IO.Path]::GetFullPath((Join-Path $repoRoot $selectedArchivePath))
+}
+$archiveKind = if (
+    [System.IO.Path]::GetExtension($resolvedApk) -eq '.aab'
+) { 'AAB' } else { 'APK' }
+$entryPrefix = if ($archiveKind -eq 'AAB') { 'base/' } else { '' }
 $resolvedAar = if ([System.IO.Path]::IsPathRooted($LiteRtNextAarPath)) {
     [System.IO.Path]::GetFullPath($LiteRtNextAarPath)
 } else {
@@ -83,6 +93,13 @@ if ($resolvedBuildMode -eq 'Release') {
         '5236E8BAEFEB9705DB086DECA2EABD6F7901CCD30525A45B4D0A755F73E189DC'
     $expectedLibraries['lib/x86_64/libtflite_custom_ops.so'] =
         '50416556054A668ED145EA224275BEE107DC52291C61E636249C2AFAAA1C6090'
+}
+if ($archiveKind -eq 'AAB') {
+    $aabLibraries = [ordered]@{}
+    foreach ($entryName in $expectedLibraries.Keys) {
+        $aabLibraries[$entryPrefix + $entryName] = $expectedLibraries[$entryName]
+    }
+    $expectedLibraries = $aabLibraries
 }
 
 function Find-LlvmObjCopy {
@@ -189,7 +206,7 @@ try {
         $archive.Entries |
             Where-Object {
                 $_.FullName -match (
-                    '^lib/[^/]+/(libLiteRt.*|libtensorflowlite.*|' +
+                    '^(?:base/)?lib/[^/]+/(libLiteRt.*|libtensorflowlite.*|' +
                     'libtflite.*)\.so$'
                 )
             }
@@ -216,6 +233,8 @@ finally {
 }
 
 Write-Host (
-    'APK model runtime integrity ({0}): PASS' -f $resolvedBuildMode
+    'APK/AAB model runtime integrity ({0}, {1}): PASS' -f
+        $archiveKind,
+        $resolvedBuildMode
 ) -ForegroundColor Green
 exit 0

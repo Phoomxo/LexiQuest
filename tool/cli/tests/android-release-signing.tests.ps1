@@ -46,6 +46,9 @@ $appCheckPath = Join-Path $repoRoot `
 $appCheckEnforcementPath = Join-Path $repoRoot `
     'tool\cli\set-firebase-app-check-enforcement.cjs'
 $googleServicesPath = Join-Path $repoRoot 'android\app\google-services.json'
+$signingTrustPath = Join-Path $repoRoot `
+    'tool\cli\config\release-signing-trust.json'
+$packagerPath = Join-Path $repoRoot 'tool\cli\package-field-release.ps1'
 
 if (-not (Test-Path -LiteralPath $gradlePath)) {
     Write-Host ("FAIL: missing {0}" -f $gradlePath) -ForegroundColor Red
@@ -170,6 +173,30 @@ if (Test-Path -LiteralPath $appCheckEnforcementPath) {
     Assert-NoMatch $appCheckEnforcement `
         '(?i)(access_token|refresh_token|authorization)' `
         'App Check enforcement evidence never handles authentication tokens'
+}
+
+Assert-True (Test-Path -LiteralPath $signingTrustPath) `
+    'owner-approved release signing trust record exists'
+if (Test-Path -LiteralPath $signingTrustPath) {
+    $signingTrust = Get-Content -LiteralPath $signingTrustPath -Raw `
+        -Encoding utf8 | ConvertFrom-Json
+    Assert-Match ([string]$signingTrust.uploadCertificateSha256) `
+        '^[A-F0-9]{64}$' `
+        'owner-approved upload certificate is a SHA-256 digest'
+}
+Assert-True (Test-Path -LiteralPath $packagerPath) `
+    'release packager exists'
+if (Test-Path -LiteralPath $packagerPath) {
+    $packager = [System.IO.File]::ReadAllText($packagerPath)
+    foreach ($needle in @(
+        'release-signing-trust.json',
+        'owner-approved upload certificate',
+        'AreAccessRulesProtected',
+        'CodexSandboxUsers'
+    )) {
+        Assert-Match $packager ([regex]::Escape($needle)) `
+            "release packager enforces signing preflight: $needle"
+    }
 }
 if (
     (Test-Path -LiteralPath $googleServicesPath) -and

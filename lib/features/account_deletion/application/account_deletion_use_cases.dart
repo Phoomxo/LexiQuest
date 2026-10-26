@@ -82,9 +82,16 @@ final class AccountDeletionUseCases {
       ownerId: identity.owner.id,
       firebaseUid: identity.session.uid,
     );
-    late final CloudDeletionReceipt cloudReceipt;
+    await _savePendingOperation(
+      ownerId: identity.owner.id,
+      firebaseUid: identity.session.uid,
+      idempotencyKey: key,
+      exportReceipt: exportReceipt,
+      authenticationReceipt: authenticationReceipt,
+    );
+    late final CloudDeletionReceipt serverReceipt;
     try {
-      cloudReceipt = await cloud.deleteRecursively(
+      serverReceipt = await cloud.deleteRecursively(
         ownerId: identity.owner.id,
         firebaseUid: identity.session.uid,
         idempotencyKey: key,
@@ -100,11 +107,12 @@ final class AccountDeletionUseCases {
       );
     }
     _validateCloud(
-      cloudReceipt,
+      serverReceipt,
       ownerId: identity.owner.id,
       firebaseUid: identity.session.uid,
       idempotencyKey: key,
     );
+    final cloudReceipt = serverReceipt.durableMarker();
     await _saveCloudReceipt(cloudReceipt);
 
     await _requireOwner(
@@ -130,9 +138,7 @@ final class AccountDeletionUseCases {
   Future<LocalDeletionReceipt> resumeLocalDeletion(
     CloudDeletionReceipt cloudReceipt,
   ) async {
-    if (!enabled) {
-      throw const AccountDeletionException(AccountDeletionFailureCode.disabled);
-    }
+    cloudReceipt = cloudReceipt.durableMarker();
     _validateCloud(
       cloudReceipt,
       ownerId: cloudReceipt.ownerId,
@@ -156,7 +162,11 @@ final class AccountDeletionUseCases {
         cloudReceipt: cloudReceipt,
       );
       await _saveCloudReceipt(cloudReceipt);
-    } else if (!_sameCloudReceipt(entry.cloudReceipt, cloudReceipt)) {
+    } else if (entry.ownerId != cloudReceipt.ownerId ||
+        entry.firebaseUid != cloudReceipt.firebaseUid ||
+        entry.idempotencyKey != cloudReceipt.idempotencyKey ||
+        (entry.cloudReceipt != null &&
+            !_sameCloudReceipt(entry.cloudReceipt!, cloudReceipt))) {
       throw AccountDeletionException(
         AccountDeletionFailureCode.invalidCloudReceipt,
         cloudReceipt: entry.cloudReceipt,
@@ -164,6 +174,8 @@ final class AccountDeletionUseCases {
     } else if (entry.localReceipt case final completed?) {
       _validateLocal(completed, cloudReceipt.ownerId, cloudReceipt);
       return completed;
+    } else if (entry.cloudReceipt == null) {
+      await _saveCloudReceipt(cloudReceipt);
     }
     return _deleteLocalAndJournal(
       ownerId: cloudReceipt.ownerId,
@@ -172,9 +184,6 @@ final class AccountDeletionUseCases {
   }
 
   Future<LocalDeletionReceipt?> resumePendingDeletion() async {
-    if (!enabled) {
-      throw const AccountDeletionException(AccountDeletionFailureCode.disabled);
-    }
     late final AccountDeletionJournalEntry? entry;
     try {
       entry = await journal.load();
@@ -188,7 +197,50 @@ final class AccountDeletionUseCases {
     }
     if (entry == null) return null;
 
-    final cloudReceipt = entry.cloudReceipt;
+    var cloudReceipt = entry.cloudReceipt;
+    if (cloudReceipt == null) {
+      final exportReceipt = entry.exportReceipt;
+      final authenticationReceipt = entry.authenticationReceipt;
+      if (entry.ownerId.isEmpty ||
+          entry.firebaseUid.isEmpty ||
+          entry.idempotencyKey.isEmpty ||
+          exportReceipt == null ||
+          authenticationReceipt == null) {
+        throw const AccountDeletionException(
+          AccountDeletionFailureCode.unavailable,
+        );
+      }
+      _validateExport(exportReceipt, entry.ownerId);
+      _validatePersistedAuthentication(
+        authenticationReceipt,
+        entry.firebaseUid,
+      );
+      late final CloudDeletionReceipt serverReceipt;
+      try {
+        serverReceipt = await cloud.deleteRecursively(
+          ownerId: entry.ownerId,
+          firebaseUid: entry.firebaseUid,
+          idempotencyKey: entry.idempotencyKey,
+          exportReceipt: exportReceipt,
+          authenticationReceipt: authenticationReceipt,
+        );
+      } on AccountDeletionException {
+        rethrow;
+      } catch (error) {
+        throw AccountDeletionException(
+          AccountDeletionFailureCode.cloudDeleteFailed,
+          cause: error,
+        );
+      }
+      _validateCloud(
+        serverReceipt,
+        ownerId: entry.ownerId,
+        firebaseUid: entry.firebaseUid,
+        idempotencyKey: entry.idempotencyKey,
+      );
+      cloudReceipt = serverReceipt.durableMarker();
+      await _saveCloudReceipt(cloudReceipt);
+    }
     _validateCloud(
       cloudReceipt,
       ownerId: cloudReceipt.ownerId,
@@ -305,6 +357,19 @@ final class AccountDeletionUseCases {
     }
   }
 
+  void _validatePersistedAuthentication(
+    RecentAuthenticationReceipt receipt,
+    String firebaseUid,
+  ) {
+    if (receipt.firebaseUid != firebaseUid ||
+        !receipt.authenticatedAtUtc.isUtc ||
+        receipt.authenticatedAtUtc.isAfter(_now().add(serverClockSkew))) {
+      throw const AccountDeletionException(
+        AccountDeletionFailureCode.reauthenticationRequired,
+      );
+    }
+  }
+
   void _validateCloud(
     CloudDeletionReceipt receipt, {
     required String ownerId,
@@ -384,6 +449,31 @@ final class AccountDeletionUseCases {
         AccountDeletionFailureCode.localDeleteFailed,
         cause: error,
         cloudReceipt: receipt,
+      );
+    }
+  }
+
+  Future<void> _savePendingOperation({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  }) async {
+    try {
+      await journal.savePendingOperation(
+        ownerId: ownerId,
+        firebaseUid: firebaseUid,
+        idempotencyKey: idempotencyKey,
+        exportReceipt: exportReceipt,
+        authenticationReceipt: authenticationReceipt,
+      );
+    } on AccountDeletionException {
+      rethrow;
+    } catch (error) {
+      throw AccountDeletionException(
+        AccountDeletionFailureCode.unavailable,
+        cause: error,
       );
     }
   }

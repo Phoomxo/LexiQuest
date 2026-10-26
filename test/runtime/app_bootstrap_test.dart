@@ -14,6 +14,10 @@ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
+import 'package:vocab_learning_app/features/account_deletion/application/account_deletion_use_cases.dart';
+import 'package:vocab_learning_app/features/account_deletion/data/drift_local_account_deletion_gateway.dart';
+import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
@@ -44,6 +48,211 @@ AppDatabase _testDatabase() {
 }
 
 void main() {
+  test(
+    'composes account deletion only behind its explicit production flag',
+    () async {
+      var calls = 0;
+      final newRequestFlags = <bool>[];
+      Future<AccountDeletionComposition> compose({
+        required AppDatabase database,
+        required LocalOwnerRepository owners,
+        required AppConfig config,
+        required AccountDeletionSessionReader currentSession,
+        required Future<void> Function() signOut,
+        required bool newRequestsEnabled,
+      }) async {
+        calls++;
+        newRequestFlags.add(newRequestsEnabled);
+        return AccountDeletionComposition(
+          useCases: _deletionUseCases(owners, enabled: newRequestsEnabled),
+          dispose: () async {},
+        );
+      }
+
+      final disabled = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => _StartupGateway(
+          const AccountSession(
+            uid: 'firebase-user',
+            email: 'learner@example.test',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        ),
+        accountDeletionFactory: compose,
+      ).initialize();
+      addTearDown(disabled.dispose);
+      expect(disabled.accountDeletion?.enabled, isFalse);
+      expect(calls, 1);
+
+      final capabilityMissing = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => _StartupGateway(
+          const AccountSession(
+            uid: 'firebase-user',
+            email: 'learner@example.test',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        ),
+        accountDeletionEnabled: true,
+        accountDeletionFactory: compose,
+      ).initialize();
+      addTearDown(capabilityMissing.dispose);
+      expect(capabilityMissing.accountDeletion?.enabled, isFalse);
+      expect(calls, 2);
+
+      final enabled = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => _StartupGateway(
+          const AccountSession(
+            uid: 'firebase-user',
+            email: 'learner@example.test',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        ),
+        accountDeletionEnabled: true,
+        accountDeletionServerExportAuthorityConfigured: true,
+        accountDeletionRecoveryRetention: const Duration(days: 7),
+        accountDeletionFactory: compose,
+      ).initialize();
+      addTearDown(enabled.dispose);
+      expect(enabled.accountDeletion, isNotNull);
+      expect(enabled.accountDeletion?.enabled, isTrue);
+      expect(calls, 3);
+      expect(newRequestFlags, [false, false, true]);
+    },
+  );
+
+  test(
+    'recovers an Auth-deleted account before startup reconciliation',
+    () async {
+      final database = _testDatabase();
+      await database.customStatement(
+        "INSERT INTO local_owners (id, firebase_uid, created_at_utc_ms, is_active) VALUES ('owner-a', 'firebase-user', 1, 1)",
+      );
+      final events = <String>[];
+      final gateway = _StartupGateway(null)
+        ..onRead = () => events.add('reconcile');
+      final journal = _BootstrapDeletionJournal(_pendingDeletionEntry());
+      final cloud = _BootstrapDeletionCloud()
+        ..onCall = () => events.add('recover');
+
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => gateway,
+        accountDeletionFactory:
+            ({
+              required database,
+              required owners,
+              required config,
+              required currentSession,
+              required signOut,
+              required newRequestsEnabled,
+            }) async => _bootstrapDeletionComposition(
+              database: database,
+              owners: owners,
+              currentSession: currentSession,
+              signOut: signOut,
+              journal: journal,
+              cloud: cloud,
+              newRequestsEnabled: newRequestsEnabled,
+              onLocalPurge: () => events.add('local-purge'),
+            ),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(events.take(2), ['recover', 'local-purge']);
+      expect(
+        events.indexOf('reconcile'),
+        greaterThan(events.indexOf('local-purge')),
+      );
+      final active = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(active.firebaseUid, isNull);
+      expect(active.id, isNot('owner-a'));
+      expect(dependencies.accountDeletion?.enabled, isFalse);
+    },
+  );
+
+  test(
+    'failed startup recovery preserves the bound owner and remains retryable',
+    () async {
+      final database = _testDatabase();
+      await database.customStatement(
+        "INSERT INTO local_owners (id, firebase_uid, created_at_utc_ms, is_active) VALUES ('owner-a', 'firebase-user', 1, 1)",
+      );
+      final events = <String>[];
+      final gateway = _StartupGateway(null)
+        ..onRead = () => events.add('reconcile');
+      final journal = _BootstrapDeletionJournal(_pendingDeletionEntry());
+      final cloud = _BootstrapDeletionCloud()
+        ..failure = StateError('synthetic recovery outage')
+        ..onCall = () => events.add('recover');
+
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => gateway,
+        accountDeletionEnabled: true,
+        accountDeletionServerExportAuthorityConfigured: true,
+        accountDeletionRecoveryRetention: const Duration(days: 7),
+        accountDeletionFactory:
+            ({
+              required database,
+              required owners,
+              required config,
+              required currentSession,
+              required signOut,
+              required newRequestsEnabled,
+            }) async => _bootstrapDeletionComposition(
+              database: database,
+              owners: owners,
+              currentSession: currentSession,
+              signOut: signOut,
+              journal: journal,
+              cloud: cloud,
+              newRequestsEnabled: newRequestsEnabled,
+              onLocalPurge: () => events.add('local-purge'),
+            ),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      var active = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(active.id, 'owner-a');
+      expect(active.firebaseUid, 'firebase-user');
+      expect(events.first, 'recover');
+      expect(events, isNot(contains('local-purge')));
+      expect(dependencies.accountDeletion, isNotNull);
+
+      cloud.failure = null;
+      await dependencies.accountDeletion!.resumePendingDeletion();
+      active = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(active.firebaseUid, isNull);
+      expect(events.where((event) => event == 'recover'), hasLength(2));
+      expect(events.where((event) => event == 'local-purge'), hasLength(1));
+    },
+  );
+
   test(
     'two committed Drift owner transitions A B A cancel delayed validation without reactivating A',
     () async {
@@ -882,9 +1091,11 @@ final class _StartupGateway implements AccountGateway {
   _StartupGateway(this.session);
   AccountSession? session;
   Object? readFailure;
+  void Function()? onRead;
   int signOutCalls = 0;
   @override
   AccountSession? get currentSession {
+    onRead?.call();
     if (readFailure case final error?) throw error;
     return session;
   }
@@ -976,4 +1187,159 @@ final class _BootstrapSyncGateway implements SyncGateway {
   Future<PushResult> push(PushMutation mutation) {
     throw UnimplementedError();
   }
+}
+
+AccountDeletionUseCases _deletionUseCases(
+  LocalOwnerRepository owners, {
+  bool enabled = false,
+}) {
+  final unused = _UnusedDeletionDependency();
+  return AccountDeletionUseCases(
+    enabled: enabled,
+    owners: owners,
+    currentSession: () => null,
+    exporter: unused,
+    reauthenticator: unused,
+    cloud: unused,
+    local: unused,
+    journal: unused,
+    nowUtc: () => DateTime.now().toUtc(),
+  );
+}
+
+final class _UnusedDeletionDependency
+    implements
+        FullAccountExporter,
+        AccountDeletionReauthenticator,
+        PrivilegedAccountDeletionGateway,
+        LocalAccountDeletionGateway,
+        AccountDeletionJournal {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+AccountDeletionJournalEntry _pendingDeletionEntry() {
+  final now = DateTime.now().toUtc();
+  const key = 'delete:00000000-0000-4000-8000-000000000001';
+  return AccountDeletionJournalEntry(
+    ownerId: 'owner-a',
+    firebaseUid: 'firebase-user',
+    idempotencyKey: key,
+    exportReceipt: FullAccountExportReceipt(
+      ownerId: 'owner-a',
+      artifactId: 'complete-export.json',
+      artifactSha256: 'a' * 64,
+      bytesWritten: 128,
+      schemaVersion: 10,
+      coveredScopes: requiredFullAccountExportScopes,
+      completedAtUtc: now.subtract(const Duration(minutes: 10)),
+    ),
+    authenticationReceipt: RecentAuthenticationReceipt(
+      firebaseUid: 'firebase-user',
+      authenticatedAtUtc: now.subtract(const Duration(minutes: 10)),
+    ),
+  );
+}
+
+AccountDeletionComposition _bootstrapDeletionComposition({
+  required AppDatabase database,
+  required LocalOwnerRepository owners,
+  required AccountDeletionSessionReader currentSession,
+  required Future<void> Function() signOut,
+  required _BootstrapDeletionJournal journal,
+  required _BootstrapDeletionCloud cloud,
+  required bool newRequestsEnabled,
+  required void Function() onLocalPurge,
+}) {
+  final unused = _UnusedDeletionDependency();
+  return AccountDeletionComposition(
+    useCases: AccountDeletionUseCases(
+      enabled: newRequestsEnabled,
+      owners: owners,
+      currentSession: currentSession,
+      exporter: unused,
+      reauthenticator: unused,
+      cloud: cloud,
+      local: DriftLocalAccountDeletionGateway(
+        database,
+        nowUtc: () => DateTime.now().toUtc(),
+        purgeOwnerSecret: ({required ownerId, required firebaseUid}) async {
+          onLocalPurge();
+          await signOut();
+        },
+      ),
+      journal: journal,
+      nowUtc: () => DateTime.now().toUtc(),
+    ),
+    dispose: () async {},
+  );
+}
+
+final class _BootstrapDeletionCloud
+    implements PrivilegedAccountDeletionGateway {
+  Object? failure;
+  void Function()? onCall;
+
+  @override
+  Future<CloudDeletionReceipt> deleteRecursively({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  }) async {
+    onCall?.call();
+    if (failure case final error?) throw error;
+    return CloudDeletionReceipt(
+      receiptId: 'cloud-receipt-bootstrap',
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      idempotencyKey: idempotencyKey,
+      completedAtUtc: DateTime.now().toUtc(),
+    );
+  }
+}
+
+final class _BootstrapDeletionJournal implements AccountDeletionJournal {
+  _BootstrapDeletionJournal(this.entry);
+
+  AccountDeletionJournalEntry? entry;
+
+  @override
+  Future<AccountDeletionJournalEntry?> load() async => entry;
+
+  @override
+  Future<void> saveCloudReceipt(CloudDeletionReceipt receipt) async {
+    final durableReceipt = receipt.durableMarker();
+    entry = AccountDeletionJournalEntry(
+      ownerId: durableReceipt.ownerId,
+      firebaseUid: durableReceipt.firebaseUid,
+      idempotencyKey: durableReceipt.idempotencyKey,
+      cloudReceipt: durableReceipt,
+    );
+  }
+
+  @override
+  Future<void> saveLocalReceipt({
+    required CloudDeletionReceipt cloudReceipt,
+    required LocalDeletionReceipt localReceipt,
+  }) async {
+    final current = entry!;
+    entry = AccountDeletionJournalEntry(
+      ownerId: current.ownerId,
+      firebaseUid: current.firebaseUid,
+      idempotencyKey: current.idempotencyKey,
+      cloudReceipt: cloudReceipt,
+      localReceipt: localReceipt,
+    );
+  }
+
+  @override
+  Future<void> savePendingOperation({
+    required String ownerId,
+    required String firebaseUid,
+    required String idempotencyKey,
+    required FullAccountExportReceipt exportReceipt,
+    required RecentAuthenticationReceipt authenticationReceipt,
+  }) async => throw UnimplementedError();
 }

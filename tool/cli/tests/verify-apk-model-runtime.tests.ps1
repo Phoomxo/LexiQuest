@@ -26,7 +26,11 @@ $required = @(
     'llvm-objcopy',
     'Get-FileHash',
     'Unexpected model runtime libraries or ABIs',
-    'GPU accelerator libraries must not be packaged'
+    'GPU accelerator libraries must not be packaged',
+    '[string]$ArchivePath',
+    "'.aab'",
+    "'base/'",
+    'APK/AAB model runtime integrity'
 )
 foreach ($needle in $required) {
     if (-not $source.Contains($needle)) {

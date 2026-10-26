@@ -15,6 +15,9 @@ from datetime import timedelta
 from lexiquest_ai.app import create_app
 from lexiquest_ai.auth import FirebaseTokenVerifier
 from lexiquest_ai.config import Settings
+from lexiquest_ai.firebase_account_deletion import (
+    build_firebase_account_deletion_service,
+)
 from lexiquest_ai.services.cache import CachingContentGenerator, ContentCache
 from lexiquest_ai.services.llm_content_service import LlmContentService
 
@@ -48,11 +51,18 @@ content_service = _CachedService(
     delegate=CachingContentGenerator(inner=inner, cache=cache),
     version=settings.model_version,
 )
+account_deletion_service = build_firebase_account_deletion_service(
+    enabled=bool(settings.account_deletion_server_export_authority.strip()),
+    recovery_retention=timedelta(
+        seconds=settings.account_deletion_recovery_retention_seconds
+    ),
+)
 
 app = create_app(
     content_service=content_service,
     token_verifier=token_verifier,
     settings=settings,
+    account_deletion_service=account_deletion_service,
 )
 
 __all__ = ["app"]

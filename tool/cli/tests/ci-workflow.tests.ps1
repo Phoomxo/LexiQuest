@@ -124,6 +124,8 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text 'lexiquest_lm' 'job covers backend/lexiquest_lm CPU tests'
     Assert-ContainsString $Text 'runtime-probes.tests.ps1' 'job runs runtime probe tests'
     Assert-ContainsString $Text 'run-android.tests.ps1' 'job runs Android command tests'
+    Assert-ContainsString $Text 'public-release-pages.tests.ps1' 'job validates public release pages'
+    Assert-ContainsString $Text 'firebase-hosting-headers.test.cjs' 'job verifies Firebase Hosting headers with the emulator'
     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
     Assert-ContainsString $Text 'apk' 'Android build produces an APK'
     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
@@ -200,6 +202,7 @@ function Invoke-NpmFirebaseToolchainTests {
     Assert-RegexMatches $WorkflowText '(?m)^[ \t]*java-version[ \t]*:[ \t]*[''"]?21\b' 'setup-java selects Java 21 (firebase-tools 15.24.0 requires Java 21+)'
     Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
+    Assert-ContainsString $WorkflowText 'npm run test:auth' 'workflow executes Firebase Auth emulator tests'
 }
 
 function Invoke-SupabaseToolchainTests {

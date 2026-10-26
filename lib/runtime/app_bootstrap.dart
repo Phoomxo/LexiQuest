@@ -10,16 +10,25 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
+import '../data/local/shared_preferences_account_deletion_journal.dart';
 import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/data/google_sign_in_credential_source.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/account_deletion/application/account_deletion_use_cases.dart';
+import '../features/account_deletion/data/drift_account_snapshot.dart';
+import '../features/account_deletion/data/drift_local_account_deletion_gateway.dart';
+import '../features/account_deletion/data/firebase_account_deletion_reauthenticator.dart';
+import '../features/account_deletion/data/http_privileged_account_deletion_gateway.dart';
+import '../features/account_deletion/data/snapshot_full_account_exporter.dart';
+import '../features/account_deletion/domain/account_deletion_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
@@ -36,6 +45,7 @@ import '../features/gemini/data/gemini_rest_gateway.dart';
 import '../features/gemini/data/secure_gemini_settings_store.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
+import '../features/identity/domain/local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -77,6 +87,26 @@ typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
+typedef AccountDeletionSignOut = Future<void> Function();
+typedef AccountDeletionFactory =
+    Future<AccountDeletionComposition> Function({
+      required AppDatabase database,
+      required LocalOwnerRepository owners,
+      required AppConfig config,
+      required AccountDeletionSessionReader currentSession,
+      required AccountDeletionSignOut signOut,
+      required bool newRequestsEnabled,
+    });
+
+final class AccountDeletionComposition {
+  const AccountDeletionComposition({
+    required this.useCases,
+    required this.dispose,
+  });
+
+  final AccountDeletionUseCases useCases;
+  final Future<void> Function() dispose;
+}
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -99,6 +129,17 @@ const _productionGoogleSignInEnabled = bool.fromEnvironment(
   'LEXIQUEST_GOOGLE_SIGN_IN_ENABLED',
   defaultValue: true,
 );
+const _productionAccountDeletionEnabled = bool.fromEnvironment(
+  'LEXIQUEST_ACCOUNT_DELETION_ENABLED',
+);
+const _productionAccountDeletionServerExportAuthorityConfigured =
+    bool.fromEnvironment(
+      'LEXIQUEST_ACCOUNT_DELETION_SERVER_EXPORT_AUTHORITY_CONFIGURED',
+    );
+const _productionAccountDeletionRecoveryRetentionHours = int.fromEnvironment(
+  'LEXIQUEST_ACCOUNT_DELETION_RECOVERY_RETENTION_HOURS',
+);
+const _maximumAccountDeletionRecoveryRetention = Duration(days: 30);
 
 /// Selects the Android App Check provider based on the `debugMode` flag.
 ///
@@ -142,6 +183,69 @@ Future<void> _initializeSupabaseProduction() async {
   _productionSupabaseInitialized = true;
 }
 
+Future<AccountDeletionComposition> _createProductionAccountDeletion({
+  required AppDatabase database,
+  required LocalOwnerRepository owners,
+  required AppConfig config,
+  required AccountDeletionSessionReader currentSession,
+  required AccountDeletionSignOut signOut,
+  required bool newRequestsEnabled,
+}) async {
+  DateTime nowUtc() => DateTime.now().toUtc();
+  final client = http.Client();
+  final secureSettings = SecureGeminiSettingsStore.production();
+  final snapshotBuilder = DriftAccountSnapshotBuilder(database, nowUtc: nowUtc);
+  final journal = SharedPreferencesAccountDeletionJournal(
+    await SharedPreferences.getInstance(),
+    nowUtc: nowUtc,
+    recoveryRetention: Duration(
+      hours: _productionAccountDeletionRecoveryRetentionHours,
+    ),
+  );
+  final useCases = AccountDeletionUseCases(
+    enabled: newRequestsEnabled,
+    owners: owners,
+    currentSession: currentSession,
+    exporter: SnapshotFullAccountExporter(
+      owners: owners,
+      buildSnapshot: snapshotBuilder.build,
+      store: const FileSelectorExportStore(),
+      schemaVersion: database.schemaVersion,
+    ),
+    reauthenticator: FirebaseAccountDeletionReauthenticator.production(
+      FirebaseAuth.instance,
+    ),
+    cloud: HttpPrivilegedAccountDeletionGateway(
+      client: client,
+      baseUri: config.aiApiBaseUri,
+      idToken: () async {
+        final user = FirebaseAuth.instance.currentUser;
+        return user == null ? null : await user.getIdToken(true);
+      },
+    ),
+    local: DriftLocalAccountDeletionGateway(
+      database,
+      nowUtc: nowUtc,
+      purgeOwnerSecret: ({required ownerId, required firebaseUid}) async {
+        await secureSettings.delete(
+          GeminiScope(
+            ownerId: ownerId,
+            firebaseUid: firebaseUid,
+            isAnonymous: false,
+          ),
+        );
+        await signOut();
+      },
+    ),
+    journal: journal,
+    nowUtc: nowUtc,
+  );
+  return AccountDeletionComposition(
+    useCases: useCases,
+    dispose: () async => client.close(),
+  );
+}
+
 final class AppBootstrap {
   const AppBootstrap({
     required this.initializeFirebase,
@@ -152,6 +256,10 @@ final class AppBootstrap {
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
     this.accountGatewayFactory,
+    this.accountDeletionEnabled = false,
+    this.accountDeletionServerExportAuthorityConfigured = false,
+    this.accountDeletionRecoveryRetention = Duration.zero,
+    this.accountDeletionFactory,
     this.cloudSyncEnabled = true,
     this.readGeminiSession,
     this.watchGeminiSessions,
@@ -181,6 +289,13 @@ final class AppBootstrap {
             ? GoogleSignInCredentialSource.production()
             : null,
       ),
+      accountDeletionEnabled: _productionAccountDeletionEnabled,
+      accountDeletionServerExportAuthorityConfigured:
+          _productionAccountDeletionServerExportAuthorityConfigured,
+      accountDeletionRecoveryRetention: Duration(
+        hours: _productionAccountDeletionRecoveryRetentionHours,
+      ),
+      accountDeletionFactory: _createProductionAccountDeletion,
       cloudSyncEnabled: _productionCloudSyncEnabled,
       readGeminiSession: () =>
           _geminiAuthSession(FirebaseAuth.instance.currentUser),
@@ -198,6 +313,10 @@ final class AppBootstrap {
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
+  final bool accountDeletionEnabled;
+  final bool accountDeletionServerExportAuthorityConfigured;
+  final Duration accountDeletionRecoveryRetention;
+  final AccountDeletionFactory? accountDeletionFactory;
   final bool cloudSyncEnabled;
   final AccountSession? Function()? readGeminiSession;
   final Stream<AccountSession?> Function()? watchGeminiSessions;
@@ -225,21 +344,75 @@ final class AppBootstrap {
     var firebase = await _availability(initializeFirebase);
     final createAccountGateway = accountGatewayFactory;
     AccountUseCases? account;
+    AccountGateway? accountGateway;
     if (firebase == RuntimeAvailability.ready && createAccountGateway != null) {
       try {
-        final candidate = AccountUseCases(
-          gateway: createAccountGateway(),
+        accountGateway = createAccountGateway();
+        account = AccountUseCases(
+          gateway: accountGateway,
           owners: localOwners,
           upgradeGuestOwner: upgradeGuestOwner,
         );
-        await candidate.reconcileLocalOwner();
-        account = candidate;
       } catch (_) {
         firebase = RuntimeAvailability.unavailable;
       }
     }
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
+    AccountDeletionComposition? accountDeletionComposition;
+    var preserveOwnerForDeletionRecovery = false;
+    final composeAccountDeletion = accountDeletionFactory;
+    final deletionCapabilitiesReady =
+        accountDeletionEnabled &&
+        accountDeletionServerExportAuthorityConfigured &&
+        accountDeletionRecoveryRetention > Duration.zero &&
+        accountDeletionRecoveryRetention <=
+            _maximumAccountDeletionRecoveryRetention;
+    if (account != null && accountGateway != null) {
+      if (config == null || composeAccountDeletion == null) {
+        if (accountDeletionEnabled) {
+          preserveOwnerForDeletionRecovery = true;
+        }
+      } else {
+        try {
+          accountDeletionComposition = await composeAccountDeletion(
+            database: database,
+            owners: localOwners,
+            config: config,
+            currentSession: () => account?.currentSession,
+            signOut: accountGateway.signOut,
+            newRequestsEnabled: deletionCapabilitiesReady,
+          );
+          try {
+            await accountDeletionComposition.useCases.resumePendingDeletion();
+          } on AccountDeletionException {
+            // A durable deletion may have already removed Firebase Auth. Keep
+            // its bound local owner intact so the same operation can retry.
+            preserveOwnerForDeletionRecovery = true;
+          }
+        } on Object {
+          final failedComposition = accountDeletionComposition;
+          accountDeletionComposition = null;
+          try {
+            await failedComposition?.dispose();
+          } on Object {
+            // Recovery stays fail-closed even if best-effort cleanup fails.
+          }
+          preserveOwnerForDeletionRecovery = true;
+        }
+      }
+    }
+    if (account != null && !preserveOwnerForDeletionRecovery) {
+      try {
+        await account.reconcileLocalOwner();
+      } catch (_) {
+        firebase = RuntimeAvailability.unavailable;
+        account = null;
+        accountGateway = null;
+        await accountDeletionComposition?.dispose();
+        accountDeletionComposition = null;
+      }
+    }
     final syncStore = DriftSyncStore(database);
     SyncEngine? syncEngine;
     SyncTrigger? syncTrigger;
@@ -486,12 +659,14 @@ final class AppBootstrap {
       sourcePracticeFilePicker: FileSelectorSourcePracticeFilePicker().pick,
       deviceModels: deviceModels,
       account: account,
+      accountDeletion: accountDeletionComposition?.useCases,
       researchConsent: researchConsent,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       devicePermissions: const PluginDevicePermissionAccess(),
       speechPractice: speechPractice,
       disposeResources: () async {
+        await accountDeletionComposition?.dispose();
         await geminiAuthSubscription?.cancel();
         await geminiOwnerUpdatesSubscription.cancel();
         await geminiOwnerSubscription.cancel();

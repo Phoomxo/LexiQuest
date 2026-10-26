@@ -1,51 +1,156 @@
 {
-  "schemaVersion": 1,
-  "releaseId": "<OWNER_CONFIG_REQUIRED>",
+  "schemaVersion": 3,
+  "releaseProfile": "fieldTrial",
+  "releaseId": "<FROM_VERSION_AND_BUILD_ID>",
   "artifact": {
-    "apkPath": "build/field-release/lexiquest-1.0.0+1.apk",
+    "apkPath": "lexiquest-1.0.0+27.apk",
     "apkSha256": "<FROM_RELEASE_MANIFEST>",
-    "aabPath": "build/field-release/lexiquest-1.0.0+1.aab",
+    "aabPath": "lexiquest-1.0.0+27.aab",
     "aabSha256": "<FROM_RELEASE_MANIFEST>",
-    "signingCertificateSha256": "<FROM_RELEASE_MANIFEST>",
+    "signingCertificateSha256": "<MEASURED_APKSIGNER_SHA256>",
     "packageName": "com.lexiquest.app",
     "versionName": "1.0.0",
-    "versionCode": 1,
-    "buildId": "<FROM_RELEASE_MANIFEST>",
-    "modelSha256": "D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B"
+    "versionCode": 27,
+    "buildId": "<FULL_SOURCE_COMMIT>",
+    "modelSha256": "<FROM_COMMITTED_MODEL_MANIFEST>"
   },
-  "cloudControls": {
-    "appCheckConfigured": false,
-    "appCheckValidTrafficObserved": false,
-    "appCheckEnforced": false,
-    "budgetAlertsConfigured": false,
-    "budgetAlertsNotApplicable": false,
-    "billingMode": "budgeted",
-    "assetLinksVerified": false,
-    "cloudKillSwitchVerified": false,
-    "appCheckEvidenceRef": "",
-    "budgetAlertsEvidenceRef": "",
-    "assetLinksEvidenceRef": "",
-    "cloudKillSwitchEvidenceRef": ""
+  "records": {
+    "controls": {
+      "path": "records/release-controls.json",
+      "sha256": "<MEASURED_FILE_SHA256>"
+    },
+    "ownerApproval": {
+      "path": "records/owner-approval.json",
+      "sha256": "<MEASURED_FILE_SHA256>"
+    }
   },
-  "participantPackage": {
-    "installGuide": "docs/install-and-update.md",
-    "privacyNotice": "docs/privacy-and-consent-v1.md",
-    "dataRightsGuide": "docs/data-export-and-deletion.md",
-    "knownLimitations": "docs/known-limitations.md",
-    "feedbackGuide": "docs/feedback-and-support.md",
-    "researchProtocol": "docs/research-protocol-v1.md",
-    "consentVersion": 1,
-    "feedbackChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
-    "supportChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
-    "researchProtocolRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>"
-  },
-  "devices": [],
-  "ownerApproval": {
-    "approved": false,
-    "apkSha256": "<FROM_RELEASE_MANIFEST>",
-    "aabSha256": "<FROM_RELEASE_MANIFEST>",
-    "approvedAtUtc": "",
-    "approverRole": "owner",
-    "evidenceRef": ""
+  "devices": [
+    {
+      "path": "devices/low-phone.device.json",
+      "sha256": "<MEASURED_FILE_SHA256>"
+    },
+    {
+      "path": "devices/mid-tablet.device.json",
+      "sha256": "<MEASURED_FILE_SHA256>"
+    },
+    {
+      "path": "devices/high-fold.device.json",
+      "sha256": "<MEASURED_FILE_SHA256>"
+    }
+  ],
+  "recordTemplates": {
+    "releaseControls": {
+      "recordType": "lexiquestReleaseControls",
+      "releaseProfile": "fieldTrial",
+      "artifact": {
+        "apkSha256": "<EXACT_APK_SHA256>",
+        "aabSha256": "<EXACT_AAB_SHA256>",
+        "signingCertificateSha256": "<MEASURED_APKSIGNER_SHA256>",
+        "packageName": "com.lexiquest.app",
+        "versionName": "1.0.0",
+        "versionCode": 27,
+        "buildId": "<FULL_SOURCE_COMMIT>",
+        "modelSha256": "<FROM_COMMITTED_MODEL_MANIFEST>"
+      },
+      "cloudControls": {
+        "appCheckConfigured": false,
+        "appCheckValidTrafficObserved": false,
+        "appCheckEnforced": false,
+        "billingMode": "noBillingAccount",
+        "budgetAlertsConfigured": false,
+        "budgetAlertsNotApplicable": true,
+        "assetLinksVerified": false,
+        "cloudKillSwitchVerified": false,
+        "appCheckEvidenceRef": {"path": "records/app-check.json", "sha256": "<SHA256>"},
+        "budgetAlertsEvidenceRef": {"path": "records/budget.json", "sha256": "<SHA256>"},
+        "assetLinksEvidenceRef": {"path": "records/asset-links.json", "sha256": "<SHA256>"},
+        "cloudKillSwitchEvidenceRef": {"path": "records/kill-switch.json", "sha256": "<SHA256>"}
+      },
+      "participantPackage": {
+        "installGuide": {"path": "docs/install-and-update.md", "sha256": "<SHA256>"},
+        "privacyNotice": {"path": "docs/privacy-and-consent-v1.md", "sha256": "<SHA256>"},
+        "dataRightsGuide": {"path": "docs/data-export-and-deletion.md", "sha256": "<SHA256>"},
+        "knownLimitations": {"path": "docs/known-limitations.md", "sha256": "<SHA256>"},
+        "feedbackGuide": {"path": "docs/feedback-and-support.md", "sha256": "<SHA256>"},
+        "researchProtocol": {"path": "docs/research-protocol-v1.md", "sha256": "<SHA256>"},
+        "consentVersion": 1,
+        "feedbackChannelRef": {"path": "records/feedback-channel.json", "sha256": "<SHA256>"},
+        "supportChannelRef": {"path": "records/support-channel.json", "sha256": "<SHA256>"},
+        "researchProtocolRef": {"path": "records/research-protocol.json", "sha256": "<SHA256>"}
+      },
+      "releaseControls": {
+        "playAabAccepted": false,
+        "playAabSha256": "<EXACT_AAB_SHA256>",
+        "playPackageName": "com.lexiquest.app",
+        "playVersionName": "1.0.0",
+        "playVersionCode": 27,
+        "playAppSigningCertificateSha256": "<MEASURED_PLAY_CERT_SHA256>",
+        "playAcceptanceEvidenceRef": {"path": "records/play-acceptance.json", "sha256": "<SHA256>"},
+        "privacyPolicyPublished": false,
+        "privacyPolicyRef": "https://example.invalid/privacy",
+        "privacyPolicyEvidenceRef": {"path": "records/privacy-policy.json", "sha256": "<SHA256>"},
+        "accountDeletionVerified": false,
+        "accountDeletionEvidenceRef": {"path": "records/account-deletion.json", "sha256": "<SHA256>"},
+        "dataSafetyApproved": false,
+        "dataSafetyEvidenceRef": {"path": "records/data-safety.json", "sha256": "<SHA256>"},
+        "rollbackDrillVerified": false,
+        "rollbackEvidenceRef": {"path": "records/rollback.json", "sha256": "<SHA256>"}
+      },
+      "researchControls": {
+        "ethicsApproved": false,
+        "protocolApproved": false,
+        "trustedIssuerConfigured": false,
+        "researchRolloutApproved": false,
+        "ethicsEvidenceRef": {"path": "records/ethics.json", "sha256": "<SHA256>"},
+        "protocolEvidenceRef": {"path": "records/protocol.json", "sha256": "<SHA256>"},
+        "trustedIssuerEvidenceRef": {"path": "records/trusted-issuer.json", "sha256": "<SHA256>"},
+        "rolloutEvidenceRef": {"path": "records/research-rollout.json", "sha256": "<SHA256>"}
+      }
+    },
+    "ownerApproval": {
+      "recordType": "lexiquestOwnerApproval",
+      "approved": false,
+      "apkSha256": "<EXACT_APK_SHA256>",
+      "aabSha256": "<EXACT_AAB_SHA256>",
+      "approvedAtUtc": "",
+      "approverRole": "owner",
+      "evidenceRef": {"path": "records/owner-approval-proof.json", "sha256": "<SHA256>"}
+    },
+    "deviceRecordTemplate": {
+      "recordType": "lexiquestPhysicalDeviceEvidence",
+      "tier": "low|mid|high",
+      "formFactor": "phone|foldable|tablet",
+      "device": {
+        "physical": true,
+        "emulatorDetected": false,
+        "sdk": 33,
+        "ramMb": 6144,
+        "smallestWidthDp": 411,
+        "hasHingeSensor": false,
+        "foldFeatureObserved": false,
+        "unsupportedFormFactorFeature": false,
+        "featureSetSha256": "<MEASURED_SHA256>",
+        "windowStateSha256": "<MEASURED_SHA256>"
+      },
+      "installation": {
+        "source": "directAdb|play",
+        "installedBaseApkSha256": "<MEASURED_SHA256>",
+        "installedSigningCertificateSha256": "<MEASURED_SHA256>",
+        "installerPackageName": "<MEASURED_INSTALLER>"
+      },
+      "acceptance": {
+        "portrait": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "landscape": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "textScale100": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "textScale200": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "manualTalkBack": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "humanUat": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+        "foldPostures": {
+          "cover": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+          "book": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}},
+          "tabletop": {"status": "pending", "evidenceRef": {"path": "", "sha256": ""}}
+        }
+      }
+    }
   }
 }

@@ -38,14 +38,20 @@ identity. Do not commit the keystore or `key.properties`.
 ### S1.1. Build and package the signed release APK
 
 ```powershell
+$version = '1.0.0+27'
+$releasePackage = "build/field-release/lexiquest-$version"
+$releaseManifest = "$releasePackage/release-manifest.json"
+$evidenceRoot = "field/evidence/lexiquest-$version"
+
 powershell -NoProfile -ExecutionPolicy Bypass `
-  -File tool/cli/package-field-release.ps1 -Version 1.0.0+1
+  -File tool/cli/package-field-release.ps1 `
+  -Version $version -ReleaseProfile fieldTrial
 ```
 
 Outputs (under `build/field-release/`):
 
-- `lexiquest-1.0.0+1.apk` — the signed APK
-- `release-manifest.json` — contains `signingCertificateSha256` (64 hex chars),
+- `$releasePackage/lexiquest-$version.apk` — the signed APK
+- `$releaseManifest` — contains `signingCertificateSha256` (64 hex chars),
   `apkSha256`, `buildId`, and `sourceCommit`
 
 The script refuses to run if Android-relevant sources are dirty or if
@@ -54,11 +60,11 @@ The script refuses to run if Android-relevant sources are dirty or if
 
 ### S1.2. Register the certificate SHA-256 with Firebase
 
-```bash
-node tool/cli/configure-firebase-release-sha.cjs
+```powershell
+node tool/cli/configure-firebase-release-sha.cjs $releaseManifest
 ```
 
-This reads `signingCertificateSha256` from `release-manifest.json`, checks
+This reads `signingCertificateSha256` from the explicit versioned manifest, checks
 Firebase for an existing match, and registers the SHA-256 fingerprint if it is
 not already present. Requires a global `firebase-tools` login
 (`firebase login`) with access to project `vocab-learning-app-219ef`.
@@ -175,10 +181,11 @@ These cannot be automated and require the project owner:
    refuse to pass until `ownerApproval.approved` is true and the hash matches.
 2. **Gemini BYOK API key.** Create a Gemini API key and exercise the AI Tutor
    end-to-end (see the P6 gate).
-3. **Private channel refs.** Supply `feedbackChannelRef`,
-   `supportChannelRef`, and `researchProtocolRef` as `-FeedbackChannelRef`,
-   `-SupportChannelRef`, `-ResearchProtocolRef` to
-   `tool/cli/new-field-release-evidence.ps1` (see `docs/field/README.md`).
+3. **Private channel refs.** Save the real channel/protocol records below
+   `$evidenceRoot`, hash-reference them from `records/release-controls.json`,
+   then pass that control record to `tool/cli/new-field-release-evidence.ps1`
+   as documented in `docs/field/README.md`. Do not put private refs on the
+   command line.
 4. **Physical device tiers.** Procure and test on a low-tier device
    (≤ 4 GB RAM, Android 11–12) and a high-tier device (≥ 8 GB RAM,
    Android 14+). GPU allowlisting also needs a qualifying device.
@@ -189,7 +196,9 @@ These cannot be automated and require the project owner:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `
-  -File tool/cli/verify-field-release.ps1
+  -File tool/cli/verify-field-release.ps1 `
+  -ParticipantPackagePath $releasePackage `
+  -EvidenceRootPath $evidenceRoot
 ```
 
 This must remain failing until every required item above is genuine. Any
