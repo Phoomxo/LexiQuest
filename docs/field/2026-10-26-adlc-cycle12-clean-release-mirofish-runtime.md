@@ -1,7 +1,9 @@
 # ADLC cycle 12 — clean signed release and MiroFish runtime evidence
 
-Date: 2026-10-26 (Asia/Bangkok)  
-Branch: `codex/cycle12-release`  
+Date: 2026-10-26 (Asia/Bangkok)
+
+Branch: `codex/cycle12-release`
+
 Disposition: local engineering evidence complete for this continuation; production rollout remains gated
 
 ## Outcome
@@ -55,7 +57,8 @@ UAT, or authority to enroll/upload real research participants.
 
 ## Clean signed candidate
 
-Version: `1.0.0+14`  
+Version: `1.0.0+14`
+
 Artifact source commit: `bf9e8879ee990ee28ff641656019531e80852f78`
 
 | Artifact | SHA-256 | Verification |
