@@ -69,8 +69,11 @@ $resolvedEvidence = Get-LexiQuestContainedPath `
 $resolvedPackage = Resolve-RepositoryPath $ParticipantPackagePath
 if (-not (Test-Path -LiteralPath $resolvedEvidence -PathType Leaf)) {
     throw (
-        'Field evidence is missing: {0}. Collect physical low/mid/high, Fold, ' +
-        'tablet, TalkBack, and UAT evidence; never replace it with simulation.' -f
+        (
+            'Field evidence is missing: {0}. Collect physical low/mid/high, ' +
+            'Fold, tablet, TalkBack, and UAT evidence; never replace it with ' +
+            'simulation.'
+        ) -f
         $resolvedEvidence
     )
 }

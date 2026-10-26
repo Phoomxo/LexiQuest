@@ -1216,6 +1216,12 @@ finally {
 $gateText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/verify-field-release.ps1'
 ) -Raw -Encoding utf8
+Assert-True (
+    $gateText -match (
+        '(?s)throw\s*\(\s*\(\s*''Field evidence is missing: \{0\}\.' +
+        '.*?\)\s*-f\s*\$resolvedEvidence\s*\)'
+    )
+) 'missing-evidence diagnostics format the resolved path instead of literal {0}'
 foreach ($needle in @(
     'apksigner',
     'jarsigner',
