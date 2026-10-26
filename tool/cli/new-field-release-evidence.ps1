@@ -108,6 +108,7 @@ $evidence = [ordered]@{
     ownerApproval = [ordered]@{
         approved = [bool]$OwnerApproved
         apkSha256 = $manifest.artifact.apkSha256
+        aabSha256 = $manifest.artifact.aabSha256
         approvedAtUtc = $approvedAt
         approverRole = 'owner'
         evidenceRef = $OwnerApprovalEvidenceRef

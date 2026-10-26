@@ -116,6 +116,7 @@ try {
         releaseId = 'release-1'
         artifact = [pscustomobject]@{
             apkSha256 = 'A' * 64
+            aabSha256 = 'D' * 64
             signingCertificateSha256 = 'B' * 64
             modelSha256 = 'C' * 64
             packageName = 'com.lexiquest.app'
@@ -153,6 +154,7 @@ try {
         ownerApproval = [pscustomobject]@{
             approved = $true
             apkSha256 = 'A' * 64
+            aabSha256 = 'D' * 64
             approvedAtUtc = '2026-07-30T00:00:00Z'
             approverRole = 'owner'
             evidenceRef = 'private:owner-smoke'
@@ -178,6 +180,14 @@ try {
                 -ParticipantPackagePath $tempRoot
         )
     }
+
+    $evidence.ownerApproval.aabSha256 = 'E' * 64
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match
+            'owner approval must reference the release AAB SHA-256'
+    ) 'owner approval is bound to the exact release AAB'
+    $evidence.ownerApproval.aabSha256 = 'D' * 64
 
     $evidence.devices = @(New-RequiredDevices)
     $evidence.devices += (New-Device 'mid' '4')
@@ -356,8 +366,11 @@ $gateText = Get-Content -LiteralPath (
 ) -Raw -Encoding utf8
 foreach ($needle in @(
     'apksigner',
+    'jarsigner',
+    'keytool',
     'V\d+',
     'Get-FileHash',
+    'aabSha256',
     'verify-product-completion.ps1',
     'verify-apk-model-runtime.ps1',
     'Test-LexiQuestFieldReleaseEvidence'
@@ -393,6 +406,12 @@ Assert-True (
 Assert-True (
     $collectorText -notmatch "(?m)status\s*=\s*'pass'.*(camera|speech|gemini)"
 ) 'collector never fabricates camera, speech, or Gemini passes'
+Assert-True (
+    ([regex]::Matches(
+        $collectorText,
+        'CultureInfo\]::InvariantCulture'
+    )).Count -ge 2
+) 'collector writes machine-readable evidence timestamps with invariant UTC years'
 
 $packagerText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/package-field-release.ps1'
@@ -400,14 +419,21 @@ $packagerText = Get-Content -LiteralPath (
 foreach ($needle in @(
     'android/key.properties',
     'flutter build apk --release',
+    'flutter build appbundle --release',
+    'app-release.aab',
     'apksigner',
+    'jarsigner',
+    'keytool',
+    'aabPath',
+    'aabSha256',
     'signingCertificateSha256',
     'Get-FileHash',
     'git status --porcelain',
     'docs/field',
     'tool/cli/package-field-release.ps1',
     'tool/cli/lib/field-release-evidence.ps1',
-    'tool/cli/new-field-release-evidence.ps1'
+    'tool/cli/new-field-release-evidence.ps1',
+    'tool/cli/collect-android-field-evidence.ps1'
 )) {
     Assert-True $packagerText.Contains($needle) "packager contains $needle"
 }
@@ -427,10 +453,18 @@ foreach ($needle in @(
     'AssetLinksVerified',
     'CloudKillSwitchVerified',
     'OwnerApproved',
+    'aabSha256',
     'DeviceEvidenceDirectory'
 )) {
     Assert-True $assemblerText.Contains($needle) "assembler contains $needle"
 }
+
+$templateText = Get-Content -LiteralPath (
+    Join-Path $repoRoot 'docs/field/release-evidence-template.json'
+) -Raw -Encoding utf8
+Assert-True (
+    ([regex]::Matches($templateText, '"aabSha256"')).Count -ge 2
+) 'release evidence template binds artifact and owner approval to the AAB'
 
 $budgetText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/configure-firebase-budget.cjs'

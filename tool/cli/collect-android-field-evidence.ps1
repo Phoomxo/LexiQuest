@@ -180,10 +180,16 @@ if ($null -eq $priorVersionCode) {
 
 $recordedAt = [DateTime]::UtcNow
 $record = [ordered]@{
-    evidenceId = "$Tier-$($recordedAt.ToString('yyyyMMddTHHmmssZ'))"
+    evidenceId = "$Tier-$($recordedAt.ToString(
+        'yyyyMMddTHHmmssZ',
+        [System.Globalization.CultureInfo]::InvariantCulture
+    ))"
     tier = $Tier
     pseudonymousDeviceId = $pseudonymousId
-    recordedAtUtc = $recordedAt.ToString('o')
+    recordedAtUtc = $recordedAt.ToString(
+        'o',
+        [System.Globalization.CultureInfo]::InvariantCulture
+    )
     device = [ordered]@{
         physical = $true
         model = Invoke-AdbValue @('-s', $serial, 'shell', 'getprop',

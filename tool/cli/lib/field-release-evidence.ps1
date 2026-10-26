@@ -58,11 +58,15 @@ function Test-LexiQuestFieldReleaseEvidence {
     }
 
     $artifactApk = ConvertTo-NormalizedSha256 $Evidence.artifact.apkSha256
+    $artifactAab = ConvertTo-NormalizedSha256 $Evidence.artifact.aabSha256
     $artifactCertificate =
         ConvertTo-NormalizedSha256 $Evidence.artifact.signingCertificateSha256
     $artifactModel = ConvertTo-NormalizedSha256 $Evidence.artifact.modelSha256
     if ($artifactApk -notmatch $shaPattern -or $artifactApk -ne $actualApk) {
         $errors.Add('artifact APK SHA-256 does not match the verified APK.')
+    }
+    if ($artifactAab -notmatch $shaPattern) {
+        $errors.Add('artifact aabSha256 must be a 64-character SHA-256.')
     }
     if (
         $artifactCertificate -notmatch $shaPattern -or
@@ -339,6 +343,12 @@ function Test-LexiQuestFieldReleaseEvidence {
         $artifactApk
     ) {
         $errors.Add('owner approval must reference the release APK SHA-256.')
+    }
+    if (
+        (ConvertTo-NormalizedSha256 $approval.aabSha256) -ne
+        $artifactAab
+    ) {
+        $errors.Add('owner approval must reference the release AAB SHA-256.')
     }
     foreach ($field in @('approvedAtUtc', 'approverRole', 'evidenceRef')) {
         if ([string]::IsNullOrWhiteSpace([string]$approval.$field)) {

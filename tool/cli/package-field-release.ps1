@@ -55,6 +55,7 @@ try {
             android assets lib docs/field pubspec.yaml pubspec.lock `
             firebase.json firestore.rules firestore.indexes.json `
             tool/cli/package-field-release.ps1 `
+            tool/cli/collect-android-field-evidence.ps1 `
             tool/cli/lib/field-release-evidence.ps1 `
             tool/cli/new-field-release-evidence.ps1 `
             tool/cli/verify-apk-model-runtime.ps1 `
@@ -78,9 +79,20 @@ try {
     if ([int]$LASTEXITCODE -ne 0) {
         throw 'Flutter release APK build failed.'
     }
+    & flutter build appbundle --release --no-pub `
+        "--build-name=$($Version.Split('+')[0])" `
+        "--build-number=$($Version.Split('+')[1])" `
+        --dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true `
+        "--dart-define=LEXIQUEST_VERSION=$Version" `
+        "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
+    if ([int]$LASTEXITCODE -ne 0) {
+        throw 'Flutter release AAB build failed.'
+    }
 
     $sourceApk = Join-Path $repoRoot `
         'build/app/outputs/flutter-apk/app-release.apk'
+    $sourceAab = Join-Path $repoRoot `
+        'build/app/outputs/bundle/release/app-release.aab'
     $resolvedOutput = if ([System.IO.Path]::IsPathRooted($OutputPath)) {
         [System.IO.Path]::GetFullPath($OutputPath)
     } else {
@@ -88,7 +100,9 @@ try {
     }
     New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
     $releaseApk = Join-Path $resolvedOutput "lexiquest-$Version.apk"
+    $releaseAab = Join-Path $resolvedOutput "lexiquest-$Version.aab"
     Copy-Item -LiteralPath $sourceApk -Destination $releaseApk -Force
+    Copy-Item -LiteralPath $sourceAab -Destination $releaseAab -Force
 
     $apkSigner = Find-ApkSigner
     $signatureOutput = & $apkSigner verify --verbose --print-certs `
@@ -106,7 +120,39 @@ try {
     }
     $certificateSha256 =
         $certificateMatch.Groups[1].Value.Replace(':', '').ToUpperInvariant()
+    $jarSigner = Get-Command jarsigner -ErrorAction SilentlyContinue
+    if ($null -eq $jarSigner) {
+        throw 'jarsigner is required before packaging a field release.'
+    }
+    $aabSignatureOutput = & $jarSigner.Source -verify $releaseAab 2>&1
+    if (
+        [int]$LASTEXITCODE -ne 0 -or
+        ($aabSignatureOutput -join "`n") -notmatch '(?im)^jar verified\.$'
+    ) {
+        throw "jarsigner rejected the packaged AAB: $aabSignatureOutput"
+    }
+    $keyTool = Get-Command keytool -ErrorAction SilentlyContinue
+    if ($null -eq $keyTool) {
+        throw 'keytool is required before packaging a field release.'
+    }
+    $aabCertificateOutput = & $keyTool.Source -printcert -jarfile `
+        $releaseAab 2>&1
+    $aabCertificateMatch = [regex]::Match(
+        ($aabCertificateOutput -join "`n"),
+        '(?im)^\s*SHA256:\s*([A-Fa-f0-9:]{95})\s*$'
+    )
+    if (-not $aabCertificateMatch.Success) {
+        throw 'Unable to read the AAB signing certificate SHA-256.'
+    }
+    $aabCertificateSha256 = $aabCertificateMatch.Groups[1].Value.Replace(
+        ':',
+        ''
+    ).ToUpperInvariant()
+    if ($aabCertificateSha256 -ne $certificateSha256) {
+        throw 'APK and AAB signing certificates do not match.'
+    }
     $apkSha256 = (Get-FileHash -LiteralPath $releaseApk -Algorithm SHA256).Hash
+    $aabSha256 = (Get-FileHash -LiteralPath $releaseAab -Algorithm SHA256).Hash
 
     $docsOutput = Join-Path $resolvedOutput 'docs'
     New-Item -ItemType Directory -Path $docsOutput -Force | Out-Null
@@ -119,6 +165,8 @@ try {
         artifact = [ordered]@{
             apkPath = $releaseApk
             apkSha256 = $apkSha256
+            aabPath = $releaseAab
+            aabSha256 = $aabSha256
             signingCertificateSha256 = $certificateSha256
             packageName = 'com.lexiquest.app'
             versionName = $Version.Split('+')[0]

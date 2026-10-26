@@ -68,6 +68,7 @@ $releaseManifest =
         ConvertFrom-Json
 foreach ($field in @(
     'apkSha256',
+    'aabSha256',
     'signingCertificateSha256',
     'packageName',
     'versionName',
@@ -85,8 +86,27 @@ $apkPath = Resolve-RepositoryPath ([string]$evidence.artifact.apkPath)
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
     throw "Release APK is missing: $apkPath"
 }
+$aabPath = Resolve-RepositoryPath ([string]$evidence.artifact.aabPath)
+if (-not (Test-Path -LiteralPath $aabPath -PathType Leaf)) {
+    throw "Release AAB is missing: $aabPath"
+}
 
 $actualApkSha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash
+$actualAabSha256 = (Get-FileHash -LiteralPath $aabPath -Algorithm SHA256).Hash
+if ($actualAabSha256 -ne [string]$evidence.artifact.aabSha256) {
+    throw 'Release AAB SHA-256 does not match field evidence.'
+}
+$jarSigner = Get-Command jarsigner -ErrorAction SilentlyContinue
+if ($null -eq $jarSigner) {
+    throw 'jarsigner is required to verify the release AAB.'
+}
+$aabSignatureOutput = & $jarSigner.Source -verify $aabPath 2>&1
+if (
+    [int]$LASTEXITCODE -ne 0 -or
+    ($aabSignatureOutput -join "`n") -notmatch '(?im)^jar verified\.$'
+) {
+    throw "jarsigner rejected the release AAB: $aabSignatureOutput"
+}
 $apkSigner = Find-ApkSigner
 $signatureOutput = & $apkSigner verify --verbose --print-certs $apkPath 2>&1
 if ([int]$LASTEXITCODE -ne 0) {
@@ -101,6 +121,29 @@ if (-not $certificateMatch.Success) {
     throw 'apksigner did not report a SHA-256 signing certificate digest.'
 }
 $actualCertificateSha256 = $certificateMatch.Groups[1].Value
+$keyTool = Get-Command keytool -ErrorAction SilentlyContinue
+if ($null -eq $keyTool) {
+    throw 'keytool is required to verify the release AAB certificate.'
+}
+$aabCertificateOutput = & $keyTool.Source -printcert -jarfile $aabPath 2>&1
+$aabCertificateMatch = [regex]::Match(
+    ($aabCertificateOutput -join "`n"),
+    '(?im)^\s*SHA256:\s*([A-Fa-f0-9:]{95})\s*$'
+)
+if (-not $aabCertificateMatch.Success) {
+    throw 'Unable to read the AAB signing certificate SHA-256.'
+}
+$aabCertificateSha256 = $aabCertificateMatch.Groups[1].Value.Replace(
+    ':',
+    ''
+).ToUpperInvariant()
+$normalizedApkCertificateSha256 = $actualCertificateSha256.Replace(
+    ':',
+    ''
+).ToUpperInvariant()
+if ($aabCertificateSha256 -ne $normalizedApkCertificateSha256) {
+    throw 'APK and AAB signing certificates do not match.'
+}
 
 $evidenceErrors = Test-LexiQuestFieldReleaseEvidence `
     -Evidence $evidence `

@@ -4,6 +4,8 @@
   "artifact": {
     "apkPath": "build/field-release/lexiquest-1.0.0+1.apk",
     "apkSha256": "<FROM_RELEASE_MANIFEST>",
+    "aabPath": "build/field-release/lexiquest-1.0.0+1.aab",
+    "aabSha256": "<FROM_RELEASE_MANIFEST>",
     "signingCertificateSha256": "<FROM_RELEASE_MANIFEST>",
     "packageName": "com.lexiquest.app",
     "versionName": "1.0.0",
@@ -41,6 +43,7 @@
   "ownerApproval": {
     "approved": false,
     "apkSha256": "<FROM_RELEASE_MANIFEST>",
+    "aabSha256": "<FROM_RELEASE_MANIFEST>",
     "approvedAtUtc": "",
     "approverRole": "owner",
     "evidenceRef": ""
