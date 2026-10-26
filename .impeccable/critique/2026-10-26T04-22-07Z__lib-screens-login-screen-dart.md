@@ -10,6 +10,7 @@ target_fingerprint: "sha256:ab609dde0fc4eba40ba2337a24cb2194036abc8eeaa0810e2524
 target_path: "C:\\Users\\Phet\\.codex\\worktrees\\cycle12-release\\LexiQuest\\lib\\screens\\login_screen.dart"
 timestamp: 2026-10-26T04-22-07Z
 slug: lib-screens-login-screen-dart
+closed: true
 ---
 # Login screen critique — Vivo signed release +14
 

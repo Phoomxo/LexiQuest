@@ -28,10 +28,11 @@ UAT, or authority to enroll/upload real research participants.
 
 - Consolidated cycle-12 baseline: `7f2ed7b6` (`adlc-cycle12-engineering-20261026`).
 - Synthetic MiroFish boundary: `574fcbfb`.
-- Artifact source and AAB-bound release gate: `bf9e8879`.
+- AAB-bound release gate baseline: `bf9e8879`.
 - Subsequent collector-only recovery commits: `e6c8929d`, `530d14bd`, and
-  `393e651a`; these do not alter the Flutter application bytes represented by
-  the signed artifacts below.
+  `393e651a`.
+- Final Login recovery/identity polish and current artifact source:
+  `3cd91c8c5f25c6ee578a7226a88b2e6ce62f3dff`.
 
 ## MiroFish runtime evidence
 
@@ -57,14 +58,14 @@ UAT, or authority to enroll/upload real research participants.
 
 ## Clean signed candidate
 
-Version: `1.0.0+14`
+Version: `1.0.0+15`
 
-Artifact source commit: `bf9e8879ee990ee28ff641656019531e80852f78`
+Artifact source commit: `3cd91c8c5f25c6ee578a7226a88b2e6ce62f3dff`
 
 | Artifact | SHA-256 | Verification |
 | --- | --- | --- |
-| `build/field-release/lexiquest-1.0.0+14.apk` | `10EE87F19F8086CAEFC6F63FBD04CE9BD40616763A69944BD67FCC85BF986FB7` | `apksigner` accepted; release model runtime passed |
-| `build/field-release/lexiquest-1.0.0+14.aab` | `6F7EBE90FA0854A528C85D0F80B6B930B52EF3786B160DD23B1C65D70C5D19E1` | `jarsigner` returned `jar verified.` |
+| `build/field-release/lexiquest-1.0.0+15.apk` | `88022344F49CCB243D95EBD4E54723FC6893F365017AA833A1C8DE722B482984` | 112,353,496 bytes; `apksigner` accepted; release model runtime passed |
+| `build/field-release/lexiquest-1.0.0+15.aab` | `8377C7E24F3DB54B304B7389A06F9CF18C51AD77D9B20C894402E1F6C93D75F5` | 100,142,913 bytes; `jarsigner` returned `jar verified.` |
 
 APK and AAB certificate SHA-256:
 `E1B00E17896BFB73FE0DC42429768B966465213D49A8A5165DE06688CC8FDC1F`.
@@ -84,6 +85,11 @@ Focused verification on the final tooling snapshot:
 
 - field-release contract: **87/87 pass**;
 - Android release-signing contract: **56/56 pass**;
+- Login/account/accessibility regression: **51/51 pass**;
+- product-completion suite: **731/731 pass**;
+- Firebase Auth emulator: **3/3 pass**;
+- Firestore rules emulator: **33/33 pass**;
+- full analyzer, debug APK, and debug/release model-runtime gates: pass;
 - PowerShell parser and JSON template parse: pass;
 - independent review: Ready, Critical 0, Important 0.
 
@@ -95,38 +101,44 @@ hash remains external evidence.
 
 Device: Vivo V2041, Android 13/API 33, 1080×2408, density 440.
 
-- Upgraded in place from versionCode 13 to 14 with `adb install
-  --no-streaming -r`; `firstInstallTime` remained
+- Upgraded in place from versionCode 14 to 15; `firstInstallTime` remained
   `2026-10-26 08:57:19` and `lastUpdateTime` became
-  `2026-10-26 11:18:15`.
-- Installed package certificate matches the release certificate above.
+  `2026-10-26 12:07:32`.
+- The installed `base.apk` SHA-256 is
+  `88022344F49CCB243D95EBD4E54723FC6893F365017AA833A1C8DE722B482984`,
+  exactly matching the locally signed APK. The in-place package-manager
+  upgrade also retained the release-signature lineage.
 - Cold launch: `MainActivity` top-resumed.
 - Home/background/warm resume: the same `MainActivity` returned top-resumed.
 - Post-launch log scan found zero matches for fatal Android/Flutter exceptions,
   RenderFlex overflow, database lock, app ANR, SIGABRT, or SIGSEGV.
 - Screenshot:
-  `build/field-release/vivo-cycle12-v14-cold.png`.
+  `build/field-release/vivo-cycle12-v15-cold.png`.
+- Log:
+  `build/field-release/vivo-cycle12-v15.log`.
 
-The Vivo transport dropped its final ADB acknowledgement after install even
-though package state had advanced. Two bounded collection attempts were used;
-the operation was not retried again. The collector was repaired and reviewed
-to accept this OEM case only when the transport returns, the installed
-version equals the target, and version/last-update package state changed. A
-fresh structured `+14` device-ledger JSON remains uncollected; the direct ADB
-evidence above is retained in this checkpoint without manufacturing pending
-journey results.
+The Vivo transport dropped large-file ADB sync acknowledgements and a raw
+binary stream later showed no measurable progress at the ten-minute watchdog.
+That task-owned process was stopped without changing the installed `+14` app.
+The bounded alternative split the APK into 27 four-MiB-or-smaller chunks,
+transferred each once, reassembled them on-device, and required the full
+SHA-256 match before `pm install -r`. The direct ADB evidence above is retained
+without manufacturing pending journey results. The generated chunk files are
+not source or release artifacts; automated cleanup was denied by the execution
+policy after exact target validation, so their cleanup remains housekeeping.
 
 ## `/critique` — signed Vivo Login
 
-- Target: `lib/screens/login_screen.dart` rendered from the signed `+14` APK.
+- Target: `lib/screens/login_screen.dart` rendered from the signed `+15` APK.
 - Method: native design review only; web detector/overlay not applicable.
-- Score: **37/40 — Excellent**, P0=0, P1=0.
-- Strengths: one clear primary CTA, plain Thai copy, multiple account/guest
-  paths, 48dp controls, autofill, keyboard submit, and tested 200% text.
-- Non-blocking P3 polish: stronger LexiQuest-specific identity and persistent
-  provider-recovery guidance.
+- Score: **40/40 — Excellent**, P0=0, P1=0.
+- The previous generic identity and transient-recovery findings are closed:
+  the screen now uses an LQ route mark, persistent inline provider feedback,
+  live-region semantics, recovery-state clearing, responsive 16/20dp gutters,
+  48dp controls, autofill, keyboard submit, and tested 200% text.
+- Trend: **37/40 -> 40/40**.
 - Snapshot:
-  `.impeccable/critique/2026-10-26T04-22-07Z__lib-screens-login-screen-dart.md`.
+  `.impeccable/critique/2026-10-26T05-09-55Z__lib-screens-login-screen-dart.md`.
 
 ## Remaining external release gates
 
@@ -140,5 +152,9 @@ journey results.
   authority. Real enrollment and upload remain fail-closed/default-off.
 
 The final field-release gate is expected to remain closed until those external
-records exist. Local engineering completion and production authorization are
+records exist. It was executed against the `+15` package and exited 1 at the
+first missing-field-evidence check, before any rollout action. Its message
+currently renders the path placeholder as literal `{0}`; that cosmetic defect
+does not weaken the fail-closed result and was not used to force another
+artifact build. Local engineering completion and production authorization are
 separate states.
