@@ -87,7 +87,7 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '⚔️ ต่อสู้บอสคำศัพท์ประจำวัน',
+          'ด่านท้าทายคำศัพท์ประจำวัน',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.red.shade900,
@@ -120,7 +120,7 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
                           ),
                         ),
                         Text(
-                          'HP: $_bossHp / ${widget.initialBossHp}',
+                          'พลัง: $_bossHp / ${widget.initialBossHp}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -153,7 +153,7 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'ได้รับ +$_earnedXp XP และ +$_earnedCoins เหรียญ!',
+                'ได้รับ +$_earnedXp คะแนนประสบการณ์ และ +$_earnedCoins เหรียญ!',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

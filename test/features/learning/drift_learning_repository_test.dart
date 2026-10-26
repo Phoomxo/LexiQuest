@@ -62,6 +62,57 @@ void main() {
     expect(words.first.meaning, 'สถานี');
   });
 
+  test('target filters exclude deleted words and other owners', () async {
+    await database
+        .into(database.localOwners)
+        .insert(LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1));
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-2',
+            ownerId: 'owner-2',
+            name: 'Other',
+            normalizedName: 'other',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'other-word',
+            ownerId: 'owner-2',
+            categoryId: 'category-2',
+            spelling: 'synthetic',
+            normalizedSpelling: 'synthetic',
+            meaning: 'อื่น',
+            normalizedMeaning: 'อื่น',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database.customStatement(
+      "UPDATE vocabulary_words SET is_deleted = 1 WHERE id = 'word-2'",
+    );
+    final words = await repository.listQuizWords(
+      ownerId: 'owner-1',
+      limit: 10,
+      wordIds: ['word-1', 'word-2', 'other-word'],
+    );
+    expect(words.map((word) => word.id), ['word-1']);
+    expect(
+      await repository.listQuizWords(
+        ownerId: 'owner-1',
+        limit: 10,
+        wordIds: [],
+      ),
+      isEmpty,
+    );
+  });
+
   test('answer transaction is idempotent and updates SRS and points', () async {
     const session = LearningSessionDraft(
       id: 'session-1',
@@ -383,5 +434,36 @@ void main() {
       database.outboxOperations,
     )..where((row) => row.entityType.equals('readingEvent'))).get();
     expect(readingOutbox, hasLength(3));
+  });
+
+  test('reading progress rejects an owner that is no longer active', () async {
+    await database.customUpdate(
+      "UPDATE local_owners SET is_active = 0 WHERE id = 'owner-1'",
+      updates: {database.localOwners},
+    );
+    await database
+        .into(database.localOwners)
+        .insert(LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 2));
+
+    await expectLater(
+      repository.saveReadingProgress(
+        ReadingProgressCommand(
+          eventId: 'reading-stale-owner',
+          ownerId: 'owner-1',
+          documentId: 'doc-1',
+          documentRevision: 1,
+          position: 2,
+          isCompleted: false,
+          occurredAtUtc: DateTime.utc(2026, 10, 21),
+        ),
+      ),
+      throwsStateError,
+    );
+    expect(await database.select(database.readingEvents).get(), isEmpty);
+    expect(
+      await database.select(database.readingProgressEntries).get(),
+      isEmpty,
+    );
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
 }

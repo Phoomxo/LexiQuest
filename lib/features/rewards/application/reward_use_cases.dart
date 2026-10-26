@@ -5,7 +5,26 @@ import '../domain/reward_models.dart';
 typedef RewardIdGenerator = String Function();
 typedef RewardUtcNow = DateTime Function();
 
-final class RewardUseCases {
+abstract interface class RewardShopOperations {
+  Future<RewardSession> loadSession();
+
+  Stream<RewardAppearance> watchAppearance();
+
+  Future<PurchaseResult> purchase({
+    required String expectedOwnerId,
+    required String itemId,
+    required int catalogVersion,
+    required String idempotencyKey,
+  });
+
+  Future<EquipResult> equip({
+    required String expectedOwnerId,
+    required String itemId,
+    required String idempotencyKey,
+  });
+}
+
+final class RewardUseCases implements RewardShopOperations {
   const RewardUseCases({
     required this.owners,
     required this.repository,
@@ -21,11 +40,26 @@ final class RewardUseCases {
   final void Function()? onLocalMutation;
 
   Future<RewardAccount> load() async {
-    final owner = await owners.getOrCreateActiveOwner();
-    return repository.load(owner.id);
+    return (await loadSession()).account;
   }
 
+  @override
+  Future<RewardSession> loadSession() async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final session = RewardSession(
+      ownerId: owner.id,
+      account: await repository.load(owner.id),
+    );
+    await _requireActiveOwner(owner.id);
+    return session;
+  }
+
+  @override
+  Stream<RewardAppearance> watchAppearance() => repository.watchAppearance();
+
+  @override
   Future<PurchaseResult> purchase({
+    required String expectedOwnerId,
     required String itemId,
     required int catalogVersion,
     required String idempotencyKey,
@@ -42,32 +76,56 @@ final class RewardUseCases {
     if (key.isEmpty || key.length > 256) {
       throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
     }
-    final owner = await owners.getOrCreateActiveOwner();
+    final ownerId = await _requireActiveOwner(expectedOwnerId);
     final result = await repository.purchase(
-      ownerId: owner.id,
+      ownerId: ownerId,
       item: item,
       idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
     );
     if (result.status == PurchaseStatus.purchased) onLocalMutation?.call();
+    await _requireActiveOwner(ownerId);
     return result;
   }
 
-  Future<RewardAccount> equip(String itemId) async {
+  @override
+  Future<EquipResult> equip({
+    required String expectedOwnerId,
+    required String itemId,
+    required String idempotencyKey,
+  }) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {
       throw const RewardException(RewardFailureCode.unknownItem);
     }
-    final owner = await owners.getOrCreateActiveOwner();
+    final key = idempotencyKey.trim();
+    if (key.isEmpty || key.length > 256) {
+      throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+    }
+    final ownerId = await _requireActiveOwner(expectedOwnerId);
     final result = await repository.equip(
-      ownerId: owner.id,
+      ownerId: ownerId,
       item: item,
+      idempotencyKey: key,
       transactionId: 'reward:${_nextId()}',
       occurredAtUtc: _now(),
     );
-    onLocalMutation?.call();
+    if (result.status == EquipStatus.equipped) onLocalMutation?.call();
+    await _requireActiveOwner(ownerId);
     return result;
+  }
+
+  Future<String> _requireActiveOwner(String expectedOwnerId) async {
+    final expected = expectedOwnerId.trim();
+    if (expected.isEmpty) {
+      throw const RewardException(RewardFailureCode.ownerChanged);
+    }
+    final active = await owners.getOrCreateActiveOwner();
+    if (active.id != expected) {
+      throw const RewardException(RewardFailureCode.ownerChanged);
+    }
+    return active.id;
   }
 
   String _nextId() {

@@ -8,6 +8,7 @@ import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/reward_models.dart';
+import '../application/sync_status.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_result.dart';
@@ -24,7 +25,7 @@ final class ClaimedSyncOperation {
   final PushMutation mutation;
 }
 
-final class DriftSyncStore {
+final class DriftSyncStore implements SyncStatusSource {
   DriftSyncStore(this.database)
     : projections = DriftLearningProjectionRebuilder(database),
       rewardProjections = DriftRewardProjectionRebuilder(database);
@@ -36,6 +37,61 @@ final class DriftSyncStore {
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
+
+  @override
+  Stream<SyncStatusSnapshot?> watchCurrentOwnerSyncStatus() async* {
+    final query = database.customSelect(
+      '''
+      SELECT
+        owner.id AS owner_id,
+        COALESCE(SUM(CASE WHEN outbox.state = 'pending' THEN 1 ELSE 0 END), 0)
+          AS pending_count,
+        COALESCE(SUM(CASE WHEN outbox.state = 'retryWaiting' THEN 1 ELSE 0 END), 0)
+          AS retry_waiting_count,
+        COALESCE(SUM(CASE WHEN outbox.state = 'inFlight' THEN 1 ELSE 0 END), 0)
+          AS in_flight_count,
+        COALESCE(SUM(CASE WHEN outbox.state = 'blockedAuth' THEN 1 ELSE 0 END), 0)
+          AS blocked_auth_count,
+        COALESCE(SUM(CASE WHEN outbox.state = 'permanentFailure' THEN 1 ELSE 0 END), 0)
+          AS permanent_failure_count,
+        (SELECT COUNT(*) FROM sync_conflicts AS conflict
+          WHERE conflict.owner_id = owner.id)
+          AS handled_conflict_count
+      FROM local_owners AS owner
+      LEFT JOIN outbox_operations AS outbox ON outbox.owner_id = owner.id
+      WHERE owner.is_active = 1
+      GROUP BY owner.id
+      ''',
+      readsFrom: {
+        database.localOwners,
+        database.outboxOperations,
+        database.syncConflicts,
+      },
+    );
+
+    String? previousOwnerId;
+    var first = true;
+    await for (final rows in query.watch()) {
+      final snapshot = rows.length == 1
+          ? SyncStatusSnapshot(
+              ownerId: rows.single.read<String>('owner_id'),
+              pending: rows.single.read<int>('pending_count'),
+              retryWaiting: rows.single.read<int>('retry_waiting_count'),
+              inFlight: rows.single.read<int>('in_flight_count'),
+              blockedAuth: rows.single.read<int>('blocked_auth_count'),
+              permanentFailure: rows.single.read<int>(
+                'permanent_failure_count',
+              ),
+              handledConflicts: rows.single.read<int>('handled_conflict_count'),
+            )
+          : null;
+      final ownerId = snapshot?.ownerId;
+      if (first || ownerId != previousOwnerId) yield null;
+      first = false;
+      previousOwnerId = ownerId;
+      if (snapshot != null) yield snapshot;
+    }
+  }
 
   Future<bool> tryAcquireRunLease({
     required String ownerId,
@@ -219,15 +275,31 @@ final class DriftSyncStore {
                 ),
               );
 
+          late final PushMutation mutation;
+          try {
+            mutation = await _reconstructMutation(
+              selected,
+              firebaseUid: canonicalUid,
+              baseRevision: baseRevision,
+            );
+          } on InvalidSyncPayloadFailure {
+            await (database.update(
+              database.outboxOperations,
+            )..where((r) => r.operationId.equals(selected.operationId))).write(
+              const db.OutboxOperationsCompanion(
+                state: Value('permanentFailure'),
+                failureCode: Value('invalidPayload'),
+                leaseToken: Value(null),
+                leaseExpiresAtUtcMs: Value(null),
+              ),
+            );
+            continue;
+          }
           claimed.add(
             ClaimedSyncOperation(
               leaseToken: canonicalLeaseToken,
               attemptCount: selected.attemptCount + 1,
-              mutation: await _reconstructMutation(
-                selected,
-                firebaseUid: canonicalUid,
-                baseRevision: baseRevision,
-              ),
+              mutation: mutation,
             ),
           );
         }
@@ -679,6 +751,10 @@ final class DriftSyncStore {
         if (transaction == null) {
           throw StateError('outbox reward transaction was not found');
         }
+        if (transaction.transactionType != 'purchase' &&
+            transaction.transactionType != 'equip') {
+          throw const InvalidSyncPayloadFailure();
+        }
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
@@ -994,7 +1070,7 @@ final class DriftSyncStore {
         sessionId: existing.sessionId,
       );
       await projections.rebuildAchievements(ownerId);
-      await rewardProjections.rebuild(ownerId);
+      await _rebuildOptionalRewards(ownerId);
       return;
     }
     final payload = entity.payload;
@@ -1066,7 +1142,15 @@ final class DriftSyncStore {
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
     await projections.rebuildAchievements(ownerId);
-    await rewardProjections.rebuild(ownerId);
+    await _rebuildOptionalRewards(ownerId);
+  }
+
+  Future<void> _rebuildOptionalRewards(String ownerId) async {
+    try {
+      await rewardProjections.rebuild(ownerId);
+    } catch (_) {
+      // The reward savepoint rolls back without blocking immutable learning sync.
+    }
   }
 
   Future<void> _applyReadingEvent(String ownerId, SyncEntity entity) async {
@@ -1132,6 +1216,18 @@ final class DriftSyncStore {
     SyncEntity entity,
   ) async {
     _requireImmutableEntity(entity, SyncCollection.rewardTransactions);
+    final remoteType = entity.payload['transactionType'];
+    if (remoteType != 'purchase' && remoteType != 'equip') {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: const {'reason': 'unsupportedRewardType'},
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+        conflictId:
+            'quarantine:reward:$ownerId:${entity.entityId}:${entity.revision}',
+      );
+      return;
+    }
     final existing =
         await (database.select(database.rewardTransactions)..where(
               (row) =>
@@ -1381,14 +1477,16 @@ final class DriftSyncStore {
     required SyncEntity entity,
     required Map<String, Object?> localPayload,
     required DateTime resolvedAtUtc,
+    String? conflictId,
   }) async {
     await database
         .into(database.syncConflicts)
         .insert(
           db.SyncConflictsCompanion.insert(
             id:
+                conflictId ??
                 'conflict:immutable:${entity.collection.wireName}:'
-                '${entity.entityId}:${entity.revision}',
+                    '${entity.entityId}:${entity.revision}',
             ownerId: ownerId,
             entityType: entity.collection.entityType,
             entityId: entity.entityId,

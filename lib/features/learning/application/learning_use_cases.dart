@@ -66,7 +66,27 @@ final class LearningUseCases {
   /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
   final StreakEventSink? streakEventSink;
 
-  Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
+  Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
+      _startVocabularySession(categoryId, limit, 'quiz');
+
+  Future<QuizSession> startReading({int limit = 2}) =>
+      _startVocabularySession(null, limit, 'associativeReading');
+
+  Future<List<QuizWord>> prepareReading({int limit = 2}) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    return repository.listQuizWords(ownerId: owner.id, limit: limit);
+  }
+
+  Future<QuizSession> startReadingForWords({
+    required Iterable<String> wordIds,
+    int limit = 2,
+  }) => _startWordPractice(wordIds, limit, 'associativeReading');
+
+  Future<QuizSession> _startVocabularySession(
+    String? categoryId,
+    int limit,
+    String activityType,
+  ) async {
     final owner = await owners.getOrCreateActiveOwner();
     final words = await repository.listQuizWords(
       ownerId: owner.id,
@@ -82,7 +102,7 @@ final class LearningUseCases {
       LearningSessionDraft(
         id: sessionId,
         ownerId: owner.id,
-        activityType: 'quiz',
+        activityType: activityType,
         startedAtUtc: now,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
@@ -127,7 +147,23 @@ final class LearningUseCases {
   Future<QuizSession> startWeaknessPractice({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) async {
+  }) => _startWordPractice(wordIds, limit, 'weaknessPractice');
+
+  Future<QuizSession> startGhostDuel({
+    required Iterable<String> wordIds,
+    int limit = 20,
+  }) => _startWordPractice(wordIds, limit, 'ghostDuel');
+
+  Future<QuizSession> startSourcePracticeForWords({
+    required Iterable<String> wordIds,
+    int limit = 20,
+  }) => _startWordPractice(wordIds, limit, 'sourcePractice');
+
+  Future<QuizSession> _startWordPractice(
+    Iterable<String> wordIds,
+    int limit,
+    String activityType,
+  ) async {
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
@@ -136,21 +172,25 @@ final class LearningUseCases {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final owner = await owners.getOrCreateActiveOwner();
-    final words = await repository.listQuizWords(ownerId: owner.id, limit: 100);
-    final selected = words
-        .where((word) => requested.contains(word.id))
-        .take(limit)
-        .toList(growable: false);
+    final selected = await repository.listQuizWords(
+      ownerId: owner.id,
+      wordIds: requested,
+      limit: limit,
+    );
     if (selected.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    final optionWords = await repository.listQuizWords(
+      ownerId: owner.id,
+      limit: 100,
+    );
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
       LearningSessionDraft(
         id: sessionId,
         ownerId: owner.id,
-        activityType: 'ghostDuel',
+        activityType: activityType,
         startedAtUtc: now,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
@@ -158,7 +198,7 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
-      questions: _questions(selected),
+      questions: _questions([...selected], optionWords: optionWords),
       startedAtUtc: now,
     );
   }
@@ -171,11 +211,22 @@ final class LearningUseCases {
     required int? responseTimeMs,
     required int attemptNumber,
     String? providerProvenance,
+    String? attemptId,
+    DateTime? occurredAtUtc,
   }) async {
+    if ((attemptId == null) != (occurredAtUtc == null)) {
+      throw ArgumentError(
+        'retry identity and timestamp must be supplied together',
+      );
+    }
+    final recordedAt = occurredAtUtc ?? _now();
+    if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
     final owner = await owners.getOrCreateActiveOwner();
     final result = await repository.recordAnswer(
       RecordAnswerCommand(
-        id: 'attempt:${_nextId()}',
+        id: attemptId == null
+            ? 'attempt:${_nextId()}'
+            : _requiredId(attemptId, 'attemptId'),
         ownerId: owner.id,
         sessionId: _requiredId(sessionId, 'sessionId'),
         wordId: _requiredId(wordId, 'wordId'),
@@ -183,7 +234,7 @@ final class LearningUseCases {
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        occurredAtUtc: _now(),
+        occurredAtUtc: recordedAt,
         providerProvenance: providerProvenance,
       ),
     );
@@ -203,7 +254,7 @@ final class LearningUseCases {
           isCorrect: isCorrect,
           responseTimeMs: responseTimeMs,
           attemptNumber: attemptNumber,
-          occurredAtUtc: _now(),
+          occurredAtUtc: recordedAt,
           providerProvenance: providerProvenance,
           appVersion: buildInfo.version,
           buildId: buildInfo.buildId,
@@ -228,7 +279,7 @@ final class LearningUseCases {
           isCorrect: isCorrect,
           responseTimeMs: responseTimeMs,
           attemptNumber: attemptNumber,
-          occurredAtUtc: _now(),
+          occurredAtUtc: recordedAt,
           providerProvenance: providerProvenance,
           appVersion: buildInfo.version,
           buildId: buildInfo.buildId,
@@ -278,12 +329,17 @@ final class LearningUseCases {
     required int documentRevision,
     required int position,
     required bool isCompleted,
+    String? expectedOwnerId,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    final expected = expectedOwnerId?.trim();
+    if (expected != null && expected.isNotEmpty && owner.id != expected) {
+      throw StateError('reading owner is no longer active');
+    }
     final result = await repository.saveReadingProgress(
       ReadingProgressCommand(
         eventId: 'reading-event:${_nextId()}',
-        ownerId: owner.id,
+        ownerId: expected == null || expected.isEmpty ? owner.id : expected,
         documentId: _requiredId(documentId, 'documentId'),
         documentRevision: documentRevision,
         position: position,
@@ -295,10 +351,14 @@ final class LearningUseCases {
     return result;
   }
 
-  List<QuizQuestion> _questions(List<QuizWord> words) {
-    final allMeanings =
-        words.map((word) => word.meaning).toSet().toList(growable: false)
-          ..sort();
+  List<QuizQuestion> _questions(
+    List<QuizWord> words, {
+    List<QuizWord> optionWords = const [],
+  }) {
+    final allMeanings = [
+      ...words,
+      ...optionWords,
+    ].map((word) => word.meaning).toSet().toList(growable: false)..sort();
     return words
         .map((word) {
           final distractors = allMeanings

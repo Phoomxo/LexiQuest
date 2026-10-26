@@ -55,7 +55,7 @@ $expectedLibraries = [ordered]@{
     'lib/arm64-v8a/libtensorflowlite_jni.so' =
         '3BA28CE98B0E6AB7E417B9CC8D9AD0E7E1616EF86DD83CF1EA16EF109A029FA4'
     'lib/arm64-v8a/libtflite_custom_ops.so' =
-        'DCAF40FC640C99413DCD8652FB6C3B6F65CDAC50AF001922CB162C155B4E407F'
+        'CE5E655AB1E9CA1AF96EE41FE038B6EDA8977CBB704459183908C68FDC916828'
     'lib/armeabi-v7a/libLiteRt.so' =
         '836EE7A2321C9453F02658B6774FC4C5951716432B450BA6BC4E9A94FE524E6C'
     'lib/armeabi-v7a/libtensorflowlite_gpu_jni.so' =
@@ -63,7 +63,7 @@ $expectedLibraries = [ordered]@{
     'lib/armeabi-v7a/libtensorflowlite_jni.so' =
         '5C3280CBA72ED9563CFA47C39B79670BC8F4C2ED26FF545874B33DBA805D8E4B'
     'lib/armeabi-v7a/libtflite_custom_ops.so' =
-        '43135F9C6E328D6F9597AF213AAF9333ABCCFE2CEECE228817E5854624BF77C6'
+        '15247385DCC008F33DCAE730D71A23A7D1E2D185605D2A652E4B4CCE0D41CB19'
     'lib/x86_64/libLiteRt.so' =
         '6D5B2F35D536A3B2D38B26D26328CC9C259133EF2AA0413EC554CD7EF84F6604'
     'lib/x86_64/libtensorflowlite_gpu_jni.so' =
@@ -71,23 +71,98 @@ $expectedLibraries = [ordered]@{
     'lib/x86_64/libtensorflowlite_jni.so' =
         'F0B4F69DD1EC93E289A2A47CBF8623FF9403C1C71E72616B12FC25BA2D284A88'
     'lib/x86_64/libtflite_custom_ops.so' =
-        '52143132085C15890859DB7DE74316AF109EC5A95D3F2C131131F33986A8B42F'
+        'C26344121F8AAFEBA56FBF71329CE4C82A22DD87BA808424AA7C725B2AFB332B'
 }
 
 if ($resolvedBuildMode -eq 'Release') {
     # flutter_litert compiles this project-owned JNI shim as RelWithDebInfo for
-    # release while the vendor LiteRT binaries remain byte-identical. Pin the
-    # reproducible release outputs separately instead of applying debug hashes
-    # to a correctly optimized release APK.
+    # release while the vendor LiteRT binaries remain byte-identical.
     $expectedLibraries['lib/arm64-v8a/libtflite_custom_ops.so'] =
-        '570E067F5EED5F3EB27C653D7650CB65846FECED0F5A4543CBFF80260493B10E'
+        '82CC19156495E9C3845AE00B3A4DF4ED196124CA6586884C80F702BFC4BC35B2'
     $expectedLibraries['lib/armeabi-v7a/libtflite_custom_ops.so'] =
-        'ED8A789CDE1266E388818DFA259101628942D336AF4B1A2D7D4264571D923FAB'
+        '5236E8BAEFEB9705DB086DECA2EABD6F7901CCD30525A45B4D0A755F73E189DC'
     $expectedLibraries['lib/x86_64/libtflite_custom_ops.so'] =
-        'B1E7A49EE12AEF57A65717536F205E4D0E6E17DE857A5BD4B75F02EEF9328D95'
+        '50416556054A668ED145EA224275BEE107DC52291C61E636249C2AFAAA1C6090'
+}
+
+function Find-LlvmObjCopy {
+    $command = Get-Command llvm-objcopy -ErrorAction SilentlyContinue
+    if ($null -ne $command) {
+        return $command.Source
+    }
+
+    $sdkRoots = @($env:ANDROID_SDK_ROOT, $env:ANDROID_HOME)
+    if ($env:OS -eq 'Windows_NT') {
+        $sdkRoots += Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+    }
+    foreach ($sdkRoot in @($sdkRoots | Where-Object { $_ } | Select-Object -Unique)) {
+        $ndkRoot = Join-Path $sdkRoot 'ndk'
+        if (-not (Test-Path -LiteralPath $ndkRoot -PathType Container)) {
+            continue
+        }
+        foreach ($ndk in @(Get-ChildItem -LiteralPath $ndkRoot -Directory |
+                Sort-Object Name -Descending)) {
+            $prebuiltRoot = Join-Path $ndk.FullName 'toolchains\llvm\prebuilt'
+            if (-not (Test-Path -LiteralPath $prebuiltRoot -PathType Container)) {
+                continue
+            }
+            foreach ($prebuilt in @(Get-ChildItem -LiteralPath $prebuiltRoot -Directory)) {
+                $executable = if ($env:OS -eq 'Windows_NT') {
+                    'llvm-objcopy.exe'
+                } else {
+                    'llvm-objcopy'
+                }
+                $candidate = Join-Path $prebuilt.FullName "bin\$executable"
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                    return $candidate
+                }
+            }
+        }
+    }
+    throw 'llvm-objcopy is required to normalize the JNI shim build ID.'
+}
+
+function Get-PackagedLibrarySha256 {
+    param(
+        [Parameter(Mandatory)][object]$Entry,
+        [Parameter(Mandatory)][string]$EntryName,
+        [AllowNull()][string]$LlvmObjCopy,
+        [AllowNull()][string]$TemporaryDirectory
+    )
+
+    if (-not $EntryName.EndsWith('/libtflite_custom_ops.so')) {
+        $stream = $Entry.Open()
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '')
+        }
+        finally {
+            $sha256.Dispose()
+            $stream.Dispose()
+        }
+    }
+
+    $temporaryFile = Join-Path $TemporaryDirectory (
+        ($EntryName -replace '[^A-Za-z0-9_.-]', '_')
+    )
+    [System.IO.Compression.ZipFileExtensions]::ExtractToFile(
+        $Entry,
+        $temporaryFile,
+        $true
+    )
+    & $LlvmObjCopy --remove-section=.note.gnu.build-id $temporaryFile
+    if ([int]$LASTEXITCODE -ne 0) {
+        throw "Unable to normalize native build ID for $EntryName."
+    }
+    return (Get-FileHash -LiteralPath $temporaryFile -Algorithm SHA256).Hash
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+$llvmObjCopy = Find-LlvmObjCopy
+$temporaryDirectory = Join-Path (
+    [System.IO.Path]::GetTempPath()
+) ('lexiquest-apk-runtime-' + [Guid]::NewGuid().ToString('N'))
+[System.IO.Directory]::CreateDirectory($temporaryDirectory) | Out-Null
 $archive = [System.IO.Compression.ZipFile]::OpenRead($resolvedApk)
 try {
     foreach ($entryName in $expectedLibraries.Keys) {
@@ -95,16 +170,11 @@ try {
         if ($null -eq $entry) {
             throw "Required model runtime library is missing: $entryName"
         }
-        $stream = $entry.Open()
-        $sha256 = [System.Security.Cryptography.SHA256]::Create()
-        try {
-            $bytes = $sha256.ComputeHash($stream)
-            $actual = ([BitConverter]::ToString($bytes)).Replace('-', '')
-        }
-        finally {
-            $sha256.Dispose()
-            $stream.Dispose()
-        }
+        $actual = Get-PackagedLibrarySha256 `
+            -Entry $entry `
+            -EntryName $entryName `
+            -LlvmObjCopy $llvmObjCopy `
+            -TemporaryDirectory $temporaryDirectory
         if ($actual -ne $expectedLibraries[$entryName]) {
             throw (
                 'Packaged native checksum mismatch for {0}. Expected {1}, got {2}.' -f
@@ -140,6 +210,9 @@ try {
 }
 finally {
     $archive.Dispose()
+    Get-ChildItem -LiteralPath $temporaryDirectory -File |
+        ForEach-Object { [System.IO.File]::Delete($_.FullName) }
+    [System.IO.Directory]::Delete($temporaryDirectory, $false)
 }
 
 Write-Host (

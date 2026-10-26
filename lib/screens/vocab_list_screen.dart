@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../config/m3_theme.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/adaptive_content_pane.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
 import '../navigation/app_routes.dart';
+import 'source_practice_screen.dart';
 
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
@@ -29,6 +32,7 @@ class VocabListScreen extends StatefulWidget {
 class _VocabListScreenState extends State<VocabListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  int _retryEpoch = 0;
 
   @override
   void dispose() {
@@ -38,113 +42,173 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final useCases =
-        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
-    final importer =
-        widget.importer ??
-        AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final useCases = widget.vocabulary ?? dependencies?.vocabulary;
+    final importer = widget.importer ?? dependencies?.vocabularyImporter;
+    final learning = dependencies?.learning;
+    final sourcePicker = dependencies?.sourcePracticeFilePicker;
+    final canPracticeSource =
+        useCases != null && learning != null && sourcePicker != null;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.categoryName)),
-      body: useCases == null
-          ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SearchBar(
-                    controller: _searchController,
-                    hintText: 'ค้นหาคำศัพท์',
-                    leading: const Icon(Icons.search),
-                    onChanged: (value) {
-                      setState(() => _query = value.trim().toLowerCase());
-                    },
+      appBar: AppBar(
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, widget.categoryName),
+      ),
+      body: AdaptiveContentPane(
+        child: useCases == null
+            ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
+            : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SearchBar(
+                          controller: _searchController,
+                          hintText: 'ค้นหาคำศัพท์',
+                          leading: const Icon(Icons.search),
+                          onChanged: (value) {
+                            setState(() => _query = value.trim().toLowerCase());
+                          },
+                        ),
+                        if (canPracticeSource || importer != null) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (canPracticeSource)
+                                OutlinedButton.icon(
+                                  key: const ValueKey('source-practice'),
+                                  onPressed: () {
+                                    AppNavigator.pushPage<void>(
+                                      context,
+                                      AppPage<void>(
+                                        name: 'vocabulary/source-practice',
+                                        builder: (_) => SourcePracticeScreen(
+                                          categoryId: widget.categoryId,
+                                          categoryName: widget.categoryName,
+                                          vocabulary: useCases,
+                                          learning: learning,
+                                          filePicker: sourcePicker,
+                                          associativeLearning:
+                                              dependencies?.associativeLearning,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.menu_book_outlined),
+                                  label: const Text('ฝึกจากไฟล์'),
+                                ),
+                              if (importer != null)
+                                OutlinedButton.icon(
+                                  key: const ValueKey('import-words'),
+                                  onPressed: () {
+                                    AppNavigator.pushPage<void>(
+                                      context,
+                                      AppPage<void>(
+                                        name: 'vocabulary/import',
+                                        builder: (_) => AddMultipleWordsScreen(
+                                          categoryId: widget.categoryId,
+                                          categoryName: widget.categoryName,
+                                          importer: importer,
+                                          vocabulary: useCases,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.file_upload_outlined),
+                                  label: const Text('นำเข้าคำศัพท์'),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: StreamBuilder<List<VocabularyWord>>(
-                    stream: useCases.watchWords(widget.categoryId),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Center(
-                          child: Text('อ่านคำศัพท์ไม่สำเร็จ'),
-                        );
-                      }
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final words = snapshot.data!
-                          .where(
-                            (word) =>
-                                _query.isEmpty ||
-                                word.normalizedSpelling.contains(_query) ||
-                                word.normalizedMeaning.contains(_query),
-                          )
-                          .toList();
-                      if (words.isEmpty) {
-                        return const Center(
-                          child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'),
-                        );
-                      }
-                      return ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 96),
-                        itemCount: words.length,
-                        itemBuilder: (context, index) {
-                          final word = words[index];
-                          return ListTile(
-                            title: Text(word.spelling),
-                            subtitle: Text(
-                              '${word.meaning} · ${word.partOfSpeech}',
-                            ),
-                            onTap: () =>
-                                _openWordEditor(context, useCases, word: word),
-                            trailing: IconButton(
-                              tooltip: 'ลบคำศัพท์',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () =>
-                                  _deleteWord(context, useCases, word),
+                  Expanded(
+                    child: StreamBuilder<List<VocabularyWord>>(
+                      key: ValueKey<int>(_retryEpoch),
+                      stream: useCases.watchWords(widget.categoryId),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Text('อ่านคำศัพท์ไม่สำเร็จ'),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton(
+                                  onPressed: () =>
+                                      setState(() => _retryEpoch++),
+                                  child: const Text('ลองใหม่'),
+                                ),
+                              ],
                             ),
                           );
-                        },
-                      );
-                    },
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              semanticsLabel: 'กำลังโหลดคำศัพท์',
+                            ),
+                          );
+                        }
+                        final words = snapshot.data!
+                            .where(
+                              (word) =>
+                                  _query.isEmpty ||
+                                  word.normalizedSpelling.contains(_query) ||
+                                  word.normalizedMeaning.contains(_query),
+                            )
+                            .toList();
+                        if (words.isEmpty) {
+                          return const Center(
+                            child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'),
+                          );
+                        }
+                        return ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 96),
+                          itemCount: words.length,
+                          itemBuilder: (context, index) {
+                            final word = words[index];
+                            return ListTile(
+                              title: Text(word.spelling),
+                              subtitle: Text(
+                                '${word.meaning} · ${word.partOfSpeech}',
+                              ),
+                              onTap: () => _openWordEditor(
+                                context,
+                                useCases,
+                                word: word,
+                              ),
+                              trailing: IconButton(
+                                tooltip: 'ลบคำศัพท์ ${word.spelling}',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () =>
+                                    _deleteWord(context, useCases, word),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
       floatingActionButton: useCases == null
           ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (importer != null)
-                  FloatingActionButton.small(
-                    heroTag: 'words-import',
-                    tooltip: 'นำเข้าคำศัพท์',
-                    onPressed: () {
-                      AppNavigator.pushPage<void>(
-                        context,
-                        AppPage<void>(
-                          name: 'vocabulary/import',
-                          builder: (_) => AddMultipleWordsScreen(
-                            categoryId: widget.categoryId,
-                            categoryName: widget.categoryName,
-                            importer: importer,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Icon(Icons.file_upload_outlined),
-                  ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  key: const ValueKey('add-word'),
-                  heroTag: 'words-add',
-                  onPressed: () => _openWordEditor(context, useCases),
-                  icon: const Icon(Icons.add),
-                  label: const Text('เพิ่มคำศัพท์'),
-                ),
-              ],
+          : FloatingActionButton.extended(
+              key: const ValueKey('add-word'),
+              heroTag: 'words-add',
+              onPressed: () => _openWordEditor(context, useCases),
+              icon: const Icon(Icons.add),
+              label: const Text('เพิ่มคำศัพท์'),
             ),
     );
   }

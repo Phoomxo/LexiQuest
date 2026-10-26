@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
 void main() {
   late AppDatabase database;
@@ -24,6 +25,57 @@ void main() {
   tearDown(() async {
     await database.close();
   });
+
+  test(
+    'local credits keep stable identities through rehome without reward outbox',
+    () async {
+      await _seedEveryOwnerScopedTable(database);
+      final rewards = DriftRewardRepository(database);
+      final before = await rewards.load('guest-owner');
+      expect(before.balance, 120);
+      final creditsBefore =
+          await (database.select(database.rewardTransactions)..where(
+                (r) => r.transactionType.isIn([
+                  'creditQuizCorrectV1',
+                  'creditLegacyCarryV1',
+                ]),
+              ))
+              .get();
+      expect(creditsBefore, hasLength(2));
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      final account = await rewards.load('account-owner');
+      expect(account.balance, before.balance);
+      expect(account.ownedItemIds, before.ownedItemIds);
+      expect(account.equippedBySlot, before.equippedBySlot);
+      final creditsAfter =
+          await (database.select(database.rewardTransactions)..where(
+                (r) => r.transactionType.isIn([
+                  'creditQuizCorrectV1',
+                  'creditLegacyCarryV1',
+                ]),
+              ))
+              .get();
+      expect(
+        creditsAfter.map((r) => r.id).toSet(),
+        creditsBefore.map((r) => r.id).toSet(),
+      );
+      expect(
+        creditsAfter.every(
+          (r) =>
+              r.ownerId == 'account-owner' &&
+              !r.idempotencyKey.startsWith('merged:'),
+        ),
+        isTrue,
+      );
+      final outbox = await database.select(database.outboxOperations).get();
+      final creditIds = creditsAfter.map((r) => r.id).toSet();
+      expect(outbox.where((r) => creditIds.contains(r.entityId)), isEmpty);
+      expect((await rewards.load('guest-owner')).balance, 0);
+    },
+  );
 
   test('migration inventory covers every owner-scoped Drift table', () async {
     final rows = await database.customSelect('''
@@ -275,9 +327,12 @@ void main() {
 
     expect(result.conflictCount, 1);
     expect(
-      await (database.select(
-        database.rewardTransactions,
-      )..where((row) => row.ownerId.equals('account-owner'))).get(),
+      await (database.select(database.rewardTransactions)..where(
+            (row) =>
+                row.ownerId.equals('account-owner') &
+                row.transactionType.equals('purchase'),
+          ))
+          .get(),
       hasLength(2),
     );
     expect(
@@ -289,7 +344,11 @@ void main() {
     final ledger = await (database.select(
       database.pointsLedgerEntries,
     )..where((row) => row.ownerId.equals('account-owner'))).get();
-    expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 120);
+    expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 200);
+    expect(
+      (await DriftRewardRepository(database).load('account-owner')).balance,
+      120,
+    );
   });
 
   test(

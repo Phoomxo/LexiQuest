@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../domain/gemini_contracts.dart';
@@ -55,56 +57,56 @@ final class SecureGeminiSettingsStore implements GeminiSettingsStore {
   factory SecureGeminiSettingsStore.production() =>
       SecureGeminiSettingsStore(FlutterSecureValueStore());
 
-  static const _apiKey = 'gemini_api_key';
-  static const _providerConsent = 'gemini_provider_consent';
-  static const _summaryConsent = 'gemini_learning_summary_consent';
-
   final SecureValueStore _storage;
 
-  @override
-  Future<String?> readKey() => _read(_apiKey);
+  String _path(GeminiScope scope) =>
+      'lq_gemini_scoped_v1_${base64Url.encode(utf8.encode(jsonEncode([scope.ownerId, scope.firebaseUid, scope.isAnonymous])))}';
 
   @override
-  Future<void> writeKey(String key) => _write(_apiKey, key);
-
-  @override
-  Future<void> deleteKey() => _delete(_apiKey);
-
-  @override
-  Future<bool> readProviderConsent() async =>
-      await _read(_providerConsent) == 'true';
-
-  @override
-  Future<void> writeProviderConsent(bool value) =>
-      _write(_providerConsent, value.toString());
-
-  @override
-  Future<bool> readLearningSummaryConsent() async =>
-      await _read(_summaryConsent) == 'true';
-
-  @override
-  Future<void> writeLearningSummaryConsent(bool value) =>
-      _write(_summaryConsent, value.toString());
-
-  Future<String?> _read(String key) async {
+  Future<GeminiConfiguration> read(GeminiScope scope) async {
     try {
-      return await _storage.read(key);
+      final raw = await _storage.read(_path(scope));
+      if (raw == null) return const GeminiConfiguration();
+      final data = jsonDecode(raw);
+      if (data is! Map<String, dynamic> ||
+          data['v'] != 1 ||
+          !(data['key'] == null || data['key'] is String) ||
+          !data.containsKey('key') ||
+          data['providerConsent'] is! bool ||
+          data['shareLearningSummary'] is! bool) {
+        throw const GeminiException(GeminiFailureCode.secureStorage);
+      }
+      // A stored credential never restores session consent, including old records.
+      return GeminiConfiguration(key: data['key'] as String?);
     } on Object {
       throw const GeminiException(GeminiFailureCode.secureStorage);
     }
   }
 
-  Future<void> _write(String key, String value) async {
+  @override
+  Future<void> write(
+    GeminiScope scope,
+    GeminiConfiguration configuration,
+  ) async {
     try {
-      await _storage.write(key, value);
+      // One secure item prevents mixed key/consent revisions; no legacy lookup.
+      await _storage.write(
+        _path(scope),
+        jsonEncode({
+          'v': 1,
+          'key': configuration.key,
+          'providerConsent': false,
+          'shareLearningSummary': false,
+        }),
+      );
     } on Object {
       throw const GeminiException(GeminiFailureCode.secureStorage);
     }
   }
 
-  Future<void> _delete(String key) async {
+  Future<void> delete(GeminiScope scope) async {
     try {
-      await _storage.delete(key);
+      await _storage.delete(_path(scope));
     } on Object {
       throw const GeminiException(GeminiFailureCode.secureStorage);
     }

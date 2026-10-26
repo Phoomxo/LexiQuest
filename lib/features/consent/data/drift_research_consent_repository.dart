@@ -22,6 +22,7 @@ final class DriftResearchConsentRepository
             ))
             .getSingleOrNull();
     return ResearchConsentStatus(
+      ownerId: ownerId,
       version: version,
       accepted: row?.consentState == 'accepted',
       decidedAtUtc: row == null ? null : _utc(row.decidedAtUtcMs),
@@ -32,7 +33,7 @@ final class DriftResearchConsentRepository
   }
 
   @override
-  Future<void> decide({
+  Future<bool> decide({
     required String ownerId,
     required int version,
     required bool accepted,
@@ -40,6 +41,31 @@ final class DriftResearchConsentRepository
   }) {
     final epoch = decidedAtUtc.millisecondsSinceEpoch;
     return database.transaction(() async {
+      final activeOwners =
+          await (database.select(database.localOwners)
+                ..where((row) => row.isActive.equals(true))
+                ..limit(2))
+              .get();
+      if (activeOwners.length != 1 || activeOwners.single.id != ownerId) {
+        return false;
+      }
+      if (!accepted) {
+        final updated =
+            await (database.update(database.researchConsents)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.consentVersion.equals(version) &
+                      row.consentState.equals('accepted'),
+                ))
+                .write(
+                  db.ResearchConsentsCompanion(
+                    consentState: const Value('withdrawn'),
+                    decidedAtUtcMs: Value(epoch),
+                    withdrawnAtUtcMs: Value(epoch),
+                  ),
+                );
+        return updated == 1;
+      }
       await (database.delete(database.researchConsents)..where(
             (row) =>
                 row.ownerId.equals(ownerId) &
@@ -53,11 +79,11 @@ final class DriftResearchConsentRepository
               id: 'consent:$ownerId:$version',
               ownerId: ownerId,
               consentVersion: version,
-              consentState: accepted ? 'accepted' : 'withdrawn',
+              consentState: 'accepted',
               decidedAtUtcMs: epoch,
-              withdrawnAtUtcMs: Value(accepted ? null : epoch),
             ),
           );
+      return true;
     });
   }
 }

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "accepted": [
+    {
+      "id": "hosting-wrapper",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%3A%2F%2Fvocab-learning-app-219ef.firebaseapp.com%2F__%2Fauth%2Faction%3Fmode%3DverifyEmail%26oobCode%3Dwrapped123%26continueUrl%3Dhttps%253A%252F%252Fvocab-learning-app-219ef.firebaseapp.com%252Fauth%252Faction",
+      "mode": "verifyEmail",
+      "code": "wrapped123"
+    },
+    {
+      "id": "flattened-legacy",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?mode=resetPassword&oobCode=legacy123",
+      "mode": "resetPassword",
+      "code": "legacy123"
+    },
+    {
+      "id": "internal-relative",
+      "url": "/auth/action?mode=verifyEmail&oobCode=internal123",
+      "mode": "verifyEmail",
+      "code": "internal123"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "http-wrapper",
+      "url": "http://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?mode=verifyEmail&oobCode=bad"
+    },
+    {
+      "id": "untrusted-wrapper-host",
+      "url": "https://evil.example/__/auth/links?mode=verifyEmail&oobCode=bad"
+    },
+    {
+      "id": "userinfo-host-confusion",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com@evil.example/__/auth/links?mode=verifyEmail&oobCode=bad"
+    },
+    {
+      "id": "absolute-internal-path",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/auth/action?mode=verifyEmail&oobCode=bad"
+    },
+    {
+      "id": "untrusted-inner-host",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%3A%2F%2Fevil.example%2F__%2Fauth%2Faction%3Fmode%3DverifyEmail%26oobCode%3Dbad"
+    },
+    {
+      "id": "wrong-inner-path",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%3A%2F%2Fvocab-learning-app-219ef.firebaseapp.com%2Fauth%2Faction%3Fmode%3DverifyEmail%26oobCode%3Dbad"
+    },
+    {
+      "id": "double-encoded-inner-link",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%253A%252F%252Fvocab-learning-app-219ef.firebaseapp.com%252F__%252Fauth%252Faction%253Fmode%253DverifyEmail%2526oobCode%253Dbad"
+    },
+    {
+      "id": "unsafe-continue-url",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%3A%2F%2Fvocab-learning-app-219ef.firebaseapp.com%2F__%2Fauth%2Faction%3Fmode%3DverifyEmail%26oobCode%3Dbad%26continueUrl%3Dhttps%253A%252F%252Fevil.example%252Fphish"
+    },
+    {
+      "id": "unsafe-flattened-continue-url",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?mode=verifyEmail&oobCode=bad&continueUrl=https%3A%2F%2Fevil.example%2Fphish"
+    },
+    {
+      "id": "invalid-link-does-not-fall-back",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?link=https%3A%2F%2Fevil.example%2F__%2Fauth%2Faction%3Fmode%3DverifyEmail%26oobCode%3Dbad&mode=verifyEmail&oobCode=fallback"
+    },
+    {
+      "id": "duplicate-action-code",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?mode=verifyEmail&oobCode=first&oobCode=second"
+    },
+    {
+      "id": "missing-action-code",
+      "url": "https://vocab-learning-app-219ef.firebaseapp.com/__/auth/links?mode=verifyEmail"
+    }
+  ]
+}

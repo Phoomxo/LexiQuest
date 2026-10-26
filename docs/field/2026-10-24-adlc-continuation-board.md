@@ -1,0 +1,69 @@
+# ADLC continuation board — 2026-10-24
+
+## Intent
+
+Continue the approved LexiQuest Android work without reopening routine product
+decisions. Complete every local/synthetic engineering gate that can be proven
+from this checkout, preserve the frozen 8-domain/44-capability catalog, and
+leave production deployment, research enrollment/upload, and destructive live
+data operations disabled.
+
+## Grounded source
+
+- Worktree: `C:\Users\Phet\Documents\LexiQuest`
+- Branch: `feature/associative-reading-loop`
+- HEAD baseline: `f43aa0fff2155ca29d6a26f2695191dd44a2d6d1`
+- The checkout is intentionally dirty with integrated work from the active
+  plan. Each card has one writer and a disjoint write set.
+- R11 is synchronized to Figma Cloud under owner `petch954100@gmail.com`.
+- Current integrated source passes 1703/1703 Flutter tests, full analyze,
+  format, CLI contracts, Firebase Auth/Firestore emulator suites, signed
+  release builds, and the final8 local Android device matrix.
+- Vivo cold/warm App Link replay and native Google provider launch remain
+  retained evidence from the earlier final/final4 snapshots; they were not
+  rerun against final8.
+
+## Task graph
+
+| Card | Outcome | State | Writer/write set | Acceptance evidence |
+| --- | --- | --- | --- | --- |
+| `DEVICE-DIALOG-1` | Remove route-local controller disposal race found by Firebase Test Lab | Done | Root; category/login/settings dialogs + focused test | Vivo real-IME replay accepted; 1598/1598 suite; signed release rebuilt |
+| `UI-PREF-1` | Persist System/Light/Dark independently from marketplace theme/wallpaper | Done | Adaptive UI agent; appearance preference/config/screen, `main.dart`, settings row, focused tests | Integrated 133-test run passed; scoped analyze clean; save failure does not apply; navigation/reward appearance retained; compact 200% text |
+| `RESEARCH-R1` | Make research export fail closed until an explicit operation authorizer exists | Done | Research agent; new research authorizer, export use case/bootstrap and focused tests | Integrated 133-test run passed; consent alone cannot export; denial precedes reads/writes; personal export unaffected |
+| `ACCOUNT-A3` | Preserve a committed account when the first verification-email dispatch fails | Done | Account/release agent; Firebase gateway, OTP copy, focused tests | Integrated 133-test run passed; committed session continues to owner binding; explicit resend remains available; pre-commit failures stay typed |
+| `FOLD-1` | Conservative hinge-safe shell fallback | Done | Adaptive UI agent; composition root + adaptive tests only | Vertical/horizontal/no-feature/state tests 4/4; integrated startup/reward/appearance run 24/24; scoped analyze clean |
+| `ACCOUNT-G1` | Add a tested Google sign-in path gated on real OAuth config | Done | Account agent; account contracts/use cases/gateways/bootstrap/login, dependency lock, focused tests | Owner isolation and fallback covered; refreshed production config contains Android/Web OAuth clients; provider enabled and production gate defaults on |
+| `INTEGRATE-1` | Reconcile agent diffs and verify one consistent source snapshot | Done (local engineering) | Root only; checkpoint/evidence plus corrections in returned write sets | Flutter 1685/1685; backend 206; Auth 3/3; rules 33/33; analyze/format/diff clean; debug/release APK and AAB rebuilt; Vivo cold/warm App Link replay passed |
+| `ACCOUNT-D1` | Crash-resumable, owner-isolated account deletion core | Done (default-off) | Account deletion domain/use case, SharedPreferences journal, Drift local gateway, focused tests | Rejects journal overwrite; exact-one-active-owner fail closed; deterministic retry receipt; no production composition |
+| `ACCOUNT-D2` | Complete locally provable deletion UX/data/backend contracts | Done (default-off) | Account deletion UI/adapters, Gemini secure store, AI API service contract, focused tests | Exact Thai confirmation; local-only retry after cloud receipt; exact 26-scope owner-isolated snapshot; required secret purge with post-commit recovery; completed-journal identifier scrub; server-derived UID/auth_time; same-key receipt replay; endpoint disabled without production adapters |
+| `FIREBASE-MOBILE-LINKS` | Configure Firebase Hosting mobile-link domain and Android App Link | Done | Firebase project config, manifest, parser, runbook, fixtures | Hosted assetlinks 200; exact package/cert; trusted wrapper/redirect rejection; Vivo cold/warm replay |
+| `FTL-POSTFIX` | Re-run fixed artifact on low/high/fold/tablet | Current local matrix done; cloud quota blocked | Evidence only | `final8` low/high/tablet 3/3 pass on LDPlayer with Google visible/enabled, nonparticipant consent reaching Home, and zero severe logs; FTL matrix `matrix-dbgrwqqxijpsa` rejected with `TEST_QUOTA_EXCEEDED`; no available emulator exposes a real fold hinge |
+| `FIGMA-R11-CLOUD` | Sync validated R11 authority into the owner's Figma file | Done | Figma writer | Cloud root `81:2`; 240 screens, 942 routes, 41 starts; final8 Google copy and both prototype routes verified; `/critique` 40/40 |
+| `RESEARCH-R2` | Signed permit/assignment lifecycle and fail-closed export | Done (production default-off) | Research authorizer/export/bootstrap plus synthetic tests | Owner/operation/issuer/key/algorithm/assignment/protocol/instrument/revision/expiry/revocation pinned; nonparticipants produce zero research writes |
+| `ACCOUNT-G1-CONSOLE` | Enable Google provider and refresh Android OAuth config | Done | Root; Firebase Console, generated config, runtime gate, CLI contract and Vivo evidence | Provider Enabled for `petch954100@gmail.com`; Android/Web OAuth clients verified; `final4` opens native Google Sign-In activity on Vivo |
+| `RELEASE-EXTERNAL` | Play/App Check/production Firestore/UAT authorization | External wait | Owner-controlled console/evidence | Requires exact AAB/APK hash acceptance and explicit rollout authority; neither is recorded yet |
+
+## Conflict and authority rules
+
+- Flutter tests/builds, dependency resolution, and code generation remain
+  serialized by root.
+- `UI-PREF-1`, `RESEARCH-R1`, and `ACCOUNT-A3` have handed their write sets back
+  to root after connected review and an integrated 133-test run.
+- `FOLD-1` has handed `main.dart` back to root after root reran its integrated
+  24-test matrix.
+- ไม่มี implementation writer ค้างอยู่; ทุก agent คืน write set ให้ root แล้ว
+  และ integration evidence อ้าง source snapshot เดียวกัน
+- No card may add a 45th feature, create a parallel reward/learning authority,
+  reserve schema v11, or enable production research from inferred contracts.
+- Pair Matching remains outside this board under the explicit guardrail that it
+  needs a separate user request after research engineering completion.
+
+## Integration order
+
+1. Local engineering baseline is attested in
+   `2026-10-24-adlc-final-integration-checkpoint.md`; the current UI, device,
+   release-artifact, and Figma evidence is superseded by
+   `2026-10-24-adlc-final8-ui-critique-checkpoint.md`.
+2. Google Sign-In is enabled in the verified `final8` artifacts.
+3. Research enrollment/upload, production deletion, Play rollout, and App
+   Check enforcement remain separate authority gates.

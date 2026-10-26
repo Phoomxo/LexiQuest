@@ -67,7 +67,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'แบบฝึกฟังคำศัพท์ (Dictation Quiz)',
+          'แบบฝึกฟังแล้วพิมพ์คำศัพท์',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,

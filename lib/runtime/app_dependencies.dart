@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
+import '../features/account_deletion/application/account_deletion_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
@@ -11,15 +12,19 @@ import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
+import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
+import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/source_practice.dart';
+import '../features/vocabulary/application/vocabulary_import_file_picker.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
@@ -47,17 +52,22 @@ final class AppDependencies {
     this.upgradeGuestOwner,
     this.syncEngine,
     this.syncTrigger,
+    this.syncStatus,
     this.learning,
     this.progress,
     this.rewards,
     this.vocabulary,
     this.vocabularyImporter,
+    this.vocabularyImportFilePicker,
+    this.sourcePracticeFilePicker,
     this.deviceModels,
     this.account,
+    this.accountDeletion,
     this.researchConsent,
     this.exports,
     this.geminiTutor,
     this.objectScanner,
+    this.devicePermissions,
     this.speechPractice,
     this.voice,
     this.quest,
@@ -81,17 +91,24 @@ final class AppDependencies {
   final UpgradeGuestOwner? upgradeGuestOwner;
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
+  final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
+  final VocabularyImportFilePicker? vocabularyImportFilePicker;
+  final SourcePracticeFilePicker? sourcePracticeFilePicker;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
+
+  /// Present only when the privileged deletion backend is configured.
+  final AccountDeletionUseCases? accountDeletion;
   final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
+  final DevicePermissionAccess? devicePermissions;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
 

@@ -1,11 +1,13 @@
 final class ResearchConsentStatus {
   const ResearchConsentStatus({
+    required this.ownerId,
     required this.version,
     required this.accepted,
     this.decidedAtUtc,
     this.withdrawnAtUtc,
   });
 
+  final String ownerId;
   final int version;
   final bool accepted;
   final DateTime? decidedAtUtc;
@@ -18,7 +20,7 @@ abstract interface class ResearchConsentRepository {
     required int version,
   });
 
-  Future<void> decide({
+  Future<bool> decide({
     required String ownerId,
     required int version,
     required bool accepted,

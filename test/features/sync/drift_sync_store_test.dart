@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_status.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
@@ -511,12 +514,177 @@ void main() {
       expect(conflicts.single.outcome, 'cloudWins');
     },
   );
+
+  test(
+    'status counts five live states and handled history independently',
+    () async {
+      for (final (index, state) in <String>[
+        'pending',
+        'retryWaiting',
+        'inFlight',
+        'blockedAuth',
+        'permanentFailure',
+        'acknowledged',
+        'superseded',
+        'conflictResolved',
+      ].indexed) {
+        await _insertOutbox(
+          database,
+          ownerId: 'owner-a',
+          operationId: 'operation:$state',
+          entityId: 'entity:$index',
+          baseRevision: 0,
+          createdAtUtcMs: index,
+          state: state,
+        );
+      }
+      for (var index = 0; index < 3; index++) {
+        await _insertConflict(
+          database,
+          ownerId: 'owner-a',
+          id: 'conflict:$index',
+        );
+      }
+
+      final status = await store.watchCurrentOwnerSyncStatus().firstWhere(
+        (snapshot) => snapshot != null,
+      );
+
+      expect(
+        status,
+        const SyncStatusSnapshot(
+          ownerId: 'owner-a',
+          pending: 1,
+          retryWaiting: 1,
+          inFlight: 1,
+          blockedAuth: 1,
+          permanentFailure: 1,
+          handledConflicts: 3,
+        ),
+      );
+      expect(
+        await database.select(database.outboxOperations).get(),
+        hasLength(8),
+      );
+      expect(await database.select(database.syncConflicts).get(), hasLength(3));
+    },
+  );
+
+  test('status distinguishes an empty owner from no active owner', () async {
+    final empty = await store.watchCurrentOwnerSyncStatus().firstWhere(
+      (snapshot) => snapshot != null,
+    );
+
+    expect(
+      empty,
+      const SyncStatusSnapshot(
+        ownerId: 'owner-a',
+        pending: 0,
+        retryWaiting: 0,
+        inFlight: 0,
+        blockedAuth: 0,
+        permanentFailure: 0,
+        handledConflicts: 0,
+      ),
+    );
+
+    await (database.update(database.localOwners)
+          ..where((row) => row.id.equals('owner-a')))
+        .write(const LocalOwnersCompanion(isActive: Value(false)));
+
+    expect(await store.watchCurrentOwnerSyncStatus().first, isNull);
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
+    expect(await database.select(database.syncConflicts).get(), isEmpty);
+  });
+
+  test(
+    'status emits no previous owner snapshot after atomic owner switch',
+    () async {
+      await _insertOwner(database, 'owner-b', active: false);
+      await _insertOutbox(
+        database,
+        ownerId: 'owner-a',
+        operationId: 'operation:a:1',
+        entityId: 'entity:a:1',
+        baseRevision: 0,
+        createdAtUtcMs: 1,
+      );
+      for (var index = 0; index < 2; index++) {
+        await _insertOutbox(
+          database,
+          ownerId: 'owner-b',
+          operationId: 'operation:b:$index',
+          entityId: 'entity:b:$index',
+          baseRevision: 0,
+          createdAtUtcMs: index,
+          state: 'retryWaiting',
+        );
+      }
+      final events = StreamIterator<SyncStatusSnapshot?>(
+        store.watchCurrentOwnerSyncStatus(),
+      );
+      addTearDown(events.cancel);
+
+      expect(await events.moveNext(), isTrue);
+      expect(events.current, isNull);
+      expect(await events.moveNext(), isTrue);
+      expect(events.current?.ownerId, 'owner-a');
+      expect(events.current?.pending, 1);
+      expect(events.current?.retryWaiting, 0);
+
+      await _insertOutbox(
+        database,
+        ownerId: 'owner-a',
+        operationId: 'operation:a:2',
+        entityId: 'entity:a:2',
+        baseRevision: 0,
+        createdAtUtcMs: 2,
+      );
+      expect(await events.moveNext(), isTrue);
+      expect(events.current?.ownerId, 'owner-a');
+      expect(events.current?.pending, 2);
+
+      await database.transaction(() async {
+        await _insertOutbox(
+          database,
+          ownerId: 'owner-a',
+          operationId: 'operation:a:3',
+          entityId: 'entity:a:3',
+          baseRevision: 0,
+          createdAtUtcMs: 3,
+        );
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals('owner-a')))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals('owner-b')))
+            .write(const LocalOwnersCompanion(isActive: Value(true)));
+      });
+
+      expect(await events.moveNext(), isTrue);
+      expect(events.current, isNull);
+      expect(await events.moveNext(), isTrue);
+      expect(events.current?.ownerId, 'owner-b');
+      expect(events.current?.pending, 0);
+      expect(events.current?.retryWaiting, 2);
+    },
+  );
 }
 
-Future<void> _insertOwner(AppDatabase database, String ownerId) {
+Future<void> _insertOwner(
+  AppDatabase database,
+  String ownerId, {
+  bool active = true,
+}) {
   return database
       .into(database.localOwners)
-      .insert(LocalOwnersCompanion.insert(id: ownerId, createdAtUtcMs: 0));
+      .insert(
+        LocalOwnersCompanion.insert(
+          id: ownerId,
+          createdAtUtcMs: 0,
+          isActive: Value(active),
+        ),
+      );
 }
 
 Future<void> _insertCategory(
@@ -548,6 +716,7 @@ Future<void> _insertOutbox(
   required String entityId,
   required int baseRevision,
   required int createdAtUtcMs,
+  String state = 'pending',
 }) {
   return database
       .into(database.outboxOperations)
@@ -559,7 +728,30 @@ Future<void> _insertOutbox(
           entityId: entityId,
           operationKind: 'upsert',
           baseRevision: Value(baseRevision),
+          state: Value(state),
           createdAtUtcMs: createdAtUtcMs,
+        ),
+      );
+}
+
+Future<void> _insertConflict(
+  AppDatabase database, {
+  required String ownerId,
+  required String id,
+}) {
+  return database
+      .into(database.syncConflicts)
+      .insert(
+        SyncConflictsCompanion.insert(
+          id: id,
+          ownerId: ownerId,
+          entityType: 'category',
+          entityId: 'entity:$id',
+          localRevision: 1,
+          cloudRevision: 2,
+          resolutionPolicy: 'cloudWins',
+          outcome: 'cloudWins',
+          resolvedAtUtcMs: 1,
         ),
       );
 }

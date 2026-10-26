@@ -44,7 +44,7 @@ Future<void> _pumpHome(WidgetTester tester, AppBuildInfo buildInfo) async {
 }
 
 Future<void> _openDrawer(WidgetTester tester) async {
-  await tester.tap(find.byKey(const ValueKey<String>('legacy-drawer-button')));
+  await tester.tap(find.byKey(const ValueKey<String>('shell-drawer-button')));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(Drawer), findsOneWidget);
@@ -71,7 +71,7 @@ void main() {
   group('MainNavigationScreen build identity', () {
     setUp(() {});
 
-    testWidgets('drawer renders version and buildId under build-identity', (
+    testWidgets('drawer renders version without internal buildId', (
       tester,
     ) async {
       const buildInfo = AppBuildInfo(version: '9.9.9+9', buildId: 'feedface');
@@ -87,7 +87,7 @@ void main() {
         find.byKey(const ValueKey<String>('build-identity')),
       );
       expect(identity.data, contains('9.9.9+9'));
-      expect(identity.data, contains('feedface'));
+      expect(identity.data, isNot(contains('feedface')));
     });
   });
 

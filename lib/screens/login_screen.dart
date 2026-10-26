@@ -32,6 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
   ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
   bool _obscure = true;
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void didChangeDependencies() {
@@ -45,32 +47,72 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signIn() async {
     final account = _account;
-    if (account == null || _busy) {
-      _show('ระบบบัญชีออนไลน์ไม่พร้อม การเรียนแบบ Guest ยังใช้งานได้');
+    if (_busy) return;
+    if (account == null) {
+      _show('ระบบบัญชีออนไลน์ไม่พร้อม คุณยังเรียนโดยไม่ใช้บัญชีได้');
       return;
     }
-    setState(() => _busy = true);
+    final email = _email.text.trim();
+    final emailError = _emailErrorText(email);
+    final passwordError = _password.text.isEmpty ? 'กรอกรหัสผ่าน' : null;
+    if (emailError != null || passwordError != null) {
+      setState(() {
+        _emailError = emailError;
+        _passwordError = passwordError;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _emailError = null;
+      _passwordError = null;
+    });
     try {
       final session = await account.signIn(
-        email: _email.text,
+        email: email,
         password: _password.text,
       );
-      if (!mounted) return;
-      await _ensureResearchConsentDecision();
-      if (!mounted) return;
-      if (session.emailVerified) {
-        await AppNavigator.resetTo<void>(context, AppRoute.home);
-      } else {
-        await AppNavigator.push<void>(
-          context,
-          AppRoute.emailVerification,
-          arguments: EmailVerificationArgs(session.email ?? _email.text),
-        );
-      }
+      await _completeSignIn(session, fallbackEmail: email);
     } on AccountException catch (error) {
       if (mounted) _show(_accountFailure(error.code));
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    final account = _account;
+    if (_busy) return;
+    if (account == null || !account.googleSignInAvailable) {
+      _show('ผู้ให้บริการบัญชีไม่พร้อมใช้งาน');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final session = await account.signInWithGoogle();
+      await _completeSignIn(session);
+    } on AccountException catch (error) {
+      if (mounted) _show(_accountFailure(error.code));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _completeSignIn(
+    AccountSession session, {
+    String fallbackEmail = '',
+  }) async {
+    if (!mounted) return;
+    await _ensureResearchConsentDecision();
+    if (!mounted) return;
+    if (session.emailVerified) {
+      await AppNavigator.resetTo<void>(context, AppRoute.home);
+    } else {
+      await AppNavigator.push<void>(
+        context,
+        AppRoute.emailVerification,
+        arguments: EmailVerificationArgs(session.email ?? fallbackEmail),
+      );
     }
   }
 
@@ -86,48 +128,80 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result is GuestSessionStarted) {
       await AppNavigator.resetTo<void>(context, AppRoute.home);
     } else {
-      _show('เริ่มโหมด Guest ไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+      _show('เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
     }
   }
 
   Future<void> _ensureResearchConsentDecision() async {
     final consent = _researchConsent;
     if (consent == null) return;
-    final current = await consent.load();
-    if (current.accepted || current.withdrawnAtUtc != null || !mounted) return;
-    final accepted = await showResearchConsentDialog(context);
-    if (accepted) {
-      await consent.accept();
-    } else {
-      await consent.withdraw();
+    try {
+      final current = await consent.load();
+      if (current.accepted || current.withdrawnAtUtc != null || !mounted) {
+        return;
+      }
+      final accepted = await showResearchConsentDialog(context);
+      if (accepted != true) return;
+      final recorded = await consent.accept(expectedOwnerId: current.ownerId);
+      if (!recorded && mounted) {
+        _show('สถานะผู้ใช้เปลี่ยน จึงไม่ได้บันทึกความยินยอมการวิจัย');
+      }
+    } catch (_) {
+      if (mounted) {
+        _show(
+          'ตรวจสอบสถานะการวิจัยไม่ได้ '
+          'จึงไม่ได้บันทึกความยินยอมการวิจัย',
+        );
+      }
     }
   }
 
   Future<void> _forgotPassword() async {
-    final emailController = TextEditingController(text: _email.text);
+    var resetEmail = _email.text;
+    String? resetError;
     final email = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('รีเซ็ตรหัสผ่าน'),
-        content: TextField(
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          decoration: const InputDecoration(labelText: 'อีเมล'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, emailController.text),
-            child: const Text('ส่งลิงก์'),
-          ),
-        ],
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          void submit() {
+            final value = resetEmail.trim();
+            final error = _emailErrorText(value);
+            if (error != null) {
+              setDialogState(() => resetError = error);
+              return;
+            }
+            Navigator.pop(dialogContext, value);
+          }
+
+          return AlertDialog(
+            title: const Text('รีเซ็ตรหัสผ่าน'),
+            content: TextFormField(
+              initialValue: resetEmail,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: InputDecoration(
+                labelText: 'อีเมล',
+                errorText: resetError,
+              ),
+              onChanged: (value) {
+                resetEmail = value;
+                if (resetError != null) {
+                  setDialogState(() => resetError = null);
+                }
+              },
+              onFieldSubmitted: (_) => submit(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('ยกเลิก'),
+              ),
+              FilledButton(onPressed: submit, child: const Text('ส่งลิงก์')),
+            ],
+          );
+        },
       ),
     );
-    emailController.dispose();
     if (email == null || !mounted) return;
     final account = _account;
     if (account == null) {
@@ -159,97 +233,153 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = ((width - 560) / 2)
+        .clamp(24.0, double.infinity)
+        .toDouble();
     return Scaffold(
       appBar: AppBar(title: const Text('เข้าสู่ระบบ LexiQuest')),
       body: SafeArea(
-        child: AutofillGroup(
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const SizedBox(height: 32),
-              Icon(
-                Icons.menu_book_outlined,
-                size: 72,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _email,
-                enabled: !_busy,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [
-                  AutofillHints.username,
-                  AutofillHints.email,
-                ],
-                decoration: const InputDecoration(
-                  labelText: 'อีเมล',
-                  prefixIcon: Icon(Icons.email_outlined),
+        child: Stack(
+          children: [
+            AutofillGroup(
+              child: ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 24,
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _password,
-                enabled: !_busy,
-                obscureText: _obscure,
-                autofillHints: const [AutofillHints.password],
-                onSubmitted: (_) => _signIn(),
-                decoration: InputDecoration(
-                  labelText: 'รหัสผ่าน',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(
-                      _obscure ? Icons.visibility : Icons.visibility_off,
+                children: [
+                  const SizedBox(height: 32),
+                  Icon(
+                    Icons.menu_book_outlined,
+                    size: 72,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'สร้างคลังคำของคุณ ฝึกทบทวน '
+                    'และติดตามความก้าวหน้าภาษาอังกฤษ',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _email,
+                    enabled: !_busy,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [
+                      AutofillHints.username,
+                      AutofillHints.email,
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'อีเมล',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ).copyWith(errorText: _emailError),
+                    onChanged: (_) {
+                      if (_emailError != null) {
+                        setState(() => _emailError = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _password,
+                    enabled: !_busy,
+                    obscureText: _obscure,
+                    autofillHints: const [AutofillHints.password],
+                    onSubmitted: (_) => _signIn(),
+                    decoration: InputDecoration(
+                      labelText: 'รหัสผ่าน',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      errorText: _passwordError,
+                      suffixIcon: IconButton(
+                        tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure ? Icons.visibility : Icons.visibility_off,
+                        ),
+                      ),
+                    ),
+                    onChanged: (_) {
+                      if (_passwordError != null) {
+                        setState(() => _passwordError = null);
+                      }
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _busy ? null : _forgotPassword,
+                      child: const Text('ลืมรหัสผ่าน'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _signIn,
+                      child: const Text('เข้าสู่ระบบ'),
+                    ),
+                  ),
+                  if (_account?.googleSignInAvailable == true) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        key: const ValueKey<String>('google-sign-in-button'),
+                        onPressed: _busy ? null : _signInWithGoogle,
+                        icon: const Icon(Icons.account_circle_outlined),
+                        label: const Text('ใช้บัญชี Google'),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      key: const ValueKey<String>('guest-mode-button'),
+                      onPressed: _busy ? null : _startGuest,
+                      child: const Text('เรียนต่อโดยไม่ใช้บัญชี'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => AppNavigator.push<void>(
+                            context,
+                            AppRoute.register,
+                          ),
+                    child: const Text('สร้างบัญชีใหม่'),
+                  ),
+                ],
+              ),
+            ),
+            if (_busy)
+              const Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'กำลังเข้าสู่ระบบ',
                 ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _busy ? null : _forgotPassword,
-                  child: const Text('ลืมรหัสผ่าน'),
-                ),
-              ),
-              SizedBox(
-                height: 48,
-                child: FilledButton(
-                  onPressed: _busy ? null : _signIn,
-                  child: const Text('เข้าสู่ระบบ'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 48,
-                child: OutlinedButton(
-                  key: const ValueKey<String>('guest-mode-button'),
-                  onPressed: _busy ? null : _startGuest,
-                  child: const Text('เรียนแบบ Guest'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => AppNavigator.push<void>(context, AppRoute.register),
-                child: const Text('สร้างบัญชีใหม่'),
-              ),
-              if (_busy)
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
+String? _emailErrorText(String value) {
+  final email = value.trim();
+  if (email.isEmpty) return 'กรอกอีเมล';
+  return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)
+      ? null
+      : 'ตรวจสอบรูปแบบอีเมล';
+}
+
 String _accountFailure(AccountFailureCode code) => switch (code) {
   AccountFailureCode.invalidEmail => 'รูปแบบอีเมลไม่ถูกต้อง',
+  AccountFailureCode.invalidDisplayName => 'ชื่อที่แสดงไม่ถูกต้อง',
   AccountFailureCode.weakPassword => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
   AccountFailureCode.emailInUse => 'อีเมลนี้ถูกใช้แล้ว',
   AccountFailureCode.invalidCredential => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',

@@ -587,6 +587,25 @@ describe('field sync ownership and atomic revision contract', () => {
     await assertFails(deleteDoc(ref));
   });
 
+  for (const type of ['creditQuizCorrectV1', 'creditLegacyCarryV1']) {
+    it(`denies positive ${type} mint in the purchase/equip-only protocol`, async () => {
+      await assertFails(writeFieldRewardTransaction(authDb(), {
+        entityId: `denied-${type}`,
+        operationId: `denied-${type}`,
+        payload: {
+          idempotencyKey: `denied-${type}`,
+          transactionType: type,
+          amount: 1,
+          itemId: null,
+          slot: null,
+          catalogVersion: 0,
+          sourceEventId: 'synthetic-attempt',
+          occurredAtUtcMs: 4000,
+        },
+      }));
+    });
+  }
+
   it('rejects reward transactions with a client-invented price or slot', async () => {
     const db = authDb();
     await assertFails(

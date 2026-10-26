@@ -35,5 +35,8 @@ void main() {
     expect(find.text('ธีมมาตรฐาน'), findsOneWidget);
     expect(find.text('0'), findsWidgets);
     expect(find.textContaining('Damage'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }

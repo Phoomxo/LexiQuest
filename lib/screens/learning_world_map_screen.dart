@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'cefr_selection_screen.dart';
+
+import '../config/m3_theme.dart';
 import '../navigation/app_routes.dart';
+import '../widgets/adaptive_content_pane.dart';
+import 'cefr_selection_screen.dart';
 
 class CampaignNode {
-  final String level;
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final bool isUnlocked;
-
   const CampaignNode({
     required this.level,
     required this.title,
     required this.description,
     required this.icon,
-    required this.color,
-    required this.isUnlocked,
   });
+
+  final String level;
+  final String title;
+  final String description;
+  final IconData icon;
 }
 
 class LearningWorldMapScreen extends StatelessWidget {
@@ -26,157 +25,128 @@ class LearningWorldMapScreen extends StatelessWidget {
   final List<CampaignNode> _nodes = const [
     CampaignNode(
       level: 'A1',
-      title: 'เกาะเริ่มต้น (A1 Starter Island)',
+      title: 'เกาะเริ่มต้น · ระดับ A1',
       description: 'คำศัพท์พื้นฐานชีวิตประจำวัน',
       icon: Icons.landscape,
-      color: Colors.green,
-      isUnlocked: true,
     ),
     CampaignNode(
       level: 'A2',
-      title: 'ป่าพฤกษา (A2 Forest of Phrases)',
+      title: 'ป่าคำและวลี · ระดับ A2',
       description: 'ประโยคและการเดินทางทั่วไป',
       icon: Icons.forest,
-      color: Colors.teal,
-      isUnlocked: true,
     ),
     CampaignNode(
       level: 'B1',
-      title: 'เมืองการค้า (B1 Business City)',
+      title: 'เมืองแห่งการสื่อสาร · ระดับ B1',
       description: 'การสื่อสารในงานและสังคม',
       icon: Icons.location_city,
-      color: Colors.blue,
-      isUnlocked: true,
     ),
     CampaignNode(
       level: 'B2',
-      title: 'วิทยาลัยความรู้ (B2 Academic Hub)',
+      title: 'ศูนย์ความรู้ · ระดับ B2',
       description: 'คำศัพท์ระดับสูงและบทวิเคราะห์',
       icon: Icons.school,
-      color: Colors.indigo,
-      isUnlocked: false,
     ),
     CampaignNode(
       level: 'C1',
-      title: 'ปราสาทสัทศาสตร์ (C1 Phonetic Castle)',
+      title: 'ปราสาทการออกเสียง · ระดับ C1',
       description: 'คำศัพท์เฉพาะทางและสำนวนลึกซึ้ง',
       icon: Icons.castle,
-      color: Colors.purple,
-      isUnlocked: false,
     ),
     CampaignNode(
       level: 'C2',
-      title: 'หอคอยเพชร (C2 Diamond Spire)',
+      title: 'หอคอยผู้เชี่ยวชาญ · ระดับ C2',
       description: 'ระดับความเชี่ยวชาญสูงสุด',
       icon: Icons.auto_awesome,
-      color: Colors.amber,
-      isUnlocked: false,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'แผนที่ท่องโลกคำศัพท์ (World Map Campaign)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.teal.shade900,
+        toolbarHeight: M3Theme.appBarToolbarHeight(context),
+        title: M3Theme.appBarTitle(context, 'แผนที่การเรียนรู้'),
         centerTitle: true,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(20.0),
-        itemCount: _nodes.length,
-        itemBuilder: (context, index) {
-          final node = _nodes[index];
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Column(
-              children: [
-                InkWell(
-                  onTap: node.isUnlocked
-                      ? () {
-                          AppNavigator.pushPage<void>(
-                            context,
-                            AppPage<void>(
-                              name: 'learning/cefr',
-                              builder: (context) => const CefrSelectionScreen(),
-                            ),
-                          );
-                        }
-                      : null,
-                  child: Card(
-                    elevation: node.isUnlocked ? 4 : 1,
-                    color: node.isUnlocked
-                        ? node.color.withValues(alpha: 0.15)
-                        : Colors.grey.shade200,
+      body: AdaptiveContentPane(
+        child: ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: _nodes.length,
+          itemBuilder: (context, index) {
+            final node = _nodes[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                children: [
+                  Card(
+                    color: colors.surfaceContainerLow,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: node.isUnlocked
-                            ? node.color
-                            : Colors.grey.shade400,
-                        width: 2,
-                      ),
+                      side: BorderSide(color: colors.outlineVariant),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: node.isUnlocked
-                                ? node.color
-                                : Colors.grey,
-                            child: Icon(
-                              node.isUnlocked ? node.icon : Icons.lock,
-                              color: Colors.white,
-                              size: 28,
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'learning/cefr',
+                          builder: (_) =>
+                              CefrSelectionScreen(initialLevel: node.level),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: colors.primaryContainer,
+                              child: Icon(
+                                node.icon,
+                                color: colors.onPrimaryContainer,
+                                size: 28,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '[${node.level}] ${node.title}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: node.isUnlocked
-                                        ? Colors.black87
-                                        : Colors.grey,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    node.title,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  node.description,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: node.isUnlocked
-                                        ? Colors.black54
-                                        : Colors.grey,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    node.description,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                if (index < _nodes.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Icon(Icons.arrow_downward, color: Colors.grey),
-                  ),
-              ],
-            ),
-          );
-        },
+                  if (index < _nodes.length - 1)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Icon(Icons.arrow_downward),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

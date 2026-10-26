@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../widgets/adaptive_content_pane.dart';
 
 class ScoreScreen extends StatelessWidget {
   const ScoreScreen({
@@ -8,11 +10,15 @@ class ScoreScreen extends StatelessWidget {
     this.score,
     this.isFromFirestore = false,
     this.selectedCategoryId,
+    this.mistakes = const [],
+    this.onPracticeMistakes,
   });
 
   final int correctAnswers;
   final int wrongAnswers;
   final int? score;
+  final List<QuizWord> mistakes;
+  final VoidCallback? onPracticeMistakes;
 
   /// Retained for source compatibility; score data is always local-first.
   final bool isFromFirestore;
@@ -25,39 +31,62 @@ class ScoreScreen extends StatelessWidget {
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return Scaffold(
       appBar: AppBar(title: const Text('ผลการเรียน')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$resolvedScore%',
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
-              const SizedBox(height: 20),
-              _ResultRow(
-                label: 'ตอบถูก',
-                value: correctAnswers,
-                icon: Icons.check_circle_outline,
-              ),
-              _ResultRow(
-                label: 'ตอบผิด',
-                value: wrongAnswers,
-                icon: Icons.cancel_outlined,
-              ),
-              _ResultRow(
-                label: 'จำนวนตัวอย่าง',
-                value: total,
-                icon: Icons.dataset_outlined,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('กลับไปเลือกกิจกรรม'),
-              ),
-            ],
+      body: AdaptiveContentPane(
+        maxWidth: AdaptiveContentPane.formMaxWidth,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$resolvedScore%',
+                  style: Theme.of(context).textTheme.displayMedium,
+                ),
+                const SizedBox(height: 20),
+                _ResultRow(
+                  label: 'ตอบถูก',
+                  value: correctAnswers,
+                  icon: Icons.check_circle_outline,
+                ),
+                _ResultRow(
+                  label: 'ตอบผิด',
+                  value: wrongAnswers,
+                  icon: Icons.cancel_outlined,
+                ),
+                _ResultRow(
+                  label: 'คำตอบที่ใช้คำนวณ',
+                  value: total,
+                  icon: Icons.dataset_outlined,
+                ),
+                const SizedBox(height: 24),
+                if (mistakes.isNotEmpty) ...[
+                  Text(
+                    'คำที่ควรฝึกต่อ',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  ...mistakes.map(
+                    (word) => ListTile(
+                      title: Text(word.spelling),
+                      subtitle: Text(word.meaning),
+                    ),
+                  ),
+                  if (onPracticeMistakes != null)
+                    FilledButton.icon(
+                      onPressed: onPracticeMistakes,
+                      icon: const Icon(Icons.refresh),
+                      label: Text('ฝึกคำที่ผิด (${mistakes.length})'),
+                    ),
+                  const SizedBox(height: 12),
+                ],
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('กลับไปเลือกกิจกรรม'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

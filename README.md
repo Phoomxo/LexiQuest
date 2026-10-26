@@ -1,5 +1,8 @@
 # LexiQuest
 
+Current development source is in [lexiquest-current](../../.codex/worktrees/lexiquest-current/LexiQuest/docs/development/ux-delivery/README.md).
+The checkout containing this README is the historical `feature/associative-reading-loop` branch, not the latest UX source. See the current index for remaining work and the 2026-10-01 cleanup checkpoint.
+
 An AI-enhanced gamified vocabulary learning application built with Flutter, Firebase, and an authenticated OmniVoice text-to-speech engine.
 
 ## Overview
@@ -14,6 +17,8 @@ LexiQuest combines gamified vocabulary learning (quizzes, word scrambles, catego
 - **Backend API**: Python 3.11 FastAPI service (`backend/voice_api`) serving OmniVoice 0.2.1 24 kHz WAV synthesis with Firebase ID token authentication.
 
 ## Development & Testing
+
+Development work follows the [LexiQuest Agentic Development Life Cycle](docs/development/agentic-development-life-cycle.md): Intent, Ground, Plan, Execute, Review, Attest, Integrate, and Learn. The process keeps implementation moving while requiring source-grounded context, focused checks, review disposition, and durable evidence for each completed task.
 
 ### Running Flutter Tests
 
