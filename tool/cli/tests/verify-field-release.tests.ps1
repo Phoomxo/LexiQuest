@@ -199,6 +199,47 @@ foreach ($requiredFunction in @(
         "release gate exposes behavioral helper $requiredFunction"
 }
 
+$nativeWarningRoot = Join-Path ([IO.Path]::GetTempPath()) (
+    'lexiquest-aab-warning-' + [guid]::NewGuid().ToString('N')
+)
+$originalBundletoolFinder = (
+    Get-Command Find-LexiQuestBundletoolClasspath
+).ScriptBlock
+$originalErrorActionPreference = $ErrorActionPreference
+try {
+    New-Item -ItemType Directory -Path $nativeWarningRoot | Out-Null
+    $script:fakeBundletoolJava = Join-Path $nativeWarningRoot 'fake-java.cmd'
+    @'
+@echo off
+1>&2 echo WARNING: synthetic Java runtime warning
+echo ^<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.lexiquest.app" android:versionName="1.0.0" android:versionCode="18"^>^<application /^>^</manifest^>
+exit /b 0
+'@ | Set-Content -LiteralPath $script:fakeBundletoolJava -Encoding ascii
+    $fakeAab = Join-Path $nativeWarningRoot 'synthetic.aab'
+    [IO.File]::WriteAllBytes($fakeAab, [byte[]](1, 2, 3, 4))
+    function Find-LexiQuestBundletoolClasspath {
+        return [pscustomobject]@{
+            java = $script:fakeBundletoolJava
+            classpath = 'unused'
+        }
+    }
+    $ErrorActionPreference = 'Stop'
+    $warningMetadata = Get-LexiQuestMeasuredAabMetadata -AabPath $fakeAab
+    Assert-True ($warningMetadata.applicationId -eq 'com.lexiquest.app') `
+        'AAB measurement tolerates a successful Java warning on stderr'
+    Assert-True ($warningMetadata.versionCode -eq 18) `
+        'AAB measurement retains manifest metadata after a Java warning'
+}
+finally {
+    $ErrorActionPreference = $originalErrorActionPreference
+    Set-Item Function:Find-LexiQuestBundletoolClasspath `
+        -Value $originalBundletoolFinder
+    Remove-Item -LiteralPath $nativeWarningRoot -Recurse -Force `
+        -ErrorAction SilentlyContinue
+    Remove-Variable -Name fakeBundletoolJava -Scope Script `
+        -ErrorAction SilentlyContinue
+}
+
 $packagerCommand = Get-Command (
     Join-Path $repoRoot 'tool/cli/package-field-release.ps1'
 )

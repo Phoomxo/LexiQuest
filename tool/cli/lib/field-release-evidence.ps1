@@ -583,13 +583,21 @@ function Get-LexiQuestMeasuredAabMetadata {
     param([Parameter(Mandatory)][string]$AabPath)
 
     $tooling = Find-LexiQuestBundletoolClasspath
-    $LASTEXITCODE = 0
-    $output = @(
-        & $tooling.java -cp $tooling.classpath `
-            com.android.tools.build.bundletool.BundleToolMain `
-            dump manifest "--bundle=$AabPath" --module=base 2>&1
-    )
-    if ([int]$LASTEXITCODE -ne 0) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $LASTEXITCODE = 0
+        $output = @(
+            & $tooling.java -cp $tooling.classpath `
+                com.android.tools.build.bundletool.BundleToolMain `
+                dump manifest "--bundle=$AabPath" --module=base 2>&1
+        )
+        $nativeExitCode = [int]$LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($nativeExitCode -ne 0) {
         throw "bundletool could not read the AAB manifest: $output"
     }
     $manifestMatch = [regex]::Match(
