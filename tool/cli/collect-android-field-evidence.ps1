@@ -354,9 +354,17 @@ $installOutput = @()
 $installExitCode = 0
 $isDirectInstall = [string]$releaseManifest.releaseProfile -eq 'fieldTrial'
 if ($isDirectInstall) {
-    $installOutput = & adb -s $serial install --no-streaming -r `
-        $apkPath 2>&1
-    $installExitCode = [int]$LASTEXITCODE
+    $previousAdbErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $installOutput = @(
+            & adb -s $serial install --no-streaming -r $apkPath 2>&1
+        )
+        $installExitCode = [int]$LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousAdbErrorActionPreference
+    }
 } elseif ([string]$releaseManifest.releaseProfile -ne 'publicProduction') {
     throw 'Release manifest profile must be fieldTrial or publicProduction.'
 }

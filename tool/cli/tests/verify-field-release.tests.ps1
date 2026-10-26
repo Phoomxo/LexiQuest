@@ -1335,6 +1335,13 @@ $collectorCommand = Get-Command (
 )
 Assert-True (-not $collectorCommand.Parameters.ContainsKey('SigningTrustPath')) `
     'collector trust cannot be redirected to an arbitrary file'
+Assert-True (
+    $collectorText.Contains('$previousAdbErrorActionPreference') -and
+    $collectorText.Contains("`$ErrorActionPreference = 'Continue'") -and
+    $collectorText.Contains(
+        '$ErrorActionPreference = $previousAdbErrorActionPreference'
+    )
+) 'collector judges ADB install progress by exit code instead of stderr warnings'
 foreach ($needle in @(
     'ro.kernel.qemu',
     'ro.boot.qemu',
