@@ -1342,6 +1342,10 @@ Assert-True (
         '$ErrorActionPreference = $previousAdbErrorActionPreference'
     )
 ) 'collector judges ADB install progress by exit code instead of stderr warnings'
+Assert-True (
+    $collectorText.Contains('$previousPullErrorActionPreference') -and
+    $collectorText.Contains('$pullExitCode = [int]$LASTEXITCODE')
+) 'collector judges ADB pull progress by exit code instead of stderr warnings'
 foreach ($needle in @(
     'ro.kernel.qemu',
     'ro.boot.qemu',

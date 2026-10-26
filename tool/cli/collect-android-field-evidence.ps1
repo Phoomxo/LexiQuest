@@ -432,8 +432,17 @@ try {
             'lexiquest-installed-' + [Guid]::NewGuid().ToString('N') +
             "-$apkIndex.apk"
         )
-        & adb -s $serial pull $remoteApk $temporaryApk 2>&1 | Out-Null
-        if ([int]$LASTEXITCODE -ne 0 -or
+        $previousPullErrorActionPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            & adb -s $serial pull $remoteApk $temporaryApk 2>&1 |
+                Out-Null
+            $pullExitCode = [int]$LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousPullErrorActionPreference
+        }
+        if ($pullExitCode -ne 0 -or
             -not (Test-Path -LiteralPath $temporaryApk -PathType Leaf)) {
             throw "Unable to pull installed APK: $remoteApk"
         }
