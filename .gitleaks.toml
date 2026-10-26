@@ -75,6 +75,15 @@ regexes = [
 ]
 
 [[allowlists]]
+description = "Synthetic App Check JWT is a structural parser fixture."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)test/runtime/app_bootstrap_test\.dart$''']
+regexes = [
+  '''eyJhbGciOiJSUzI1NiJ9\.eyJleHAiOjQxMDI0NDQ4MDB9\.c2lnbmF0dXJl''',
+]
+
+[[allowlists]]
 description = "Sync and learning test identifiers are not credentials."
 condition = "AND"
 regexTarget = "line"
