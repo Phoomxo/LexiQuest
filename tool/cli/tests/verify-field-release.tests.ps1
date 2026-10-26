@@ -385,7 +385,7 @@ foreach ($needle in @(
     'ro.kernel.qemu',
     'pseudonymousDeviceId',
     "status = 'pending'",
-    'install -r',
+    'install --no-streaming -r',
     'Get-InstalledVersionCode',
     'priorVersionCode',
     'targetVersionCode',

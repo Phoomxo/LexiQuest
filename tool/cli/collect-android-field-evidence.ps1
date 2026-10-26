@@ -93,7 +93,7 @@ $priorVersionCode = Get-InstalledVersionCode `
     -Serial $serial `
     -PackageName 'com.lexiquest.app'
 
-$installOutput = & adb -s $serial install -r $apkPath 2>&1
+$installOutput = & adb -s $serial install --no-streaming -r $apkPath 2>&1
 if ([int]$LASTEXITCODE -ne 0 -or ($installOutput -join "`n") -notmatch 'Success') {
     throw "APK installation failed: $installOutput"
 }
