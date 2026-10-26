@@ -8,11 +8,12 @@ root (``backend/ai_api/.env``).
 from __future__ import annotations
 
 import ipaddress
+import re
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from lexiquest_ai.models import MAX_TEXT_LENGTH_CEILING
@@ -28,6 +29,10 @@ _ENV_FILE = _PROJECT_ROOT / ".env"
 # new base URL + model name rather than a new SDK.
 _SUPPORTED_PROVIDERS = frozenset({"openai-compat"})
 _CLOUD_METADATA_HOSTS = frozenset({"metadata.google.internal"})
+_KMS_KEY_VERSION_PATTERN = re.compile(
+    r"projects/[^/\s]+/locations/[^/\s]+/keyRings/[^/\s]+/"
+    r"cryptoKeys/[^/\s]+/cryptoKeyVersions/[1-9][0-9]*"
+)
 
 
 def _canonical_ip_address(
@@ -108,11 +113,29 @@ class Settings(BaseSettings):
     max_text_length: int = Field(default=500, ge=1, le=MAX_TEXT_LENGTH_CEILING)
     request_timeout_seconds: int = Field(default=20, ge=1, le=120)
     account_deletion_enabled: bool = False
-    account_deletion_server_export_authority: str = Field(
-        default="", max_length=128
+    account_deletion_server_export_authority: Literal[
+        "", "gcp-kms-hmac-sha256-v1"
+    ] = ""
+    account_deletion_export_bucket: str = Field(default="", max_length=255)
+    account_deletion_export_kms_key_version: str = Field(
+        default="", max_length=512
+    )
+    account_deletion_export_trusted_kms_key_versions: str = Field(
+        default="", max_length=4096
+    )
+    account_deletion_export_retention_seconds: int = Field(
+        default=0, ge=0, le=30 * 24 * 3600
     )
     account_deletion_recovery_retention_seconds: int = Field(
         default=0, ge=0, le=30 * 24 * 3600
+    )
+    account_deletion_export_maximum_documents: int = Field(
+        default=10_000, ge=1, le=100_000
+    )
+    account_deletion_export_maximum_bytes: int = Field(
+        default=50 * 1024 * 1024,
+        ge=1,
+        le=512 * 1024 * 1024,
     )
 
     # --- Response cache (primary cost control) ---
@@ -225,3 +248,86 @@ class Settings(BaseSettings):
         # surprising duplicates downstream.
         parts = [p.strip() for p in value.split(",") if p.strip()]
         return ",".join(parts)
+
+    @field_validator("account_deletion_export_bucket")
+    @classmethod
+    def _validate_export_bucket(cls, value: str) -> str:
+        bucket = value.strip()
+        if not bucket:
+            return ""
+        labels = bucket.split(".")
+        if (
+            not 3 <= len(bucket) <= 222
+            or any(not 1 <= len(label) <= 63 for label in labels)
+            or any(
+                re.fullmatch(
+                    r"[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?", label
+                )
+                is None
+                for label in labels
+            )
+        ):
+            raise ValueError("account deletion export bucket name is invalid")
+        try:
+            ipaddress.ip_address(bucket)
+        except ValueError:
+            return bucket
+        raise ValueError("account deletion export bucket must not be an IP address")
+
+    @field_validator("account_deletion_export_kms_key_version")
+    @classmethod
+    def _validate_export_kms_key_version(cls, value: str) -> str:
+        key_version = value.strip()
+        if not key_version:
+            return ""
+        if _KMS_KEY_VERSION_PATTERN.fullmatch(key_version) is None:
+            raise ValueError("account deletion KMS key version is invalid")
+        return key_version
+
+    @field_validator("account_deletion_export_trusted_kms_key_versions")
+    @classmethod
+    def _validate_trusted_export_kms_key_versions(cls, value: str) -> str:
+        versions: list[str] = []
+        for raw in value.split(","):
+            version = raw.strip()
+            if not version:
+                continue
+            if _KMS_KEY_VERSION_PATTERN.fullmatch(version) is None:
+                raise ValueError("trusted account deletion KMS key is invalid")
+            if version not in versions:
+                versions.append(version)
+        return ",".join(versions)
+
+    @model_validator(mode="after")
+    def _validate_account_deletion_export(self) -> Settings:
+        authority = self.account_deletion_server_export_authority
+        bucket = self.account_deletion_export_bucket.strip()
+        key_version = self.account_deletion_export_kms_key_version.strip()
+        trusted_versions = (
+            self.account_deletion_export_trusted_kms_key_versions.strip()
+        )
+        export_retention = self.account_deletion_export_retention_seconds
+        recovery_retention = self.account_deletion_recovery_retention_seconds
+        if not authority:
+            if (
+                bucket
+                or key_version
+                or trusted_versions
+                or export_retention
+                or recovery_retention
+            ):
+                raise ValueError(
+                    "account deletion export configuration is partial"
+                )
+            return self
+        if (
+            not bucket
+            or not key_version
+            or export_retention <= 0
+            or recovery_retention <= 0
+            or export_retention < recovery_retention
+        ):
+            raise ValueError(
+                "account deletion export configuration is incomplete"
+            )
+        return self

@@ -54,17 +54,23 @@ void main() {
     await database.close();
   });
 
-  SyncEngine engine({bool cloudEnabled = true, SyncMutex? mutex}) {
+  SyncEngine engine({
+    bool cloudEnabled = true,
+    SyncMutex? mutex,
+    SyncPolicyProvider? policyProvider,
+  }) {
     return SyncEngine(
       owners: owners,
       store: store,
       gateway: gateway,
-      policyProvider: () async => CloudSyncPolicy(
-        enabled: cloudEnabled,
-        source: CloudSyncPolicySource.cache,
-        fetchedAtUtc: nowUtc,
-        expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
-      ),
+      policyProvider:
+          policyProvider ??
+          () async => CloudSyncPolicy(
+            enabled: cloudEnabled,
+            source: CloudSyncPolicySource.cache,
+            fetchedAtUtc: nowUtc,
+            expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
+          ),
       mutex: mutex ?? SyncMutex(),
       backoff: const SyncBackoff(jitterFraction: 0),
       nowUtc: () => nowUtc,
@@ -88,13 +94,25 @@ void main() {
   test('owner without Firebase UID skips without claiming work', () async {
     owners.owner = identity.LocalOwner(id: 'owner-a', createdAtUtc: nowUtc);
     await _seedCategoryOperation(database);
+    var policyCalls = 0;
 
-    final result = await engine().run();
+    final result = await engine(
+      policyProvider: () async {
+        policyCalls++;
+        return CloudSyncPolicy(
+          enabled: true,
+          source: CloudSyncPolicySource.remote,
+          fetchedAtUtc: nowUtc,
+          expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
+        );
+      },
+    ).run();
     final operation = await database
         .select(database.outboxOperations)
         .getSingle();
 
     expect(result.status, SyncRunStatus.skippedUnauthenticated);
+    expect(policyCalls, 0);
     expect(operation.state, 'pending');
   });
 

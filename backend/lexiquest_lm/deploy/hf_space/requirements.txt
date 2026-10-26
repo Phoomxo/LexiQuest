@@ -10,3 +10,8 @@ torch==2.13.0
 transformers==5.14.1
 peft==0.19.1
 pydantic==2.13.4
+
+# Direct constraints keep transitive runtime packages above published fixes.
+accelerate==1.15.0
+anyio==4.15.1
+certifi==2026.10.23

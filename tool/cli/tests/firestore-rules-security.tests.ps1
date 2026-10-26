@@ -74,6 +74,10 @@ $config = ([System.IO.File]::ReadAllText($configPath) -replace "`r`n", "`n") -re
 Assert-Match $rules "rules_version\s*=\s*['""]2['""]" 'rules_version is 2'
 Assert-Match $rules 'service\s+cloud\.firestore' 'firestore rules service is declared'
 Assert-Match $rules 'request\.auth\.uid\s*!=\s*null' 'authentication is required for access'
+Assert-Match $rules 'function\s+ownerWriteAllowed\s*\(uid\)' 'account deletion owner-write fence helper is declared'
+Assert-Match $rules '!exists\(\s*/databases/\$\(database\)/documents/account_deletion_operations/\$\(uid\)\s*\)' 'owner-write fence is bound to the durable deletion tombstone'
+Assert-Match $rules 'allow\s+create,\s*update\s*:\s*if\s*ownerWriteAllowed\(uid\)' 'owner document writes require the deletion fence'
+Assert-Match $rules 'request\.resource\.data\.uid\s*==\s*request\.auth\.uid\s*&&\s*ownerWriteAllowed\(request\.auth\.uid\)' 'private vocabulary rows bind owner uid and deletion fence'
 
 # Self-ownership by document id (users, state).
 Assert-Match $rules 'match\s+/users/\{[^}]+\}' 'users collection is matched'

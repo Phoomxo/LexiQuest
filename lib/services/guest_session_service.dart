@@ -121,6 +121,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     void Function()? onOwnerBound,
     GuestRetryDelay? retryDelay,
     int maxCloudBindingAttempts = 5,
+    bool cloudBindingEnabled = true,
   }) => OwnerBindingGuestSessionService._(
     delegate,
     localOwners,
@@ -128,6 +129,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     onOwnerBound,
     retryDelay ?? ((delay) => Future<void>.delayed(_withJitter(delay))),
     maxCloudBindingAttempts,
+    cloudBindingEnabled,
   );
 
   OwnerBindingGuestSessionService._(
@@ -137,6 +139,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     this._onOwnerBound,
     this._retryDelay,
     this._maxCloudBindingAttempts,
+    this._cloudBindingEnabled,
   ) {
     if (_maxCloudBindingAttempts < 1) {
       throw ArgumentError.value(
@@ -153,13 +156,14 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
   final void Function()? _onOwnerBound;
   final GuestRetryDelay _retryDelay;
   final int _maxCloudBindingAttempts;
+  final bool _cloudBindingEnabled;
   Future<void>? _cloudBinding;
 
   @override
   Future<GuestSessionResult> start() async {
     try {
       final owner = await _localOwners.getOrCreateActiveOwner();
-      if (owner.firebaseUid == null) {
+      if (_cloudBindingEnabled && owner.firebaseUid == null) {
         final binding = _cloudBinding ??= _bindAnonymousOwner(owner.id);
         unawaited(
           binding.whenComplete(() {

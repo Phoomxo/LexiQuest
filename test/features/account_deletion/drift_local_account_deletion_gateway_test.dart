@@ -75,6 +75,17 @@ void main() {
         ]),
         1,
       );
+      for (final table in const [
+        'research_consents',
+        'events_v2',
+        'outbox_operations',
+      ]) {
+        expect(
+          await _count(database, table, 'owner_id = ?', ['owner-b']),
+          1,
+          reason: '$table keeps owner B research evidence',
+        );
+      }
     },
   );
 
@@ -462,5 +473,35 @@ Future<void> _seed(AppDatabase database) async {
     "INSERT INTO quest_objective_progress "
     "(id, instance_id, objective_id, target_count) "
     "VALUES ('objective-a', 'instance-a', 'objective-1', 1)",
+  );
+  await database.customStatement(
+    "INSERT INTO research_consents "
+    "(id, owner_id, consent_version, consent_state, decided_at_utc_ms) "
+    "VALUES ('consent-research-a', 'owner-a', 1, 'accepted', $now), "
+    "('consent-research-b', 'owner-b', 1, 'accepted', $now)",
+  );
+  await database.customStatement('''
+    INSERT INTO events_v2 (
+      event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
+      actor_identity, owner_id, aggregate_type, aggregate_id,
+      idempotency_key, consent_context_json, app_version, build_id,
+      privacy_classification, payload_json
+    ) VALUES
+      ('event-research-a', 'research.synthetic', 1, 1792833600000,
+       1792833600000, 'owner-a', 'owner-a', 'research', 'study-a',
+       'research-key-a', '{"consentVersion":1}', '1', 'build', 'ownerOnly',
+       '{"marker":"research-a"}'),
+      ('event-research-b', 'research.synthetic', 1, 1792833600000,
+       1792833600000, 'owner-b', 'owner-b', 'research', 'study-b',
+       'research-key-b', '{"consentVersion":1}', '1', 'build', 'ownerOnly',
+       '{"marker":"research-b"}')
+    ''');
+  await database.customStatement(
+    "INSERT INTO outbox_operations "
+    "(operation_id, owner_id, entity_type, entity_id, operation_kind, created_at_utc_ms) "
+    "VALUES ('outbox-research-a', 'owner-a', 'event_v2', "
+    "'event-research-a', 'upsert', $now), "
+    "('outbox-research-b', 'owner-b', 'event_v2', "
+    "'event-research-b', 'upsert', $now)",
   );
 }

@@ -1117,7 +1117,9 @@ function Test-LexiQuestResolvedFieldReleaseEvidence {
         foreach ($control in @(
             'ethicsApproved',
             'protocolApproved',
+            'instrumentApproved',
             'trustedIssuerConfigured',
+            'trustedTimeConfigured',
             'researchRolloutApproved'
         )) {
             if ($Evidence.researchControls.$control -ne $true) {
@@ -1127,7 +1129,9 @@ function Test-LexiQuestResolvedFieldReleaseEvidence {
         foreach ($reference in @(
             'ethicsEvidenceRef',
             'protocolEvidenceRef',
+            'instrumentEvidenceRef',
             'trustedIssuerEvidenceRef',
+            'trustedTimeEvidenceRef',
             'rolloutEvidenceRef'
         )) {
             $referenceValue = $Evidence.researchControls.$reference

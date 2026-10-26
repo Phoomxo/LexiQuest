@@ -69,14 +69,14 @@ final class SyncEngine {
   final Set<String> _permissionRecoveryAttemptedOwners = <String>{};
 
   Future<SyncRunResult> run() async {
-    final policy = await policyProvider();
-    if (!policy.enabled) {
-      return const SyncRunResult(status: SyncRunStatus.skippedCloudDisabled);
-    }
     final owner = await owners.getOrCreateActiveOwner();
     final firebaseUid = owner.firebaseUid?.trim();
     if (firebaseUid == null || firebaseUid.isEmpty) {
       return const SyncRunResult(status: SyncRunStatus.skippedUnauthenticated);
+    }
+    final policy = await policyProvider();
+    if (!policy.enabled) {
+      return const SyncRunResult(status: SyncRunStatus.skippedCloudDisabled);
     }
     if (!mutex.tryAcquire(owner.id)) {
       return const SyncRunResult(status: SyncRunStatus.alreadyRunning);

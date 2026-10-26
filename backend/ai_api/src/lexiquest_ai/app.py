@@ -10,6 +10,7 @@ against both services.
 from __future__ import annotations
 
 import logging
+from typing import Protocol
 from uuid import uuid4
 
 from fastapi import FastAPI, Header
@@ -45,12 +46,22 @@ from lexiquest_ai.services.rate_limiter import ProviderRateLimited
 logger = logging.getLogger(__name__)
 
 
+class AccountDeletionReadinessProbe(Protocol):
+    def is_ready(self) -> bool:
+        """Return true only after runtime infrastructure attestation."""
+
+        ...
+
+
 def create_app(
     *,
     content_service: ContentGenerator,
     token_verifier: TokenVerifier,
     settings: Settings,
     account_deletion_service: AccountDeletionService | None = None,
+    account_deletion_readiness_probe: (
+        AccountDeletionReadinessProbe | None
+    ) = None,
 ) -> FastAPI:
     """Create the HTTP API without loading production dependencies."""
 
@@ -63,6 +74,21 @@ def create_app(
         openapi_url=None if is_prod else "/openapi.json",
     )
     app.state.settings = settings
+
+    def account_deletion_infrastructure_ready() -> bool:
+        if (
+            account_deletion_service is None
+            or account_deletion_readiness_probe is None
+        ):
+            return False
+        try:
+            return account_deletion_readiness_probe.is_ready()
+        except Exception as error:
+            logger.error(
+                "Account deletion readiness failed: %s",
+                type(error).__name__,
+            )
+            return False
 
     @app.middleware("http")
     async def limit_body_size(request, call_next):
@@ -97,6 +123,26 @@ def create_app(
                         "message": "The content provider is not configured.",
                     }
                 },
+            )
+        deletion_configured = bool(
+            settings.account_deletion_enabled
+            or settings.account_deletion_server_export_authority
+        )
+        deletion_ready = (
+            account_deletion_infrastructure_ready()
+            if deletion_configured
+            else False
+        )
+        if deletion_configured and not deletion_ready:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": {
+                        "code": "ACCOUNT_DELETION_UNAVAILABLE",
+                        "message": "Account deletion is not configured.",
+                    }
+                },
+                headers={"Retry-After": "5"},
             )
         return {"status": "ready"}
 
@@ -178,6 +224,15 @@ def create_app(
                 },
                 headers={"Retry-After": "5"},
             )
+        if not account_deletion_infrastructure_ready():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "ACCOUNT_DELETION_UNAVAILABLE",
+                    "message": "Account deletion is unavailable.",
+                },
+                headers={"Retry-After": "5"},
+            )
         try:
             receipt = account_deletion_service.delete(request, user)
         except RecentAuthenticationRequired:
@@ -214,7 +269,7 @@ def create_app(
                 },
                 headers={"Retry-After": "5"},
             ) from None
-        return receipt.response()
+        return receipt.response(idempotency_key=request.idempotency_key)
 
     @app.post("/v1/account-deletions/recover")
     def recover_account_deletion(
@@ -259,6 +314,6 @@ def create_app(
                 },
                 headers={"Retry-After": "5"},
             ) from None
-        return receipt.response()
+        return receipt.response(idempotency_key=request.idempotency_key)
 
     return app

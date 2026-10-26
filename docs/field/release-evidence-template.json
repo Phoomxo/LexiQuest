@@ -99,11 +99,15 @@
       "researchControls": {
         "ethicsApproved": false,
         "protocolApproved": false,
+        "instrumentApproved": false,
         "trustedIssuerConfigured": false,
+        "trustedTimeConfigured": false,
         "researchRolloutApproved": false,
         "ethicsEvidenceRef": {"path": "records/ethics.json", "sha256": "<SHA256>"},
         "protocolEvidenceRef": {"path": "records/protocol.json", "sha256": "<SHA256>"},
+        "instrumentEvidenceRef": {"path": "records/instrument-approval.json", "sha256": "<SHA256>"},
         "trustedIssuerEvidenceRef": {"path": "records/trusted-issuer.json", "sha256": "<SHA256>"},
+        "trustedTimeEvidenceRef": {"path": "records/trusted-time.json", "sha256": "<SHA256>"},
         "rolloutEvidenceRef": {"path": "records/research-rollout.json", "sha256": "<SHA256>"}
       }
     },

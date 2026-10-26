@@ -58,6 +58,7 @@ void main() {
   });
 
   test('background result retries only retryable partial failures', () {
+    expect(workmanagerSuccess(null), isTrue);
     expect(
       workmanagerSuccess(const SyncRunResult(status: SyncRunStatus.completed)),
       isTrue,

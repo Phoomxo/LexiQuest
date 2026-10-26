@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'research_trusted_time.dart';
+
 enum ResearchOperation {
   collect('collect'),
   export('export'),
@@ -154,19 +156,25 @@ abstract interface class ResearchPermitSignatureVerifier {
 
 final class SignedPermitResearchOperationAuthorizer
     implements ResearchOperationAuthorizer {
-  const SignedPermitResearchOperationAuthorizer({
+  SignedPermitResearchOperationAuthorizer({
     required this.permits,
     required this.states,
     required this.verifier,
     required this.requirements,
-    required this.nowUtc,
-  });
+    this.nowUtc,
+    this.trustedTime,
+  }) {
+    if ((nowUtc == null) == (trustedTime == null)) {
+      throw ArgumentError('Exactly one research clock authority is required.');
+    }
+  }
 
   final ResearchPermitSource permits;
   final ResearchPermitStateSource states;
   final ResearchPermitSignatureVerifier verifier;
   final ResearchPermitRequirements requirements;
-  final DateTime Function() nowUtc;
+  final DateTime Function()? nowUtc;
+  final ResearchTrustedTimeSource? trustedTime;
 
   @override
   Future<bool> authorize({
@@ -174,11 +182,13 @@ final class SignedPermitResearchOperationAuthorizer
     required ResearchOperation operation,
   }) async {
     try {
+      final now = await _trustedNowUtc();
+      if (now == null) return false;
       final permit = await permits.loadPermit(
         ownerId: ownerId,
         operation: operation,
       );
-      if (permit == null || !_matches(permit, ownerId, operation)) {
+      if (permit == null || !_matches(permit, ownerId, operation, now)) {
         return false;
       }
       if (!await verifier.verify(
@@ -203,8 +213,8 @@ final class SignedPermitResearchOperationAuthorizer
     ResearchPermit permit,
     String ownerId,
     ResearchOperation operation,
+    DateTime now,
   ) {
-    final now = nowUtc().toUtc();
     final textValues = <String>[
       permit.permitId,
       permit.issuerId,
@@ -251,5 +261,12 @@ final class SignedPermitResearchOperationAuthorizer
     return permit.issuedAtUtc.isBefore(permit.expiresAtUtc) &&
         !permit.issuedAtUtc.isAfter(now) &&
         permit.expiresAtUtc.isAfter(now);
+  }
+
+  Future<DateTime?> _trustedNowUtc() async {
+    final source = trustedTime;
+    if (source == null) return nowUtc!().toUtc();
+    final reading = await source.read();
+    return reading != null && reading.isFresh ? reading.effectiveNowUtc : null;
   }
 }

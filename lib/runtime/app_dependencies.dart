@@ -18,6 +18,7 @@ import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
+import '../features/research/domain/research_runtime_availability.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -64,6 +65,7 @@ final class AppDependencies {
     this.account,
     this.accountDeletion,
     this.researchConsent,
+    this.researchAvailability = ResearchRuntimeAvailability.disabled,
     this.exports,
     this.geminiTutor,
     this.objectScanner,
@@ -105,6 +107,7 @@ final class AppDependencies {
   /// Present only when the privileged deletion backend is configured.
   final AccountDeletionUseCases? accountDeletion;
   final ResearchConsentUseCases? researchConsent;
+  final ResearchRuntimeAvailability researchAvailability;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;

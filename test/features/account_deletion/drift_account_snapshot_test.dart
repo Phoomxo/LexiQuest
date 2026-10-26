@@ -26,6 +26,36 @@ void main() {
       "VALUES ('cat-a', 'owner-a', 'A', 'a', 0, 0, 1, 1), "
       "('cat-b', 'owner-b', 'B', 'b', 0, 0, 1, 1)",
     );
+    await database.customStatement(
+      "INSERT INTO research_consents "
+      "(id, owner_id, consent_version, consent_state, decided_at_utc_ms) "
+      "VALUES ('consent-research-a', 'owner-a', 1, 'accepted', 1), "
+      "('consent-research-b', 'owner-b', 1, 'accepted', 2)",
+    );
+    await database.customStatement('''
+      INSERT INTO events_v2 (
+        event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
+        actor_identity, owner_id, aggregate_type, aggregate_id,
+        idempotency_key, consent_context_json, app_version, build_id,
+        privacy_classification, payload_json
+      ) VALUES
+        ('event-research-a', 'research.synthetic', 1, 1, 1,
+         'owner-a', 'owner-a', 'research', 'study-a', 'research-key-a',
+         '{"consentVersion":1}', '1', 'build', 'ownerOnly',
+         '{"marker":"research-a"}'),
+        ('event-research-b', 'research.synthetic', 1, 2, 2,
+         'owner-b', 'owner-b', 'research', 'study-b', 'research-key-b',
+         '{"consentVersion":1}', '1', 'build', 'ownerOnly',
+         '{"marker":"research-b"}')
+      ''');
+    await database.customStatement(
+      "INSERT INTO outbox_operations "
+      "(operation_id, owner_id, entity_type, entity_id, operation_kind, created_at_utc_ms) "
+      "VALUES ('outbox-research-a', 'owner-a', 'event_v2', "
+      "'event-research-a', 'upsert', 1), "
+      "('outbox-research-b', 'owner-b', 'event_v2', "
+      "'event-research-b', 'upsert', 2)",
+    );
   });
 
   tearDown(() => database.close());
@@ -47,8 +77,23 @@ void main() {
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
       expect((data['vocabulary_categories'] as List).single['id'], 'cat-a');
-      expect(utf8.decode(snapshot.bytes), isNot(contains('cat-b')));
-      expect(utf8.decode(snapshot.bytes), isNot(contains('uid-b')));
+      expect(
+        (data['research_consents'] as List).single['id'],
+        'consent-research-a',
+      );
+      expect(
+        (data['events_v2'] as List).single['event_id'],
+        'event-research-a',
+      );
+      expect(
+        (data['outbox_operations'] as List).single['operation_id'],
+        'outbox-research-a',
+      );
+      final encoded = utf8.decode(snapshot.bytes);
+      expect(encoded, contains('research-a'));
+      expect(encoded, isNot(contains('research-b')));
+      expect(encoded, isNot(contains('cat-b')));
+      expect(encoded, isNot(contains('uid-b')));
     },
   );
 }

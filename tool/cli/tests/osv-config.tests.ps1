@@ -25,14 +25,10 @@ if (-not (Test-Path -LiteralPath $configPath)) {
 }
 $text = ([System.IO.File]::ReadAllText($configPath) -replace "`r`n", "`n") -replace "`r", "`n"
 
-# brace-expansion@2.1.2 (GHSA-mh99 / GHSA-rgw5) was fixed via the scoped npm
-# override in package.json (forces ^2.1.4). The contract below both pins the
-# single remaining accepted ignore (uuid) and guards against brace-expansion
-# regressing back into the ignore set.
-Assert-Count $text '(?m)^\[\[IgnoredVulns\]\]\s*$' 1 'exactly one accepted ignore (uuid only)'
-Assert-Count $text '(?m)^\s*id\s*=\s*"GHSA-w5hq-g745-h8pq"\s*$' 1 'uuid advisory id'
-Assert-Count $text '(?m)^\s*reason\s*=\s*"\S[^"]*"\s*$' 1 'each advisory has a reason'
-Assert-Count $text '(?m)^\s*ignoreUntil\s*=\s*2026-10-26\s*$' 1 'each exception expires on 2026-10-26'
+# All former exceptions have expired or been fixed. Keep the scanner fail-closed
+# instead of silently extending an expired release waiver.
+Assert-Count $text '(?m)^\[\[IgnoredVulns\]\]\s*$' 0 'no accepted vulnerability ignores'
+Assert-Count $text '(?m)^\s*id\s*=\s*"GHSA-w5hq-g745-h8pq"\s*$' 0 'expired uuid advisory is not ignored'
 Assert-Count $text '(?m)^\s*id\s*=\s*"GHSA-mh99-v99m-4gvg"\s*$' 0 'brace-expansion is fixed, not ignored'
 Assert-Count $text '(?m)^\[\[PackageOverrides\]\]\s*$' 0 'package-wide overrides are forbidden'
 

@@ -7,7 +7,6 @@ reviewed store and owner-isolated deleter before enabling the endpoint.
 from __future__ import annotations
 
 import re
-from hmac import compare_digest
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -146,17 +145,25 @@ class AccountDeletionReceipt:
     receipt_id: str
     owner_id: str
     firebase_uid: str
-    idempotency_key: str
     completed_at_utc: datetime
 
-    def response(self) -> AccountDeletionResponse:
+    def response(self, *, idempotency_key: str) -> AccountDeletionResponse:
+        if not _KEY_PATTERN.fullmatch(idempotency_key):
+            raise ValueError("idempotencyKey is invalid")
         return AccountDeletionResponse(
             receiptId=self.receipt_id,
             ownerId=self.owner_id,
             firebaseUid=self.firebase_uid,
-            idempotencyKey=self.idempotency_key,
+            idempotencyKey=idempotency_key,
             completedAtUtc=self.completed_at_utc,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class RecoveryKeyProof:
+    algorithm: str
+    key_version: str
+    mac: bytes
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,7 +171,7 @@ class AccountDeletionOperation:
     operation_id: str
     owner_id: str
     firebase_uid: str
-    idempotency_key: str
+    recovery_key_proof: RecoveryKeyProof
     scopes: frozenset[str]
     requested_at_utc: datetime
     receipt: AccountDeletionReceipt | None = None
@@ -179,6 +186,20 @@ class AccountDeletionConflict(Exception):
 
 class RecentAuthenticationRequired(Exception):
     """The verified Firebase token is missing a recent auth_time claim."""
+
+
+class AccountDeletionRecoveryKeyAuthority(Protocol):
+    def issue(self, idempotency_key: str) -> RecoveryKeyProof:
+        """Return a keyed verifier without persisting the presented secret."""
+
+        ...
+
+    def verify(
+        self, idempotency_key: str, proof: RecoveryKeyProof
+    ) -> bool:
+        """Verify the presented recovery key in constant time at authority."""
+
+        ...
 
 
 class AccountDeletionOperationStore(Protocol):
@@ -266,6 +287,7 @@ class AccountDeletionService:
         store: AccountDeletionOperationStore,
         deleter: OwnerIsolatedAccountDeleter,
         server_export_authority: ServerCompleteAccountExportAuthority,
+        recovery_key_authority: AccountDeletionRecoveryKeyAuthority,
         recovery_retention: timedelta,
         now_utc: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
@@ -277,6 +299,7 @@ class AccountDeletionService:
         self._store = store
         self._deleter = deleter
         self._server_export_authority = server_export_authority
+        self._recovery_key_authority = recovery_key_authority
         self._recovery_retention = recovery_retention
         self._now_utc = now_utc
 
@@ -302,7 +325,9 @@ class AccountDeletionService:
             operation_id=str(uuid4()),
             owner_id=request.owner_id,
             firebase_uid=user.uid,
-            idempotency_key=request.idempotency_key,
+            recovery_key_proof=self._recovery_key_authority.issue(
+                request.idempotency_key
+            ),
             scopes=ACCOUNT_DELETION_SCOPES,
             requested_at_utc=now,
             recovery_expires_at_utc=now + self._recovery_retention,
@@ -310,8 +335,9 @@ class AccountDeletionService:
         operation = self._store.claim(candidate)
         if (
             operation.firebase_uid != user.uid
-            or not compare_digest(
-                operation.idempotency_key, request.idempotency_key
+            or not self._recovery_key_authority.verify(
+                request.idempotency_key,
+                operation.recovery_key_proof,
             )
             or operation.owner_id != request.owner_id
             or operation.scopes != ACCOUNT_DELETION_SCOPES
@@ -321,7 +347,7 @@ class AccountDeletionService:
             self._server_export_authority.ensure_complete_export(
                 owner_id=operation.owner_id,
                 firebase_uid=operation.firebase_uid,
-                idempotency_key=operation.idempotency_key,
+                idempotency_key=request.idempotency_key,
                 operation_id=operation.operation_id,
                 client_export_receipt=request.export_receipt,
             )
@@ -347,7 +373,9 @@ class AccountDeletionService:
             operation is None
             or operation.owner_id != owner_id
             or operation.firebase_uid != firebase_uid
-            or not compare_digest(operation.idempotency_key, idempotency_key)
+            or not self._recovery_key_authority.verify(
+                idempotency_key, operation.recovery_key_proof
+            )
             or operation.scopes != ACCOUNT_DELETION_SCOPES
             or not operation.server_export_completed
             or operation.receipt is None
@@ -379,7 +407,6 @@ class AccountDeletionService:
                 receipt_id=operation.operation_id,
                 owner_id=operation.owner_id,
                 firebase_uid=operation.firebase_uid,
-                idempotency_key=operation.idempotency_key,
                 completed_at_utc=self._now_utc(),
             )
             receipt = self._store.complete(operation, receipt)

@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/export/application/export_use_cases.
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/screens/export_center_screen.dart';
 
 const _rewardKey = ValueKey<String>('export-rewards');
@@ -56,6 +57,19 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  testWidgets('production-style default hides research export', (tester) async {
+    await _pumpExport(
+      tester,
+      exports,
+      researchAvailability: ResearchRuntimeAvailability.disabled,
+    );
+
+    expect(find.text('งานวิจัย'), findsNothing);
+    expect(find.text('CSV'), findsOneWidget);
+    expect(find.text('PDF'), findsOneWidget);
+    expect(find.text('Anki'), findsOneWidget);
+  });
 
   testWidgets('reward export is default-off and limited to CSV and PDF', (
     tester,
@@ -134,6 +148,10 @@ void main() {
       hasLength(rowsBefore.length),
     );
     expect(_liveRegion(tester, _statusKey), isTrue);
+    final status = tester.widget<Text>(find.byKey(_statusKey)).data!;
+    expect(status, contains(artifact.suggestedFileName));
+    expect(status, isNot(contains('content://')));
+    expect(status, matches(RegExp(r'(ไบต์|KB)\)$')));
   });
 
   testWidgets('research format clears reward selection before consent check', (
@@ -221,6 +239,8 @@ Future<void> _pumpExport(
   WidgetTester tester,
   ExportUseCases exports, {
   double textScale = 1,
+  ResearchRuntimeAvailability researchAvailability =
+      ResearchRuntimeAvailability.syntheticComplete,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -231,7 +251,11 @@ Future<void> _pumpExport(
         ).copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
-      home: ExportCenterScreen(key: UniqueKey(), exports: exports),
+      home: ExportCenterScreen(
+        key: UniqueKey(),
+        exports: exports,
+        researchAvailability: researchAvailability,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -273,7 +297,7 @@ final class _MemoryStore implements ExportArtifactStore {
     await revalidateBeforeWrite();
     saved = artifact;
     return ExportSaveResult(
-      path: artifact.suggestedFileName,
+      path: 'content://downloads/${artifact.suggestedFileName}',
       bytesWritten: artifact.bytes.length,
     );
   }

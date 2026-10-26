@@ -14,10 +14,16 @@ void main() {
     expect(find.widgetWithText(TextField, 'อีเมล'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'รหัสผ่าน'), findsOneWidget);
 
-    // Verify the Login button (FilledButton since UI refresh)
-    expect(find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'), findsOneWidget);
+    // A bare screen has no online account provider, so local learning is primary.
+    expect(
+      find.widgetWithText(FilledButton, 'เริ่มเรียนในเครื่อง'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('local-mode-notice')),
+      findsOneWidget,
+    );
 
-    // Verify the registration prompt
-    expect(find.textContaining('สร้างบัญชีใหม่'), findsOneWidget);
+    expect(find.textContaining('สร้างบัญชีใหม่'), findsNothing);
   });
 }

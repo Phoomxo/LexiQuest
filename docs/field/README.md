@@ -71,8 +71,10 @@ hash ที่ไม่ตรงเนื้อหา
 
 สำหรับ public profile, control record ต้องผูก exact AAB hash/version/package,
 Play app-signing certificate และหลักฐาน Play acceptance/privacy/account deletion/
-Data Safety/rollback สำหรับ field trial ต้องมี ethics/protocol/trusted issuer/rollout
-record จริง ระบบจะ fail closed หาก record หรือ hash ใดหาไม่พบ
+Data Safety/rollback สำหรับ field trial ต้องมี ethics/protocol/เครื่องมือวิจัย/
+trusted issuer/trusted time/rollout record จริง โดยแต่ละรายการต้องมี hashed
+`*EvidenceRef` ที่อยู่ใต้ `$evidenceRoot` ระบบจะ fail closed หาก record, path หรือ
+hash ใดหาไม่พบ
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `

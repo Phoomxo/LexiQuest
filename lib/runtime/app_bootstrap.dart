@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -60,6 +61,7 @@ import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/research/domain/research_operation_authorizer.dart';
+import '../features/research/domain/research_runtime_availability.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/sync/application/sync_backoff.dart';
@@ -83,6 +85,7 @@ import 'app_runtime_status.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
+typedef FirebaseAppCheckTokenLoader = Future<String?> Function();
 typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
@@ -156,6 +159,41 @@ AndroidAppCheckProvider resolveAndroidAppCheckProvider({
       : const AndroidPlayIntegrityProvider();
 }
 
+Future<void> requireFirebaseAppCheckToken(
+  FirebaseAppCheckTokenLoader loadToken, {
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  if (timeout <= Duration.zero) {
+    throw ArgumentError.value(timeout, 'timeout', 'must be positive');
+  }
+  final token = (await loadToken().timeout(timeout))?.trim();
+  if (token == null || !_isStructurallyValidAppCheckJwt(token)) {
+    throw StateError('Firebase App Check token is unavailable.');
+  }
+}
+
+bool _isStructurallyValidAppCheckJwt(String token) {
+  final parts = token.split('.');
+  if (parts.length != 3 || parts.any((part) => part.isEmpty)) return false;
+  try {
+    final header = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(parts[0]))),
+    );
+    final claims = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+    );
+    base64Url.decode(base64Url.normalize(parts[2]));
+    return header is Map<String, dynamic> &&
+        header['alg'] is String &&
+        (header['alg'] as String).isNotEmpty &&
+        header['alg'] != 'none' &&
+        claims is Map<String, dynamic> &&
+        claims['exp'] is num;
+  } on FormatException {
+    return false;
+  }
+}
+
 bool _productionSupabaseInitialized = false;
 
 Future<void> _initializeFirebaseProduction() async {
@@ -168,6 +206,9 @@ Future<void> _initializeFirebaseProduction() async {
     providerAndroid: resolveAndroidAppCheckProvider(
       debugMode: _productionAppCheckDebug,
     ),
+  );
+  await requireFirebaseAppCheckToken(
+    () => FirebaseAppCheck.instance.getToken(),
   );
 }
 
@@ -260,17 +301,21 @@ final class AppBootstrap {
     this.accountDeletionServerExportAuthorityConfigured = false,
     this.accountDeletionRecoveryRetention = Duration.zero,
     this.accountDeletionFactory,
+    this.accountDeletionSignOut,
     this.cloudSyncEnabled = true,
     this.readGeminiSession,
     this.watchGeminiSessions,
     this.geminiSettingsStoreFactory,
     this.geminiGatewayFactory,
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
+    this.researchAvailability = ResearchRuntimeAvailability.disabled,
   });
 
   factory AppBootstrap.production({
     ResearchOperationAuthorizer researchAuthorizer =
         const DenyAllResearchOperationAuthorizer(),
+    ResearchRuntimeAvailability researchAvailability =
+        ResearchRuntimeAvailability.disabled,
   }) {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
@@ -296,12 +341,14 @@ final class AppBootstrap {
         hours: _productionAccountDeletionRecoveryRetentionHours,
       ),
       accountDeletionFactory: _createProductionAccountDeletion,
+      accountDeletionSignOut: () => FirebaseAuth.instance.signOut(),
       cloudSyncEnabled: _productionCloudSyncEnabled,
       readGeminiSession: () =>
           _geminiAuthSession(FirebaseAuth.instance.currentUser),
       watchGeminiSessions: () =>
           FirebaseAuth.instance.userChanges().map(_geminiAuthSession),
       researchAuthorizer: researchAuthorizer,
+      researchAvailability: researchAvailability,
     );
   }
 
@@ -317,12 +364,14 @@ final class AppBootstrap {
   final bool accountDeletionServerExportAuthorityConfigured;
   final Duration accountDeletionRecoveryRetention;
   final AccountDeletionFactory? accountDeletionFactory;
+  final AccountDeletionSignOut? accountDeletionSignOut;
   final bool cloudSyncEnabled;
   final AccountSession? Function()? readGeminiSession;
   final Stream<AccountSession?> Function()? watchGeminiSessions;
   final GeminiSettingsStore Function()? geminiSettingsStoreFactory;
   final GeminiGateway Function()? geminiGatewayFactory;
   final ResearchOperationAuthorizer researchAuthorizer;
+  final ResearchRuntimeAvailability researchAvailability;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -368,38 +417,41 @@ final class AppBootstrap {
         accountDeletionRecoveryRetention > Duration.zero &&
         accountDeletionRecoveryRetention <=
             _maximumAccountDeletionRecoveryRetention;
-    if (account != null && accountGateway != null) {
-      if (config == null || composeAccountDeletion == null) {
-        if (accountDeletionEnabled) {
-          preserveOwnerForDeletionRecovery = true;
-        }
-      } else {
+    if (config == null || composeAccountDeletion == null) {
+      if (accountDeletionEnabled) {
+        preserveOwnerForDeletionRecovery = true;
+      }
+    } else {
+      final signOut =
+          accountDeletionSignOut ?? accountGateway?.signOut ?? () async {};
+      try {
+        accountDeletionComposition = await composeAccountDeletion(
+          database: database,
+          owners: localOwners,
+          config: config,
+          currentSession: () => account?.currentSession,
+          signOut: signOut,
+          newRequestsEnabled:
+              deletionCapabilitiesReady &&
+              account != null &&
+              accountGateway != null,
+        );
         try {
-          accountDeletionComposition = await composeAccountDeletion(
-            database: database,
-            owners: localOwners,
-            config: config,
-            currentSession: () => account?.currentSession,
-            signOut: accountGateway.signOut,
-            newRequestsEnabled: deletionCapabilitiesReady,
-          );
-          try {
-            await accountDeletionComposition.useCases.resumePendingDeletion();
-          } on AccountDeletionException {
-            // A durable deletion may have already removed Firebase Auth. Keep
-            // its bound local owner intact so the same operation can retry.
-            preserveOwnerForDeletionRecovery = true;
-          }
-        } on Object {
-          final failedComposition = accountDeletionComposition;
-          accountDeletionComposition = null;
-          try {
-            await failedComposition?.dispose();
-          } on Object {
-            // Recovery stays fail-closed even if best-effort cleanup fails.
-          }
+          await accountDeletionComposition.useCases.resumePendingDeletion();
+        } on AccountDeletionException {
+          // A durable deletion may have already removed Firebase Auth. Keep
+          // its bound local owner intact so the same operation can retry.
           preserveOwnerForDeletionRecovery = true;
         }
+      } on Object {
+        final failedComposition = accountDeletionComposition;
+        accountDeletionComposition = null;
+        try {
+          await failedComposition?.dispose();
+        } on Object {
+          // Recovery stays fail-closed even if best-effort cleanup fails.
+        }
+        preserveOwnerForDeletionRecovery = true;
       }
     }
     if (account != null && !preserveOwnerForDeletionRecovery) {
@@ -449,6 +501,7 @@ final class AppBootstrap {
             delegate: guestSessionService,
             localOwners: localOwners,
             upgradeGuestOwner: upgradeGuestOwner,
+            cloudBindingEnabled: firebase == RuntimeAvailability.ready,
             onOwnerBound: () {
               final trigger = syncTrigger;
               if (trigger != null) {
@@ -660,7 +713,8 @@ final class AppBootstrap {
       deviceModels: deviceModels,
       account: account,
       accountDeletion: accountDeletionComposition?.useCases,
-      researchConsent: researchConsent,
+      researchConsent: researchAvailability.isEnabled ? researchConsent : null,
+      researchAvailability: researchAvailability,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       devicePermissions: const PluginDevicePermissionAccess(),

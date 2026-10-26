@@ -115,8 +115,9 @@ final class WorkmanagerSyncScheduler implements BackgroundSyncScheduler {
   }
 }
 
-bool workmanagerSuccess(SyncRunResult result) {
-  return result.status != SyncRunStatus.partialFailure ||
+bool workmanagerSuccess(SyncRunResult? result) {
+  return result == null ||
+      result.status != SyncRunStatus.partialFailure ||
       !result.retryRecommended;
 }
 
@@ -136,8 +137,7 @@ void lexiQuestSyncCallbackDispatcher() {
         final owner = await dependencies.localOwners?.getOrCreateActiveOwner();
         if (owner == null || owner.id != expectedOwnerId) return true;
         final engine = dependencies.syncEngine;
-        if (engine == null) return false;
-        return workmanagerSuccess(await engine.run());
+        return workmanagerSuccess(engine == null ? null : await engine.run());
       } finally {
         await dependencies.dispose();
       }

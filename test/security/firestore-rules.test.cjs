@@ -40,6 +40,15 @@ async function seedStateAndProduct(points = 100, price = 50) {
   });
 }
 
+async function seedDeletionFence(uid = alice) {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await setDoc(
+      doc(context.firestore(), 'account_deletion_operations', uid),
+      { operationId: 'delete-operation-1', firebaseUid: uid },
+    );
+  });
+}
+
 function purchaseData(totalPrice = 50) {
   return {
     user_id: alice,
@@ -300,6 +309,183 @@ describe('purchased_items transaction integrity', () => {
       purchaseData(),
     );
     await assertFails(second.commit());
+  });
+});
+
+describe('account deletion owner-write fence', () => {
+  it('keeps ordinary owner writes working before a tombstone exists', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      setDoc(doc(db, 'state', alice), { totalPoints: 100 }),
+    );
+    await assertSucceeds(
+      setDoc(doc(db, 'categories', 'before-delete'), {
+        category_name: 'Travel',
+        created_at: serverTimestamp(),
+        uid: alice,
+      }),
+    );
+    await assertSucceeds(
+      setDoc(doc(db, 'vocabulary', 'private-before-delete'), {
+        word: 'cat',
+        meaning: 'แมว',
+        part_of_speech: 'noun',
+        uid: alice,
+      }),
+    );
+    await assertSucceeds(
+      writeFieldCategory(db, {
+        entityId: 'before-delete',
+        operationId: 'before-delete-operation',
+      }),
+    );
+  });
+
+  it('denies every owner write surface after tombstone but preserves reads', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'users', alice), {
+        first_name: 'Alice',
+        last_name: '',
+        email: 'alice@example.test',
+        age: 20,
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(doc(db, 'state', alice), { totalPoints: 100 });
+      await setDoc(doc(db, 'categories', 'existing-category'), {
+        category_name: 'Existing',
+        created_at: serverTimestamp(),
+        uid: alice,
+      });
+      await setDoc(
+        doc(db, 'categories', 'existing-category', 'words', 'existing-word'),
+        {
+          word: 'cat',
+          meaning: 'แมว',
+          part_of_speech: 'noun',
+          user_id: alice,
+          is_global: false,
+          created_at: serverTimestamp(),
+        },
+      );
+      await setDoc(doc(db, 'products', productId), {
+        name: 'Neon',
+        price: 50,
+        image_name: 'wallpaper_neon.png',
+      });
+    });
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldCategory(db, {
+        entityId: 'existing-field-category',
+        operationId: 'existing-field-operation',
+      }),
+    );
+    await seedDeletionFence();
+
+    await assertSucceeds(getDoc(doc(db, 'users', alice)));
+    await assertSucceeds(
+      getDoc(doc(db, 'categories', 'existing-category')),
+    );
+    await assertSucceeds(
+      getDoc(
+        doc(
+          db,
+          'field_users',
+          alice,
+          'categories',
+          'existing-field-category',
+        ),
+      ),
+    );
+
+    await assertFails(updateDoc(doc(db, 'users', alice), { points: 1 }));
+    await assertFails(updateDoc(doc(db, 'state', alice), { totalPoints: 99 }));
+    await assertFails(
+      setDoc(doc(db, 'categories', 'blocked-category'), {
+        category_name: 'Blocked',
+        created_at: serverTimestamp(),
+        uid: alice,
+      }),
+    );
+    await assertFails(deleteDoc(doc(db, 'categories', 'existing-category')));
+    await assertFails(
+      setDoc(
+        doc(db, 'categories', 'existing-category', 'words', 'blocked-word'),
+        {
+          word: 'dog',
+          meaning: 'สุนัข',
+          part_of_speech: 'noun',
+          user_id: alice,
+          is_global: false,
+          created_at: serverTimestamp(),
+        },
+      ),
+    );
+    await assertFails(
+      updateDoc(
+        doc(db, 'categories', 'existing-category', 'words', 'existing-word'),
+        { meaning: 'แมวบ้าน' },
+      ),
+    );
+    await assertFails(
+      deleteDoc(
+        doc(db, 'categories', 'existing-category', 'words', 'existing-word'),
+      ),
+    );
+    await assertFails(
+      setDoc(doc(db, 'vocabulary', 'blocked-private'), {
+        word: 'dog',
+        meaning: 'สุนัข',
+        part_of_speech: 'noun',
+        uid: alice,
+      }),
+    );
+    await assertFails(
+      writeFieldCategory(db, {
+        entityId: 'blocked-field-category',
+        operationId: 'blocked-field-operation',
+      }),
+    );
+
+    const purchase = writeBatch(db);
+    purchase.update(doc(db, 'state', alice), { totalPoints: 50 });
+    purchase.set(
+      doc(db, 'purchased_items', purchaseId),
+      purchaseData(),
+    );
+    await assertFails(purchase.commit());
+  });
+
+  it('does not fence other owners or uid-less shared vocabulary', async () => {
+    await seedDeletionFence();
+    await assertSucceeds(
+      setDoc(doc(authDb(bob), 'state', bob), { totalPoints: 5 }),
+    );
+    await assertSucceeds(
+      setDoc(doc(authDb(), 'vocabulary', 'shared-after-delete'), {
+        word: 'bird',
+        meaning: 'นก',
+        part_of_speech: 'noun',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(authDb(bob), 'vocabulary', 'spoof-alice'), {
+        word: 'fish',
+        meaning: 'ปลา',
+        part_of_speech: 'noun',
+        uid: alice,
+      }),
+    );
+  });
+
+  it('keeps the tombstone inaccessible to clients', async () => {
+    await seedDeletionFence();
+    const ref = doc(authDb(), 'account_deletion_operations', alice);
+    await assertFails(getDoc(ref));
+    await assertFails(setDoc(ref, { operationId: 'replace' }));
+    await assertFails(updateDoc(ref, { operationId: 'replace' }));
+    await assertFails(deleteDoc(ref));
   });
 });
 

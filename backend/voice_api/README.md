@@ -9,9 +9,10 @@ does not perform voice cloning.
 This is a research spike, not a completed backend. The only verified evidence
 to date is:
 
-- **`OmniVoiceEngine` CUDA synthesis**, exercised directly against the engine
-  on an NVIDIA GeForce RTX 3050, producing a 24 kHz WAV with the locked
-  research preset.
+- **`OmniVoiceEngine` CUDA synthesis on the former Torch 2.8 stack**,
+  exercised directly against the engine on an NVIDIA GeForce RTX 3050 and
+  producing a 24 kHz WAV with the locked research preset. The remediated Torch
+  2.11 stack still requires a fresh physical-GPU check.
 - **The FastAPI HTTP contract, exercised by fake-injected tests** that supply a
   `FakeTokenVerifier` and a `FakeSpeechEngine`.
 - **Thai/English golden-set evaluation dataset & harness**, provided under `research/golden_texts.json` and `research/run_golden_set.py`.
@@ -52,8 +53,10 @@ end-to-end (see Status).
   Default Credentials source
 
 The CUDA/GPU path was smoke-tested on this workstation on 2026-07-24 with
-an NVIDIA GeForce RTX 3050. The pinned model produced a 24 kHz WAV response
-through `OmniVoiceEngine` using the locked research preset.
+an NVIDIA GeForce RTX 3050 and the former Torch 2.8 stack. The pinned model
+produced a 24 kHz WAV response through `OmniVoiceEngine` using the locked
+research preset. That result is historical and does not verify the current
+Torch/Torchaudio 2.11.0+cu128 pair.
 
 ## Setup
 
@@ -117,6 +120,7 @@ Firebase credentials, a GPU, or the OmniVoice runtime.
 | --- | --- |
 | Model ID | `k2-fsa/OmniVoice` |
 | OmniVoice package | `0.2.1` |
+| Torch/Torchaudio | `2.11.0+cu128` |
 | Hugging Face model revision | `c5fdb5ccb189668d56333f77ba2629f4cd7535f4` |
 | Device | `cuda:0` |
 | Sample rate | `24000` Hz |

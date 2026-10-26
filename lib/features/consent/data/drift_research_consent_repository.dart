@@ -49,6 +49,13 @@ final class DriftResearchConsentRepository
       if (activeOwners.length != 1 || activeOwners.single.id != ownerId) {
         return false;
       }
+      final existing =
+          await (database.select(database.researchConsents)..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.consentVersion.equals(version),
+              ))
+              .getSingleOrNull();
       if (!accepted) {
         final updated =
             await (database.update(database.researchConsents)..where(
@@ -65,6 +72,13 @@ final class DriftResearchConsentRepository
                   ),
                 );
         return updated == 1;
+      }
+      if (existing?.consentState == 'withdrawn' ||
+          existing?.withdrawnAtUtcMs != null) {
+        return false;
+      }
+      if (existing?.consentState == 'accepted') {
+        return true;
       }
       await (database.delete(database.researchConsents)..where(
             (row) =>

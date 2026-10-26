@@ -3,15 +3,22 @@ import 'package:flutter/material.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/research/domain/research_runtime_availability.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/research_consent_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, this.account, this.researchConsent});
+  const RegisterScreen({
+    super.key,
+    this.account,
+    this.researchConsent,
+    this.researchAvailability,
+  });
 
   final AccountUseCases? account;
   final ResearchConsentUseCases? researchConsent;
+  final ResearchRuntimeAvailability? researchAvailability;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -23,6 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPassword = TextEditingController();
   AccountUseCases? _account;
   ResearchConsentUseCases? _researchConsent;
+  ResearchRuntimeAvailability _researchAvailability =
+      ResearchRuntimeAvailability.disabled;
   bool _busy = false;
   bool _consent = false;
   bool _obscure = true;
@@ -38,11 +47,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _account ??= widget.account ?? dependencies?.account;
     _researchConsent ??=
         widget.researchConsent ?? dependencies?.researchConsent;
+    _researchAvailability =
+        widget.researchAvailability ??
+        dependencies?.researchAvailability ??
+        ResearchRuntimeAvailability.disabled;
   }
 
   Future<void> _register() async {
     if (_busy) return;
     final account = _account;
+    if (account == null) {
+      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
+      return;
+    }
     final emailError = _registrationEmailError(_email.text);
     final passwordError = _registrationPasswordError(_password.text);
     final confirmPasswordError = _registrationConfirmationError(
@@ -64,10 +81,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         consentError != null) {
       return;
     }
-    if (account == null) {
-      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
-      return;
-    }
     setState(() => _busy = true);
     try {
       final session = await account.register(
@@ -75,24 +88,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
       );
       if (!mounted) return;
-      final researchConsent = _researchConsent;
+      final researchConsent = _researchAvailability.isEnabled
+          ? _researchConsent
+          : null;
       if (researchConsent != null) {
         try {
           final consentContext = await researchConsent.load();
           if (!mounted) return;
-          final accepted = await showResearchConsentDialog(context);
-          var recorded = true;
-          if (accepted == true) {
-            recorded = await researchConsent.accept(
-              expectedOwnerId: consentContext.ownerId,
-            );
-          } else if (accepted == false && consentContext.accepted) {
-            recorded = await researchConsent.withdraw(
-              expectedOwnerId: consentContext.ownerId,
-            );
-          }
-          if (!recorded && mounted) {
-            _show('สถานะผู้ใช้เปลี่ยน จึงไม่ได้บันทึกความยินยอมการวิจัย');
+          if (consentContext.withdrawnAtUtc == null) {
+            final accepted = await showResearchConsentDialog(context);
+            var recorded = true;
+            if (accepted == true) {
+              recorded = await researchConsent.accept(
+                expectedOwnerId: consentContext.ownerId,
+              );
+            } else if (accepted == false && consentContext.accepted) {
+              recorded = await researchConsent.withdraw(
+                expectedOwnerId: consentContext.ownerId,
+              );
+            }
+            if (!recorded && mounted) {
+              _show('สถานะผู้ใช้เปลี่ยน จึงไม่ได้บันทึกความยินยอมการวิจัย');
+            }
           }
         } catch (_) {
           if (mounted) {
@@ -117,18 +134,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _showPrivacyNotice() {
+    final researchNotice = _researchAvailability.isEnabled
+        ? '\n\nการเข้าร่วมงานวิจัยเป็นทางเลือกและจะถามแยกหลังสร้างบัญชี '
+              'การไม่เข้าร่วมไม่กระทบการเรียนตามปกติ'
+        : '';
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('ประกาศความเป็นส่วนตัวและเงื่อนไขทดลองใช้'),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Text(
             'LexiQuest ใช้อีเมลเพื่อสร้างและดูแลบัญชี '
             'และเก็บข้อมูลคำศัพท์กับความคืบหน้าการเรียนเพื่อให้บริการแก่คุณ\n\n'
             'กล้อง ไมโครโฟน และผู้ช่วย AI จะทำงานเมื่อคุณเลือกใช้ฟีเจอร์นั้น '
-            'คุณส่งออกหรือลบบัญชีและข้อมูลได้จากการตั้งค่า\n\n'
-            'การเข้าร่วมงานวิจัยเป็นทางเลือกและจะถามแยกหลังสร้างบัญชี '
-            'การไม่เข้าร่วมไม่กระทบการเรียนตามปกติ',
+            'คุณส่งออกหรือลบบัญชีและข้อมูลได้จากการตั้งค่า'
+            '$researchNotice',
           ),
         ),
         actions: [
@@ -157,12 +177,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final accountAvailable = _account != null;
     return Scaffold(
       appBar: AppBar(title: const Text('สร้างบัญชี')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            if (!accountAvailable) ...[
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'ยังสร้างบัญชีไม่ได้ในขณะนี้ '
+                    'กลับไปเริ่มเรียนในเครื่องได้โดยข้อมูลจะยังอยู่ในอุปกรณ์นี้',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             const Text(
               'ข้อมูลการเรียนในเครื่องจะย้ายเข้าสู่บัญชีหลังสมัครสำเร็จ '
               'โดยไม่ลบประวัติการเรียนในเครื่อง',
@@ -170,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: _email,
-              enabled: !_busy,
+              enabled: accountAvailable && !_busy,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: InputDecoration(
@@ -186,7 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _password,
-              enabled: !_busy,
+              enabled: accountAvailable && !_busy,
               obscureText: _obscure,
               autofillHints: const [AutofillHints.newPassword],
               decoration: InputDecoration(
@@ -194,7 +228,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 errorText: _passwordError,
                 suffixIcon: IconButton(
                   tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
-                  onPressed: () => setState(() => _obscure = !_obscure),
+                  onPressed: accountAvailable
+                      ? () => setState(() => _obscure = !_obscure)
+                      : null,
                   icon: Icon(
                     _obscure ? Icons.visibility : Icons.visibility_off,
                   ),
@@ -212,7 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _confirmPassword,
-              enabled: !_busy,
+              enabled: accountAvailable && !_busy,
               obscureText: _obscure,
               autofillHints: const [AutofillHints.newPassword],
               decoration: InputDecoration(
@@ -228,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             CheckboxListTile(
               value: _consent,
               contentPadding: EdgeInsets.zero,
-              onChanged: _busy
+              onChanged: !accountAvailable || _busy
                   ? null
                   : (value) => setState(() {
                       _consent = value ?? false;
@@ -254,7 +290,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(
               height: 48,
               child: FilledButton(
-                onPressed: _busy ? null : _register,
+                onPressed: !accountAvailable || _busy ? null : _register,
                 child: const Text('สมัครและส่งอีเมลยืนยัน'),
               ),
             ),

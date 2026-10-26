@@ -70,6 +70,60 @@ def test_ready_returns_503_when_service_not_configured(
     assert response.json()["detail"]["code"] == "PROVIDER_UNAVAILABLE"
 
 
+def test_ready_fails_closed_when_account_deletion_is_enabled_without_service(
+    token_verifier: FakeTokenVerifier,
+) -> None:
+    app = create_app(
+        content_service=FakeContentService(),
+        token_verifier=token_verifier,
+        settings=Settings(account_deletion_enabled=True),
+        account_deletion_service=None,
+    )
+
+    response = TestClient(app).get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "ACCOUNT_DELETION_UNAVAILABLE"
+
+
+@pytest.mark.parametrize("probe_ready", [False, True])
+def test_ready_requires_runtime_account_deletion_attestation(
+    token_verifier: FakeTokenVerifier,
+    probe_ready: bool,
+) -> None:
+    class _Probe:
+        def is_ready(self) -> bool:
+            return probe_ready
+
+    app = create_app(
+        content_service=FakeContentService(),
+        token_verifier=token_verifier,
+        settings=Settings(account_deletion_enabled=True),
+        account_deletion_service=object(),  # type: ignore[arg-type]
+        account_deletion_readiness_probe=_Probe(),
+    )
+
+    response = TestClient(app).get("/health/ready")
+
+    assert response.status_code == (200 if probe_ready else 503)
+
+
+def test_ready_fails_closed_when_account_deletion_probe_is_missing(
+    token_verifier: FakeTokenVerifier,
+) -> None:
+    app = create_app(
+        content_service=FakeContentService(),
+        token_verifier=token_verifier,
+        settings=Settings(account_deletion_enabled=True),
+        account_deletion_service=object(),  # type: ignore[arg-type]
+    )
+
+    response = TestClient(app).get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "ACCOUNT_DELETION_UNAVAILABLE"
+
+
 def test_content_enforces_configured_text_length(
     token_verifier: FakeTokenVerifier,
     make_client,

@@ -567,11 +567,15 @@ try {
         researchControls = [pscustomobject]@{
             ethicsApproved = $true
             protocolApproved = $true
+            instrumentApproved = $true
             trustedIssuerConfigured = $true
+            trustedTimeConfigured = $true
             researchRolloutApproved = $true
             ethicsEvidenceRef = 'private:ethics-approval'
             protocolEvidenceRef = 'private:protocol-approval'
+            instrumentEvidenceRef = 'private:instrument-approval'
             trustedIssuerEvidenceRef = 'private:issuer-approval'
+            trustedTimeEvidenceRef = 'private:trusted-time-configuration'
             rolloutEvidenceRef = 'private:research-rollout-approval'
         }
         devices = @(New-RequiredDevices)
@@ -838,6 +842,44 @@ try {
         ($errors -join "`n") -match 'researchControls.ethicsApproved must be true'
     ) 'a field trial cannot collect research data without ethics authority'
     $evidence.researchControls.ethicsApproved = $true
+
+    $evidence.researchControls.instrumentApproved = $false
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match (
+            'researchControls.instrumentApproved must be true'
+        )
+    ) 'a field trial cannot collect data with an unapproved instrument'
+    $evidence.researchControls.instrumentApproved = $true
+
+    $evidence.researchControls.trustedTimeConfigured = $false
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match (
+            'researchControls.trustedTimeConfigured must be true'
+        )
+    ) 'a field trial requires trusted time before research collection'
+    $evidence.researchControls.trustedTimeConfigured = $true
+
+    $instrumentEvidenceRef = $evidence.researchControls.instrumentEvidenceRef
+    $evidence.researchControls.instrumentEvidenceRef = ''
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match (
+            'researchControls.instrumentEvidenceRef must reference private evidence'
+        )
+    ) 'instrument approval needs traceable evidence'
+    $evidence.researchControls.instrumentEvidenceRef = $instrumentEvidenceRef
+
+    $trustedTimeEvidenceRef = $evidence.researchControls.trustedTimeEvidenceRef
+    $evidence.researchControls.trustedTimeEvidenceRef = ''
+    $errors = @(& $validate)
+    Assert-True (
+        ($errors -join "`n") -match (
+            'researchControls.trustedTimeEvidenceRef must reference private evidence'
+        )
+    ) 'trusted time configuration needs traceable evidence'
+    $evidence.researchControls.trustedTimeEvidenceRef = $trustedTimeEvidenceRef
 
     $evidence.releaseProfile = 'publicProduction'
     $errors = @(& $validate)

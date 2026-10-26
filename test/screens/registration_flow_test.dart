@@ -11,40 +11,25 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/screens/register_screen.dart';
 
 void main() {
-  testWidgets('registration requires consent and a real account provider', (
+  testWidgets('registration explains unavailable account service up front', (
     tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
 
     expect(find.text('สร้างบัญชี'), findsOneWidget);
     expect(find.byType(TextField), findsNWidgets(3));
-    expect(find.text('สมัครและส่งอีเมลยืนยัน'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField).first, 'student@example.com');
-    await tester.enterText(find.byType(TextField).at(1), 'password123');
-    await tester.enterText(find.byType(TextField).last, 'password123');
-    await tester.tap(find.text('สมัครและส่งอีเมลยืนยัน'));
-    await tester.pump();
-
-    expect(find.text('กรุณายอมรับประกาศความเป็นส่วนตัวก่อน'), findsOneWidget);
-  });
-
-  testWidgets('registration never reports success without a provider', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
-    await tester.tap(find.byType(Checkbox));
-    await tester.enterText(find.byType(TextField).first, 'student@example.com');
-    await tester.enterText(find.byType(TextField).at(1), 'password123');
-    await tester.enterText(find.byType(TextField).last, 'password123');
-    await tester.tap(find.text('สมัครและส่งอีเมลยืนยัน'));
-    await tester.pump();
-
-    expect(find.text('ระบบบัญชีออนไลน์ไม่พร้อม'), findsOneWidget);
-    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(find.textContaining('ยังสร้างบัญชีไม่ได้'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+    for (final field in tester.widgetList<TextField>(find.byType(TextField))) {
+      expect(field.enabled, isFalse);
+    }
   });
 
   testWidgets('pending registration announces account creation', (
@@ -76,7 +61,8 @@ void main() {
   testWidgets('registration rejects mismatched passwords before provider use', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+    final harness = _RegistrationHarness();
+    await _pumpRegistration(tester, harness);
     await tester.tap(find.byType(Checkbox));
     await tester.enterText(find.byType(TextField).first, 'student@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'password123');
@@ -86,6 +72,7 @@ void main() {
 
     expect(find.text('รหัสผ่านและการยืนยันไม่ตรงกัน'), findsOneWidget);
     expect(find.text('ระบบบัญชีออนไลน์ไม่พร้อม'), findsNothing);
+    expect(harness.gateway.registerCalls, 0);
   });
 
   testWidgets(
@@ -127,6 +114,40 @@ void main() {
     await tester.tap(find.text('ยังไม่ยินยอม'));
     await _pumpFrames(tester);
 
+    expect(harness.consentRepository.decisions, isEmpty);
+    expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
+  });
+
+  testWidgets('production-style default skips the research prompt', (
+    tester,
+  ) async {
+    final harness = _RegistrationHarness();
+    await _pumpRegistration(
+      tester,
+      harness,
+      researchAvailability: ResearchRuntimeAvailability.disabled,
+    );
+    await _fillRegistration(tester);
+
+    await tester.tap(find.text('สมัครและส่งอีเมลยืนยัน'));
+    await _pumpFrames(tester);
+
+    expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
+    expect(harness.consentRepository.decisions, isEmpty);
+    expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
+  });
+
+  testWidgets('withdrawn current version does not reopen research consent', (
+    tester,
+  ) async {
+    final harness = _RegistrationHarness(initialResearchWithdrawn: true);
+    await _pumpRegistration(tester, harness);
+    await _fillRegistration(tester);
+
+    await tester.tap(find.text('สมัครและส่งอีเมลยืนยัน'));
+    await _pumpFrames(tester);
+
+    expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
     expect(harness.consentRepository.decisions, isEmpty);
     expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
   });
@@ -199,12 +220,33 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
+    expect(
+      find.textContaining('การเข้าร่วมงานวิจัยเป็นทางเลือก'),
+      findsOneWidget,
+    );
     expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
     expect(harness.consentRepository.decisions, isEmpty);
 
     await tester.tap(find.text('รับทราบ'));
     await tester.pumpAndSettle();
     expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+  });
+
+  testWidgets('default-off privacy notice does not advertise research', (
+    tester,
+  ) async {
+    final harness = _RegistrationHarness();
+    await _pumpRegistration(
+      tester,
+      harness,
+      researchAvailability: ResearchRuntimeAvailability.disabled,
+    );
+
+    await tester.tap(find.text('อ่านประกาศความเป็นส่วนตัว'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('การเข้าร่วมงานวิจัย'), findsNothing);
+    expect(find.textContaining('ส่งออกหรือลบบัญชีและข้อมูล'), findsOneWidget);
   });
 
   testWidgets('fresh post-registration acceptance records the bound owner', (
@@ -226,13 +268,16 @@ void main() {
 
 Future<void> _pumpRegistration(
   WidgetTester tester,
-  _RegistrationHarness harness,
-) {
+  _RegistrationHarness harness, {
+  ResearchRuntimeAvailability researchAvailability =
+      ResearchRuntimeAvailability.syntheticComplete,
+}) {
   return tester.pumpWidget(
     MaterialApp(
       home: RegisterScreen(
         account: harness.account,
         researchConsent: harness.consent,
+        researchAvailability: researchAvailability,
       ),
       routes: {
         AppRoute.emailVerification.path: (_) =>
@@ -259,10 +304,12 @@ final class _RegistrationHarness {
   _RegistrationHarness({
     bool switchOwnerOnRegister = false,
     bool initialResearchAccepted = false,
+    bool initialResearchWithdrawn = false,
     Object? consentLoadError,
   }) : owners = _RegistrationOwners(),
        consentRepository = _RecordingConsentRepository(
          accepted: initialResearchAccepted,
+         withdrawn: initialResearchWithdrawn,
          loadError: consentLoadError,
        ) {
     final upgrades = _RegistrationUpgrades(
@@ -289,10 +336,15 @@ final class _RegistrationHarness {
 }
 
 final class _RecordingConsentRepository implements ResearchConsentRepository {
-  _RecordingConsentRepository({this.accepted = false, this.loadError});
+  _RecordingConsentRepository({
+    this.accepted = false,
+    this.withdrawn = false,
+    this.loadError,
+  });
 
   final List<(String, bool)> decisions = [];
   bool accepted;
+  final bool withdrawn;
   final Object? loadError;
 
   @override
@@ -305,7 +357,8 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
       ownerId: ownerId,
       version: version,
       accepted: accepted,
-      decidedAtUtc: accepted ? DateTime.utc(2026, 10, 20) : null,
+      decidedAtUtc: accepted || withdrawn ? DateTime.utc(2026, 10, 20) : null,
+      withdrawnAtUtc: withdrawn ? DateTime.utc(2026, 10, 20) : null,
     );
   }
 

@@ -40,3 +40,64 @@ condition = "AND"
 regexTarget = "match"
 paths = ['''(?:^|/)backend/ai_api/tests/test_models\.py$''']
 regexes = ['''hunter2-leak-canary-9f3c''']
+
+[[allowlists]]
+description = "Generated development evidence contains SHA-256 fingerprints, not credentials."
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)docs/development/(?:ari|ux-delivery|full-system|post-g83-e\d+)(?:/.*)?\.json$''']
+regexes = ['''(?i)"(?:commandKey|[^"\r\n]+\.(?:dart|py|cjs|json(?:\.gz)?|example))"\s*:\s*"[a-f0-9]{64}"''']
+
+[[allowlists]]
+description = "Retired Supabase anonymous client JWT was public configuration in three historical commits."
+condition = "AND"
+paths = ['''(?:^|/)lib/main\.dart$''']
+commits = [
+  "ff2364209c53bf3b4ff5e3bff7630484d9c5fd05",
+  "15ae3e0e6b510296c4d064f974993f167730f8c4",
+  "52a478a7a9589766bfbdf8a88bff97e3a6c771b7",
+]
+
+[[allowlists]]
+description = "Synthetic AI provider keys are test fixtures."
+condition = "AND"
+regexTarget = "line"
+paths = [
+  '''(?:^|/)test/features/ai_tutor/ai_gateway_adapters_test\.dart$''',
+  '''(?:^|/)test/features/ai_tutor/ai_gateway_loopback_test\.dart$''',
+  '''(?:^|/)test/features/ai_tutor/openai_compatible_gateway_test\.dart$''',
+  '''(?:^|/)test/features/gemini/gemini_rest_gateway_test\.dart$''',
+]
+regexes = [
+  '''['"]synthetic-key-long-enough-123456['"]''',
+  '''['"]sk-test-key-1234567890abcdef['"]''',
+  '''['"]test-key-that-is-long-enough-123456['"]''',
+]
+
+[[allowlists]]
+description = "Sync and learning test identifiers are not credentials."
+condition = "AND"
+regexTarget = "line"
+paths = [
+  '''(?:^|/)test/features/sync/firestore_sync_gateway_test\.dart$''',
+  '''(?:^|/)test/features/sync/reward_transaction_sync_test\.dart$''',
+  '''(?:^|/)test/features/sync/learner_preferences_sync_test\.dart$''',
+  '''(?:^|/)test/features/learning/drift_learning_event_store_test\.dart$''',
+  '''(?:^|/)test/features/learning/pair_matching/pair_measurement_boundary_test\.dart$''',
+  '''(?:^|/)test/features/learning/pair_matching/pair_matching_compatibility_rollout_test\.dart$''',
+]
+regexes = [
+  '''['"]quest-v1-missing-provenance['"]''',
+  '''['"]pm8-synthetic-owner-gate['"]''',
+  '''['"]pm7-synthetic-claim-gate['"]''',
+  '''['"]pm7-synthetic-claim['"]''',
+  '''['"]f20-saved-long-id-lease['"]''',
+  '''['"]f20-saved-long-id-rollout['"]''',
+  '''['"]f20-saved-rollout['"]''',
+  '''['"]v2-v1-replacement-lease['"]''',
+  '''['"]exhausted-v2-purchase['"]''',
+  '''['"]eligible-v2-purchase['"]''',
+  '''['"]tamper-evident-v2-purchase['"]''',
+  '''['"]carried-v1-funding['"]''',
+  '''['"]carried-v1-purchase['"]''',
+]

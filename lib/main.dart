@@ -21,7 +21,7 @@ Future<void> main() async {
   final appearance = await loadAppAppearanceController();
   runApp(MyApp(dependencies: dependencies, appearance: appearance));
   final owners = dependencies.localOwners;
-  if (owners != null) {
+  if (owners != null && dependencies.syncEngine != null) {
     final scheduler = WorkmanagerSyncScheduler(
       client: const PluginWorkmanagerClient(),
       isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,

@@ -361,6 +361,46 @@ void main() {
     expect((parsed['attempts'] as List).single['evidenceId'], 'attempt-1');
   });
 
+  test('research JSON includes owner A data and excludes owner B', () async {
+    await _seedOwnerWord(database, ownerId: 'owner-a', spelling: 'alpha');
+    await _seedOwnerWord(database, ownerId: 'owner-b', spelling: 'bravo');
+    final owners = _MutableOwners(_owner('owner-a'));
+    final ownerScopedExports = ExportUseCases(
+      owners: owners,
+      reader: DriftExportReader(database),
+      store: store,
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      loadThaiFont: () =>
+          rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+      researchConsent: ResearchConsentUseCases(
+        owners: owners,
+        repository: const _OwnerConsentRepository(
+          acceptedOwnerIds: {'owner-a'},
+        ),
+        nowUtc: () => DateTime.utc(2026, 7, 30),
+      ),
+      researchAuthorizer: const _AllowResearchOperationAuthorizer(),
+    );
+
+    final artifact = await ownerScopedExports.prepare(
+      format: ExportFormat.researchJson,
+      selection: const ExportSelection(
+        includeVocabulary: true,
+        includeAttempts: false,
+        includeReading: false,
+      ),
+      cancellation: ExportCancellation(),
+    );
+    final encoded = utf8.decode(artifact.bytes);
+    final parsed = jsonDecode(encoded) as Map<String, dynamic>;
+    final vocabulary = parsed['vocabulary'] as List<dynamic>;
+
+    expect(vocabulary, hasLength(1));
+    expect((vocabulary.single as Map<String, dynamic>)['spelling'], 'alpha');
+    expect(encoded, isNot(contains('bravo')));
+    expect(encoded, isNot(contains('word-owner-b')));
+  });
+
   for (final bAccepted in [true, false]) {
     test('research prepare rejects owner B after consent from A '
         '(${bAccepted ? 'accepted' : 'never-participant'} B)', () async {

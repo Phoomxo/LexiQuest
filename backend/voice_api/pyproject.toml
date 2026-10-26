@@ -15,19 +15,39 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx2==2.9.1",
+    "httpx2==2.16.0",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
 ]
 gpu = [
     "omnivoice==0.2.1",
     "soundfile==0.14.0",
-    "torch==2.8.0+cu128",
-    "torchaudio==2.8.0+cu128",
+    "torch==2.11.0+cu128",
+    "torchaudio==2.11.0+cu128",
 ]
 
-# OmniVoice 0.2.1 is supported on the CUDA 12.8 runtime, so torch and
-# torchaudio 2.8.0+cu128 wheels come from the dedicated PyTorch index. The
+# OmniVoice declares Gradio for its optional interactive demo, but the
+# LexiQuest API imports only the model runtime. Correct that package metadata
+# locally so the unused demo UI and image stack are not shipped with the API.
+[[tool.uv.dependency-metadata]]
+name = "omnivoice"
+version = "0.2.1"
+requires-dist = [
+    "accelerate",
+    "librosa",
+    "numpy",
+    "pydub",
+    "soundfile",
+    "tensorboardx",
+    "torch>=2.4",
+    "torchaudio>=2.4",
+    "transformers>=5.3.0",
+    "webdataset",
+]
+
+# OmniVoice 0.2.1 supports torch and torchaudio >=2.4. The paired
+# 2.11.0+cu128 wheels are the newest releases on the official torchaudio index.
+# They come from the dedicated PyTorch index, and the
 # explicit source bindings prevent unrelated packages from using this index.
 [[tool.uv.index]]
 name = "pytorch-cu128"

@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../features/export/application/export_use_cases.dart';
 import '../features/export/domain/export_contracts.dart';
+import '../features/research/domain/research_runtime_availability.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
 
 class ExportCenterScreen extends StatefulWidget {
-  const ExportCenterScreen({super.key, this.exports});
+  const ExportCenterScreen({
+    super.key,
+    this.exports,
+    this.researchAvailability,
+  });
 
   final ExportUseCases? exports;
+  final ResearchRuntimeAvailability? researchAvailability;
 
   @override
   State<ExportCenterScreen> createState() => _ExportCenterScreenState();
@@ -16,6 +22,8 @@ class ExportCenterScreen extends StatefulWidget {
 
 class _ExportCenterScreenState extends State<ExportCenterScreen> {
   ExportUseCases? _exports;
+  ResearchRuntimeAvailability _researchAvailability =
+      ResearchRuntimeAvailability.disabled;
   ExportFormat _format = ExportFormat.csv;
   bool _vocabulary = true;
   bool _attempts = true;
@@ -28,8 +36,17 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _exports ??=
-        widget.exports ?? AppDependenciesScope.maybeOf(context)?.exports;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _exports ??= widget.exports ?? dependencies?.exports;
+    _researchAvailability =
+        widget.researchAvailability ??
+        dependencies?.researchAvailability ??
+        ResearchRuntimeAvailability.disabled;
+    if (!_researchAvailability.isEnabled &&
+        _format == ExportFormat.researchJson) {
+      _format = ExportFormat.csv;
+      _rewards = false;
+    }
   }
 
   Future<void> _export() async {
@@ -54,7 +71,9 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _status = 'บันทึกแล้ว ${result.bytesWritten} ไบต์\n${result.path}';
+        _status =
+            'บันทึกไฟล์ ${_displayName(result.path)} แล้ว '
+            '(${_readableBytes(result.bytesWritten)})';
       });
     } on ExportException catch (error) {
       if (!mounted) return;
@@ -99,17 +118,24 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                 final largeText =
                     MediaQuery.textScalerOf(context).scale(1) > 1.5;
                 return SegmentedButton<ExportFormat>(
-                  segments: const [
-                    ButtonSegment(value: ExportFormat.csv, label: Text('CSV')),
-                    ButtonSegment(value: ExportFormat.pdf, label: Text('PDF')),
-                    ButtonSegment(
+                  segments: [
+                    const ButtonSegment(
+                      value: ExportFormat.csv,
+                      label: Text('CSV'),
+                    ),
+                    const ButtonSegment(
+                      value: ExportFormat.pdf,
+                      label: Text('PDF'),
+                    ),
+                    const ButtonSegment(
                       value: ExportFormat.anki,
                       label: Text('Anki'),
                     ),
-                    ButtonSegment(
-                      value: ExportFormat.researchJson,
-                      label: Text('งานวิจัย'),
-                    ),
+                    if (_researchAvailability.isEnabled)
+                      const ButtonSegment(
+                        value: ExportFormat.researchJson,
+                        label: Text('งานวิจัย'),
+                      ),
                   ],
                   selected: {_format},
                   direction: constraints.maxWidth < 480 && largeText
@@ -224,4 +250,19 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
       'เขียนไฟล์ไม่สำเร็จและล้างไฟล์ชั่วคราวแล้ว',
     ExportFailureCode.unavailable => 'ระบบบันทึกไฟล์ไม่พร้อมใช้งาน',
   };
+}
+
+String _displayName(String path) {
+  final segments = Uri.tryParse(path)?.pathSegments;
+  if (segments != null && segments.isNotEmpty) {
+    return Uri.decodeComponent(segments.last);
+  }
+  final normalized = path.replaceAll('\\', '/');
+  return normalized.substring(normalized.lastIndexOf('/') + 1);
+}
+
+String _readableBytes(int bytes) {
+  if (bytes < 1024) return '$bytes ไบต์';
+  final kilobytes = bytes / 1024;
+  return '${kilobytes.toStringAsFixed(kilobytes >= 10 ? 0 : 1)} KB';
 }

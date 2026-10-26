@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -41,6 +42,8 @@ const accountErrorKey = ValueKey<String>('account-error');
 Widget _loginHarness({
   required GuestSessionService guestSessionService,
   ResearchConsentUseCases? researchConsent,
+  ResearchRuntimeAvailability researchAvailability =
+      ResearchRuntimeAvailability.disabled,
   AccountUseCases? account,
 }) {
   return MaterialApp(
@@ -49,6 +52,7 @@ Widget _loginHarness({
       '/login': (context) => LoginScreen(
         guestSessionService: guestSessionService,
         researchConsent: researchConsent,
+        researchAvailability: researchAvailability,
         account: account,
       ),
       '/home': (context) =>
@@ -77,6 +81,39 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets(
+    'local mode is explained and offers the primary learning action',
+    (tester) async {
+      await tester.pumpWidget(
+        _loginHarness(guestSessionService: _CompleterGuestSessionService()),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('local-mode-notice')),
+        findsOneWidget,
+      );
+      expect(find.text('เริ่มเรียนในเครื่อง'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.ancestor(
+                of: find.text('เริ่มเรียนในเครื่อง'),
+                matching: find.byType(FilledButton),
+              ),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      expect(find.text('สร้างบัญชีใหม่'), findsNothing);
+      expect(
+        tester
+            .widgetList<TextField>(find.byType(TextField))
+            .every((field) => field.enabled == false),
+        isTrue,
+      );
+    },
+  );
 
   testWidgets('tablet keeps the login form centered within 560dp', (
     tester,
@@ -118,6 +155,7 @@ void main() {
       _loginHarness(
         guestSessionService: _CompleterGuestSessionService(),
         researchConsent: consent,
+        researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
       ),
     );
     await tester.pumpAndSettle();
@@ -130,6 +168,9 @@ void main() {
     );
     expect(find.text('ยังไม่ยินยอม').hitTestable(), findsOneWidget);
     expect(find.text('ยินยอมเข้าร่วม').hitTestable(), findsOneWidget);
+    expect(find.textContaining('รอบทดลองใช้เวลา 30 วัน'), findsOneWidget);
+    expect(find.textContaining('เก็บไม่เกิน 180 วัน'), findsOneWidget);
+    expect(find.textContaining('web.app/privacy'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -163,6 +204,7 @@ void main() {
         child: _loginHarness(
           guestSessionService: _CompleterGuestSessionService(),
           researchConsent: consent,
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
           account: account,
         ),
       ),
@@ -371,6 +413,70 @@ void main() {
   });
 
   testWidgets(
+    'production-style default hides research consent even when use cases exist',
+    (tester) async {
+      final repository = _RecordingConsentRepository();
+      final consent = ResearchConsentUseCases(
+        owners: _MutableOwners(_owner('owner-a')),
+        repository: repository,
+        nowUtc: () => DateTime.utc(2026, 10, 21),
+      );
+      final service = _CompleterGuestSessionService();
+      await tester.pumpWidget(
+        _loginHarness(guestSessionService: service, researchConsent: consent),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(guestModeButtonKey));
+      await tester.pump();
+
+      expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
+      expect(repository.decisions, isEmpty);
+      expect(service.startCalls, 1);
+      service.complete(const GuestSessionStarted(uid: 'guest-uid-123'));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets('research-enabled guest flow is single-flight on rapid taps', (
+    tester,
+  ) async {
+    final loadGate = Completer<void>();
+    final repository = _RecordingConsentRepository(loadGate: loadGate);
+    final consent = ResearchConsentUseCases(
+      owners: _MutableOwners(_owner('owner-a')),
+      repository: repository,
+      nowUtc: () => DateTime.utc(2026, 10, 21),
+    );
+    final service = _CompleterGuestSessionService();
+    await tester.pumpWidget(
+      _loginHarness(
+        guestSessionService: service,
+        researchConsent: consent,
+        researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final button = find.byKey(guestModeButtonKey);
+    await tester.tap(button);
+    await tester.tap(button);
+    loadGate.complete();
+    await tester.pumpAndSettle();
+
+    expect(repository.loadCalls, 1);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('ยินยอมเข้าร่วม'));
+    await tester.pump();
+    expect(repository.decisions, [('owner-a', true)]);
+    expect(service.startCalls, 1);
+
+    service.complete(const GuestSessionStarted(uid: 'guest-uid-123'));
+    await tester.pumpAndSettle();
+    expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+  });
+
+  testWidgets(
     'declining research export still permits offline guest learning',
     (tester) async {
       final database = db.AppDatabase(NativeDatabase.memory());
@@ -387,7 +493,11 @@ void main() {
       );
       final service = _CompleterGuestSessionService();
       await tester.pumpWidget(
-        _loginHarness(guestSessionService: service, researchConsent: consent),
+        _loginHarness(
+          guestSessionService: service,
+          researchConsent: consent,
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -423,7 +533,11 @@ void main() {
     );
     final service = _CompleterGuestSessionService();
     await tester.pumpWidget(
-      _loginHarness(guestSessionService: service, researchConsent: consent),
+      _loginHarness(
+        guestSessionService: service,
+        researchConsent: consent,
+        researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -457,7 +571,11 @@ void main() {
     );
     final service = _CompleterGuestSessionService();
     await tester.pumpWidget(
-      _loginHarness(guestSessionService: service, researchConsent: consent),
+      _loginHarness(
+        guestSessionService: service,
+        researchConsent: consent,
+        researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -497,6 +615,7 @@ void main() {
       _loginHarness(
         guestSessionService: _CompleterGuestSessionService(),
         researchConsent: consent,
+        researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
         account: account,
       ),
     );
@@ -743,7 +862,11 @@ final class _MutableOwners implements LocalOwnerRepository {
 }
 
 final class _RecordingConsentRepository implements ResearchConsentRepository {
+  _RecordingConsentRepository({this.loadGate});
+
   final List<(String, bool)> decisions = [];
+  final Completer<void>? loadGate;
+  int loadCalls = 0;
   Object? loadError;
 
   @override
@@ -751,6 +874,8 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
     required String ownerId,
     required int version,
   }) async {
+    loadCalls += 1;
+    await loadGate?.future;
     if (loadError case final error?) throw error;
     return ResearchConsentStatus(
       ownerId: ownerId,

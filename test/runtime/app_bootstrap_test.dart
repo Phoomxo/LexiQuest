@@ -20,6 +20,7 @@ import 'package:vocab_learning_app/features/account_deletion/domain/account_dele
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
+import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
@@ -250,6 +251,68 @@ void main() {
       expect(active.firebaseUid, isNull);
       expect(events.where((event) => event == 'recover'), hasLength(2));
       expect(events.where((event) => event == 'local-purge'), hasLength(1));
+    },
+  );
+
+  test(
+    'committed deletion finishes local purge when Firebase is unavailable',
+    () async {
+      final database = _testDatabase();
+      await database.customStatement(
+        "INSERT INTO local_owners (id, firebase_uid, created_at_utc_ms, is_active) VALUES ('owner-a', 'firebase-user', 1, 1)",
+      );
+      final events = <String>[];
+      final journal = _BootstrapDeletionJournal(_committedDeletionEntry());
+      final cloud = _BootstrapDeletionCloud()
+        ..onCall = () => events.add('cloud');
+
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async =>
+            throw StateError('synthetic Firebase outage'),
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => throw StateError('must not be called'),
+        accountDeletionEnabled: true,
+        accountDeletionServerExportAuthorityConfigured: true,
+        accountDeletionRecoveryRetention: const Duration(days: 7),
+        accountDeletionFactory:
+            ({
+              required database,
+              required owners,
+              required config,
+              required currentSession,
+              required signOut,
+              required newRequestsEnabled,
+            }) async => _bootstrapDeletionComposition(
+              database: database,
+              owners: owners,
+              currentSession: currentSession,
+              signOut: signOut,
+              journal: journal,
+              cloud: cloud,
+              newRequestsEnabled: newRequestsEnabled,
+              onLocalPurge: () => events.add('local-purge'),
+            ),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(events, ['local-purge']);
+      expect(
+        dependencies.runtimeStatus.firebase,
+        RuntimeAvailability.unavailable,
+      );
+      expect(dependencies.account, isNull);
+      expect(dependencies.syncEngine, isNull);
+      expect(dependencies.accountDeletion?.enabled, isFalse);
+      final active = await dependencies.localOwners!.getOrCreateActiveOwner();
+      expect(active.firebaseUid, isNull);
+      expect(active.id, isNot('owner-a'));
+      expect(
+        (await dependencies.vocabulary!.createCategory('Offline')).name,
+        'Offline',
+      );
     },
   );
 
@@ -535,6 +598,41 @@ void main() {
     },
   );
   group('AppBootstrap.initialize', () {
+    test('production hides research UI until every rollout gate is ready', () {
+      expect(AppBootstrap.production().researchAvailability.isEnabled, isFalse);
+      expect(
+        const ResearchRuntimeAvailability(
+          ethicsApproved: true,
+          protocolApproved: true,
+          instrumentApproved: true,
+          trustedIssuerConfigured: true,
+          trustedTimeConfigured: false,
+          rolloutApproved: true,
+        ).isEnabled,
+        isFalse,
+      );
+      expect(
+        AppBootstrap.production(
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+        ).researchAvailability.isEnabled,
+        isTrue,
+      );
+    });
+
+    test('default composition does not expose research consent UI', () async {
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(dependencies.researchAvailability.isEnabled, isFalse);
+      expect(dependencies.researchConsent, isNull);
+    });
+
     test('production defaults research authority to deny-all', () {
       expect(
         AppBootstrap.production().researchAuthorizer,
@@ -566,6 +664,7 @@ void main() {
           initializeSupabase: () async {},
           loadConfig: _validConfig,
           guestSessionService: _StubGuestSessionService(),
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
         ).initialize();
         addTearDown(dependencies.dispose);
         final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
@@ -628,8 +727,9 @@ void main() {
       },
     );
 
-    test('unavailable Firebase never creates the account gateway', () async {
+    test('unavailable Firebase never creates cloud gateways', () async {
       var factoryCalls = 0;
+      var syncFactoryCalls = 0;
       final dependencies = await AppBootstrap(
         createDatabase: _testDatabase,
         initializeFirebase: () async =>
@@ -642,11 +742,18 @@ void main() {
           factoryCalls++;
           return _StartupGateway(null);
         },
+        syncGatewayFactory: () {
+          syncFactoryCalls++;
+          return _BootstrapSyncGateway();
+        },
       ).initialize();
       addTearDown(dependencies.dispose);
 
       expect(factoryCalls, 0);
+      expect(syncFactoryCalls, 0);
       expect(dependencies.account, isNull);
+      expect(dependencies.syncEngine, isNull);
+      expect(dependencies.syncTrigger, isNull);
       expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
       expect(
         await dependencies.guestSessionService.start(),
@@ -1017,6 +1124,14 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => _StartupGateway(
+          const AccountSession(
+            uid: 'firebase-user',
+            email: 'learner@example.test',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        ),
         syncGatewayFactory: () => gateway,
       );
 
@@ -1054,6 +1169,51 @@ void main() {
         );
       },
     );
+  });
+
+  group('requireFirebaseAppCheckToken', () {
+    test('accepts a structurally valid App Check JWT', () async {
+      await requireFirebaseAppCheckToken(
+        () async =>
+            'eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.c2lnbmF0dXJl',
+      );
+    });
+
+    for (final token in <String?>[
+      null,
+      '',
+      '   ',
+      'synthetic-token',
+      'eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==',
+    ]) {
+      test('rejects unavailable token ${token ?? 'null'}', () async {
+        await expectLater(
+          requireFirebaseAppCheckToken(() async => token),
+          throwsStateError,
+        );
+      });
+    }
+
+    test('preserves the first App Check exchange failure', () async {
+      final failure = StateError('synthetic exchange rejection');
+
+      await expectLater(
+        requireFirebaseAppCheckToken(() async => throw failure),
+        throwsA(same(failure)),
+      );
+    });
+
+    test('times out a token exchange that never completes', () async {
+      final never = Completer<String?>();
+
+      await expectLater(
+        requireFirebaseAppCheckToken(
+          () => never.future,
+          timeout: const Duration(milliseconds: 1),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
   });
 }
 
@@ -1184,9 +1344,11 @@ final class _BootstrapSyncGateway implements SyncGateway {
   }) async => PullPage(changes: const [], nextCursor: after, hasMore: false);
 
   @override
-  Future<PushResult> push(PushMutation mutation) {
-    throw UnimplementedError();
-  }
+  Future<PushResult> push(PushMutation mutation) async => PushAcknowledged(
+    operationId: mutation.operationId,
+    resultingRevision: mutation.localRevision,
+    acknowledgedAtUtc: DateTime.now().toUtc(),
+  );
 }
 
 AccountDeletionUseCases _deletionUseCases(
@@ -1237,6 +1399,21 @@ AccountDeletionJournalEntry _pendingDeletionEntry() {
     authenticationReceipt: RecentAuthenticationReceipt(
       firebaseUid: 'firebase-user',
       authenticatedAtUtc: now.subtract(const Duration(minutes: 10)),
+    ),
+  );
+}
+
+AccountDeletionJournalEntry _committedDeletionEntry() {
+  final now = DateTime.now().toUtc();
+  return AccountDeletionJournalEntry(
+    cloudReceipt: CloudDeletionReceipt(
+      receiptId: 'cloud-receipt-bootstrap',
+      ownerId: 'owner-a',
+      firebaseUid: 'firebase-user',
+      idempotencyKey: durableAccountDeletionBinding(
+        'delete:00000000-0000-4000-8000-000000000001',
+      ),
+      completedAtUtc: now.subtract(const Duration(minutes: 1)),
     ),
   );
 }

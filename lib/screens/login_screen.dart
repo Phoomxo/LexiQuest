@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/research/domain/research_runtime_availability.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../services/guest_session_service.dart';
@@ -14,11 +15,13 @@ class LoginScreen extends StatefulWidget {
     this.guestSessionService,
     this.account,
     this.researchConsent,
+    this.researchAvailability,
   });
 
   final GuestSessionService? guestSessionService;
   final AccountUseCases? account;
   final ResearchConsentUseCases? researchConsent;
+  final ResearchRuntimeAvailability? researchAvailability;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -30,6 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
   GuestSessionService? _guest;
   AccountUseCases? _account;
   ResearchConsentUseCases? _researchConsent;
+  ResearchRuntimeAvailability _researchAvailability =
+      ResearchRuntimeAvailability.disabled;
+  bool _guestFlowInFlight = false;
   bool _busy = false;
   bool _obscure = true;
   String? _emailError;
@@ -44,6 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
     _account ??= widget.account ?? dependencies?.account;
     _researchConsent ??=
         widget.researchConsent ?? dependencies?.researchConsent;
+    _researchAvailability =
+        widget.researchAvailability ??
+        dependencies?.researchAvailability ??
+        ResearchRuntimeAvailability.disabled;
   }
 
   Future<void> _signIn() async {
@@ -133,24 +143,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _startGuest() async {
-    if (_busy) return;
-    if (_accountError != null) setState(() => _accountError = null);
+    if (_busy || _guestFlowInFlight) return;
     final guest = _guest;
     if (guest == null) return;
-    await _ensureResearchConsentDecision();
-    if (!mounted) return;
-    setState(() => _busy = true);
-    final result = await guest.start();
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (result is GuestSessionStarted) {
-      await AppNavigator.resetTo<void>(context, AppRoute.home);
-    } else {
-      _show('เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+    _guestFlowInFlight = true;
+    if (_accountError != null) setState(() => _accountError = null);
+    try {
+      await _ensureResearchConsentDecision();
+      if (!mounted) return;
+      setState(() => _busy = true);
+      final result = await guest.start();
+      if (!mounted) return;
+      if (result is GuestSessionStarted) {
+        await AppNavigator.resetTo<void>(context, AppRoute.home);
+      } else {
+        _show(
+          'เริ่มเรียนโดยไม่ใช้บัญชีไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่',
+        );
+      }
+    } finally {
+      _guestFlowInFlight = false;
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _ensureResearchConsentDecision() async {
+    if (!_researchAvailability.isEnabled) return;
     final consent = _researchConsent;
     if (consent == null) return;
     try {
@@ -342,9 +360,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  if (_account == null) ...[
+                    Semantics(
+                      key: const ValueKey<String>('local-mode-notice'),
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          'ขณะนี้ใช้บัญชีออนไลน์ไม่ได้ '
+                          'แต่คุณเริ่มเรียนและเก็บข้อมูลไว้ในเครื่องได้ทันที',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onPrimaryContainer),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton(
+                        key: const ValueKey<String>('guest-mode-button'),
+                        onPressed: _busy ? null : _startGuest,
+                        child: const Text('เริ่มเรียนในเครื่อง'),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   TextField(
                     controller: _email,
-                    enabled: !_busy,
+                    enabled: _account != null && !_busy,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [
                       AutofillHints.username,
@@ -366,17 +413,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _password,
-                    enabled: !_busy,
+                    enabled: _account != null && !_busy,
                     obscureText: _obscure,
                     autofillHints: const [AutofillHints.password],
-                    onSubmitted: (_) => _signIn(),
+                    onSubmitted: _account == null ? null : (_) => _signIn(),
                     decoration: InputDecoration(
                       labelText: 'รหัสผ่าน',
                       prefixIcon: const Icon(Icons.lock_outline),
                       errorText: _passwordError,
                       suffixIcon: IconButton(
                         tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                        onPressed: _account == null
+                            ? null
+                            : () => setState(() => _obscure = !_obscure),
                         icon: Icon(
                           _obscure ? Icons.visibility : Icons.visibility_off,
                         ),
@@ -394,7 +443,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _busy ? null : _forgotPassword,
+                      onPressed: _account == null || _busy
+                          ? null
+                          : _forgotPassword,
                       child: const Text('ลืมรหัสผ่าน'),
                     ),
                   ),
@@ -434,7 +485,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     height: 48,
                     child: FilledButton(
-                      onPressed: _busy ? null : _signIn,
+                      onPressed: _account == null || _busy ? null : _signIn,
                       child: const Text('เข้าสู่ระบบ'),
                     ),
                   ),
@@ -455,27 +506,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      key: const ValueKey<String>('guest-mode-button'),
-                      onPressed: _busy ? null : _startGuest,
-                      child: const Text('เรียนต่อโดยไม่ใช้บัญชี'),
+                  if (_account != null) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton(
+                        key: const ValueKey<String>('guest-mode-button'),
+                        onPressed: _busy ? null : _startGuest,
+                        child: const Text('เรียนต่อโดยไม่ใช้บัญชี'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () {
-                            if (_accountError != null) {
-                              setState(() => _accountError = null);
-                            }
-                            AppNavigator.push<void>(context, AppRoute.register);
-                          },
-                    child: const Text('สร้างบัญชีใหม่'),
-                  ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              if (_accountError != null) {
+                                setState(() => _accountError = null);
+                              }
+                              AppNavigator.push<void>(
+                                context,
+                                AppRoute.register,
+                              );
+                            },
+                      child: const Text('สร้างบัญชีใหม่'),
+                    ),
+                  ],
                 ],
               ),
             ),

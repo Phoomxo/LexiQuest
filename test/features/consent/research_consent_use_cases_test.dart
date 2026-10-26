@@ -18,6 +18,7 @@ void main() {
   var nowUtc = DateTime.utc(2026, 7, 30, 12);
 
   setUp(() async {
+    nowUtc = DateTime.utc(2026, 7, 30, 12);
     database = db.AppDatabase(NativeDatabase.memory());
     owners = DriftLocalOwnerRepository(
       database,
@@ -77,6 +78,48 @@ void main() {
     expect(await database.select(database.eventsV2).get(), isEmpty);
     expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
+
+  test(
+    'repeated acceptance is idempotent and keeps first decision time',
+    () async {
+      expect(await consent.accept(), isTrue);
+
+      nowUtc = DateTime.utc(2026, 7, 30, 13);
+      expect(await consent.accept(), isTrue);
+
+      final status = await consent.load();
+      expect(status.accepted, isTrue);
+      expect(status.decidedAtUtc, DateTime.utc(2026, 7, 30, 12));
+      expect(
+        await database.select(database.researchConsents).get(),
+        hasLength(1),
+      );
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
+
+  test(
+    'withdrawn consent cannot be accepted again at the same version',
+    () async {
+      expect(await consent.accept(), isTrue);
+      nowUtc = DateTime.utc(2026, 7, 30, 13);
+      expect(await consent.withdraw(), isTrue);
+
+      nowUtc = DateTime.utc(2026, 7, 30, 14);
+      expect(await consent.accept(), isFalse);
+
+      final status = await consent.load();
+      expect(status.accepted, isFalse);
+      expect(status.decidedAtUtc, DateTime.utc(2026, 7, 30, 13));
+      expect(status.withdrawnAtUtc, DateTime.utc(2026, 7, 30, 13));
+      final rows = await database.select(database.researchConsents).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.consentState, 'withdrawn');
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
 
   test(
     'repository rejects decisions for inactive or undecided owners',

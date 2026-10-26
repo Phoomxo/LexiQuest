@@ -165,6 +165,31 @@ void main() {
   });
 
   group('OwnerBindingGuestSessionService', () {
+    test('disabled cloud binding never calls Firebase', () async {
+      final delegate = _SequencedGuestSessionService(const [
+        GuestSessionStarted(uid: 'must-not-be-used'),
+      ]);
+      final service = OwnerBindingGuestSessionService(
+        delegate: delegate,
+        localOwners: _FakeLocalOwnerRepository(),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        cloudBindingEnabled: false,
+      );
+
+      final result = await service.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        result,
+        isA<GuestSessionStarted>().having(
+          (started) => started.uid,
+          'local owner id',
+          'local-owner',
+        ),
+      );
+      expect(delegate.startCalls, 0);
+    });
+
     test(
       'starts the local guest without waiting for anonymous Firebase',
       () async {
