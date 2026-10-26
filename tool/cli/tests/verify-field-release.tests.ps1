@@ -397,6 +397,9 @@ Assert-True (
     $collectorText.Contains('$priorVersionCode -lt $targetVersionCode')
 ) 'collector distinguishes a real version upgrade from a same-version reinstall'
 Assert-True (
+    $collectorText.Contains('$installedVersionCode -ne $targetVersionCode')
+) 'collector reconciles installation success from the installed package version'
+Assert-True (
     $collectorText -match (
         '(?s)if\s*\(\$null\s+-eq\s+\$priorVersionCode\)\s*\{' +
         '.*?\$journeys\.cleanInstall\s*=\s*\[ordered\]@\{' +

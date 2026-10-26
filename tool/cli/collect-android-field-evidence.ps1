@@ -94,8 +94,18 @@ $priorVersionCode = Get-InstalledVersionCode `
     -PackageName 'com.lexiquest.app'
 
 $installOutput = & adb -s $serial install --no-streaming -r $apkPath 2>&1
-if ([int]$LASTEXITCODE -ne 0 -or ($installOutput -join "`n") -notmatch 'Success') {
-    throw "APK installation failed: $installOutput"
+$installExitCode = [int]$LASTEXITCODE
+$installedVersionCode = Get-InstalledVersionCode `
+    -Serial $serial `
+    -PackageName 'com.lexiquest.app'
+if (
+    $installExitCode -ne 0 -or
+    $installedVersionCode -ne $targetVersionCode
+) {
+    throw (
+        'APK installation failed or did not reconcile to versionCode {0}: ' +
+        '{1}' -f $targetVersionCode, ($installOutput -join "`n")
+    )
 }
 & adb -s $serial shell monkey -p com.lexiquest.app 1 | Out-Null
 if ([int]$LASTEXITCODE -ne 0) {
