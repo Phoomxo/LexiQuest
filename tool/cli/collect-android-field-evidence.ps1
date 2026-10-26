@@ -55,6 +55,25 @@ function Get-InstalledVersionCode {
     return [int]$versionMatch.Groups[1].Value
 }
 
+function Get-InstalledLastUpdateTime {
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [Parameter(Mandatory)][string]$PackageName
+    )
+
+    $packageOutput = @(
+        & adb -s $Serial shell dumpsys package $PackageName 2>$null
+    )
+    $lastUpdateMatch = [regex]::Match(
+        ($packageOutput -join "`n"),
+        '(?m)^\s*lastUpdateTime=(.+)$'
+    )
+    if (-not $lastUpdateMatch.Success) {
+        return ''
+    }
+    return $lastUpdateMatch.Groups[1].Value.Trim()
+}
+
 if ($null -eq (Get-Command adb -ErrorAction SilentlyContinue)) {
     throw 'adb is required to collect physical Android evidence.'
 }
@@ -92,19 +111,42 @@ if ($targetVersionCode -lt 1) {
 $priorVersionCode = Get-InstalledVersionCode `
     -Serial $serial `
     -PackageName 'com.lexiquest.app'
+$priorLastUpdateTime = Get-InstalledLastUpdateTime `
+    -Serial $serial `
+    -PackageName 'com.lexiquest.app'
 
 $installOutput = & adb -s $serial install --no-streaming -r $apkPath 2>&1
 $installExitCode = [int]$LASTEXITCODE
+$transportReady = $false
+for ($attempt = 0; $attempt -lt 15; $attempt++) {
+    $deviceState = (& adb -s $serial get-state 2>$null | Select-Object -First 1)
+    if (([string]$deviceState).Trim() -eq 'device') {
+        $transportReady = $true
+        break
+    }
+    Start-Sleep -Seconds 1
+}
 $installedVersionCode = Get-InstalledVersionCode `
     -Serial $serial `
     -PackageName 'com.lexiquest.app'
+$installedLastUpdateTime = Get-InstalledLastUpdateTime `
+    -Serial $serial `
+    -PackageName 'com.lexiquest.app'
+$installationChanged =
+    $null -eq $priorVersionCode -or
+    $priorVersionCode -ne $installedVersionCode -or
+    $priorLastUpdateTime -ne $installedLastUpdateTime
 if (
-    $installExitCode -ne 0 -or
-    $installedVersionCode -ne $targetVersionCode
+    -not $transportReady -or
+    $installedVersionCode -ne $targetVersionCode -or
+    -not $installationChanged
 ) {
     throw (
         'APK installation failed or did not reconcile to versionCode {0}: ' +
-        '{1}' -f $targetVersionCode, ($installOutput -join "`n")
+        'adbExit={1}; {2}' -f
+            $targetVersionCode,
+            $installExitCode,
+            ($installOutput -join "`n")
     )
 }
 & adb -s $serial shell monkey -p com.lexiquest.app 1 | Out-Null

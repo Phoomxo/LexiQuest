@@ -399,6 +399,15 @@ Assert-True (
 Assert-True (
     $collectorText.Contains('$installedVersionCode -ne $targetVersionCode')
 ) 'collector reconciles installation success from the installed package version'
+foreach ($needle in @(
+    'get-state',
+    'transportReady',
+    'priorLastUpdateTime',
+    'installedLastUpdateTime'
+)) {
+    Assert-True $collectorText.Contains($needle) `
+        "collector reconciles transport loss with $needle"
+}
 Assert-True (
     $collectorText -match (
         '(?s)if\s*\(\$null\s+-eq\s+\$priorVersionCode\)\s*\{' +
