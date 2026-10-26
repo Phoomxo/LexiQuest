@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   String? _emailError;
   String? _passwordError;
+  String? _accountError;
 
   @override
   void didChangeDependencies() {
@@ -49,7 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final account = _account;
     if (_busy) return;
     if (account == null) {
-      _show('ระบบบัญชีออนไลน์ไม่พร้อม คุณยังเรียนโดยไม่ใช้บัญชีได้');
+      _showAccountError(
+        'ระบบบัญชีออนไลน์ไม่พร้อม คุณยังเรียนโดยไม่ใช้บัญชีได้',
+      );
       return;
     }
     final email = _email.text.trim();
@@ -59,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _emailError = emailError;
         _passwordError = passwordError;
+        _accountError = null;
       });
       return;
     }
@@ -66,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _busy = true;
       _emailError = null;
       _passwordError = null;
+      _accountError = null;
     });
     try {
       final session = await account.signIn(
@@ -74,7 +79,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       await _completeSignIn(session, fallbackEmail: email);
     } on AccountException catch (error) {
-      if (mounted) _show(_accountFailure(error.code));
+      if (error.code == AccountFailureCode.cancelled) {
+        if (mounted) _show(_accountFailure(error.code));
+      } else {
+        _showAccountError(_accountFailure(error.code));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -84,15 +93,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final account = _account;
     if (_busy) return;
     if (account == null || !account.googleSignInAvailable) {
-      _show('ผู้ให้บริการบัญชีไม่พร้อมใช้งาน');
+      _showAccountError('ผู้ให้บริการบัญชีไม่พร้อมใช้งาน');
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _accountError = null;
+    });
     try {
       final session = await account.signInWithGoogle();
       await _completeSignIn(session);
     } on AccountException catch (error) {
-      if (mounted) _show(_accountFailure(error.code));
+      if (error.code == AccountFailureCode.cancelled) {
+        if (mounted) _show(_accountFailure(error.code));
+      } else {
+        _showAccountError(_accountFailure(error.code));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -117,8 +133,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _startGuest() async {
+    if (_busy) return;
+    if (_accountError != null) setState(() => _accountError = null);
     final guest = _guest;
-    if (guest == null || _busy) return;
+    if (guest == null) return;
     await _ensureResearchConsentDecision();
     if (!mounted) return;
     setState(() => _busy = true);
@@ -157,6 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _forgotPassword() async {
+    if (_accountError != null) setState(() => _accountError = null);
     var resetEmail = _email.text;
     String? resetError;
     final email = await showDialog<String>(
@@ -224,6 +243,11 @@ class _LoginScreenState extends State<LoginScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _showAccountError(String message) {
+    if (!mounted) return;
+    setState(() => _accountError = message);
+  }
+
   @override
   void dispose() {
     _email.dispose();
@@ -234,9 +258,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final horizontalPadding = ((width - 560) / 2)
-        .clamp(24.0, double.infinity)
-        .toDouble();
+    final colorScheme = Theme.of(context).colorScheme;
+    final horizontalPadding = width >= 600
+        ? ((width - 560) / 2).clamp(24.0, double.infinity).toDouble()
+        : width >= 360
+        ? 20.0
+        : 16.0;
     return Scaffold(
       appBar: AppBar(title: const Text('เข้าสู่ระบบ LexiQuest')),
       body: SafeArea(
@@ -250,10 +277,60 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 children: [
                   const SizedBox(height: 32),
-                  Icon(
-                    Icons.menu_book_outlined,
-                    size: 72,
-                    color: Theme.of(context).colorScheme.primary,
+                  Semantics(
+                    key: const ValueKey<String>('login-brand-mark'),
+                    label: 'สัญลักษณ์ LexiQuest',
+                    image: true,
+                    child: ExcludeSemantics(
+                      child: Center(
+                        child: Container(
+                          width: 88,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Text(
+                                'LQ',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -1.5,
+                                    ),
+                              ),
+                              Positioned(
+                                right: 7,
+                                bottom: 7,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: colorScheme.surface,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Icon(
+                                      Icons.route_rounded,
+                                      size: 18,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -278,8 +355,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icon(Icons.email_outlined),
                     ).copyWith(errorText: _emailError),
                     onChanged: (_) {
-                      if (_emailError != null) {
-                        setState(() => _emailError = null);
+                      if (_emailError != null || _accountError != null) {
+                        setState(() {
+                          _emailError = null;
+                          _accountError = null;
+                        });
                       }
                     },
                   ),
@@ -303,8 +383,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     onChanged: (_) {
-                      if (_passwordError != null) {
-                        setState(() => _passwordError = null);
+                      if (_passwordError != null || _accountError != null) {
+                        setState(() {
+                          _passwordError = null;
+                          _accountError = null;
+                        });
                       }
                     },
                   ),
@@ -315,6 +398,39 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('ลืมรหัสผ่าน'),
                     ),
                   ),
+                  if (_accountError case final message?) ...[
+                    Semantics(
+                      key: const ValueKey<String>('account-error'),
+                      liveRegion: true,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: colorScheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                message,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onErrorContainer,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   SizedBox(
                     height: 48,
                     child: FilledButton(
@@ -329,7 +445,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: OutlinedButton.icon(
                         key: const ValueKey<String>('google-sign-in-button'),
                         onPressed: _busy ? null : _signInWithGoogle,
-                        icon: const Icon(Icons.account_circle_outlined),
+                        icon: const ExcludeSemantics(
+                          child: Text(
+                            'G',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
                         label: const Text('ใช้บัญชี Google'),
                       ),
                     ),
@@ -347,10 +468,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: _busy
                         ? null
-                        : () => AppNavigator.push<void>(
-                            context,
-                            AppRoute.register,
-                          ),
+                        : () {
+                            if (_accountError != null) {
+                              setState(() => _accountError = null);
+                            }
+                            AppNavigator.push<void>(context, AppRoute.register);
+                          },
                     child: const Text('สร้างบัญชีใหม่'),
                   ),
                 ],

@@ -35,6 +35,8 @@ class _CompleterGuestSessionService implements GuestSessionService {
 
 const guestModeButtonKey = ValueKey<String>('guest-mode-button');
 const googleSignInButtonKey = ValueKey<String>('google-sign-in-button');
+const loginBrandMarkKey = ValueKey<String>('login-brand-mark');
+const accountErrorKey = ValueKey<String>('account-error');
 
 Widget _loginHarness({
   required GuestSessionService guestSessionService,
@@ -56,6 +58,26 @@ Widget _loginHarness({
 }
 
 void main() {
+  testWidgets('login brand mark is specific and labeled for assistive tech', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        _loginHarness(guestSessionService: _CompleterGuestSessionService()),
+      );
+
+      final mark = find.byKey(loginBrandMarkKey);
+      expect(mark, findsOneWidget);
+      expect(
+        tester.getSemantics(mark).getSemanticsData().label,
+        'สัญลักษณ์ LexiQuest',
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('tablet keeps the login form centered within 560dp', (
     tester,
   ) async {
@@ -574,6 +596,134 @@ void main() {
     expect(find.text('ยกเลิกรายการแล้ว'), findsOneWidget);
     expect(find.textContaining('secret-token-sentinel'), findsNothing);
   });
+
+  testWidgets('Google provider failure stays inline until the user acts', (
+    tester,
+  ) async {
+    final gateway = _LoginAccountGateway(
+      googleAvailable: true,
+      googleFailure: const AccountException(AccountFailureCode.network),
+    );
+    final account = AccountUseCases(
+      gateway: gateway,
+      owners: _MutableOwners(_owner('owner-a')),
+      upgradeGuestOwner: UpgradeGuestOwner(_LoginUpgrades()),
+    );
+    await tester.pumpWidget(
+      _loginHarness(
+        guestSessionService: _CompleterGuestSessionService(),
+        account: account,
+      ),
+    );
+
+    await tester.tap(find.byKey(googleSignInButtonKey));
+    await tester.pump();
+
+    expect(find.byKey(accountErrorKey), findsOneWidget);
+    expect(find.text('ไม่สามารถเชื่อมต่อเครือข่ายได้'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+
+    await tester.enterText(
+      find.byType(TextField).first,
+      'student@example.test',
+    );
+    await tester.pump();
+    expect(find.byKey(accountErrorKey), findsNothing);
+  });
+
+  testWidgets('password failure is announced inline and reset clears it', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final gateway = _LoginAccountGateway(
+      signInFailure: const AccountException(
+        AccountFailureCode.invalidCredential,
+      ),
+    );
+    final account = AccountUseCases(
+      gateway: gateway,
+      owners: _MutableOwners(_owner('owner-a')),
+      upgradeGuestOwner: UpgradeGuestOwner(_LoginUpgrades()),
+    );
+    try {
+      await tester.pumpWidget(
+        _loginHarness(
+          guestSessionService: _CompleterGuestSessionService(),
+          account: account,
+        ),
+      );
+
+      await tester.enterText(
+        find.byType(TextField).first,
+        'student@example.test',
+      );
+      await tester.enterText(find.byType(TextField).last, 'password123');
+      await tester.tap(find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'));
+      await tester.pumpAndSettle();
+
+      final error = find.byKey(accountErrorKey);
+      expect(error, findsOneWidget);
+      expect(find.text('อีเมลหรือรหัสผ่านไม่ถูกต้อง'), findsOneWidget);
+      expect(tester.widget<Semantics>(error).properties.liveRegion, isTrue);
+      final semanticsData = tester.getSemantics(error).getSemanticsData();
+      expect(semanticsData.label, contains('อีเมลหรือรหัสผ่านไม่ถูกต้อง'));
+
+      await tester.tap(find.text('ลืมรหัสผ่าน'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(accountErrorKey), findsNothing);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'ส่งลิงก์'));
+      await tester.pumpAndSettle();
+      expect(gateway.passwordResetEmails, ['student@example.test']);
+      expect(find.byKey(accountErrorKey), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('provider recovery stays readable at 200 percent text', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final account = AccountUseCases(
+      gateway: _LoginAccountGateway(
+        googleAvailable: true,
+        googleFailure: const AccountException(AccountFailureCode.network),
+      ),
+      owners: _MutableOwners(_owner('owner-a')),
+      upgradeGuestOwner: UpgradeGuestOwner(_LoginUpgrades()),
+    );
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: _loginHarness(
+          guestSessionService: _CompleterGuestSessionService(),
+          account: account,
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(googleSignInButtonKey),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(googleSignInButtonKey));
+    await tester.pumpAndSettle();
+
+    final message = find.descendant(
+      of: find.byKey(accountErrorKey),
+      matching: find.text('ไม่สามารถเชื่อมต่อเครือข่ายได้'),
+    );
+    expect(message.hitTestable(), findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(message).didExceedMaxLines,
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 LocalOwner _owner(String id) =>
@@ -623,10 +773,15 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
 
 final class _LoginAccountGateway
     implements AccountGateway, GoogleAccountGateway {
-  _LoginAccountGateway({this.googleAvailable = false, this.googleFailure});
+  _LoginAccountGateway({
+    this.googleAvailable = false,
+    this.googleFailure,
+    this.signInFailure,
+  });
 
   final bool googleAvailable;
   final Object? googleFailure;
+  final Object? signInFailure;
   final Completer<AccountSession> googleCompleter = Completer<AccountSession>();
   int googleCalls = 0;
   int signInCalls = 0;
@@ -644,6 +799,7 @@ final class _LoginAccountGateway
     required String password,
   }) async {
     signInCalls++;
+    if (signInFailure case final error?) throw error;
     currentSession = AccountSession(
       uid: 'signed-user',
       email: email,
