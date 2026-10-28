@@ -1,0 +1,50 @@
+{
+  "status": "TWO_DEFECTS_FIXED_HOST_AND_NATIVE_BASELINE_VERIFIED_LIVE_PROVIDER_PENDING",
+  "defects": [
+    {
+      "id": "SCRAMBLE-COMMITTED-FEEDBACK",
+      "cause": "Word/sentence screens recorded directly, bypassing controller committed count and feedback",
+      "red": "Both actual-screen/Drift tests had one durable row but controller count0 instead of1",
+      "fix": "Record/retry existing pending evidence through lifecycle.recordCapturedEvidence; original adapter/evaluation unchanged; standalone path retained",
+      "verification": "Two modes x absent AI scope/connected registry/disconnected registry during blocked write =6production-loader widget cases; one write, correct feedback, no precommit answer exposure, no AI answer actions"
+    },
+    {
+      "id": "NATIVE-LOADER-REMOUNT",
+      "cause": "First shell feedback changed loader tree from modeSurface to Column containing modeSurface, recreating StatefulWidget",
+      "nativeReproduction": "Word bag completed but all3selected slots became empty on first039APK",
+      "red": "All6production-loader tests failed same(originalState) after successful durable write",
+      "fix": "Keep Column/Expanded structure whether feedback present or absent",
+      "verification": "All6state identity checks passed; final Vivo word retains b,a,g and sentence retains selected tokens after correct completed result"
+    }
+  ],
+  "host": {
+    "productionLoaderTests": 6,
+    "nativeScreenRegressionTests": 24,
+    "chooseAndReviewedLoaderTests": 77,
+    "evidenceLevel": "Real native widget controls and real Drift; provider presence/loss simulated at menu registry, no network provider called",
+    "analysis": "Final four changed Dart files: no issues",
+    "redLogs": [
+      "build/verification/ae790eb8325c1b2465a8af8f539016b68442dd00/61c9e79dbc23-95244814eb63-85743f92/Explicit-Flutter-tests.stdout.log",
+      "build/verification/ae790eb8325c1b2465a8af8f539016b68442dd00/62cf442681a8-7f45d5045de2-78909b3f/Explicit-Flutter-tests.stdout.log"
+    ]
+  },
+  "native": {
+    "serial": "9582188822004C6",
+    "package": "com.lexiquest.app.ariTest",
+    "buildAndInstall": "PASS",
+    "intermediateApkSha256": "1531e41cd97e87af4875689ff872fc5e0a5d4f651ca672f2942f2f9c3faf43c6",
+    "finalApk": "build/ari-assistance-039.apk",
+    "word": "bag selected manually; committed correct/100% and b,a,g retained",
+    "sentence": "I carry my clothes in a bag. selected manually; committed correct/100% and tokens retained",
+    "provider": "Disconnected throughout; no bridge/login started",
+    "dashboard": "28/42,30m53s,0due unchanged; scramble adapters classify evidence as recreational, not mastery evidence",
+    "testData": "Three successful isolated native game submissions: initial word reproduction, final word retest, final sentence. Retained as test history; original package/accounts untouched.",
+    "usbStayAwake": 2
+  },
+  "testMethodCorrection": "Initial rapid coordinate sequence assumed letter pool stayed fixed; observed moved pool, removed misplaced g, then selected by fresh observed labels. No incorrect submission made from that sequence.",
+  "remaining": [
+    "Live provider reply against newly committed word/sentence results",
+    "Other mode-specific persistence and disconnection gaps",
+    "All14workflow/mode acceptance remainsOPEN; whole-project review queued"
+  ]
+}

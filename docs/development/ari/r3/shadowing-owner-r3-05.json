@@ -1,0 +1,31 @@
+{
+  "id": "R3-05-SHADOWING-OWNER-001",
+  "criteria": [
+    "W11/owner_isolation",
+    "shadowing/owner_isolation"
+  ],
+  "status": "HOST_FIXED_NATIVE_BASELINE_VERIFIED_PROVIDER_PENDING",
+  "reproduction": "Construct ShadowingChallengeScreen with referenceSentence, no ownerId, active MenuActionRegistry owner-1; optional context incorrectly contains unowned reference.",
+  "rootCause": "readValue JSON remains populated with null dataOwner; registry intentionally uses current session owner for session-only context. Shadowing failed to suppress a data-bearing projection lacking provenance.",
+  "repair": "Suppress readValue until _ownerId is nonnull, matching Speaking and LessonAssistanceContext; native child stays mounted.",
+  "productionApplicability": "Current canonical navigation supplies session.ownerId; direct/default widget boundary must fail closed while owner is unavailable. No demonstrated real cross-account incident is claimed.",
+  "redLog": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/230e52afd418-9f79ba92c8d1-2fdad876/Explicit-Flutter-tests.stdout.log",
+  "redObserved": "Expected empty context; actual speech/shadowing-assistance exposed Private reference without provenance.",
+  "greenReceipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-de25a5762932e95dd1bb29e9e7485d0257a9a1f15b4235998d8477e863c4e80b.json",
+  "affectedRetestReceipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-974373341801e522123188534ed4d3af83b9247a8df8714a97abfcd2f70a9e8c.json",
+  "changedFiles": [
+    "lib/screens/shadowing_challenge_screen.dart",
+    "test/screens/shadowing_challenge_screen_test.dart"
+  ],
+  "assertions": [
+    "unowned context suppressed while native reference and listen control visible",
+    "owned context attaches after AI owner resolves",
+    "same-owner preserveContext reconnect retains bound context",
+    "changed owner suppresses context",
+    "disposed route removes context",
+    "existing saved-after-ACK and duplicate-final tests still pass"
+  ],
+  "native": "native-shadowing-r3-05.json",
+  "actualProvider": "external_pending; no session established or provider inference called",
+  "review": "Sole coordinator; change is localized to projection, not score/storage/voice/session authority."
+}

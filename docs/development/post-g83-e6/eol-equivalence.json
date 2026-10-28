@@ -1,0 +1,69 @@
+{
+  "reason": "Remove checkout-only platform changes and preserve original mixed-EOL tool layout outside two changed lines; no semantic change after final tests.",
+  "files": [
+    {
+      "path": "linux/flutter/generated_plugin_registrant.cc",
+      "beforeSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+      "afterSha256": "cb290bfc23b97c2d3d1010a04aeb3bb7105a7ac65506fe3523ddfe90ea4a57ac",
+      "normalizedSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\linux\\flutter\\generated_plugin_registrant.cc",
+      "normalizedEqual": true
+    },
+    {
+      "path": "linux/flutter/generated_plugin_registrant.h",
+      "beforeSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+      "afterSha256": "3e4cf762b2bb67328e807ada539ead7bfc68cf7203d15f54267c519c94735099",
+      "normalizedSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\linux\\flutter\\generated_plugin_registrant.h",
+      "normalizedEqual": true
+    },
+    {
+      "path": "linux/flutter/generated_plugins.cmake",
+      "beforeSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+      "afterSha256": "4fa9eaa97355aaa2f263b9db2e1b91fa66f6973f2ff1e6bdcebf8a08b382580a",
+      "normalizedSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\linux\\flutter\\generated_plugins.cmake",
+      "normalizedEqual": true
+    },
+    {
+      "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "beforeSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+      "afterSha256": "f15d5ca7226bdba3d070537c241c1e979c5347f7db43866ea51ccd1a4a36cc6e",
+      "normalizedSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\macos\\Flutter\\GeneratedPluginRegistrant.swift",
+      "normalizedEqual": true
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.cc",
+      "beforeSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+      "afterSha256": "fdfdae342c9c7f8eba99cc50c83f27b34b74b5e647dcc54e8da3a6dad0111a07",
+      "normalizedSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\windows\\flutter\\generated_plugin_registrant.cc",
+      "normalizedEqual": true
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.h",
+      "beforeSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+      "afterSha256": "bac28d0d2535578bf27db13b937aa03e7790f98619a322914624c1c4e7cdcc6b",
+      "normalizedSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\windows\\flutter\\generated_plugin_registrant.h",
+      "normalizedEqual": true
+    },
+    {
+      "path": "windows/flutter/generated_plugins.cmake",
+      "beforeSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+      "afterSha256": "0ae13238e4ec2597c6724d7b5228bf91a6a9a39a9b63ba8d4d8dbe681b62c38d",
+      "normalizedSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\windows\\flutter\\generated_plugins.cmake",
+      "normalizedEqual": true
+    },
+    {
+      "path": "tool/final_test_plan/generate_final_test_plan.dart",
+      "beforeSha256": "a04d4221231c8702ed48e0ff604e10edab771f9d79e905ac9421ddcfcea4973b",
+      "afterSha256": "caeebfd4961017d9b065bde0b410a7349b5291349e419e3dec26e2f6e839c2dc",
+      "normalizedSha256": "16099bdefd79ea0000d63c051d1f691996017f7f2a313a8aa12d13d919d70c76",
+      "beforeCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\pre-eol\\tool\\final_test_plan\\generate_final_test_plan.dart",
+      "normalizedEqual": true
+    }
+  ]
+}

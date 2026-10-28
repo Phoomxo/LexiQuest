@@ -1,0 +1,61 @@
+{
+  "bundleId": "B18",
+  "currentPackageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "threadId": "01a0ba53-8ce3-7042-88d0-6d363275b3d8",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\3483\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f03-c03",
+  "inputCheckpointSha": "7a85f702d753bf8d88ff71a1aab667c6c867c376",
+  "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "G82Accepted": true,
+  "G83Started": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "writerReleased": false,
+  "completedSlice": null,
+  "findingsClosed": 32,
+  "remainingOpenFindings": 37,
+  "nextSlice": "B18-G83-F03",
+  "historyPath": "resume-history-before-F03-C03.json",
+  "evidence": [
+    "G8.3-F03-C03-checkpoint.json",
+    "G8.3-F03-C03-integrity.json",
+    "G8.3-owner-plan.json",
+    "defects.json"
+  ],
+  "nextWork": [
+    "Continue6 genuinely unfinished F03 findings; start Ghost lifecycle REV03-09 or profile REV06-06 after exact finding/contract/callers. No F04 until19/19 outcomes complete.",
+    "No remaining6 finding was reproduced/fixed in C03. Preliminary profile read only: no didUpdateWidget, didChangeDependencies skips changed dependencies while active; current account header sampled separately. No accepted profile fix.",
+    "Preserve all69 IDs/1429 dispositions/564 REV12 paths/historical plan hash and accepted F01/F02/13 F03 outcomes. Configured assessment remains synthetic/local; never activate research.",
+    "After final G8.3 acceptance notify master accepted SHA/receipt/released writer for Engineering Spec v3 E0/E1 reconciliation; no direct B19, preserve G8.4-G8.9."
+  ],
+  "verification": "96 scoped tests passed across9 targets; analyzer0 across11 changed Dart files;21 pre/post pairs equal, final1338 inputs unchanged through source commit. Historical mixed EOL preserved. No whole-app/native/provider/full-release claim.",
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "continuationId": "B18-G83-F03-C03",
+  "remainingF02": [],
+  "F02Accepted": true,
+  "nextContinuation": "B18-G83-F03-C04",
+  "remainingF03": [
+    "B18-REV03-09",
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04",
+    "B18-REV06-06"
+  ],
+  "F03Accepted": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

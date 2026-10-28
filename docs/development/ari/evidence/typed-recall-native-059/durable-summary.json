@@ -1,0 +1,23 @@
+{
+  "session": {
+    "activity_type": "quiz",
+    "state": "completed",
+    "correct_count": 1,
+    "wrong_count": 1,
+    "score": 50
+  },
+  "attempts": [
+    {
+      "prompt_mode": "meaningChoice",
+      "evidence_class": "recognition",
+      "is_correct": 1,
+      "attempt_number": 1
+    },
+    {
+      "prompt_mode": "typedRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 0,
+      "attempt_number": 2
+    }
+  ]
+}

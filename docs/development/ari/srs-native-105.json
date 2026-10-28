@@ -1,0 +1,20 @@
+{
+  "checkpoint": "105",
+  "workflow": "W07",
+  "status": "REPRESENTATIVE_CONNECTED_DISCONNECTED_SRS_VERIFIED",
+  "native": "Vivo isolated098,actual provider via USB bridge",
+  "journey": [
+    "Before reveal AI correctly reads1of2 awaitingRecall and exposure distinction",
+    "Manual plate reveal; AI reads revealed and directs Continue",
+    "Explicit disconnect; Continue then manually simulate Again on clock;session returns home"
+  ],
+  "database": "Two new attempts:plate exposure andclock incorrect recall;onlyclock schedule changes;points andreading unchanged",
+  "qualityObservation": "Initial reply offers post-reveal self-assessment ambiguously; followup correctly directs Continue. Preserve as response-quality audit item.",
+  "automationRecovery": "First attempted text tap missed editor; Back exited initial ungraded session. Screenshot corrected focus;newsession completed. No extra attempts observed.",
+  "evidence": "evidence/srs-native-105",
+  "remaining": [
+    "Final W07 coverage and response quality audit",
+    "All14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

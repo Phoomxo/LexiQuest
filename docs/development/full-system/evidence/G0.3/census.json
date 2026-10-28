@@ -1,0 +1,16 @@
+{
+  "nonMergeCommits": {
+    "main": 48,
+    "R15": 382
+  },
+  "mergeNodes": 10,
+  "changeRows": 4886,
+  "uniquePaths": 1603,
+  "pathDispositions": {
+    "conflict": 136,
+    "applicable": 4077,
+    "superseded": 671,
+    "equivalent": 2
+  },
+  "residualInventoryPaths": []
+}

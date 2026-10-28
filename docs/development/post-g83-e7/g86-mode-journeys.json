@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+  "status": "local-emulator-coverage-complete; implemented-off and external acoustic/physical gates separately retained",
+  "emulator": "LexiQuest_API_35",
+  "modes": [
+    {
+      "mode": "meaningQuiz",
+      "configuration": "default",
+      "status": "completed",
+      "result": "10/10; distinct-process offline restart preserved",
+      "evidence": [
+        "g86-lesson-result.xml",
+        "g86-progress-after-restart.xml"
+      ]
+    },
+    {
+      "mode": "typedRecall",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "mixed two-question session 2/2; Android keyboard book accepted",
+      "evidence": [
+        "g86-typed-feedback.xml",
+        "g86-typed-two-result.xml"
+      ]
+    },
+    {
+      "mode": "matching",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "4/4 without hints; 3 stars; restart/history and replay4/4; protected tables unchanged",
+      "evidence": [
+        "g86-pair-result.xml",
+        "g86-pair-history-after-restart.xml",
+        "g86-replay-result.xml",
+        "g86-replay-invariance.json"
+      ]
+    },
+    {
+      "mode": "definitionQuiz",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "10/10 approved definitions",
+      "evidence": [
+        "g86-definition-result.xml"
+      ]
+    },
+    {
+      "mode": "shadowing",
+      "configuration": "default",
+      "status": "native-permission-and-fallback-only",
+      "result": "One-time microphone permission, retry/listening and no-clear-speech fallback with text practice; no acoustic acceptance.",
+      "evidence": [
+        "g86-shadowing-settled.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015"
+    },
+    {
+      "mode": "flashcard",
+      "status": "completed-controlled-fixture",
+      "result": "Two due timestamps explicitly seeded on task-created data; unrevealed self-rating advances SRS, reveal-only exposure does not; temporary unrevised due timestamp restored. Native shortage message verified after update.",
+      "evidence": [
+        "g86-srs-finished.xml",
+        "g86-srs-fixture-proof.json",
+        "g86-d23-message.xml"
+      ],
+      "sourceCommit": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+      "configuration": "default"
+    },
+    {
+      "mode": "cloze",
+      "status": "completed",
+      "result": "Typed bag accepted, optional speech skipped,1/1",
+      "evidence": [
+        "g86-cloze-result.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "wordScramble",
+      "status": "completed",
+      "result": "bag arranged and completed100%",
+      "evidence": [
+        "g86-word-scramble-result.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "sentenceScramble",
+      "status": "completed",
+      "result": "Reviewed sentence I carry my clothes in a bag arranged correctly; 100%.",
+      "evidence": [
+        "g86-d20-board.xml",
+        "g86-d20-result.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "associativeReading",
+      "status": "completed",
+      "result": "Ten-word recall10/10 and original content preserved across stage2 restart through stage6; new one-word round1/1 returns without false failure.",
+      "evidence": [
+        "g86-d21-stage2.xml",
+        "g86-d21-resumed-stage2.xml",
+        "g86-reading-stage6.xml",
+        "g86-d22-native-return.xml",
+        "g86-final-durable-proof.json"
+      ],
+      "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "cefrReading",
+      "status": "completed-controls",
+      "result": "A1 local article opened, word selected and finished; levels remain approximate and uncertified; no acoustic-quality claim.",
+      "evidence": [
+        "g86-cefr-a1.xml",
+        "g86-cefr-word-replay.xml",
+        "g86-cefr-finished.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "dictation",
+      "status": "completed-typed-submission",
+      "result": "Typed bag accepted100%; playback controls invoked; no listening-accuracy or audio-quality claim.",
+      "evidence": [
+        "g86-dictation-result.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "speaking",
+      "status": "native-permission-and-fallback-only",
+      "result": "Denied permission handled; subsequent one-time permission and retry enter listening then no-clear-speech retry. No acoustic acceptance or successful transcript.",
+      "evidence": [
+        "g86-speaking-settled.xml"
+      ],
+      "sourceCommit": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "status": "completed-controls-and-cleanup",
+      "result": "Two strokes/undo/clear, typed bag/self-check invoked, exit and reopen empty; no OCR, canonical score or persistent self-grade claim.",
+      "evidence": [
+        "g86-handwriting-strokes.xml",
+        "g86-handwriting-undo.xml",
+        "g86-handwriting-clear.xml",
+        "g86-handwriting-reopened-empty.xml"
+      ],
+      "sourceCommit": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+      "configuration": "local-preview"
+    },
+    {
+      "mode": "ghostDuel",
+      "configuration": "default",
+      "sourceCommit": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+      "status": "completed",
+      "result": "Honest no-weakness state, then two deliberately incorrect lesson answers create precondition; two-word duel records two correct recreational attempts and completes.",
+      "evidence": [
+        "g86-ghost-board.xml",
+        "g86-ghost-result.xml",
+        "g86-ghost-proof.json"
+      ]
+    },
+    {
+      "mode": "adventureJourney",
+      "configuration": "default and local-preview",
+      "status": "implemented-off-native-boundary",
+      "result": "Feature.adventureMotivation hidden in fieldDefaults; LearningPreviewFeatureRegistry enables only dailyContinuity. No rollout override applied. Local behavioral tests remain separate; no native Adventure completion claimed.",
+      "sourcePaths": [
+        "lib/runtime/registries/feature_registry.dart",
+        "lib/runtime/learning_preview_feature_registry.dart"
+      ]
+    }
+  ],
+  "otherPaths": {
+    "history": "passed on local-preview; hidden in default field registry",
+    "replay": "passed with persisted recreational evidence and unchanged progress/rewards",
+    "defaultCloud": "network disabled; consent declined",
+    "physicalProviderAndHuman": "pending; no substitution"
+  },
+  "sourcePolicy": "Each journey names its actual artifact source; final source reconciliation belongs to G8.8.",
+  "finalNativeRetest": {
+    "source": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+    "evidence": "g86-d24-native-proof.json"
+  }
+}

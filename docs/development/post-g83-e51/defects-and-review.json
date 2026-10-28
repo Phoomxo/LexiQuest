@@ -1,0 +1,64 @@
+{
+  "scope": "E5.1/F07; direct review under user no-subagent policy",
+  "method": "Inspected changed runtime, graph, storage, UI, evidence and lifecycle paths; mapped requirements to tests; source and AI-assisted content review only.",
+  "findings": [
+    {
+      "id": "D01",
+      "finding": "Retired handles could become usable after feature re-enable",
+      "fix": "Unforgeable per-generation capability validated on every mutation; retirement and in-flight rollback regressions",
+      "status": "fixed"
+    },
+    {
+      "id": "D02",
+      "finding": "Title and objective exposed the target before the initial recognition choice",
+      "fix": "Context-only titles and objective; explicit no-answer-cue assertion for each authored scene",
+      "status": "fixed"
+    },
+    {
+      "id": "D03",
+      "finding": "Generic error retry could complete instead of retrying abandonment",
+      "fix": "Retain abandonment operation kind and disable new choices after uncertain end; canonical abandonment remains idempotent",
+      "status": "fixed"
+    },
+    {
+      "id": "D04",
+      "finding": "Inherited every-owner-table fixture omitted audio, written, speaking and guided-repair rows",
+      "fix": "Add opaque ownership sentinels for all four tables and assert identity/payload retention without weakening inventory coverage",
+      "status": "fixed"
+    }
+  ],
+  "recoveries": [
+    "Fresh dependency resolution changed generated registrant line endings; subsequent verifier inputs stable; no semantic generated change.",
+    "Discovered missing paths/symbols with repository-root search; corrected guessed fixture tables to immutable events_v2.",
+    "Literal TestName selector cannot accept regex; failed no-tests run retained, subsequent selections explicit.",
+    "Fixture corrections: missing due work, constructor parameters, nested crosswalk ref, Dart declaration ordering, typed JSON map, lazy scrolling and bounded async pump.",
+    "Background UI must be rendered after resumed lifecycle; verified handle stays retired and private scene stays hidden.",
+    "Python default Windows encoding could not decode Thai; explicit UTF-8 used, no data discarded."
+  ],
+  "unchangedAuthority": [
+    "schema 34",
+    "58 named tables",
+    "48 direct owner descriptors",
+    "prior checkpoint decoders",
+    "canonical SRS/reward/research writers"
+  ],
+  "contentReview": {
+    "source": "Existing reviewed ContextPracticeInventory and pinned lexical artifacts; original authored scenes",
+    "senses": [
+      "book object",
+      "pencil writing tool",
+      "bottle narrow-neck container"
+    ],
+    "objective": "Contextual selected-word recognition; finite assisted repair",
+    "branches": "All 3 terminal paths for each of 3 scenes exercised",
+    "assistance": "First selected response recognition; repair hintLevel1 guidedPractice, original attempt retained",
+    "notClaimed": [
+      "independent human calibration",
+      "CEFR calibration",
+      "physical assistive/device acceptance",
+      "release readiness"
+    ]
+  },
+  "acceptanceStatus": "accepted local implementation",
+  "unresolvedImplementationFindings": []
+}

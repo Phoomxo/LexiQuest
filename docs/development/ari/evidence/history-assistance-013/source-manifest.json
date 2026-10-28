@@ -1,0 +1,8 @@
+{
+  "files": {
+    "lib/screens/learning_history_screen.dart": "be2352b286db310b6954e9f64f48b0157403695b7a024abb0ac1a0725b60f457",
+    "test/screens/learning_history_screen_test.dart": "6aaf7d69d3dc8d576f224c761a4a2077c494cb3538854349ddce428811842fc7",
+    "tool/experiments/ari_app_server/chat_bridge.py": "58ee3c9fc628c79be5feb19e30f224421f49b7c8b0e856d41d08684e66570b21"
+  },
+  "normalization": "Original equal lines restored after verification; changed lines use original predominant line endings; tokens unchanged."
+}

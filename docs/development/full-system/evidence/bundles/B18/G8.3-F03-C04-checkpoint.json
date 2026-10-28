@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "continuationId": "B18-G83-F03-C04",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T16:45:07.120914+00:00",
+  "threadId": "01a0ba71-1485-7e00-bda6-17738f2f336a",
+  "inputCheckpointSha": "c7f59e2c9e94ecab71a6ebef761a74ee447df983",
+  "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "findings": [
+    {
+      "findingId": "B18-REV03-09",
+      "status": "closed-regression-verified",
+      "redRun": "ghost-red; ghost-timing-red",
+      "greenRun": "final2",
+      "outcome": "Unfinished Ghost retirement abandons the pinned session after pending evidence settles; completed turns close once, failed terminal persistence stays unresolved without implicit retry, cleanup exceptions are contained and accepted evidence is preserved. Response clock pauses across app/background and route coverage; retained inactive callbacks cannot submit. Deterministic clock proves 200+300ms active response excludes60000ms background."
+    },
+    {
+      "findingId": "B18-REV06-06",
+      "status": "closed-regression-verified",
+      "redRun": "profile-red; owner-red3; profile-offline-red; final",
+      "greenRun": "final2",
+      "outcome": "Profile invalidates loader/dependency replacement and committed owner transition. Header and axes share a load snapshot; stale completions cannot restore retired values. Active-only canonical owner observation uses table notifications subscribed before the initial read, revision-fences obsolete owner reads, and cancels without retained query-stream timers. Real Drift logout preserves old SRS and displays new local owner. Unavailable account services allow local data; a different signed-in account fails closed. Synchronous failures remain visible and superseded asynchronous failures are observed."
+    }
+  ],
+  "closedInThisCheckpoint": 2,
+  "closedF03": 15,
+  "remainingF03": [
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04"
+  ],
+  "totalClosed": 34,
+  "remainingOpenFindings": 35,
+  "dartTestsPassed": 90,
+  "testTargetCount": 6,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 6,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/progress/application/progress_use_cases.dart",
+      "sha256": "a798c57fc94993f2d5b90178852624195420b2b7112c94a1acba61e87b255efb"
+    },
+    {
+      "path": "lib/screens/ghost_shadow_duel_screen.dart",
+      "sha256": "bd143942f82e8586ae31f697729341f9747c9fb3dfa7f6fc167757ce15e8715c"
+    },
+    {
+      "path": "lib/screens/profile_settings_screen.dart",
+      "sha256": "8eac4ff0febccf36ea3a41fc3c8ee54fcfca86fb0c55b319fc7229bb2462b231"
+    },
+    {
+      "path": "test/screens/ghost_shadow_duel_screen_test.dart",
+      "sha256": "fe0b59f8efc0e7fe77273b494c3483b35a19f0d6ea5af44e6d2ed96b79db49e7"
+    },
+    {
+      "path": "test/screens/profile_owner_lifecycle_test.dart",
+      "sha256": "56a02f864e79e03daba7389a3ace9ec832408888ed3db25c1998fd3e288f17fd"
+    },
+    {
+      "path": "test/screens/profile_settings_screen_test.dart",
+      "sha256": "e38d57a327359c6b4e2e832bfd926b5c5cad340219ea73d5691bfee44100e605"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03\\C04",
+  "evidenceManifestSha256": "28ced8a2607e2d8c1ec29c9d3323c1f8da5a403f8538c66499588dd3c018cec1",
+  "review": "review.json; local review only",
+  "limitations": [
+    "F03 only15/19closed;4remain;F04 gated.",
+    "16input pre/post pairs equal;1339final inputs unchanged.",
+    "No installed/native/device/provider/full-release or whole-app analyzer claim."
+  ],
+  "F03Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

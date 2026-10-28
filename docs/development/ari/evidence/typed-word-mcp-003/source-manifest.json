@@ -1,0 +1,50 @@
+{
+  "lib/features/ai_tutor/application/menu_action_registry.dart": {
+    "sha256": "1f542193ca2adf64565c52db960232b5fb54468a39d9743b172deaea965fd0f0",
+    "normalizedLfSha256": "1f542193ca2adf64565c52db960232b5fb54468a39d9743b172deaea965fd0f0"
+  },
+  "lib/features/ai_tutor/data/local_login_bridge.dart": {
+    "sha256": "b013cce286208e6f7c1a825bc0ae9427d9529445b4ffd55ab8c68824d6f6c3af",
+    "normalizedLfSha256": "b013cce286208e6f7c1a825bc0ae9427d9529445b4ffd55ab8c68824d6f6c3af"
+  },
+  "lib/features/ai_tutor/presentation/menu_action_binding.dart": {
+    "sha256": "41f41dc33c1c496254b7e0f4b40379ea4d28a0341d838ecd7256959c24d36032",
+    "normalizedLfSha256": "41f41dc33c1c496254b7e0f4b40379ea4d28a0341d838ecd7256959c24d36032"
+  },
+  "lib/features/vocabulary/application/vocabulary_use_cases.dart": {
+    "sha256": "cdb27e3cdea51fe44f5271196fba3bd74698c334f5fec8d6743480e70d24459e",
+    "normalizedLfSha256": "4917253252165f04d205f74118008ca5cfd7341d0f50da5b2a246c663231fc4c"
+  },
+  "lib/screens/add_vocab_screen.dart": {
+    "sha256": "ab51184be70e1e5e208ac500907288d29a0938b75efadf17c96f12641f397d67",
+    "normalizedLfSha256": "ab51184be70e1e5e208ac500907288d29a0938b75efadf17c96f12641f397d67"
+  },
+  "test/features/ai_tutor/managed/menu_bridge_test.dart": {
+    "sha256": "1f9fff4d3f16ba4e6a21cefef9df0f6ecaef7486795db0fac2d75af27507fbb4",
+    "normalizedLfSha256": "1f9fff4d3f16ba4e6a21cefef9df0f6ecaef7486795db0fac2d75af27507fbb4"
+  },
+  "test/features/vocabulary/vocabulary_use_cases_test.dart": {
+    "sha256": "8a7e085eb09b8ea64d388432e26e920281fca64908ea5aefbdedd9a73b6331d0",
+    "normalizedLfSha256": "8a7e085eb09b8ea64d388432e26e920281fca64908ea5aefbdedd9a73b6331d0"
+  },
+  "test/screens/offline_vocabulary_journey_test.dart": {
+    "sha256": "6584ba02c29364997125ba3e954e3a0b0bac133aad624f4f0f9ebbe82aa8fe15",
+    "normalizedLfSha256": "2fc38ede4ad9ef455fd6ca5ba05be37f1fdba618c0827b34372d7b527f4d5eb0"
+  },
+  "tool/experiments/ari_app_server/menu_channel.py": {
+    "sha256": "f0d7fd5676f727ef13e08820ee16f3d9b540ffd6aa742be9d4d29679093f095c",
+    "normalizedLfSha256": "f0d7fd5676f727ef13e08820ee16f3d9b540ffd6aa742be9d4d29679093f095c"
+  },
+  "tool/experiments/ari_app_server/test_menu_channel.py": {
+    "sha256": "a0408378357616d2fde10be4e56a7279334416ebeadc2089a0185ffabc094b01",
+    "normalizedLfSha256": "a0408378357616d2fde10be4e56a7279334416ebeadc2089a0185ffabc094b01"
+  },
+  "tool/experiments/ari_app_server/tutor_mcp.py": {
+    "sha256": "f5ec19a715cebc732b414e28550b2ca173b32950ca08959600854d8fb5beee7c",
+    "normalizedLfSha256": "f5ec19a715cebc732b414e28550b2ca173b32950ca08959600854d8fb5beee7c"
+  },
+  "test/features/ai_tutor/managed/menu_form_registry_test.dart": {
+    "sha256": "35d89c4aa42c0882207daf6057e703c5c5750d17f3cfd7fa0905659948eee85a",
+    "normalizedLfSha256": "bf3f88187dde884a5041384c151cfedee9302ef0d6a0f2ddfb4d6603ca8ed1d7"
+  }
+}

@@ -1,0 +1,394 @@
+{
+  "sourceBase": "969fea33130cb15bb97b919d93a79c7a791b0873",
+  "modeCount": 14,
+  "modeRecords": [
+    {
+      "mode": "associativeReading",
+      "route": "learning/associative-reading",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-associativeReading",
+      "contentReadiness": "Authored word/context revision; scene exposure followed by separately classified canonical typed recall.",
+      "resultEvidence": "Scene exposure is not recall. Authored recall uses canonical typed-recall evidence after explicit answer.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "meaningQuiz",
+      "route": "learning/quiz",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward",
+        "reverse",
+        "mixed"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": true,
+      "requirementId": "MODE-meaningQuiz",
+      "contentReadiness": "reviewed lexical item; both language directions",
+      "resultEvidence": "Recognition evidence; first eligible item and repair remain separate.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "typedRecall",
+      "route": "learning/typed-recall",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "mixed"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-typedRecall",
+      "contentReadiness": "canonical full-word answers and normalization policy",
+      "resultEvidence": "Independent production only after committed typed answer; hint becomes guided.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "definitionQuiz",
+      "route": "learning/definition-quiz",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-definitionQuiz",
+      "contentReadiness": "reviewed English definition; unavailable if absent",
+      "resultEvidence": "Recognition from reviewed English definition; missing content unavailable.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicit skip marks skipped item, not a correct first answer.",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "cloze",
+      "route": "learning/cloze",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-cloze",
+      "contentReadiness": "reviewed context/blank/answer/distractor revision; selected and typed",
+      "resultEvidence": "Selected recognition and typed independent/guided remain distinct.",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicit skip marks skipped item, not a correct first answer.",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "matching",
+      "route": "learning/matching",
+      "minItems": 2,
+      "maxItems": 6,
+      "defaultItems": 6,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-matching",
+      "contentReadiness": "Pair4/6 canonical lexical plan; independent/support/repair",
+      "resultEvidence": "Pair engine independent/support/repair; one durable pair answer, no tile reward; final state before animation.",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "flashcard",
+      "route": "learning/srs",
+      "minItems": 1,
+      "maxItems": 100,
+      "defaultItems": 10,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-flashcard",
+      "contentReadiness": "canonical lexical front/back and due SRS; self-rating",
+      "resultEvidence": "Unaided pre-reveal recall versus assisted exposure; self-rating is not exam correctness.",
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "route": "learning/handwriting-scratchpad",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-handwritingScratchpad",
+      "contentReadiness": "ephemeral drawing/typing; no OCR or durable answer evidence",
+      "resultEvidence": "Unscored ephemeral; no session, evidence, SRS, XP/coins, OCR or durable response.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Direct ephemeral route in selected local preview/cloud-off; no configuration persistence.",
+      "pauseResume": "Privacy background clears strokes/typed text; resuming shows blank local canvas.",
+      "exitBack": "Disposal, controller replacement, owner loss/emergency retirement clear scratch only; fresh route required.",
+      "skip": "Not applicable: unscored freeform local tool.",
+      "accessibility": "Typed alternative; tested rotation, narrow text200, draw/undo/clear. No timed session control."
+    },
+    {
+      "mode": "dictation",
+      "route": "game/dictation",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-dictation",
+      "contentReadiness": "audio availability + canonical typed answer; no audio fallback",
+      "resultEvidence": "Typed spelling with available audio; no fabricated score when media unavailable.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "speaking",
+      "route": "practice/speaking",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-speaking",
+      "contentReadiness": "readable reference, recognized text provenance; no acoustic claim",
+      "resultEvidence": "Pronunciation/text-match evidence from recognized-text provenance, not acoustic mastery.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "shadowing",
+      "route": "practice/shadowing",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-shadowing",
+      "contentReadiness": "reference/audio/recognized text, native speech attempt identity",
+      "resultEvidence": "Pronunciation/text-match provenance with reference/audio; no fabricated acoustic claim.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "cefrReading",
+      "route": "learning/cefr-reading",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-cefrReading",
+      "contentReadiness": "authored A1–C2 reading revision; CEFR estimate disclosed",
+      "resultEvidence": "Authored comprehension/level estimate, not official CEFR certification.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "sentenceScramble",
+      "route": "game/sentence-scramble",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-sentenceScramble",
+      "contentReadiness": "canonical token occurrences/punctuation and sentence revision",
+      "resultEvidence": "Recreational token ordering; no per-tile learning reward.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    },
+    {
+      "mode": "wordScramble",
+      "route": "game/word-scramble",
+      "minItems": 1,
+      "maxItems": 1,
+      "defaultItems": 1,
+      "directions": [
+        "forward"
+      ],
+      "timed": true,
+      "untimedActiveEffortBounded": true,
+      "packSelection": false,
+      "requirementId": "MODE-wordScramble",
+      "contentReadiness": "canonical word/meaning; tile occurrence IDs including repeats",
+      "resultEvidence": "Recreational occurrence-index block spelling; no per-tile reward.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "availability": "Actual registry.resolve plus enabled runtime feature; default delivery never substitutes for missing registry.",
+      "launch": "Choose Mode -> validated configuration/revalidation -> owned session shell; content/owner/protocol rechecked before command admission.",
+      "pauseResume": "App background suspends active effort/media. Existing session may resume only under current owner/configuration; late operations retain frozen evidence or fail closed.",
+      "exitBack": "Retire route; abandon unfinished session or reconcile accepted pending close; never replay rewards.",
+      "skip": "Explicitly unsupported in default Choose Mode route",
+      "accessibility": "Ordered semantic roles, text+icon cues, keyboard controls, text200/static reduced motion declaration; actual full G2 smoke gate remains G2.8."
+    }
+  ],
+  "scope": "Contracts and bounded local verification; physical/media provider claims pending G6/G8."
+}

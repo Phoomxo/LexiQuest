@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-21",
+  "status": "BOUNDED_LIVE_DEMONSTRATION_PASS_PRODUCTION_OPEN",
+  "baseCommit": "a47018a8f6b966aafd7e0940e4ba0356613235e0",
+  "references": [
+    "../../generated/alltcas-idea-integration-feature-map.md",
+    "../post-g83-e0-e1/reference-observations.json"
+  ],
+  "userClarification": "AllTCAS + Astra AI",
+  "sourcePins": {
+    "lib/main_ari_test.dart": "cc94109a90e34fb5a17726eb8ed500fbb6d55294383f5907baec45f9d30e6b63",
+    "lib/features/ai_tutor/application/managed_tutor_controller.dart": "af716157209f85b0d1b6d2749b4068ee013de733008ae034b681faf43564eb53",
+    "lib/features/ai_tutor/application/managed_tutor_runtime.dart": "7db18b0f9b91b6a31fb628fa8116bef74a1b37a7a67b67ca2f66c1513d6e5e1a",
+    "lib/features/ai_tutor/data/local_login_bridge.dart": "6175e7b8cd3ceb3f7a3d0b1d2de2ccd4aa8a0472ee0995d192920ac86a9b6db7",
+    "lib/features/ai_tutor/presentation/managed_tutor_panel.dart": "2a9b4f625158f217a75069c3005de5635e031f47e56444d0e7c0062bfbd25e7f",
+    "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart": "fa9aa69ca4d80ce17a6b2267a7b943fdb218a94b05eb2e6bf913a094d7f6bb5a",
+    "lib/features/ai_tutor/presentation/managed_practice_card.dart": "4f919609a18f960c4ddfb1d87764852831f46145b30eda93d0f8de576d63670e",
+    "tool/experiments/ari_app_server/chat_bridge.py": "d7f12533796ff937328c0d71f65d9ff4a11f0983caa10b2054d7f85564137995",
+    "tool/experiments/ari_app_server/tutor_mcp.py": "24d9b37a791da41fc9b01a4a372a196d1fe335a1a2a883d543cf38d6f2521d3e",
+    "tool/experiments/ari_app_server/login_bridge.py": "b15f1c235a3427ba871847ffb0c27933d7ec21951e04ddb385f68a4df309c3db"
+  },
+  "verification": {
+    "managedFlutter": {
+      "passed": 46,
+      "files": 8,
+      "evidence": "evidence/chat-mcp-001/managed-tests.json.gz"
+    },
+    "catalogAccess": {
+      "passed": 9,
+      "evidence": "evidence/chat-mcp-001/starter-access-tests.json.gz"
+    },
+    "python": {
+      "passed": 37,
+      "command": "python -m unittest discover -s tool/experiments/ari_app_server -p 'test_*.py'",
+      "exitCode": 0,
+      "distinction": "Real MCP subprocess tests; provider protocol is simulated in unit tests."
+    },
+    "focusedAnalyze": "NO_ISSUES",
+    "realAppServerMcpSmoke": {
+      "passed": true,
+      "modelInference": false,
+      "tools": [
+        "read_selected_word",
+        "create_practice_draft"
+      ],
+      "binarySha256": "bc343ba420dc2e2e9f59e6fc5e5bf0aae1cd8c771fc319665241fc9c0271fddb"
+    }
+  },
+  "apk": {
+    "path": "build/ari-chat-prototype.apk",
+    "sha256": "3de6bc67a14ca9161ad793a08d3e50f1c941dbd9a39a86cfc12fd8667231e740",
+    "package": "com.lexiquest.app.ariTest"
+  },
+  "physical": {
+    "device": "Vivo V2041",
+    "provider": "isolated ChatGPT account through pinned App Server",
+    "inputLanguage": "English",
+    "replyLanguage": "Thai",
+    "cases": {
+      "loginAndChatReady": "PASS",
+      "bottleExplanationAndLookup": "PASS",
+      "followupWithoutRepeatingWord": "PASS",
+      "mcpDraftOpensNativePractice": "PASS",
+      "wrongThenUppercaseCorrectAnswer": "PASS",
+      "cancelWhilePendingNoLateReply": "PASS",
+      "explicitReconnect": "PASS",
+      "switchToChairNewContext": "PASS",
+      "usbOfflineAndExplicitRecovery": "PASS",
+      "backgroundClearsChatAndIsolatedLogin": "PASS"
+    },
+    "observations": "device-observations.jsonl",
+    "nativeThaiKeyboard": "NOT_RUN"
+  },
+  "defectsFixed": [
+    "CHAT-01 unrelated lease updates invalidated identity",
+    "CHAT-02 shipped words absent from selector",
+    "CHAT-03 MCP error result incorrectly labelled completed"
+  ],
+  "notProven": [
+    "Standalone mobile deployment",
+    "All-menu MCP integration",
+    "Native Thai keyboard entry",
+    "Provider-enforced billing/Free Thailand eligibility",
+    "Remote revoke and provider cancellation accounting",
+    "Persistent history and progress writes",
+    "Full-system/endurance/human learning acceptance"
+  ],
+  "cleanup": {
+    "bridgeStopped": true,
+    "reverseRemoved": true,
+    "stayAwake": 0,
+    "previewRestoredSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
+    "originalAppVersionCode": 23,
+    "backgroundWorkers": 0
+  },
+  "artifacts": {
+    "evidence/chat-mcp-001/ari-chat-ready.png": "047fcd77dc973652b63bcb8670c63c6124ff358012471ec41a43f78451f307cb",
+    "evidence/chat-mcp-001/ari-practice-correct.png": "48d677a6f800dc63c76b53307796b79856430fbc696812f7250a42fb0f0693b9",
+    "evidence/chat-mcp-001/ari-practice-wrong.png": "3f5dc25e74a93a9ec2f0f52f657cd65b44ece2c566e9feef6e5a2207e8793bf5",
+    "evidence/chat-mcp-001/managed-tests.json.gz": "0e169e123f397e66363e4023e61683e122718388fb832859fa0c3076cb2b6769",
+    "evidence/chat-mcp-001/managed-tests.stderr.gz": "bc8b036634431a1f883fcea1695b604b87267424bd4ef7854783038c0e436a31",
+    "evidence/chat-mcp-001/managed-tests.stdout.gz": "b760fd761a1f544817a6a3373c57a90185b386bdb2ce5241868df21ea496b07b",
+    "evidence/chat-mcp-001/starter-access-tests.json.gz": "f6fbe2e6166c521a8589d437696cb8f60ce91a421d793172231103c91e2d3621"
+  }
+}

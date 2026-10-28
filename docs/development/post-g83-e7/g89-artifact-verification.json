@@ -1,0 +1,121 @@
+{
+  "sourceFreeze": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+  "indexes": [
+    {
+      "path": "docs\\development\\post-g83-e7\\raw-log-index.json",
+      "sha256": "fc61b07e47c8a0e08cb9362aa2c3b2a8809657c0a4c7f697077475b91cc0d2a3",
+      "verifiedEntries": 106,
+      "boundary": "Archived bytes verified; historical run statuses unchanged."
+    },
+    {
+      "path": "docs\\development\\post-g83-e7\\g86-native-evidence-index.json",
+      "sha256": "1bbbae51cfa1ced4891f1e9213be6634c5f0003548961d162be18abeff8750d9",
+      "verifiedEntries": 845,
+      "boundary": "Archived bytes verified; historical run statuses unchanged."
+    },
+    {
+      "path": "docs\\development\\post-g83-e7\\g87-native-evidence-index.json",
+      "sha256": "ad33dab3c4c02922a3d49bc69a105b6a6d356136bee0d5a485fa8605ec47faa6",
+      "verifiedEntries": 153,
+      "boundary": "Archived bytes verified; historical run statuses unchanged."
+    },
+    {
+      "path": "docs\\development\\post-g83-e7\\g86-local-run-index.json",
+      "sha256": "9db9b8a1dd6987e6d21ef7b9be6489c7adc25caeda13b51ffc7799dcb3647bcb",
+      "verifiedEntries": 72,
+      "boundary": "Archived bytes verified; historical run statuses unchanged."
+    },
+    {
+      "path": "docs\\development\\post-g83-e7\\g88-raw-evidence-index.json",
+      "sha256": "cd8b3bfe04908814aebdb79bc929d5ecf5134a91e5cedb40a069b9591d6093fb",
+      "verifiedEntries": 79,
+      "boundary": "Archived bytes verified; historical run statuses unchanged."
+    }
+  ],
+  "apks": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-1ec4071d-production-debug.apk",
+      "sha256": "77c5014a6bed0a36d6ef36315ac9bb982fac3a77324ad6d71d5562008e3f0604",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-4fa8cdcc-production-debug.apk",
+      "sha256": "c2079fe69928850bbedb2eedd01c5aafebcad21871ba37f067ed3810d2e4bb3f",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-5535da0e-local-preview-debug.apk",
+      "sha256": "1674ebc5d630fa2348c9c263028a255c3b7092f77fbedf23d130810cd0a6b243",
+      "bytes": 268597164,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-5535da0e-production-debug.apk",
+      "sha256": "0af6be6dfcf91359affdc10b7d4851eb8be45063fc5c4e80ae81a28470573f6f",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-75b44bab-local-preview-debug.apk",
+      "sha256": "7e242875521ebccdf15f645d4a3ec6032d9a9a3423444343bbcf90ba13765a69",
+      "bytes": 268602722,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-75b44bab-production-debug.apk",
+      "sha256": "883cb43895b43188193d7b24f705595c1389d37e50f780f21cbbcd9dacd5361b",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-ae29ec3d-local-preview-debug.apk",
+      "sha256": "af01003bc111863cc53371906782af1f449db8261e72214507419bcda62d4ea3",
+      "bytes": 268598290,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-e25c3bf5-local-preview-debug.apk",
+      "sha256": "47a5d5ca626143bbc5e58c6b956e0533b5c2f264a2107620fe276cb8d92bbd62",
+      "bytes": 268601199,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-e25c3bf5-production-debug.apk",
+      "sha256": "f4fe39e0ec7f55f7601632ff8ec6cd0bd3c8a3a03151de08450fc6b428fb6135",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-f25a7313-focus-preview-debug.apk",
+      "sha256": "5cdead5d5e1df25cf25d11ea9f43ea4ec2e972040f4c795bdf2615a624bfbb5e",
+      "bytes": 268603648,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-f25a7313-resource-debug.apk",
+      "sha256": "cf7dbabd1f2f21bd02d05a38895ebd24812d8d7aa7a1cc836c6cd949d913ab5f",
+      "bytes": 228208157,
+      "disposition": "retained-native-build-history; source/install acceptance only as recorded in native artifact proofs"
+    }
+  ],
+  "finalSyntheticSnapshot": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g89-final-db\\lexiquest.sqlite",
+      "sha256": "fef01baa36024a3fdcb7d21d449e0a0a88e6a98b29b66efb704343f92c0044e1",
+      "bytes": 2129920
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g89-final-db\\rows.json",
+      "sha256": "0dee98d7c4588969277e68be20eba375b52345c7c15382359db876c2e2b8c3e4",
+      "bytes": 1491492
+    }
+  ],
+  "sourceManifest": {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\reviewed-source-manifest-final.json",
+    "sha256": "cd14bcf91c765aa6d24aed746cbe87c5da3074222b8a40f6a118ce3ef8ddd409"
+  },
+  "uniqueFilesHashed": 1191,
+  "historicalEvidenceIncident": "g86-incidents.json retains two overwritten/retired shadowing pins; not claimed verified by this archive check."
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "path": "G1.6-runs/targeted-learning-247fdf40a2320ac2ccbcd9ad5d489d3b722055e7e3aa2c6d4454f21e2dd74537.json",
+    "status": "Passed",
+    "fingerprint": "1ebd9bff1f335ddccb6935cbeef20a98365f11a5cb20c9d79b97af1d87de2199",
+    "targets": [
+      "test",
+      "test/features/time_tracking/active_learning_time_controller_test.dart",
+      "test/features/time_tracking/learning_time_repository_test.dart",
+      "test/features/progress/learning_calendar_reader_test.dart",
+      "--reporter",
+      "compact"
+    ],
+    "counts": [
+      "28"
+    ]
+  },
+  {
+    "path": "G1.6-runs/targeted-learning-927ba38a35d2db33d62001506a16f10ace5aaca3d58152aa995ec00d7ba1e5ef.json",
+    "status": "Passed",
+    "fingerprint": "b3c18a26e82f6b89542edd5d5e3cab0201075e394c8a183c72fbc24f643b8584",
+    "targets": [
+      "test",
+      "test/screens/learning_calendar_screen_test.dart",
+      "--reporter",
+      "compact"
+    ],
+    "counts": [
+      "2"
+    ]
+  },
+  {
+    "path": "G1.6-runs/targeted-learning-e60309f23d2536b443e19a1d01dd2862ad2fba31340150a9767136f031cba139.json",
+    "status": "Passed",
+    "fingerprint": "6ba298be18d00ff63f4bbda7e536c5459e7123ab81e9bb90517ed709ee29e78e",
+    "targets": [
+      "test",
+      "test/features/time_tracking/active_learning_time_controller_test.dart",
+      "test/features/time_tracking/focus_timer_controller_test.dart",
+      "test/features/history/learning_history_reader_test.dart",
+      "test/features/progress/progress_projector_test.dart",
+      "--reporter",
+      "compact"
+    ],
+    "counts": [
+      "63"
+    ]
+  },
+  {
+    "path": "G1.6-runs/targeted-learning-f7935cd30fcbb3538ad2a42c796fc6bd196cc67f9312365a86619707bb0b212a.json",
+    "status": "Passed",
+    "fingerprint": "6ba298be18d00ff63f4bbda7e536c5459e7123ab81e9bb90517ed709ee29e78e",
+    "targets": [
+      "test",
+      "test/features/progress/personal_learning_profile_test.dart",
+      "test/screens/mastery_dashboard_screen_test.dart",
+      "test/screens/learning_calendar_screen_test.dart",
+      "--reporter",
+      "compact"
+    ],
+    "counts": [
+      "29"
+    ]
+  }
+]

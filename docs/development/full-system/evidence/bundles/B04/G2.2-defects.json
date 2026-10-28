@@ -1,0 +1,11 @@
+[
+  {
+    "id": "B04-PAIR-TEST-01",
+    "status": "closed",
+    "red": "253passed/3failed; all failures standard6 support fixture",
+    "cause": "pairBoardGuidedState hardcoded2 intervening matches; PairRepairPolicy requires wordIds.length~/2, i.e.3 for6pairs.",
+    "fix": "Fixture performs density-dependent number of real engine matches; available/guidedRequired assertions retained. No production rule changes.",
+    "evidence": "G2.2-runs/967972c5e66d-0abcd54a2e52/Explicit-Flutter-tests.stdout.log",
+    "retest": "G2.2-verification.json"
+  }
+]

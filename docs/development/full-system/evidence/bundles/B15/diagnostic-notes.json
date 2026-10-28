@@ -1,0 +1,12 @@
+{
+  "preparationIssues": [
+    "Native checkout started detached default SHA; clean worktree safely switched to acceptedB14 branch",
+    "Several discovery rg patterns had no matches or referenced absent candidate paths; corrected using actual rg --files inventory, no file mutations",
+    "A post-state-write stray PowerShell text token failed after atomic replace; re-read current state before next mutation, no replay",
+    "A Python edit aborted on Windows cp874 decoding before remaining patches; retained resulting failed gate then changed all edit reads/writes to explicit UTF8 and added exit guards",
+    "A formatted test anchor mismatch aborted edit; no-match focused test failed rather than counting PASS; corrected anchor and demonstrated real zero-byte failure",
+    "Initial dart formatter CRLF caused diff-check noise in G7.1; normalized LF in follow-up before package receipt. Test semantics unchanged",
+    "Git show ref:path hit Windows long-path stat during inherited audit; switched to ls-tree object IDs plus cat-file blob and verified all69 inherited artifact hashes. Failed audit retained."
+  ],
+  "evidencePolicy": "Failed verifier logs retained verbatim; diagnostic summaries here are not represented as raw command transcripts. Passed rules gate not rerun after unrelated Flutter/CLI changes; exact affected-input audit will record deltas."
+}

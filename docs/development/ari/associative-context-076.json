@@ -1,0 +1,27 @@
+{
+  "checkpoint": "076",
+  "status": "ASSOCIATIVE_STAGE_CONTEXT_HOST_PASS_NATIVE_LIVE_PENDING",
+  "native": {
+    "apk": "075",
+    "progress": "Fresh round shared header0before answer\u2192100after one acknowledged correct recall",
+    "durable": "Active round atStage4;exact1independentRecall true,wrong0",
+    "defect": "ASSOCIATIVE-PROGRESS-075 fresh-round native retest passed;restored progress still needs explicit check"
+  },
+  "implementation": "Owner-bound readonly actual stage1-6,title,CEFR,target count,phase,guidance,nextstep,collapse/scroll instructions. No passage,target answers,cues,drafts or score-changing tool. Loading/error/unknownowner do not expose context. Stage5 documented ephemeral/ungraded.",
+  "host": {
+    "red": "Absent flow passed;connected/disconnected failed missing binding before implementation",
+    "green": "29full screen tests PASS;2file analysis clean",
+    "scope": "New absent/connected/disconnected tests traverse all6stages;recording repository asserts exactly1recall;existing realDrift evidence tests retained",
+    "isolation": "Owner mismatch hides context;disconnect preserves mountedState/draft;manual recall committed while disconnected;reconnect atStage4",
+    "fixtureRecovery": "Owner mismatch intentionally invalidates stale context;isolation assertion moved after flow;disconnect remains tested before real submission"
+  },
+  "installedApk": "build/ari-assistance-076.apk",
+  "apkSha256": "a3fd5a676588408acd1e544627e24d8945763d989ea78c9cf08d53fe3424f9f7",
+  "remaining": [
+    "Live associative stage guidance/disconnect",
+    "Restored shared progress after process death atStage4",
+    "Retry/feature-disabled stage assistance details need audit",
+    "Original fullscope gaps"
+  ],
+  "wholeGoalComplete": false
+}

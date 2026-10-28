@@ -1,0 +1,35 @@
+{
+  "checkpoint": "087",
+  "workflows": [
+    "W08",
+    "W01"
+  ],
+  "status": "PREFERENCES_NATIVE_CONNECTION_STATES_VERIFIED_FOCUS_RETEST_PENDING",
+  "sourceBase": "22682143",
+  "nativePreferences": {
+    "apk": "086",
+    "baseline": "Reuse086noAI35minute save/reopen",
+    "connected": "Actual provider correctly read draft55/lastConfirmed35unsaved,then manual save55 and actual provider read55saved",
+    "disconnected": "Explicit AI disconnect then native save40,leave/reopen40"
+  },
+  "evidence": "evidence/preferences-native-087/native-summary.json",
+  "defect": {
+    "id": "CHAT-FOCUS-087",
+    "cause": "Chat TextField is removed during send/disconnect,restoring prior focused underlying form field and showing keyboard",
+    "red": "Both send/disconnect widget regressions reproduced priorformfocus=true;4existingtests pass",
+    "fix": "Unfocus current scope before user send/disconnect removes field",
+    "host": "6paneltests pass;2fileDartanalysisclean",
+    "nativeRetest": "PENDING on installed087;do before goals/new-item work"
+  },
+  "installedApk": {
+    "path": "build/ari-assistance-087.apk",
+    "sha256": "9dc1b7984e979e79762f3aa764d5a54d186a91296687db4131f24fc2681c4a0a"
+  },
+  "remaining": [
+    "Native focus retest with actual provider on087",
+    "Goals optionalcontext",
+    "Nonemptynew-itemplan",
+    "W10 and allremaining14workflow14modeacceptance"
+  ],
+  "wholeGoalComplete": false
+}

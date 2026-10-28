@@ -1,0 +1,19 @@
+{
+  "status": "NATIVE_CONTEXT_REFRESH_PROVEN_BYTE_INTERPRETATION_FIX_HOST_PASS_NATIVE_RETEST_PENDING",
+  "installedSource": "d527c531adf55d5d79299dc2ffc2228394b90e7d",
+  "evidence": "device-observations.jsonl",
+  "native": [
+    "Mounted offline screen survived private provider login and exposed list_menu_actions without route reentry.",
+    "Live Thai response reported verified5819 bytes and second item notDownloaded0 bytes.",
+    "Native download of voice-installation-check changed UI to ready3.0KB. Second live list_menu_actions response refreshed to verified3066 bytes.",
+    "Defect: response rendered3066/708 bytes as a ratio although708 is manifest payload and installed total includes adapter files.",
+    "Explicit disconnect then native removal of only just-downloaded voice fixture succeeded; original5819-byte content preserved."
+  ],
+  "rootCause": "Context exposed requiredBytes beside downloadedBytes without distinguishing manifest payload and total installed bytes. VerifiedOfflineContentManager._persistPublished adds adapter installedBytes to manifest byteLength.",
+  "fix": "Expose manifestBytes and byteCountMeaning; byteCountsComparableAsProgress=false. Preserve native controls/storage semantics.",
+  "host": "Five status context tests failed on new assertions before fix; full screen suite passed after fix. Test verified total8192 exceeds manifest4096.",
+  "redLog": "build/verification/5797c62281db749c3587d557904f1e02d33abdfb/0d8f4ea43ef5-99d687c50687-7a0466d1/Explicit-Flutter-tests.stdout.log",
+  "verification": "evidence/offline-native-027/verification.json",
+  "cleanup": "Bridge81194 terminal exit1 after CtrlC; reverse8765 removed; no listener returned. USBstayawake retained; original accounts preserved.",
+  "open": "Native fix retest required before closing byte explanation defect. Other019-025 native coverage and all14 acceptance remain open."
+}

@@ -1,0 +1,36 @@
+{
+  "sourceCommit": "133e382db5e4c59d29975b39a47e5dfa3820d2d2",
+  "reason": "Original generated gate obligations kept alongside disjoint Flutter target batches; these commands are not repeated as larger suites. Integration selectors in inherited verify-scope refer to nonexistent legacy paths; explicit current generated-plan targets retained pending runner reconciliation.",
+  "commands": [
+    {
+      "id": "AUTH-EMULATOR",
+      "command": "npm run test:auth",
+      "environment": "local Firebase Auth emulator; synthetic demo project",
+      "status": "NOT RUN"
+    },
+    {
+      "id": "CLI-CONTRACTS",
+      "command": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Runtime -BaseSha 133e382db5e4c59d29975b39a47e5dfa3820d2d2 -CliTestTargets @('r15-scope.tests.ps1','verify-scope.tests.ps1','verify-scope-selection.tests.ps1','verify-scope-integrity.tests.ps1','run-android-smoke.tests.ps1','verify-apk-model-runtime.tests.ps1') -Resume",
+      "environment": "local synthetic CLI fixtures",
+      "status": "PASS",
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f.json",
+      "additionalTarget": "verify-scope-integration.tests.ps1"
+    },
+    {
+      "id": "INTEGRATION-CONTROLS",
+      "command": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Integration -BaseSha 133e382db5e4c59d29975b39a47e5dfa3820d2d2 -TestTargets @('integration_test/field_trial_feature_controls_test.dart') -Resume",
+      "environment": "local Flutter integration binding, fake external gateways",
+      "status": "PASS-TARGET-IN-MIXED-RUN",
+      "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/20ba7a222a4d-0724ad3f7ea4-8d78d513/Explicit-Flutter-tests.stdout.log",
+      "note": "One control case completed; later media launch failed. Failed aggregate retained."
+    },
+    {
+      "id": "INTEGRATION-MEDIA",
+      "command": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Integration -BaseSha 133e382db5e4c59d29975b39a47e5dfa3820d2d2 -TestTargets @('integration_test/field_trial_media_smoke_test.dart') -Resume",
+      "environment": "local Flutter integration binding, fake camera/mic/model; not real device proof",
+      "status": "PASS",
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-integration-5afbc324598ae6f19be78b2f82dd1390bce9e173aeea270cb14a48914467eada.json"
+    }
+  ],
+  "runnerReconciliation": "E7-D12: existing integration entrypoints; bounded local Flutter tester selector; no physical-device inference."
+}

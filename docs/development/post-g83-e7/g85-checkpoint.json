@@ -1,0 +1,38 @@
+{
+  "package": "G8.5",
+  "status": "LOCAL-EXECUTION-COMPLETE; G88 review/refreeze pending",
+  "sourceCommitBeforeFixCommit": "c657cef72162401c67e015d85fc265155d24d8e9",
+  "scheduledLocalTargets": 453,
+  "scheduledTargetsObserved": 453,
+  "affectedRegressionTargets": 48,
+  "defectsFixedLocally": 18,
+  "countsAreOverlapping": true,
+  "inheritedEvidence": "reuse-evidence.json; final delta reconciliation remains G88 obligation",
+  "backend": {
+    "AI": 109,
+    "Voice": 74,
+    "LM": 105
+  },
+  "rules": 190,
+  "auth": 3,
+  "cameraEvaluatorUnitTests": 20,
+  "staticAnalysis": "No issues found",
+  "featureMap": "revision1.3.0 current",
+  "whitespace": "PASS with CRLF-aware check; no global config changed",
+  "notAccepted": [
+    "G8.6 APK/device journeys",
+    "G8.7 resources/faults/physical-human boundaries",
+    "G8.8 final changed-code review/refreeze",
+    "G8.9 final cleanup/coverage ledger",
+    "real camera/audio/TalkBack/live-provider gates"
+  ],
+  "excludedFailure": "local-platform-disposition.json retains unsupported iOS failure; not counted as Android pass",
+  "reports": [
+    "runs.json",
+    "raw-log-index.json",
+    "defects.json",
+    "environment-incidents.json",
+    "generated-output-restoration.json",
+    "independent-command-reconciliation.json"
+  ]
+}

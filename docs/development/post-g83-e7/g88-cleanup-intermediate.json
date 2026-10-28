@@ -1,0 +1,109 @@
+[
+  {
+    "path": "test/features/learning/pair_matching/failures/host_replay_result_english_isolatedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\7e64ba9762570664-host_replay_result_english_isolatedDiff.png",
+    "sha256": "7e64ba9762570664e708b62a39b03853ea68146cf17cca037658871589f803c5"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_replay_result_english_maskedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\32bef72149b84e5b-host_replay_result_english_maskedDiff.png",
+    "sha256": "32bef72149b84e5baacee9d4c7100a7b75e4295045e357aa2b0aaf64e37cfbb8"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_replay_result_english_masterImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\aed4993b2eb9a856-host_replay_result_english_masterImage.png",
+    "sha256": "aed4993b2eb9a856e8783268bb9d7a4d843faa38210ca2a091fe0920bf0b50b4"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_replay_result_english_testImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\cde35a7774ec625c-host_replay_result_english_testImage.png",
+    "sha256": "cde35a7774ec625cbedf67e53e1c46d61dc5bf3d31cc1db7f1e2462b0145c70d"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_isolatedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2207b3aa97b96163-host_result_thai_measured_isolatedDiff.png",
+    "sha256": "2207b3aa97b961637a3c7604d9d7fb966543bcf94c04ae5d4eb646db0ad038cb"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_maskedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\d248791186e703c9-host_result_thai_measured_maskedDiff.png",
+    "sha256": "d248791186e703c924ee3c257d6689604eb8d6fb9d33347efb0f8cfebcb828df"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_masterImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\3e97bb7c00b8b0d6-host_result_thai_measured_masterImage.png",
+    "sha256": "3e97bb7c00b8b0d699b55d49f51894ec2e3b1af6ef0d5eba3498922bdf9fbc04"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_testImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\aadec3bb321af358-host_result_thai_measured_testImage.png",
+    "sha256": "aadec3bb321af35805571b3b8e75552e79e36d75d5247591f38b6f3f91d32f19"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_isolatedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\5aa330c2f7d2a4bb-host_timeout_thai_isolatedDiff.png",
+    "sha256": "5aa330c2f7d2a4bb8e072b5d65359a05bade0bf179e23bf3d70e433475da6451"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_maskedDiff.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2f42150eaea5ebb2-host_timeout_thai_maskedDiff.png",
+    "sha256": "2f42150eaea5ebb2be702612189729db2752db5640e6acda19c4607148074490"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_masterImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\c76c9f57aceb1215-host_timeout_thai_masterImage.png",
+    "sha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d"
+  },
+  {
+    "path": "test/features/learning/pair_matching/failures/host_timeout_thai_testImage.png",
+    "action": "archive-current-diagnostic-and-restore-historical-tracked-output",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\679784a10a7a575f-host_timeout_thai_testImage.png",
+    "sha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399"
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.cc",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512"
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.h",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+  },
+  {
+    "path": "linux/flutter/generated_plugins.cmake",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa"
+  },
+  {
+    "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.cc",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.h",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+  },
+  {
+    "path": "windows/flutter/generated_plugins.cmake",
+    "action": "restore-generated-EOL-only",
+    "normalizedSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424"
+  }
+]

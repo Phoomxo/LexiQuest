@@ -1,0 +1,40 @@
+{
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "sourceFingerprint": "6db9afc3bb93af8435c9683adf234c3e2fd2df5bc864ff917b53728b53498d40",
+  "kind": "CURRENT_ASSERTION_INSPECTION_NOT_NEW_TEST_RUN",
+  "inspectedSourceHashes": {
+    "test/features/vocabulary/vocabulary_use_cases_test.dart": "c487af97fa330de8c5f2d83288d815389bbe34aa08e7c21ce767cc530cf4624b",
+    "test/features/vocabulary/import_vocabulary_test.dart": "9824b0748266a9636ec5c7bbbd8632e2a341ebbb5b991a4b8fe73f8b8473e4ec",
+    "test/features/vocabulary/drift_vocabulary_repository_test.dart": "26c1c1b0b7e2456047dfabc8ffd03e54350f8f044673358ad7240e0e6bcfc71c",
+    "test/screens/vocabulary_route_withdrawal_test.dart": "9a20817357b76c505f1c94d2fa7eed5aab0f0f77266d588a00a038dae6b493db",
+    "test/screens/offline_vocabulary_journey_test.dart": "02fff5f5af3ba07243a13d114e50630f7c4fa283a015ccd1226752a2234f7940"
+  },
+  "boundaries": [
+    {
+      "boundary": "pre-admission",
+      "evidence": "A05/A10 plus vocabulary_use_cases_test category changed owner/retired admission;create/update/delete wrong owner;import owner mismatch/cancellation;withdrawal dialogs and retained editor/import callbacks",
+      "limit": "Tests are not a5route x every-transition delayed-owner-query matrix; updateWord revoked mutation guard is not separately asserted in the inspected use-case test."
+    },
+    {
+      "boundary": "in-transaction",
+      "evidence": "drift_vocabulary_repository_test B11 mutation expiry at commit rolls back category/word/outbox;A20 eight SQLite ABORT controls",
+      "limit": "B11 combined createOrReuseWordInCategory is not every create/edit/delete route;ABORT controls prove transaction rollback, not every possible lifecycle timing."
+    },
+    {
+      "boundary": "post-mutation notifier",
+      "evidence": "A20 part07:8 synchronous notifier faults+8ABORTcontrols+10route reconciliation cases",
+      "limit": "No arbitrary post-commit repository-throw or OS commit-ack claim."
+    },
+    {
+      "boundary": "post-commit readback",
+      "evidence": "A14/A16/A18 reconciliation;A22 five routes x six transitions30cases",
+      "limit": "Current changes do not modify these product routes. Retain old exact bounded results;do not loop recertifying them."
+    },
+    {
+      "boundary": "native/provider/process death",
+      "evidence": "A07/A15/A17/A19/A21/A23 manual unpaired native withfreshrestore;A06domainrestart",
+      "limit": "Foreign AI owner/native provider and durable request-ID process-death protocol not proven."
+    }
+  ],
+  "remainingActionable": "After W01 durable lease/restart and W02 route fixtures, fill specifically missing delayed pre-admission owner/route assertions using existing owner repository boundaries if needed;do not invent arbitrary transaction faults or rerun unchanged A20/A22."
+}

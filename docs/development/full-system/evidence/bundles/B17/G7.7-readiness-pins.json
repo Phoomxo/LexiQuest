@@ -1,0 +1,130 @@
+{
+  "sourceHead": "29ffbe5e332501883e2ab61419490ccfe9f07e18",
+  "pins": [
+    {
+      "path": "pubspec.yaml",
+      "sha256": "afd947c0c0f4ac8864dbf67a33ecbb4699b6a40f3d39edac4ba6be60459db584",
+      "bytes": 3060
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "47745c547efa5cb964b424607cb6356f6e5a2c791b0e78c182a30c0fe2718ca3",
+      "bytes": 54867
+    },
+    {
+      "path": ".metadata",
+      "sha256": "4e9a6c8485af5128c7985dd1b834c48a041fd2d74eff57d8ace0ba7011c051ee",
+      "bytes": 1706
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "sha256": "df66eaf5f3e57448948f6aa2a698532575d0420041ebabb001904102c66340e9",
+      "bytes": 840
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "sha256": "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba",
+      "bytes": 537
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "d80766eb065929d15e3077bbd85f551b7408c065996bc365ea24d0007d74d5ad",
+      "bytes": 4763
+    },
+    {
+      "path": "android/gradle.properties",
+      "sha256": "44ce23ee2f3f5e04ed87dd9b924e47ca60d850422c04787a7870333d5b52b0d0",
+      "bytes": 304
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "d5af567ad117ba311cc4cf12639407dda372f4eb7fd06e3d1772eff65894e9eb",
+      "bytes": 252
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "sha256": "80c71b975d3beff60ea6f1687f3fbe0d7571f21af47210d3bf206d830a040e99",
+      "bytes": 4414
+    },
+    {
+      "path": "android/app/src/debug/AndroidManifest.xml",
+      "sha256": "a26c6a09687b114fb22e4da825b0fb89d1a20882fe3c0b468e009d0a38497848",
+      "bytes": 171
+    },
+    {
+      "path": "android/app/src/release/AndroidManifest.xml",
+      "sha256": "e8f56c85d88718ad0ee7ea0e043c1f1b7be566bb4dbf8bfd2aaee9f379a204c0",
+      "bytes": 521
+    },
+    {
+      "path": "ios/Runner/Info.plist",
+      "sha256": "71842eec448617dec56529001b1bc3a6957e757249c033c7974348bd1939475c",
+      "bytes": 2079
+    },
+    {
+      "path": "lib/features/device_model/domain/model_manifest.dart",
+      "sha256": "4f2c764194e99426aa91f3eaf7b06bb8a404caa6f7243a84d1c32297cbc6d89d",
+      "bytes": 3763
+    },
+    {
+      "path": "tool/final_test_plan/generate_final_test_plan.dart",
+      "sha256": "461204b20ac45f312e87b6e00109b2228dd467b71994e1fcdec4eb28ee05e4d9",
+      "bytes": 43103
+    },
+    {
+      "path": "docs/generated/alltcas-8-44-final-test-plan.json",
+      "sha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534",
+      "bytes": 40210
+    },
+    {
+      "path": "tool/cli/profiles/local-learning-preview.json",
+      "sha256": "fc18f908f817463ec789117204076d2df27814807377179027d6a6157415dfa4",
+      "bytes": 86
+    },
+    {
+      "path": "backend/ai_api/uv.lock",
+      "sha256": "28b5273d6c2c5c14f52511923014a00c54c275a37f16b9d644b1a4fd941f2f7c",
+      "bytes": 112875
+    },
+    {
+      "path": "backend/lexiquest_lm/uv.lock",
+      "sha256": "ac7fdf16bf219e1446eb6c6eae79a296f6c0307359ce56c50980cdb1effa1079",
+      "bytes": 153388
+    },
+    {
+      "path": "backend/voice_api/uv.lock",
+      "sha256": "f9ae0b1a716f53f82c15ed91e29bda306ae1f315ce247021e4ddff79d67b9a10",
+      "bytes": 222583
+    }
+  ],
+  "android": {
+    "identity": "com.lexiquest.app",
+    "compileSdk": 36,
+    "minSdk": 26,
+    "ndk": "28.2.13676358",
+    "gradle": "9.1.0",
+    "agp": "9.0.1",
+    "kotlin": "2.3.20",
+    "permissions": [
+      "android.permission.CAMERA",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.POST_NOTIFICATIONS",
+      "android.permission.RECEIVE_BOOT_COMPLETED"
+    ],
+    "backup": "false",
+    "cleartext": "false"
+  },
+  "cameraPins": {
+    "candidate": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+    "dataset": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+    "baseline": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b",
+    "releaseEnabled": false,
+    "distributionUri": null
+  },
+  "historicalTestPlan": "Preserved as historical d6be10d2...; no regeneration before G8.4",
+  "schema": "27 / 50 tables; unchanged",
+  "scope": "Read-only source/toolchain inspection; no native installed permission/device proof; no lockfile/dependency upgrade",
+  "updatedAfterGeneratorFix": true
+}

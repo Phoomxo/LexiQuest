@@ -1,0 +1,160 @@
+{
+  "taskId": "01a0cfb2-6a0a-7940-9f53-c0aaaef50aa4",
+  "sourceFingerprint": "b6ade277692668fba6de65f332fc9a5c1dc0f949ec786ad84214c639cb88a0c7",
+  "sourceManifest": "source-manifest-r3-05-part06.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part06.apk",
+  "apkSha256": "3ae046219e3e06b3ae3ef4ecfdf38c17ac9fb24b5f7415bfa4ffb3183ec83761",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "log": "build/ari-r3-05/part06-android-build.log",
+    "sha256": "399c4f8c61c8b339e6adcf23d13bc6ebd202634109254a185ff304822baa67d1",
+    "warning": "Existing Kotlin Gradle migration warning"
+  },
+  "observed": [
+    "Fresh main/WAL/SHM backup before install; aapt package checked, installed hash matches",
+    "Create R305Part06 category; native category draft preserved on AI expand/collapse while unpaired",
+    "Import r306import,book,noun twice plus invalid,,noun: native result 1 accepted/1duplicate/1rejected; exact multiline draft survives AI expand/collapse",
+    "Force-stop/relaunch; revisit category shows r306import/book/noun",
+    "58 tables compared by actual PK: category+1 word+1 revision1 import+1 rows+3 outbox+2upserts; original vocabulary/import/outbox rows preserved; owner/answer/session/AIusage unchanged",
+    "Runtime/content timestamps and quest refresh separately recorded",
+    "Fresh main/WAL/SHM restored byte-exact and isolated app force-stopped"
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part06-native/backup.json",
+  "restore": "build/ari-r3-05/part06-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "outbox_operations": {
+        "beforeRows": 359,
+        "afterRows": 361,
+        "added": 2,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "operation_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      "vocabulary_categories": {
+        "beforeRows": 8,
+        "afterRows": 9,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_import_rows": {
+        "beforeRows": 6,
+        "afterRows": 9,
+        "added": 3,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_imports": {
+        "beforeRows": 4,
+        "afterRows": 5,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_words": {
+        "beforeRows": 19,
+        "afterRows": 20,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "fixture": {
+      "categoriesAdded": 1,
+      "wordsAdded": 1,
+      "wordTombstones": 0,
+      "outboxRowsAdded": 2,
+      "wordUpsertOutboxRows": 1,
+      "sameOwner": true
+    },
+    "installedApkSha256": "3ae046219e3e06b3ae3ef4ecfdf38c17ac9fb24b5f7415bfa4ffb3183ec83761",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "notProven": [
+    "No durable provider request-ID or process-death reconciliation protocol claim; restart tests verify database integrity only",
+    "Exceptions inside mutation methods or their post-mutation notifier before returning success remain unaudited; not certified",
+    "Native exercised ordinary create/import baseline; injected verification faults are host-only",
+    "Actual provider/foreign-owner-native/other route lifecycle combinations remain pending; no whole W03/R3-05 completion"
+  ]
+}

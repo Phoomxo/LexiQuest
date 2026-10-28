@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 1,
+  "packageId": "G0.6",
+  "bundleId": "B01",
+  "status": "passed",
+  "kind": "cleanup-review",
+  "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+  "runtimeVerified": false,
+  "documents": 373,
+  "failureCandidates": 76,
+  "restoreBlobsVerified": 76,
+  "changedDocumentLinks": 13,
+  "eolOnlyReuse": [
+    {
+      "path": "AGENTS.md",
+      "workingSha256": "458135e24fa923c5465f7d9a379e54dea69ece2c4b9f91c9a5ead18651e8910c",
+      "recordedSha256": "97ea73f3278c701b4547b8d1fa78b98117b041a1722104a835b5e6fd4b10ed61",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/2026-09-13-current-system-and-plan-readiness.md",
+      "workingSha256": "40ff291c95355016042bb5bdd9b546b04ca364bfaaa228cb1d914ac0a7d65c0a",
+      "recordedSha256": "26b99c06d18128e9c45019c2eceaea54530316b5274cff539548775d34878890",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/2026-09-13-full-system-work-ledger.json",
+      "workingSha256": "63292828412629c42d375c4c29044f44b58d9c44f701a92d622833f0e6a04f83",
+      "recordedSha256": "eab2c5f762d46a543f9b719d335e97dc47081c65305381af430dde1f93b67a63",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/2026-09-13-rule-supersession-register.md",
+      "workingSha256": "2083c6f94863e3e64e0bcb542dfcf2a78a675d65f38fa010f0cec5d6280192f6",
+      "recordedSha256": "40104c229940c26f690e7dc97e1af964c8ccb84283b8eb4831d8720306696869",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system-bundle-map.md",
+      "workingSha256": "62c2391b1f0a1b5d15ab3688a57e6c40f1d82b4386b1e2d1be5d85b20966f72a",
+      "recordedSha256": "3e682ad78ddd41f52114f95305323fe7203231813f9b6d2f701ac710e68f0948",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system-package-workflow.md",
+      "workingSha256": "7439aaefceae0bb52a7163da853c53201681404c7b771531b7ace13b146deea7",
+      "recordedSha256": "a7dd983780a85f2c4d2e831362b52f99c7a3bf6caf4abe2433be0e8c53ae6e30",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system-task-index.json",
+      "workingSha256": "d716bca80c311cf0d88d8f1217a1ced4e9c66c9d7ccbdd9f56ee2239c3e96393",
+      "recordedSha256": "6738fc38b077c49b4b40fca4b0803378ca221e7ca72392b19ae3dddf30e32441",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/bundles-4-migration.md",
+      "workingSha256": "319ff7e25c6fb8ecb6ebec10670fb4bbd420aeaab7f64d69065f565a87b73720",
+      "recordedSha256": "a622c1bf4dbbf8e0825df00e4a53f9451b83c90769aaa0f6cc99271576cd16af",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/bundle-definitions.json",
+      "workingSha256": "e3c2ae646214fa533acfa905bdf471c225fbae820665b152583b6853d43de338",
+      "recordedSha256": "d12ebf9d0e856d07d2f36ef023d5f9f347839eb4a0c12a8d3bf5a0e4e5c72eac",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/coupling.json",
+      "workingSha256": "b2ddeda53f26a44d649c35ed5b54f2818c8ef508426c848ede0694a03a6fecbf",
+      "recordedSha256": "b17d82a403752c563ba310b760c7b0c5ee17fb5036ca7be0d750659dcc434dfc",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/git-diagnostics.json",
+      "workingSha256": "1fb326b081d3c70cbdb2c53cc72544ff44b4a13ee00585eb08676502871205a5",
+      "recordedSha256": "53879f3ec82a2405a37f755dd5fe9e732917dce2b4f65645ddee21ee4a0083ca",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/technical-preservation.json",
+      "workingSha256": "a399e9b2f361ddde455db41be1c573cac4617c44b0b8486a5113b947cc81c703",
+      "recordedSha256": "e7e258fbb2a64068acce9fcb756d09e3de356e94c7d57bab0e645fdf2c06e520",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/verify_workflow.py",
+      "workingSha256": "09f052ea49f6f57740f2b13b84e66bc96a0eda5886c81781685e2173ae693102",
+      "recordedSha256": "03bce67048e4e080e35a126af061ca1fb2934e6ea2a4fd13d42b0ce80a817610",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/development/r15-package-workflow.md",
+      "workingSha256": "98539c123e1f24a87c490bfc767c9c3b95b82babcf9c0bc96e13f843b53d2846",
+      "recordedSha256": "c8413b294562a3d309e7439e45ac9f31a3dcbf704a231d90f3388b4d5a91d607",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B01.md",
+      "workingSha256": "4f134c0829658a71d02ed3b2647b5baa764afaa53400cf07f10e870971129cb1",
+      "recordedSha256": "e73d92f9fbe47735c526afb75eab949563b521351a470eed800139a459b17f17",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B02.md",
+      "workingSha256": "cd9e759f823df4337a9265b016f3f81a57cccdd48d3cefe2d26cf93b311d91ac",
+      "recordedSha256": "b2315748d69e29a1740c73f456567bc52a5d659d6e0a67a69627be44c2e43ec6",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B03.md",
+      "workingSha256": "aa11bea1135b7ebe72a6d75610e3bc66ef4641e3c6464377ad08c5b3cdc81501",
+      "recordedSha256": "63d8376e2140258aa33250db2c4c0e2e6876302de94ea003997e11b00c546d19",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B04.md",
+      "workingSha256": "e7de0c40f4f0ff740de51b2a9f53703ebf0d53684bd1d4a34a129647beafb1a8",
+      "recordedSha256": "38aa2668c752d24c5d84f5c653f0c109f5a50b513f12f18003102c6d5938fdd4",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B05.md",
+      "workingSha256": "21c173442a52be82e158ba19eb02f986ec866da13d7f89945196834028a6d102",
+      "recordedSha256": "5905edbbb60a8b05fb38455e487ef35ba2be5ddb89ebabde5f8da7f8285116ac",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B06.md",
+      "workingSha256": "010f13712f95e0775de29a34c05eefc561c2fe483ac0a378ec6ebdb07c9da782",
+      "recordedSha256": "b24e3d34cf3d45995573b4b5fb4833625b87b4feb93a750a77502c659ad510a8",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B07.md",
+      "workingSha256": "3c31d6277e2495ded6fae14bbe7974b0237cb656923ad473218c270823c8e4e8",
+      "recordedSha256": "bce4deaba20599ea5fb98a599577cc420f630bcf50593dfe07cfde77e961909b",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B08.md",
+      "workingSha256": "3b376fb524ee0346b8e2566ca6633a3edbd8185bb2cf792ad08c3e6c1d43fec9",
+      "recordedSha256": "7ede4eaae693cfd3019069b00c4d2f6e41b4adb1a32e53589da495db2c734a76",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B09.md",
+      "workingSha256": "afcb1dd47dacc00687c4328196a7ec63a34c5b6f4d2496318868d5042bc1a677",
+      "recordedSha256": "f9a2cc0708e0e691ed3a4129f10348f21aa856b0df7ef6f0b0ab303168c1cbbe",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B10.md",
+      "workingSha256": "72b5921b23472276973108ff63772d19ccb433ea74c8aa83258bb09aabc10cca",
+      "recordedSha256": "d88f1276aeb814fac79ef80d5767d9e3d8909533e2e8b2a5a3e8a27e745c3c86",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B11.md",
+      "workingSha256": "073b34c818f2688f166e95fc884128824e16f37270237e373f10c95f61bbdfdc",
+      "recordedSha256": "f8f1e891c157529f56145c8abb8c18052ae7c2729668c4614bd37e24af8dae77",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B12.md",
+      "workingSha256": "b384814e027b064c7a1b8c05b1f17516eb673eebbe05ef3619d257b366a7e601",
+      "recordedSha256": "f963956d2848574c7bed75bde00ea2806b07e24e90cf242bb737566097e7fd92",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B13.md",
+      "workingSha256": "497781912399173cd4e5106f00d8deef9a468e7a269d3e61a695003b6b8ade17",
+      "recordedSha256": "00beaf8d3a80a0b51ac97754dbf22dc2567a75a7b88711c1354788712f55a008",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B14.md",
+      "workingSha256": "7ec213bd5e76fcb39c8151ea2ed7870b7b6a69232bf9bfc881b7b8f2ffc69b82",
+      "recordedSha256": "059bacbd9ba2832fff927b17f152332413cabd4b8975bc1b6afa9a30ca6f71b9",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B15.md",
+      "workingSha256": "9814b03d65dc657f1ea4986d5b9b149171d13a0c5e648324c5813d34e61041da",
+      "recordedSha256": "01c2c8952baf6d4e5ff5122888874ba06ed9b92edca865ee4952abc836ffa9c7",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B16.md",
+      "workingSha256": "7e4d410f5baa471c7ab2dc030509f896821306a65c8b95545756d7e879dfa6fe",
+      "recordedSha256": "78b662425ac56f6890103a40fa49cd02d45910e30367083a13564f5c5da23bbe",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B17.md",
+      "workingSha256": "b6ad32a564a05ef3e30b2d78c0c9623766af8e8660fdd2207a1e9d4e4b88ddfa",
+      "recordedSha256": "b3c6d6ab3c004ea290d25586172ad4a3303ec7ec8faa579b5a661357bbbeeee5",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B18.md",
+      "workingSha256": "a7b70463649cb6cfa4a864e3e264f0d304515bdb211bbac25c2a16bfc8027c0f",
+      "recordedSha256": "c14a9c0b711b465115329c31f6f6f183fe2b21805e127c837166db989bcbf757",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B19.md",
+      "workingSha256": "65b96e36a24ae68ed24a7689dc6e58c5d8d4471b2d3705239d910efd8db0c294",
+      "recordedSha256": "aae14943c0b9ed73aaa1bb11710f6951d8c8790f5696ec2fe3a69abcfc96b154",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B20.md",
+      "workingSha256": "c3c8c5e97f86a2ddc1ce9c840692b1b7587806cca0c8cee5875220a21acbfe4a",
+      "recordedSha256": "df7c4064f3311e1362a7f5d930ac9c0dbff47d60f38416ec7bdc4eed5be4e8f4",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-13-lexiquest-full-system-master-plan.md",
+      "workingSha256": "a03989cd6b6347d353394c841bea1718b2bf4c507bb9bdaa524074dcb21ca115",
+      "recordedSha256": "7e1bb7ea91c23418dda19bbf47e1f065c125a808ecf6f1fb443a4126d17f35f5",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.1.md",
+      "workingSha256": "42757068503e3f1c3f7a9ca3d28073dd35894e481f53f14a09db8ec7e7583366",
+      "recordedSha256": "d2081918d250d145d8e18024f159e720feb6565bfe49eb5a6c678d0843dd7dd8",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.2.md",
+      "workingSha256": "5e5cc760e6ebb7f5da92312600febcfe18c219ec6d2633dae5267f30ca13bcd7",
+      "recordedSha256": "e8cd27ff039b4f577080953c7dc3a4f4e7b8f13db084fe0ea802d2c506d06568",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.3.md",
+      "workingSha256": "34b2444d734477b4d9c036fcd6e2b188bbd39f92ad0bbd6bdd8bff6fa221d07b",
+      "recordedSha256": "380e77a8021db439c23db97af9034b101cf4c5d21827a3f001ae0b857b2ffd29",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.4.md",
+      "workingSha256": "a0a70ea13580a3648fb85941aa38a2c0f2a24f41526c1b243e8ef0e7eeeef184",
+      "recordedSha256": "6d07955769b957c8e38555611473ea20818510ed67229b9dafb07471cd33386a",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.5.md",
+      "workingSha256": "2a62e322728cb60a781db3a2daf3cccef360fdf8a00a771d6bee4fa5ccfe32dc",
+      "recordedSha256": "3d8425d8551c33d4e3dbc2f86a1a4a2330cd384a33d8a851a5d1522af0b3dc0a",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.6.md",
+      "workingSha256": "c5ff7f48f06a17f59564e39542b1e82d019b6ae1163011ca568eb1f13d52622a",
+      "recordedSha256": "e7693266a84e1657e1d38ad67df34d4f3c41d6dddd1ea478ad6cc06ae69a18d6",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.7.md",
+      "workingSha256": "9a9630a296ca4a4d634055502879d27d16ea0a22bc773110e3c654c8546d1130",
+      "recordedSha256": "f97802e640d90e5389689ef190db857bf3c5edf7ef862f82082b4b5e2f6fc295",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.8.md",
+      "workingSha256": "1a836f95e65b9ebddc47e0753f02e0748fd5cbe57df2e4fa9c62a2df661601f6",
+      "recordedSha256": "f3878d6ea09d8c58fe2d29314511c88729555c39a8006273a8b0250fb4f8d1c6",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.1.md",
+      "workingSha256": "21acfea61659bb94d585a86e05830b85c73afef30a94589eb3afdf89c70754b8",
+      "recordedSha256": "ffee2a2262dcb5ffe9f8b89c652ae0280bf660fb38d34804f99c5dc4af59f5ab",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.2.md",
+      "workingSha256": "62a6d2a1d2f3e185438e04f54c19b9d293a9240555107c68f3a2a2a0e3884071",
+      "recordedSha256": "3c763b96f96140931a60e97fc967c4633d38b4143fab333485b6973a9a5ac8e6",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.3.md",
+      "workingSha256": "2cef8ee3c494de7072f9447925a44e1fd59de6d85d385741f1e1472e90446c3c",
+      "recordedSha256": "e59debc9870d9099cb7e3bf3c08f846379b3e59d4a98bf462997412c057a79c6",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.4.md",
+      "workingSha256": "2beec20ef66d9568356e178e507c39e66c32dd33585b09cb5783fdc68e51f105",
+      "recordedSha256": "87802b122ae89e9e84a0596776e8adf5d6b81641443397ce1c5a05009bc6c6eb",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.5.md",
+      "workingSha256": "9766758eae76cdac5d8274aa95af76d4ff6aed5c4c2330d96290a502c798c118",
+      "recordedSha256": "3c0efb56ecf1b54f31bfd9183e7f20b7aa251aa83a8e51cb7576abf7a59074e9",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.6.md",
+      "workingSha256": "d7b21ca6135a693ae1458e2641653847eb3f0388510d03dc855e100a566721cd",
+      "recordedSha256": "d1b5d54d1fd9b1016f2c54abcd9a977e65f9d9b936d784af546eb0c2b32adb22",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.7.md",
+      "workingSha256": "44ff010773392b77d294825a1e1bf670f38d44adbcc6bfe56c0a69e8f9983cac",
+      "recordedSha256": "0819c413a7a3ba4e57a4024749dbb06112f506755df3aff08fa02e3f64a38185",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.1.md",
+      "workingSha256": "4a6a12aacdd6c431599c91f5bceb84e0b4eaf7a0de04116177ed54a2ea5b74b6",
+      "recordedSha256": "278f99f400a774d19a752b46e4c0a338acedcb2d4b3fd7188bf985d541e95ef5",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.2.md",
+      "workingSha256": "eac6f87d491488354ec86449a880470615dfe783aadf217d4d1b636e5b1844ff",
+      "recordedSha256": "a911642cb8ede06ead8859e451f7f41770ebdce1b5dd2d2e43996e5a9c13ea7b",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.3.md",
+      "workingSha256": "247fc39d4577b300c4963f013ae13c75d46c10727d6f7eeb29bde172d31039d6",
+      "recordedSha256": "c5f880a7892b493032f87b18120f2d76a148cdce98467ba1c6234e3dd1c8e3b8",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.4.md",
+      "workingSha256": "18a53c2103379a7a6bbffa5fc1238b95e4d399c4146b3c0c1e7f996977b965d9",
+      "recordedSha256": "6ab1019744961daecf115c0f5c0c05d19231408c191f1a6555339e29e2a174a4",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.5.md",
+      "workingSha256": "c1df55581e613299667bb4ac8cb0632b9fc590e8add75cae616dda1229109b72",
+      "recordedSha256": "046ab7331d97bade96a92ee98e2945cf5be072a88178018488c68f36d114c145",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.6.md",
+      "workingSha256": "ea1840857af883d55e898e365b0d6516d5714e5dc637920c7e58e1649f51154c",
+      "recordedSha256": "68971d0cbb0608c3f1ffb644abe14a9c8727f44a09467379945cc402f12c1f0c",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.7.md",
+      "workingSha256": "b56ab91788ecdbf4be20d372981f3fc710fcfc4bd43a4dd73e2b6227aca67a85",
+      "recordedSha256": "63fd81f9755d6525e05b4b7fc060e1744de887337bf8abc3fab554114988f1f1",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.8.md",
+      "workingSha256": "0aadb3a806937e062e31dee6c37326a6e764beae4b9a9b330adc946666ab75a9",
+      "recordedSha256": "7886c898a42d199b1dae1ad1b412711faf1c66d91ebd37d321297f224e4bc7f1",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.1.md",
+      "workingSha256": "a8cd2621f4bf25d5cf19184c45deb15f9c69a2af892bfd4b0d7745e240f36541",
+      "recordedSha256": "785003b05d8e4989081d2f4b6624a346f2ed0208fcb5e08ca99511ca9a5404be",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.2.md",
+      "workingSha256": "21d2ba56ea19569ccc2ca74e45752d1011065f2931654d86bf797f79181ee212",
+      "recordedSha256": "4603e93fd3060968836b013079df069cbc5caf52a69ed2dec35a4d589a0bbd0d",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.3.md",
+      "workingSha256": "d28d3e4a5263edba09dc42abe834031a00d76c96319598590e5fbbe026290b78",
+      "recordedSha256": "9db0d86a11ed3a9d033c28305a929aba83795c875e03f0971616fbb759006598",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.4.md",
+      "workingSha256": "848471c5b9b60d8b229440a013da3588fa9ce49e818eb79edc40862da301701a",
+      "recordedSha256": "3afb1948b3f92d8d68eb9bafc39647bdfa25dbe48a073e876d63a57f3b681f0e",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.5.md",
+      "workingSha256": "ebf677065e7f0609462243fd5ab739c40d375ec2aadacc7ed19b53f19558eb13",
+      "recordedSha256": "37fc39e93c4b0b1ba27377ecf84942f0957eaa1449f8a4887cdb466ed9507aee",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.6.md",
+      "workingSha256": "db8fa904643ca9355263d05d62f9d9d9806bd41572847437b600f8672bf9765f",
+      "recordedSha256": "5a1c5f9c7fc0a39e34d10b698b045ca87d24b922b5f491e98c9039acc5910874",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.7.md",
+      "workingSha256": "7ed2cfcb95be953f591e41c9c4a317399e6d3ba1c8dee07eab5bef7675d950a2",
+      "recordedSha256": "380581cd3c34a976a528e3dea241987ebd43cdf1e21bae8265445a7e723cbc7f",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.1.md",
+      "workingSha256": "22d5404354f5ed4b9d4e163a8109636a342c8bcc304f2a71aa95553007ed94b2",
+      "recordedSha256": "732990763586d4422479c67d8543c51fb02f072cd87bba2e26c768b709e35676",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.2.md",
+      "workingSha256": "00c80a9a28a7348a8707fb02405a30b2c01a4136d23f613887dd593216d0be9f",
+      "recordedSha256": "ab90ccffcacba357487aa8a633e7b00cefdb16c0fb547e85fe6f3bd41a080fac",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.3.md",
+      "workingSha256": "ac007a59f2e88b83b04f819ddbec107869de6453ae5c285b917f61eacfdf6bab",
+      "recordedSha256": "cce0f4ce42714e925ebb9aaef9a7abea72340dfd5a057ec19ce94dc267ebfec1",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.4.md",
+      "workingSha256": "6984a6ab889c8cdb513b0e28f93740583f5b2110a9604259b254d1f056aff5b8",
+      "recordedSha256": "3f2b9e6f20c2cde79e74759ffac30aa9d1731d81051d405ded369b28ff9093aa",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.5.md",
+      "workingSha256": "ea090edd2c287bd5292ca49d658bb4b4b304575fece105dcb43cf70b7c794246",
+      "recordedSha256": "c62842cd7c28159c95be87fc47bd037754e541f515b5a0567652ea7b56c524a5",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.6.md",
+      "workingSha256": "4aabff1adfb622a1402acd3e82682423b38dd8f72851c8df290ce6e529cd0194",
+      "recordedSha256": "47fc59ee4d9528cc6085cf526e8ae4b2330da264f10008ee4b61f45496eab222",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.1.md",
+      "workingSha256": "9cd3dfd3a56ab42c68fe5fea96c5fdb8631704352f04da018d10d2bf2f5c5dfa",
+      "recordedSha256": "95185ea0b99183136daac87f5a519ad01bfe96707a5e5cacad3adc1fe406873f",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.2.md",
+      "workingSha256": "599d026aacf3b7c1f93a8751fb014cd483ad2dc34ebc612b18f35bd8dcecdc39",
+      "recordedSha256": "4dc33e6d3b59a0053a96ef5130f5d89db75f02111e9cd1339405dd2c4dcf2e34",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.3.md",
+      "workingSha256": "b74962cfd8ae718b0ed67daffb5bf9a754340f39c22d511916d092336639b46a",
+      "recordedSha256": "45b2d294a34640824cecf561cc48492635cfa1d777229be8acb5ae7d56141df9",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.4.md",
+      "workingSha256": "46f1de29a4b797a438f80d166ef6f713d01d185a350a6c9593e8068d6b8724a2",
+      "recordedSha256": "4161dd892e4a1e7b7eb4d05fe8acf9192aead73e1a67fe034c0abc8e5439047b",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.5.md",
+      "workingSha256": "28558ccf8a5edb13a52ba2a62420602e10d51f8c9ac1fb7f5be5bf6613844286",
+      "recordedSha256": "f3e746e2587f1cc0939502fe9135be24218474be971024f9088a4ca21452f4bf",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.6.md",
+      "workingSha256": "463205321838780668c43dcb555ef46f3bf4b3404861f88280ee3fc9df824d8d",
+      "recordedSha256": "bbacb72b958a4599f2d04c88927fee9843dbb0cbb5cde96146224a096c36f797",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.1.md",
+      "workingSha256": "dded70303f9f6078cee39e1436e4292c1c8300a83115b6f29d1335650513fdda",
+      "recordedSha256": "4b678ec1b019f8062bd6beefc8b4b7286dc981c8ae9de0ac688bc34d89e15f99",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.2.md",
+      "workingSha256": "fa604b01f8517f9f382ec24ec7cdc8b9c3ead4530709095dd1270254acb9bc1b",
+      "recordedSha256": "320a6130a3dd6d55c34057dd59b6b84180cbe9eda9bc9ba467271e18a6a76699",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.3.md",
+      "workingSha256": "354b955933953c7295f4ab5d9bdd549e9543ad14ee72f7f78fbcf9e56302c29b",
+      "recordedSha256": "f1d3f99a62328dbfe340d4c3527777c54847f8e762a59711cf6d2c4d532a5599",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.4.md",
+      "workingSha256": "bb3128940efc2000b2d9841e23bd94e9e3524c7b8d66be0e5ccd4b8d094aa45b",
+      "recordedSha256": "120747b7baf85f8c1edcdbc22ea5b3be822203f952a5022429e55d5b7ee90ca9",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.5.md",
+      "workingSha256": "fa77a3064a7b5ad2b3ea89eb232cf0ef2bd0b88090fae7fe47076a019ecc923f",
+      "recordedSha256": "0897d4f765407e28865b619900ef2cbe733caeb50fa406107f5827aeb692bdbd",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.6.md",
+      "workingSha256": "0c3594c63f3af02adb904762b520d0713cebe136291f86a17ec188159c86386e",
+      "recordedSha256": "f7894b8cda3374f9e59fa22f79460d7a398cf3277054ee55a8c47756f70b467e",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.1.md",
+      "workingSha256": "cd97256b20ee9f9391665976fca6b9fe4bfa53dbd0359a4f39158ae780e505ed",
+      "recordedSha256": "d836f99ede4db060206bf60c5bbdf05b09766e4b4222421a91f4280444d1878f",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.2.md",
+      "workingSha256": "fa1f283f223a156d59d9c25c54268c90af28a7c58d0db10fc6402a196bba558c",
+      "recordedSha256": "14f41f8c4682834ee3e1d3622f14412f664464584ac96649499bf69ed07dc775",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.3.md",
+      "workingSha256": "392b72fad9f29ddcee39d64b6688d31991a9321cdfbccbfc41d1b154b49fb4ad",
+      "recordedSha256": "bfccab7eefd1da8a7ab307f44e07bab032b1c9c950e0a540075502c8e6d6b923",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.4.md",
+      "workingSha256": "971bdf6ee26386292520cc06ed7cda1cdd2c7f31893c2329a036da0909f83beb",
+      "recordedSha256": "81aa35f50e3ff0663228c43530ba111edef9723fae99ad7a1d4815d56b5caf90",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.5.md",
+      "workingSha256": "e57a8d170206bed37348fecc71792f0241f0fdb86ff6587301eead3b6053e28e",
+      "recordedSha256": "15993d4674182caf433d86159ca10f67a76faad49a44d211af7b376483b304d7",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.6.md",
+      "workingSha256": "e364afa9a41b2343d633d31641c08008c919750700a09335ea59808975042163",
+      "recordedSha256": "c42aec257b7b0252faac34d8f40638b0e2f41097de7e13c851213a6069d4f03f",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.7.md",
+      "workingSha256": "7cef25d23ec09e3a06071fb488975b9df7aa0cffb31f018ea925d2b0eb72d408",
+      "recordedSha256": "06b7c4753ec9e9ca274e6c6e23907cd5c3d0421e37fe8c4cc4de15d2d18bde1e",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.1.md",
+      "workingSha256": "dcc5ac8127f60c42be062ffbee1e2e9f6e156bb387d4815eff05cd85065fc46d",
+      "recordedSha256": "48d8c6bc1f7d2a0a07ff271ea01708f8b9a61458ccdbe5a271c5e08d36d6032f",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.2.md",
+      "workingSha256": "22f6a54f5c0d866c9c6000947f5f91f2267a1e515f2d5fda7e20f143570c0356",
+      "recordedSha256": "f0e3e83ad423d9fd24e87938f61f7ae7db46b44a6240dd79ab7db4bcf2115b68",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.3.md",
+      "workingSha256": "326e9455309559bcc38ff72b6bcde3cad0ec231e0b509daf1c40673f26986554",
+      "recordedSha256": "8654fa74f3b7392a6efd29dd36228f173626346468a3df1429ace6576e403f69",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.4.md",
+      "workingSha256": "f8ed82e725b6dd385b39ff0cfe2f2c97fb1869250d3a4cae6a0d084fd4e97c32",
+      "recordedSha256": "38f4fb2830fc9b21c576ef036f4544296af8b099ebf8756dbde17ed2af5e9915",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.5.md",
+      "workingSha256": "efc2d0d1a3414538d0a609bd69041774d9628a3ba026dbcd6c5878a2b34e207c",
+      "recordedSha256": "0533b2a9f0d466a6c37fbf7aa9b423b12a63e8c5c8a0ec11c4c5ef714b9ed960",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.6.md",
+      "workingSha256": "04f121b434b53ddbb0356230b3fae4486934b94820d2b24301dfb14ead0c41cc",
+      "recordedSha256": "0039660f1f3cadec13b8de5480f5342156f5575ea5b64cf451af24dd641e6fbb",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.7.md",
+      "workingSha256": "f3f21d18ad8356c7d8737a621efd265ab18d0b4c929d5f0a66dc919c67dcffb5",
+      "recordedSha256": "54759a6df4ebd374a27a3931e748abeb29af1377a1a76c43cdc0a71b2b75a22e",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.8.md",
+      "workingSha256": "36b226f2bf2d2cd92913f474fdf63943006b198c13132e5ff7aa5df116776e83",
+      "recordedSha256": "6621f62d7ae3b4f3acd7a5211f87dbac8b56e4083c6e09deb70bd86b15690368",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.9.md",
+      "workingSha256": "f9c9bbef0d5936c1bad1bd9bb7163185b6035a9b7ed87c7826536e29c3fd7312",
+      "recordedSha256": "6ec7ef1d705f407fdfa83a96c5e761cb3fa20422c62e047f892e6020658574b7",
+      "reason": "EOL-only; accepted Git blob content unchanged"
+    }
+  ],
+  "deletions": 0,
+  "moves": 0,
+  "applicationDelta": 0,
+  "requirements": {
+    "PLAN-04": "Current index supersedes stale context/speech identity observations without rewriting historical evidence.",
+    "PLAN-10": "All76 candidates have refs/hash/archive/restore and justified retain disposition.",
+    "G0": "Cleanup disposition ready; formula/edition gates pending."
+  },
+  "reused": {
+    "workflow": "docs\\development\\full-system\\evidence\\bundles-4\\verification.json",
+    "unchangedPins": 99,
+    "G0.4": "No change to bounded-verifier source/dependency/config; accepted CLI results retained.",
+    "G0.5": "No change to application/content/coverage source pins; no new runtime PASS."
+  },
+  "fingerprints": {
+    "G0.6-document-registry.json": "93c9ebe290fdbd6f73323bbcafaebb9fe1323a5f20a6e505c8b1eca36ce3b78d",
+    "G0.6-cleanup-dry-run.json": "0e83b7193df44e0d660260cddea64c5bf171aa6fe01ab524bb13ca6aef5d12a6",
+    "verify_cleanup.py": "ef2e123c9052fee9f95e0a7744c383b184ab70dc5d26e42c06d04baf14a3e8c0"
+  },
+  "review": "No protected files deleted; all76 Git archive blobs recover exact working bytes; active Master and serial64 requirement/20 bundle queue retain validated migration inputs."
+}
