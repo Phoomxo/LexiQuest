@@ -1,0 +1,3386 @@
+# Review package: f66d0316daff57c83ed972a11f6425cb326f482a..2276dcb4fc528550d47f50caf10eabf9ffba79a8
+
+## Commits
+2276dcb fix: close final release integrity findings
+04e2f8f fix(economy): disable client-authoritative rewards
+20e40da fix(research): reject undefined latency changes
+7bec482 fix(research): enforce observation integrity
+
+## Files changed
+ lib/config/remote_economy_policy.dart              |  13 +
+ lib/runtime/app_bootstrap.dart                     |  21 +
+ lib/runtime/app_dependencies.dart                  |   6 +
+ lib/screens/achievements_screen.dart               | 131 ++++---
+ lib/screens/choose_mode_screen.dart                |  27 +-
+ lib/screens/export_center_screen.dart              |  37 +-
+ lib/screens/main_navigation_screen.dart            |  14 +-
+ lib/screens/quiz_screen.dart                       |  46 +--
+ lib/screens/score_screen.dart                      | 424 +++++++++++----------
+ lib/screens/setting_screen.dart                    | 255 +++++++------
+ lib/screens/shop_page.dart                         |  43 ++-
+ lib/screens/thesis_chart_screen.dart               |  18 +-
+ lib/services/quiz_service.dart                     |  10 -
+ lib/services/research_data_exporter_service.dart   | 111 +++++-
+ .../research_report_pdf_exporter_service.dart      | 165 +++++---
+ lib/services/user_service.dart                     |  17 +-
+ test/runtime/app_bootstrap_test.dart               |  61 +++
+ test/screens/achievements_screen_test.dart         |  15 +-
+ test/screens/main_navigation_screen_test.dart      |   5 +-
+ test/screens/production_shell_navigation_test.dart |  14 +-
+ .../quiz_score_persistence_regression_test.dart    |  52 +++
+ ...esearch_integrity_navigation_contract_test.dart |  45 +++
+ test/screens/score_screen_test.dart                | 269 +++++++++++++
+ test/screens/setting_screen_test.dart              |  18 +
+ test/screens/shop_page_test.dart                   |  21 +
+ test/screens/thesis_chart_screen_test.dart         |  26 +-
+ .../research_data_exporter_service_test.dart       | 193 +++++++++-
+ .../research_report_pdf_exporter_service_test.dart | 145 ++++++-
+ 28 files changed, 1602 insertions(+), 600 deletions(-)
+
+## Diff
+diff --git a/lib/config/remote_economy_policy.dart b/lib/config/remote_economy_policy.dart
+new file mode 100644
+index 0000000..fe5db15
+--- /dev/null
++++ b/lib/config/remote_economy_policy.dart
+@@ -0,0 +1,13 @@
++/// Controls client visibility of remote, spendable economy features.
++///
++/// This is deliberately closed by default. Runtime service readiness and public
++/// Dart defines must not enable spending or ranking functionality.
++final class RemoteEconomyPolicy {
++  const RemoteEconomyPolicy({
++    this.shopAndPurchasesEnabled = false,
++    this.leaderboardEnabled = false,
++  });
++
++  final bool shopAndPurchasesEnabled;
++  final bool leaderboardEnabled;
++}
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index 4febb55..c4faa48 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -1,23 +1,27 @@
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:supabase_flutter/supabase_flutter.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../config/app_config.dart';
+ import '../firebase_options.dart';
++import '../progress/local_progress_repository.dart';
++import '../progress/progress_repository.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_dependencies.dart';
+ import 'app_runtime_status.dart';
+ import 'supabase_client_config.dart';
+ 
+ typedef RuntimeInitializer = Future<void> Function();
+ typedef AppConfigLoader = AppConfig Function();
++typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
+ 
+ // Public client identifiers, not server credentials. The Supabase URL keeps a
+ // public default, but the publishable key must be supplied per build.
+ const _productionSupabaseUrl = String.fromEnvironment(
+   'LEXIQUEST_SUPABASE_URL',
+   defaultValue: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
+ );
+ const _productionSupabasePublishableKey = String.fromEnvironment(
+   'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
+ );
+@@ -37,58 +41,67 @@ Future<void> _initializeSupabaseProduction() async {
+   final publishableKey = requireSupabasePublishableKey(
+     _productionSupabasePublishableKey,
+   );
+   await Supabase.initialize(
+     url: _productionSupabaseUrl,
+     publishableKey: publishableKey,
+   );
+   _productionSupabaseInitialized = true;
+ }
+ 
++Future<ProgressRepository> _loadProgressRepositoryProduction() async {
++  return LocalProgressRepository(await SharedPreferences.getInstance());
++}
++
+ final class AppBootstrap {
+   const AppBootstrap({
+     required this.initializeFirebase,
+     required this.initializeSupabase,
+     required this.loadConfig,
+     required this.guestSessionService,
++    this.loadProgressRepository = _loadProgressRepositoryProduction,
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+       initializeSupabase: _initializeSupabaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
++      loadProgressRepository: _loadProgressRepositoryProduction,
+     );
+   }
+ 
+   final RuntimeInitializer initializeFirebase;
+   final RuntimeInitializer initializeSupabase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
++  final ProgressRepositoryLoader loadProgressRepository;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+     final supabase = await _availability(initializeSupabase);
+     final config = _loadConfig();
++    final progressRepository = await _loadProgressRepository();
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+         supabase: supabase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
+       ),
+       config: config,
+       guestSessionService: guestSessionService,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
++      progressRepository: progressRepository,
+     );
+   }
+ 
+   Future<RuntimeAvailability> _availability(
+     RuntimeInitializer initializer,
+   ) async {
+     try {
+       await initializer();
+       return RuntimeAvailability.ready;
+     } catch (_) {
+@@ -96,11 +109,19 @@ final class AppBootstrap {
+     }
+   }
+ 
+   AppConfig? _loadConfig() {
+     try {
+       return loadConfig();
+     } catch (_) {
+       return null;
+     }
+   }
++
++  Future<ProgressRepository?> _loadProgressRepository() async {
++    try {
++      return await loadProgressRepository();
++    } catch (_) {
++      return null;
++    }
++  }
+ }
+diff --git a/lib/runtime/app_dependencies.dart b/lib/runtime/app_dependencies.dart
+index 21c6cac..3e7b0c3 100644
+--- a/lib/runtime/app_dependencies.dart
++++ b/lib/runtime/app_dependencies.dart
+@@ -1,29 +1,35 @@
+ import 'package:flutter/widgets.dart';
+ 
+ import '../config/app_config.dart';
++import '../config/remote_economy_policy.dart';
++import '../progress/progress_repository.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_runtime_status.dart';
+ 
+ final class AppDependencies {
+   const AppDependencies({
+     required this.runtimeStatus,
+     required this.config,
+     required this.guestSessionService,
+     this.buildInfo = const AppBuildInfo.fromEnvironment(),
++    this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
++    this.progressRepository,
+   });
+ 
+   final AppRuntimeStatus runtimeStatus;
+   final AppConfig? config;
+   final GuestSessionService guestSessionService;
+   final AppBuildInfo buildInfo;
++  final RemoteEconomyPolicy remoteEconomyPolicy;
++  final ProgressRepository? progressRepository;
+ 
+   @override
+   String toString() => 'AppDependencies';
+ }
+ 
+ final class AppDependenciesScope extends InheritedWidget {
+   const AppDependenciesScope({
+     super.key,
+     required this.dependencies,
+     required super.child,
+diff --git a/lib/screens/achievements_screen.dart b/lib/screens/achievements_screen.dart
+index ae67d84..03127e9 100644
+--- a/lib/screens/achievements_screen.dart
++++ b/lib/screens/achievements_screen.dart
+@@ -1,21 +1,34 @@
+ import 'package:flutter/material.dart';
+ import '../models/achievement_badge.dart';
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
+ 
+ class AchievementsScreen extends StatelessWidget {
+   final List<AchievementBadge>? badges;
+-  final int coins;
++  final int? coins;
+ 
+-  const AchievementsScreen({super.key, this.badges, this.coins = 250});
++  const AchievementsScreen({
++    super.key,
++    this.badges,
++    this.coins,
++    this.remoteEconomyPolicy,
++  });
++
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   Widget build(BuildContext context) {
++    final remoteEconomyEnabled =
++        remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
+     final displayBadges =
+         badges ??
+         [
+           const AchievementBadge(
+             id: 'streak_3',
+             title: 'นักเรียนต่อเนื่อง 3 วัน',
+             description: 'ทบทวนคำศัพท์ติดต่อกัน 3 วัน',
+             isUnlocked: true,
+             coinReward: 50,
+           ),
+@@ -30,81 +43,103 @@ class AchievementsScreen extends StatelessWidget {
+             id: 'dictation_pro',
+             title: 'เซียนสะกดคำ',
+             description: 'ทำคะแนน Dictation ได้ 100%',
+             isUnlocked: false,
+             coinReward: 150,
+           ),
+         ];
+ 
+     return Scaffold(
+       appBar: AppBar(
+-        title: const Text(
+-          'ตราความสำเร็จ & รางวัล (Achievements)',
+-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
++        title: Text(
++          remoteEconomyEnabled.shopAndPurchasesEnabled
++              ? 'ตราความสำเร็จ & รางวัล (Achievements)'
++              : 'ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)',
++          style: const TextStyle(
++            fontWeight: FontWeight.bold,
++            color: Colors.white,
++          ),
+         ),
+         backgroundColor: Colors.amber.shade800,
+         centerTitle: true,
+       ),
+       body: Padding(
+         padding: const EdgeInsets.all(16.0),
+         child: Column(
+           children: [
+-            Card(
+-              elevation: 4,
+-              color: Colors.amber.shade100,
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(16),
+-              ),
+-              child: Padding(
+-                padding: const EdgeInsets.all(16.0),
+-                child: Row(
+-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+-                  children: [
+-                    Row(
+-                      children: [
+-                        Icon(
+-                          Icons.monetization_on,
+-                          color: Colors.amber.shade900,
+-                          size: 36,
+-                        ),
+-                        const SizedBox(width: 8),
+-                        Text(
+-                          '$coins เหรียญสะสม',
+-                          style: TextStyle(
+-                            fontSize: 20,
+-                            fontWeight: FontWeight.bold,
++            if (!remoteEconomyEnabled.shopAndPurchasesEnabled)
++              Card(
++                elevation: 2,
++                color: Colors.blueGrey.shade50,
++                shape: RoundedRectangleBorder(
++                  borderRadius: BorderRadius.circular(16),
++                ),
++                child: const Padding(
++                  padding: EdgeInsets.all(16),
++                  child: Text(
++                    'ความคืบหน้าการฝึกเฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้',
++                    textAlign: TextAlign.center,
++                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
++                  ),
++                ),
++              )
++            else if (coins != null)
++              Card(
++                elevation: 4,
++                color: Colors.amber.shade100,
++                shape: RoundedRectangleBorder(
++                  borderRadius: BorderRadius.circular(16),
++                ),
++                child: Padding(
++                  padding: const EdgeInsets.all(16.0),
++                  child: Row(
++                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
++                    children: [
++                      Row(
++                        children: [
++                          Icon(
++                            Icons.monetization_on,
+                             color: Colors.amber.shade900,
++                            size: 36,
+                           ),
+-                        ),
+-                      ],
+-                    ),
+-                    ElevatedButton.icon(
+-                      onPressed: () {
+-                        ScaffoldMessenger.of(context).showSnackBar(
+-                          const SnackBar(
+-                            content: Text(
+-                              'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
++                          const SizedBox(width: 8),
++                          Text(
++                            '$coins เหรียญสะสม',
++                            style: TextStyle(
++                              fontSize: 20,
++                              fontWeight: FontWeight.bold,
++                              color: Colors.amber.shade900,
+                             ),
+                           ),
+-                        );
+-                      },
+-                      icon: const Icon(Icons.shopping_bag),
+-                      label: const Text('ร้านค้า'),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.amber.shade900,
+-                        foregroundColor: Colors.white,
++                        ],
+                       ),
+-                    ),
+-                  ],
++                      ElevatedButton.icon(
++                        onPressed: () {
++                          ScaffoldMessenger.of(context).showSnackBar(
++                            const SnackBar(
++                              content: Text(
++                                'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
++                              ),
++                            ),
++                          );
++                        },
++                        icon: const Icon(Icons.shopping_bag),
++                        label: const Text('ร้านค้า'),
++                        style: ElevatedButton.styleFrom(
++                          backgroundColor: Colors.amber.shade900,
++                          foregroundColor: Colors.white,
++                        ),
++                      ),
++                    ],
++                  ),
+                 ),
+               ),
+-            ),
+             const SizedBox(height: 16),
+             Expanded(
+               child: GridView.builder(
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                   crossAxisSpacing: 12,
+                   mainAxisSpacing: 12,
+                   childAspectRatio: 0.9,
+                 ),
+                 itemCount: displayBadges.length,
+diff --git a/lib/screens/choose_mode_screen.dart b/lib/screens/choose_mode_screen.dart
+index c7e9989..3d526fc 100644
+--- a/lib/screens/choose_mode_screen.dart
++++ b/lib/screens/choose_mode_screen.dart
+@@ -1,31 +1,30 @@
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:flutter/material.dart';
+ import 'ai_tutor_screen.dart';
+ import 'avatar_equipment_screen.dart';
+ import 'boss_battle_screen.dart';
+ import 'cefr_article_reader_screen.dart';
+ import 'cefr_diagnostic_test_screen.dart';
+ import 'cefr_selection_screen.dart';
+ import 'dictation_quiz_screen.dart';
++import 'export_center_screen.dart';
+ import 'learning_world_map_screen.dart';
+ import 'mastery_dashboard_screen.dart';
+ import 'object_scanner_screen.dart';
+ import 'phonetic_explorer_screen.dart';
+ import 'quiz_screen.dart';
+ import 'select_category_for_quiz.dart';
+ import 'sentence_scramble_screen.dart';
+ import 'shadowing_challenge_screen.dart';
+ import 'smart_audio_playlist_screen.dart';
+ import 'srs_flashcards_screen.dart';
+-import 'thesis_chart_screen.dart';
+-import 'export_center_screen.dart';
+ import 'ghost_shadow_duel_screen.dart';
+ import 'interactive_storybook_screen.dart';
+ import 'wordbook_import_screen.dart';
+ 
+ class ChooseModeScreen extends StatelessWidget {
+   const ChooseModeScreen({super.key});
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+@@ -307,26 +306,25 @@ class ChooseModeScreen extends StatelessWidget {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+                     builder: (context) => const WordbookImportScreen(),
+                   ),
+                 );
+               },
+             ),
+             const SizedBox(height: 12),
+ 
+-            // 📄 11.1 ระบบส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)
+             _buildModeButton(
+               context,
+-              title: "📄 ส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)",
+-              icon: Icons.download_for_offline,
+-              color: Colors.indigo.shade800,
++              title: "ส่งออกคลังคำศัพท์ (Anki & PDF Glossary)",
++              icon: Icons.ios_share,
++              color: Colors.blueGrey,
+               onPressed: () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+                     builder: (context) => const ExportCenterScreen(),
+                   ),
+                 );
+               },
+             ),
+             const SizedBox(height: 12),
+@@ -341,37 +339,20 @@ class ChooseModeScreen extends StatelessWidget {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+                     builder: (context) => const PhoneticExplorerScreen(),
+                   ),
+                 );
+               },
+             ),
+             const SizedBox(height: 12),
+ 
+-            // 📊 13. กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)
+-            _buildModeButton(
+-              context,
+-              title: "กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)",
+-              icon: Icons.bar_chart,
+-              color: Colors.indigo.shade900,
+-              onPressed: () {
+-                Navigator.push(
+-                  context,
+-                  MaterialPageRoute(
+-                    builder: (context) => const ThesisChartScreen(),
+-                  ),
+-                );
+-              },
+-            ),
+-            const SizedBox(height: 12),
+-
+             // 🛡️ 13.1 อุปกรณ์สวมใส่ตัวละคร & บัฟพลัง RPG (Avatar Equipment)
+             _buildModeButton(
+               context,
+               title: "🛡️ อุปกรณ์ตัวละคร & บัฟพลัง RPG (Avatar Gear)",
+               icon: Icons.shield,
+               color: Colors.deepPurple.shade700,
+               onPressed: () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+diff --git a/lib/screens/export_center_screen.dart b/lib/screens/export_center_screen.dart
+index ec11237..6f5733e 100644
+--- a/lib/screens/export_center_screen.dart
++++ b/lib/screens/export_center_screen.dart
+@@ -1,29 +1,25 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter/services.dart';
+ import '../services/anki_dictionary_exporter_service.dart';
+ import '../services/pdf_glossary_exporter_service.dart';
+-import '../services/research_data_exporter_service.dart';
+ 
+ class ExportCenterScreen extends StatefulWidget {
+   const ExportCenterScreen({super.key});
+ 
+   @override
+   State<ExportCenterScreen> createState() => _ExportCenterScreenState();
+ }
+ 
+ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+   final PdfGlossaryExporterService _pdfService =
+       const PdfGlossaryExporterService();
+-  final ResearchDataExporterService _researchService =
+-      const ResearchDataExporterService();
+-
+   String _previewContent = '';
+   String _activeTab = 'anki';
+ 
+   final List<VocabularyCardExport> _sampleCards = const [
+     VocabularyCardExport(
+       word: 'perseverance',
+       ipa: '/ˌpɜːsɪˈvɪərəns/',
+       translation: 'ความอุตสาหะ พากเพียร',
+       exampleSentence: 'Success requires dedication and perseverance.',
+     ),
+@@ -65,61 +61,36 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+             'example': c.exampleSentence,
+           },
+         )
+         .toList();
+     setState(() {
+       _activeTab = 'pdf';
+       _previewContent = _pdfService.generateGlossaryDocument(list);
+     });
+   }
+ 
+-  void _generateResearchCsv() {
+-    final records = [
+-      {
+-        'word': 'perseverance',
+-        'cefr_level': 'B2',
+-        'latency_ms': 2400,
+-        'accuracy_percent': 95.0,
+-        'srs_box': 4,
+-        'reviewed_at': DateTime.now().toIso8601String(),
+-      },
+-      {
+-        'word': 'resilience',
+-        'cefr_level': 'B2',
+-        'latency_ms': 1800,
+-        'accuracy_percent': 100.0,
+-        'srs_box': 5,
+-        'reviewed_at': DateTime.now().toIso8601String(),
+-      },
+-    ];
+-    setState(() {
+-      _activeTab = 'csv';
+-      _previewContent = _researchService.generateCsvReport(records);
+-    });
+-  }
+-
+   void _copyToClipboard() {
+     Clipboard.setData(ClipboardData(text: _previewContent));
+     ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(
+         content: Text('📋 คัดลอกข้อมูลไปยัง คลิปบอร์ด เรียบร้อย!'),
+         backgroundColor: Colors.indigo,
+       ),
+     );
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+-          'Export Center (ส่งออกสมุดศัพท์ & ข้อมูลวิจัย)',
++          'ส่งออกคลังคำศัพท์: Anki & PDF Glossary',
+           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+         ),
+         backgroundColor: Colors.indigo.shade900,
+         centerTitle: true,
+       ),
+       body: Padding(
+         padding: const EdgeInsets.all(20.0),
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.stretch,
+           children: [
+@@ -129,32 +100,26 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+                 ButtonSegment(
+                   value: 'anki',
+                   label: Text('Anki Deck'),
+                   icon: Icon(Icons.style, size: 16),
+                 ),
+                 ButtonSegment(
+                   value: 'pdf',
+                   label: Text('PDF Glossary'),
+                   icon: Icon(Icons.picture_as_pdf, size: 16),
+                 ),
+-                ButtonSegment(
+-                  value: 'csv',
+-                  label: Text('Research CSV'),
+-                  icon: Icon(Icons.table_chart, size: 16),
+-                ),
+               ],
+               selected: {_activeTab},
+               onSelectionChanged: (Set<String> newSelection) {
+                 final selected = newSelection.first;
+                 if (selected == 'anki') _generateAnkiExport();
+                 if (selected == 'pdf') _generatePdfGlossary();
+-                if (selected == 'csv') _generateResearchCsv();
+               },
+             ),
+             const SizedBox(height: 16),
+ 
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 Text(
+                   'ตัวอย่างไฟล์ที่สร้าง ($_activeTab.txt):',
+                   style: const TextStyle(
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index c745a95..ce69d57 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -89,25 +89,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+                 child: Text(
+                   'LexiQuest',
+                   style: TextStyle(color: Colors.white, fontSize: 22),
+                 ),
+               ),
+               ListTile(
+                 leading: const Icon(Icons.menu_book),
+                 title: const Text('คลังหมวดหมู่'),
+                 onTap: () => _pushLegacyDestination(CategoriesPage()),
+               ),
+-              ListTile(
+-                leading: const Icon(Icons.shopping_bag),
+-                title: const Text('ร้านค้า'),
+-                onTap: () => _pushLegacyDestination(const ShopPage()),
+-              ),
++              if (AppDependenciesScope.maybeOf(
++                    context,
++                  )?.remoteEconomyPolicy.shopAndPurchasesEnabled ??
++                  false)
++                ListTile(
++                  leading: const Icon(Icons.shopping_bag),
++                  title: const Text('ร้านค้า'),
++                  onTap: () => _pushLegacyDestination(const ShopPage()),
++                ),
+               ListTile(
+                 leading: const Icon(Icons.settings),
+                 title: const Text('ตั้งค่าเดิม'),
+                 onTap: () => _pushLegacyDestination(const SettingScreen()),
+               ),
+               const Divider(),
+               Padding(
+                 padding: const EdgeInsets.symmetric(
+                   horizontal: 16,
+                   vertical: 12,
+diff --git a/lib/screens/quiz_screen.dart b/lib/screens/quiz_screen.dart
+index c335aba..01a86d5 100644
+--- a/lib/screens/quiz_screen.dart
++++ b/lib/screens/quiz_screen.dart
+@@ -1,16 +1,19 @@
++import 'dart:math';
++
+ import 'package:flutter/material.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:flutter/services.dart';
+ import 'score_screen.dart';
+ import 'speak_to_text_screen.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
++import '../runtime/app_dependencies.dart';
+ 
+ class QuizScreen extends StatefulWidget {
+   final List<Map<String, dynamic>> vocabList;
+   final String? selectedCategoryId;
+ 
+   const QuizScreen({
+     super.key,
+     required this.vocabList,
+     this.selectedCategoryId,
+   });
+@@ -18,28 +21,29 @@ class QuizScreen extends StatefulWidget {
+   @override
+   State<QuizScreen> createState() => _QuizScreenState();
+ }
+ 
+ class _QuizScreenState extends State<QuizScreen> {
+   int currentQuestionIndex = 0;
+   int correctAnswers = 0;
+   bool isAnswered = false;
+   bool isCorrect = false;
+   List<String> shuffledOptions = [];
+-  int userPoints = 0;
+   String? backgroundUrl;
++  late final String _sessionId;
+ 
+   final FirebaseAuth _auth = FirebaseAuth.instance;
+ 
+   @override
+   void initState() {
+     super.initState();
++    _sessionId = _newSessionId();
+     _initializeOptions();
+     _loadBackground();
+   }
+ 
+   Future<void> _loadBackground() async {
+     final user = _auth.currentUser;
+     if (user != null) {
+       final doc = await FirebaseFirestore.instance
+           .collection('state')
+           .doc(user.uid)
+@@ -72,62 +76,58 @@ class _QuizScreenState extends State<QuizScreen> {
+   }
+ 
+   void _checkAnswer(String selectedAnswer) {
+     final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
+ 
+     setState(() {
+       isAnswered = true;
+       if (selectedAnswer == correctAnswer) {
+         isCorrect = true;
+         correctAnswers++;
+-        userPoints++;
+         HapticFeedback.lightImpact();
+       } else {
+         isCorrect = false;
+         HapticFeedback.vibrate();
+       }
+     });
+   }
+ 
+   void _nextQuestion() {
+     if (currentQuestionIndex < widget.vocabList.length - 1) {
+       setState(() {
+         currentQuestionIndex++;
+         isAnswered = false;
+         isCorrect = false;
+         _initializeOptions();
+       });
+     } else {
+-      _savePointsToFirestore().then((_) {
+-        if (mounted) {
+-          Navigator.pushReplacement(
+-            context,
+-            MaterialPageRoute(
+-              builder: (context) => ScoreScreen(
+-                correctAnswers: correctAnswers,
+-                wrongAnswers: widget.vocabList.length - correctAnswers,
+-              ),
+-            ),
+-          );
+-        }
+-      });
++      Navigator.pushReplacement(
++        context,
++        MaterialPageRoute(
++          builder: (context) => ScoreScreen(
++            sessionId: _sessionId,
++            correctAnswers: correctAnswers,
++            wrongAnswers: widget.vocabList.length - correctAnswers,
++            repository: AppDependenciesScope.maybeOf(
++              context,
++            )?.progressRepository,
++          ),
++        ),
++      );
+     }
+   }
+ 
+-  Future<void> _savePointsToFirestore() async {
+-    final userRef = FirebaseFirestore.instance
+-        .collection('users')
+-        .doc(_auth.currentUser!.uid);
+-    await userRef.set({
+-      'totalPoints': FieldValue.increment(userPoints),
+-      'gamesPlayed': FieldValue.increment(1),
+-    }, SetOptions(merge: true));
++  String _newSessionId() {
++    final random = Random.secure();
++    return 'quiz-${DateTime.now().microsecondsSinceEpoch}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}';
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     final currentQuestion = widget.vocabList[currentQuestionIndex];
+     final word = currentQuestion['word'];
+     final partOfSpeech = currentQuestion['part_of_speech'];
+     final correctAnswer = currentQuestion['meaning'];
+ 
+     return Scaffold(
+diff --git a/lib/screens/score_screen.dart b/lib/screens/score_screen.dart
+index 66946a9..0b4ca33 100644
+--- a/lib/screens/score_screen.dart
++++ b/lib/screens/score_screen.dart
+@@ -1,259 +1,279 @@
+-import 'package:cloud_firestore/cloud_firestore.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+ import 'package:flutter/material.dart';
++
++import '../progress/progress_repository.dart';
++import '../runtime/app_dependencies.dart';
+ import 'choose_mode_screen.dart';
+ import 'main_navigation_screen.dart';
+ 
+-class ScoreScreen extends StatelessWidget {
+-  final int correctAnswers;
+-  final int wrongAnswers;
+-  final bool isFromFirestore;
+-  final String? selectedCategoryId;
+-
++class ScoreScreen extends StatefulWidget {
+   const ScoreScreen({
+     super.key,
+     required this.correctAnswers,
+     required this.wrongAnswers,
++    required this.sessionId,
++    this.repository,
+     this.isFromFirestore = true,
+     this.selectedCategoryId,
+   });
+ 
+-  @override
+-  Widget build(BuildContext context) {
+-    final user = FirebaseAuth.instance.currentUser;
+-    if (user == null) {
+-      return const Scaffold(body: Center(child: Text('กรุณาเข้าสู่ระบบ')));
+-    }
++  final int correctAnswers;
++  final int wrongAnswers;
++  final String sessionId;
++  final ProgressRepository? repository;
++  final bool isFromFirestore;
++  final String? selectedCategoryId;
+ 
+-    // ✅ อัปเดตข้อมูลผู้ใช้ใน Firestore
+-    _updateUserStats(user.uid, correctAnswers, wrongAnswers);
++  @override
++  State<ScoreScreen> createState() => _ScoreScreenState();
++}
+ 
+-    return FutureBuilder<DocumentSnapshot>(
+-      future: FirebaseFirestore.instance
+-          .collection('state')
+-          .doc(user.uid)
+-          .get(),
+-      builder: (context, snapshot) {
+-        if (snapshot.connectionState == ConnectionState.waiting) {
+-          return const Center(child: CircularProgressIndicator());
+-        }
++class _ScoreScreenState extends State<ScoreScreen> {
++  Future<_PersistenceResult>? _persistenceFuture;
+ 
+-        if (snapshot.hasError) {
+-          return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดคะแนน!'));
+-        }
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    if (_persistenceFuture != null) return;
++    final repository =
++        widget.repository ??
++        AppDependenciesScope.maybeOf(context)?.progressRepository;
++    _persistenceFuture = repository == null
++        ? Future.value(const _PersistenceResult.notSaved())
++        : _recordAndRead(repository);
++  }
+ 
+-        if (!snapshot.hasData ||
+-            snapshot.data == null ||
+-            !snapshot.data!.exists) {
+-          return const Center(child: Text('ไม่พบข้อมูลคะแนน!'));
+-        }
++  Future<_PersistenceResult> _recordAndRead(
++    ProgressRepository repository,
++  ) async {
++    try {
++      await repository.recordSession(
++        ProgressSession(
++          sessionId: widget.sessionId,
++          correctAnswers: widget.correctAnswers,
++          wrongAnswers: widget.wrongAnswers,
++        ),
++      );
++    } catch (_) {
++      return const _PersistenceResult.notSaved();
++    }
+ 
+-        final userData = snapshot.data!.data() as Map<String, dynamic>;
+-        final totalPoints = userData['totalPoints'] ?? 0;
+-        final totalCorrectAnswers = userData['totalCorrectAnswers'] ?? 0;
+-        final totalWrongAnswers = userData['totalWrongAnswers'] ?? 0;
+-        final gamesPlayed = userData['gamesPlayed'] ?? 0;
++    try {
++      return _PersistenceResult.saved(await repository.readSnapshot());
++    } catch (_) {
++      return const _PersistenceResult.savedWithoutSnapshot();
++    }
++  }
+ 
+-        return Scaffold(
+-          appBar: AppBar(
+-            title: const Text(
+-              'ผลลัพธ์ของคุณ',
+-              style: TextStyle(
+-                fontWeight: FontWeight.bold,
+-                color: Colors.white,
+-              ),
++  @override
++  Widget build(BuildContext context) {
++    final persistenceFuture = _persistenceFuture;
++    return Scaffold(
++      appBar: AppBar(
++        title: const Text(
++          'ผลลัพธ์ของคุณ',
++          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
++        ),
++        centerTitle: true,
++        backgroundColor: Colors.transparent,
++        elevation: 0,
++        flexibleSpace: Container(
++          decoration: const BoxDecoration(
++            gradient: LinearGradient(
++              colors: [Colors.deepPurple, Colors.indigo],
++              begin: Alignment.topLeft,
++              end: Alignment.bottomRight,
+             ),
+-            centerTitle: true,
+-            backgroundColor: Colors.transparent,
+-            elevation: 0,
+-            flexibleSpace: Container(
+-              decoration: const BoxDecoration(
+-                gradient: LinearGradient(
+-                  colors: [Colors.deepPurple, Colors.indigo],
+-                  begin: Alignment.topLeft,
+-                  end: Alignment.bottomRight,
++          ),
++        ),
++      ),
++      body: ListView(
++        padding: const EdgeInsets.all(16),
++        children: [
++          Card(
++            shape: RoundedRectangleBorder(
++              borderRadius: BorderRadius.circular(15),
++            ),
++            elevation: 5,
++            child: Padding(
++              padding: const EdgeInsets.all(20),
++              child: Text(
++                'รอบนี้: ตอบถูก ${widget.correctAnswers} • '
++                'ตอบผิด ${widget.wrongAnswers}',
++                textAlign: TextAlign.center,
++                style: const TextStyle(
++                  fontSize: 20,
++                  fontWeight: FontWeight.bold,
+                 ),
+               ),
+             ),
+           ),
+-
+-          body: Padding(
+-            padding: const EdgeInsets.all(16.0),
+-            child: Column(
+-              mainAxisAlignment: MainAxisAlignment.center,
+-              children: [
+-                // 🏆 แสดงคะแนนรวม
+-                Card(
+-                  shape: RoundedRectangleBorder(
+-                    borderRadius: BorderRadius.circular(15),
+-                  ),
+-                  elevation: 5,
+-                  child: Padding(
+-                    padding: const EdgeInsets.all(20.0),
+-                    child: Column(
+-                      children: [
+-                        const Text(
+-                          'แต้มสะสมทั้งหมด',
+-                          style: TextStyle(
+-                            fontSize: 22,
+-                            fontWeight: FontWeight.bold,
+-                          ),
+-                        ),
+-                        const SizedBox(height: 10),
+-                        Text(
+-                          '$totalPoints',
+-                          style: TextStyle(
+-                            fontSize: 40,
+-                            fontWeight: FontWeight.bold,
+-                            color: totalPoints > 50
+-                                ? Colors.green
+-                                : Colors.redAccent,
+-                          ),
+-                        ),
+-                      ],
++          const SizedBox(height: 12),
++          FutureBuilder<_PersistenceResult>(
++            future: persistenceFuture,
++            builder: (context, snapshot) {
++              if (snapshot.connectionState != ConnectionState.done) {
++                return const Text(
++                  'กำลังบันทึกผลรอบนี้ในอุปกรณ์…',
++                  textAlign: TextAlign.center,
++                );
++              }
++              return _buildPersistenceResult(
++                snapshot.data ?? const _PersistenceResult.notSaved(),
++              );
++            },
++          ),
++          const SizedBox(height: 24),
++          Row(
++            mainAxisAlignment: MainAxisAlignment.center,
++            children: [
++              ElevatedButton.icon(
++                onPressed: () {
++                  Navigator.pushReplacement(
++                    context,
++                    MaterialPageRoute(
++                      builder: (context) => const ChooseModeScreen(),
+                     ),
+-                  ),
++                  );
++                },
++                icon: const Icon(Icons.replay, color: Colors.white),
++                label: const Text(
++                  'เล่นใหม่',
++                  style: TextStyle(color: Colors.white),
+                 ),
+-
+-                const SizedBox(height: 20),
+-
+-                // 📊 แสดงสถิติการเล่น
+-                _buildStatCard(
+-                  'จำนวนครั้งที่เล่น',
+-                  gamesPlayed.toString(),
+-                  Icons.history,
+-                  Colors.deepPurple,
+-                ),
+-                _buildStatCard(
+-                  'ตอบถูกทั้งหมด',
+-                  totalCorrectAnswers.toString(),
+-                  Icons.check_circle,
+-                  Colors.green,
+-                ),
+-                _buildStatCard(
+-                  'ตอบผิดทั้งหมด',
+-                  totalWrongAnswers.toString(),
+-                  Icons.cancel,
+-                  Colors.red,
++                style: ElevatedButton.styleFrom(
++                  backgroundColor: Colors.deepPurple,
++                  padding: const EdgeInsets.symmetric(
++                    horizontal: 24,
++                    vertical: 15,
++                  ),
++                  shape: RoundedRectangleBorder(
++                    borderRadius: BorderRadius.circular(12),
++                  ),
+                 ),
+-
+-                const SizedBox(height: 30),
+-
+-                // 🎮 ปุ่มเล่นใหม่ และกลับหน้าหลัก
+-                Row(
+-                  mainAxisAlignment: MainAxisAlignment.center,
+-                  children: [
+-                    // ปุ่มเล่นใหม่ → กลับไปที่ ChooseModeScreen
+-                    ElevatedButton.icon(
+-                      onPressed: () {
+-                        Navigator.pushReplacement(
+-                          context,
+-                          MaterialPageRoute(
+-                            builder: (context) => const ChooseModeScreen(),
+-                          ),
+-                        );
+-                      },
+-                      icon: const Icon(Icons.replay, color: Colors.white),
+-                      label: const Text(
+-                        'เล่นใหม่',
+-                        style: TextStyle(color: Colors.white),
+-                      ),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.deepPurple,
+-                        padding: const EdgeInsets.symmetric(
+-                          horizontal: 30,
+-                          vertical: 15,
+-                        ),
+-                        shape: RoundedRectangleBorder(
+-                          borderRadius: BorderRadius.circular(12),
+-                        ),
+-                      ),
+-                    ),
+-                    const SizedBox(width: 20),
+-                    // ปุ่มกลับหน้าหลัก → ไปที่ MainNavigation และล้าง Stack
+-                    ElevatedButton.icon(
+-                      onPressed: () {
+-                        Navigator.pushAndRemoveUntil(
+-                          context,
+-                          MaterialPageRoute(
+-                            builder: (context) => const MainNavigationScreen(),
+-                          ),
+-                          (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
+-                        );
+-                      },
+-                      icon: const Icon(Icons.home, color: Colors.white),
+-                      label: const Text(
+-                        'กลับหน้าหลัก',
+-                        style: TextStyle(color: Colors.white),
+-                      ),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.red,
+-                        padding: const EdgeInsets.symmetric(
+-                          horizontal: 30,
+-                          vertical: 15,
+-                        ),
+-                        shape: RoundedRectangleBorder(
+-                          borderRadius: BorderRadius.circular(12),
+-                        ),
+-                      ),
++              ),
++              const SizedBox(width: 12),
++              ElevatedButton.icon(
++                onPressed: () {
++                  Navigator.pushAndRemoveUntil(
++                    context,
++                    MaterialPageRoute(
++                      builder: (context) => const MainNavigationScreen(),
+                     ),
+-                  ],
++                    (route) => false,
++                  );
++                },
++                icon: const Icon(Icons.home, color: Colors.white),
++                label: const Text(
++                  'กลับหน้าหลัก',
++                  style: TextStyle(color: Colors.white),
+                 ),
+-              ],
+-            ),
++                style: ElevatedButton.styleFrom(
++                  backgroundColor: Colors.red,
++                  padding: const EdgeInsets.symmetric(
++                    horizontal: 24,
++                    vertical: 15,
++                  ),
++                  shape: RoundedRectangleBorder(
++                    borderRadius: BorderRadius.circular(12),
++                  ),
++                ),
++              ),
++            ],
+           ),
+-        );
+-      },
++        ],
++      ),
+     );
+   }
+ 
+-  /// ✅ ฟังก์ชันอัปเดตข้อมูลใน Firestore
+-  Future<void> _updateUserStats(
+-    String userId,
+-    int correctAnswers,
+-    int wrongAnswers,
+-  ) async {
+-    final userRef = FirebaseFirestore.instance.collection('state').doc(userId);
+-
+-    try {
+-      await userRef.set({
+-        'totalPoints': FieldValue.increment(correctAnswers), // ✅ เพิ่มแต้มสะสม
+-        'totalCorrectAnswers': FieldValue.increment(
+-          correctAnswers,
+-        ), // ✅ บันทึกคำตอบที่ถูก
+-        'totalWrongAnswers': FieldValue.increment(
+-          wrongAnswers,
+-        ), // ✅ บันทึกคำตอบที่ผิด
+-        'gamesPlayed': FieldValue.increment(1), // ✅ เพิ่มจำนวนครั้งที่เล่น
+-      }, SetOptions(merge: true));
+-
+-      debugPrint("✅ อัปเดตคะแนนสำเร็จ");
+-    } catch (e) {
+-      debugPrint("❌ เกิดข้อผิดพลาดในการอัปเดตคะแนน: $e");
++  Widget _buildPersistenceResult(_PersistenceResult persistence) {
++    switch (persistence.outcome) {
++      case _PersistenceOutcome.notSaved:
++        return const Text(
++          'ยังไม่ได้บันทึกผลรอบนี้ในอุปกรณ์',
++          textAlign: TextAlign.center,
++        );
++      case _PersistenceOutcome.savedWithoutSnapshot:
++        return const Text(
++          'บันทึกผลรอบนี้แล้ว แต่ยังอ่านยอดรวมจากอุปกรณ์ไม่ได้',
++          textAlign: TextAlign.center,
++        );
++      case _PersistenceOutcome.saved:
++        final progress = persistence.snapshot!;
++        return Column(
++          children: [
++            const Text(
++              'บันทึกผลแล้ว: ความคืบหน้าการฝึกอยู่เฉพาะอุปกรณ์นี้',
++              textAlign: TextAlign.center,
++              style: TextStyle(fontWeight: FontWeight.bold),
++            ),
++            const SizedBox(height: 8),
++            _buildStatCard(
++              'แต้มฝึกสะสม (เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้)',
++              progress.totalPoints.toString(),
++              Icons.stars,
++              Colors.amber.shade800,
++            ),
++            _buildStatCard(
++              'จำนวนครั้งที่เล่น (เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้)',
++              progress.gamesPlayed.toString(),
++              Icons.history,
++              Colors.deepPurple,
++            ),
++            _buildStatCard(
++              'ตอบถูกทั้งหมด (เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้)',
++              progress.totalCorrectAnswers.toString(),
++              Icons.check_circle,
++              Colors.green,
++            ),
++            _buildStatCard(
++              'ตอบผิดทั้งหมด (เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้)',
++              progress.totalWrongAnswers.toString(),
++              Icons.cancel,
++              Colors.red,
++            ),
++          ],
++        );
+     }
+   }
+ 
+-  /// 📌 ฟังก์ชันสร้างการ์ดแสดงสถิติ
+   Widget _buildStatCard(
+     String title,
+     String value,
+     IconData icon,
+     Color color,
+   ) {
+     return Card(
+       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+       elevation: 4,
+       child: ListTile(
+         leading: Icon(icon, color: color, size: 30),
+         title: Text(
+           title,
+-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
++          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+         ),
+         trailing: Text(
+           value,
+           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+         ),
+       ),
+     );
+   }
+ }
++
++enum _PersistenceOutcome { notSaved, saved, savedWithoutSnapshot }
++
++class _PersistenceResult {
++  const _PersistenceResult.saved(this.snapshot)
++    : outcome = _PersistenceOutcome.saved;
++
++  const _PersistenceResult.notSaved()
++    : snapshot = null,
++      outcome = _PersistenceOutcome.notSaved;
++
++  const _PersistenceResult.savedWithoutSnapshot()
++    : snapshot = null,
++      outcome = _PersistenceOutcome.savedWithoutSnapshot;
++
++  final ProgressSnapshot? snapshot;
++  final _PersistenceOutcome outcome;
++}
+diff --git a/lib/screens/setting_screen.dart b/lib/screens/setting_screen.dart
+index 5915e89..b63e51d 100644
+--- a/lib/screens/setting_screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -1,40 +1,46 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import '../services/local_user_progress_store.dart';
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
+ import 'achievements_screen.dart';
+ import 'avatar_equipment_screen.dart';
+ import 'export_center_screen.dart';
+ import 'select_wallpaper_screen.dart';
+ 
+ class SettingScreen extends StatefulWidget {
+-  const SettingScreen({super.key});
++  const SettingScreen({super.key, this.profileData, this.remoteEconomyPolicy});
++
++  final Map<String, dynamic>? profileData;
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   State<SettingScreen> createState() => _SettingScreenState();
+ }
+ 
+ class _SettingScreenState extends State<SettingScreen> {
+   firebase_auth.FirebaseAuth? _auth;
+   FirebaseFirestore? _firestore;
+   Map<String, dynamic>? _profileData;
+   IconData _selectedIcon = Icons.account_circle;
+ 
+   firebase_auth.User? get _currentUser => _auth?.currentUser;
+ 
+   @override
+   void initState() {
+     super.initState();
+     _auth = _resolveAuth();
+     _firestore = _resolveFirestore();
+-    if (_currentUser != null) {
++    _profileData = widget.profileData;
++    if (_profileData == null && _currentUser != null) {
+       _fetchUserProfile();
+     }
+   }
+ 
+   firebase_auth.FirebaseAuth? _resolveAuth() {
+     try {
+       return firebase_auth.FirebaseAuth.instance;
+     } catch (_) {
+       return null;
+     }
+@@ -161,157 +167,170 @@ class _SettingScreenState extends State<SettingScreen> {
+           title,
+           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+         ),
+         trailing: Text(value, style: const TextStyle(fontSize: 16)),
+       ),
+     );
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
++    final remoteEconomyEnabled =
++        widget.remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'Settings',
+           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+         ),
+         backgroundColor: Colors.deepPurpleAccent,
+         actions: [
+           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+         ],
+       ),
+       body: _profileData == null
+           ? const Center(child: CircularProgressIndicator())
+           : Padding(
+               padding: const EdgeInsets.all(16.0),
+-              child: Column(
+-                children: [
+-                  GestureDetector(
+-                    onTap: _showIconPicker,
+-                    child: CircleAvatar(
+-                      radius: 60,
+-                      backgroundColor:
+-                          Colors.primaries[_selectedIcon.codePoint %
+-                              Colors.primaries.length],
+-                      child: Icon(_selectedIcon, size: 80, color: Colors.white),
+-                    ),
+-                  ),
+-                  const SizedBox(height: 20),
+-                  _buildProfileItem(
+-                    'First Name',
+-                    _profileData?['first_name'] ?? '',
+-                  ),
+-                  _buildProfileItem(
+-                    'Last Name',
+-                    _profileData?['last_name'] ?? '',
+-                  ),
+-                  _buildProfileItem(
+-                    'Age',
+-                    _profileData?['age']?.toString() ?? '',
+-                  ),
+-                  const SizedBox(height: 16),
+-                  Wrap(
+-                    spacing: 8,
+-                    runSpacing: 8,
+-                    alignment: WrapAlignment.center,
+-                    children: [
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => SelectWallpaperScreen(),
+-                            ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.wallpaper, size: 18),
+-                        label: const Text('เปลี่ยนวอลเปเปอร์'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.deepPurpleAccent,
+-                          foregroundColor: Colors.white,
+-                        ),
+-                      ),
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) =>
+-                                  const AvatarEquipmentScreen(),
+-                            ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.shield, size: 18),
+-                        label: const Text('อุปกรณ์ Avatar'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.deepPurple.shade700,
+-                          foregroundColor: Colors.white,
++              child: SingleChildScrollView(
++                child: Column(
++                  children: [
++                    GestureDetector(
++                      onTap: _showIconPicker,
++                      child: CircleAvatar(
++                        radius: 60,
++                        backgroundColor:
++                            Colors.primaries[_selectedIcon.codePoint %
++                                Colors.primaries.length],
++                        child: Icon(
++                          _selectedIcon,
++                          size: 80,
++                          color: Colors.white,
+                         ),
+                       ),
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => const AchievementsScreen(),
++                    ),
++                    const SizedBox(height: 20),
++                    _buildProfileItem(
++                      'First Name',
++                      _profileData?['first_name'] ?? '',
++                    ),
++                    _buildProfileItem(
++                      'Last Name',
++                      _profileData?['last_name'] ?? '',
++                    ),
++                    _buildProfileItem(
++                      'Age',
++                      _profileData?['age']?.toString() ?? '',
++                    ),
++                    const SizedBox(height: 16),
++                    Wrap(
++                      spacing: 8,
++                      runSpacing: 8,
++                      alignment: WrapAlignment.center,
++                      children: [
++                        if (remoteEconomyEnabled.shopAndPurchasesEnabled)
++                          ElevatedButton.icon(
++                            onPressed: () {
++                              Navigator.push(
++                                context,
++                                MaterialPageRoute(
++                                  builder: (context) => SelectWallpaperScreen(),
++                                ),
++                              );
++                            },
++                            icon: const Icon(Icons.wallpaper, size: 18),
++                            label: const Text('เปลี่ยนวอลเปเปอร์'),
++                            style: ElevatedButton.styleFrom(
++                              backgroundColor: Colors.deepPurpleAccent,
++                              foregroundColor: Colors.white,
+                             ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.emoji_events, size: 18),
+-                        label: const Text('เหรียญรางวัล'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.amber.shade800,
+-                          foregroundColor: Colors.white,
++                          ),
++                        ElevatedButton.icon(
++                          onPressed: () {
++                            Navigator.push(
++                              context,
++                              MaterialPageRoute(
++                                builder: (context) =>
++                                    const AvatarEquipmentScreen(),
++                              ),
++                            );
++                          },
++                          icon: const Icon(Icons.shield, size: 18),
++                          label: const Text('อุปกรณ์ Avatar'),
++                          style: ElevatedButton.styleFrom(
++                            backgroundColor: Colors.deepPurple.shade700,
++                            foregroundColor: Colors.white,
++                          ),
+                         ),
+-                      ),
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => const ExportCenterScreen(),
+-                            ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.download_for_offline, size: 18),
+-                        label: const Text('ส่งออกข้อมูล'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.indigo.shade800,
+-                          foregroundColor: Colors.white,
++                        ElevatedButton.icon(
++                          onPressed: () {
++                            Navigator.push(
++                              context,
++                              MaterialPageRoute(
++                                builder: (context) =>
++                                    const AchievementsScreen(),
++                              ),
++                            );
++                          },
++                          icon: const Icon(Icons.emoji_events, size: 18),
++                          label: const Text('เหรียญรางวัล'),
++                          style: ElevatedButton.styleFrom(
++                            backgroundColor: Colors.amber.shade800,
++                            foregroundColor: Colors.white,
++                          ),
+                         ),
+-                      ),
+-                    ],
+-                  ),
+-                  const SizedBox(height: 16),
+-                  OutlinedButton.icon(
+-                    onPressed: () async {
+-                      final messenger = ScaffoldMessenger.of(context);
+-                      await LocalUserProgressStore().clearAll();
+-                      if (!mounted) return;
+-                      messenger.showSnackBar(
+-                        const SnackBar(
+-                          content: Text(
+-                            '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
++                        ElevatedButton.icon(
++                          onPressed: () {
++                            Navigator.push(
++                              context,
++                              MaterialPageRoute(
++                                builder: (context) =>
++                                    const ExportCenterScreen(),
++                              ),
++                            );
++                          },
++                          icon: const Icon(Icons.ios_share, size: 18),
++                          label: const Text('ส่งออก Anki/PDF'),
++                          style: ElevatedButton.styleFrom(
++                            backgroundColor: Colors.blueGrey.shade700,
++                            foregroundColor: Colors.white,
+                           ),
+-                          backgroundColor: Colors.green,
+                         ),
+-                      );
+-                    },
+-                    icon: const Icon(
+-                      Icons.cleaning_services,
+-                      color: Colors.redAccent,
++                      ],
+                     ),
+-                    label: const Text(
+-                      '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
+-                      style: TextStyle(
++                    const SizedBox(height: 16),
++                    OutlinedButton.icon(
++                      onPressed: () async {
++                        final messenger = ScaffoldMessenger.of(context);
++                        await LocalUserProgressStore().clearAll();
++                        if (!mounted) return;
++                        messenger.showSnackBar(
++                          const SnackBar(
++                            content: Text(
++                              '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
++                            ),
++                            backgroundColor: Colors.green,
++                          ),
++                        );
++                      },
++                      icon: const Icon(
++                        Icons.cleaning_services,
+                         color: Colors.redAccent,
+-                        fontSize: 16,
+-                        fontWeight: FontWeight.bold,
++                      ),
++                      label: const Text(
++                        '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
++                        style: TextStyle(
++                          color: Colors.redAccent,
++                          fontSize: 16,
++                          fontWeight: FontWeight.bold,
++                        ),
+                       ),
+                     ),
+-                  ),
+-                ],
++                  ],
++                ),
+               ),
+             ),
+     );
+   }
+ }
+diff --git a/lib/screens/shop_page.dart b/lib/screens/shop_page.dart
+index e04acac..cbeb205 100644
+--- a/lib/screens/shop_page.dart
++++ b/lib/screens/shop_page.dart
+@@ -1,39 +1,73 @@
+ import 'package:flutter/material.dart';
+ import 'package:supabase_flutter/supabase_flutter.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+ 
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
++
+ class ShopPage extends StatefulWidget {
+-  const ShopPage({super.key});
++  const ShopPage({super.key, this.remoteEconomyPolicy, this.onLoadData});
++
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
++
++  @visibleForTesting
++  final Future<void> Function()? onLoadData;
+ 
+   @override
+   State<ShopPage> createState() => _ShopPageState();
+ }
+ 
+ class _ShopPageState extends State<ShopPage> {
+   SupabaseClient? get _supabase {
+     try {
+       return Supabase.instance.client;
+     } catch (_) {
+       return null;
+     }
+   }
+ 
+   int userPoints = 0;
+   List<Map<String, dynamic>> products = [];
+   bool _isLoading = true;
++  bool _hasStartedLoading = false;
+ 
+   @override
+   void initState() {
+     super.initState();
+-    _loadData();
++  }
++
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    if (_hasStartedLoading || !_policyFor(context).shopAndPurchasesEnabled) {
++      return;
++    }
++    _hasStartedLoading = true;
++    _startLoading();
++  }
++
++  RemoteEconomyPolicy _policyFor(BuildContext context) {
++    return widget.remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
++  }
++
++  Future<void> _startLoading() async {
++    final onLoadData = widget.onLoadData;
++    if (onLoadData != null) {
++      await onLoadData();
++      if (mounted) setState(() => _isLoading = false);
++      return;
++    }
++    await _loadData();
+   }
+ 
+   Future<void> _loadData() async {
+     setState(() => _isLoading = true);
+     await Future.wait([_fetchUserPoints(), _fetchProducts()]);
+     if (mounted) setState(() => _isLoading = false);
+   }
+ 
+   Future<void> _fetchUserPoints() async {
+     try {
+@@ -269,20 +303,25 @@ class _ShopPageState extends State<ShopPage> {
+       fit: BoxFit.cover,
+       width: double.infinity,
+       errorBuilder: (context, error, stackTrace) {
+         return const Icon(Icons.broken_image, size: 50, color: Colors.red);
+       },
+     );
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
++    if (!_policyFor(context).shopAndPurchasesEnabled) {
++      return const Scaffold(
++        body: Center(child: Text('Shop is currently unavailable.')),
++      );
++    }
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'ร้านค้า',
+           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+         ),
+         centerTitle: true,
+         actions: [
+           IconButton(
+             icon: const Icon(Icons.restore, color: Colors.white),
+diff --git a/lib/screens/thesis_chart_screen.dart b/lib/screens/thesis_chart_screen.dart
+index 59c5a22..f3ffd72 100644
+--- a/lib/screens/thesis_chart_screen.dart
++++ b/lib/screens/thesis_chart_screen.dart
+@@ -1,23 +1,23 @@
+ import 'package:fl_chart/fl_chart.dart';
+ import 'package:flutter/material.dart';
+ 
+ class ThesisChartScreen extends StatelessWidget {
+   final double preTestScore;
+   final double postTestScore;
+   final List<double> latencyTrend;
+ 
+   const ThesisChartScreen({
+     super.key,
+-    this.preTestScore = 52.0,
+-    this.postTestScore = 88.5,
+-    this.latencyTrend = const [2400, 2100, 1850, 1600, 1300, 1150],
++    required this.preTestScore,
++    required this.postTestScore,
++    required this.latencyTrend,
+   });
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)',
+           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+         ),
+@@ -64,22 +64,30 @@ class ThesisChartScreen extends StatelessWidget {
+                           width: 28,
+                         ),
+                       ],
+                     ),
+                   ],
+                   titlesData: FlTitlesData(
+                     bottomTitles: AxisTitles(
+                       sideTitles: SideTitles(
+                         showTitles: true,
+                         getTitlesWidget: (val, meta) {
+-                          if (val == 0) return const Text('Pre-Test (52%)');
+-                          if (val == 1) return const Text('Post-Test (88.5%)');
++                          if (val == 0) {
++                            return Text(
++                              'Pre-Test (${preTestScore.toStringAsFixed(1)}%)',
++                            );
++                          }
++                          if (val == 1) {
++                            return Text(
++                              'Post-Test (${postTestScore.toStringAsFixed(1)}%)',
++                            );
++                          }
+                           return const Text('');
+                         },
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+             ),
+             const Divider(height: 40),
+             const Text(
+diff --git a/lib/services/quiz_service.dart b/lib/services/quiz_service.dart
+index 61b5150..e1588c7 100644
+--- a/lib/services/quiz_service.dart
++++ b/lib/services/quiz_service.dart
+@@ -14,30 +14,20 @@ class QuizService {
+     required String correctAnswer,
+   }) async {
+     await _quizCollection.add({
+       'word': word,
+       'options': options,
+       'correctAnswer': correctAnswer,
+       'createdAt': FieldValue.serverTimestamp(),
+     });
+   }
+ 
+-  /// บันทึกคะแนนของผู้ใช้ลง Firestore
+-  Future<void> savePointsToFirestore(int points) async {
+-    final user = FirebaseAuth.instance.currentUser;
+-    if (user != null) {
+-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+-        {'points': points},
+-      );
+-    }
+-  }
+-
+   /// สุ่มตัวเลือก
+   List<String> shuffleOptions({
+     required String correctAnswer,
+     required List<String> allMeanings,
+     int numberOfFakes = 3,
+   }) {
+     final fakeOptions =
+         allMeanings.where((meaning) => meaning != correctAnswer).toList()
+           ..shuffle();
+     final options = [correctAnswer, ...fakeOptions.take(numberOfFakes)];
+diff --git a/lib/services/research_data_exporter_service.dart b/lib/services/research_data_exporter_service.dart
+index efabcf1..422f05d 100644
+--- a/lib/services/research_data_exporter_service.dart
++++ b/lib/services/research_data_exporter_service.dart
+@@ -1,25 +1,110 @@
++class ResearchExportRow {
++  const ResearchExportRow({
++    required this.word,
++    required this.cefrLevel,
++    required this.latencyMs,
++    required this.accuracyPercent,
++    required this.srsBox,
++    required this.reviewedAtUtc,
++  });
++
++  final String word;
++  final String cefrLevel;
++  final double latencyMs;
++  final double accuracyPercent;
++  final int srsBox;
++  final DateTime reviewedAtUtc;
++}
++
++class InvalidResearchExportData implements Exception {
++  const InvalidResearchExportData(this.message);
++
++  final String message;
++
++  @override
++  String toString() => 'InvalidResearchExportData: $message';
++}
++
+ class ResearchDataExporterService {
+   const ResearchDataExporterService();
+ 
++  static const int maxWordLength = 100;
++  static const Set<String> supportedCefrLevels = {
++    'A1',
++    'A2',
++    'B1',
++    'B2',
++    'C1',
++    'C2',
++  };
++
+   /// Converts learning telemetry and SRS performance records into CSV format for SPSS/Python analysis in Chapter 4.
+-  String generateCsvReport(List<Map<String, dynamic>> records) {
++  String generateCsvReport(List<ResearchExportRow> records) {
+     final buffer = StringBuffer();
+-    buffer.writeln(
+-      'word,cefr_level,latency_ms,accuracy_percent,srs_box,reviewed_at',
++    buffer.write(
++      'word,cefr_level,latency_ms,accuracy_percent,srs_box,reviewed_at\r\n',
+     );
+ 
+-    for (final rec in records) {
+-      final word = rec['word']?.toString() ?? '';
+-      final level = rec['cefr_level']?.toString() ?? 'A1';
+-      final latency = rec['latency_ms']?.toString() ?? '0';
+-      final accuracy = rec['accuracy_percent']?.toString() ?? '0.0';
+-      final box = rec['srs_box']?.toString() ?? '1';
+-      final time =
+-          rec['reviewed_at']?.toString() ?? DateTime.now().toIso8601String();
+-
+-      buffer.writeln('$word,$level,$latency,$accuracy,$box,$time');
++    for (final record in records) {
++      _validate(record);
++      buffer.write(
++        '${_safeTextField(record.word)},${record.cefrLevel},'
++        '${record.latencyMs},'
++        '${record.accuracyPercent},${record.srsBox},'
++        '${record.reviewedAtUtc.toIso8601String()}\r\n',
++      );
+     }
+ 
+     return buffer.toString();
+   }
++
++  static String _safeTextField(String value) {
++    var safe = value
++        .trim()
++        .replaceAll('\r\n', '\n')
++        .replaceAll('\r', '\n')
++        .replaceAll('\n', '\r\n');
++    if ('=+-@'.contains(safe[0])) {
++      safe = "'$safe";
++    }
++    if (safe.contains(',') ||
++        safe.contains('"') ||
++        safe.contains('\r') ||
++        safe.contains('\n')) {
++      return '"${safe.replaceAll('"', '""')}"';
++    }
++    return safe;
++  }
++
++  static void _validate(ResearchExportRow row) {
++    final word = row.word.trim();
++    if (word.isEmpty || word.length > maxWordLength) {
++      throw const InvalidResearchExportData(
++        'Word must contain between 1 and 100 characters.',
++      );
++    }
++    if (!supportedCefrLevels.contains(row.cefrLevel)) {
++      throw const InvalidResearchExportData(
++        'CEFR level must be between A1 and C2.',
++      );
++    }
++    if (!row.latencyMs.isFinite || row.latencyMs <= 0) {
++      throw const InvalidResearchExportData(
++        'Latency must be finite and strictly positive.',
++      );
++    }
++    if (!row.accuracyPercent.isFinite ||
++        row.accuracyPercent < 0 ||
++        row.accuracyPercent > 100) {
++      throw const InvalidResearchExportData(
++        'Accuracy must be finite and between 0 and 100.',
++      );
++    }
++    if (row.srsBox < 1 || row.srsBox > 5) {
++      throw const InvalidResearchExportData('SRS box must be between 1 and 5.');
++    }
++    if (!row.reviewedAtUtc.isUtc) {
++      throw const InvalidResearchExportData('Review timestamp must be UTC.');
++    }
++  }
+ }
+diff --git a/lib/services/research_report_pdf_exporter_service.dart b/lib/services/research_report_pdf_exporter_service.dart
+index 5ab28f4..07119dc 100644
+--- a/lib/services/research_report_pdf_exporter_service.dart
++++ b/lib/services/research_report_pdf_exporter_service.dart
+@@ -1,12 +1,46 @@
+ import 'dart:math';
+ 
++class ResearchObservation {
++  final double preTestScore;
++  final double postTestScore;
++  final double preLatencyMs;
++  final double postLatencyMs;
++
++  const ResearchObservation({
++    required this.preTestScore,
++    required this.postTestScore,
++    required this.preLatencyMs,
++    required this.postLatencyMs,
++  });
++}
++
++class InsufficientData implements Exception {
++  final String message;
++
++  const InsufficientData([
++    this.message = 'At least two real research observations are required.',
++  ]);
++
++  @override
++  String toString() => 'InsufficientData: $message';
++}
++
++class InvalidResearchData implements Exception {
++  final String message;
++
++  const InvalidResearchData(this.message);
++
++  @override
++  String toString() => 'InvalidResearchData: $message';
++}
++
+ class ThesisAcademicStats {
+   final double preTestMean;
+   final double preTestSd;
+   final double postTestMean;
+   final double postTestSd;
+   final double meanGainPercentage;
+   final double preLatencyMs;
+   final double postLatencyMs;
+   final double latencyReductionPercentage;
+   final int sampleSize;
+@@ -21,104 +55,123 @@ class ThesisAcademicStats {
+     required this.postLatencyMs,
+     required this.latencyReductionPercentage,
+     required this.sampleSize,
+   });
+ }
+ 
+ class ResearchReportPdfExporterService {
+   const ResearchReportPdfExporterService();
+ 
+   ThesisAcademicStats calculateAcademicStats(
+-    List<Map<String, dynamic>> records,
++    List<ResearchObservation> observations,
+   ) {
+-    if (records.isEmpty) {
+-      return const ThesisAcademicStats(
+-        preTestMean: 45.0,
+-        preTestSd: 12.5,
+-        postTestMean: 87.5,
+-        postTestSd: 6.2,
+-        meanGainPercentage: 94.4,
+-        preLatencyMs: 3400.0,
+-        postLatencyMs: 1250.0,
+-        latencyReductionPercentage: 63.2,
+-        sampleSize: 30,
+-      );
++    if (observations.length < 2) {
++      throw const InsufficientData();
+     }
+ 
+-    final latencies = records
+-        .map((e) => (e['latencyMs'] as num).toDouble())
+-        .toList();
+-    final sampleSize = records.length;
++    for (var index = 0; index < observations.length; index++) {
++      final observation = observations[index];
++      if (!_isBoundedScore(observation.preTestScore) ||
++          !_isBoundedScore(observation.postTestScore) ||
++          !_isPositiveFinite(observation.preLatencyMs) ||
++          !_isPositiveFinite(observation.postLatencyMs)) {
++        throw InvalidResearchData(
++          'Observation ${index + 1} contains an invalid score or latency.',
++        );
++      }
++    }
+ 
+-    final meanLatency = latencies.reduce((a, b) => a + b) / sampleSize;
+-    final variance =
+-        latencies.map((x) => pow(x - meanLatency, 2)).reduce((a, b) => a + b) /
+-        sampleSize;
+-    final sd = sqrt(variance);
++    final preTestScores = observations
++        .map((observation) => observation.preTestScore)
++        .toList();
++    final postTestScores = observations
++        .map((observation) => observation.postTestScore)
++        .toList();
++    final preLatencies = observations
++        .map((observation) => observation.preLatencyMs)
++        .toList();
++    final postLatencies = observations
++        .map((observation) => observation.postLatencyMs)
++        .toList();
++    final preTestMean = _mean(preTestScores);
++    final postTestMean = _mean(postTestScores);
++    final preLatencyMs = _mean(preLatencies);
++    final postLatencyMs = _mean(postLatencies);
+ 
+     return ThesisAcademicStats(
+-      preTestMean: 48.0,
+-      preTestSd: 11.2,
+-      postTestMean: 86.4,
+-      postTestSd: sd,
+-      meanGainPercentage: 80.0,
+-      preLatencyMs: 3200.0,
+-      postLatencyMs: meanLatency,
+-      latencyReductionPercentage: ((3200.0 - meanLatency) / 3200.0 * 100).clamp(
+-        0,
+-        100,
+-      ),
+-      sampleSize: sampleSize,
++      preTestMean: preTestMean,
++      preTestSd: _sampleStandardDeviation(preTestScores, preTestMean),
++      postTestMean: postTestMean,
++      postTestSd: _sampleStandardDeviation(postTestScores, postTestMean),
++      meanGainPercentage: postTestMean - preTestMean,
++      preLatencyMs: preLatencyMs,
++      postLatencyMs: postLatencyMs,
++      latencyReductionPercentage:
++          (preLatencyMs - postLatencyMs) / preLatencyMs * 100,
++      sampleSize: observations.length,
+     );
+   }
+ 
+-  String generateAcademicPdfReport(List<Map<String, dynamic>> records) {
+-    final stats = calculateAcademicStats(records);
++  String generateAcademicPdfReport(List<ResearchObservation> observations) {
++    final stats = calculateAcademicStats(observations);
+     final buffer = StringBuffer();
+ 
+     buffer.writeln(
+       '===============================================================',
+     );
+-    buffer.writeln('   LEXIQUEST RESEARCH SUMMARY REPORT (THESIS CHAPTER 4)');
++    buffer.writeln('LEXIQUEST RESEARCH SUMMARY REPORT');
+     buffer.writeln(
+       '===============================================================\n',
+     );
+-    buffer.writeln('1. EXECUTIVE SUMMARY & STATISTICAL OVERVIEW');
+-    buffer.writeln('   - Sample Size (N): ${stats.sampleSize} participants');
++    buffer.writeln('1. OBSERVED SUMMARY STATISTICS');
++    buffer.writeln('   - Paired Observations (N): ${stats.sampleSize}');
+     buffer.writeln(
+-      '   - Pre-Test Score (Mean ± SD): ${stats.preTestMean.toStringAsFixed(1)}% ± ${stats.preTestSd.toStringAsFixed(1)}',
++      '   - Pre-Test Score (Mean +/- Sample SD (N-1)): ${stats.preTestMean.toStringAsFixed(1)}% +/- ${stats.preTestSd.toStringAsFixed(1)}',
+     );
+     buffer.writeln(
+-      '   - Post-Test Score (Mean ± SD): ${stats.postTestMean.toStringAsFixed(1)}% ± ${stats.postTestSd.toStringAsFixed(1)}',
++      '   - Post-Test Score (Mean +/- Sample SD (N-1)): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
+     );
+     buffer.writeln(
+-      '   - Overall Achievement Gain: +${stats.meanGainPercentage.toStringAsFixed(1)}%',
++      '   - Mean Score Change: ${_formatSigned(stats.meanGainPercentage)} percentage points',
+     );
+     buffer.writeln(
+       '   - Pre-Test Recall Latency: ${stats.preLatencyMs.toStringAsFixed(0)} ms',
+     );
+     buffer.writeln(
+       '   - Post-Test Recall Latency: ${stats.postLatencyMs.toStringAsFixed(0)} ms',
+     );
+     buffer.writeln(
+-      '   - Recall Latency Reduction: -${stats.latencyReductionPercentage.toStringAsFixed(1)}%\n',
+-    );
+-    buffer.writeln(
+-      '---------------------------------------------------------------',
+-    );
+-    buffer.writeln('2. SPSS / R STATISTICAL ANALYSIS RECOMMENDATION');
+-    buffer.writeln(
+-      '   - Perform Paired-Samples t-Test comparing Pre vs Post Scores.',
+-    );
+-    buffer.writeln(
+-      '   - Null Hypothesis (H0): No statistically significant difference.',
+-    );
+-    buffer.writeln(
+-      '   - Expected Significance: p < 0.001 (Strong Rejection of H0).\n',
++      '   - Recall Latency Change: ${stats.latencyReductionPercentage.toStringAsFixed(1)}%',
+     );
+     buffer.writeln(
+       '===============================================================',
+     );
+ 
+     return buffer.toString();
+   }
++
++  static double _mean(List<double> values) {
++    return values.reduce((sum, value) => sum + value) / values.length;
++  }
++
++  static bool _isBoundedScore(double value) {
++    return value.isFinite && value >= 0 && value <= 100;
++  }
++
++  static bool _isPositiveFinite(double value) {
++    return value.isFinite && value > 0;
++  }
++
++  static double _sampleStandardDeviation(List<double> values, double mean) {
++    final variance =
++        values
++            .map((value) => pow(value - mean, 2))
++            .reduce((sum, value) => sum + value) /
++        (values.length - 1);
++    return sqrt(variance);
++  }
++
++  static String _formatSigned(double value) {
++    final sign = value > 0 ? '+' : '';
++    return '$sign${value.toStringAsFixed(1)}';
++  }
+ }
+diff --git a/lib/services/user_service.dart b/lib/services/user_service.dart
+index 95b0436..6401b73 100644
+--- a/lib/services/user_service.dart
++++ b/lib/services/user_service.dart
+@@ -5,28 +5,27 @@ import '../models/user_model.dart';
+ class UserService {
+   final FirebaseAuth _auth = FirebaseAuth.instance;
+   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+ 
+   /// บันทึกข้อมูลผู้ใช้ใหม่ลงใน Firestore
+   Future<void> saveUserData({
+     required String uid,
+     required String firstName,
+     required String lastName,
+     required String email,
+-    int points = 0,
+   }) async {
+     try {
+       await _firestore.collection('users').doc(uid).set({
+         'first_name': firstName,
+         'last_name': lastName,
+         'email': email,
+-        'points': points,
++        'points': 0,
+       });
+     } catch (e) {
+       throw Exception('Failed to save user data: $e');
+     }
+   }
+ 
+   /// ดึงข้อมูลผู้ใช้ทั้งหมดจาก Firestore
+   Future<AppUser?> getUserData() async {
+     try {
+       final user = _auth.currentUser;
+@@ -35,34 +34,20 @@ class UserService {
+         if (doc.exists) {
+           return AppUser.fromMap(doc.data()!, doc.id);
+         }
+       }
+     } catch (e) {
+       throw Exception('Failed to fetch user data: $e');
+     }
+     return null;
+   }
+ 
+-  /// อัปเดตแต้มของผู้ใช้
+-  Future<void> updateUserPoints(int points) async {
+-    try {
+-      final user = _auth.currentUser;
+-      if (user != null) {
+-        await _firestore.collection('users').doc(user.uid).update({
+-          'points': FieldValue.increment(points),
+-        });
+-      }
+-    } catch (e) {
+-      throw Exception('Failed to update user points: $e');
+-    }
+-  }
+-
+   Future<int> getTotalPointsFromState() async {
+     try {
+       final user = _auth.currentUser;
+       if (user != null) {
+         final doc = await _firestore.collection('state').doc(user.uid).get();
+         if (doc.exists) {
+           return doc.data()!['totalPoints'] ?? 0;
+         }
+       }
+     } catch (e) {
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index 327c85b..48c61fa 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -1,31 +1,92 @@
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:vocab_learning_app/config/app_config.dart';
++import 'package:vocab_learning_app/progress/progress_repository.dart';
+ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _StubGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionFailed(GuestSessionFailure.unknown);
+   }
+ }
+ 
++class _StubProgressRepository implements ProgressRepository {
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => const [];
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async => const ProgressSnapshot(
++    totalPoints: 0,
++    totalCorrectAnswers: 0,
++    totalWrongAnswers: 0,
++    gamesPlayed: 0,
++  );
++
++  @override
++  Future<void> recordSession(ProgressSession session) async {}
++}
++
+ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   aiApiUrl: 'https://ai.example.com',
+   isDebug: false,
+ );
+ 
+ void main() {
++  TestWidgetsFlutterBinding.ensureInitialized();
++
++  setUp(() {
++    SharedPreferences.setMockInitialValues({});
++  });
++
+   group('AppBootstrap.initialize', () {
++    test('retains the repository returned by the injected loader', () async {
++      final expectedRepository = _StubProgressRepository();
++      final bootstrap = AppBootstrap(
++        initializeFirebase: () async {},
++        initializeSupabase: () async {},
++        loadConfig: _validConfig,
++        guestSessionService: _StubGuestSessionService(),
++        loadProgressRepository: () async => expectedRepository,
++      );
++
++      final dependencies = await bootstrap.initialize();
++
++      expect(
++        identical(dependencies.progressRepository, expectedRepository),
++        isTrue,
++      );
++    });
++
++    test(
++      'repository loader failure returns null without leaking details',
++      () async {
++        const sentinel = 'LOCAL-STORAGE-CREDENTIAL-7c9f3a';
++        final bootstrap = AppBootstrap(
++          initializeFirebase: () async {},
++          initializeSupabase: () async {},
++          loadConfig: _validConfig,
++          guestSessionService: _StubGuestSessionService(),
++          loadProgressRepository: () async => throw StateError(sentinel),
++        );
++
++        final dependencies = await bootstrap.initialize();
++
++        expect(dependencies.progressRepository, isNull);
++        expect(dependencies.toString(), isNot(contains(sentinel)));
++      },
++    );
++
+     test('marks all components ready and retains the exact config', () async {
+       final expectedConfig = _validConfig();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+         initializeSupabase: () async {},
+         loadConfig: () => expectedConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+diff --git a/test/screens/achievements_screen_test.dart b/test/screens/achievements_screen_test.dart
+index 00f66c3..1ed2ede 100644
+--- a/test/screens/achievements_screen_test.dart
++++ b/test/screens/achievements_screen_test.dart
+@@ -1,18 +1,27 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/screens/achievements_screen.dart';
+ 
+ void main() {
+-  testWidgets('AchievementsScreen renders coin balance and badge cards', (
++  testWidgets('disabled economy shows only device-local practice messaging', (
+     WidgetTester tester,
+   ) async {
+     await tester.pumpWidget(
+       const MaterialApp(home: AchievementsScreen(coins: 300)),
+     );
+     await tester.pumpAndSettle();
+ 
+-    expect(find.text('ตราความสำเร็จ & รางวัล (Achievements)'), findsOneWidget);
+-    expect(find.text('300 เหรียญสะสม'), findsOneWidget);
++    expect(find.text('ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)'), findsOneWidget);
++    expect(
++      find.text('ความคืบหน้าการฝึกเฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
++      findsOneWidget,
++    );
++    expect(find.textContaining('250'), findsNothing);
++    expect(find.textContaining('300'), findsNothing);
++    expect(find.textContaining('เหรียญ'), findsNothing);
++    expect(find.textContaining('รางวัล'), findsNothing);
++    expect(find.textContaining('ร้านค้า'), findsNothing);
+     expect(find.text('นักเรียนต่อเนื่อง 3 วัน'), findsOneWidget);
++    expect(find.byIcon(Icons.shopping_bag), findsNothing);
+   });
+ }
+diff --git a/test/screens/main_navigation_screen_test.dart b/test/screens/main_navigation_screen_test.dart
+index 474919d..c7cfac5 100644
+--- a/test/screens/main_navigation_screen_test.dart
++++ b/test/screens/main_navigation_screen_test.dart
+@@ -28,22 +28,19 @@ void main() {
+ 
+       expect(
+         find.text('คลินิกซ่อมแซมจุดอ่อน (Weakness Clinic)'),
+         findsOneWidget,
+       );
+ 
+       // Tap Achievements tab (index 3)
+       await tester.tap(find.byType(NavigationDestination).at(3));
+       await tester.pumpAndSettle();
+ 
+-      expect(
+-        find.text('ตราความสำเร็จ & รางวัล (Achievements)'),
+-        findsOneWidget,
+-      );
++      expect(find.text('ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)'), findsOneWidget);
+ 
+       await tester.tap(find.byType(NavigationDestination).at(4));
+       await tester.pumpAndSettle();
+ 
+       expect(find.byType(ProfileSettingsScreen), findsOneWidget);
+     },
+   );
+ }
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index bee8d34..50a0095 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -1,20 +1,19 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import 'package:vocab_learning_app/main.dart';
+ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/screens/categories_page.dart';
+ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+ import 'package:vocab_learning_app/screens/setting_screen.dart';
+-import 'package:vocab_learning_app/screens/shop_page.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionStarted(uid: 'guest-shell-test');
+   }
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+@@ -105,51 +104,40 @@ void main() {
+     }
+   });
+ 
+   testWidgets('drawer lists legacy destinations and safe runtime status', (
+     tester,
+   ) async {
+     await _pumpHome(tester, ready: false);
+     await _openDrawer(tester);
+ 
+     expect(find.text('คลังหมวดหมู่'), findsOneWidget);
+-    expect(find.text('ร้านค้า'), findsOneWidget);
++    expect(find.text('ร้านค้า'), findsNothing);
+     expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+     expect(status.data, contains('ไม่พร้อม'));
+   });
+ 
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(CategoriesPage), findsOneWidget);
+   });
+ 
+-  testWidgets('drawer shop item reaches ShopPage', (tester) async {
+-    await _pumpHome(tester);
+-    await _openDrawer(tester);
+-
+-    await tester.tap(find.text('ร้านค้า'));
+-    await tester.pump();
+-    await tester.pump(const Duration(milliseconds: 350));
+-
+-    expect(find.byType(ShopPage), findsOneWidget);
+-  });
+-
+   testWidgets('drawer settings item reaches SettingScreen', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('ตั้งค่าเดิม'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(SettingScreen), findsOneWidget);
+   });
+diff --git a/test/screens/quiz_score_persistence_regression_test.dart b/test/screens/quiz_score_persistence_regression_test.dart
+new file mode 100644
+index 0000000..bb9a582
+--- /dev/null
++++ b/test/screens/quiz_score_persistence_regression_test.dart
+@@ -0,0 +1,52 @@
++import 'dart:io';
++
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('production has no client score or reward writers outside the disabled '
++      'shop debit allowlist', () {
++    final forbiddenWriters = <String>[];
++    final scoreOrRewardField = RegExp(
++      r'''['"](points|totalPoints|score|coins|coinReward|rewardXp|rewardCoins|balance|xp)['"]\s*:''',
++    );
++
++    for (final entity in Directory('lib').listSync(recursive: true)) {
++      if (entity is! File || !entity.path.endsWith('.dart')) continue;
++      final source = entity.readAsStringSync();
++      if (!source.contains('cloud_firestore')) continue;
++
++      final relativePath = entity.path.replaceAll(r'\', '/');
++      final lines = source.split('\n');
++      for (var index = 0; index < lines.length; index++) {
++        final normalized = lines[index].trim();
++        if (!scoreOrRewardField.hasMatch(normalized) &&
++            !normalized.contains('FieldValue.increment')) {
++          continue;
++        }
++
++        final isLegacyZeroInitialization =
++            relativePath == 'lib/services/user_service.dart' &&
++            normalized == "'points': 0,";
++        final isDefaultDisabledPurchaseDebit =
++            relativePath == 'lib/screens/shop_page.dart' &&
++            normalized == "'totalPoints': FieldValue.increment(-productPrice),";
++
++        if (!isLegacyZeroInitialization && !isDefaultDisabledPurchaseDebit) {
++          forbiddenWriters.add('$relativePath:${index + 1}: $normalized');
++        }
++      }
++    }
++
++    final policySource = File(
++      'lib/config/remote_economy_policy.dart',
++    ).readAsStringSync();
++    final shopSource = File('lib/screens/shop_page.dart').readAsStringSync();
++
++    expect(forbiddenWriters, isEmpty);
++    expect(policySource, contains('this.shopAndPurchasesEnabled = false'));
++    expect(
++      shopSource,
++      contains('!_policyFor(context).shopAndPurchasesEnabled'),
++    );
++  });
++}
+diff --git a/test/screens/research_integrity_navigation_contract_test.dart b/test/screens/research_integrity_navigation_contract_test.dart
+new file mode 100644
+index 0000000..3cae7d1
+--- /dev/null
++++ b/test/screens/research_integrity_navigation_contract_test.dart
+@@ -0,0 +1,45 @@
++import 'dart:io';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/screens/export_center_screen.dart';
++
++void main() {
++  test('Choose Mode and Settings expose only the sanitized Export Center', () {
++    final chooseModeSource = File(
++      'lib/screens/choose_mode_screen.dart',
++    ).readAsStringSync();
++    final settingsSource = File(
++      'lib/screens/setting_screen.dart',
++    ).readAsStringSync();
++
++    expect(chooseModeSource, contains('ExportCenterScreen'));
++    expect(chooseModeSource, isNot(contains('ThesisChartScreen')));
++    expect(settingsSource, contains('ExportCenterScreen'));
++    expect(settingsSource, isNot(contains('ThesisChartScreen')));
++  });
++
++  test('Export Center does not offer a sample Research CSV export', () {
++    final source = File(
++      'lib/screens/export_center_screen.dart',
++    ).readAsStringSync();
++
++    expect(source, isNot(contains('Research CSV')));
++    expect(source, isNot(contains('_generateResearchCsv')));
++    expect(source, isNot(contains('ResearchDataExporterService')));
++  });
++
++  testWidgets(
++    'reachable Export Center presents Anki and PDF without research outputs',
++    (tester) async {
++      await tester.pumpWidget(const MaterialApp(home: ExportCenterScreen()));
++      await tester.pumpAndSettle();
++
++      expect(find.text('Anki Deck'), findsOneWidget);
++      expect(find.text('PDF Glossary'), findsOneWidget);
++      expect(find.textContaining('ข้อมูลวิจัย'), findsNothing);
++      expect(find.textContaining('Research CSV'), findsNothing);
++      expect(find.textContaining('Thesis'), findsNothing);
++    },
++  );
++}
+diff --git a/test/screens/score_screen_test.dart b/test/screens/score_screen_test.dart
+new file mode 100644
+index 0000000..02632cc
+--- /dev/null
++++ b/test/screens/score_screen_test.dart
+@@ -0,0 +1,269 @@
++import 'dart:async';
++import 'dart:io';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/progress/progress_repository.dart';
++import 'package:vocab_learning_app/screens/score_screen.dart';
++
++class _RecordingRepository implements ProgressRepository {
++  final List<ProgressSession> recorded = [];
++  final Set<String> _sessionIds = {};
++  ProgressSnapshot _snapshot = const ProgressSnapshot(
++    totalPoints: 0,
++    totalCorrectAnswers: 0,
++    totalWrongAnswers: 0,
++    gamesPlayed: 0,
++  );
++
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => recorded;
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async => _snapshot;
++
++  @override
++  Future<void> recordSession(ProgressSession session) async {
++    recorded.add(session);
++    if (!_sessionIds.add(session.sessionId)) return;
++    _snapshot = ProgressSnapshot(
++      totalPoints: _snapshot.totalPoints + session.correctAnswers,
++      totalCorrectAnswers:
++          _snapshot.totalCorrectAnswers + session.correctAnswers,
++      totalWrongAnswers: _snapshot.totalWrongAnswers + session.wrongAnswers,
++      gamesPlayed: _snapshot.gamesPlayed + 1,
++    );
++  }
++}
++
++class _FailingRepository implements ProgressRepository {
++  const _FailingRepository({required this.failRecord});
++
++  final bool failRecord;
++
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => const [];
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async {
++    throw StateError('read failed');
++  }
++
++  @override
++  Future<void> recordSession(ProgressSession session) async {
++    if (failRecord) throw StateError('record failed');
++  }
++}
++
++class _BlockingRepository implements ProgressRepository {
++  final Completer<void> recordCompleter = Completer<void>();
++  final List<ProgressSession> recorded = [];
++
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => recorded;
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async => const ProgressSnapshot(
++    totalPoints: 4,
++    totalCorrectAnswers: 4,
++    totalWrongAnswers: 2,
++    gamesPlayed: 1,
++  );
++
++  @override
++  Future<void> recordSession(ProgressSession session) {
++    recorded.add(session);
++    return recordCompleter.future;
++  }
++}
++
++void main() {
++  test('sessionId is required and ScoreScreen never generates one', () {
++    final source = File('lib/screens/score_screen.dart').readAsStringSync();
++
++    expect(source, contains('required this.sessionId'));
++    expect(source, isNot(contains('_newLegacySessionId')));
++    expect(source, isNot(contains('Random.secure')));
++  });
++
++  testWidgets('renders result shell immediately while persistence is pending', (
++    tester,
++  ) async {
++    final repository = _BlockingRepository();
++
++    await tester.pumpWidget(
++      MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'pending-session',
++          correctAnswers: 4,
++          wrongAnswers: 2,
++          repository: repository,
++        ),
++      ),
++    );
++    await tester.pump();
++
++    expect(find.text('ผลลัพธ์ของคุณ'), findsOneWidget);
++    expect(find.text('รอบนี้: ตอบถูก 4 • ตอบผิด 2'), findsOneWidget);
++    expect(find.text('เล่นใหม่'), findsOneWidget);
++    expect(find.text('กลับหน้าหลัก'), findsOneWidget);
++    expect(find.byType(CircularProgressIndicator), findsNothing);
++    expect(repository.recorded, hasLength(1));
++  });
++
++  testWidgets('records the injected session once across rebuilds', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    final score = ScoreScreen(
++      sessionId: 'quiz-session-123',
++      correctAnswers: 4,
++      wrongAnswers: 2,
++      repository: repository,
++    );
++
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++
++    expect(repository.recorded, hasLength(1));
++    expect(repository.recorded.single.sessionId, 'quiz-session-123');
++    expect(repository.recorded.single.correctAnswers, 4);
++    expect(repository.recorded.single.wrongAnswers, 2);
++  });
++
++  testWidgets('replaying a session id leaves injected totals unchanged', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    final score = ScoreScreen(
++      sessionId: 'quiz-session-456',
++      correctAnswers: 3,
++      wrongAnswers: 1,
++      repository: repository,
++    );
++
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++    final before = await repository.readSnapshot();
++    await repository.recordSession(
++      const ProgressSession(
++        sessionId: 'quiz-session-456',
++        correctAnswers: 999,
++        wrongAnswers: 999,
++      ),
++    );
++    final after = await repository.readSnapshot();
++
++    expect(after.totalPoints, before.totalPoints);
++    expect(after.totalCorrectAnswers, before.totalCorrectAnswers);
++    expect(after.totalWrongAnswers, before.totalWrongAnswers);
++    expect(after.gamesPlayed, before.gamesPlayed);
++  });
++
++  testWidgets('successful persistence renders four scoped aggregate totals', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    await repository.recordSession(
++      const ProgressSession(
++        sessionId: 'existing-session',
++        correctAnswers: 10,
++        wrongAnswers: 6,
++      ),
++    );
++
++    await tester.pumpWidget(
++      MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'aggregate-session',
++          correctAnswers: 4,
++          wrongAnswers: 2,
++          repository: repository,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(
++      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
++      findsNWidgets(4),
++    );
++    expect(find.text('14'), findsWidgets);
++    expect(find.text('8'), findsWidgets);
++    expect(find.text('2'), findsWidgets);
++    expect(
++      find.text('บันทึกผลแล้ว: ความคืบหน้าการฝึกอยู่เฉพาะอุปกรณ์นี้'),
++      findsOneWidget,
++    );
++  });
++
++  testWidgets('record failure shows session results without invented totals', (
++    tester,
++  ) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'record-failure',
++          correctAnswers: 4,
++          wrongAnswers: 2,
++          repository: _FailingRepository(failRecord: true),
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(find.text('ยังไม่ได้บันทึกผลรอบนี้ในอุปกรณ์'), findsOneWidget);
++    expect(find.text('รอบนี้: ตอบถูก 4 • ตอบผิด 2'), findsOneWidget);
++    expect(
++      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
++      findsNothing,
++    );
++  });
++
++  testWidgets('snapshot read failure shows session results without totals', (
++    tester,
++  ) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'read-failure',
++          correctAnswers: 3,
++          wrongAnswers: 1,
++          repository: _FailingRepository(failRecord: false),
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(
++      find.text('บันทึกผลรอบนี้แล้ว แต่ยังอ่านยอดรวมจากอุปกรณ์ไม่ได้'),
++      findsOneWidget,
++    );
++    expect(find.text('รอบนี้: ตอบถูก 3 • ตอบผิด 1'), findsOneWidget);
++    expect(
++      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
++      findsNothing,
++    );
++  });
++
++  testWidgets('no repository settles without rebuilding a new loading future', (
++    tester,
++  ) async {
++    const score = ScoreScreen(
++      sessionId: 'no-repository',
++      correctAnswers: 2,
++      wrongAnswers: 1,
++    );
++
++    await tester.pumpWidget(const MaterialApp(home: score));
++    await tester.pumpAndSettle();
++    await tester.pumpWidget(const MaterialApp(home: score));
++    await tester.pumpAndSettle();
++
++    expect(find.byType(CircularProgressIndicator), findsNothing);
++    expect(find.text('ยังไม่ได้บันทึกผลรอบนี้ในอุปกรณ์'), findsOneWidget);
++    expect(find.text('รอบนี้: ตอบถูก 2 • ตอบผิด 1'), findsOneWidget);
++  });
++}
+diff --git a/test/screens/setting_screen_test.dart b/test/screens/setting_screen_test.dart
+new file mode 100644
+index 0000000..d978200
+--- /dev/null
++++ b/test/screens/setting_screen_test.dart
+@@ -0,0 +1,18 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/screens/setting_screen.dart';
++
++void main() {
++  testWidgets(
++    'settings hides wallpaper selection while remote economy is disabled',
++    (tester) async {
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: SettingScreen(profileData: {'first_name': 'Phet'}),
++        ),
++      );
++
++      expect(find.byIcon(Icons.wallpaper), findsNothing);
++    },
++  );
++}
+diff --git a/test/screens/shop_page_test.dart b/test/screens/shop_page_test.dart
+new file mode 100644
+index 0000000..a95417c
+--- /dev/null
++++ b/test/screens/shop_page_test.dart
+@@ -0,0 +1,21 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/screens/shop_page.dart';
++
++void main() {
++  testWidgets(
++    'disabled shop does not load products or expose purchase controls',
++    (tester) async {
++      var loadCalls = 0;
++
++      await tester.pumpWidget(
++        MaterialApp(home: ShopPage(onLoadData: () async => loadCalls++)),
++      );
++      await tester.pump();
++
++      expect(loadCalls, 0);
++      expect(find.text('Shop is currently unavailable.'), findsOneWidget);
++      expect(find.byType(ElevatedButton), findsNothing);
++    },
++  );
++}
+diff --git a/test/screens/thesis_chart_screen_test.dart b/test/screens/thesis_chart_screen_test.dart
+index 8ce0ff4..f1e2e17 100644
+--- a/test/screens/thesis_chart_screen_test.dart
++++ b/test/screens/thesis_chart_screen_test.dart
+@@ -1,26 +1,48 @@
++import 'dart:io';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/screens/thesis_chart_screen.dart';
+ 
+ void main() {
+   testWidgets(
+-    'ThesisChartScreen renders Pre/Post test scores and Latency trend chart',
++    'ThesisChartScreen renders labels from caller-supplied observations',
+     (WidgetTester tester) async {
+       await tester.pumpWidget(
+         const MaterialApp(
+-          home: ThesisChartScreen(preTestScore: 50, postTestScore: 90),
++          home: ThesisChartScreen(
++            preTestScore: 50,
++            postTestScore: 90,
++            latencyTrend: [2000, 1000],
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+ 
++      expect(find.text('Pre-Test (50.0%)'), findsOneWidget);
++      expect(find.text('Post-Test (90.0%)'), findsOneWidget);
++
+       expect(
+         find.text('กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)'),
+         findsOneWidget,
+       );
+       expect(
+         find.text('1. กราฟเปรียบเทียบคะแนน Pre-Test vs Post-Test'),
+         findsOneWidget,
+       );
+     },
+   );
++
++  test('ThesisChartScreen has no fabricated constructor defaults', () {
++    final source = File(
++      'lib/screens/thesis_chart_screen.dart',
++    ).readAsStringSync();
++
++    expect(source, contains('required this.preTestScore'));
++    expect(source, contains('required this.postTestScore'));
++    expect(source, contains('required this.latencyTrend'));
++    expect(source, isNot(contains('this.preTestScore =')));
++    expect(source, isNot(contains('this.postTestScore =')));
++    expect(source, isNot(contains('this.latencyTrend =')));
++  });
+ }
+diff --git a/test/services/research_data_exporter_service_test.dart b/test/services/research_data_exporter_service_test.dart
+index 3f5cd81..e211811 100644
+--- a/test/services/research_data_exporter_service_test.dart
++++ b/test/services/research_data_exporter_service_test.dart
+@@ -1,28 +1,203 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/services/research_data_exporter_service.dart';
+ 
+ void main() {
+   const service = ResearchDataExporterService();
+ 
+   test('generateCsvReport formats learning data into CSV header and rows', () {
+     final records = [
+-      {
+-        'word': 'apple',
+-        'cefr_level': 'A1',
+-        'latency_ms': 1200,
+-        'accuracy_percent': 100.0,
+-        'srs_box': 2,
+-        'reviewed_at': '2026-07-24T12:00:00Z',
+-      },
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: DateTime.utc(2026, 7, 24, 12),
++      ),
+     ];
+ 
+     final csv = service.generateCsvReport(records);
+     expect(
+       csv.contains(
+         'word,cefr_level,latency_ms,accuracy_percent,srs_box,reviewed_at',
+       ),
+       true,
+     );
+-    expect(csv.contains('apple,A1,1200,100.0,2,2026-07-24T12:00:00Z'), true);
++    expect(
++      csv.contains('apple,A1,1200.0,100.0,2,2026-07-24T12:00:00.000Z'),
++      true,
++    );
++  });
++
++  test('generateCsvReport applies RFC 4180 quoting to text fields', () {
++    final csv = service.generateCsvReport([
++      ResearchExportRow(
++        word: 'hello, "world"\nnext',
++        cefrLevel: 'B2',
++        latencyMs: 500,
++        accuracyPercent: 75,
++        srsBox: 3,
++        reviewedAtUtc: DateTime.utc(2026, 7, 24, 12),
++      ),
++    ]);
++
++    expect(
++      csv,
++      contains(
++        '"hello, ""world""\r\nnext",B2,500.0,75.0,3,'
++        '2026-07-24T12:00:00.000Z',
++      ),
++    );
++  });
++
++  test('generateCsvReport uses RFC 4180 CRLF record terminators', () {
++    final csv = service.generateCsvReport([
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: DateTime.utc(2026, 7, 24, 12),
++      ),
++    ]);
++
++    expect(csv, contains('\r\n'));
++    expect(csv.replaceAll('\r\n', ''), isNot(contains('\n')));
++  });
++
++  test('generateCsvReport neutralizes spreadsheet formulas in text fields', () {
++    for (final prefix in ['=', '+', '-', '@']) {
++      final csv = service.generateCsvReport([
++        ResearchExportRow(
++          word: '${prefix}SUM(A1:A2)',
++          cefrLevel: 'C1',
++          latencyMs: 500,
++          accuracyPercent: 75,
++          srsBox: 3,
++          reviewedAtUtc: DateTime.utc(2026, 7, 24, 12),
++        ),
++      ]);
++
++      expect(csv, contains("'${prefix}SUM(A1:A2),C1,"));
++      expect(csv, isNot(contains('\n${prefix}SUM(A1:A2),C1,')));
++    }
++  });
++
++  test(
++    'generateCsvReport rejects missing values through required typed rows',
++    () {
++      expect(
++        () => Function.apply(ResearchExportRow.new, const [], const {
++          #word: 'apple',
++          #cefrLevel: 'A1',
++          #latencyMs: 1200.0,
++          #accuracyPercent: 100.0,
++          #srsBox: 2,
++        }),
++        throwsA(isA<NoSuchMethodError>()),
++      );
++    },
++  );
++
++  test('generateCsvReport rejects every invalid row value', () {
++    final validTime = DateTime.utc(2026, 7, 24, 12);
++    final invalidRows = <ResearchExportRow>[
++      ResearchExportRow(
++        word: ' ',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: List.filled(101, 'a').join(),
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A0',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: double.nan,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 0,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: double.infinity,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: -0.1,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100.1,
++        srsBox: 2,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 0,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 6,
++        reviewedAtUtc: validTime,
++      ),
++      ResearchExportRow(
++        word: 'apple',
++        cefrLevel: 'A1',
++        latencyMs: 1200,
++        accuracyPercent: 100,
++        srsBox: 2,
++        reviewedAtUtc: DateTime(2026, 7, 24, 12),
++      ),
++    ];
++
++    for (final row in invalidRows) {
++      expect(
++        () => service.generateCsvReport([row]),
++        throwsA(isA<InvalidResearchExportData>()),
++      );
++    }
+   });
+ }
+diff --git a/test/services/research_report_pdf_exporter_service_test.dart b/test/services/research_report_pdf_exporter_service_test.dart
+index 6863817..7648658 100644
+--- a/test/services/research_report_pdf_exporter_service_test.dart
++++ b/test/services/research_report_pdf_exporter_service_test.dart
+@@ -1,24 +1,145 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/services/research_report_pdf_exporter_service.dart';
+ 
+ void main() {
+   const service = ResearchReportPdfExporterService();
+ 
+-  test('calculateAcademicStats calculates mean and SD correctly', () {
+-    final records = [
+-      {'latencyMs': 2000},
+-      {'latencyMs': 1000},
+-    ];
++  const observations = [
++    ResearchObservation(
++      preTestScore: 60,
++      postTestScore: 80,
++      preLatencyMs: 3000,
++      postLatencyMs: 1500,
++    ),
++    ResearchObservation(
++      preTestScore: 70,
++      postTestScore: 90,
++      preLatencyMs: 1000,
++      postLatencyMs: 500,
++    ),
++  ];
++
++  test(
++    'calculateAcademicStats rejects empty research observations explicitly',
++    () {
++      expect(
++        () => service.calculateAcademicStats(const []),
++        throwsA(isA<InsufficientData>()),
++      );
++    },
++  );
++
++  test('calculateAcademicStats derives statistics from typed observations', () {
++    final stats = service.calculateAcademicStats(observations);
+ 
+-    final stats = service.calculateAcademicStats(records);
+     expect(stats.sampleSize, 2);
+-    expect(stats.postLatencyMs, 1500.0);
++    expect(stats.preTestMean, 65.0);
++    expect(stats.preTestSd, closeTo(7.071, 0.001));
++    expect(stats.postTestMean, 85.0);
++    expect(stats.postTestSd, closeTo(7.071, 0.001));
++    expect(stats.preLatencyMs, 2000.0);
++    expect(stats.postLatencyMs, 1000.0);
++    expect(stats.latencyReductionPercentage, 50.0);
++  });
++
++  test('calculateAcademicStats rejects every malformed observation value', () {
++    final malformed = <ResearchObservation>[
++      const ResearchObservation(
++        preTestScore: double.nan,
++        postTestScore: 80,
++        preLatencyMs: 100,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: double.infinity,
++        preLatencyMs: 100,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: -0.1,
++        postTestScore: 80,
++        preLatencyMs: 100,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 100.1,
++        preLatencyMs: 100,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 80,
++        preLatencyMs: 0,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 80,
++        preLatencyMs: double.negativeInfinity,
++        postLatencyMs: 100,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 80,
++        preLatencyMs: 100,
++        postLatencyMs: -1,
++      ),
++      const ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 80,
++        preLatencyMs: 100,
++        postLatencyMs: double.nan,
++      ),
++    ];
++
++    for (final observation in malformed) {
++      expect(
++        () => service.calculateAcademicStats([observation, observations.first]),
++        throwsA(isA<InvalidResearchData>()),
++      );
++    }
+   });
+ 
+-  test('generateAcademicPdfReport formats research report text', () {
+-    final report = service.generateAcademicPdfReport([]);
+-    expect(report.contains('LEXIQUEST RESEARCH SUMMARY REPORT'), true);
+-    expect(report.contains('Sample Size (N)'), true);
+-    expect(report.contains('Paired-Samples t-Test'), true);
++  test(
++    'generateAcademicPdfReport labels paired N and sample SD explicitly',
++    () {
++      final report = service.generateAcademicPdfReport(observations);
++
++      expect(report, contains('Paired Observations (N): 2'));
++      expect(report, isNot(contains('participants')));
++      expect(report, contains('Sample SD (N-1)'));
++      expect(report, contains('65.0%'));
++      expect(report, contains('85.0%'));
++      expect(report, contains('2000 ms'));
++      expect(report, contains('1000 ms'));
++      expect(report, isNot(contains('Expected Significance')));
++      expect(report, isNot(contains('p <')));
++      expect(report, isNot(contains('Paired-Samples t-Test')));
++    },
++  );
++
++  test('generateAcademicPdfReport formats a score decline with one sign', () {
++    const decliningObservations = [
++      ResearchObservation(
++        preTestScore: 80,
++        postTestScore: 60,
++        preLatencyMs: 1000,
++        postLatencyMs: 1200,
++      ),
++      ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 60,
++        preLatencyMs: 1000,
++        postLatencyMs: 1200,
++      ),
++    ];
++
++    final report = service.generateAcademicPdfReport(decliningObservations);
++
++    expect(report, contains('Mean Score Change: -10.0 percentage points'));
++    expect(report, isNot(contains('Mean Score Gain')));
++    expect(report, isNot(contains('+-10.0')));
+   });
+ }
