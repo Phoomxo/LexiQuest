@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_projection_rebuilder.dart';
+import 'learning_session_lifecycle_observer.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
@@ -15,13 +16,22 @@ final class DriftLearningRepository implements LearningRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
+    this.lifecycleObserver,
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,
        ),
-       rewardProjections = DriftRewardProjectionRebuilder(database);
+       rewardProjections = DriftRewardProjectionRebuilder(database) {
+    if (lifecycleObserver != null &&
+        !identical(database, lifecycleObserver!.database)) {
+      throw ArgumentError(
+        'Learning and its lifecycle observer must share a database',
+      );
+    }
+  }
 
   final db.AppDatabase database;
+  final LearningSessionLifecycleObserver? lifecycleObserver;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
 
@@ -65,20 +75,50 @@ final class DriftLearningRepository implements LearningRepository {
   @override
   Future<void> startSession(LearningSessionDraft session) async {
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
-    await database
-        .into(database.learningSessions)
-        .insert(
-          db.LearningSessionsCompanion.insert(
-            id: _required(session.id, 'id'),
-            ownerId: _required(session.ownerId, 'ownerId'),
-            activityType: _required(session.activityType, 'activityType'),
-            state: 'active',
-            startedAtUtcMs: startedAt.millisecondsSinceEpoch,
-            appVersion: _required(session.appVersion, 'appVersion'),
-            buildId: _required(session.buildId, 'buildId'),
-          ),
-          mode: InsertMode.insertOrIgnore,
+    final id = _required(session.id, 'id');
+    final owner = _required(session.ownerId, 'ownerId');
+    final activity = _required(session.activityType, 'activityType');
+    final app = _required(session.appVersion, 'appVersion');
+    final build = _required(session.buildId, 'buildId');
+    await database.transaction(() async {
+      await database
+          .into(database.learningSessions)
+          .insert(
+            db.LearningSessionsCompanion.insert(
+              id: id,
+              ownerId: owner,
+              activityType: activity,
+              state: 'active',
+              startedAtUtcMs: startedAt.millisecondsSinceEpoch,
+              appVersion: app,
+              buildId: build,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+      final inserted =
+          (await database
+                  .customSelect('SELECT changes() AS affected')
+                  .getSingle())
+              .read<int>('affected') ==
+          1;
+      final row = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(id))).getSingleOrNull();
+      if (row == null ||
+          row.ownerId != owner ||
+          row.activityType != activity ||
+          row.startedAtUtcMs != startedAt.millisecondsSinceEpoch ||
+          row.appVersion != app ||
+          row.buildId != build) {
+        throw StateError('session id already exists with different identity');
+      }
+      final observer = lifecycleObserver;
+      if (inserted && observer != null) {
+        await _observe(
+          () => observer.accepted(LearningSessionLifecycleFact.fromRow(row)),
         );
+      }
+    });
   }
 
   @override
@@ -224,6 +264,21 @@ final class DriftLearningRepository implements LearningRepository {
           );
         }
       }
+      final observer = lifecycleObserver;
+      if (observer != null) {
+        final completed =
+            await (database.select(database.learningSessions)..where(
+                  (candidate) =>
+                      candidate.id.equals(sessionId) &
+                      candidate.ownerId.equals(ownerId),
+                ))
+                .getSingle();
+        await _observe(
+          () => observer.completed(
+            LearningSessionLifecycleFact.fromRow(completed),
+          ),
+        );
+      }
       return LearningSessionSummary(
         id: row.id,
         state: 'completed',
@@ -232,6 +287,14 @@ final class DriftLearningRepository implements LearningRepository {
         score: score,
       );
     });
+  }
+
+  Future<void> _observe(Future<void> Function() callback) async {
+    try {
+      await database.transaction(callback, requireNew: true);
+    } on Object {
+      // The research savepoint rolls back while canonical learning continues.
+    }
   }
 
   @override
