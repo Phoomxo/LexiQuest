@@ -16,6 +16,8 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
+import '../../support/experiment_assignment_fixture.dart';
+
 void main() {
   late AppDatabase database;
   final now = DateTime.utc(2026, 10, 24, 12);
@@ -78,6 +80,7 @@ void main() {
       );
       for (final table in const [
         'research_consents',
+        'experiment_assignments',
         'events_v2',
         'outbox_operations',
       ]) {
@@ -482,6 +485,8 @@ Future<void> _seed(AppDatabase database) async {
     "VALUES ('consent-research-a', 'owner-a', 1, 'accepted', $now), "
     "('consent-research-b', 'owner-b', 1, 'accepted', $now)",
   );
+  await seedOwnerAssignment(database, 'owner-a');
+  await seedOwnerAssignment(database, 'owner-b');
   await database.customStatement('''
     INSERT INTO events_v2 (
       event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,

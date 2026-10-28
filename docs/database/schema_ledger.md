@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v11** with 29 tables, matching `AppDatabase.schemaVersion`. The former
+**v12** with 30 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -181,10 +181,10 @@ claimed.
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
-| v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Reserved 2026-10-29 |
+| v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
 | v13+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11 or the reserved v12. Reserve the next available version, starting at v13,
+> **Rule:** Do not reuse v10, v11 or v12. Reserve the next available version, starting at v13,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -195,16 +195,18 @@ claimed.
 
 **Owner:** Root integration; assignment admission worker owns separate domain/repository tests.
 
-**Status:** RESERVED. Current executable schema remains v11/29 tables until this
-migration is implemented and verified. This reservation does not authorize
-research enrollment, collection, upload or deployment.
+**Status:** IMPLEMENTED LOCALLY. Current executable schema is v12/30 tables.
+Populated migration, owner lifecycle and signed admission checks pass within a
+655-test integration suite; analysis reports no issues. Full regression and APK
+attestation follow on the frozen source. This entry does not authorize research
+enrollment, collection, upload or deployment.
 
 Add `experiment_assignments` with seven columns: `id`, `owner_id`,
 `experiment_id`, `experiment_version`, `cohort`, `protocol_version`,
 `assigned_at_utc_ms`. The primary ID is `experiment-assignment:` plus SHA-256 of
 the UTF-8 JSON tuple `[ownerId, experimentId, experimentVersion]`. Require an
 owner foreign key and uniqueness of `(owner_id, experiment_id, experiment_version)`.
-The resulting schema will have 30 tables; the approved feature catalog remains
+The resulting schema has 30 tables; the approved feature catalog remains
 8 domains and 44 capabilities.
 
 Only the admission repository may create this local fact. It requires matching

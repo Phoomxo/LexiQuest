@@ -33,6 +33,7 @@ abstract interface class OwnerUpgradeRepository {
 
 const Set<String> ownerUpgradeInventory = <String>{
   'research_consents',
+  'experiment_assignments',
   'vocabulary_categories',
   'vocabulary_words',
   'vocabulary_imports',

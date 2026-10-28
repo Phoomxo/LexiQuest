@@ -7,6 +7,8 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account_deletion/data/drift_account_snapshot.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 
+import '../../support/experiment_assignment_fixture.dart';
+
 void main() {
   late AppDatabase database;
   final now = DateTime.utc(2026, 10, 24, 12);
@@ -32,6 +34,8 @@ void main() {
       "VALUES ('consent-research-a', 'owner-a', 1, 'accepted', 1), "
       "('consent-research-b', 'owner-b', 1, 'accepted', 2)",
     );
+    await seedOwnerAssignment(database, 'owner-a');
+    await seedOwnerAssignment(database, 'owner-b');
     await database.customStatement('''
       INSERT INTO events_v2 (
         event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
@@ -72,11 +76,18 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 11);
+      expect(json['schemaVersion'], 12);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
       expect((data['vocabulary_categories'] as List).single['id'], 'cat-a');
+      final assignment = (data['experiment_assignments'] as List).single as Map;
+      expect(assignment['owner_id'], 'owner-a');
+      expect(assignment['experiment_id'], 'synthetic-study');
+      expect(assignment['experiment_version'], 1);
+      expect(assignment['cohort'], 'standard');
+      expect(assignment['protocol_version'], 'synthetic-protocol-v1');
+      expect(assignment['assigned_at_utc_ms'], 1);
       expect(
         (data['research_consents'] as List).single['id'],
         'consent-research-a',

@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../research/domain/experiment_assignment.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../domain/owner_upgrade.dart';
 import 'drift_owner_write_coordinator.dart';
@@ -87,6 +88,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           target.id,
           upgradedAt,
         );
+        await _mergeExperimentAssignments(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
         await _moveOwnerRows(source.id, target.id);
         await _rebuildLearningProjections(target.id);
@@ -555,8 +557,101 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     return conflicts;
   }
 
+  Future<void> _mergeExperimentAssignments(
+    String sourceId,
+    String targetId,
+  ) async {
+    final rows = await _database
+        .customSelect(
+          'SELECT * FROM experiment_assignments WHERE owner_id IN (?, ?) '
+          'ORDER BY owner_id, experiment_id, experiment_version',
+          variables: [Variable<String>(sourceId), Variable<String>(targetId)],
+        )
+        .get();
+    final source = <QueryRow>[];
+    final target = <(String, int), QueryRow>{};
+    for (final row in rows) {
+      final owner = row.read<String>('owner_id');
+      final experiment = row.read<String>('experiment_id');
+      final version = row.read<int>('experiment_version');
+      if (experiment.trim().isEmpty ||
+          version <= 0 ||
+          row.read<String>('cohort').trim().isEmpty ||
+          row.read<String>('protocol_version').trim().isEmpty ||
+          row.read<int>('assigned_at_utc_ms') < 0 ||
+          row.read<String>('id') !=
+              experimentAssignmentId(
+                ownerId: owner,
+                experimentId: experiment,
+                experimentVersion: version,
+              )) {
+        throw StateError('invalid persisted experiment assignment');
+      }
+      if (owner == sourceId) {
+        source.add(row);
+      } else {
+        target[(experiment, version)] = row;
+      }
+    }
+    for (final row in source) {
+      final experiment = row.read<String>('experiment_id');
+      final version = row.read<int>('experiment_version');
+      final id = experimentAssignmentId(
+        ownerId: targetId,
+        experimentId: experiment,
+        experimentVersion: version,
+      );
+      final duplicate = target[(experiment, version)];
+      final occupied = await _database
+          .customSelect(
+            'SELECT owner_id FROM experiment_assignments WHERE id = ?',
+            variables: [Variable<String>(id)],
+          )
+          .getSingleOrNull();
+      if (occupied != null &&
+          (occupied.read<String>('owner_id') != targetId ||
+              duplicate == null)) {
+        throw StateError('experiment assignment ID belongs to another fact');
+      }
+      if (duplicate != null) {
+        if (row.read<String>('cohort') != duplicate.read<String>('cohort') ||
+            row.read<String>('protocol_version') !=
+                duplicate.read<String>('protocol_version') ||
+            row.read<int>('assigned_at_utc_ms') !=
+                duplicate.read<int>('assigned_at_utc_ms')) {
+          throw StateError(
+            'experiment assignment facts conflict during owner merge',
+          );
+        }
+        await _database.customUpdate(
+          'DELETE FROM experiment_assignments WHERE id = ? AND owner_id = ?',
+          variables: [
+            Variable<String>(row.read<String>('id')),
+            Variable<String>(sourceId),
+          ],
+          updates: {_database.experimentAssignments},
+        );
+      } else {
+        await _database.customUpdate(
+          'UPDATE experiment_assignments SET id = ?, owner_id = ? '
+          'WHERE id = ? AND owner_id = ?',
+          variables: [
+            Variable<String>(id),
+            Variable<String>(targetId),
+            Variable<String>(row.read<String>('id')),
+            Variable<String>(sourceId),
+          ],
+          updates: {_database.experimentAssignments},
+        );
+      }
+    }
+  }
+
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
+      if (table == 'experiment_assignments') {
+        continue;
+      }
       await _updateOwner(table, sourceId, targetId);
     }
     await _database.customUpdate(

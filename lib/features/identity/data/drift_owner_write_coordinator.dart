@@ -22,6 +22,8 @@ final class DriftOwnerWriteCoordinator implements OwnerWriteCoordinator {
   final DateTime Function() nowUtc;
   final String Function() _nonceGenerator;
 
+  db.AppDatabase get database => _database;
+
   @override
   Future<T> writeForActiveOwner<T>({
     required String expectedOwnerId,

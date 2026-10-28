@@ -8,7 +8,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 
 void main() {
-  test('v11 adds only evidence metadata to all populated v10 facts', () async {
+  test('v10 facts retain frozen v11 evidence in the current schema', () async {
     final before = <String, List<Map<String, Object?>>>{};
     final sql = File('test/fixtures/schema_v10.sql').readAsStringSync();
     expect(sql, isNot(contains('evidence_context_json')));
@@ -67,9 +67,13 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final version = await database
         .customSelect('PRAGMA user_version')
         .getSingle();
-    expect(version.read<int>('user_version'), 11);
+    expect(version.read<int>('user_version'), 12);
     expect(before, hasLength(29));
-    expect(database.allTables, hasLength(29));
+    expect(database.allTables, hasLength(30));
+    expect(
+      await database.customSelect('SELECT * FROM experiment_assignments').get(),
+      isEmpty,
+    );
     for (final entry in before.entries) {
       final rows = await database
           .customSelect('SELECT * FROM "${entry.key}"')
@@ -118,20 +122,17 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     expect(context.researchConsentVersion, isNull);
   });
 
-  test(
-    'new v11 databases include metadata without adding owner tables',
-    () async {
-      final database = AppDatabase(NativeDatabase.memory());
-      addTearDown(database.close);
-      final columns = await database
-          .customSelect('PRAGMA table_info(answer_attempts)')
-          .get();
-      expect(database.schemaVersion, 11);
-      expect(database.allTables, hasLength(29));
-      expect(
-        columns.map((row) => row.read<String>('name')),
-        containsAll(['evidence_class', 'evidence_context_json']),
-      );
-    },
-  );
+  test('new databases retain the v11 answer evidence metadata', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final columns = await database
+        .customSelect('PRAGMA table_info(answer_attempts)')
+        .get();
+    expect(database.schemaVersion, 12);
+    expect(database.allTables, hasLength(30));
+    expect(
+      columns.map((row) => row.read<String>('name')),
+      containsAll(['evidence_class', 'evidence_context_json']),
+    );
+  });
 }

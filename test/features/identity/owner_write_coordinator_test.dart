@@ -11,6 +11,8 @@ import 'package:vocab_learning_app/features/account_deletion/domain/account_dele
 import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 
+import '../../support/experiment_assignment_fixture.dart';
+
 final _now = DateTime.utc(2026, 10, 28, 12);
 const _owner = 'synthetic-private-owner-a';
 const _uid = 'synthetic-private-firebase-a';
@@ -906,6 +908,7 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _insertResearchArtifacts(AppDatabase database) async {
+  await seedOwnerAssignment(database, _owner);
   await database.customStatement(
     'INSERT INTO research_consents '
     '(id, owner_id, consent_version, consent_state, decided_at_utc_ms) '
@@ -931,7 +934,12 @@ Future<void> _insertResearchArtifacts(AppDatabase database) async {
 }
 
 Future<void> _expectResearchCounts(AppDatabase database, int count) async {
-  for (final table in ['research_consents', 'events_v2', 'outbox_operations']) {
+  for (final table in [
+    'research_consents',
+    'experiment_assignments',
+    'events_v2',
+    'outbox_operations',
+  ]) {
     final row = await database
         .customSelect('SELECT COUNT(*) AS count FROM $table')
         .getSingle();

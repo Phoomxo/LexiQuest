@@ -6,6 +6,8 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_re
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
+import '../../support/experiment_assignment_fixture.dart';
+
 void main() {
   late AppDatabase database;
   late DriftOwnerUpgradeRepository repository;
@@ -447,6 +449,7 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  await seedOwnerAssignment(database, 'guest-owner');
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",
