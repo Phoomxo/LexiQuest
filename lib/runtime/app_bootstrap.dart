@@ -1,0 +1,286 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../ai/ai_service_factory.dart';
+import '../ai/generated_reading_content_source.dart';
+import '../config/app_config.dart';
+import '../firebase_options.dart';
+import '../learning/adaptive_associative_scheduler.dart';
+import '../learning/association_prompt.dart';
+import '../learning/associative_memory.dart';
+import '../learning/associative_reading_coordinator.dart';
+import '../learning/reading_content_source.dart';
+import '../learning/secure_id_generator.dart';
+import '../learning/storage/drift_learning_repository.dart';
+import '../learning/storage/learning_database_factory.dart';
+import '../learning/vocabulary_mixer.dart';
+import '../progress/local_progress_repository.dart';
+import '../progress/firebase_progress_remote_writer.dart';
+import '../progress/firebase_purchase_remote_writer.dart';
+import '../progress/progress_remote_writer.dart';
+import '../progress/progress_repository.dart';
+import '../progress/progress_sync_service.dart';
+import '../progress/purchase_remote_writer.dart';
+import '../services/guest_session_service.dart';
+import '../voice/reading_voice_enrichment.dart';
+import '../voice/voice_service_factory.dart';
+import 'app_build_info.dart';
+import 'app_dependencies.dart';
+import 'app_runtime_status.dart';
+import 'learning_dependencies.dart';
+import 'learning_feature_flags.dart';
+import 'supabase_client_config.dart';
+
+typedef RuntimeInitializer = Future<void> Function();
+typedef AppConfigLoader = AppConfig Function();
+typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
+
+// Public client identifiers, not server credentials. The Supabase URL keeps a
+// public default, but the publishable key must be supplied per build.
+const _productionSupabaseUrl = String.fromEnvironment(
+  'LEXIQUEST_SUPABASE_URL',
+  defaultValue: 'https://jkiyfnlegmhodyxpfwpc.supabase.co',
+);
+const _productionSupabasePublishableKey = String.fromEnvironment(
+  'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
+);
+
+bool _productionSupabaseInitialized = false;
+
+Future<void> _initializeFirebaseProduction() async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+    );
+  } else if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS)) {
+    await FirebaseAppCheck.instance.activate(
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+    );
+  }
+}
+
+Future<void> _initializeSupabaseProduction() async {
+  if (_productionSupabaseInitialized) return;
+  final publishableKey = requireSupabasePublishableKey(
+    _productionSupabasePublishableKey,
+  );
+  await Supabase.initialize(
+    url: _productionSupabaseUrl,
+    publishableKey: publishableKey,
+  );
+  _productionSupabaseInitialized = true;
+}
+
+Future<ProgressRepository> _loadProgressRepositoryProduction() async {
+  return LocalProgressRepository(await SharedPreferences.getInstance());
+}
+
+Future<LearningDependencies> _loadLearningDependenciesProduction(
+  AppConfig? config,
+  LearningFeatureFlags flags,
+) async {
+  final database = await LearningDatabaseFactory().open();
+  const buildInfo = AppBuildInfo.fromEnvironment();
+  ManagedAiService? generatedService;
+  ManagedVoiceService? voiceService;
+  try {
+    final repository = DriftLearningRepository(database);
+    final curatedSource = OfflineCuratedReadingContentSource();
+    ReadingContentSource contentSource = curatedSource;
+    if (flags.generatedContentEnabled && config != null) {
+      generatedService = AiServiceFactory.create(config: config);
+      contentSource = GeneratedReadingContentSource(
+        provider: generatedService,
+        curatedFallback: curatedSource,
+      );
+    }
+
+    var readingVoice = const ReadingVoiceEnrichment.disabled();
+    if (flags.voiceEnrichmentEnabled && config != null) {
+      voiceService = VoiceServiceFactory.create(config: config);
+      readingVoice = ReadingVoiceEnrichment(provider: voiceService);
+    }
+
+    return LearningDependencies(
+      repository: repository,
+      reader: repository,
+      associativeMemory: AssociativeMemory(
+        repository: repository,
+        reader: repository,
+        promptCatalog: CuratedAssociationPromptCatalog.offlineDefaults(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
+      readingCoordinator: AssociativeReadingCoordinator(
+        repository: repository,
+        reader: repository,
+        contentSource: contentSource,
+        mixer: const VersionedVocabularyMixer(),
+        scheduler: const AdaptiveAssociativeScheduler(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      readingVoice: readingVoice,
+      close: () => _closeLearningResources(
+        database.close,
+        generatedService?.dispose,
+        voiceService?.dispose,
+      ),
+    );
+  } on Object {
+    await _closeLearningResources(
+      database.close,
+      generatedService?.dispose,
+      voiceService?.dispose,
+    );
+    rethrow;
+  }
+}
+
+Future<void> _closeLearningResources(
+  Future<void> Function() closeDatabase,
+  Future<void> Function()? closeGeneratedService,
+  Future<void> Function()? closeVoiceService,
+) async {
+  Object? firstError;
+  StackTrace? firstStackTrace;
+  for (final closer in <Future<void> Function()?>[
+    closeVoiceService,
+    closeGeneratedService,
+    closeDatabase,
+  ]) {
+    if (closer == null) continue;
+    try {
+      await closer();
+    } on Object catch (error, stackTrace) {
+      firstError ??= error;
+      firstStackTrace ??= stackTrace;
+    }
+  }
+  if (firstError != null) {
+    Error.throwWithStackTrace(firstError, firstStackTrace!);
+  }
+}
+
+final class AppBootstrap {
+  const AppBootstrap({
+    required this.initializeFirebase,
+    required this.initializeSupabase,
+    required this.loadConfig,
+    required this.guestSessionService,
+    this.loadProgressRepository = _loadProgressRepositoryProduction,
+    this.progressRemoteWriter,
+    this.purchaseRemoteWriter,
+    this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+    this.loadLearningDependencies = _loadLearningDependenciesProduction,
+  });
+
+  factory AppBootstrap.production() {
+    return AppBootstrap(
+      initializeFirebase: _initializeFirebaseProduction,
+      initializeSupabase: _initializeSupabaseProduction,
+      loadConfig: AppConfig.fromEnvironment,
+      guestSessionService: FirebaseGuestSessionService.production(),
+      loadProgressRepository: _loadProgressRepositoryProduction,
+      progressRemoteWriter: FirebaseProgressRemoteWriter(),
+      purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
+    );
+  }
+
+  final RuntimeInitializer initializeFirebase;
+  final RuntimeInitializer initializeSupabase;
+  final AppConfigLoader loadConfig;
+  final GuestSessionService guestSessionService;
+  final ProgressRepositoryLoader loadProgressRepository;
+  final ProgressRemoteWriter? progressRemoteWriter;
+  final PurchaseRemoteWriter? purchaseRemoteWriter;
+  final LearningFeatureFlags featureFlags;
+  final LearningDependenciesLoader loadLearningDependencies;
+
+  Future<AppDependencies> initialize() async {
+    final firebase = await _availability(initializeFirebase);
+    final supabase = await _availability(initializeSupabase);
+    final config = _loadConfig();
+    final progressRepository = await _loadProgressRepository();
+    final progressSyncService =
+        progressRepository == null || progressRemoteWriter == null
+        ? null
+        : ProgressSyncService(
+            repository: progressRepository,
+            remoteWriter: progressRemoteWriter!,
+          );
+    final learningDependencies = featureFlags.associativeReadingEnabled
+        ? await _loadLearningDependencies(config)
+        : null;
+
+    return AppDependencies(
+      runtimeStatus: AppRuntimeStatus(
+        firebase: firebase,
+        supabase: supabase,
+        backends: config == null
+            ? RuntimeAvailability.unavailable
+            : RuntimeAvailability.ready,
+      ),
+      config: config,
+      guestSessionService: guestSessionService,
+      buildInfo: const AppBuildInfo.fromEnvironment(),
+      progressRepository: progressRepository,
+      progressSyncService: progressSyncService,
+      purchaseRemoteWriter: purchaseRemoteWriter,
+      learningDependencies: learningDependencies,
+    );
+  }
+
+  Future<RuntimeAvailability> _availability(
+    RuntimeInitializer initializer,
+  ) async {
+    try {
+      await initializer();
+      return RuntimeAvailability.ready;
+    } catch (_) {
+      return RuntimeAvailability.unavailable;
+    }
+  }
+
+  AppConfig? _loadConfig() {
+    try {
+      return loadConfig();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<ProgressRepository?> _loadProgressRepository() async {
+    try {
+      return await loadProgressRepository();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<LearningDependencies?> _loadLearningDependencies(
+    AppConfig? config,
+  ) async {
+    try {
+      return await loadLearningDependencies(config, featureFlags);
+    } catch (_) {
+      return null;
+    }
+  }
+}
