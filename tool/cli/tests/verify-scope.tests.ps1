@@ -1,0 +1,75 @@
+$ErrorActionPreference = 'Stop'
+$runner = Join-Path (Split-Path $PSScriptRoot -Parent) 'verify-scope.ps1'
+$tokens = $null; $errors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($runner, [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw $errors[0] }
+foreach ($function in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+    Invoke-Expression $function.Extent.Text
+}
+$repoRoot = Split-Path (Split-Path (Split-Path $runner -Parent) -Parent) -Parent
+$scriptDir = Split-Path $runner -Parent
+$TestTargets = @(); $TestName = ''; $CliOnly = $false
+$failures = [System.Collections.Generic.List[string]]::new()
+foreach ($area in @('BackendAI','BackendVoice','BackendLM')) {
+    $pattern = Get-AreaPathPattern $area
+    if ('tool/cli/verify-scope.ps1' -notmatch $pattern) { $failures.Add("$area omits runner dependency") }
+    $command = @(Get-VerificationCommands Targeted $area)[0]
+    if ($command.Arguments -notcontains '--frozen' -or $command.Arguments -notcontains 'dev') { $failures.Add("$area lacks frozen dev environment") }
+}
+if ($failures.Count) { throw ($failures -join "`n") }
+$missing = New-CommandSpec -Name 'Missing fixture runner' -FilePath powershell -Arguments @('-File','tool/cli/does-not-exist.ps1') -SourceArea Runtime
+$rejected = $false
+try { Assert-CommandPaths @($missing) } catch { $rejected = $true }
+if (-not $rejected) { throw 'Missing command must be rejected before any suite starts' }
+
+# Exercise the actual entry point in a disposable repository. Dummy child scripts
+# count executions; no Flutter/backend/release suite is started by this fixture.
+$fixture = Join-Path $repoRoot ('build/verification/scope-contract-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path "$fixture/tool/cli/tests" -Force | Out-Null
+Copy-Item -LiteralPath $runner -Destination "$fixture/tool/cli/verify-scope.ps1"
+foreach ($name in @('r15-scope.tests.ps1','verify-scope.tests.ps1')) {
+    [IO.File]::WriteAllText("$fixture/tool/cli/tests/$name", 'Add-Content -LiteralPath (Join-Path $PSScriptRoot "../../../build/calls.txt") -Value "run"')
+}
+git -C $fixture init -q
+git -C $fixture -c user.name=Fixture -c user.email=fixture@example.invalid commit --allow-empty -qm fixture
+if ($LASTEXITCODE) { throw 'Fixture git initialization failed' }
+$head = (git -C $fixture rev-parse HEAD).Trim()
+$fixtureRunner = "$fixture/tool/cli/verify-scope.ps1"
+function Invoke-Fixture {
+    param([string[]]$Extra = @(), [bool]$ShouldPass = $true)
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $fixtureRunner -Level Subsystem -Area Runtime -CliOnly @Extra 2>&1
+    $code = $LASTEXITCODE
+    $output | Add-Content "$fixture/transcript.log"
+    if (($code -eq 0) -ne $ShouldPass) { throw "Fixture exit $code; see $fixture/transcript.log" }
+}
+function Assert-Calls([int]$Expected) {
+    $count = if (Test-Path "$fixture/build/calls.txt") { @(Get-Content "$fixture/build/calls.txt").Count } else { 0 }
+    if ($count -ne $Expected) { throw "Expected $Expected executions, got $count" }
+}
+Invoke-Fixture -Extra @('-PlanOnly')
+Assert-Calls 0
+$resultPath = "$fixture/build/verification/$head/subsystem-runtime-cli.json"
+if (Test-Path $resultPath) { throw 'Plan-only must not create executable PASS evidence' }
+Invoke-Fixture
+Assert-Calls 2
+Invoke-Fixture -Extra @('-Resume')
+Assert-Calls 2
+Add-Content "$fixture/tool/cli/tests/r15-scope.tests.ps1" '# relevant edit'
+Invoke-Fixture -Extra @('-Resume')
+Assert-Calls 4
+$prior = Get-Content $resultPath -Raw | ConvertFrom-Json
+Remove-Item -LiteralPath $prior.commands[0].Stdout
+Invoke-Fixture -Extra @('-Resume')
+Assert-Calls 5
+$prior = Get-Content $resultPath -Raw | ConvertFrom-Json
+$prior.commands[0].ExitCode = 17
+$prior | ConvertTo-Json -Depth 12 | Set-Content $resultPath
+Invoke-Fixture -Extra @('-Resume')
+Assert-Calls 6
+$old = $env:PYTEST_ADDOPTS
+try {
+    $env:PYTEST_ADDOPTS = '--g04-fixture-changed'
+    Invoke-Fixture -Extra @('-Resume')
+    Assert-Calls 8
+} finally { $env:PYTEST_ADDOPTS = $old }
+Write-Output "PASS: backend closure; plan-only zero execution; exact resume; source/environment/log/exit rejection. Fixture: $fixture"
