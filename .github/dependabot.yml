@@ -1,0 +1,110 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: pub
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: gradle
+    directory: "/android"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: uv
+    directory: "/backend/ai_api"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: uv
+    directory: "/backend/voice_api"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: uv
+    directory: "/backend/lexiquest_lm"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: "/backend/lexiquest_lm/deploy/hf_space"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: docker
+    directory: "/backend/lexiquest_lm/deploy/hf_space"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
