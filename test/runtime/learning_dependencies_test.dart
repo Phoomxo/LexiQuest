@@ -1,0 +1,196 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/learning/association_record.dart';
+import 'package:vocab_learning_app/learning/association_prompt.dart';
+import 'package:vocab_learning_app/learning/associative_memory.dart';
+import 'package:vocab_learning_app/learning/associative_reading_coordinator.dart';
+import 'package:vocab_learning_app/learning/learning_commit.dart';
+import 'package:vocab_learning_app/learning/learning_repository.dart';
+import 'package:vocab_learning_app/learning/memory_state.dart';
+import 'package:vocab_learning_app/learning/reading_content_source.dart';
+import 'package:vocab_learning_app/learning/reading_session.dart';
+import 'package:vocab_learning_app/learning/recall_attempt.dart';
+import 'package:vocab_learning_app/learning/secure_id_generator.dart';
+import 'package:vocab_learning_app/learning/sync_outbox_entry.dart';
+import 'package:vocab_learning_app/learning/vocabulary_mixer.dart';
+import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+import 'package:vocab_learning_app/runtime/learning_dependencies.dart';
+import 'package:vocab_learning_app/runtime/learning_feature_flags.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/reading_voice_enrichment.dart';
+
+class _StubGuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async {
+    return const GuestSessionFailed(GuestSessionFailure.unknown);
+  }
+}
+
+class _StubLearningStore implements LearningRepository, LearningReader {
+  @override
+  Future<CommitResult> commit(LearningCommit commit) async {
+    return CommitResult(
+      commitId: commit.commitId,
+      disposition: CommitDisposition.applied,
+      writtenRecords: commit.recordCount,
+    );
+  }
+
+  @override
+  Future<List<AssociationRecord>> readAssociations({
+    required String ownerId,
+    required String wordKey,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<MemoryState?> readMemoryState({
+    required String ownerId,
+    required String wordKey,
+  }) async {
+    return null;
+  }
+
+  @override
+  Future<List<RecallAttempt>> readRecallAttempts({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<List<SyncOutboxEntry>> readPendingOutbox({
+    required String ownerId,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<ReadingSession?> readSession({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    return null;
+  }
+}
+
+AppConfig _validConfig() => AppConfig.fromValues(
+  voiceApiUrl: 'https://voice.example.com',
+  isDebug: false,
+);
+
+AppBootstrap _bootstrap({
+  required LearningFeatureFlags featureFlags,
+  required LearningDependenciesLoader loadLearningDependencies,
+}) {
+  return AppBootstrap(
+    initializeFirebase: () async {},
+    initializeSupabase: () async {},
+    loadConfig: _validConfig,
+    guestSessionService: _StubGuestSessionService(),
+    featureFlags: featureFlags,
+    loadLearningDependencies: loadLearningDependencies,
+  );
+}
+
+void main() {
+  test('optional learning capabilities and research are closed by default', () {
+    const flags = LearningFeatureFlags();
+
+    expect(flags.associativeReadingEnabled, isFalse);
+    expect(flags.generatedContentEnabled, isFalse);
+    expect(flags.voiceEnrichmentEnabled, isFalse);
+    expect(flags.researchModeEnabled, isFalse);
+  });
+
+  test('does not open durable storage while the feature is disabled', () async {
+    var loaderCalls = 0;
+    final dependencies = await _bootstrap(
+      featureFlags: const LearningFeatureFlags(),
+      loadLearningDependencies: (config, flags) async {
+        loaderCalls++;
+        throw StateError('must not run');
+      },
+    ).initialize();
+
+    expect(loaderCalls, 0);
+    expect(dependencies.learningDependencies, isNull);
+  });
+
+  test('retains the learning ports when the feature is enabled', () async {
+    final store = _StubLearningStore();
+    final expected = LearningDependencies(
+      repository: store,
+      reader: store,
+      associativeMemory: AssociativeMemory(
+        repository: store,
+        reader: store,
+        promptCatalog: CuratedAssociationPromptCatalog(const {}),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
+      readingCoordinator: AssociativeReadingCoordinator(
+        repository: store,
+        reader: store,
+        contentSource: CuratedReadingContentSource(const []),
+        mixer: const VersionedVocabularyMixer(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
+      readingVoice: const ReadingVoiceEnrichment.disabled(),
+      close: () async {},
+    );
+    AppConfig? receivedConfig;
+    LearningFeatureFlags? receivedFlags;
+    const enabledFlags = LearningFeatureFlags(
+      associativeReadingEnabled: true,
+      generatedContentEnabled: true,
+      voiceEnrichmentEnabled: true,
+    );
+    final dependencies = await _bootstrap(
+      featureFlags: enabledFlags,
+      loadLearningDependencies: (config, flags) async {
+        receivedConfig = config;
+        receivedFlags = flags;
+        return expected;
+      },
+    ).initialize();
+
+    expect(identical(dependencies.learningDependencies, expected), isTrue);
+    expect(
+      identical(dependencies.learningDependencies?.repository, store),
+      isTrue,
+    );
+    expect(identical(dependencies.learningDependencies?.reader, store), isTrue);
+    expect(
+      identical(
+        dependencies.learningDependencies?.readingCoordinator,
+        expected.readingCoordinator,
+      ),
+      isTrue,
+    );
+    expect(receivedConfig, isNotNull);
+    expect(identical(receivedFlags, enabledFlags), isTrue);
+    expect(
+      identical(
+        dependencies.learningDependencies?.readingVoice,
+        expected.readingVoice,
+      ),
+      isTrue,
+    );
+  });
+
+  test('fails closed when durable storage cannot open', () async {
+    const sentinel = 'PRIVATE-STORAGE-PATH-7c9f3a';
+    final dependencies = await _bootstrap(
+      featureFlags: const LearningFeatureFlags(associativeReadingEnabled: true),
+      loadLearningDependencies: (config, flags) async =>
+          throw StateError(sentinel),
+    ).initialize();
+
+    expect(dependencies.learningDependencies, isNull);
+    expect(dependencies.toString(), isNot(contains(sentinel)));
+  });
+}
