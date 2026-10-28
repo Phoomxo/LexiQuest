@@ -1,6 +1,6 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `8504a202`, on 2026-10-29.
+Source: `codex/remaining-system-readiness`, through `6f88bdc5`, on 2026-10-29.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -59,7 +59,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | Ordinary progress, supplied instruments and v12 signed local assignment admission/owner lifecycle are verified. Persisted participant context, baseline/post storage/UI and collection/upload authority remain incomplete. |
+| f28 | Learning Assessment & Progress Comparison | Partial | Ordinary progress, supplied instruments, v12 signed assignment admission and v13 durable participation context/owner lifecycle are verified. Baseline/post storage, canonical session linkage, UI and collection/upload authority remain incomplete. |
 
 ## Motivation
 

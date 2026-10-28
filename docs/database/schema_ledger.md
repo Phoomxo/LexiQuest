@@ -183,9 +183,10 @@ claimed.
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
-| v14+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Reserved 2026-10-29 |
+| v15+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12 or v13. Reserve the next available version, starting at v14,
+> **Rule:** Do not reuse v10, v11, v12, v13 or v14. Reserve the next available version, starting at v15,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -196,7 +197,7 @@ claimed.
 
 **Owner:** Root integration; assignment admission worker owns separate domain/repository tests.
 
-**Status:** IMPLEMENTED LOCALLY. Current executable schema is v12/30 tables.
+**Status:** IMPLEMENTED LOCALLY in source `8504a202` at v12/30 tables.
 Populated migration, owner lifecycle and signed admission checks pass within a
 655-test integration suite. Source `8504a202` passes full Flutter 2385, analysis
 0, CLI 23 and the normal Android debug build. This entry does not authorize research
@@ -243,10 +244,10 @@ downgrade; no automatic rollback is claimed.
 **Owner:** Root integration owns schema/generated source/inventory; separate
 workers own the participation repository and signed-owner merge checks.
 
-**Status:** IMPLEMENTED LOCALLY. Executable schema is v13/31 tables. A 715-test
-integration suite and analysis pass after the late-operation-expiry correction;
-full regression/build attestation follows. Enrollment, upload and deployment
-stay disabled.
+**Status:** IMPLEMENTED LOCALLY. Executable schema is v13/31 tables. Source
+`6a49e8e7` has identical app inputs at `6f88bdc5`: integration 715, full Flutter
+2445, analysis 0, CLI 23 and the normal debug APK pass after the late-operation
+expiry correction. Enrollment, upload and deployment stay disabled.
 
 Add one `research_participation_permits` table using the approved signed model's
 20 normalized fields: `id`, `owner_id`, `local_revision`, `cloud_revision`,
@@ -282,6 +283,66 @@ backup or an explicitly tested downgrade.
 
 ---
 
+### v14 — Structured supplied-instrument motivation measurements
+
+**Reserved:** 2026-10-29
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root owns schema, generation, migration, owner inventory and populated
+lifecycle fixtures. A separate worker owns the measurement domain/repository and
+`test/support/motivation_measurement_harness.dart`. Root owns the distinct
+`test/support/motivation_measurement_fixture.dart` seed helper.
+
+**Status:** RESERVED. Current executable schema remains v13/31 tables. This adds
+two local-only tables, yielding 33 tables. No new cloud collection, outbox type,
+Research JSON export allowlist or runtime enrollment composition is authorized.
+
+`motivation_measurement_runs` has 30 fields: `id`, `owner_id`, `local_revision`,
+`permit_id`, `permit_payload_sha256`, `assignment_id`, `assignment_revision`,
+`consent_version`, `consent_decided_at_utc_ms`, `protocol_id`, `protocol_version`,
+`protocol_revision`, `treatment`, `instrument_id`, `instrument_version`,
+`instrument_revision`, `instrument_checksum_sha256`, `form_id`, `form_version`,
+`item_catalog_version`, `scoring_rule_version`, `app_version`, `build_id`,
+`database_schema_version`, `content_revision`, `evidence_policy_version`,
+`catalog_version`, `state`, `started_at_utc_ms`, `closed_at_utc_ms`.
+Require owner, signed permit and assignment FKs, positive revisions and valid
+state/timestamps. Canonical ID is `motivation:` plus SHA-256 of UTF-8 JSON
+`[ownerId, permitId, protocolId, protocolVersion, instrumentChecksum]`.
+Uniqueness of `(owner_id, assignment_id, protocol_id, protocol_version)` prevents
+silently creating a second cycle with a replacement permit.
+
+`motivation_responses` has nine fields: `id`, `owner_id`, `local_revision`,
+`run_id`, `item_id`, `item_catalog_version`, `response_code`, `ordinal_value`,
+`answered_at_utc_ms`. Require owner FK, run FK with cascade, bounded catalog
+codes, ordinal 0..100 and nonnegative time. Canonical ID is `response:` plus
+SHA-256 of UTF-8 JSON `[runId, itemId]`; unique `(owner_id, run_id, item_id)`.
+No free text, caller score, caller ordinal or caller timestamp is accepted.
+
+Use the supplied instrument's exact checksum and existing normalization formula,
+pinned as `normalized-score-v1`. Partial form scores remain null. Exact response
+replay keeps its original fact and time; changed-code replay conflicts. Terminal
+replay cannot reopen a run or change completion time. Withdrawal commits canonical
+consent denial first and then narrows existing run history without a collect grant.
+
+Every collecting mutation runs under the existing concrete owner writer and fresh
+R2 participant/actual Ed25519 receipt checks, including a final trusted-time check
+after all asynchronous reads. Timing facts must distinguish unavailable from
+conclusively no exposure. R3B must later supply committed visible exposure and
+the first accepted canonical session; generic session timestamps are insufficient.
+Do not compose collection UI before that linkage exists.
+
+Acceptance includes a normal v13 DDL fixture, populated migration preserving all
+31 tables and deletion intent, signature/consent/expiry/owner/fence races, no
+research/event/outbox growth for denied participants, immutable replay/conflicts,
+catalog and full-pin rejection, and populated export/purge/delete isolation.
+Delete responses before runs before permits before assignments. Signed-source
+owner merges remain rejected; target and same-owner signed facts remain intact.
+Missing external authority fails research closed while learning continues.
+Downgrade requires a pre-upgrade backup or an explicitly tested downgrade.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -299,6 +360,7 @@ backup or an explicitly tested downgrade.
 | 2026-10-28 | Reserved current-lineage v11 for two answer evidence metadata columns with populated-v10 and owner/sync lifecycle coverage. No research tables or rollout permission added. | Root integration |
 | 2026-10-29 | Reserved current-lineage v12 for one immutable assignment table with strict admission and populated migration/owner lifecycle checks. Runtime remains v11 until implementation; no research rollout permission added. | Root integration |
 | 2026-10-29 | Reserved current-lineage v13 for one cached signed participation table; use must reauthorize against independent current authority and preserve signed owner pins. Runtime remains v12 until implementation. | Root integration |
+| 2026-10-29 | Attested v13 and reserved v14 for two local-only supplied-instrument measurement tables with immutable responses and fresh receipts; canonical session linkage remains a separate prerequisite for UI composition. | Root integration |
 
 ---
 
