@@ -90,3 +90,21 @@ Research enrollment/upload stays disabled. Assignment, baseline/post collection,
 UI, withdrawal/revocation, upload gating and owner lifecycle remain engineering
 work. Real instrument/protocol/issuer/ethics artifacts, live model behavior,
 physical-device UAT and rollout authority remain separate requirements.
+
+## Subsequent consent unit
+
+Commit `a06c1a4c` replaces the unused synchronous consent check with versioned
+six-field snapshots. The adapter delegates to the existing consent repository;
+it introduces no SQL or writes. Bootstrap shares that same repository instance.
+An integration test proves accepted consent is visible while the default
+operation authorizer still rejects research export.
+
+Runtime and consent checks pass 117 tests, analysis reports no issues and
+independent review accepted the unit. The full-suite and APK results above
+remain evidence for source `efff26a6`; they are not relabelled as a new full
+regression or APK for the later consent commit.
+
+Before assignment writes, the next design examines actual owner/deletion
+coordination. The current sync lease and instance-local write queues are not a
+shared deletion fence. No v12 schema or assignment write path is reserved or
+implemented at this checkpoint.
