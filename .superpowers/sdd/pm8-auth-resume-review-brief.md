@@ -1,9 +1,0 @@
-# PM8 current auth review after interruption — 2026-09-07
-
-Use pm8-auth-review-brief.md requirements/scope and pm8-owner-contract.md. Previous reviewer is no longer live, so this fresh bounded review reads current full four-file packet once: pm8-auth-current-review.diff. Base3bdb5f5605e670e8b30628f3f237cd9c0d660ad9; current source is uncommitted, exact current hashes in pm8-auth-current-manifest.json. No invented head commit. Four files frozen; PM8 finalize agent owns all serialized tools and remaining source, root owns Git/docs.
-
-Read prior pm8-auth-review-report.md for ImportantI1/I2. Current source adds rejection of malformed present checkpoint and destination creation lower bound; actual five-case RED pm8-auth-review-red.log and historical GREEN169/9s pm8-auth-review-green.log exist. Prior handoff report still describes pre-fix hashes and is historical; current packet/manifest govern. Fresh covering command/results are being captured by pm8_finalize after interruption. Read these when supplied before final verdict, never infer exact argv/exit from the old expanded log alone.
-
-Assess both fixes and their valid legacy/no-checkpoint/direct-multihop/late-created destination controls. Prior accepted codec owner-bound semantics unchanged unless current diff shows otherwise. Current full scope remains authentication/capacity subset, not repository/host/wholePM8/release approval. Frozen evidence/source contracts/catalog/schema/branch/user authorization and named cross-boundary reads in original brief still apply. Review root's claims independently; do not pre-judge severity or dismiss extra discovered concrete defects.
-
-Write only pm8-auth-current-review-report.md, preserve prior report. Use installed SDD task-reviewer template, clear Spec and Quality verdicts, exact findings/file:line and verified evidence/current hashes. No Flutter/Dart/tests/scanners or Git/worktree/index mutation. Root will supply fresh test result and handle fixes.

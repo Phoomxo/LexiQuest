@@ -1,3 +1,0 @@
-param([Parameter(Mandatory)][ValidateSet('media','retry','performance')][string]$Flow,[Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Stem,[ValidateSet('debug','profile')][string]$Mode='debug')
-& "$PSScriptRoot/device-current-source-gate.ps1" -Label "$Stem-build" -Executable 'C:/Users/Phet/AppData/Local/Programs/flutter/bin/flutter.bat' -ArgumentList @('build','apk',("--"+$Mode),'--no-pub','--target-platform','android-arm64','--target','.superpowers/sdd/device-isolated-suite.dart',("--dart-define=LEXIQUEST_DEVICE_FLOW="+$Flow),'--dart-define=LEXIQUEST_VERSION=1.0.0+14',("--dart-define=LEXIQUEST_BUILD_ID="+$Stem))
-exit $LASTEXITCODE

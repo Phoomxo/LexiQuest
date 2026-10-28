@@ -1,3 +1,0 @@
-$ErrorActionPreference='Stop'
-& "$PSScriptRoot/device-run-gate.ps1" -SourceCommit '1875a61854490e0493cc084bffb705f5d3bd4b0b' -CheckoutCommit '788e90e62b1694c20945734787723c168b6a6ab2' -SourceFingerprint '50ddab9318080e5dd7cd4b640cfb63dbbf52fb9613d7d61fa8064a59132d22fc' -Label 'pair-shell-device-suite-build' -Executable 'flutter' -ArgumentList @('build','apk','--debug','--no-pub','--target-platform','android-arm64','--target','.superpowers/sdd/device-pair-suite.dart','--dart-define=LEXIQUEST_VERSION=1.0.0+14','--dart-define=LEXIQUEST_BUILD_ID=pair-suite-788e90e6')
-exit $LASTEXITCODE
