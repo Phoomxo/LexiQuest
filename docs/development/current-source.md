@@ -1,6 +1,6 @@
 # Current source and retained artifacts
 
-Updated 2026-10-28. This index identifies the audit fixes and continuing system integration. It does not declare a production rollout.
+Updated 2026-10-29. This index identifies the audit fixes and continuing system integration. It does not declare a production rollout.
 
 | Item | Location | Disposition |
 | --- | --- | --- |
@@ -9,7 +9,9 @@ Updated 2026-10-28. This index identifies the audit fixes and continuing system 
 | Remaining-system plan | [Complete the remaining LexiQuest systems](../superpowers/plans/2026-10-28-unfinished-system-integration.md) | Current execution board and acceptance checks. |
 | Capability coverage | [44-capability runtime matrix](../field/2026-10-28-feature-readiness-matrix.md) | Source-backed connected/partial/missing states; not production or UAT certification. |
 | Verified v11 integration | [Evidence metadata checkpoint](../field/2026-10-28-remaining-systems-wave2.md) | Source `efff26a6`, Flutter 2191, analysis 0, rules 45, CLI 23 and Android debug pass. |
-| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Build ID `efff26a6`, debug `1.0.0+1`; not installed or published. Hash and scope are in the v11 checkpoint. |
+| Verified motion/owner integration | [Wave 3 checkpoint](../field/2026-10-29-remaining-systems-wave3.md) | Application source `26952596`: Flutter 2308, analysis 0 and normal Android debug build passed. |
+| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `26952596`, debug `1.0.0+1`; not installed or published. Its hash and source trees are recorded in the wave 3 checkpoint. |
+| Reduced Motion | Commit `0eedc90b` | Theme/motion persistence, OS accessibility settings, route/card/chat/sheet consumers; focused 153 tests and analysis pass. Android light 100% settings fixture is readable; dark/200% native checks remain unverified after emulator failure. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
 | Superseded-file cleanup | [2026-10-28 cleanup round 2](../field/2026-10-28-storage-cleanup-round2.md) | Another 51.572 GiB net reclaimed. GitHub snapshots cover 39 old worktrees; 9 local worktrees removed. |
@@ -24,3 +26,11 @@ Updated 2026-10-28. This index identifies the audit fixes and continuing system 
 The latest cleanup follows the user's explicit instruction to delete superseded versions after Git backup. Old generated evidence, packages and inactive Python environments may be removed; current source, +18 baseline, model sources and signing material remain. Link-related approval blocks leave 30 archived old checkouts in place. The 56 native build runs whose removal was previously denied remain outside the cleanup allowlist. See the round-2 report for exact retained and blocked paths.
 
 Engineering tests, a signed field build, human UAT, production infrastructure and research authorization have separate completion states. Research enrollment/upload and production rollout remain disabled until their existing gates are satisfied.
+
+The disposable `emulator-5568` session failed after its light settings capture.
+Automatic tool approval rejected the combined command to stop its two owned
+processes and remove its temporary VM and preview APK, stating `blocked by
+policy`. No cleanup retry was made. Those artifacts remain under
+`D:\LexiQuest-Storage\maintenance\2026-10-28\remaining-systems\motion-native-a9595bdb`
+and `visual-checks\reduced-motion-preview.apk`; the visual manifest records
+the exact scope and retained evidence. No new reclaimed-space claim includes them.

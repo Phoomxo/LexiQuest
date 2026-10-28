@@ -1,6 +1,6 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `efff26a6`, on 2026-10-28.
+Source: `codex/remaining-system-readiness`, through `26952596`, on 2026-10-29.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -9,7 +9,7 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 9 connected runtime capabilities, 20 partial capabilities and 15
+There are 10 connected runtime capabilities, 19 partial capabilities and 15
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
@@ -80,7 +80,7 @@ capability still needs the applicable acceptance and release checks.
 | f36 | Personal Learning Profile | Partial | Profile settings contain display name and metrics. Editable learning preferences/goals are absent. |
 | f37 | Recommendation Panel | Connected | Choose Mode and Weakness offer rule-based due/weakness/quiz recommendations and targeted practice. |
 | f38 | Accessibility | Partial | Several flows have adaptive layouts, semantics, input alternatives and text-scale checks. Coverage is incomplete; physical TalkBack is unverified. |
-| f39 | Motion & Theme Controls | Partial | Appearance saves System/Light/Dark. Reduced Motion control is absent. |
+| f39 | Motion & Theme Controls | Connected | Commit `0eedc90b` wires saved theme/Reduced Motion, OS accessibility propagation and route/card/chat/sheet consumers. Focused 153 tests and Android light 100% settings fixture pass; native dark/200% and hardware gestures remain release checks. |
 
 ## Local operation and rollout
 

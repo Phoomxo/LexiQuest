@@ -181,10 +181,55 @@ claimed.
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
-| v12+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Reserved 2026-10-29 |
+| v13+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10 or v11. Reserve the next available version, starting at v12,
+> **Rule:** Do not reuse v10, v11 or the reserved v12. Reserve the next available version, starting at v13,
 > through a separate approved entry before writing migration code.
+
+### v12 — Authorized local experiment assignments
+
+**Reserved:** 2026-10-29
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root integration; assignment admission worker owns separate domain/repository tests.
+
+**Status:** RESERVED. Current executable schema remains v11/29 tables until this
+migration is implemented and verified. This reservation does not authorize
+research enrollment, collection, upload or deployment.
+
+Add `experiment_assignments` with seven columns: `id`, `owner_id`,
+`experiment_id`, `experiment_version`, `cohort`, `protocol_version`,
+`assigned_at_utc_ms`. The primary ID is `experiment-assignment:` plus SHA-256 of
+the UTF-8 JSON tuple `[ownerId, experimentId, experimentVersion]`. Require an
+owner foreign key and uniqueness of `(owner_id, experiment_id, experiment_version)`.
+The resulting schema will have 30 tables; the approved feature catalog remains
+8 domains and 44 capabilities.
+
+Only the admission repository may create this local fact. It requires matching
+current P256 participation authority, concrete Ed25519 collect authorization,
+explicit protocol/instrument revision pins, trusted time, accepted versioned
+consent and the persistent active-owner/deletion boundary. Caller-supplied
+cohort, timestamps and boolean permission are not admission APIs. The timestamp
+records the first successful local admission; it is not permit issuance or a
+server assignment time. No assignment events or outbox mutations are added.
+
+Acceptance covers populated-v11 migration with existing facts unchanged,
+signature/revision/withdrawal/time rejection, current-authority unavailability,
+idempotent concurrent admission, owner/deletion races, and populated export and
+deletion isolation. Owner merge must validate canonical IDs, rekey with the
+destination owner, deduplicate only exact cohort/protocol/time matches and
+roll back the entire merge on conflict or collision. Signed participation
+documents must not be silently rewritten.
+
+Trusted time is checked at full precision after asynchronous authority checks
+and after SQLite writer acquisition. Millisecond projection is used only where
+the existing P256 contract and stored timestamp require it. Missing production
+authority adapters deny admission; synthetic authority fixtures permit local
+engineering checks. Cross-authority revocation is not claimed atomic with
+SQLite commit. Downgrade requires a pre-upgrade backup or an explicitly tested
+downgrade; no automatic rollback is claimed.
 
 ---
 
@@ -203,6 +248,7 @@ claimed.
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
 | 2026-10-28 | Reserved current-lineage v11 for two answer evidence metadata columns with populated-v10 and owner/sync lifecycle coverage. No research tables or rollout permission added. | Root integration |
+| 2026-10-29 | Reserved current-lineage v12 for one immutable assignment table with strict admission and populated migration/owner lifecycle checks. Runtime remains v11 until implementation; no research rollout permission added. | Root integration |
 
 ---
 
