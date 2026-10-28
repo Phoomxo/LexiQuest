@@ -3,7 +3,9 @@
 Source: `codex/remaining-system-readiness`, through `2c94d4a3` (v16), on
 2026-10-29. Latest full suite/APK: `4a4cbdd8`, Flutter 2728, analysis 0 and
 CLI 23. The later study-consent component passes 133 focused and 700 integration
-checks with analysis 0; it has no new full-suite/APK claim.
+checks with analysis 0; it has no new full-suite/APK claim. The later Mission
+capture component passes 65 scoped and 1380 integration cases with analysis 0;
+its production visible caller remains uncomposed.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -62,7 +64,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | Supplied instruments, signed participation, structured baseline/post storage, first-session linkage, a coded form component and exact quiz recovery are verified locally. The visible study host, both presentations, remaining neutral events, learning-outcome assessment and collection/upload authority remain incomplete. |
+| f28 | Learning Assessment & Progress Comparison | Partial | Supplied instruments, signed participation, structured baseline/post storage, exact quiz recovery, final visibility guard and canonical Mission Started/Completed are verified locally. The visible study host, both presentations, PresentationChanged, learning-outcome assessment and collection/upload authority remain incomplete. |
 
 ## Motivation
 

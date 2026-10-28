@@ -2,6 +2,12 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'motivation_study_protocol.dart';
 
+String researchEventIdentity(String opportunityId, String eventType) {
+  requireResearchCode(opportunityId);
+  requireResearchCode(eventType);
+  return 'research:${sha256.convert(utf8.encode(jsonEncode([opportunityId, eventType, 0])))}';
+}
+
 /// UUID v7 preserves milliseconds across the frozen event table's seconds mapping.
 String researchEventId(String identity, DateTime occurredAtUtc) {
   requireResearchUtc(occurredAtUtc);

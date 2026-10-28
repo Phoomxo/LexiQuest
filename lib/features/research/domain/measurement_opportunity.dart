@@ -4,9 +4,13 @@ import 'package:crypto/crypto.dart';
 
 import '../../adventure/domain/adventure_entry.dart';
 import 'motivation_study_protocol.dart';
+import 'research_event_identity.dart';
 
 const measurementPresentedEventType = 'TodayExperiencePresented';
 const measurementPresentedEventVersion = 1;
+const measurementMissionStartedEventType = 'TodayExperienceMissionStarted';
+const measurementMissionCompletedEventType = 'TodayExperienceMissionCompleted';
+const measurementMissionEventVersion = 1;
 
 final class MeasurementPresentationFact {
   const MeasurementPresentationFact({
@@ -72,7 +76,7 @@ String measurementOpportunityId({
     'opportunity:${sha256.convert(utf8.encode(jsonEncode([ownerId, measurementRunId, permitId, entryAttemptId])))}';
 
 String measurementPresentedIdentity(String opportunityId) =>
-    'research:${sha256.convert(utf8.encode(jsonEncode([opportunityId, measurementPresentedEventType, 0])))}';
+    researchEventIdentity(opportunityId, measurementPresentedEventType);
 
 void validateMeasurementPresentedPayload(Map<String, Object?> payload) {
   const keys = {
@@ -97,4 +101,56 @@ void validateMeasurementPresentedPayload(Map<String, Object?> payload) {
   }
   requireMeasurementEntryId(payload['entryAttemptId']! as String);
   requireResearchCode(payload['catalogVersion']! as String);
+}
+
+String measurementMissionIdentity(String opportunityId, String eventType) {
+  if (eventType != measurementMissionStartedEventType &&
+      eventType != measurementMissionCompletedEventType) {
+    throw const FormatException('Expected a Mission event type');
+  }
+  return researchEventIdentity(opportunityId, eventType);
+}
+
+void validateMeasurementMissionStartedPayload(Map<String, Object?> payload) {
+  _validateMissionPayload(payload, 'mode');
+  if (payload['mode'] != 'meaning-quiz') {
+    throw const FormatException('Expected the accepted meaning-quiz mode');
+  }
+}
+
+void validateMeasurementMissionCompletedPayload(Map<String, Object?> payload) {
+  _validateMissionPayload(payload, 'terminalState');
+  if (payload['terminalState'] != 'completed') {
+    throw const FormatException('Expected canonical completed state');
+  }
+}
+
+void _validateMissionPayload(Map<String, Object?> payload, String field) {
+  final keys = {
+    'assignedTreatment',
+    'effectivePresentation',
+    'opportunityId',
+    'planId',
+    field,
+  };
+  if (payload.length != keys.length ||
+      !payload.keys.every(keys.contains) ||
+      TodayExperiencePresentationCodec.tryDecode(
+            payload['assignedTreatment'],
+          ) ==
+          null ||
+      TodayExperiencePresentationCodec.tryDecode(
+            payload['effectivePresentation'],
+          ) ==
+          null ||
+      payload['opportunityId'] is! String ||
+      payload['planId'] is! String ||
+      !RegExp(
+        r'^opportunity:[0-9a-f]{64}$',
+      ).hasMatch(payload['opportunityId']! as String) ||
+      !RegExp(
+        r'^quiz-plan:[0-9a-f]{64}$',
+      ).hasMatch(payload['planId']! as String)) {
+    throw const FormatException('Invalid Mission payload');
+  }
 }
