@@ -1,0 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cu128
+fastapi==0.116.1
+starlette==0.47.3
+torch==2.8.0+cu128
+torchaudio==2.8.0+cu128
+omnivoice==0.2.1
+soundfile==0.13.1

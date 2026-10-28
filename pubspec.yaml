@@ -1,0 +1,43 @@
+name: vocab_learning_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.19.0 <3.0.0'
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.4
+  firebase_storage: ^12.3.7
+  provider: ^6.1.2
+  cloud_firestore: ^5.4.4
+  google_fonts: ^6.2.1
+  speech_to_text: ^7.0.0
+  flutter_tts: ^3.5.4
+  image_picker: ^1.1.2
+  fl_chart: ^0.55.2
+  http: ^1.0.0
+  supabase_flutter: ^2.8.3  # ตรวจสอบเวอร์ชันล่าสุดใน pub.dev
+  shared_preferences: ^2.0.15
+  file_picker: ^8.3.1
+  fluttertoast: ^8.2.11
+  confetti: ^0.7.0
+  cached_network_image: ^3.3.0
+  flutter_speed_dial: ^7.0.0
+  mailer: ^6.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+
+
+flutter:
+  uses-material-design: true
