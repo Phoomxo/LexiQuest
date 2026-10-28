@@ -56,7 +56,19 @@ $entryPoints = @(
 )
 foreach ($entryPoint in $entryPoints) {
     $content = [System.IO.File]::ReadAllText((Join-Path $repoRoot $entryPoint))
-    if ($content -match 'from_pretrained\s*\(' -and $content -match 'Qwen2\.5') {
+    if ($entryPoint -eq 'backend/lexiquest_lm/deploy/hf_space/app.py') {
+        # Serving accepts a complete merged model pinned by commit, not a training base-model fallback.
+        $loadingPresent = $content -match 'AutoModelForCausalLM\.from_pretrained\s*\(' -and
+            $content -match 'AutoTokenizer\.from_pretrained\s*\(' -and
+            $content -match 'revision\s*=\s*settings\.model_revision' -and
+            $content -match 'MODEL_REVISION' -and
+            $content -match '\[0-9a-fA-F\]\{40\}' -and
+            ([regex]::Matches($content, 'local_files_only\s*=\s*True').Count -ge 2) -and
+            $content -match 'use_safetensors\s*=\s*True'
+    } else {
+        $loadingPresent = $content -match 'from_pretrained\s*\(' -and $content -match 'Qwen2\.5'
+    }
+    if ($loadingPresent) {
         $script:Passed++
     } else { Write-Fail ("model loading missing from {0}" -f $entryPoint) }
 }

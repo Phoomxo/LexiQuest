@@ -1,267 +1,343 @@
-"""LexiQuest-LM HuggingFace Space serving app.
-
-Exposes the fine-tuned LexiQuest-LM (Qwen2.5-0.5B + LoRA adapter) as an
-OpenAI-compatible chat completions endpoint on HuggingFace Spaces' free CPU
-tier. This is the public face of the thesis's custom model: the Flutter app
-calls it just like it would call Gemini or Ollama, because the contract is
-identical.
-
-Cold start
-----------
-HuggingFace Spaces spin down after inactivity, so the first request after a
-cold start pays a ~30-60s model-load penalty. To avoid the app holding the
-request open that long, the model is loaded eagerly at import time; the
-Space's own readiness probe handles the wait. Subsequent requests are fast
-(CPU inference on a 0.5B model is ~1-3s per short completion).
-
-Configuration
--------------
-- ``MODEL_ID`` (secret): the HF repo of the merged/adapter model, e.g.
-  ``your-user/lexiquest-lm``. Defaults to the base Qwen2.5-0.5B for
-  first-time smoke tests before the adapter exists.
-- ``MAX_INPUT_TOKENS``: per-request prompt cap (default 1024).
-- ``MAX_NEW_TOKENS``: per-request generation cap (default 128).
-
-Privacy
--------
-Like the rest of LexiQuest, this service never logs request text, user
-identity, or tokens. Only the request count and the exception type (on error)
-are logged.
-"""
+"""Authenticated content and chat endpoints for a pinned LexiQuest-LM model."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 import logging
 import os
+from pathlib import Path
+import re
+import threading
 import time
-from typing import Any
+from typing import Any, Literal, Protocol
 
-# Defer the heavy imports until the module body runs so the Space can at
-# least report a clean error if torch/transformers are unavailable. We do
-# NOT defer past this point because HF Spaces loads the model at import time
-# to keep request latency low.
-import torch
-from fastapi import FastAPI, Header, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from starlette.concurrency import run_in_threadpool
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-# Hugging Face copies this directory as a flat Space, so keep this template
-# byte-identical to backend/lexiquest_lm/train/tokenise_dataset.py.
+try:
+    from .auth import AuthenticationError, FirebaseTokenVerifier, extract_bearer_token
+except ImportError:  # Hugging Face copies this directory as a flat Space.
+    from auth import AuthenticationError, FirebaseTokenVerifier, extract_bearer_token
+
+
+logger = logging.getLogger("lexiquest_lm_space")
 SYSTEM_PROMPT = "You are an English vocabulary teacher for Thai learners."
-
 _PROMPT_TEMPLATE = (
     "<|im_start|>system\n{system}<|im_end|>\n"
     "<|im_start|>user\n{user}<|im_end|>\n"
     "<|im_start|>assistant\n"
 )
+MAX_INPUT_TOKENS = 1024
+MAX_NEW_TOKENS = 128
 
 
 def format_prompt(user_prompt: str) -> str:
     return _PROMPT_TEMPLATE.format(system=SYSTEM_PROMPT, user=user_prompt)
-try:
-    from .auth import (  # noqa: E402
-        AuthenticationError,
-        FirebaseTokenVerifier,
-        extract_bearer_token,
-    )
-except ImportError:  # Hugging Face copies this directory as a flat Space.
-    from auth import (  # type: ignore[no-redef]  # noqa: E402
-        AuthenticationError,
-        FirebaseTokenVerifier,
-        extract_bearer_token,
-    )
-
-logger = logging.getLogger("lexiquest_lm_space")
-logging.basicConfig(level=logging.INFO)
-
-import threading
-
-MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-0.5B")
-MODEL_REVISION = os.environ.get("MODEL_REVISION", "main")
-MAX_INPUT_TOKENS = max(1, int(os.environ.get("MAX_INPUT_TOKENS", "1024")))
-MAX_NEW_TOKENS = max(1, int(os.environ.get("MAX_NEW_TOKENS", "128")))
-FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
-token_verifier = FirebaseTokenVerifier(FIREBASE_PROJECT_ID)
-
-_GENERATION_LOCK = threading.Lock()
 
 
-# ---------------------------------------------------------------------------
-# Model load (eager, at import time)
-# ---------------------------------------------------------------------------
+def _environment_limit(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        return 0
 
 
-def _load_model_and_tokenizer() -> tuple[Any, Any]:
-    logger.info("Loading model %s (revision: %s)...", MODEL_ID, MODEL_REVISION)
+@dataclass(frozen=True, slots=True)
+class ServingSettings:
+    model_id: str = ""
+    model_revision: str = ""
+    max_input_tokens: int = MAX_INPUT_TOKENS
+    max_new_tokens: int = MAX_NEW_TOKENS
+
+    @classmethod
+    def from_environment(cls) -> ServingSettings:
+        return cls(
+            model_id=os.environ.get("MODEL_ID", "").strip(),
+            model_revision=os.environ.get("MODEL_REVISION", "").strip(),
+            max_input_tokens=_environment_limit("MAX_INPUT_TOKENS", MAX_INPUT_TOKENS),
+            max_new_tokens=_environment_limit("MAX_NEW_TOKENS", MAX_NEW_TOKENS),
+        )
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(
+            re.fullmatch(r"[\w][\w.-]{0,95}/[\w][\w.-]{0,95}", self.model_id, re.ASCII)
+            and ".." not in self.model_id
+            and re.fullmatch(r"[0-9a-fA-F]{40}", self.model_revision)
+            and self.max_input_tokens > 0
+            and self.max_new_tokens > 0
+        )
+
+    @property
+    def model_version(self) -> str:
+        return f"{self.model_id}@{self.model_revision}"
+
+
+@dataclass(frozen=True, slots=True)
+class GenerationResult:
+    text: str
+    prompt_tokens: int
+    completion_tokens: int
+
+
+class Generator(Protocol):
+    def generate(self, prompt: str, max_new_tokens: int) -> GenerationResult: ...
+
+
+class _TransformersGenerator:
+    def __init__(self, model: Any, tokenizer: Any, torch: Any, settings: ServingSettings):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.torch = torch
+        self.settings = settings
+
+    def generate(self, prompt: str, max_new_tokens: int) -> GenerationResult:
+        inputs = self.tokenizer(
+            prompt, return_tensors="pt", truncation=True,
+            max_length=self.settings.max_input_tokens,
+        ).to(self.model.device)
+        stop_token_ids = {self.tokenizer.eos_token_id}
+        im_end_id = self.tokenizer.convert_tokens_to_ids("<|im_end|>")
+        if im_end_id is not None and im_end_id != self.tokenizer.unk_token_id:
+            stop_token_ids.add(im_end_id)
+        with self.torch.no_grad():
+            output = self.model.generate(
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=list(stop_token_ids),
+            )
+        prompt_tokens = int(inputs["input_ids"].shape[1])
+        new_tokens = output[0][prompt_tokens:]
+        return GenerationResult(
+            self.tokenizer.decode(new_tokens, skip_special_tokens=True).strip(),
+            prompt_tokens, int(new_tokens.shape[0]),
+        )
+
+
+def _load_generator(settings: ServingSettings) -> Generator:
+    import torch
+    from huggingface_hub import snapshot_download
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
     start = time.monotonic()
+    snapshot = Path(snapshot_download(
+        repo_id=settings.model_id, revision=settings.model_revision,
+        allow_patterns=[
+            "config.json", "generation_config.json", "tokenizer.json",
+            "tokenizer_config.json", "tokenizer.model", "special_tokens_map.json",
+            "added_tokens.json", "vocab.json", "merges.txt", "model*.safetensors",
+            "model.safetensors.index.json",
+        ],
+    ))
+    if (
+        (snapshot / "adapter_config.json").exists()
+        or not (snapshot / "config.json").is_file()
+        or not any(snapshot.glob("model*.safetensors"))
+    ):
+        raise ValueError("A merged safetensors model snapshot is required")
     tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_ID,
-        revision=MODEL_REVISION,
+        snapshot, local_files_only=True, trust_remote_code=False,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    # CPU + float32 on the free tier. A 0.5B model fits comfortably in the
-    # 16GB RAM HF allocates to free CPU Spaces.
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        revision=MODEL_REVISION,
-        use_safetensors=True,
-        dtype=torch.float32,
-        device_map="cpu",
+        snapshot, local_files_only=True, use_safetensors=True,
+        trust_remote_code=False, dtype=torch.float32, device_map="cpu",
     )
     model.eval()
     logger.info("Model loaded in %.1fs", time.monotonic() - start)
-    return model, tokenizer
+    return _TransformersGenerator(model, tokenizer, torch, settings)
 
 
-model, tokenizer = _load_model_and_tokenizer()
+class RequestBodyLimitMiddleware:
+    maximum_bytes = 100_000
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
+            await self.app(scope, receive, send)
+            return
+
+        async def reject(status_code: int) -> None:
+            response = JSONResponse(status_code=status_code, content={"detail": {
+                "code": "PAYLOAD_TOO_LARGE" if status_code == 413 else "INVALID_CONTENT_LENGTH",
+                "message": "Request body exceeds 100KB." if status_code == 413 else "Content-Length is invalid.",
+            }})
+            await response(scope, receive, send)
+
+        lengths = [value.strip() for name, value in scope["headers"] if name.lower() == b"content-length"]
+        if len(lengths) > 1 or (lengths and (not lengths[0].isdigit() or len(lengths[0]) > 20)):
+            await reject(400)
+            return
+        if lengths and int(lengths[0]) > self.maximum_bytes:
+            await reject(413)
+            return
+        body = bytearray()
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > self.maximum_bytes:
+                await reject(413)
+                return
+            body.extend(chunk)
+            if not message.get("more_body", False):
+                break
+        delivered = False
+        async def replay() -> Message:
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
+            return await receive()
+        await self.app(scope, replay, send)
 
 
-# ---------------------------------------------------------------------------
-# API
-# ---------------------------------------------------------------------------
+class ContentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    text: str = Field(min_length=1, max_length=2000)
+    kind: Literal["sentence", "story", "explanation"]
+    cefr: Literal["a1", "a2", "b1", "b2", "c1", "c2", "unknown"] = "unknown"
+    language: Literal["en", "th"] = "en"
 
-
-app = FastAPI(title="LexiQuest-LM", version="0.1.0")
+    @field_validator("text")
+    @classmethod
+    def normalize_whitespace(cls, value: str) -> str:
+        return re.sub(r"\s+", " ", value)
 
 
 class ChatMessage(BaseModel):
     role: str
-    content: str
+    content: str = Field(max_length=2000)
 
 
 class ChatCompletionRequest(BaseModel):
-    """Subset of the OpenAI chat completions request the Flutter client sends.
-
-    Extra fields (``temperature``, ``top_p``, ``stream``, etc.) are accepted
-    and ignored so a client built for OpenAI does not get a 422.
-    """
-
-    model_config = {"extra": "ignore"}
+    model_config = ConfigDict(extra="ignore")
     model: str = ""
-    messages: list[ChatMessage] = Field(default_factory=list)
+    messages: list[ChatMessage] = Field(min_length=1, max_length=10)
     max_tokens: int | None = None
 
 
 def _build_prompt(messages: list[ChatMessage]) -> str:
-    """Convert the OpenAI messages list to our ChatML training template.
-
-    We always inject the same system prompt used during fine-tuning; any
-    client-supplied system message is folded in AFTER it so the model still
-    recognises its role frame.
-    """
-
-    user_parts: list[str] = []
-    for msg in messages:
-        if msg.role == "system":
-            # Prepend any extra system instructions to the canonical one so
-            # the model never loses its teaching identity.
-            user_parts.append(f"(Additional guidance: {msg.content})")
-        elif msg.role in ("user", "assistant"):
-            user_parts.append(msg.content)
-    user_text = "\n".join(p for p in user_parts if p) or "Hello."
-    return format_prompt(user_text)
+    user_parts = [
+        f"(Additional guidance: {message.content})" if message.role == "system" else message.content
+        for message in messages if message.role in ("system", "user", "assistant")
+    ]
+    return format_prompt("\n".join(part for part in user_parts if part) or "Hello.")
 
 
-@app.get("/health/live")
-def live() -> dict[str, str]:
-    return {"status": "live"}
+def _content_prompt(request: ContentRequest) -> str:
+    instruction = {
+        "sentence": "Write one short example sentence using",
+        "story": "Write a short story of 3 to 5 sentences using",
+        "explanation": "Explain the meaning and usage of",
+    }[request.kind]
+    level = "" if request.cefr == "unknown" else f" Use CEFR {request.cefr} vocabulary."
+    language = "Thai" if request.language == "th" else "English"
+    return format_prompt(f"{instruction}: {request.text}.{level} Respond in {language}.")
 
 
-@app.get("/health/ready")
-def ready() -> dict[str, str]:
-    if model is None or not token_verifier.is_configured:
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={
-                "detail": {
-                    "code": "SERVICE_UNAVAILABLE",
-                    "message": "Service is not ready.",
-                }
-            },
-        )
-    return {"status": "ready"}
+def _failure(status_code: int, code: str, message: str) -> HTTPException:
+    return HTTPException(status_code=status_code, detail={"code": code, "message": message})
 
 
-@app.post("/v1/chat/completions")
-def chat_completions(
-    request: ChatCompletionRequest,
-    authorization: str | None = Header(default=None),
-) -> dict[str, Any]:
-    try:
-        token = extract_bearer_token(authorization)
-        token_verifier.verify(token)
-    except AuthenticationError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "UNAUTHENTICATED", "message": "Bearer token required."},
-        ) from None
+def create_app(
+    *, settings: ServingSettings | None = None,
+    token_verifier: FirebaseTokenVerifier | None = None,
+    generator: Generator | None = None,
+    model_loader: Callable[[ServingSettings], Generator] | None = None,
+) -> FastAPI:
+    config = settings if settings is not None else ServingSettings.from_environment()
+    verifier = token_verifier if token_verifier is not None else FirebaseTokenVerifier(os.environ.get("FIREBASE_PROJECT_ID"))
+    lock = threading.Lock()
 
-    if not request.messages or len(request.messages) > 10:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail={"code": "INVALID_REQUEST", "message": "messages must contain between 1 and 10 items"},
-        )
-    for msg in request.messages:
-        if len(msg.content) > 2000:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail={"code": "INVALID_REQUEST", "message": "message content length exceeds limit"},
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        if app.state.generator is None and config.is_configured and verifier.is_configured:
+            try:
+                app.state.generator = await run_in_threadpool(model_loader or _load_generator, config)
+            except Exception as error:
+                logger.error("Model load failed: %s", type(error).__name__)
+        yield
+        app.state.generator = None
+
+    app = FastAPI(title="LexiQuest-LM", version="0.1.0", lifespan=lifespan)
+    app.state.generator = generator
+    app.add_middleware(RequestBodyLimitMiddleware)
+
+    def authenticate(authorization: str | None) -> None:
+        try:
+            verifier.verify(extract_bearer_token(authorization))
+        except AuthenticationError:
+            raise _failure(401, "UNAUTHENTICATED", "Bearer token required.") from None
+
+    def generate(
+        prompt: str, maximum: int | None = None, *, content_contract: bool = False,
+    ) -> GenerationResult:
+        backend = app.state.generator
+        if not config.is_configured or backend is None:
+            raise _failure(
+                503, "PROVIDER_UNAVAILABLE" if content_contract else "SERVICE_UNAVAILABLE",
+                "Service is not ready.",
             )
-
-    prompt = _build_prompt(request.messages)
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-        truncation=True,
-        max_length=MAX_INPUT_TOKENS,
-    ).to(model.device)
-    max_new = max(
-        1,
-        min(request.max_tokens or MAX_NEW_TOKENS, MAX_NEW_TOKENS),
-    )
-
-    stop_token_ids = {tokenizer.eos_token_id}
-    im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
-    if im_end_id is not None and im_end_id != tokenizer.unk_token_id:
-        stop_token_ids.add(im_end_id)
-
-    if not _GENERATION_LOCK.acquire(blocking=False):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"code": "BUSY", "message": "Model generation busy"},
-        )
-    try:
-        with torch.no_grad():
-            out = model.generate(
-                **inputs,
-                max_new_tokens=max_new,
-                do_sample=False,  # greedy for reproducibility
-                pad_token_id=tokenizer.pad_token_id,
-                eos_token_id=list(stop_token_ids),
+        if not lock.acquire(blocking=False):
+            raise _failure(
+                429 if content_contract else 503,
+                "RATE_LIMITED" if content_contract else "BUSY", "Model generation busy.",
             )
-    finally:
-        _GENERATION_LOCK.release()
-    new_tokens = out[0][inputs["input_ids"].shape[1]:]
-    text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+        try:
+            maximum = max(1, min(config.max_new_tokens if maximum is None else maximum, config.max_new_tokens))
+            result = backend.generate(prompt, maximum)
+            if not result.text.strip():
+                raise ValueError("empty model response")
+            return result
+        except Exception as error:
+            logger.error("Generation failed: %s", type(error).__name__)
+            raise _failure(
+                503, "CONTENT_GENERATION_FAILED" if content_contract else "GENERATION_FAILED",
+                "Model generation failed.",
+            ) from None
+        finally:
+            lock.release()
 
-    # OpenAI-compatible response shape so the Flutter client can parse it
-    # with the same code it uses for Gemini/Ollama.
-    return {
-        "id": f"lexiquest-lm-{int(time.time())}",
-        "object": "chat.completion",
-        "model": MODEL_ID,
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": text},
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {
-            "prompt_tokens": int(inputs["input_ids"].shape[1]),
-            "completion_tokens": int(new_tokens.shape[0]),
-            "total_tokens": int(inputs["input_ids"].shape[1] + new_tokens.shape[0]),
-        },
-    }
+    @app.get("/health/live")
+    def live() -> dict[str, str]:
+        return {"status": "live"}
+
+    @app.get("/health/ready")
+    def ready() -> dict[str, str]:
+        if not config.is_configured or app.state.generator is None or not verifier.is_configured:
+            raise _failure(503, "SERVICE_UNAVAILABLE", "Service is not ready.")
+        return {"status": "ready"}
+
+    @app.post("/v1/content")
+    def content(request: ContentRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+        authenticate(authorization)
+        result = generate(_content_prompt(request), content_contract=True)
+        return {"text": result.text.strip(), "kind": request.kind, "language": request.language,
+                "cefr": request.cefr, "model_version": config.model_version, "cached": False}
+
+    @app.post("/v1/chat/completions")
+    def chat_completions(request: ChatCompletionRequest, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+        authenticate(authorization)
+        result = generate(_build_prompt(request.messages), request.max_tokens)
+        return {
+            "id": f"lexiquest-lm-{time.time_ns()}", "object": "chat.completion",
+            "model": config.model_id,
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": result.text.strip()}, "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": result.prompt_tokens, "completion_tokens": result.completion_tokens,
+                      "total_tokens": result.prompt_tokens + result.completion_tokens},
+        }
+
+    return app
+
+
+app = create_app()

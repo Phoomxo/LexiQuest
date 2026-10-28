@@ -330,8 +330,8 @@ def _run_real_train(args: argparse.Namespace) -> int:
     tokenizer.save_pretrained(str(adapter_dir))
     print(f"LoRA adapter saved to {adapter_dir}")
     print(
-        "Next: deploy/hf_space/app.py loads this adapter on top of the base "
-        "model for inference."
+        "Next: merge and export a complete model artifact, then pin its "
+        "immutable revision before serving with deploy/hf_space/app.py."
     )
     return 0
 
