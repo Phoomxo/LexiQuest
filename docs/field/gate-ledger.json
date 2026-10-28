@@ -1,0 +1,23 @@
+﻿{
+    "schemaVersion":  1,
+    "records":  [
+                    {
+                        "gate":  "integration",
+                        "commitSha":  "4df6ed4b5fb647342e025340659457740b145a7f",
+                        "dependencyLockSha256":  "F99D74680F0DC0F5FA67D1B3C101369A03B332CEE23952977F8D11FA340A53FB",
+                        "apkSha256":  "",
+                        "command":  "flutter analyze; flutter test; flutter build apk --debug",
+                        "result":  "pass",
+                        "recordedAtUtc":  "2026-08-04T04:01:21.0676737Z"
+                    },
+                    {
+                        "gate":  "release",
+                        "commitSha":  "0e3a7ef2c19723852c2821217d1705bffceeef83",
+                        "dependencyLockSha256":  "F99D74680F0DC0F5FA67D1B3C101369A03B332CEE23952977F8D11FA340A53FB",
+                        "apkSha256":  "0A7E1B1CF9E3561EAA4F861B7CD890425A27DAFC1962C94DF9E3801FD84A5CCE",
+                        "command":  "flutter analyze; flutter test 1022; backend 255; policy 26; flutter build apk --release 1.0.1+2 signed verified",
+                        "result":  "pass",
+                        "recordedAtUtc":  "2026-08-04T04:35:54.6520542Z"
+                    }
+                ]
+}

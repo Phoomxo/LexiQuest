@@ -1,0 +1,411 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+
+class _FakeAnonymousAuthGateway implements AnonymousAuthGateway {
+  _FakeAnonymousAuthGateway({this.uid, this.error});
+
+  final String? uid;
+  final Object? error;
+
+  @override
+  Future<String?> signInAnonymously() async {
+    final captured = error;
+    if (captured != null) throw captured;
+    return uid;
+  }
+}
+
+void main() {
+  group('FirebaseGuestSessionService.start', () {
+    test('starts a guest session with the exact gateway uid', () async {
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(uid: 'guest-uid-123'),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionStarted>().having(
+          (started) => started.uid,
+          'uid',
+          'guest-uid-123',
+        ),
+      );
+    });
+
+    for (final invalidUid in <String?>[null, '', '   ']) {
+      test('maps invalid uid "$invalidUid" to unknown', () async {
+        final service = FirebaseGuestSessionService(
+          _FakeAnonymousAuthGateway(uid: invalidUid),
+        );
+
+        final result = await service.start();
+
+        expect(
+          result,
+          isA<GuestSessionFailed>().having(
+            (failed) => failed.reason,
+            'reason',
+            GuestSessionFailure.unknown,
+          ),
+        );
+      });
+    }
+
+    test('maps operation-not-allowed to providerDisabled', () async {
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(
+          error: FirebaseAuthException(
+            code: 'operation-not-allowed',
+            message: 'Anonymous sign-in is disabled.',
+          ),
+        ),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.providerDisabled,
+        ),
+      );
+    });
+
+    test('maps network-request-failed to network', () async {
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(
+          error: FirebaseAuthException(
+            code: 'network-request-failed',
+            message: 'Network unavailable.',
+          ),
+        ),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.network,
+        ),
+      );
+    });
+
+    test('maps a missing Firebase app to firebaseUnavailable', () async {
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(
+          error: FirebaseException(
+            plugin: 'core',
+            code: 'no-app',
+            message: 'No Firebase app.',
+          ),
+        ),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.firebaseUnavailable,
+        ),
+      );
+    });
+
+    test('maps an unexpected exception to unknown', () async {
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(error: StateError('unexpected failure')),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.unknown,
+        ),
+      );
+    });
+
+    test('failure exposes only the enum and never provider messages', () async {
+      const sentinel = 'SECRET_PROVIDER_RESPONSE_42';
+      final service = FirebaseGuestSessionService(
+        _FakeAnonymousAuthGateway(
+          error: FirebaseAuthException(
+            code: 'operation-not-allowed',
+            message: sentinel,
+          ),
+        ),
+      );
+
+      final result = await service.start();
+      final failed = result as GuestSessionFailed;
+
+      expect(failed.reason, GuestSessionFailure.providerDisabled);
+      expect(result.toString(), isNot(contains(sentinel)));
+      expect(failed.reason.toString(), isNot(contains(sentinel)));
+    });
+  });
+
+  group('OwnerBindingGuestSessionService', () {
+    test('persists Guest before starting anonymous cloud binding', () async {
+      final transitions = <String>[];
+      final entryState = _RecordingEntryStateStore(transitions);
+      final delegate = _RecordingGuestSessionService(transitions);
+      final service = OwnerBindingGuestSessionService(
+        delegate: delegate,
+        localOwners: _FakeLocalOwnerRepository(),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        entryStateStore: entryState,
+        maxCloudBindingAttempts: 1,
+      );
+
+      final result = await service.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(result, isA<GuestSessionStarted>());
+      expect(transitions.take(2), ['markGuest', 'cloudBinding']);
+    });
+
+    test('does not start cloud binding when Guest persistence fails', () async {
+      final delegate = _SequencedGuestSessionService(<GuestSessionResult>[
+        const GuestSessionFailed(GuestSessionFailure.network),
+      ]);
+      final service = OwnerBindingGuestSessionService(
+        delegate: delegate,
+        localOwners: _FakeLocalOwnerRepository(),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        entryStateStore: _RecordingEntryStateStore(
+          <String>[],
+          failure: StateError('preference write failed'),
+        ),
+        maxCloudBindingAttempts: 1,
+      );
+
+      final result = await service.start();
+
+      expect(result, isA<GuestSessionFailed>());
+      expect(delegate.startCalls, 0);
+    });
+
+    test(
+      'starts the local guest without waiting for anonymous Firebase',
+      () async {
+        final service = OwnerBindingGuestSessionService(
+          delegate: _PendingGuestSessionService(),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        );
+
+        final result = await service.start().timeout(
+          const Duration(milliseconds: 100),
+        );
+
+        expect(
+          result,
+          isA<GuestSessionStarted>().having(
+            (started) => started.uid,
+            'local owner id',
+            'local-owner',
+          ),
+        );
+      },
+    );
+
+    test(
+      'binds the active local owner in the background when online',
+      () async {
+        final upgrades = _FakeOwnerUpgradeRepository();
+        final service = OwnerBindingGuestSessionService(
+          delegate: FirebaseGuestSessionService(
+            _FakeAnonymousAuthGateway(uid: 'anonymous-firebase-uid'),
+          ),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+        );
+
+        final result = await service.start();
+        await upgrades.upgraded.future;
+
+        expect(result, isA<GuestSessionStarted>());
+        expect(upgrades.ownerId, 'local-owner');
+        expect(upgrades.firebaseUid, 'anonymous-firebase-uid');
+      },
+    );
+
+    test(
+      'retries transient cloud binding without blocking local use',
+      () async {
+        final upgrades = _FakeOwnerUpgradeRepository();
+        final delegate = _SequencedGuestSessionService(<GuestSessionResult>[
+          const GuestSessionFailed(GuestSessionFailure.network),
+          const GuestSessionStarted(uid: 'anonymous-after-reconnect'),
+        ]);
+        final delays = <Duration>[];
+        final service = OwnerBindingGuestSessionService(
+          delegate: delegate,
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          retryDelay: (delay) async {
+            delays.add(delay);
+          },
+          maxCloudBindingAttempts: 2,
+        );
+
+        final result = await service.start();
+        await upgrades.upgraded.future;
+
+        expect(result, isA<GuestSessionStarted>());
+        expect(delegate.startCalls, 2);
+        expect(delays, const <Duration>[Duration(seconds: 15)]);
+        expect(upgrades.firebaseUid, 'anonymous-after-reconnect');
+      },
+    );
+
+    test('fails closed when local ownership cannot be bound', () async {
+      final service = OwnerBindingGuestSessionService(
+        delegate: FirebaseGuestSessionService(
+          _FakeAnonymousAuthGateway(uid: 'anonymous-firebase-uid'),
+        ),
+        localOwners: _FakeLocalOwnerRepository(error: StateError('db failed')),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.unknown,
+        ),
+      );
+      expect(result.toString(), isNot(contains('db failed')));
+    });
+  });
+}
+
+final class _PendingGuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() => Completer<GuestSessionResult>().future;
+}
+
+final class _SequencedGuestSessionService implements GuestSessionService {
+  _SequencedGuestSessionService(this.results);
+
+  final List<GuestSessionResult> results;
+  int startCalls = 0;
+
+  @override
+  Future<GuestSessionResult> start() async {
+    final index = startCalls++;
+    return results[index];
+  }
+}
+
+final class _RecordingGuestSessionService implements GuestSessionService {
+  _RecordingGuestSessionService(this.transitions);
+
+  final List<String> transitions;
+
+  @override
+  Future<GuestSessionResult> start() async {
+    transitions.add('cloudBinding');
+    return const GuestSessionFailed(GuestSessionFailure.providerDisabled);
+  }
+}
+
+final class _RecordingEntryStateStore implements AppEntryStateStore {
+  _RecordingEntryStateStore(this.transitions, {this.failure});
+
+  final List<String> transitions;
+  final Object? failure;
+
+  @override
+  Future<AppEntryMode> read() async => AppEntryMode.signedOut;
+
+  @override
+  Future<void> markGuest() async {
+    transitions.add('markGuest');
+    if (failure case final captured?) throw captured;
+  }
+
+  @override
+  Future<void> clear() async {}
+}
+
+final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
+  _FakeLocalOwnerRepository({this.error});
+
+  final Object? error;
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    final captured = error;
+    if (captured != null) throw captured;
+    return LocalOwner(
+      id: 'local-owner',
+      createdAtUtc: DateTime.utc(2026, 7, 30),
+    );
+  }
+}
+
+final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
+  String? ownerId;
+  String? firebaseUid;
+  final Completer<void> upgraded = Completer<void>();
+
+  @override
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<OwnerUpgradeResult> upgrade({
+    required String activeOwnerId,
+    required String firebaseUid,
+  }) async {
+    ownerId = activeOwnerId;
+    this.firebaseUid = firebaseUid;
+    if (!upgraded.isCompleted) {
+      upgraded.complete();
+    }
+    return OwnerUpgradeResult(
+      targetOwnerId: activeOwnerId,
+      mode: OwnerUpgradeMode.anonymousBound,
+      conflictCount: 0,
+    );
+  }
+}

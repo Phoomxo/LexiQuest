@@ -1,0 +1,122 @@
+import 'package:flutter/widgets.dart';
+
+import '../config/app_config.dart';
+import '../data/local/app_database.dart';
+import '../features/account/application/account_use_cases.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/device_model/application/device_model_use_cases.dart';
+import '../features/export/application/export_use_cases.dart';
+import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
+import '../features/identity/domain/local_owner_repository.dart';
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/media_practice/application/object_scanner_use_cases.dart';
+import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/progress/application/progress_use_cases.dart';
+import '../features/rewards/application/reward_use_cases.dart';
+import '../features/sync/application/sync_engine.dart';
+import '../features/sync/application/sync_trigger.dart';
+import '../features/identity/application/upgrade_guest_owner.dart';
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../navigation/app_routes.dart';
+import '../services/guest_session_service.dart';
+import '../voice/voice_provider.dart';
+import 'app_build_info.dart';
+import 'app_runtime_status.dart';
+import 'field_feature_registry.dart';
+
+final class AppDependencies {
+  AppDependencies({
+    required this.runtimeStatus,
+    required this.config,
+    required this.guestSessionService,
+    this.buildInfo = const AppBuildInfo.fromEnvironment(),
+    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
+    this.database,
+    this.localOwners,
+    this.upgradeGuestOwner,
+    this.syncEngine,
+    this.syncTrigger,
+    this.learning,
+    this.progress,
+    this.rewards,
+    this.vocabulary,
+    this.vocabularyImporter,
+    this.deviceModels,
+    this.account,
+    this.researchConsent,
+    this.exports,
+    this.aiTutor,
+    this.aiUsage,
+    this.objectScanner,
+    this.speechPractice,
+    required this.voice,
+    this.initialRoute = AppRoute.login,
+    this.disposeResources,
+  });
+
+  final AppRuntimeStatus runtimeStatus;
+  final AppConfig? config;
+  final GuestSessionService guestSessionService;
+  final AppBuildInfo buildInfo;
+  final FieldFeatureRegistry fieldFeatures;
+  final AppDatabase? database;
+  final LocalOwnerRepository? localOwners;
+  final UpgradeGuestOwner? upgradeGuestOwner;
+  final SyncEngine? syncEngine;
+  final SyncTrigger? syncTrigger;
+  final LearningUseCases? learning;
+  final ProgressUseCases? progress;
+  final RewardUseCases? rewards;
+  final VocabularyUseCases? vocabulary;
+  final ImportVocabulary? vocabularyImporter;
+  final DeviceModelUseCases? deviceModels;
+  final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
+  final ExportUseCases? exports;
+  final AiTutorController? aiTutor;
+  final AiUsageRepository? aiUsage;
+  final ObjectScannerController? objectScanner;
+  final SpeechPracticeUseCases? speechPractice;
+  final VoiceProvider voice;
+  final AppRoute initialRoute;
+  final Future<void> Function()? disposeResources;
+  Future<void>? _disposeFuture;
+
+  Future<void> dispose() {
+    return _disposeFuture ??= disposeResources?.call() ?? Future<void>.value();
+  }
+
+  @override
+  String toString() => 'AppDependencies';
+}
+
+final class AppDependenciesScope extends InheritedWidget {
+  const AppDependenciesScope({
+    super.key,
+    required this.dependencies,
+    required super.child,
+  });
+
+  final AppDependencies dependencies;
+
+  static AppDependencies? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<AppDependenciesScope>()
+        ?.dependencies;
+  }
+
+  static AppDependencies of(BuildContext context) {
+    final dependencies = maybeOf(context);
+    assert(
+      dependencies != null,
+      'AppDependenciesScope was not found in the widget tree.',
+    );
+    return dependencies!;
+  }
+
+  @override
+  bool updateShouldNotify(AppDependenciesScope oldWidget) {
+    return !identical(dependencies, oldWidget.dependencies);
+  }
+}

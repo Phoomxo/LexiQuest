@@ -1,0 +1,12 @@
+[
+  {
+    "contentId": "fixture-cat",
+    "text": "Cat",
+    "relativePath": "words/cat.wav"
+  },
+  {
+    "contentId": "fixture-dog",
+    "text": "Dog",
+    "relativePath": "words/dog.wav"
+  }
+]

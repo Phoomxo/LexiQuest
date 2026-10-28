@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "providers": {
+    "gptStable": {
+      "id": "gpt-stable",
+      "pool": "GPT Pro 20x Stable",
+      "baseUrl": "https://api.maxplus-ai.cc/gpt-pro-20x-stable",
+      "accountBaseUrl": "https://api.maxplus-ai.cc",
+      "model": "gpt-5.6-sol",
+      "authStyle": "bearer",
+      "accountRoute": "/v1/me",
+      "modelsRoute": "/v1/models",
+      "generationRoute": "/v1/responses",
+      "store": false,
+      "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+      "outputTokens": {
+        "low": 2048,
+        "medium": 4096,
+        "high": 8192,
+        "xhigh": 32768,
+        "max": 65536,
+        "ultra": 65536
+      }
+    },
+    "claudeReviewer": {
+      "id": "claude-reviewer",
+      "pool": "AWS Lite Ultimate",
+      "baseUrl": "https://api.maxplus-ai.cc/aws-lite-ultimate",
+      "accountBaseUrl": "https://api.maxplus-ai.cc",
+      "models": {
+        "routine": "claude-sonnet-5",
+        "deep": "claude-opus-5"
+      },
+      "authStyle": "anthropic",
+      "anthropicVersion": "2023-06-01",
+      "accountRoute": "/v1/me",
+      "modelsRoute": "/v1/models",
+      "generationRoute": "/v1/messages",
+      "efforts": ["low", "medium", "high", "xhigh", "max"],
+      "outputTokens": {
+        "low": 4096,
+        "medium": 8192,
+        "high": 16384,
+        "xhigh": 65536,
+        "max": 65536
+      }
+    }
+  },
+  "context": {
+    "maxFiles": 20,
+    "maxCharacters": 96000,
+    "maxFileBytes": 262144,
+    "allowedExtensions": [
+      ".c", ".cc", ".cpp", ".css", ".dart", ".gradle", ".h", ".html",
+      ".java", ".js", ".json", ".kt", ".m", ".md", ".mm", ".ps1",
+      ".rules", ".sql", ".swift", ".toml", ".ts", ".tsx", ".txt", ".xml",
+      ".yaml", ".yml"
+    ],
+    "denylist": [
+      ".env*", "*.jks", "*.keystore", "*.p12", "*.pem", "*.key",
+      "key.properties", "android/local.properties", "field/evidence/**", "build/**",
+      "**/*.dpapi", "**/google-services.json", "**/GoogleService-Info.plist"
+    ]
+  },
+  "secretPatterns": [
+    { "id": "maxplusInferenceKey", "pattern": "(?<![A-Za-z0-9])ccsk-[a-f0-9]{64}" },
+    { "id": "maxplusManagementToken", "pattern": "(?<![A-Za-z0-9])ccmk-[A-Za-z0-9_-]{16,}" },
+    { "id": "openAiKey", "pattern": "(?<![A-Za-z0-9])sk-(?!ant-)[A-Za-z0-9_-]{20,}" },
+    { "id": "anthropicKey", "pattern": "(?<![A-Za-z0-9])sk-ant-[A-Za-z0-9_-]{20,}" },
+    { "id": "geminiKey", "pattern": "(?<![A-Za-z0-9])AIza[0-9A-Za-z_-]{20,}" }
+  ],
+  "retentionDays": 14,
+  "timeouts": {
+    "defaultSeconds": 120,
+    "minimumSeconds": 5,
+    "maximumSeconds": 600
+  }
+}
