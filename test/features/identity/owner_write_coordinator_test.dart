@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/research_participation_fixture.dart';
 
 final _now = DateTime.utc(2026, 10, 28, 12);
 const _owner = 'synthetic-private-owner-a';
@@ -908,7 +909,8 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _insertResearchArtifacts(AppDatabase database) async {
-  await seedOwnerAssignment(database, _owner);
+  final assignment = await seedOwnerAssignment(database, _owner);
+  await insertOwnerParticipation(database, _owner, assignmentId: assignment);
   await database.customStatement(
     'INSERT INTO research_consents '
     '(id, owner_id, consent_version, consent_state, decided_at_utc_ms) '
@@ -937,6 +939,7 @@ Future<void> _expectResearchCounts(AppDatabase database, int count) async {
   for (final table in [
     'research_consents',
     'experiment_assignments',
+    'research_participation_permits',
     'events_v2',
     'outbox_operations',
   ]) {

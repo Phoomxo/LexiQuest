@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/account_deletion/data/drift_account_
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/research_participation_fixture.dart';
 
 void main() {
   late AppDatabase database;
@@ -34,8 +35,18 @@ void main() {
       "VALUES ('consent-research-a', 'owner-a', 1, 'accepted', 1), "
       "('consent-research-b', 'owner-b', 1, 'accepted', 2)",
     );
-    await seedOwnerAssignment(database, 'owner-a');
-    await seedOwnerAssignment(database, 'owner-b');
+    final assignmentA = await seedOwnerAssignment(database, 'owner-a');
+    final assignmentB = await seedOwnerAssignment(database, 'owner-b');
+    await insertOwnerParticipation(
+      database,
+      'owner-a',
+      assignmentId: assignmentA,
+    );
+    await insertOwnerParticipation(
+      database,
+      'owner-b',
+      assignmentId: assignmentB,
+    );
     await database.customStatement('''
       INSERT INTO events_v2 (
         event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
@@ -76,7 +87,7 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 12);
+      expect(json['schemaVersion'], 13);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -88,6 +99,14 @@ void main() {
       expect(assignment['cohort'], 'standard');
       expect(assignment['protocol_version'], 'synthetic-protocol-v1');
       expect(assignment['assigned_at_utc_ms'], 1);
+      final permit =
+          (data['research_participation_permits'] as List).single as Map;
+      expect(permit, hasLength(20));
+      expect(permit['owner_id'], 'owner-a');
+      expect(permit['assignment_id'], assignment['id']);
+      expect(permit['local_revision'], 1);
+      expect(permit['cloud_revision'], 1);
+      expect(permit['signature'], isNotEmpty);
       expect(
         (data['research_consents'] as List).single['id'],
         'consent-research-a',
@@ -105,6 +124,7 @@ void main() {
       expect(encoded, isNot(contains('research-b')));
       expect(encoded, isNot(contains('cat-b')));
       expect(encoded, isNot(contains('uid-b')));
+      expect(encoded, isNot(contains('synthetic-permit:owner-b')));
     },
   );
 }

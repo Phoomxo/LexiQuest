@@ -59,6 +59,14 @@ final class DriftExperimentAssignmentRepository {
   Future<ExperimentAssignment?> admit({
     required String ownerId,
     required ResearchParticipationPermit participationPermit,
+  }) async => (await admitWithReceipt(
+    ownerId: ownerId,
+    participationPermit: participationPermit,
+  ))?.assignment;
+
+  Future<AuthorizedExperimentAssignment?> admitWithReceipt({
+    required String ownerId,
+    required ResearchParticipationPermit participationPermit,
   }) async {
     final study = binding.study;
     if (ownerId.isEmpty ||
@@ -142,17 +150,20 @@ final class DriftExperimentAssignmentRepository {
                     localConsent.decidedAtUtc!.millisecondsSinceEpoch) {
               _conflict(ownerId);
             }
-            return ExperimentAssignment(
-              id: id,
-              ownerId: ownerId,
-              experimentId: study.experimentId,
-              experimentVersion: study.experimentVersion,
-              cohort: cohort,
-              protocolVersion: study.protocolVersion,
-              assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
-                assignedAt,
-                isUtc: true,
+            return AuthorizedExperimentAssignment._(
+              assignment: ExperimentAssignment(
+                id: id,
+                ownerId: ownerId,
+                experimentId: study.experimentId,
+                experimentVersion: study.experimentVersion,
+                cohort: cohort,
+                protocolVersion: study.protocolVersion,
+                assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  assignedAt,
+                  isUtc: true,
+                ),
               ),
+              operation: proof.operation,
             );
           }
           final assignedAt = _milliseconds(now);
@@ -170,14 +181,17 @@ final class DriftExperimentAssignmentRepository {
               Variable<int>(assignedAt.millisecondsSinceEpoch),
             ],
           );
-          return ExperimentAssignment(
-            id: id,
-            ownerId: ownerId,
-            experimentId: study.experimentId,
-            experimentVersion: study.experimentVersion,
-            cohort: cohort,
-            protocolVersion: study.protocolVersion,
-            assignedAtUtc: assignedAt,
+          return AuthorizedExperimentAssignment._(
+            assignment: ExperimentAssignment(
+              id: id,
+              ownerId: ownerId,
+              experimentId: study.experimentId,
+              experimentVersion: study.experimentVersion,
+              cohort: cohort,
+              protocolVersion: study.protocolVersion,
+              assignedAtUtc: assignedAt,
+            ),
+            operation: proof.operation,
           );
         },
       );
@@ -318,6 +332,17 @@ final class DriftExperimentAssignmentRepository {
       value.isUtc &&
       value.microsecondsSinceEpoch >= 0 &&
       value.microsecondsSinceEpoch % 1000 == 0;
+}
+
+/// This admission's checked result, not authority for a later operation.
+final class AuthorizedExperimentAssignment {
+  const AuthorizedExperimentAssignment._({
+    required this.assignment,
+    required this.operation,
+  });
+
+  final ExperimentAssignment assignment;
+  final AuthorizedResearchOperation operation;
 }
 
 final class _AdmissionProof {

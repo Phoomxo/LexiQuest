@@ -21,13 +21,14 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 12);
+    expect(database.schemaVersion, 13);
     expect(
       tableNames,
       containsAll(<String>[
         'local_owners',
         'research_consents',
         'experiment_assignments',
+        'research_participation_permits',
         'vocabulary_categories',
         'vocabulary_words',
         'vocabulary_imports',

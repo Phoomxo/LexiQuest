@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v12** with 30 tables, matching `AppDatabase.schemaVersion`. The former
+**v13** with 31 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -182,10 +182,10 @@ claimed.
 |---------|-------|---------|--------|
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
-| v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Reserved 2026-10-29 |
+| v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
 | v14+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12 or the reserved v13. Reserve the next available version, starting at v14,
+> **Rule:** Do not reuse v10, v11, v12 or v13. Reserve the next available version, starting at v14,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -243,8 +243,10 @@ downgrade; no automatic rollback is claimed.
 **Owner:** Root integration owns schema/generated source/inventory; separate
 workers own the participation repository and signed-owner merge checks.
 
-**Status:** RESERVED. Current executable schema remains v12/30 tables until
-implementation and verification. Enrollment, upload and deployment stay disabled.
+**Status:** IMPLEMENTED LOCALLY. Executable schema is v13/31 tables. A 715-test
+integration suite and analysis pass after the late-operation-expiry correction;
+full regression/build attestation follows. Enrollment, upload and deployment
+stay disabled.
 
 Add one `research_participation_permits` table using the approved signed model's
 20 normalized fields: `id`, `owner_id`, `local_revision`, `cloud_revision`,
@@ -253,7 +255,7 @@ Add one `research_participation_permits` table using the approved signed model's
 `learner_assent_receipt_ref`, `protocol_id`, `protocol_version`,
 `issued_at_utc_ms`, `expires_at_utc_ms`, `revoked_at_utc_ms`, `issuer_key_id`,
 `payload_sha256`, `signature`. Require owner and assignment foreign keys; delete
-permits before assignments. The resulting schema will have 31 tables; this is
+permits before assignments. The resulting schema has 31 tables; this is
 not a change to the 8-domain/44-capability catalog.
 
 Persisted signed documents are cached facts, not proof of current issuer state.

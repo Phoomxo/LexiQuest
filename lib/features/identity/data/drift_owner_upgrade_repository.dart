@@ -74,6 +74,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         }
 
         await _requireActiveOwnersUnfenced();
+        await _requireTransferableResearchOwner(source.id);
         var conflicts = 0;
         conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
         conflicts += await _mergeWords(source.id, target.id, upgradedAt);
@@ -557,6 +558,20 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     return conflicts;
   }
 
+  Future<void> _requireTransferableResearchOwner(String sourceId) async {
+    final signed = await _database
+        .customSelect(
+          'SELECT 1 FROM research_participation_permits WHERE owner_id = ? LIMIT 1',
+          variables: [Variable<String>(sourceId)],
+        )
+        .getSingleOrNull();
+    if (signed != null) {
+      throw StateError(
+        'Changing a signed research owner requires re-enrollment',
+      );
+    }
+  }
+
   Future<void> _mergeExperimentAssignments(
     String sourceId,
     String targetId,
@@ -649,7 +664,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
-      if (table == 'experiment_assignments') {
+      if (table == 'experiment_assignments' ||
+          table == 'research_participation_permits') {
         continue;
       }
       await _updateOwner(table, sourceId, targetId);

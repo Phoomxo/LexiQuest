@@ -78,6 +78,37 @@ void main() {
       },
     );
 
+    test(
+      'admission receipt carries the final checked permit and verification time',
+      () async {
+        final preflightPermit = harness.operations.current;
+        final finalPermit = _operation(revision: 2);
+        final finalTime = _start.add(const Duration(microseconds: 73));
+        harness.states.onRead = (call) async {
+          if (call == 1) {
+            harness.operations.current = finalPermit;
+            harness.clock.now = _start.add(const Duration(microseconds: 13));
+          } else if (call == 2) {
+            harness.states.revision = 2;
+            harness.clock.now = finalTime;
+          }
+        };
+
+        final result = await harness.repository.admitWithReceipt(
+          ownerId: 'owner-a',
+          participationPermit: harness.participation,
+        );
+
+        expect(result, isNotNull);
+        expect(result!.operation.permit, same(finalPermit));
+        expect(result.operation.permit, isNot(same(preflightPermit)));
+        expect(result.operation.verifiedAtUtc, finalTime);
+        expect(result.assignment.id, _id());
+        expect(result.assignment.assignedAtUtc, _start);
+        await _expectArtifacts(harness.database, assignments: 1);
+      },
+    );
+
     test('a valid repeat keeps the original time and fact', () async {
       final first = await harness.admit();
       harness.clock.now = _start.add(const Duration(minutes: 1));

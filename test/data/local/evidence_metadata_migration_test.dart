@@ -67,9 +67,9 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final version = await database
         .customSelect('PRAGMA user_version')
         .getSingle();
-    expect(version.read<int>('user_version'), 12);
+    expect(version.read<int>('user_version'), 13);
     expect(before, hasLength(29));
-    expect(database.allTables, hasLength(30));
+    expect(database.allTables, hasLength(31));
     expect(
       await database.customSelect('SELECT * FROM experiment_assignments').get(),
       isEmpty,
@@ -128,8 +128,8 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final columns = await database
         .customSelect('PRAGMA table_info(answer_attempts)')
         .get();
-    expect(database.schemaVersion, 12);
-    expect(database.allTables, hasLength(30));
+    expect(database.schemaVersion, 13);
+    expect(database.allTables, hasLength(31));
     expect(
       columns.map((row) => row.read<String>('name')),
       containsAll(['evidence_class', 'evidence_context_json']),

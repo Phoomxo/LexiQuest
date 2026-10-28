@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version twelve with product tables', () async {
+  test('new databases use schema version thirteen with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 12);
+    expect(database.schemaVersion, 13);
 
     final categoryColumns = await _columnNames(
       database,
@@ -124,7 +124,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 12);
+      expect(version, 13);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -202,7 +202,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        12,
+        13,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +229,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        12,
+        13,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');
@@ -242,6 +242,7 @@ const _expectedTables = <String>{
   'local_owners',
   'research_consents',
   'experiment_assignments',
+  'research_participation_permits',
   'vocabulary_categories',
   'vocabulary_words',
   'vocabulary_imports',

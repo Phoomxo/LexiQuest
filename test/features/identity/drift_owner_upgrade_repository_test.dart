@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/research_participation_fixture.dart';
 
 void main() {
   late AppDatabase database;
@@ -92,8 +93,14 @@ void main() {
     expect(ownerUpgradeInventory, actual);
   });
 
-  test('moves every owner-scoped row and replays as a no-op', () async {
+  test('moves relocatable rows and keeps target signed facts', () async {
     await _seedEveryOwnerScopedTable(database);
+    final signedBefore = await database
+        .customSelect(
+          'SELECT * FROM research_participation_permits WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        )
+        .get();
 
     final result = await repository.upgrade(
       activeOwnerId: 'guest-owner',
@@ -107,6 +114,16 @@ void main() {
     expect(result.mode, OwnerUpgradeMode.mergedExisting);
     expect(result.targetOwnerId, 'account-owner');
     expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
+    final signedAfter = await database
+        .customSelect(
+          'SELECT * FROM research_participation_permits WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        )
+        .get();
+    expect(
+      signedAfter.map((row) => row.data).toList(),
+      signedBefore.map((row) => row.data).toList(),
+    );
     for (final table in ownerUpgradeInventory) {
       expect(
         await _ownerCount(database, table, 'guest-owner'),
@@ -450,6 +467,12 @@ Future<void> _seedOwners(AppDatabase database) async {
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await seedOwnerAssignment(database, 'guest-owner');
+  final targetAssignment = await seedOwnerAssignment(database, 'account-owner');
+  await insertOwnerParticipation(
+    database,
+    'account-owner',
+    assignmentId: targetAssignment,
+  );
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",

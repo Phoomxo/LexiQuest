@@ -1381,6 +1381,1257 @@ class ExperimentAssignmentsCompanion
   }
 }
 
+class $ResearchParticipationPermitsTable extends ResearchParticipationPermits
+    with
+        TableInfo<
+          $ResearchParticipationPermitsTable,
+          ResearchParticipationPermitRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ResearchParticipationPermitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _participantClassMeta = const VerificationMeta(
+    'participantClass',
+  );
+  @override
+  late final GeneratedColumn<String> participantClass = GeneratedColumn<String>(
+    'participant_class',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ageBandCodeMeta = const VerificationMeta(
+    'ageBandCode',
+  );
+  @override
+  late final GeneratedColumn<String> ageBandCode = GeneratedColumn<String>(
+    'age_band_code',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignmentIdMeta = const VerificationMeta(
+    'assignmentId',
+  );
+  @override
+  late final GeneratedColumn<String> assignmentId = GeneratedColumn<String>(
+    'assignment_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES experiment_assignments (id)',
+    ),
+  );
+  static const VerificationMeta _assignedTreatmentMeta = const VerificationMeta(
+    'assignedTreatment',
+  );
+  @override
+  late final GeneratedColumn<String> assignedTreatment =
+      GeneratedColumn<String>(
+        'assigned_treatment',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _consentReceiptIdMeta = const VerificationMeta(
+    'consentReceiptId',
+  );
+  @override
+  late final GeneratedColumn<String> consentReceiptId = GeneratedColumn<String>(
+    'consent_receipt_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _guardianPermissionReceiptRefMeta =
+      const VerificationMeta('guardianPermissionReceiptRef');
+  @override
+  late final GeneratedColumn<String> guardianPermissionReceiptRef =
+      GeneratedColumn<String>(
+        'guardian_permission_receipt_ref',
+        aliasedName,
+        true,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _learnerAssentReceiptRefMeta =
+      const VerificationMeta('learnerAssentReceiptRef');
+  @override
+  late final GeneratedColumn<String> learnerAssentReceiptRef =
+      GeneratedColumn<String>(
+        'learner_assent_receipt_ref',
+        aliasedName,
+        true,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _protocolIdMeta = const VerificationMeta(
+    'protocolId',
+  );
+  @override
+  late final GeneratedColumn<String> protocolId = GeneratedColumn<String>(
+    'protocol_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
+    'protocolVersion',
+  );
+  @override
+  late final GeneratedColumn<String> protocolVersion = GeneratedColumn<String>(
+    'protocol_version',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _issuedAtUtcMsMeta = const VerificationMeta(
+    'issuedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> issuedAtUtcMs = GeneratedColumn<int>(
+    'issued_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresAtUtcMsMeta = const VerificationMeta(
+    'expiresAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> expiresAtUtcMs = GeneratedColumn<int>(
+    'expires_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revokedAtUtcMsMeta = const VerificationMeta(
+    'revokedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> revokedAtUtcMs = GeneratedColumn<int>(
+    'revoked_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _issuerKeyIdMeta = const VerificationMeta(
+    'issuerKeyId',
+  );
+  @override
+  late final GeneratedColumn<String> issuerKeyId = GeneratedColumn<String>(
+    'issuer_key_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadSha256Meta = const VerificationMeta(
+    'payloadSha256',
+  );
+  @override
+  late final GeneratedColumn<String> payloadSha256 = GeneratedColumn<String>(
+    'payload_sha256',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 64,
+      maxTextLength: 64,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _signatureMeta = const VerificationMeta(
+    'signature',
+  );
+  @override
+  late final GeneratedColumn<String> signature = GeneratedColumn<String>(
+    'signature',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 256,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    localRevision,
+    cloudRevision,
+    isDeleted,
+    participantClass,
+    ageBandCode,
+    assignmentId,
+    assignedTreatment,
+    consentReceiptId,
+    guardianPermissionReceiptRef,
+    learnerAssentReceiptRef,
+    protocolId,
+    protocolVersion,
+    issuedAtUtcMs,
+    expiresAtUtcMs,
+    revokedAtUtcMs,
+    issuerKeyId,
+    payloadSha256,
+    signature,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'research_participation_permits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ResearchParticipationPermitRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('participant_class')) {
+      context.handle(
+        _participantClassMeta,
+        participantClass.isAcceptableOrUnknown(
+          data['participant_class']!,
+          _participantClassMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_participantClassMeta);
+    }
+    if (data.containsKey('age_band_code')) {
+      context.handle(
+        _ageBandCodeMeta,
+        ageBandCode.isAcceptableOrUnknown(
+          data['age_band_code']!,
+          _ageBandCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ageBandCodeMeta);
+    }
+    if (data.containsKey('assignment_id')) {
+      context.handle(
+        _assignmentIdMeta,
+        assignmentId.isAcceptableOrUnknown(
+          data['assignment_id']!,
+          _assignmentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignmentIdMeta);
+    }
+    if (data.containsKey('assigned_treatment')) {
+      context.handle(
+        _assignedTreatmentMeta,
+        assignedTreatment.isAcceptableOrUnknown(
+          data['assigned_treatment']!,
+          _assignedTreatmentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignedTreatmentMeta);
+    }
+    if (data.containsKey('consent_receipt_id')) {
+      context.handle(
+        _consentReceiptIdMeta,
+        consentReceiptId.isAcceptableOrUnknown(
+          data['consent_receipt_id']!,
+          _consentReceiptIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_consentReceiptIdMeta);
+    }
+    if (data.containsKey('guardian_permission_receipt_ref')) {
+      context.handle(
+        _guardianPermissionReceiptRefMeta,
+        guardianPermissionReceiptRef.isAcceptableOrUnknown(
+          data['guardian_permission_receipt_ref']!,
+          _guardianPermissionReceiptRefMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learner_assent_receipt_ref')) {
+      context.handle(
+        _learnerAssentReceiptRefMeta,
+        learnerAssentReceiptRef.isAcceptableOrUnknown(
+          data['learner_assent_receipt_ref']!,
+          _learnerAssentReceiptRefMeta,
+        ),
+      );
+    }
+    if (data.containsKey('protocol_id')) {
+      context.handle(
+        _protocolIdMeta,
+        protocolId.isAcceptableOrUnknown(data['protocol_id']!, _protocolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolIdMeta);
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+        _protocolVersionMeta,
+        protocolVersion.isAcceptableOrUnknown(
+          data['protocol_version']!,
+          _protocolVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolVersionMeta);
+    }
+    if (data.containsKey('issued_at_utc_ms')) {
+      context.handle(
+        _issuedAtUtcMsMeta,
+        issuedAtUtcMs.isAcceptableOrUnknown(
+          data['issued_at_utc_ms']!,
+          _issuedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_issuedAtUtcMsMeta);
+    }
+    if (data.containsKey('expires_at_utc_ms')) {
+      context.handle(
+        _expiresAtUtcMsMeta,
+        expiresAtUtcMs.isAcceptableOrUnknown(
+          data['expires_at_utc_ms']!,
+          _expiresAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtUtcMsMeta);
+    }
+    if (data.containsKey('revoked_at_utc_ms')) {
+      context.handle(
+        _revokedAtUtcMsMeta,
+        revokedAtUtcMs.isAcceptableOrUnknown(
+          data['revoked_at_utc_ms']!,
+          _revokedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('issuer_key_id')) {
+      context.handle(
+        _issuerKeyIdMeta,
+        issuerKeyId.isAcceptableOrUnknown(
+          data['issuer_key_id']!,
+          _issuerKeyIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_issuerKeyIdMeta);
+    }
+    if (data.containsKey('payload_sha256')) {
+      context.handle(
+        _payloadSha256Meta,
+        payloadSha256.isAcceptableOrUnknown(
+          data['payload_sha256']!,
+          _payloadSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadSha256Meta);
+    }
+    if (data.containsKey('signature')) {
+      context.handle(
+        _signatureMeta,
+        signature.isAcceptableOrUnknown(data['signature']!, _signatureMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_signatureMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ResearchParticipationPermitRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ResearchParticipationPermitRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      participantClass: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}participant_class'],
+      )!,
+      ageBandCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}age_band_code'],
+      )!,
+      assignmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assignment_id'],
+      )!,
+      assignedTreatment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assigned_treatment'],
+      )!,
+      consentReceiptId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}consent_receipt_id'],
+      )!,
+      guardianPermissionReceiptRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guardian_permission_receipt_ref'],
+      ),
+      learnerAssentReceiptRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learner_assent_receipt_ref'],
+      ),
+      protocolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protocol_id'],
+      )!,
+      protocolVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protocol_version'],
+      )!,
+      issuedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}issued_at_utc_ms'],
+      )!,
+      expiresAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expires_at_utc_ms'],
+      )!,
+      revokedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revoked_at_utc_ms'],
+      ),
+      issuerKeyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}issuer_key_id'],
+      )!,
+      payloadSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_sha256'],
+      )!,
+      signature: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}signature'],
+      )!,
+    );
+  }
+
+  @override
+  $ResearchParticipationPermitsTable createAlias(String alias) {
+    return $ResearchParticipationPermitsTable(attachedDatabase, alias);
+  }
+}
+
+class ResearchParticipationPermitRow extends DataClass
+    implements Insertable<ResearchParticipationPermitRow> {
+  final String id;
+  final String ownerId;
+  final int localRevision;
+  final int cloudRevision;
+  final bool isDeleted;
+  final String participantClass;
+  final String ageBandCode;
+  final String assignmentId;
+  final String assignedTreatment;
+  final String consentReceiptId;
+  final String? guardianPermissionReceiptRef;
+  final String? learnerAssentReceiptRef;
+  final String protocolId;
+  final String protocolVersion;
+  final int issuedAtUtcMs;
+  final int expiresAtUtcMs;
+  final int? revokedAtUtcMs;
+  final String issuerKeyId;
+  final String payloadSha256;
+  final String signature;
+  const ResearchParticipationPermitRow({
+    required this.id,
+    required this.ownerId,
+    required this.localRevision,
+    required this.cloudRevision,
+    required this.isDeleted,
+    required this.participantClass,
+    required this.ageBandCode,
+    required this.assignmentId,
+    required this.assignedTreatment,
+    required this.consentReceiptId,
+    this.guardianPermissionReceiptRef,
+    this.learnerAssentReceiptRef,
+    required this.protocolId,
+    required this.protocolVersion,
+    required this.issuedAtUtcMs,
+    required this.expiresAtUtcMs,
+    this.revokedAtUtcMs,
+    required this.issuerKeyId,
+    required this.payloadSha256,
+    required this.signature,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    map['participant_class'] = Variable<String>(participantClass);
+    map['age_band_code'] = Variable<String>(ageBandCode);
+    map['assignment_id'] = Variable<String>(assignmentId);
+    map['assigned_treatment'] = Variable<String>(assignedTreatment);
+    map['consent_receipt_id'] = Variable<String>(consentReceiptId);
+    if (!nullToAbsent || guardianPermissionReceiptRef != null) {
+      map['guardian_permission_receipt_ref'] = Variable<String>(
+        guardianPermissionReceiptRef,
+      );
+    }
+    if (!nullToAbsent || learnerAssentReceiptRef != null) {
+      map['learner_assent_receipt_ref'] = Variable<String>(
+        learnerAssentReceiptRef,
+      );
+    }
+    map['protocol_id'] = Variable<String>(protocolId);
+    map['protocol_version'] = Variable<String>(protocolVersion);
+    map['issued_at_utc_ms'] = Variable<int>(issuedAtUtcMs);
+    map['expires_at_utc_ms'] = Variable<int>(expiresAtUtcMs);
+    if (!nullToAbsent || revokedAtUtcMs != null) {
+      map['revoked_at_utc_ms'] = Variable<int>(revokedAtUtcMs);
+    }
+    map['issuer_key_id'] = Variable<String>(issuerKeyId);
+    map['payload_sha256'] = Variable<String>(payloadSha256);
+    map['signature'] = Variable<String>(signature);
+    return map;
+  }
+
+  ResearchParticipationPermitsCompanion toCompanion(bool nullToAbsent) {
+    return ResearchParticipationPermitsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      isDeleted: Value(isDeleted),
+      participantClass: Value(participantClass),
+      ageBandCode: Value(ageBandCode),
+      assignmentId: Value(assignmentId),
+      assignedTreatment: Value(assignedTreatment),
+      consentReceiptId: Value(consentReceiptId),
+      guardianPermissionReceiptRef:
+          guardianPermissionReceiptRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guardianPermissionReceiptRef),
+      learnerAssentReceiptRef: learnerAssentReceiptRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learnerAssentReceiptRef),
+      protocolId: Value(protocolId),
+      protocolVersion: Value(protocolVersion),
+      issuedAtUtcMs: Value(issuedAtUtcMs),
+      expiresAtUtcMs: Value(expiresAtUtcMs),
+      revokedAtUtcMs: revokedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(revokedAtUtcMs),
+      issuerKeyId: Value(issuerKeyId),
+      payloadSha256: Value(payloadSha256),
+      signature: Value(signature),
+    );
+  }
+
+  factory ResearchParticipationPermitRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ResearchParticipationPermitRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      participantClass: serializer.fromJson<String>(json['participantClass']),
+      ageBandCode: serializer.fromJson<String>(json['ageBandCode']),
+      assignmentId: serializer.fromJson<String>(json['assignmentId']),
+      assignedTreatment: serializer.fromJson<String>(json['assignedTreatment']),
+      consentReceiptId: serializer.fromJson<String>(json['consentReceiptId']),
+      guardianPermissionReceiptRef: serializer.fromJson<String?>(
+        json['guardianPermissionReceiptRef'],
+      ),
+      learnerAssentReceiptRef: serializer.fromJson<String?>(
+        json['learnerAssentReceiptRef'],
+      ),
+      protocolId: serializer.fromJson<String>(json['protocolId']),
+      protocolVersion: serializer.fromJson<String>(json['protocolVersion']),
+      issuedAtUtcMs: serializer.fromJson<int>(json['issuedAtUtcMs']),
+      expiresAtUtcMs: serializer.fromJson<int>(json['expiresAtUtcMs']),
+      revokedAtUtcMs: serializer.fromJson<int?>(json['revokedAtUtcMs']),
+      issuerKeyId: serializer.fromJson<String>(json['issuerKeyId']),
+      payloadSha256: serializer.fromJson<String>(json['payloadSha256']),
+      signature: serializer.fromJson<String>(json['signature']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'participantClass': serializer.toJson<String>(participantClass),
+      'ageBandCode': serializer.toJson<String>(ageBandCode),
+      'assignmentId': serializer.toJson<String>(assignmentId),
+      'assignedTreatment': serializer.toJson<String>(assignedTreatment),
+      'consentReceiptId': serializer.toJson<String>(consentReceiptId),
+      'guardianPermissionReceiptRef': serializer.toJson<String?>(
+        guardianPermissionReceiptRef,
+      ),
+      'learnerAssentReceiptRef': serializer.toJson<String?>(
+        learnerAssentReceiptRef,
+      ),
+      'protocolId': serializer.toJson<String>(protocolId),
+      'protocolVersion': serializer.toJson<String>(protocolVersion),
+      'issuedAtUtcMs': serializer.toJson<int>(issuedAtUtcMs),
+      'expiresAtUtcMs': serializer.toJson<int>(expiresAtUtcMs),
+      'revokedAtUtcMs': serializer.toJson<int?>(revokedAtUtcMs),
+      'issuerKeyId': serializer.toJson<String>(issuerKeyId),
+      'payloadSha256': serializer.toJson<String>(payloadSha256),
+      'signature': serializer.toJson<String>(signature),
+    };
+  }
+
+  ResearchParticipationPermitRow copyWith({
+    String? id,
+    String? ownerId,
+    int? localRevision,
+    int? cloudRevision,
+    bool? isDeleted,
+    String? participantClass,
+    String? ageBandCode,
+    String? assignmentId,
+    String? assignedTreatment,
+    String? consentReceiptId,
+    Value<String?> guardianPermissionReceiptRef = const Value.absent(),
+    Value<String?> learnerAssentReceiptRef = const Value.absent(),
+    String? protocolId,
+    String? protocolVersion,
+    int? issuedAtUtcMs,
+    int? expiresAtUtcMs,
+    Value<int?> revokedAtUtcMs = const Value.absent(),
+    String? issuerKeyId,
+    String? payloadSha256,
+    String? signature,
+  }) => ResearchParticipationPermitRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    isDeleted: isDeleted ?? this.isDeleted,
+    participantClass: participantClass ?? this.participantClass,
+    ageBandCode: ageBandCode ?? this.ageBandCode,
+    assignmentId: assignmentId ?? this.assignmentId,
+    assignedTreatment: assignedTreatment ?? this.assignedTreatment,
+    consentReceiptId: consentReceiptId ?? this.consentReceiptId,
+    guardianPermissionReceiptRef: guardianPermissionReceiptRef.present
+        ? guardianPermissionReceiptRef.value
+        : this.guardianPermissionReceiptRef,
+    learnerAssentReceiptRef: learnerAssentReceiptRef.present
+        ? learnerAssentReceiptRef.value
+        : this.learnerAssentReceiptRef,
+    protocolId: protocolId ?? this.protocolId,
+    protocolVersion: protocolVersion ?? this.protocolVersion,
+    issuedAtUtcMs: issuedAtUtcMs ?? this.issuedAtUtcMs,
+    expiresAtUtcMs: expiresAtUtcMs ?? this.expiresAtUtcMs,
+    revokedAtUtcMs: revokedAtUtcMs.present
+        ? revokedAtUtcMs.value
+        : this.revokedAtUtcMs,
+    issuerKeyId: issuerKeyId ?? this.issuerKeyId,
+    payloadSha256: payloadSha256 ?? this.payloadSha256,
+    signature: signature ?? this.signature,
+  );
+  ResearchParticipationPermitRow copyWithCompanion(
+    ResearchParticipationPermitsCompanion data,
+  ) {
+    return ResearchParticipationPermitRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      participantClass: data.participantClass.present
+          ? data.participantClass.value
+          : this.participantClass,
+      ageBandCode: data.ageBandCode.present
+          ? data.ageBandCode.value
+          : this.ageBandCode,
+      assignmentId: data.assignmentId.present
+          ? data.assignmentId.value
+          : this.assignmentId,
+      assignedTreatment: data.assignedTreatment.present
+          ? data.assignedTreatment.value
+          : this.assignedTreatment,
+      consentReceiptId: data.consentReceiptId.present
+          ? data.consentReceiptId.value
+          : this.consentReceiptId,
+      guardianPermissionReceiptRef: data.guardianPermissionReceiptRef.present
+          ? data.guardianPermissionReceiptRef.value
+          : this.guardianPermissionReceiptRef,
+      learnerAssentReceiptRef: data.learnerAssentReceiptRef.present
+          ? data.learnerAssentReceiptRef.value
+          : this.learnerAssentReceiptRef,
+      protocolId: data.protocolId.present
+          ? data.protocolId.value
+          : this.protocolId,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      issuedAtUtcMs: data.issuedAtUtcMs.present
+          ? data.issuedAtUtcMs.value
+          : this.issuedAtUtcMs,
+      expiresAtUtcMs: data.expiresAtUtcMs.present
+          ? data.expiresAtUtcMs.value
+          : this.expiresAtUtcMs,
+      revokedAtUtcMs: data.revokedAtUtcMs.present
+          ? data.revokedAtUtcMs.value
+          : this.revokedAtUtcMs,
+      issuerKeyId: data.issuerKeyId.present
+          ? data.issuerKeyId.value
+          : this.issuerKeyId,
+      payloadSha256: data.payloadSha256.present
+          ? data.payloadSha256.value
+          : this.payloadSha256,
+      signature: data.signature.present ? data.signature.value : this.signature,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchParticipationPermitRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('participantClass: $participantClass, ')
+          ..write('ageBandCode: $ageBandCode, ')
+          ..write('assignmentId: $assignmentId, ')
+          ..write('assignedTreatment: $assignedTreatment, ')
+          ..write('consentReceiptId: $consentReceiptId, ')
+          ..write(
+            'guardianPermissionReceiptRef: $guardianPermissionReceiptRef, ',
+          )
+          ..write('learnerAssentReceiptRef: $learnerAssentReceiptRef, ')
+          ..write('protocolId: $protocolId, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('issuedAtUtcMs: $issuedAtUtcMs, ')
+          ..write('expiresAtUtcMs: $expiresAtUtcMs, ')
+          ..write('revokedAtUtcMs: $revokedAtUtcMs, ')
+          ..write('issuerKeyId: $issuerKeyId, ')
+          ..write('payloadSha256: $payloadSha256, ')
+          ..write('signature: $signature')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    localRevision,
+    cloudRevision,
+    isDeleted,
+    participantClass,
+    ageBandCode,
+    assignmentId,
+    assignedTreatment,
+    consentReceiptId,
+    guardianPermissionReceiptRef,
+    learnerAssentReceiptRef,
+    protocolId,
+    protocolVersion,
+    issuedAtUtcMs,
+    expiresAtUtcMs,
+    revokedAtUtcMs,
+    issuerKeyId,
+    payloadSha256,
+    signature,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ResearchParticipationPermitRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.isDeleted == this.isDeleted &&
+          other.participantClass == this.participantClass &&
+          other.ageBandCode == this.ageBandCode &&
+          other.assignmentId == this.assignmentId &&
+          other.assignedTreatment == this.assignedTreatment &&
+          other.consentReceiptId == this.consentReceiptId &&
+          other.guardianPermissionReceiptRef ==
+              this.guardianPermissionReceiptRef &&
+          other.learnerAssentReceiptRef == this.learnerAssentReceiptRef &&
+          other.protocolId == this.protocolId &&
+          other.protocolVersion == this.protocolVersion &&
+          other.issuedAtUtcMs == this.issuedAtUtcMs &&
+          other.expiresAtUtcMs == this.expiresAtUtcMs &&
+          other.revokedAtUtcMs == this.revokedAtUtcMs &&
+          other.issuerKeyId == this.issuerKeyId &&
+          other.payloadSha256 == this.payloadSha256 &&
+          other.signature == this.signature);
+}
+
+class ResearchParticipationPermitsCompanion
+    extends UpdateCompanion<ResearchParticipationPermitRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<bool> isDeleted;
+  final Value<String> participantClass;
+  final Value<String> ageBandCode;
+  final Value<String> assignmentId;
+  final Value<String> assignedTreatment;
+  final Value<String> consentReceiptId;
+  final Value<String?> guardianPermissionReceiptRef;
+  final Value<String?> learnerAssentReceiptRef;
+  final Value<String> protocolId;
+  final Value<String> protocolVersion;
+  final Value<int> issuedAtUtcMs;
+  final Value<int> expiresAtUtcMs;
+  final Value<int?> revokedAtUtcMs;
+  final Value<String> issuerKeyId;
+  final Value<String> payloadSha256;
+  final Value<String> signature;
+  final Value<int> rowid;
+  const ResearchParticipationPermitsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.participantClass = const Value.absent(),
+    this.ageBandCode = const Value.absent(),
+    this.assignmentId = const Value.absent(),
+    this.assignedTreatment = const Value.absent(),
+    this.consentReceiptId = const Value.absent(),
+    this.guardianPermissionReceiptRef = const Value.absent(),
+    this.learnerAssentReceiptRef = const Value.absent(),
+    this.protocolId = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.issuedAtUtcMs = const Value.absent(),
+    this.expiresAtUtcMs = const Value.absent(),
+    this.revokedAtUtcMs = const Value.absent(),
+    this.issuerKeyId = const Value.absent(),
+    this.payloadSha256 = const Value.absent(),
+    this.signature = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ResearchParticipationPermitsCompanion.insert({
+    required String id,
+    required String ownerId,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    required String participantClass,
+    required String ageBandCode,
+    required String assignmentId,
+    required String assignedTreatment,
+    required String consentReceiptId,
+    this.guardianPermissionReceiptRef = const Value.absent(),
+    this.learnerAssentReceiptRef = const Value.absent(),
+    required String protocolId,
+    required String protocolVersion,
+    required int issuedAtUtcMs,
+    required int expiresAtUtcMs,
+    this.revokedAtUtcMs = const Value.absent(),
+    required String issuerKeyId,
+    required String payloadSha256,
+    required String signature,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       participantClass = Value(participantClass),
+       ageBandCode = Value(ageBandCode),
+       assignmentId = Value(assignmentId),
+       assignedTreatment = Value(assignedTreatment),
+       consentReceiptId = Value(consentReceiptId),
+       protocolId = Value(protocolId),
+       protocolVersion = Value(protocolVersion),
+       issuedAtUtcMs = Value(issuedAtUtcMs),
+       expiresAtUtcMs = Value(expiresAtUtcMs),
+       issuerKeyId = Value(issuerKeyId),
+       payloadSha256 = Value(payloadSha256),
+       signature = Value(signature);
+  static Insertable<ResearchParticipationPermitRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<bool>? isDeleted,
+    Expression<String>? participantClass,
+    Expression<String>? ageBandCode,
+    Expression<String>? assignmentId,
+    Expression<String>? assignedTreatment,
+    Expression<String>? consentReceiptId,
+    Expression<String>? guardianPermissionReceiptRef,
+    Expression<String>? learnerAssentReceiptRef,
+    Expression<String>? protocolId,
+    Expression<String>? protocolVersion,
+    Expression<int>? issuedAtUtcMs,
+    Expression<int>? expiresAtUtcMs,
+    Expression<int>? revokedAtUtcMs,
+    Expression<String>? issuerKeyId,
+    Expression<String>? payloadSha256,
+    Expression<String>? signature,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (participantClass != null) 'participant_class': participantClass,
+      if (ageBandCode != null) 'age_band_code': ageBandCode,
+      if (assignmentId != null) 'assignment_id': assignmentId,
+      if (assignedTreatment != null) 'assigned_treatment': assignedTreatment,
+      if (consentReceiptId != null) 'consent_receipt_id': consentReceiptId,
+      if (guardianPermissionReceiptRef != null)
+        'guardian_permission_receipt_ref': guardianPermissionReceiptRef,
+      if (learnerAssentReceiptRef != null)
+        'learner_assent_receipt_ref': learnerAssentReceiptRef,
+      if (protocolId != null) 'protocol_id': protocolId,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (issuedAtUtcMs != null) 'issued_at_utc_ms': issuedAtUtcMs,
+      if (expiresAtUtcMs != null) 'expires_at_utc_ms': expiresAtUtcMs,
+      if (revokedAtUtcMs != null) 'revoked_at_utc_ms': revokedAtUtcMs,
+      if (issuerKeyId != null) 'issuer_key_id': issuerKeyId,
+      if (payloadSha256 != null) 'payload_sha256': payloadSha256,
+      if (signature != null) 'signature': signature,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ResearchParticipationPermitsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<bool>? isDeleted,
+    Value<String>? participantClass,
+    Value<String>? ageBandCode,
+    Value<String>? assignmentId,
+    Value<String>? assignedTreatment,
+    Value<String>? consentReceiptId,
+    Value<String?>? guardianPermissionReceiptRef,
+    Value<String?>? learnerAssentReceiptRef,
+    Value<String>? protocolId,
+    Value<String>? protocolVersion,
+    Value<int>? issuedAtUtcMs,
+    Value<int>? expiresAtUtcMs,
+    Value<int?>? revokedAtUtcMs,
+    Value<String>? issuerKeyId,
+    Value<String>? payloadSha256,
+    Value<String>? signature,
+    Value<int>? rowid,
+  }) {
+    return ResearchParticipationPermitsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      isDeleted: isDeleted ?? this.isDeleted,
+      participantClass: participantClass ?? this.participantClass,
+      ageBandCode: ageBandCode ?? this.ageBandCode,
+      assignmentId: assignmentId ?? this.assignmentId,
+      assignedTreatment: assignedTreatment ?? this.assignedTreatment,
+      consentReceiptId: consentReceiptId ?? this.consentReceiptId,
+      guardianPermissionReceiptRef:
+          guardianPermissionReceiptRef ?? this.guardianPermissionReceiptRef,
+      learnerAssentReceiptRef:
+          learnerAssentReceiptRef ?? this.learnerAssentReceiptRef,
+      protocolId: protocolId ?? this.protocolId,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      issuedAtUtcMs: issuedAtUtcMs ?? this.issuedAtUtcMs,
+      expiresAtUtcMs: expiresAtUtcMs ?? this.expiresAtUtcMs,
+      revokedAtUtcMs: revokedAtUtcMs ?? this.revokedAtUtcMs,
+      issuerKeyId: issuerKeyId ?? this.issuerKeyId,
+      payloadSha256: payloadSha256 ?? this.payloadSha256,
+      signature: signature ?? this.signature,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (participantClass.present) {
+      map['participant_class'] = Variable<String>(participantClass.value);
+    }
+    if (ageBandCode.present) {
+      map['age_band_code'] = Variable<String>(ageBandCode.value);
+    }
+    if (assignmentId.present) {
+      map['assignment_id'] = Variable<String>(assignmentId.value);
+    }
+    if (assignedTreatment.present) {
+      map['assigned_treatment'] = Variable<String>(assignedTreatment.value);
+    }
+    if (consentReceiptId.present) {
+      map['consent_receipt_id'] = Variable<String>(consentReceiptId.value);
+    }
+    if (guardianPermissionReceiptRef.present) {
+      map['guardian_permission_receipt_ref'] = Variable<String>(
+        guardianPermissionReceiptRef.value,
+      );
+    }
+    if (learnerAssentReceiptRef.present) {
+      map['learner_assent_receipt_ref'] = Variable<String>(
+        learnerAssentReceiptRef.value,
+      );
+    }
+    if (protocolId.present) {
+      map['protocol_id'] = Variable<String>(protocolId.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<String>(protocolVersion.value);
+    }
+    if (issuedAtUtcMs.present) {
+      map['issued_at_utc_ms'] = Variable<int>(issuedAtUtcMs.value);
+    }
+    if (expiresAtUtcMs.present) {
+      map['expires_at_utc_ms'] = Variable<int>(expiresAtUtcMs.value);
+    }
+    if (revokedAtUtcMs.present) {
+      map['revoked_at_utc_ms'] = Variable<int>(revokedAtUtcMs.value);
+    }
+    if (issuerKeyId.present) {
+      map['issuer_key_id'] = Variable<String>(issuerKeyId.value);
+    }
+    if (payloadSha256.present) {
+      map['payload_sha256'] = Variable<String>(payloadSha256.value);
+    }
+    if (signature.present) {
+      map['signature'] = Variable<String>(signature.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchParticipationPermitsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('participantClass: $participantClass, ')
+          ..write('ageBandCode: $ageBandCode, ')
+          ..write('assignmentId: $assignmentId, ')
+          ..write('assignedTreatment: $assignedTreatment, ')
+          ..write('consentReceiptId: $consentReceiptId, ')
+          ..write(
+            'guardianPermissionReceiptRef: $guardianPermissionReceiptRef, ',
+          )
+          ..write('learnerAssentReceiptRef: $learnerAssentReceiptRef, ')
+          ..write('protocolId: $protocolId, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('issuedAtUtcMs: $issuedAtUtcMs, ')
+          ..write('expiresAtUtcMs: $expiresAtUtcMs, ')
+          ..write('revokedAtUtcMs: $revokedAtUtcMs, ')
+          ..write('issuerKeyId: $issuerKeyId, ')
+          ..write('payloadSha256: $payloadSha256, ')
+          ..write('signature: $signature, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VocabularyCategoriesTable extends VocabularyCategories
     with TableInfo<$VocabularyCategoriesTable, VocabularyCategory> {
   @override
@@ -17827,6 +19078,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ExperimentAssignmentsTable experimentAssignments =
       $ExperimentAssignmentsTable(this);
+  late final $ResearchParticipationPermitsTable researchParticipationPermits =
+      $ResearchParticipationPermitsTable(this);
   late final $VocabularyCategoriesTable vocabularyCategories =
       $VocabularyCategoriesTable(this);
   late final $VocabularyWordsTable vocabularyWords = $VocabularyWordsTable(
@@ -17885,6 +19138,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localOwners,
     researchConsents,
     experimentAssignments,
+    researchParticipationPermits,
     vocabularyCategories,
     vocabularyWords,
     vocabularyImports,
@@ -18005,6 +19259,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _experimentAssignmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ResearchParticipationPermitsTable,
+    List<ResearchParticipationPermitRow>
+  >
+  _researchParticipationPermitsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.researchParticipationPermits,
+        aliasName: 'local_owners__id__research_participation_permits__owner_id',
+      );
+
+  $$ResearchParticipationPermitsTableProcessedTableManager
+  get researchParticipationPermitsRefs {
+    final manager = $$ResearchParticipationPermitsTableTableManager(
+      $_db,
+      $_db.researchParticipationPermits,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _researchParticipationPermitsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -18541,6 +19820,35 @@ class $$LocalOwnersTableFilterComposer
               }) => $$ExperimentAssignmentsTableFilterComposer(
                 $db: $db,
                 $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> researchParticipationPermitsRefs(
+    Expression<bool> Function(
+      $$ResearchParticipationPermitsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ResearchParticipationPermitsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -19229,6 +20537,35 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> researchParticipationPermitsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ResearchParticipationPermitsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ResearchParticipationPermitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> vocabularyCategoriesRefs<T extends Object>(
     Expression<T> Function($$VocabularyCategoriesTableAnnotationComposer a) f,
   ) {
@@ -19806,6 +21143,7 @@ class $$LocalOwnersTableTableManager
           PrefetchHooks Function({
             bool researchConsentsRefs,
             bool experimentAssignmentsRefs,
+            bool researchParticipationPermitsRefs,
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
             bool vocabularyImportsRefs,
@@ -19889,6 +21227,7 @@ class $$LocalOwnersTableTableManager
               ({
                 researchConsentsRefs = false,
                 experimentAssignmentsRefs = false,
+                researchParticipationPermitsRefs = false,
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
                 vocabularyImportsRefs = false,
@@ -19917,6 +21256,8 @@ class $$LocalOwnersTableTableManager
                   explicitlyWatchedTables: [
                     if (researchConsentsRefs) db.researchConsents,
                     if (experimentAssignmentsRefs) db.experimentAssignments,
+                    if (researchParticipationPermitsRefs)
+                      db.researchParticipationPermits,
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
@@ -19979,6 +21320,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).experimentAssignmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (researchParticipationPermitsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ResearchParticipationPermitRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._researchParticipationPermitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).researchParticipationPermitsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -20470,6 +21832,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
       PrefetchHooks Function({
         bool researchConsentsRefs,
         bool experimentAssignmentsRefs,
+        bool researchParticipationPermitsRefs,
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
         bool vocabularyImportsRefs,
@@ -20899,6 +22262,33 @@ final class $$ExperimentAssignmentsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $ResearchParticipationPermitsTable,
+    List<ResearchParticipationPermitRow>
+  >
+  _researchParticipationPermitsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.researchParticipationPermits,
+    aliasName:
+        'experiment_assignments__id__research_participation_permits__assignment_id',
+  );
+
+  $$ResearchParticipationPermitsTableProcessedTableManager
+  get researchParticipationPermitsRefs {
+    final manager = $$ResearchParticipationPermitsTableTableManager(
+      $_db,
+      $_db.researchParticipationPermits,
+    ).filter((f) => f.assignmentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _researchParticipationPermitsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ExperimentAssignmentsTableFilterComposer
@@ -20961,6 +22351,35 @@ class $$ExperimentAssignmentsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> researchParticipationPermitsRefs(
+    Expression<bool> Function(
+      $$ResearchParticipationPermitsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ResearchParticipationPermitsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.assignmentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 }
 
@@ -21084,6 +22503,35 @@ class $$ExperimentAssignmentsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> researchParticipationPermitsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ResearchParticipationPermitsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ResearchParticipationPermitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.assignmentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ExperimentAssignmentsTableTableManager
@@ -21099,7 +22547,10 @@ class $$ExperimentAssignmentsTableTableManager
           $$ExperimentAssignmentsTableUpdateCompanionBuilder,
           (ExperimentAssignment, $$ExperimentAssignmentsTableReferences),
           ExperimentAssignment,
-          PrefetchHooks Function({bool ownerId})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool researchParticipationPermitsRefs,
+          })
         > {
   $$ExperimentAssignmentsTableTableManager(
     _$AppDatabase db,
@@ -21171,7 +22622,779 @@ class $$ExperimentAssignmentsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({ownerId = false}) {
+          prefetchHooksCallback:
+              ({ownerId = false, researchParticipationPermitsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (researchParticipationPermitsRefs)
+                      db.researchParticipationPermits,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$ExperimentAssignmentsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$ExperimentAssignmentsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (researchParticipationPermitsRefs)
+                        await $_getPrefetchedData<
+                          ExperimentAssignment,
+                          $ExperimentAssignmentsTable,
+                          ResearchParticipationPermitRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ExperimentAssignmentsTableReferences
+                                  ._researchParticipationPermitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ExperimentAssignmentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).researchParticipationPermitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.assignmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ExperimentAssignmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExperimentAssignmentsTable,
+      ExperimentAssignment,
+      $$ExperimentAssignmentsTableFilterComposer,
+      $$ExperimentAssignmentsTableOrderingComposer,
+      $$ExperimentAssignmentsTableAnnotationComposer,
+      $$ExperimentAssignmentsTableCreateCompanionBuilder,
+      $$ExperimentAssignmentsTableUpdateCompanionBuilder,
+      (ExperimentAssignment, $$ExperimentAssignmentsTableReferences),
+      ExperimentAssignment,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool researchParticipationPermitsRefs,
+      })
+    >;
+typedef $$ResearchParticipationPermitsTableCreateCompanionBuilder =
+    ResearchParticipationPermitsCompanion Function({
+      required String id,
+      required String ownerId,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<bool> isDeleted,
+      required String participantClass,
+      required String ageBandCode,
+      required String assignmentId,
+      required String assignedTreatment,
+      required String consentReceiptId,
+      Value<String?> guardianPermissionReceiptRef,
+      Value<String?> learnerAssentReceiptRef,
+      required String protocolId,
+      required String protocolVersion,
+      required int issuedAtUtcMs,
+      required int expiresAtUtcMs,
+      Value<int?> revokedAtUtcMs,
+      required String issuerKeyId,
+      required String payloadSha256,
+      required String signature,
+      Value<int> rowid,
+    });
+typedef $$ResearchParticipationPermitsTableUpdateCompanionBuilder =
+    ResearchParticipationPermitsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<bool> isDeleted,
+      Value<String> participantClass,
+      Value<String> ageBandCode,
+      Value<String> assignmentId,
+      Value<String> assignedTreatment,
+      Value<String> consentReceiptId,
+      Value<String?> guardianPermissionReceiptRef,
+      Value<String?> learnerAssentReceiptRef,
+      Value<String> protocolId,
+      Value<String> protocolVersion,
+      Value<int> issuedAtUtcMs,
+      Value<int> expiresAtUtcMs,
+      Value<int?> revokedAtUtcMs,
+      Value<String> issuerKeyId,
+      Value<String> payloadSha256,
+      Value<String> signature,
+      Value<int> rowid,
+    });
+
+final class $$ResearchParticipationPermitsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ResearchParticipationPermitsTable,
+          ResearchParticipationPermitRow
+        > {
+  $$ResearchParticipationPermitsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias(
+        'research_participation_permits__owner_id__local_owners__id',
+      );
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ExperimentAssignmentsTable _assignmentIdTable(
+    _$AppDatabase db,
+  ) => db.experimentAssignments.createAlias(
+    'research_participation_permits__assignment_id__experiment_assignments__id',
+  );
+
+  $$ExperimentAssignmentsTableProcessedTableManager get assignmentId {
+    final $_column = $_itemColumn<String>('assignment_id')!;
+
+    final manager = $$ExperimentAssignmentsTableTableManager(
+      $_db,
+      $_db.experimentAssignments,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_assignmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ResearchParticipationPermitsTableFilterComposer
+    extends Composer<_$AppDatabase, $ResearchParticipationPermitsTable> {
+  $$ResearchParticipationPermitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get participantClass => $composableBuilder(
+    column: $table.participantClass,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ageBandCode => $composableBuilder(
+    column: $table.ageBandCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get consentReceiptId => $composableBuilder(
+    column: $table.consentReceiptId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guardianPermissionReceiptRef => $composableBuilder(
+    column: $table.guardianPermissionReceiptRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learnerAssentReceiptRef => $composableBuilder(
+    column: $table.learnerAssentReceiptRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revokedAtUtcMs => $composableBuilder(
+    column: $table.revokedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get issuerKeyId => $composableBuilder(
+    column: $table.issuerKeyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadSha256 => $composableBuilder(
+    column: $table.payloadSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get signature => $composableBuilder(
+    column: $table.signature,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableFilterComposer get assignmentId {
+    final $$ExperimentAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchParticipationPermitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ResearchParticipationPermitsTable> {
+  $$ResearchParticipationPermitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get participantClass => $composableBuilder(
+    column: $table.participantClass,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ageBandCode => $composableBuilder(
+    column: $table.ageBandCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get consentReceiptId => $composableBuilder(
+    column: $table.consentReceiptId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guardianPermissionReceiptRef =>
+      $composableBuilder(
+        column: $table.guardianPermissionReceiptRef,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get learnerAssentReceiptRef => $composableBuilder(
+    column: $table.learnerAssentReceiptRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revokedAtUtcMs => $composableBuilder(
+    column: $table.revokedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get issuerKeyId => $composableBuilder(
+    column: $table.issuerKeyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadSha256 => $composableBuilder(
+    column: $table.payloadSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get signature => $composableBuilder(
+    column: $table.signature,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableOrderingComposer get assignmentId {
+    final $$ExperimentAssignmentsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableOrderingComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchParticipationPermitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ResearchParticipationPermitsTable> {
+  $$ResearchParticipationPermitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get participantClass => $composableBuilder(
+    column: $table.participantClass,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ageBandCode => $composableBuilder(
+    column: $table.ageBandCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get consentReceiptId => $composableBuilder(
+    column: $table.consentReceiptId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guardianPermissionReceiptRef =>
+      $composableBuilder(
+        column: $table.guardianPermissionReceiptRef,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get learnerAssentReceiptRef => $composableBuilder(
+    column: $table.learnerAssentReceiptRef,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get issuedAtUtcMs => $composableBuilder(
+    column: $table.issuedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revokedAtUtcMs => $composableBuilder(
+    column: $table.revokedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get issuerKeyId => $composableBuilder(
+    column: $table.issuerKeyId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadSha256 => $composableBuilder(
+    column: $table.payloadSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get signature =>
+      $composableBuilder(column: $table.signature, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableAnnotationComposer get assignmentId {
+    final $$ExperimentAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchParticipationPermitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ResearchParticipationPermitsTable,
+          ResearchParticipationPermitRow,
+          $$ResearchParticipationPermitsTableFilterComposer,
+          $$ResearchParticipationPermitsTableOrderingComposer,
+          $$ResearchParticipationPermitsTableAnnotationComposer,
+          $$ResearchParticipationPermitsTableCreateCompanionBuilder,
+          $$ResearchParticipationPermitsTableUpdateCompanionBuilder,
+          (
+            ResearchParticipationPermitRow,
+            $$ResearchParticipationPermitsTableReferences,
+          ),
+          ResearchParticipationPermitRow,
+          PrefetchHooks Function({bool ownerId, bool assignmentId})
+        > {
+  $$ResearchParticipationPermitsTableTableManager(
+    _$AppDatabase db,
+    $ResearchParticipationPermitsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ResearchParticipationPermitsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ResearchParticipationPermitsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<String> participantClass = const Value.absent(),
+                Value<String> ageBandCode = const Value.absent(),
+                Value<String> assignmentId = const Value.absent(),
+                Value<String> assignedTreatment = const Value.absent(),
+                Value<String> consentReceiptId = const Value.absent(),
+                Value<String?> guardianPermissionReceiptRef =
+                    const Value.absent(),
+                Value<String?> learnerAssentReceiptRef = const Value.absent(),
+                Value<String> protocolId = const Value.absent(),
+                Value<String> protocolVersion = const Value.absent(),
+                Value<int> issuedAtUtcMs = const Value.absent(),
+                Value<int> expiresAtUtcMs = const Value.absent(),
+                Value<int?> revokedAtUtcMs = const Value.absent(),
+                Value<String> issuerKeyId = const Value.absent(),
+                Value<String> payloadSha256 = const Value.absent(),
+                Value<String> signature = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchParticipationPermitsCompanion(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                isDeleted: isDeleted,
+                participantClass: participantClass,
+                ageBandCode: ageBandCode,
+                assignmentId: assignmentId,
+                assignedTreatment: assignedTreatment,
+                consentReceiptId: consentReceiptId,
+                guardianPermissionReceiptRef: guardianPermissionReceiptRef,
+                learnerAssentReceiptRef: learnerAssentReceiptRef,
+                protocolId: protocolId,
+                protocolVersion: protocolVersion,
+                issuedAtUtcMs: issuedAtUtcMs,
+                expiresAtUtcMs: expiresAtUtcMs,
+                revokedAtUtcMs: revokedAtUtcMs,
+                issuerKeyId: issuerKeyId,
+                payloadSha256: payloadSha256,
+                signature: signature,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                required String participantClass,
+                required String ageBandCode,
+                required String assignmentId,
+                required String assignedTreatment,
+                required String consentReceiptId,
+                Value<String?> guardianPermissionReceiptRef =
+                    const Value.absent(),
+                Value<String?> learnerAssentReceiptRef = const Value.absent(),
+                required String protocolId,
+                required String protocolVersion,
+                required int issuedAtUtcMs,
+                required int expiresAtUtcMs,
+                Value<int?> revokedAtUtcMs = const Value.absent(),
+                required String issuerKeyId,
+                required String payloadSha256,
+                required String signature,
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchParticipationPermitsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                isDeleted: isDeleted,
+                participantClass: participantClass,
+                ageBandCode: ageBandCode,
+                assignmentId: assignmentId,
+                assignedTreatment: assignedTreatment,
+                consentReceiptId: consentReceiptId,
+                guardianPermissionReceiptRef: guardianPermissionReceiptRef,
+                learnerAssentReceiptRef: learnerAssentReceiptRef,
+                protocolId: protocolId,
+                protocolVersion: protocolVersion,
+                issuedAtUtcMs: issuedAtUtcMs,
+                expiresAtUtcMs: expiresAtUtcMs,
+                revokedAtUtcMs: revokedAtUtcMs,
+                issuerKeyId: issuerKeyId,
+                payloadSha256: payloadSha256,
+                signature: signature,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ResearchParticipationPermitsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, assignmentId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -21197,11 +23420,26 @@ class $$ExperimentAssignmentsTableTableManager
                                 currentTable: table,
                                 currentColumn: table.ownerId,
                                 referencedTable:
-                                    $$ExperimentAssignmentsTableReferences
+                                    $$ResearchParticipationPermitsTableReferences
                                         ._ownerIdTable(db),
                                 referencedColumn:
-                                    $$ExperimentAssignmentsTableReferences
+                                    $$ResearchParticipationPermitsTableReferences
                                         ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (assignmentId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.assignmentId,
+                                referencedTable:
+                                    $$ResearchParticipationPermitsTableReferences
+                                        ._assignmentIdTable(db),
+                                referencedColumn:
+                                    $$ResearchParticipationPermitsTableReferences
+                                        ._assignmentIdTable(db)
                                         .id,
                               )
                               as T;
@@ -21218,19 +23456,22 @@ class $$ExperimentAssignmentsTableTableManager
       );
 }
 
-typedef $$ExperimentAssignmentsTableProcessedTableManager =
+typedef $$ResearchParticipationPermitsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $ExperimentAssignmentsTable,
-      ExperimentAssignment,
-      $$ExperimentAssignmentsTableFilterComposer,
-      $$ExperimentAssignmentsTableOrderingComposer,
-      $$ExperimentAssignmentsTableAnnotationComposer,
-      $$ExperimentAssignmentsTableCreateCompanionBuilder,
-      $$ExperimentAssignmentsTableUpdateCompanionBuilder,
-      (ExperimentAssignment, $$ExperimentAssignmentsTableReferences),
-      ExperimentAssignment,
-      PrefetchHooks Function({bool ownerId})
+      $ResearchParticipationPermitsTable,
+      ResearchParticipationPermitRow,
+      $$ResearchParticipationPermitsTableFilterComposer,
+      $$ResearchParticipationPermitsTableOrderingComposer,
+      $$ResearchParticipationPermitsTableAnnotationComposer,
+      $$ResearchParticipationPermitsTableCreateCompanionBuilder,
+      $$ResearchParticipationPermitsTableUpdateCompanionBuilder,
+      (
+        ResearchParticipationPermitRow,
+        $$ResearchParticipationPermitsTableReferences,
+      ),
+      ResearchParticipationPermitRow,
+      PrefetchHooks Function({bool ownerId, bool assignmentId})
     >;
 typedef $$VocabularyCategoriesTableCreateCompanionBuilder =
     VocabularyCategoriesCompanion Function({
@@ -33771,6 +36012,12 @@ class $AppDatabaseManager {
       $$ResearchConsentsTableTableManager(_db, _db.researchConsents);
   $$ExperimentAssignmentsTableTableManager get experimentAssignments =>
       $$ExperimentAssignmentsTableTableManager(_db, _db.experimentAssignments);
+  $$ResearchParticipationPermitsTableTableManager
+  get researchParticipationPermits =>
+      $$ResearchParticipationPermitsTableTableManager(
+        _db,
+        _db.researchParticipationPermits,
+      );
   $$VocabularyCategoriesTableTableManager get vocabularyCategories =>
       $$VocabularyCategoriesTableTableManager(_db, _db.vocabularyCategories);
   $$VocabularyWordsTableTableManager get vocabularyWords =>
