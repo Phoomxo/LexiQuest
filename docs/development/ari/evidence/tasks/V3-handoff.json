@@ -1,0 +1,968 @@
+{
+  "schemaVersion": 1,
+  "phase": "V3",
+  "reviewDate": "2026-09-20",
+  "status": "DOCUMENTARY_PHASE_COMPLETE_GATE_NOT_MET",
+  "taskId": "01a0bf81-3881-7c10-bc29-783868bf6212",
+  "inputSourceSha": "c3617a2dcaa1e57eedaf2de750eb7dd9c8d25528",
+  "sourceBranch": "feature/ari-feasibility",
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
+  "sourcePinVerification": "Accepted user/V0/V1 pin, not freshly git-verified. Historical 77 rename tests accepted; unchanged inputs, not rerun.",
+  "upstreamV1Revision": 2,
+  "workItems": [
+    {
+      "id": "V0.1",
+      "status": "REVIEWED",
+      "requirementOutcome": "Identity, resource grant and Codex managed model authentication separated.",
+      "fact": "Identity, resource grant and Codex managed model authentication separated.",
+      "inference": "Document review is not runtime acceptance",
+      "unknown": "Applicable complete route remains unresolved",
+      "sources": [
+        "S1",
+        "S2",
+        "S3",
+        "S5",
+        "S6"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json"
+      ]
+    },
+    {
+      "id": "V0.2",
+      "status": "REVIEWED",
+      "requirementOutcome": "ChatGPT-auth Codex uses account entitlement; API billing is distinct. No end-to-end LexiQuest route has runtime PASS.",
+      "fact": "ChatGPT-auth Codex uses account entitlement; API billing is distinct. No end-to-end LexiQuest route has runtime PASS.",
+      "inference": "Document review is not runtime acceptance",
+      "unknown": "Applicable complete route remains unresolved",
+      "sources": [
+        "S5",
+        "S6",
+        "S7"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json"
+      ]
+    },
+    {
+      "id": "V0.3",
+      "status": "UNCONFIRMED",
+      "requirementOutcome": "Free inclusion documented; Thai native-mobile combination remains unresolved. Device-code documented, Remote requires companion.",
+      "fact": "Free inclusion documented; Thai native-mobile combination remains unresolved. Device-code documented, Remote requires companion.",
+      "inference": "Document review is not runtime acceptance",
+      "unknown": "Applicable complete route remains unresolved",
+      "sources": [
+        "S5",
+        "S7",
+        "S11"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json"
+      ]
+    },
+    {
+      "id": "V1.1",
+      "status": "UNCONFIRMED",
+      "requirementOutcome": "G3 provider enforcement; hosting cost and topology unestimated.",
+      "fact": "ChatGPT entitlement and API-key Platform billing differ; paid continuation is documented for eligible plans.",
+      "inference": "Hosting compute/storage/network would be a separate cost, not user inference quota. Prechecks cannot enforce atomic spend limits.",
+      "unknown": "G3 provider enforcement; hosting cost and topology unestimated.",
+      "sources": [
+        "S5",
+        "S6",
+        "S7",
+        "S12"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V1.2",
+      "status": "UNCONFIRMED",
+      "requirementOutcome": "G1/G2 supported route and eligibility remain unresolved. G6 design is ready for later implementation tests; missing runtime evidence is not an entry blocker.",
+      "fact": "App Server supports managed auth and streamed events; remote transport requires authentication/TLS.",
+      "inference": "Device-code may simplify login but cannot prove native runtime or app return. Hosted per-user App Server remains an unvalidated architecture idea.",
+      "unknown": "G1/G2 supported route and eligibility remain unresolved. G6 design is ready for later implementation tests; missing runtime evidence is not an entry blocker.",
+      "sources": [
+        "S5",
+        "S6",
+        "V0:U1",
+        "V0:U2"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V1.3",
+      "status": "UNCONFIRMED",
+      "requirementOutcome": "G4/G5; no route-specific distribution/revocation assurance.",
+      "fact": "Logout exists; auth documentation describes clearing credentials.",
+      "inference": "Logout is insufficient evidence of provider-wide token/grant invalidation. Enterprise tokens and MCP grants are different credential types.",
+      "unknown": "G4/G5; no route-specific distribution/revocation assurance.",
+      "sources": [
+        "S5",
+        "S6"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V2.1",
+      "status": "NOT_RUN",
+      "requirementOutcome": "Real Free account connection",
+      "fact": "No V2 task/prototype; V1 entry gate NOT_MET",
+      "inference": null,
+      "unknown": "Runtime outcomes",
+      "sources": [
+        "V1:gate"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V2.2",
+      "status": "NOT_RUN",
+      "requirementOutcome": "Native bottle-only prototype",
+      "fact": "No V2 task/prototype; V1 entry gate NOT_MET",
+      "inference": null,
+      "unknown": "Runtime outcomes",
+      "sources": [
+        "V1:gate"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V2.3",
+      "status": "NOT_RUN",
+      "requirementOutcome": "Failure/revoke/isolation acceptance",
+      "fact": "No V2 task/prototype; V1 entry gate NOT_MET",
+      "inference": null,
+      "unknown": "Runtime outcomes",
+      "sources": [
+        "V1:gate"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V3.1",
+      "status": "REVIEWED",
+      "requirementOutcome": "12 IDs reconciled with V1 revision 2; feasibility not certified",
+      "fact": "G1-G5 unresolved; G6 design ready",
+      "inference": "Documentary closure only",
+      "unknown": "End-to-end feasibility",
+      "sources": [
+        "V1:gate",
+        "WORKFLOW"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    },
+    {
+      "id": "V3.2",
+      "status": "NOT_RUN",
+      "requirementOutcome": "Protocol prepared, pilot 0/5; no FAIL or usability PASS",
+      "fact": "No real participants tested",
+      "inference": null,
+      "unknown": "Usability",
+      "sources": [
+        "PLAN",
+        "WORKFLOW"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V3-handoff.json"
+      ]
+    },
+    {
+      "id": "V3.3",
+      "status": "REVIEWED",
+      "requirementOutcome": "Evidence-triggered continuation prepared; no successor",
+      "fact": "V1 NOT_MET retained",
+      "inference": "New applicable evidence warrants V1 reassessment",
+      "unknown": "When prerequisites become available",
+      "sources": [
+        "V1:gate",
+        "WORKFLOW"
+      ],
+      "evidencePaths": [
+        "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json"
+      ]
+    }
+  ],
+  "gate": {
+    "status": "NOT_MET",
+    "decisionOwner": "V1",
+    "decision": "NOT_MET remains due to unresolved route, entitlement, quota-only enforcement and distribution/provider-revoke mechanism evidence (G1-G5), not missing V2 live tests. Continue existing V3; do not create another successor.",
+    "matrix": [
+      {
+        "id": "G1",
+        "requirement": "Native mobile runtime, transport and browser-only login return",
+        "status": "UNCONFIRMED",
+        "sources": [
+          "S5",
+          "S6"
+        ],
+        "evidence": "Managed device-code and JSON-RPC transports documented; mobile packaging/support not established.",
+        "needed": "Supported integration topology compatible with native mobile/no companion, with a feasible auth-return design. No provider certification naming LexiQuest or pre-prototype runtime traces required.",
+        "blocksV2Entry": true
+      },
+      {
+        "id": "G2",
+        "requirement": "ChatGPT Free Thailand entitlement for this third-party integration",
+        "status": "UNCONFIRMED",
+        "sources": [
+          "V0:U1",
+          "S7"
+        ],
+        "evidence": "Free inclusion documented; applicability to the proposed route in Thailand remains unresolved. Missing real account is a V2 execution prerequisite, not itself a V1 route blocker.",
+        "needed": "Evidence establishing applicable Free/Thailand eligibility; no LexiQuest-specific endorsement required.",
+        "blocksV2Entry": true
+      },
+      {
+        "id": "G3",
+        "requirement": "Provider-enforced included quota only, no paid credits/overage",
+        "status": "UNCONFIRMED",
+        "sources": [
+          "S5",
+          "S7",
+          "S12"
+        ],
+        "evidence": "Rate-limit reads describe usage; workspace controls are plan-specific. No applicable Free route enforcement established.",
+        "needed": "Applicable provider policy/control/default establishing quota-only operation without paid continuation, plus a testable billing-failure design. Runtime edge cases are V2 acceptance.",
+        "blocksV2Entry": true
+      },
+      {
+        "id": "G4",
+        "requirement": "Distribution of candidate to learners",
+        "status": "UNCONFIRMED",
+        "sources": [
+          "S5",
+          "V0:routeMatrix"
+        ],
+        "evidence": "Embedding intent documented; command/WS production support explicitly experimental. Plugin publishing is a different route.",
+        "needed": "Applicable supported distribution/deployment basis for the proposed integration. Experimental production warning alone is not proof that a prototype is prohibited; no named-app endorsement required.",
+        "blocksV2Entry": true
+      },
+      {
+        "id": "G5",
+        "requirement": "Provider invalidation distinct from logout",
+        "status": "UNCONFIRMED",
+        "sources": [
+          "S5",
+          "S6"
+        ],
+        "evidence": "Sign-out/credential clearing documented; upstream managed OAuth revocation semantics not established.",
+        "needed": "Available provider-side revoke mechanism and a testable logout/revoke design. Measure propagation and old-credential rejection during V2 T06, not before prototype.",
+        "blocksV2Entry": true
+      },
+      {
+        "id": "G6",
+        "requirement": "Owner-isolated replies/history/auth on switch and reconnect",
+        "status": "DESIGN_READY_RUNTIME_NOT_RUN",
+        "sources": [
+          "S5"
+        ],
+        "evidence": "V1 futureValidationDesign defines owner/session/thread/turn binding, late-response rejection and separate histories/credentials.",
+        "needed": "Implement and test T04/T05/T06 during V2 after route prerequisites are met; absent live traces do not block V2 entry.",
+        "blocksV2Entry": false
+      }
+    ],
+    "meaning": "Insufficient evidence under unchanged requirements; not proof of permanent impossibility.",
+    "clarification": "User clarification 2026-09-20: V0-V1 establish supported route, entitlement, billing and testable isolation/revoke design. T04/T05/T06 live evidence belongs to V2 acceptance. No requirement for documentation naming LexiQuest or proof of every runtime case before prototype."
+  },
+  "routeMatrix": [
+    {
+      "route": "Managed ChatGPT App Server",
+      "status": "CANDIDATE_UNCONFIRMED"
+    },
+    {
+      "route": "Isolated hosted App Server",
+      "status": "INFERENCE_ONLY",
+      "note": "Not a validated workaround; hosting/security/cost/distribution remain open."
+    },
+    {
+      "route": "SDK or ChatGPT Remote",
+      "status": "NOT_NATIVE_SUPPORT_EVIDENCE",
+      "note": "Remote companion/ChatGPT UI conflicts retained from V0."
+    },
+    {
+      "route": "API/ChatKit",
+      "status": "OUT_OF_SCOPE_PAID_ROUTE"
+    },
+    {
+      "route": "Identity/MCP",
+      "status": "INSUFFICIENT_FOR_INFERENCE_ENTITLEMENT"
+    }
+  ],
+  "futureValidationDesign": {
+    "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "quota": "Stop on provider limit/auth failure; no key fallback or credit purchase; validate provider billing evidence, not just UI.",
+    "isolation": "Bind owner/session generation/thread/turn on every event; reject late A replies after B login; isolate persisted histories and credentials; validate reconnect and interrupted turns.",
+    "revoke": "Test local logout separately from provider revoke; prove old credential refusal and unaffected other owner without retaining secrets.",
+    "distribution": "Pin supported topology/version and learner installation/login requirements before V2."
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://developers.openai.com/plugins/build/auth",
+      "section": "MCP resource authorization",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "REUSED",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S2",
+      "url": "https://learn.chatgpt.com/docs/sites",
+      "section": "Sites identity",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "REUSED",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S3",
+      "url": "https://learn.chatgpt.com/docs/plugins",
+      "section": "Partner identity and tool grants",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "REUSED",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S4",
+      "url": "https://developers.openai.com/api/docs/guides/chatkit",
+      "section": "API-backed chat session",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "REUSED",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S10",
+      "url": "https://developers.openai.com/blog/codex-as-a-platform",
+      "section": "Embedded harness, not blanket mobile entitlement",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": "2026-08-19",
+      "upstreamMethod": "OPENED_V0",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S11",
+      "url": "https://learn.chatgpt.com/docs/remote",
+      "section": "Connected computer requirement",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "OPENED_V0",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S5",
+      "url": "https://learn.chatgpt.com/docs/app-server",
+      "section": "Protocol; WebSocket authentication; Auth endpoints; device-code; logout; rate limits",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "OPENED_V1",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S6",
+      "url": "https://learn.chatgpt.com/docs/auth",
+      "section": "OpenAI authentication; check sign-in status and log out",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "OPENED_V1",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S7",
+      "url": "https://learn.chatgpt.com/docs/pricing",
+      "section": "Included plans; usage limits; credits",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "OPENED_V1",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    },
+    {
+      "id": "S12",
+      "url": "https://learn.chatgpt.com/docs/enterprise/usage-limits",
+      "section": "Scope of workspace spend controls",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null,
+      "upstreamMethod": "OPENED_V1",
+      "v3Method": "REUSED_FROM_HANDOFF_NOT_REOPENED",
+      "v3ReviewDate": "2026-09-20"
+    }
+  ],
+  "sourceReferenceAliases": {
+    "PLAN": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-feasibility.md",
+    "WORKFLOW": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-task-workflow.md",
+    "V1:gate": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json#gate",
+    "V0:U1": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json#unknowns/U1",
+    "V0:U2": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json#unknowns/U2",
+    "V0:routeMatrix": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json#routeMatrix"
+  },
+  "evidencePaths": {
+    "workflow": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-task-workflow.md",
+    "plan": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-feasibility.md",
+    "existingEvidence": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-feasibility-evidence.json",
+    "v0Report": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0.md",
+    "v0Handoff": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json",
+    "v1Report": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1.md",
+    "v1Handoff": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V1-handoff.json",
+    "report": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V3.md",
+    "handoff": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V3-handoff.json",
+    "state": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/state.json"
+  },
+  "prerequisites": {
+    "externalEntry": [
+      "G1: Supported integration topology compatible with native mobile/no companion, with a feasible auth-return design. No provider certification naming LexiQuest or pre-prototype runtime traces required.",
+      "G2: Evidence establishing applicable Free/Thailand eligibility; no LexiQuest-specific endorsement required.",
+      "G3: Applicable provider policy/control/default establishing quota-only operation without paid continuation, plus a testable billing-failure design. Runtime edge cases are V2 acceptance.",
+      "G4: Applicable supported distribution/deployment basis for the proposed integration. Experimental production warning alone is not proof that a prototype is prohibited; no named-app endorsement required.",
+      "G5: Available provider-side revoke mechanism and a testable logout/revoke design. Measure propagation and old-credential rejection during V2 T06, not before prototype."
+    ],
+    "engineeringReady": "Owner/session-generation/thread/turn binding, late-response rejection, separate histories/auth and testable failure/revoke design exist as design; implementation and T04/T05/T06 live tests belong to V2.",
+    "v2Execution": [
+      "Real eligible Free Thailand account; not an independent V1 entry blocker",
+      "Physical intended devices and approved provider quota/revoke mechanisms",
+      "Isolated V2 project worktree from accepted SHA after V1 entry reassessment; verify SHA before feature/ branch writes; one application writer"
+    ],
+    "pilot": [
+      "Actual V2 build and T01-T07 technical readiness; resolve blocking defects and record retests",
+      "Five real nontechnical learners with eligible accounts, consent and user-authorized arrangements; no external messages sent here"
+    ]
+  },
+  "pilot": {
+    "status": "NOT_RUN",
+    "protocolStatus": "PREPARED",
+    "testedCount": 0,
+    "targetCount": 5,
+    "independentCompletions": null,
+    "minimumIndependentCompletions": 4,
+    "result": null,
+    "interpretation": "0/5 is execution count, not FAIL or 0% usability and not PASS",
+    "participants": [
+      {
+        "participantId": "P01",
+        "status": "NOT_RUN",
+        "executionMode": null,
+        "date": null,
+        "buildSha": null,
+        "device": null,
+        "consent": null,
+        "freeThailandEvidence": [],
+        "connectResult": null,
+        "bottleResult": null,
+        "providerRevokeResult": null,
+        "independentCompletion": null,
+        "durationSeconds": null,
+        "hintCount": null,
+        "developerInterventions": null,
+        "blockers": [],
+        "evidence": [],
+        "defectId": null,
+        "retestId": null
+      },
+      {
+        "participantId": "P02",
+        "status": "NOT_RUN",
+        "executionMode": null,
+        "date": null,
+        "buildSha": null,
+        "device": null,
+        "consent": null,
+        "freeThailandEvidence": [],
+        "connectResult": null,
+        "bottleResult": null,
+        "providerRevokeResult": null,
+        "independentCompletion": null,
+        "durationSeconds": null,
+        "hintCount": null,
+        "developerInterventions": null,
+        "blockers": [],
+        "evidence": [],
+        "defectId": null,
+        "retestId": null
+      },
+      {
+        "participantId": "P03",
+        "status": "NOT_RUN",
+        "executionMode": null,
+        "date": null,
+        "buildSha": null,
+        "device": null,
+        "consent": null,
+        "freeThailandEvidence": [],
+        "connectResult": null,
+        "bottleResult": null,
+        "providerRevokeResult": null,
+        "independentCompletion": null,
+        "durationSeconds": null,
+        "hintCount": null,
+        "developerInterventions": null,
+        "blockers": [],
+        "evidence": [],
+        "defectId": null,
+        "retestId": null
+      },
+      {
+        "participantId": "P04",
+        "status": "NOT_RUN",
+        "executionMode": null,
+        "date": null,
+        "buildSha": null,
+        "device": null,
+        "consent": null,
+        "freeThailandEvidence": [],
+        "connectResult": null,
+        "bottleResult": null,
+        "providerRevokeResult": null,
+        "independentCompletion": null,
+        "durationSeconds": null,
+        "hintCount": null,
+        "developerInterventions": null,
+        "blockers": [],
+        "evidence": [],
+        "defectId": null,
+        "retestId": null
+      },
+      {
+        "participantId": "P05",
+        "status": "NOT_RUN",
+        "executionMode": null,
+        "date": null,
+        "buildSha": null,
+        "device": null,
+        "consent": null,
+        "freeThailandEvidence": [],
+        "connectResult": null,
+        "bottleResult": null,
+        "providerRevokeResult": null,
+        "independentCompletion": null,
+        "durationSeconds": null,
+        "hintCount": null,
+        "developerInterventions": null,
+        "blockers": [],
+        "evidence": [],
+        "defectId": null,
+        "retestId": null
+      }
+    ],
+    "facilitatorScript": "ให้ผู้เรียนเชื่อมบัญชี ChatGPT Free ของตน ถามอารีเกี่ยวกับ bottle แล้วถอนสิทธิ์ที่ผู้ให้บริการ สังเกตโดยไม่ทำแทน บันทึกเวลารวม จุดติดขัดและทุกคำแนะนำ",
+    "scoring": "All three steps independent; procedural hints/developer intervention make that attempt assisted. Preserve original five and outcomes; replacements/retests separate, no denominator substitution. Missing people = incomplete/NOT_RUN, not invented failures.",
+    "scope": "Usability only; not learning efficacy or production release approval"
+  },
+  "testRecords": [
+    {
+      "caseId": "T01",
+      "title": "Free Thailand mobile",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Use real eligible Free Thai account on intended physical Android/iOS devices; record redacted plan/region/version; browser login then return to native app.",
+      "expected": "Native return without key, Developer mode or companion. No developer-account substitution.",
+      "actual": null,
+      "requiredEvidence": "Redacted eligibility, device/version, login-return recording and approved-route trace",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T02",
+      "title": "bottle text",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Send: ช่วยอธิบาย bottle และยกตัวอย่างหนึ่งประโยค; observe streamed and final reply.",
+      "expected": "Explain bottle plus one example sentence inside native LexiQuest via approved route; no mock, ChatGPT chat WebView, images/audio or score/reward changes.",
+      "actual": null,
+      "requiredEvidence": "Native recording and sanitized owner/session/thread/turn IDs",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T03",
+      "title": "Quota",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Use provider-supported test mechanism or naturally exhausted quota; never deliberately burn quota. Include concurrent sessions/account-plan changes as separate cases.",
+      "expected": "Stop at limit; no paid credits/overage/API fallback. Provider enforcement evidence required; precheck alone insufficient.",
+      "actual": null,
+      "requiredEvidence": "Provider usage/billing plus request trace and enforcement policy; label any simulation",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T04",
+      "title": "Offline",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Disconnect before send and mid-stream in separate runs; reconnect and inspect retry/interrupted/completed turns.",
+      "expected": "Draft retained; no duplicate reply or duplicate charged inference from retry; correct owner after reconnect.",
+      "actual": null,
+      "requiredEvidence": "Network transitions, request/turn IDs, deduplication and usage evidence",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T05",
+      "title": "Switch and late reply",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "A sends pending request; logout A; login B; deliver late A response and reconnect.",
+      "expected": "No A reply/history/auth exposed to B; reject stale A events; B session works independently.",
+      "actual": null,
+      "requiredEvidence": "Pseudonymous owners, session generations, event trace and redacted history/auth-separation checks",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T06",
+      "title": "Provider revoke",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Test local logout separately; revoke A at provider during use; measure propagation; attempt old authorization via approved mechanism without exporting tokens; check B.",
+      "expected": "Revoked authorization rejected per applicable mechanism; A stops; B unaffected. Local clearing alone is not proof.",
+      "actual": null,
+      "requiredEvidence": "Separate logout/revoke timestamps, acknowledgement, rejection and B control; record propagation",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T07",
+      "title": "No fallback",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Observe route during quota/offline/auth failures; inspect sanitized network/config and provider usage/billing.",
+      "expected": "No paid API, credits, shared project credential or alternate inference provider; stop with actionable status.",
+      "actual": null,
+      "requiredEvidence": "Network destinations, configuration review and provider billing/usage for each subcase",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    },
+    {
+      "caseId": "T08",
+      "title": "Five learners",
+      "status": "NOT_RUN",
+      "executionMode": null,
+      "allowedExecutionModes": [
+        "live",
+        "simulated"
+      ],
+      "steps": "Five nontechnical learners independently connect own Free account, ask bottle, then revoke; observer records time, blockers and every hint/intervention.",
+      "expected": "At least 4/5 complete all three steps without procedural assistance or developer operating device; usability only, not learning efficacy.",
+      "actual": null,
+      "requiredEvidence": "Five pseudonymous individual records, timings, step results, assistance, consent and observations",
+      "buildSha": null,
+      "device": {
+        "platform": null,
+        "model": null,
+        "osVersion": null
+      },
+      "appVersion": null,
+      "providerVersion": null,
+      "accountPlan": null,
+      "region": null,
+      "date": null,
+      "evidence": [],
+      "defect": {
+        "id": null,
+        "severity": null,
+        "description": null,
+        "evidence": []
+      },
+      "retest": {
+        "caseId": null,
+        "buildSha": null,
+        "date": null,
+        "status": "NOT_RUN",
+        "evidence": []
+      }
+    }
+  ],
+  "recordPolicy": {
+    "nullMeaning": "Not observed; never zero or success",
+    "newRun": "Separate linked records per platform/subcase/live/simulated/retest; retain originals",
+    "simulation": "Never substitutes for real-account entitlement, provider control/revoke or learner evidence",
+    "privacy": "Pseudonyms/redaction only, no passwords/tokens/research data",
+    "stopRule": "Stop affected execution on privacy leak, unauthorized billing, unsupported route or revoke failure; record defect, fix and retest before resuming"
+  },
+  "reopeningTriggers": [
+    {
+      "gateId": "G1",
+      "trigger": "Supported integration topology compatible with native mobile/no companion, with a feasible auth-return design. No provider certification naming LexiQuest or pre-prototype runtime traces required.",
+      "requiredRecord": "Official source or verifiable provider confirmation; URL/date/version/applicability/evidence path",
+      "nextAction": "V1 reassessment with applicable evidence for remaining G1-G5; no named-LexiQuest endorsement or pre-prototype live traces required"
+    },
+    {
+      "gateId": "G2",
+      "trigger": "Evidence establishing applicable Free/Thailand eligibility; no LexiQuest-specific endorsement required.",
+      "requiredRecord": "Official source or verifiable provider confirmation; URL/date/version/applicability/evidence path",
+      "nextAction": "V1 reassessment with applicable evidence for remaining G1-G5; no named-LexiQuest endorsement or pre-prototype live traces required"
+    },
+    {
+      "gateId": "G3",
+      "trigger": "Applicable provider policy/control/default establishing quota-only operation without paid continuation, plus a testable billing-failure design. Runtime edge cases are V2 acceptance.",
+      "requiredRecord": "Official source or verifiable provider confirmation; URL/date/version/applicability/evidence path",
+      "nextAction": "V1 reassessment with applicable evidence for remaining G1-G5; no named-LexiQuest endorsement or pre-prototype live traces required"
+    },
+    {
+      "gateId": "G4",
+      "trigger": "Applicable supported distribution/deployment basis for the proposed integration. Experimental production warning alone is not proof that a prototype is prohibited; no named-app endorsement required.",
+      "requiredRecord": "Official source or verifiable provider confirmation; URL/date/version/applicability/evidence path",
+      "nextAction": "V1 reassessment with applicable evidence for remaining G1-G5; no named-LexiQuest endorsement or pre-prototype live traces required"
+    },
+    {
+      "gateId": "G5",
+      "trigger": "Available provider-side revoke mechanism and a testable logout/revoke design. Measure propagation and old-credential rejection during V2 T06, not before prototype.",
+      "requiredRecord": "Official source or verifiable provider confirmation; URL/date/version/applicability/evidence path",
+      "nextAction": "V1 reassessment with applicable evidence for remaining G1-G5; no named-LexiQuest endorsement or pre-prototype live traces required"
+    }
+  ],
+  "continuation": [
+    "New applicable G1-G5 evidence -> V1 reassessment; G6 design retained, runtime tests not entry prerequisites",
+    "Only if entry gate met: one V2 task, isolated worktree from accepted SHA, verify SHA before feature/ branch writes",
+    "Real Free account -> native bottle -> T01-T07 engineering acceptance and defect/retest -> real T08 >=4/5 independent completion",
+    "After acceptance evidence: production security, hosting costs, operations and staged distribution plan; E7 separate and unchanged"
+  ],
+  "notRun": [
+    "V2.1",
+    "V2.2",
+    "V2.3",
+    "V3.2 pilot (0/5, no failure score)",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "77 previously passed rename tests; inputs unchanged",
+    "Free login/inference",
+    "Paid API",
+    "Token extraction",
+    "Source/schema changes",
+    "E7 closure"
+  ],
+  "runtimePolicy": {
+    "requestedModel": "gpt-6-astra",
+    "requestedThinking": "medium",
+    "speed": "Standard/default; no Fast/1.5x or priority selection",
+    "effectiveTier": "UNCONFIRMED; tool does not expose runtime tier"
+  },
+  "implementationWriter": null,
+  "documentWriter": null,
+  "nextPhase": null,
+  "successor": null,
+  "nextActions": [
+    "Documentary phase closed; no successor now. Reopen on new external evidence, not missing pre-prototype runtime tests."
+  ],
+  "feasibility": "NOT_CERTIFIED",
+  "usability": "NOT_EVALUATED",
+  "e7": "UNCHANGED_NOT_CLOSED"
+}

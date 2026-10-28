@@ -1,0 +1,22 @@
+{
+  "status": "verified",
+  "inputCheckpointSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+  "handoffPins": 93,
+  "originalInventory": 3610,
+  "approvedSourceDeltas": 202,
+  "modifiedFrozen": 155,
+  "newSource": 47,
+  "policyAmendments": 3,
+  "reviewed": 1429,
+  "exclusions": 2181,
+  "REV12Paths": 564,
+  "allFindingsClosed": 69,
+  "sourceFreezeSha256": "6308e327a1bf9d795ff9f5b9241d145abf1c5ed56499d58791e8fa1695894afb",
+  "acceptanceSha256": "af264b84230b6f727ea148284c4d16dae7cee802dd4bab076910006e478a3880",
+  "externalEvidenceManifest": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\evidence-manifest.json",
+  "externalEvidenceManifestSha256": "0b43f32417fce7a9dca65a80427b4d4b69fbf85ebc9f5628d04548ad95f9d32f",
+  "sourceChangedInF07": false,
+  "historicalEvidencePreserved": true,
+  "G83Accepted": true,
+  "B18Accepted": true
+}

@@ -1,0 +1,27 @@
+{
+  "checkpoint": "071",
+  "status": "NATIVE_CONTINUITY_PASS_GUIDANCE_DEFECT_HOST_FIXED_NATIVE_RETEST_PENDING",
+  "nativeEvidence": {
+    "skip": "AI identified cloze1of3 skip but incorrectly said no next step and confused editorial review with learner review",
+    "typed": "AI identified cloze2of3 typed English input;incorrectly limited controls to back",
+    "disconnect": "ba draft survived live chat and explicit disconnect;appending g produced correct bag",
+    "completion": "selected book correct;100%,2correct/0wrong;exact2rows typed independentRecall at2 and selected recognition at3;skip no row"
+  },
+  "defect": {
+    "id": "CLOZE-MANUAL-GUIDANCE-071",
+    "cause": "Context lacked phase-specific manual steps;visible menu inventory omitted offscreen controls beneath expanded AI panel",
+    "fix": "Read-only manualNextStep per phase,collapse/scroll guidance,and editorial skip meaning",
+    "status": "HOST_FIXED_NATIVE_RETEST_REQUIRED"
+  },
+  "host": {
+    "red": "Skip test failed missing manualNextStep before production edit",
+    "greenTests": 23,
+    "analysis": "2changed files clean",
+    "receipt": "evidence/cloze-live-071/host-receipt.json"
+  },
+  "nativeEvidenceApk": "build/ari-assistance-069.apk",
+  "installedAfter": "build/ari-assistance-071.apk",
+  "apkSha256": "ac4c77fbe8cf48cbcb449ae3d2e8f249a4ac0b83f27aaee2378053435d5a7eda",
+  "next": "Reconnect bridge and retest live cloze skip/typed guidance onAPK071",
+  "wholeGoalComplete": false
+}

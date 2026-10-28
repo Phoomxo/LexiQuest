@@ -1,0 +1,268 @@
+{
+  "reviewKind": "source-and-AI-assisted-engineering-review",
+  "independentHumanReview": false,
+  "physicalDeviceAcceptance": false,
+  "scenarios": [
+    {
+      "mission": {
+        "schemaVersion": 1,
+        "id": "dialogue-book",
+        "revision": 1,
+        "title": "A wait at the library",
+        "wordId": "word:starter-book",
+        "contentRevision": 1,
+        "contentHash": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee",
+        "start": "request",
+        "maximumTurns": 2,
+        "nodes": [
+          {
+            "id": "request",
+            "scene": "At the library, Mira asks: “What can I read while I wait?”",
+            "prompt": "I read a ___ with fifty pages.",
+            "terminal": false,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "book",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” book คือหนังสือที่มีหลายหน้า ใช้กับ read ในบริบทนี้",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "pencil",
+                "next": "repair",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” pencil เป็นเครื่องเขียน ไม่ใช่สิ่งที่มีห้าสิบหน้าให้อ่าน",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "repair",
+            "scene": "Mira explains: book คือหนังสือที่มีหลายหน้า ใช้กับ read ในบริบทนี้\nTry the language choice again with this help.",
+            "prompt": "I read a ___ with fifty pages.",
+            "terminal": false,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "book",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” book คือหนังสือที่มีหลายหน้า ใช้กับ read ในบริบทนี้",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "pencil",
+                "next": "review",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” pencil เป็นเครื่องเขียน ไม่ใช่สิ่งที่มีห้าสิบหน้าให้อ่าน",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "done",
+            "scene": "Mira has the right object. Mission finished. Recognition practice is not independent recall.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": []
+          },
+          {
+            "id": "review",
+            "scene": "Mira shows the object: book. Review the explanation, then finish. The first choice remains unchanged.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": []
+          }
+        ]
+      },
+      "sha256": "415111eddc3268c67f2b63673364f91c100b03837ce07ddef5d94c0d577775c3",
+      "validationErrors": []
+    },
+    {
+      "mission": {
+        "schemaVersion": 1,
+        "id": "dialogue-pencil",
+        "revision": 1,
+        "title": "A letter at the writing desk",
+        "wordId": "word:starter-pencil",
+        "contentRevision": 1,
+        "contentHash": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca",
+        "start": "request",
+        "maximumTurns": 2,
+        "nodes": [
+          {
+            "id": "request",
+            "scene": "At the writing desk, Mira asks: “What can I use to write and erase a letter?”",
+            "prompt": "I write with a ___ and erase a wrong letter.",
+            "terminal": false,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "pencil",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” pencil ใช้เขียนและลบรอยตัวอักษรได้ สอดคล้องกับ write with และ erase",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "book",
+                "next": "repair",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” book เป็นสิ่งที่อ่าน ไม่ใช่เครื่องมือที่ใช้เขียนและลบรอย",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "repair",
+            "scene": "Mira explains: pencil ใช้เขียนและลบรอยตัวอักษรได้ สอดคล้องกับ write with และ erase\nTry the language choice again with this help.",
+            "prompt": "I write with a ___ and erase a wrong letter.",
+            "terminal": false,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "pencil",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” pencil ใช้เขียนและลบรอยตัวอักษรได้ สอดคล้องกับ write with และ erase",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "book",
+                "next": "review",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” book เป็นสิ่งที่อ่าน ไม่ใช่เครื่องมือที่ใช้เขียนและลบรอย",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "done",
+            "scene": "Mira has the right object. Mission finished. Recognition practice is not independent recall.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": []
+          },
+          {
+            "id": "review",
+            "scene": "Mira shows the object: pencil. Review the explanation, then finish. The first choice remains unchanged.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": []
+          }
+        ]
+      },
+      "sha256": "3252b0e2938a34e1799c054048432a85969533359b679dc1973a8d9e227f0991",
+      "validationErrors": []
+    },
+    {
+      "mission": {
+        "schemaVersion": 1,
+        "id": "dialogue-bottle",
+        "revision": 1,
+        "title": "Water for the picnic",
+        "wordId": "word:starter-bottle",
+        "contentRevision": 1,
+        "contentHash": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562",
+        "start": "request",
+        "maximumTurns": 2,
+        "nodes": [
+          {
+            "id": "request",
+            "scene": "At the picnic, Mira asks: “Which narrow-neck container holds our water?”",
+            "prompt": "I pour water from a ___ with a narrow neck.",
+            "terminal": false,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "bottle",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” bottle คือขวด คำใบ้ narrow neck บอกว่าภาชนะมีคอแคบ",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "cup",
+                "next": "repair",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” cup คือถ้วยปากเปิด จึงไม่ตรงกับลักษณะคอแคบของขวดในประโยคนี้",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "repair",
+            "scene": "Mira explains: bottle คือขวด คำใบ้ narrow neck บอกว่าภาชนะมีคอแคบ\nTry the language choice again with this help.",
+            "prompt": "I pour water from a ___ with a narrow neck.",
+            "terminal": false,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": [
+              {
+                "id": "target",
+                "text": "bottle",
+                "next": "done",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That fits what I need.” bottle คือขวด คำใบ้ narrow neck บอกว่าภาชนะมีคอแคบ",
+                "correct": true
+              },
+              {
+                "id": "alternative",
+                "text": "cup",
+                "next": "review",
+                "objective": "Use the situation and sentence clues to choose the matching object.",
+                "consequence": "Mira: “That does not fit this situation.” cup คือถ้วยปากเปิด จึงไม่ตรงกับลักษณะคอแคบของขวดในประโยคนี้",
+                "correct": false
+              }
+            ]
+          },
+          {
+            "id": "done",
+            "scene": "Mira has the right object. Mission finished. Recognition practice is not independent recall.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": false,
+            "exitAllowed": true,
+            "choices": []
+          },
+          {
+            "id": "review",
+            "scene": "Mira shows the object: bottle. Review the explanation, then finish. The first choice remains unchanged.",
+            "prompt": "",
+            "terminal": true,
+            "assisted": true,
+            "exitAllowed": true,
+            "choices": []
+          }
+        ]
+      },
+      "sha256": "502989cfb09e9c4b0d8a56082832917534e494ff24fd4dde53455aaf6f542216",
+      "validationErrors": []
+    }
+  ]
+}

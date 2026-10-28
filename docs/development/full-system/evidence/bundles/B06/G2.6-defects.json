@@ -1,0 +1,62 @@
+{
+  "packageId": "G2.6",
+  "defects": [
+    {
+      "id": "B06-G26-01",
+      "expected": "Local-preview scratchpad has a reachable unscored route",
+      "actual": "Menu entry absent; three new route tests failed",
+      "cause": "Registry stayed implementedOff and no production route instantiated the existing component",
+      "fix": "Local-only preview registry activation; guarded menu and ephemeral route",
+      "retest": "G2.6 route exit/owner/emergency three PASS before additional retirement regression",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    },
+    {
+      "id": "B06-G26-F01",
+      "expected": "Test fixture compiles",
+      "actual": "Undefined TableUpdate",
+      "cause": "Missing explicit Drift import in new test",
+      "fix": "Import TableUpdate",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    },
+    {
+      "id": "B06-G26-F02",
+      "expected": "Fixture drains Drift cancellation before teardown",
+      "actual": "Zero-duration query cleanup timer pending; test process stalled in teardown",
+      "cause": "New route stream cancelled at unmount without another pump",
+      "fix": "pumpAndSettle after unmount; stopped verified scoped test process only",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    },
+    {
+      "id": "B06-G26-02",
+      "expected": "Emergency retirement remains terminal after feature is reenabled",
+      "actual": "Scratchpad widget reappeared on stale route; 3 PASS/1 FAIL",
+      "cause": "ProductionFeatureGate permits reactivation; local route lacked a permanent retirement latch",
+      "fix": "Observe live registry; latch route retired and clear ephemeral strokes on disable",
+      "retest": "pending bounded suite",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    },
+    {
+      "id": "B06-G26-F03",
+      "expected": "Every test gesture reaches the intended control",
+      "actual": "Full selected suite 100 passed, 5 failed: rotation diagonal scroll won the gesture; four legacy f16 cases missed offscreen/obscured controls",
+      "cause": "Fixture did not establish horizontal drawing or hit-testable control after the bounded shell layout",
+      "fix": "Horizontal canvas stroke; scroll/pump, dismiss transient snackbar and assert hitTestable before affected taps; assertions retained",
+      "retest": "18 f16 tests and scratchpad component suite passed; final whitespace-only test edit retest running",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    },
+    {
+      "id": "B06-G26-F04",
+      "actual": "git diff --check reported added CRLF lines in an LF test segment and trailing spaces in helper calls",
+      "cause": "Inserted fragment used the wrong local line ending",
+      "fix": "Only inserted bootstrap block uses LF; trailing spaces removed in added helper calls; unchanged bytes preserved",
+      "status": "closed",
+      "finalRetest": "109 unique composite tests accepted; raw failures preserved"
+    }
+  ],
+  "noAssertionReductions": true
+}

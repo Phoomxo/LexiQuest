@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F04",
+  "continuationId": "B18-G83-F04-C03",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T18:06:39.954707+00:00",
+  "threadId": "01a0bacb-34ce-73d3-96e2-c6429e56699b",
+  "inputCheckpointSha": "b7a1e3122bab5ec6f5fe8fcb58611589e7c27284",
+  "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "acceptedF03Sha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "findings": [
+    {
+      "findingId": "B18-REV08-04",
+      "status": "closed-regression-verified",
+      "redRun": "stream-red;stream-boundary",
+      "greenRun": "stream-final",
+      "outcome": "Shared operation bounds WAV8MiB/error64KiB and uses one deadline across token/auth retry/body. Abortable request retirement and subscription cancellation stop accumulation; late tokens cannot send, late responses discarded. Exact byte boundary, oversize declared/actual, stalled/late and existing401/quota/breaker/provenance/factory regression passed. Custom client abort support and noncancellable auth futures explicitly limited."
+    },
+    {
+      "findingId": "B18-REV08-08",
+      "status": "closed-regression-verified",
+      "redRun": "tokenise-red",
+      "greenRun": "lm-final",
+      "outcome": "One EOS; full prompt/header preserved; response-only right truncation reserves EOS. Invalid budget/no answer room rejected. Separate token segments define exact mask boundary; synthetic merge/mask/short/long fixtures and serving-template regressions passed. No real tokenizer/model run."
+    },
+    {
+      "findingId": "B18-REV08-09",
+      "status": "closed-regression-verified",
+      "redRun": "dormant-red",
+      "greenRun": "lm-final",
+      "outcome": "Actual synthetic dry-loop returns features from corresponding unmasked token positions for two varying suffixes. All-masked and zero-epoch checks fail without success marker. No real dataset/model/GPU execution."
+    },
+    {
+      "findingId": "B18-REV08-10",
+      "status": "closed-regression-verified",
+      "redRun": "dormant-red",
+      "greenRun": "lm-final",
+      "outcome": "Dry-run branches before hub import/network. Missing username fails offline with explicit instruction; supplied username plans without hub dependency and writes no model card or upload."
+    }
+  ],
+  "closedInThisCheckpoint": 4,
+  "closedF04": 10,
+  "remainingF04": [
+    "B18-REV08-05",
+    "B18-REV08-06"
+  ],
+  "totalClosed": 48,
+  "remainingOpenFindings": 21,
+  "testExecutions": 125,
+  "testExecutionNote": "Final77voice+48LM; prior exploratory green executions not added.8target files,2final bounded verifier runs.",
+  "testTargetCount": 8,
+  "successfulVerifierRuns": 2,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 4,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "sha256": "d96b23608535aaf13a8ba737cf1fd16a904f8c6d8e550b2f45c96da1902f41a4"
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+      "sha256": "75e026370998f81f73cf7b42dbea8bd6fd57c8e698fc58b353ffdf29df2a9009"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/lora_finetune.py",
+      "sha256": "a51eea64e5802a1cb29e2e91946839276b94a2e25cbc14afade07c3a5b8a25d7"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "sha256": "1dafcc467945c15d272be44b6f462ea77d043d7df6943fc4b9bad6146fc1f4a7"
+    },
+    {
+      "path": "lib/voice/omni_voice_provider.dart",
+      "sha256": "ffe6ca956477e9b4234ad131f22a55688c57006b85c2693f7b1fcd497437daf2"
+    },
+    {
+      "path": "lib/voice/vox_cpm_standard_provider.dart",
+      "sha256": "a252ca89668aa3a1245e6ba11584d54d84f23cda7f2300a1de9f45af5e84c572"
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_dormant_tool_contracts.py",
+      "sha256": "b863241bf406b6a6280c94f7ec851c429a8b462aa286c3b388fcd82a14a73180"
+    },
+    {
+      "path": "lib/voice/voice_http_operation.dart",
+      "sha256": "af9002a7343776366a559e4ab4a1a630930198f4c44ce71e4e3f6283c0173e9a"
+    },
+    {
+      "path": "test/voice/voice_response_lifecycle_test.dart",
+      "sha256": "b3256474f2bae0eaa3a2ea81701e8651e5eb380701f02dbf9ba613ef72e811f0"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F04-C03",
+  "evidenceManifestSha256": "07dc20f9eb882f3fef327ce480855c9eac2a81ba7375bc8f490f7833bab2b0f4",
+  "review": {
+    "kind": "local-changed-code-review",
+    "reviewer": "current serial writer; no independent review claimed",
+    "findings": [],
+    "checks": [
+      "Both providers retain provenance, taxonomy, one401 retry, quota and breaker tests; real factory regression retained. Shared operation checks activity after token resolution before send, cancels late response streams, aborts each request on operation retirement, and cancels active body iterator. WAV8MiB/error64KiB includes declared and accumulated bounds. Exact WAV boundary accepted. No shared client close.",
+      "Content-length regression exposed lazy StreamIterator subscription; fixed by explicitly listening/cancelling rejected unopened streams. Failed evidence retained.",
+      "Full prompt and assistant header preserved; response-only right truncation reserves one EOS. Nonpositive budgets or no answer capacity rejected. Separate segment encoding defines loss boundary explicitly. Existing four-token test contradicted full-prompt contract; replaced with valid prompt-relative budget and stronger suffix/mask assertion. Serving-template tests preserved.",
+      "Synthetic dry-loop fixtures intercept actual feature returns for two suffixes; all-masked and zero-epoch cannot emit success marker. No real dataset/model/GPU run.",
+      "Upload dry-run returns before hub import or network. Missing username returns2 with instruction; explicit username needs no hub dependency and writes no model card.",
+      "Remaining REV08-05/06 are not reproduced/fixed here. Existing native/playback/owner accepted contracts unchanged."
+    ],
+    "limitations": [
+      "Underlying token futures are not cancellable; their late continuations are fenced before network work. Custom http clients may ignore abort; late streams are discarded and body accumulation is bounded. Production http1.6 IOClient abort contract inspected locally. No live-network or device claim."
+    ]
+  },
+  "F04Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "continuationReason": "Stream-lifetime and dormant LM unit verified. Remaining2 coupled playback-start/completion identity findings require fresh composed regression context; no failing test or unfinished source edit transferred.",
+  "limitations": [
+    "Initial tokenise RED had no independent pre/post hashes; retained only reproduction evidence. All final runs have equal independent actual-input hashes.",
+    "Final stderr retains first-use PowerShell CLIXML progress only. No live network/device/acoustic/real training/upload/release claims."
+  ]
+}

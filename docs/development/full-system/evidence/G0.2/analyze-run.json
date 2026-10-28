@@ -1,0 +1,5 @@
+{
+  "command": "flutter analyze --no-pub lib/screens/ai_tutor_screen.dart test/screens/ai_tutor_screen_test.dart",
+  "exitCode": 0,
+  "durationMs": 6815
+}

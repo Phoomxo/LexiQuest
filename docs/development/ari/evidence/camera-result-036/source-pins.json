@@ -1,0 +1,5 @@
+{
+  "lib/screens/object_scanner_screen.dart": "0a4f878df7c5575351d63e354d54698b4ce3bf1cec01321f7f21323d069de02e",
+  "test/screens/object_scanner_screen_test.dart": "597538bab3c28755ff5c3467800ac512fe5fc21b038ae0796babebfb8b92ba56",
+  "tool/experiments/ari_app_server/chat_bridge.py": "9192a786d9584bfb7e5b734649f9abad44eeb387b2d24d053afb881aac714a0b"
+}

@@ -1,0 +1,95 @@
+{
+  "zone": "REV-03",
+  "zoneAccepted": false,
+  "completedZones": [
+    "REV-01",
+    "REV-02"
+  ],
+  "notes": "REV-01/02 static semantic dispositions complete with open findings. Remaining10zones incomplete; G8.2 not accepted, no G8.3/runtime execution.",
+  "crossChecks": [
+    {
+      "path": "lib/services/guest_session_service.dart",
+      "ranges": [
+        [
+          1,
+          278
+        ]
+      ],
+      "note": "Canonical start contains unexpected provider/entry-store errors and returns typed failure; UI finding narrows to consent await/reentrancy and injectable contract, not proven canonical provider throw."
+    },
+    {
+      "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+      "ranges": "full source",
+      "note": "Provider breakers shared per provider across key/list/generate gateways; half-open semantics relevant, UI coordinator serialization still to check."
+    },
+    {
+      "path": "test/runtime/circuit_breaker_test.dart",
+      "ranges": "full source",
+      "note": "Tests cover threshold, one half-open probe, predicates and invalid config; no old closed-state in-flight completion case. Not rerun."
+    },
+    {
+      "path": "test/screens/login_guest_mode_test.dart",
+      "ranges": "full source",
+      "note": "Existing repeated-tap test pumps before second tap and lacks deferred consent load; no throwing consent case. Not rerun."
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "ranges": [
+        [
+          1351,
+          1385
+        ],
+        [
+          7681,
+          7730
+        ]
+      ],
+      "note": "Offline manager fixture only successful reconcile/dispose case; no failed reconcile cleanup. Full test source remains REV-12 pending."
+    },
+    {
+      "path": "test/runtime/resource_disposer_stack_test.dart",
+      "ranges": "full source",
+      "note": "Reverse order/continue-after-error oracle reviewed; initialization registration is outside this unit. Not rerun."
+    },
+    {
+      "path": "test/navigation/navigation_glossary_test.dart",
+      "ranges": "partial output",
+      "note": "Exact metadata oracle and negative missing key reviewed; fixture middle truncated, not full source acceptance."
+    },
+    {
+      "path": "lib/data/local/app_database.dart",
+      "ranges": [
+        [
+          1,
+          970
+        ]
+      ],
+      "note": "Full migration/bootstrap/index/trigger code read to cross-check owner lifecycle. Schema27/50; immutable legacy payload; source owner changes permitted. Physical table definitions and generated reproducibility still pending."
+    },
+    {
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "ranges": [
+        [
+          1,
+          280
+        ]
+      ],
+      "note": "Read complete schema1/eight-table read-only snapshot, owner validation and atomic destination import. Candidate resource issue: source.select materializes table before decoded byte budget; WAL size not included in file cap. Reproduction pending."
+    },
+    {
+      "path": "lib/data/local/app_database_open_policy.dart",
+      "ranges": "full source",
+      "note": "quick_check and version/unversioned-data rejection precede FK/WAL writes; typed failures hide raw exception."
+    },
+    {
+      "path": "lib/data/local/app_database_native_path.dart",
+      "ranges": "full source",
+      "note": "Read documents/support legacy discovery, existing destination preservation and read-only preflight. No source deletion."
+    },
+    {
+      "path": "lib/data/local/app_database_stub_path.dart",
+      "ranges": "full source",
+      "note": "Non-FFI path delegates default storage; no native path access."
+    }
+  ]
+}

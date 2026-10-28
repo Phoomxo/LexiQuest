@@ -1,0 +1,38 @@
+# Content manifests pin exact UTF-8 bytes and SHA-256, including line endings.
+assets/content/**/*.json text eol=lf
+
+# B07 verification receipts must survive worktree checkout byte-for-byte.
+docs/development/full-system/evidence/bundles/B07/**/*.log binary
+docs/development/full-system/evidence/bundles/B07/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B08/**/*.log binary
+docs/development/full-system/evidence/bundles/B08/**/*.json text eol=lf
+docs/development/full-system/evidence/bundles/B09/**/*.log binary
+docs/development/full-system/evidence/bundles/B09/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B10/**/*.log binary
+docs/development/full-system/evidence/bundles/B10/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B11/**/*.log binary
+docs/development/full-system/evidence/bundles/B11/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B11A/**/*.log binary
+docs/development/full-system/evidence/bundles/B11A/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B12/**/*.log binary
+docs/development/full-system/evidence/bundles/B12/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B13/**/*.log binary
+docs/development/full-system/evidence/bundles/B13/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B14/**/*.log binary
+docs/development/full-system/evidence/bundles/B14/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B15/**/*.log binary
+docs/development/full-system/evidence/bundles/B15/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B16/**/*.log binary
+docs/development/full-system/evidence/bundles/B16/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B17/**/*.log binary
+docs/development/full-system/evidence/bundles/B17/**/*.json binary

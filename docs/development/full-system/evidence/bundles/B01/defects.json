@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "defects": [{
+    "id": "B01-OPS-01",
+    "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+    "operation": "Bounded text search using wildcard directory arguments",
+    "expected": "Relevant cleanup protocol matches",
+    "actual": "rg rejected Windows wildcard path arguments with OS error 123; no source mutation",
+    "cause": "PowerShell did not expand wildcard paths for native rg",
+    "fix": "Use existing directory arguments and rg -g filename filters",
+    "retest": "Recorded by subsequent bounded search output",
+    "status": "closed"
+  }, {
+    "id": "B01-VERIFY-01",
+    "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+    "operation": "G0.6 verifier reuse fingerprint check",
+    "expected": "Unchanged predecessor manifest pins validate in native checkout",
+    "actual": "AssertionError AGENTS.md comparing working bytes with predecessor manifest; earlier document and76 restore checks completed",
+    "cause": "Native checkout CRLF versus accepted Git/manifest LF; AGENTS21 CRLF lines, normalized bytes equal, Git blob SHA256 matches recorded pin",
+    "fix": "Require working content equal accepted Git blob modulo EOL and recorded pin match an explicit LF/CRLF representation; record both hashes per EOL-only reuse",
+    "retest": "Corrected verifier run recorded separately in G0.6-verification.json",
+    "status": "closed"
+  }, {
+    "id": "B01-OPS-02",
+    "operation": "Native rg path discovery",
+    "expected": "Bounded source lookup",
+    "actual": "OS123 wildcard path error recurred for ai_usage*; guessed lesson_summary.dart/runtime_feature_controls.dart and verification-obligations.json paths were absent. No source mutation from these reads",
+    "cause": "Native shell glob assumption and unverified filename",
+    "fix": "Stopped speculative path lookup. Inventoried directories using rg --files, then read confirmed paths: AiUsageSummary in ai_tutor_contracts.dart, first/repair in pair_matching_history_projection.dart, controls in registries/feature_registry.dart, obligations in G0.4/registry-verification.json",
+    "retest": "Explicit-path source reads succeeded; no filesystem writes from failed searches",
+    "status": "closed"
+  }, {
+    "id": "B01-FORM-01",
+    "classification": "source-confirmed implementation gap against Master, not a new formula proposal",
+    "sourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+    "requirements": ["FORM-01", "FORM-07"],
+    "owners": ["G1.2", "G1.3", "G3.5"],
+    "expected": "First5/6 plus repair1/1 leaves first-answer accuracy5/6; exposure/self-report excluded from first eligible denominator",
+    "actual": "Pair history separates first/repair by promptWordId. DriftProgressQueries._isPracticeAttempt and DriftLearningCalendarReader exclude assessment/recreational only, then count all remaining attempts; seven qualifying stored answers5 first correct plus1 repair correct aggregate6/7",
+    "evidence": ["lib/features/progress/data/drift_progress_queries.dart:304", "lib/features/progress/data/drift_progress_queries.dart:538", "lib/features/progress/data/drift_learning_calendar_reader.dart:85", "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart:36"],
+    "cause": "General practice aggregate and first-answer metric have different denominator/eligibility semantics",
+    "fix": "Owner packages must establish shared first-eligible projection, retain historical attempts and separate repair/exposure axes; version compatibility if persisted interpretation changes",
+    "retest": "Required future regression: first5/6 + repair1/1 + duplicate ack + exposure/self-report + owner isolation, History/Progress/Calendar agreement. B01 inspected source; runtime NOT RUN",
+    "status": "open-owned-downstream",
+    "blocks": "First-answer runtime acceptance in owner packages; does not block G0.7 registry acceptance because requirement explicitly records behavior differences"
+  }, {
+    "id": "B01-FORM-02",
+    "classification": "source-confirmed no-evidence boundary gap, not acoustic-score proposal",
+    "sourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+    "requirements": ["FORM-10"],
+    "owners": ["G6.4", "G6.5"],
+    "expected": "No speech/empty reference/device failure remains unscored or noEvidence, never interpreted as0% skill",
+    "actual": "assess returns similarityPercent0 for either empty canonical text; Shadowing final-event callback invokes assess and _recordEvidence without checking empty final transcript. Explicit failure callback is separately guarded",
+    "evidence": ["lib/features/media_practice/application/speech_practice_use_cases.dart:209", "lib/screens/shadowing_challenge_screen.dart:258", "test/features/media_practice/speech_practice_use_cases_test.dart:59"],
+    "cause": "Numeric helper fallback is admitted through a scored consumer for empty final transcript",
+    "fix": "G6.4/G6.5 must gate empty/no-speech before scored evidence and keep recognized-text similarity distinct from acoustic pronunciation; preserve prior evidence version semantics",
+    "retest": "Required future empty-final/reference, failure, cancel, late final, retry and owner-change regressions; B01 source inspection only, durable runtime reproduction NOT RUN",
+    "status": "open-owned-downstream",
+    "blocks": "Speech no-evidence runtime acceptance in G6; G0 registry records gap without pretending fixed"
+  }, {
+    "id": "B01-DOC-01",
+    "operation": "Edition authority-obligation extraction",
+    "expected": "D01–D12 exactly12 adopted obligations",
+    "actual": "First generator summary reported1 authority disposition before acceptance",
+    "cause": "DOTALL allowed greedy heading .+ to consume subsequent sections",
+    "fix": "Bound heading to non-newline characters and assert exact ordered D01–D12 IDs",
+    "retest": "Corrected generator and G0.8 verifier require12 dispositions",
+    "status": "closed"
+  }, {
+    "id": "B01-OPS-03",
+    "operation": "Display B02 bundle index record",
+    "expected": "Exact title and brief for successor",
+    "actual": "Python cp874 stdout could not encode middle-dot in title; no state/source mutation",
+    "cause": "Windows locale default stdout encoding",
+    "fix": "Use python -X utf8 for the bounded JSON projection",
+    "retest": "B02 index record displayed correctly with UTF8",
+    "status": "closed"
+  }]
+}

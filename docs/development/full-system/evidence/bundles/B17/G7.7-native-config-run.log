@@ -1,0 +1,7 @@
+RUN: release-profile.tests.ps1
+RUN: verify-field-package.tests.ps1
+RUN: android-release-signing.tests.ps1
+RUN: android-release-provenance.tests.ps1
+RUN: android-manifest-security.tests.ps1
+PASS: Targeted/Runtime at 29ffbe5e332501883e2ab61419490ccfe9f07e18
+Result: C:\Users\Phet\.codex\worktrees\9f44\LexiQuest\build\verification\29ffbe5e332501883e2ab61419490ccfe9f07e18\targeted-runtime-cli-54829b42e0850bab12e0f79ea3b5bc4af5750190fced61bfb50a8a161f832ded.json

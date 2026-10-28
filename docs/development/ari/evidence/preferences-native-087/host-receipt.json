@@ -1,0 +1,33 @@
+{
+  "areaFingerprints": {
+    "AI": "1baf6ed58b3e1d290c5bf7a243b4eefa6b2068ea19da52efc3a849b20a76f088"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "22682143b4e21336692c1d2e63419961e7f4fad4",
+  "baseSha": "22682143b4e21336692c1d2e63419961e7f4fad4",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "1baf6ed58b3e1d290c5bf7a243b4eefa6b2068ea19da52efc3a849b20a76f088",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T10:30:11.5147487+00:00",
+  "finishedAt": "2026-09-23T10:30:27.0139221+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "d351f28892203d110eff79f7dbb34a90891b39d926e74c498e4d62c138b63f77",
+      "fingerprint": "1baf6ed58b3e1d290c5bf7a243b4eefa6b2068ea19da52efc3a849b20a76f088",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T10:30:13.1192985+00:00",
+      "FinishedAt": "2026-09-23T10:30:22.0985469+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\22682143b4e21336692c1d2e63419961e7f4fad4\\d351f2889220-1baf6ed58b3e-c8386664\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\22682143b4e21336692c1d2e63419961e7f4fad4\\d351f2889220-1baf6ed58b3e-c8386664\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "1baf6ed58b3e1d290c5bf7a243b4eefa6b2068ea19da52efc3a849b20a76f088",
+      "StdoutHash": "328C8104BB85AA81CF16D19A7BEE2E8B2DEA289AA27DC6A0667C9A20DA267F4D",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "1baf6ed58b3e1d290c5bf7a243b4eefa6b2068ea19da52efc3a849b20a76f088"
+}

@@ -1,0 +1,28 @@
+{
+  "defects": [
+    {
+      "id": "B11-CAM-01",
+      "cause": "benchmark mounted-only callbacks and inherited busy",
+      "fix": "epoch + scanner/lease/foreground guard; reset on lifecycle",
+      "red": "G5.1-benchmark-red",
+      "retest": "G5.1-final"
+    },
+    {
+      "id": "B11-CAM-02",
+      "cause": "resume error mounted-only callback",
+      "fix": "scanner/lease/foreground guard and clear initializing",
+      "fixtureCorrection": "First test used 600px lazy viewport; strengthened to render error at 1400px and demonstrated failure before fix",
+      "red": "G5.1-lifecycle-red",
+      "retest": "G5.1-final"
+    },
+    {
+      "id": "B11-CAM-03",
+      "cause": "permission request outside initialization try",
+      "fix": "normalize native exception to initializationFailed",
+      "red": "G5.1-final/b8d2b93496f9-0b8dfca644dc",
+      "retest": "G5.1-final"
+    }
+  ],
+  "status": "closed-local",
+  "requiredLocalOpenDefects": []
+}

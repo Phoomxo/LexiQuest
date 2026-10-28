@@ -1,0 +1,77 @@
+{
+  "scope": "E4.1 against accepted E3.3 and Engineering Spec V3; frozen EvidenceContext/EventEnvelope, SRS and reward semantics retained",
+  "resolved": [
+    {
+      "id": "E41-D01",
+      "problem": "Written form policy penalizes ASR case/punctuation and scores unconfirmed recognition",
+      "fix": "Separate speaking revision1 policy; final transcript confirmation; uncertain/empty ASR unscored",
+      "test": "speaking_rubric_test.dart"
+    },
+    {
+      "id": "E41-D02",
+      "problem": "Cleanup notified an unmounting screen",
+      "fix": "Detach listener before disposal",
+      "test": "speaking_scenario_navigation_test.dart"
+    },
+    {
+      "id": "E41-D03",
+      "problem": "Takeover during callback validation exposed stale transcript",
+      "fix": "Recheck captured SpeechPracticeSession.isCurrent before delivery",
+      "test": "speaking_capture_test.dart"
+    },
+    {
+      "id": "E41-D04",
+      "problem": "Retirement before intent choice left choice buttons usable",
+      "fix": "Retired state fences initial UI and loading",
+      "test": "speaking_scenario_navigation_test.dart: retiredReady"
+    },
+    {
+      "id": "E41-D05",
+      "problem": "Permission completion after takeover left rejected start showing Listening",
+      "fix": "Consume false start and clear old owned operation immediately",
+      "test": "speaking_capture_test.dart"
+    },
+    {
+      "id": "E41-F01",
+      "problem": "Current expectations described v32/56 tables/46 direct-owner tables",
+      "fix": "Update to v33/57/47; exclude speaking from true historical inventories; all sentinel/constraint/rollback assertions retained"
+    },
+    {
+      "id": "E41-F02",
+      "problem": "Native runtime teardown waited under widget fake clock",
+      "fix": "Bound native teardown in tester.runAsync; five retirement cases pass with cleanup intact"
+    },
+    {
+      "id": "E41-F03",
+      "problem": "Delayed-permission fake ignored Future; new Completer required import",
+      "fix": "Wire delayed permission and restore dart:async; assertions retained"
+    }
+  ],
+  "toolingRecovery": [
+    "First Flutter setup changed verifier environment; reran expected red assertions after setup stabilized.",
+    "Missing/wildcard searches corrected to repository-root discovery and exact paths.",
+    "Used explicit UTF-8 for Thai source and BOM-aware UTF-16 decoding for PowerShell logs.",
+    "Deprecated build_runner flag was ignored; generation completed.",
+    "Restored seven generated registrants only after proving EOL-normalized identity."
+  ],
+  "reviewChecks": [
+    "Exact set/sense/content/scenario/intent/rubric pins",
+    "Owner and transaction fences, A-B-A, late insertion rollback",
+    "Owned sessions, retained cleanup, permission/timeout/engine failure, duplicate finals",
+    "Exact replay, collisions, six-turn bound, restart, migration/obstruction",
+    "Owner merge, redacted export, deletion, backup/restore with rollout off",
+    "Set navigation, separate fallback, 320px/text200, route/background/feature/owner retirement",
+    "Default-off bootstrap; written revision1 and canonical evidence/SRS/reward semantics preserved"
+  ],
+  "remainingRequiredDefects": [],
+  "externalEvidenceLimits": [
+    "Finite exact-response local lexical catalog for three original object senses only; unfamiliar valid answers remain uncertain.",
+    "Transcript confirmation supports feedback about displayed words, not ASR accuracy, pronunciation or general proficiency.",
+    "Source/AI-assisted engineering review only, no independent human calibration.",
+    "No attached Android device (adb devices -l empty); physical microphone, acoustic, live-provider and native assistive checks remain E6/E7 gates.",
+    "Scoped speaking backup/restore requires exact personal-set revisions restored first.",
+    "Runtime default-off; internal rollout and production composition exercised locally. No deployment, spending, research or full release claim.",
+    "Standard/default requested; effective runtime service tier unverified."
+  ],
+  "allRuns": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E4.1\\all-runs"
+}

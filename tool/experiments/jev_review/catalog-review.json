@@ -1,0 +1,5 @@
+{
+  "id": "catalog114-review",
+  "sanitized_reviewed": true,
+  "summary": "A catalog fix now passes the canonical progress snapshot owner into both catalog summary and visible pack context bindings. When provenance is absent it suppresses the optional read value while preserving the ordinary screen. Existing tests cover late AI attachment without rebuild, disconnect and same-owner reconnect, different-owner isolation, filters, empty catalog and original navigation. What risk and further review should be prioritized?"
+}

@@ -1,0 +1,894 @@
+{
+  "baseSha": "c02b612a9b287b0cbd8aac2a49d00736d3e004c7",
+  "inheritedArtifactCount": 45,
+  "inheritedCommittedByteHashesVerified": true,
+  "inheritedCheckoutDeltas": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/audit_evidence.py",
+      "reason": "checkout line endings only"
+    }
+  ],
+  "productionDelta": [
+    "lib/features/learning/application/native_mode_adapters.dart",
+    "lib/features/media_practice/application/speech_practice_use_cases.dart",
+    "lib/screens/dictation_quiz_screen.dart",
+    "lib/screens/shadowing_challenge_screen.dart",
+    "lib/screens/speak_to_text_screen.dart"
+  ],
+  "B13Reuse": "AI request/adapters/accounting source unchanged. UI plus shared speech consumers reverified in B14. No global fingerprint equivalence claimed.",
+  "gates": [
+    {
+      "gate": "gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-042629f3cc9afa5740687e895bb7acd4ba29cda8c3a9823f452e73ddcd58fde8.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1294,
+      "deltas": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "73217f353fa8ebd96c3d6acb7dc2d215935ffa478f8720189ecd896433d19e66",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "def416ab12befb8a3fa3f4f98c265d619098b6b83aab859345a9668bc14fb0c8",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "d36bfe0ab371d141d73606503d39a6bfa6643ef82919e25014f25af9e3c04fd9",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "7cc0fdb11638cacd3293f223fcda9372a59fded8437bb703c4bb745052264eed",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "af49e779ee6ef29c2baaced3e2d251c7710bc3afc89856578235a7257bd9537b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "6d288490953964acac946d56898c263c1581473dab9488413d5a3abd98bc77c0",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "39e0320b935e80960673efd6cdd5e8332a44537a796eccb63e4638984789718f",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-1c97480658227af58507f3df3dc4a1bf5397b2713e10e53e47c4156bc21c1bcb.json",
+      "status": "Passed",
+      "inputs": 1307,
+      "exact": 1300,
+      "deltas": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": true,
+          "recorded": "70e720e9acccb80053aa975871229fe4f10962a9426b1f189a770ad6fc789628",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "ef1037fcb315da2df4c7a04bfeeecbf8c10fc180be3d4ec0748005a12e50abef",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": true,
+          "recorded": "ac4a333efa6f6d0005e5c57b2813be86b398d0741b70c6edb990a5df966c8504",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": true,
+          "recorded": "52baf8b816123eb6063592c19ddf9ed6a4d174737ca7698570120a12db19ac97",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d29c4c8cd03a8160833f26ec8d45a168cd57e770ee6e224c87bd424c20997d0f",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": true,
+          "recorded": "d521f93ac6601963ab265c6e56426c135713cdca90b546c2bce1b55e58df5f18",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        }
+      ]
+    },
+    {
+      "gate": "gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-2245ae03381ab60ca862671e852842a38b3e2aec4b7df83d3ae5b78577591c13.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1294,
+      "deltas": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "93a3a5f107d89a0791403ec046e582d32a3c4fe5ceb0b7fda49a78c251569630",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "def416ab12befb8a3fa3f4f98c265d619098b6b83aab859345a9668bc14fb0c8",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "c039a157b39512636e3e04a9117af9cbc50ad69d8618a2338ba3e0aed62ee3be",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "2efd433a4a0cbd12a6a24572ccb16db6d8304e55b23f4c6f55ccbd56b4241151",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "b24663e763d39f9544002875f8306027edfee3022f44faca723b316e7bc4cf79",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "507229b10e9bc411033c23605146c365486aa2240f076fca462a6943ee6b2aa4",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "6d288490953964acac946d56898c263c1581473dab9488413d5a3abd98bc77c0",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "39e0320b935e80960673efd6cdd5e8332a44537a796eccb63e4638984789718f",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-3a7b69369a4b272a58559e9e18244c7afc263014774c5590ec93316c70d499a0.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1299,
+      "deltas": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": true,
+          "recorded": "70e720e9acccb80053aa975871229fe4f10962a9426b1f189a770ad6fc789628",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "def416ab12befb8a3fa3f4f98c265d619098b6b83aab859345a9668bc14fb0c8",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "79254512332a6c4d4d59976303bbcc5663d58d11e1e8053b634bd70e4489fbeb",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": true,
+          "recorded": "52baf8b816123eb6063592c19ddf9ed6a4d174737ca7698570120a12db19ac97",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "f7c2ef526ebea945e2614bd7d5a007a9c6c5b20b3ecdead110684a882aa1bea7",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": true,
+          "recorded": "d521f93ac6601963ab265c6e56426c135713cdca90b546c2bce1b55e58df5f18",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        }
+      ]
+    },
+    {
+      "gate": "gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-b4c7f1e7c34b8c414d1f552c3d76f7d368f2a0aa99a2b438c6432ba1561323f0.json",
+      "status": "Passed",
+      "inputs": 1307,
+      "exact": 1300,
+      "deltas": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": true,
+          "recorded": "70e720e9acccb80053aa975871229fe4f10962a9426b1f189a770ad6fc789628",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "ef1037fcb315da2df4c7a04bfeeecbf8c10fc180be3d4ec0748005a12e50abef",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": true,
+          "recorded": "ac4a333efa6f6d0005e5c57b2813be86b398d0741b70c6edb990a5df966c8504",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": true,
+          "recorded": "52baf8b816123eb6063592c19ddf9ed6a4d174737ca7698570120a12db19ac97",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d29c4c8cd03a8160833f26ec8d45a168cd57e770ee6e224c87bd424c20997d0f",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": true,
+          "recorded": "d521f93ac6601963ab265c6e56426c135713cdca90b546c2bce1b55e58df5f18",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        }
+      ]
+    },
+    {
+      "gate": "gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-374056d584803873dfd1beda3697bf2ea5c3479ff4e41caca7b3c08441a070bc.json",
+      "status": "Passed",
+      "inputs": 1308,
+      "exact": 1306,
+      "deltas": [
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "ef1037fcb315da2df4c7a04bfeeecbf8c10fc180be3d4ec0748005a12e50abef",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d29c4c8cd03a8160833f26ec8d45a168cd57e770ee6e224c87bd424c20997d0f",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        }
+      ]
+    },
+    {
+      "gate": "gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-4b2dc8a10374824ddb113e274d4db95914481229a6b59904068c5ae8e4fd57d9.json",
+      "status": "Failed",
+      "inputs": 1308,
+      "exact": 1306,
+      "deltas": [
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "ef1037fcb315da2df4c7a04bfeeecbf8c10fc180be3d4ec0748005a12e50abef",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "a348db9c383e912483cf00ddfb9dc29a3cfb8e56e6c763ab9992fae98539a7ee",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        }
+      ]
+    },
+    {
+      "gate": "gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-9d6088b31bb751539cec71a9922f144facb8ccb027535e4460e7194dc1cce1f0.json",
+      "status": "Passed",
+      "inputs": 1308,
+      "exact": 1308,
+      "deltas": []
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-03b247e56a48c8ab7dfbadd86e92a4d3c8609488cd796ccd26727359ba276f06.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "ff7d15bf1a27c2c0aee8b3ccab5b7838452587b5324a2eb7fb7ef6a835942a4c",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "4433fd86bfe6d75fc4f72a23837faf04fe1838cc0eb1d8bb2e6b97090b2db1a9",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "c2b7476eafa640a223006d1bcbc05305f3af43f02d2851df7a24685f3d8f164a",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "2b642b01253c85d2de6c8ad7722dbf7688f9ccc05a5488ebbf44112b6c9aeae3",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "f8a158d015ec90e8dfff0e5a9d9378506c177d6c586b88659bc42568c2807f2b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "be357436c6aded693a811abed28c0f4c8f12674b0d42ee23845d598592f2b06d",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "20e7e36b509e36006836de0d34f6d5e4b57cafb68631fc49b7cf8c39cd5d19d0",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-57cfaecd2b05f33a7f641d72b389ddbf417793214cbf179be865213a04c997e2.json",
+      "status": "Passed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "ff7d15bf1a27c2c0aee8b3ccab5b7838452587b5324a2eb7fb7ef6a835942a4c",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "4433fd86bfe6d75fc4f72a23837faf04fe1838cc0eb1d8bb2e6b97090b2db1a9",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "c2b7476eafa640a223006d1bcbc05305f3af43f02d2851df7a24685f3d8f164a",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "2b642b01253c85d2de6c8ad7722dbf7688f9ccc05a5488ebbf44112b6c9aeae3",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "f8a158d015ec90e8dfff0e5a9d9378506c177d6c586b88659bc42568c2807f2b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "996aa5904329f6f7de0389be80daa18f22e8ca445e2e48b6d190988f6c02a32b",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "20e7e36b509e36006836de0d34f6d5e4b57cafb68631fc49b7cf8c39cd5d19d0",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-9d6088b31bb751539cec71a9922f144facb8ccb027535e4460e7194dc1cce1f0.json",
+      "status": "Passed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "ff7d15bf1a27c2c0aee8b3ccab5b7838452587b5324a2eb7fb7ef6a835942a4c",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "1c6cda9134be4f41e6dbe4787a66355815245a7f3985992fa5ca39b2a1e83f55",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "c2b7476eafa640a223006d1bcbc05305f3af43f02d2851df7a24685f3d8f164a",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "2b642b01253c85d2de6c8ad7722dbf7688f9ccc05a5488ebbf44112b6c9aeae3",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "f8a158d015ec90e8dfff0e5a9d9378506c177d6c586b88659bc42568c2807f2b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "12c718896de06db410b6cdfe65f7603a59935cd8c88f527b2283fe7256338f96",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "20e7e36b509e36006836de0d34f6d5e4b57cafb68631fc49b7cf8c39cd5d19d0",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-9e3cf8f554f23f42788d34bf7d9b7c11ffefe47c220ec769d665569b97c118ca.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "92fd69517a24a74bd6890b7e47ee5bed9521b58533fd4721246e6b69212ad2af",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "4433fd86bfe6d75fc4f72a23837faf04fe1838cc0eb1d8bb2e6b97090b2db1a9",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "e2c3759b8cbce38bf3c18d6bf8694c04af76e744e09f728faca5924f699d6348",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "92e9221e1e831fda5331f9af8752611b692166c1bf211ae57fead6108276525f",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "f8a158d015ec90e8dfff0e5a9d9378506c177d6c586b88659bc42568c2807f2b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "996aa5904329f6f7de0389be80daa18f22e8ca445e2e48b6d190988f6c02a32b",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "c89fb70e0d13b24a96b0c66f34e73a19b9a4f6ec6abe73123e86dc19bf17a217",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-e0b5751f4c5e437224a6f496bb7a7af8f4818af461834c57ddf3bdde8a18482d.json",
+      "status": "Passed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "92fd69517a24a74bd6890b7e47ee5bed9521b58533fd4721246e6b69212ad2af",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "4433fd86bfe6d75fc4f72a23837faf04fe1838cc0eb1d8bb2e6b97090b2db1a9",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "e2c3759b8cbce38bf3c18d6bf8694c04af76e744e09f728faca5924f699d6348",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "92e9221e1e831fda5331f9af8752611b692166c1bf211ae57fead6108276525f",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "f8a158d015ec90e8dfff0e5a9d9378506c177d6c586b88659bc42568c2807f2b",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "996aa5904329f6f7de0389be80daa18f22e8ca445e2e48b6d190988f6c02a32b",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "517e48dcb4ec68ef152d637d91faccaf7219cf3651d400dd94a3a86fe87bee72",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    },
+    {
+      "gate": "gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-f5179122bc69dd8474bd971741f9561530aa4f5606089bfb6c56b6071f30054d.json",
+      "status": "Failed",
+      "inputs": 1306,
+      "exact": 1293,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "newlineOnly": false,
+          "recorded": "006294dcc4d63fc1c8af4f550d35feb5a729c0229fc808ab3d9059acd83dfd65",
+          "current": "59d061f463b9a0b51dbd11393657d7847cd24e50a7b0d8a6034b5d61df882c1c"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "newlineOnly": false,
+          "recorded": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "current": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "newlineOnly": false,
+          "recorded": "ed4f0c3ee57c02283a9d70621b5b886d2510ae40c0b73d3d04bd57389a6fc5ce",
+          "current": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/screens/dictation_quiz_screen.dart",
+          "newlineOnly": false,
+          "recorded": "4433fd86bfe6d75fc4f72a23837faf04fe1838cc0eb1d8bb2e6b97090b2db1a9",
+          "current": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "newlineOnly": false,
+          "recorded": "e2c3759b8cbce38bf3c18d6bf8694c04af76e744e09f728faca5924f699d6348",
+          "current": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897"
+        },
+        {
+          "path": "lib/screens/speak_to_text_screen.dart",
+          "newlineOnly": false,
+          "recorded": "92e9221e1e831fda5331f9af8752611b692166c1bf211ae57fead6108276525f",
+          "current": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867"
+        },
+        {
+          "path": "test/architecture/lesson_mode_adapter_coverage_test.dart",
+          "newlineOnly": false,
+          "recorded": "1f5e04a628d137931cff81603ec1265b260bdaf3a2c53f0110313acb4186bbaa",
+          "current": "53b9f3b158a565366769961d3538bbad8b8dff4d7662dae72f3343433d4e0105"
+        },
+        {
+          "path": "test/features/learning/native_mode_adapters_test.dart",
+          "newlineOnly": false,
+          "recorded": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+          "current": "a58e94847ecc7416022f02c4a3ca32883d326cbe0b5628e7d34170f370106a6d"
+        },
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "newlineOnly": false,
+          "recorded": "3d6a6c48807a1894abd66a18c83c6413de95406a4ce66c8814a155cd557ed36c",
+          "current": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca"
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "current": "b863ee2fc52974709eefef557fdb93b9c47be596236260027a8009e60765ac0f"
+        },
+        {
+          "path": "test/screens/dictation_quiz_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "996aa5904329f6f7de0389be80daa18f22e8ca445e2e48b6d190988f6c02a32b",
+          "current": "46c0132c63dd184dded5eda17d68d99e75a13c5ccc78376961d1711c72093053"
+        },
+        {
+          "path": "test/screens/shadowing_challenge_screen_test.dart",
+          "newlineOnly": false,
+          "recorded": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+          "current": "d79a33227bb31fdfe7cf9dd6e672e96cd5f08acfcdda7eabfd18c2f555b1f909"
+        },
+        {
+          "path": "test/screens/speak_to_text_screen_voice_test.dart",
+          "newlineOnly": false,
+          "recorded": "6f8c54e8a70b7a77e8dd231a7f37d02955a858930bbc0c2bcbc430219f86c78c",
+          "current": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "checkpoint": "092",
+  "workflows": [
+    "W08"
+  ],
+  "status": "REPRESENTATIVE_GOAL_EDITOR_NATIVE_CONNECTED_DISCONNECTED_VERIFIED",
+  "sourceChanged": false,
+  "apk": "091",
+  "sourceCommit": "ce81d0c7",
+  "connected": [
+    "Actual provider identified new unsaved draft and missing deadline",
+    "Invalid manual create did not produce success claim; native cancel left list empty",
+    "Actual provider distinguished Saved goal 092 revised draft from Saved goal 092 lastConfirmed, explicitly unsaved"
+  ],
+  "disconnected": "Explicit AI disconnect while editor open; collapse optional panel; native save; leave/reopen retained revised title",
+  "durable": "Exactly one092 fixture active with expected deadline; cancelled draft absent; five learning tables exactly unchanged since090",
+  "evidence": [
+    "evidence/goals-editor-native-092/source-pins.json",
+    "evidence/goals-editor-native-092/provider-replies.json",
+    "evidence/goals-editor-native-092/durable-summary.json"
+  ],
+  "host": "Reuse unchanged091 23-test and analysis evidence; no redundant rerun",
+  "cleanup": "Bridge60185 stopped; USB reverse and isolated bridge config removed; isolated app restarted; original app/accounts untouched",
+  "limitations": [
+    "Representative native path; pending-save failure/foreign-owner races covered by host fixtures, not newly injected on device",
+    "Nonempty new-item plan and remaining workflow/mode audits open"
+  ],
+  "wholeGoalComplete": false
+}

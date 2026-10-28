@@ -1,0 +1,481 @@
+{
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+  "baseSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+  "level": "Subsystem",
+  "area": "BackendAI",
+  "fingerprint": "643a1bf2d41f63b201abc87466f96268dca15343abdafd28bc866d9e833c89ef",
+  "environmentFingerprint": "915ccdeeda780259febdfa238a273743bbcaa8953bb6bca2669612c0fe62927f",
+  "selection": [
+    {
+      "Name": "AI API tests",
+      "FilePath": "uv",
+      "Arguments": [
+        "run",
+        "--project",
+        "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\backend\\ai_api",
+        "--frozen",
+        "--group",
+        "dev",
+        "--no-group",
+        "llm",
+        "pytest",
+        "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\backend\\ai_api\\tests",
+        "-q"
+      ],
+      "SourceArea": "BackendAI",
+      "commandKey": "b018ea4dea8cbf979189a9a34b70babb4b8e3d9b0d47d7bf6109684d6790c18f"
+    }
+  ],
+  "inputClosure": [
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/.env.example",
+      "sha256": "8054A1349F640EB22A8E0A79729DCD85E053B4053D92A00E7B66600CC74226C3"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/pyproject.toml",
+      "sha256": "89E8331DF1FF9BB40302274885207B17A5033710E657568DBA33435BEE1E1E7B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/app.py",
+      "sha256": "872751E6805F5414106F4A41B785E59BCB2D0BC1A348CCBF5914EDACED2DEF70"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/auth.py",
+      "sha256": "E988908B8D99F17B415FC72C2758C8B0A2C1C791732DB48F697636D656DD5F17"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/config.py",
+      "sha256": "775D7CFCBB9B2D2E393189775787C32BE3B87E55285E7F1F3F319592DD8EC554"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/errors.py",
+      "sha256": "11C3A9258264B690DA66E997EC40A0BA671B7DC11DD297451B9F8138A5F510FB"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/__init__.py",
+      "sha256": "3CF8AF643B6D1C545D78FDCD5D87D14E2CF67C14A7BE52B747FF93D7F60F1897"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/main.py",
+      "sha256": "61FCDD4BB6DE45A8BCA54F2B510000459D59A25ED5A93B7C3AE308FF8D394135"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/models.py",
+      "sha256": "661F94A492CFB5CAF63923BC8893A72CD052D40DAD4BEB618AAD72381C3728EF"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/services/base.py",
+      "sha256": "6A612B64472D49BA7486179EFD9F3D32216D78E8AC0383CD62A21AB18ECF968C"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/services/cache.py",
+      "sha256": "0F96BB3DBEBC6CBF5727D5C0968939FB88C0079E22A528E040E1BDB68DCAFE21"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/services/__init__.py",
+      "sha256": "E2FD83B4170EDC6BA4E815819DC44CA69C028DB12B52A1875A61AF73D8A434E4"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/services/llm_content_service.py",
+      "sha256": "7986A6610BA0C1566C2E52ED311BFDBB14337D09F8C28BDF1442B9F023609D80"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/src/lexiquest_ai/services/rate_limiter.py",
+      "sha256": "237E7D76F41802E3FFA06F1FF57582955B85DB5F595BC92FD35551444FB13E48"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/conftest.py",
+      "sha256": "3CEC5AF278D8687F5DB14722C697A515A3EC8B4C20573EA327D4C39CE8718B3F"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_app.py",
+      "sha256": "802DB95F0340DF0219AC452694089DCD4C5B33CC15AEC0DC14170C1BC27B0D3A"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_auth.py",
+      "sha256": "704889B568CE7841E79B74F37E68A0555D3ED7BBFA4832A1D08FEE2D2A848B58"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_dependency_pins.py",
+      "sha256": "D268A71E1733CDCC579C742E0EB2BCDF11B6699A56DCA2D2E2CA9304D40247A3"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_llm_content_service.py",
+      "sha256": "5B508D7EDF8A520CA7BB72A6C4A71CC034F33F0613231A0DCBA945624E313E54"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_models.py",
+      "sha256": "17F75F8538F9D1EE907B09B85DFFAC79B0B16332E987F2EB7EABAB44A299ABAE"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/tests/test_response_budget.py",
+      "sha256": "CA2D5433B1AE1AF39DEC2804C5569BBBBA1211C10D365775F9A32BA5FB05CC3B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "backend/ai_api/uv.lock",
+      "sha256": "AEE3415FE95D4EE72E00DFEDAEE1D1C3FF427DF9A1CB5728E32A8920DEC13317"
+    },
+    {
+      "area": "BackendAI",
+      "path": ".gitattributes",
+      "sha256": "4A76C16BC777B8F12D6F3A8330A5ECF7800BCED4A0D633443306BFF67A12BAAC"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/collect-android-field-evidence.ps1",
+      "sha256": "D8504542011A4A724243794D8BB40B9FE40E1D2BB3915923919D4A6B42955740"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/configure-firebase-app-check.cjs",
+      "sha256": "9F4E30E2B023782CB4FC29B83079175E94E59567E314DD7FD459E334D2EAE07F"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/configure-firebase-budget.cjs",
+      "sha256": "8795CB59A635463B283E4BE2852C6F5CBF0E542EBBFFCB79C38EE16151A0221B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/configure-firebase-release-sha.cjs",
+      "sha256": "2B277C6D5EFB432EBB0A1856DC8607CAD4EAB7E9723A04C2F8FF963A5CE509B8"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/doctor.ps1",
+      "sha256": "4949C7C1B39521CFFE4210C84FCA190F1C57BA75A4BAC001A039191B156202B9"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/initialize-field-evidence-signing.ps1",
+      "sha256": "0B542434EA9CBFAB27264387077DC3001084CD21AD2F0D8E35147267C981BE14"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/initialize-release-signing.ps1",
+      "sha256": "9F142A276E438A365D542EC9EDB17D461D7270962D08AE7923F99C992A4D986D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/lib/elf-canonical-hash.ps1",
+      "sha256": "3694EF6F4E4B414048D6143D94A1D9994077982F5BF6179C7F11EE40F550556C"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/lib/field-release-evidence.ps1",
+      "sha256": "60A5C1E47201FB4CD521140CC5281DC44F056D9AB1E0569BDCE2EE6DFC36E440"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/lib/runtime-probes.ps1",
+      "sha256": "A9A48606C12BB1E77589EEF909A23DEA257F950780049AC5EC74C32A71D7CBA2"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/new-field-evidence-receipt.ps1",
+      "sha256": "8B6DD55665575B92D9943BA1224DAB1B593C4DEBCD0FC216C68FE367ECAEFA7F"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/new-field-release-evidence.ps1",
+      "sha256": "798A43E196995C8291000147804DCBCABCFDB276F731E03ADAEDE97EEDDBAD2B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/package-field-release.ps1",
+      "sha256": "D9FF129FE079307A8DEF893B2745C374CCF0860BECAA89CEC44925FDE05F01FA"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/prepare-field-model.ps1",
+      "sha256": "B256D31485A933C6DEAF91B7A81E017416385D9BE9DA8DFD108C896FAAAEC1EA"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/profiles/local-learning-preview.json",
+      "sha256": "494113F67657E20E300D50C96FAA1AAD7401FBBB8DDAEB27A53E75C27F460F9C"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/run-adventure-performance-profile.ps1",
+      "sha256": "F47949E8BF0D879E3AC3F1CD02ED2F7051968258CCE77C48785E0F4F60A2B1C2"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/run-android.ps1",
+      "sha256": "01EF9349F773B84FFF325E01AB98722A91DBF518D85B7190274C05F5020F8D06"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "D4D0F1ACBD24FAD519670AE0079FE77FF73BC7EF6418E7FE9BE9B16F263642EA"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/set-firebase-app-check-enforcement.cjs",
+      "sha256": "F87449907DA244EB1B6B2E3061E4F69B9173B218F0D6CE6D1949FAA1F694EB61"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/set-firebase-cloud-policy.cjs",
+      "sha256": "A08739C7176BC2F337051E1D075C80A39A34B6F9BB0EAB7F20F8C62130A501B6"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/sign-android-field-evidence-result.ps1",
+      "sha256": "5D0F8E83D6BFE941878FFB44234279CBFA37D1B0C4085D69A51CC410C6060CF2"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/android-manifest-security.tests.ps1",
+      "sha256": "CD59D52245BF6FF3C459123A84E72708FCB0B3430699320B0C486B5A71D5353F"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/android-release-provenance.tests.ps1",
+      "sha256": "ABC735D19640B1A0BC2FA2AC79CE5877F9C08E8F88523818BC51F36114702E79"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/android-release-signing.tests.ps1",
+      "sha256": "4CCD6A40D2749B0713EC8D327E6439718E61931F875727F6585FFD7D53EDAA6B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/ci-workflow.tests.ps1",
+      "sha256": "47CBD2FB5720E85132EC7F4D8D19B51F92BB3341F2D8DA79CF2CC55A324CB534"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/dependabot-config.tests.ps1",
+      "sha256": "64B7C729E0C35BFB2CF9E73155529441874E71C71A63F857B172846BEF70D56C"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/firebase-seed-security.tests.ps1",
+      "sha256": "FC91EAA3FF67574D18BBDD999222A8592D08E4974B9A98D31F58E0BB0BE8003B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/firestore-rules-security.tests.ps1",
+      "sha256": "F8FBBB20F7E69642D705814801DBFB23E6CD2F3113C06C4D2E97C8F8F4A9EDE2"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/model-loading-security.tests.ps1",
+      "sha256": "3ADFC3515B06A7F1392850A3BAC8F2808AB5E8C20BA329E85789A6A9E66E04C1"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/osv-config.tests.ps1",
+      "sha256": "2BD338B520F1A991E1563ACE1ADA8580F9628E4F3E04C17A59FD0678E85F2CD1"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/osv-pr-workflow.tests.ps1",
+      "sha256": "6DA238397998416C51ECEA7A2752631757BD88A495E4978413759603E852BED3"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/osv-scheduled-workflow.tests.ps1",
+      "sha256": "EF819407A4E261A913D2B9B614483CC718F4984C87A2DF69075BAF31C22F5D20"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/package-field-release.tests.ps1",
+      "sha256": "D97B0AABC0676ABF4BA0EC30995225AA4BDB3B562E54F85E32D204B528CBAC23"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/prepare-field-model.tests.ps1",
+      "sha256": "27F2D0AB608F89C48216F7859BB190C8AD2FB813B83DE93787534B64452F672C"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/r15-scope.tests.ps1",
+      "sha256": "3A8A18535BC54F874F4932256C8FEA71C0E1662A595AA5435EB6CD68CD63029D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/run-adventure-performance-profile.tests.ps1",
+      "sha256": "1E4EAF71B8E7720572CB7FAD24DEF6175275A008346993961DA0CAF748B013EC"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/run-android-smoke.tests.ps1",
+      "sha256": "560AAD32FFF9BB2B2B4FCFCE5849E1A7C79D1C79BAA1C23ACFC6C7AD43280678"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/run-android.tests.ps1",
+      "sha256": "4BCA814256858A42A4F234EA0C75FFE08C2700C5632C5A03454219ED4891DE66"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/runtime-probes.tests.ps1",
+      "sha256": "985F6C7BB256FCAC7F0D1048577D77A09F88AB2984427244E5AC25CD331DD352"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-apk-model-runtime.tests.ps1",
+      "sha256": "F3DAA19CAC49A2BDC479396AFEC8A6D69BF8A890266C11E1B70CFA1D87AE53C1"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-camera-speech.tests.ps1",
+      "sha256": "DD3985B6DC2885923E54FC6969D4B147B2E6BE3CF6082AFF6BCEDEC26FD5B892"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-device-model.tests.ps1",
+      "sha256": "7164BBD73CFD43D3D57535141F05E263C743ABE599687BED95FCA7478349B20A"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-field-package.tests.ps1",
+      "sha256": "146E79A96701AFDE56A05D36107DAEB99CAB2E01F333D5D0C7D05B74AAF4FB0A"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-field-release.tests.ps1",
+      "sha256": "78DEF2E87A5E2689C35100B54692111D9314EB8F05AB0069E3B948A7521D052D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-gemini-byok.tests.ps1",
+      "sha256": "73CB2FE23710ABE65FD3101397E82481AF16A09EF9112759590BF9B993E1CB03"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-learning-core.tests.ps1",
+      "sha256": "AA5109017C08B30CB9AF972233506C782CC6021FB7229EC7BD6F1CA24C144B45"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-product-completion.tests.ps1",
+      "sha256": "BBF1709A916405BD5E15AEC246AA201E1E6E44CECD45DEAB6351C7F81F40E10D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/tests/verify-scope.tests.ps1",
+      "sha256": "0C83931AC246B9999CE78538387588CECE376E619D13818A2A74CAF1D7F623DE"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/trusted-field-evidence-public-key.xml",
+      "sha256": "843AF0FC620440024677B972A8D098D0230E1990F7F1A832EFBC9BC93CAD27F3"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-apk-model-runtime.ps1",
+      "sha256": "938D04E7BC3B30440E80F08550AFC0CEC7FC975DBDF89548718B512B1EA180CB"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-camera-speech.ps1",
+      "sha256": "352E744CD155DABBD902F178BE14E7A2DC90A69A3C7DFFF1400B017059011391"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-device-model.ps1",
+      "sha256": "83296B26A4EF8C26FC64CC024394429C46A841B536FB07786A91161809A5BC3D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-field-package.ps1",
+      "sha256": "7F6FE16AC63B689395B1765A433CBE142B35FF2077820D8B69CBCF6B853F6F9D"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-field-release.ps1",
+      "sha256": "54BE51C06D2B20843B7E66FF78FF3AAAF1F70B89E06AFB7A1F2BFE89C3EF20D1"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-gemini-byok.ps1",
+      "sha256": "E087501D2B54966F43430AA5EC08A6B9A73CDB9E625B8F2B9FF9C63B19AE2D6B"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-hosted-asset-links.ps1",
+      "sha256": "D9BD33BF079F355514CECFD3D3B4DCEE1C27B549AA284DAE64F6BCC6E0CE2AA8"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-learning-core.ps1",
+      "sha256": "218D758E9B688CDB18CB87F4098893980583E175844DE5F23DC30473E10D9551"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-local-first.ps1",
+      "sha256": "E3E950B4113356739AF49338883FBE0047EB50317B97B6716419E77F8BAF217A"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-osv-locks.ps1",
+      "sha256": "C1A7BC3026F2FCF7A45953895EE96691DAC2F17D65990218EAFCCD0F4ED070F3"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-product-completion.ps1",
+      "sha256": "19C8E1D4C3DD7F1697B4C87FDEC2F69E3BCEC49DF46D2B139525366027B7D71E"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify.ps1",
+      "sha256": "0BCF168B86B55C56A0822B2A88B58E25CBADBE92274ACAA5B4811C2F543E1FD9"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "1C6140E00C114D436D5FADD7450A8810D8A4F3717B8BC140DDC41192F14094DA"
+    },
+    {
+      "area": "BackendAI",
+      "path": "tool/cli/verify-sync.ps1",
+      "sha256": "55C61F2273C1F30D68E4A5532C19AD7A0B7B77C6B2EBEB6E346829930655FE5B"
+    }
+  ],
+  "timeoutSeconds": 1200,
+  "startedAt": "2026-09-13T21:04:44.2814833+00:00",
+  "finishedAt": "2026-09-13T21:04:54.7251787+00:00",
+  "status": "Failed",
+  "commands": [
+    {
+      "Name": "AI API tests",
+      "commandKey": "b018ea4dea8cbf979189a9a34b70babb4b8e3d9b0d47d7bf6109684d6790c18f",
+      "fingerprint": "643a1bf2d41f63b201abc87466f96268dca15343abdafd28bc866d9e833c89ef",
+      "Status": "Failed",
+      "ExitCode": 1,
+      "StartedAt": "2026-09-13T21:04:45.0653602+00:00",
+      "FinishedAt": "2026-09-13T21:04:54.6901770+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\build\\verification\\39876818cab140cbc8263a5aa9347a03791fcce0\\b018ea4dea8c-643a1bf2d41f\\AI-API-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\build\\verification\\39876818cab140cbc8263a5aa9347a03791fcce0\\b018ea4dea8c-643a1bf2d41f\\AI-API-tests.stderr.log",
+      "StdoutHash": "8FD54606ED55C43AAA1CAF1745B73D12DA9AE1DA0D2C8C0903E8ED306528D014",
+      "StderrHash": "39CECDC1AFD9ED1F50EF644B6D211BE899CD209782FA4B02E7B2B0797B28BE1B"
+    }
+  ]
+}

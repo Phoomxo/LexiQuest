@@ -1,0 +1,29 @@
+{
+  "status": "NATIVE_SESSION_BASELINE_DURABILITY_AND_HISTORY_INTERPRETATION_PASS_FULL_SCOPE_OPEN",
+  "native": {
+    "initial": "No eligible CEFR vocabulary; library reading unaffected",
+    "fixture": "Created isolated category AriCEFR045 and added catalog a/A1 using native UI; retained for connected session acceptance",
+    "session": "Native configured CEFR one-item session completed100% with no provider",
+    "durability": "Force-stopped isolated app and copied SQLite+WAL read-only; one native-cefr-reading:v1:exposure attempt linked to completed session; reopened history verifies persisted row",
+    "legacyAggregate": "Stored wrong_count1/is_correct0 retained; UI first-answer accuracy excludes exposure, so no learner incorrect-score claim",
+    "historyBefore": "Completed CEFR, no scored first answers, historical article title/level unavailable,18sec active",
+    "historyAfter": "Same persisted row plus explicit reading-exposure-not-accuracy description",
+    "apk": "build/ari-assistance-045.apk",
+    "sha256": "f59118285561ebe62653143b798308fca50826aa9ddfb2f49ffec4bba2226fd6",
+    "finalBuildInstall": "Passed and Success",
+    "provider": "No bridge started in045",
+    "usbStayAwake": 2
+  },
+  "sourceChange": "Include cefrReading alongside associativeReading in shared visible/AI history interpretation; no storage migration or scoring change",
+  "host": {
+    "newRegression": "CEFR history interpretation absent before fix, passes after fix",
+    "fullHistoryScreenTests": 21,
+    "analysis": "2files no issues",
+    "receipt": "evidence/cefr-session-045/host-receipt.json"
+  },
+  "remaining": [
+    "Connected/disconnected native CEFR session evidence; use retained AriCEFR045 fixture",
+    "Remaining14workflow/mode native gaps including successful speech,camera,sync",
+    "Whole-project review queued after MCP acceptance"
+  ]
+}

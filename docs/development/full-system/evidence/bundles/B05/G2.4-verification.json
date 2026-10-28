@@ -1,0 +1,59 @@
+{
+  "packageId": "G2.4",
+  "bundleId": "B05",
+  "status": "accepted-local-automated",
+  "baseSha": "9d6bfcc1093744c702843e1d468eb1327a891a0b",
+  "uniqueTestsPassed": 20,
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.4-runs/targeted-learning-5a457413c6a0132158b7c34b546bede9147d31a2efe0ce9d686c2d40d6f7b735.json",
+      "originalStatus": "Failed",
+      "fingerprint": "2d553acfe0877322d7abe697f3aed2ec27b4f0fd82cf98de004bf402f340574f",
+      "changedInputsAfterRun": [
+        "test/screens/fill_in_the_blanks_screen_test.dart"
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.4-runs/targeted-learning-c11c565deec4d54a0da531f0af53740759c769476b256aa4cdd5f1accbc294c6.json",
+      "originalStatus": "Failed",
+      "fingerprint": "4979a3c66c07f50c0278fb051996235cc4cd7a93f0f9ed7e7e49dca5b90c4907",
+      "changedInputsAfterRun": [
+        "test/screens/fill_in_the_blanks_screen_test.dart"
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.4-runs/targeted-learning-fc5e39a930e19c3edd1ab477c4851b358a05850195e215967a0837198a850bab.json",
+      "originalStatus": "Passed",
+      "fingerprint": "596de84d47ef254baeed5ea634ed51234c0a5a12f930a8ff6971b9d69e192946",
+      "changedInputsAfterRun": []
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.4-runs/targeted-learning-52e733e91f3db67297609eec4022b6abcca1c25cce776fd2106b60608694bd4b.json",
+      "originalStatus": "Passed",
+      "fingerprint": "596de84d47ef254baeed5ea634ed51234c0a5a12f930a8ff6971b9d69e192946",
+      "changedInputsAfterRun": []
+    }
+  ],
+  "compositeBasis": "8 adapter tests passed first run; 9 screen tests passed second run; remaining screen test passed final targeted run; only that test changed after second run. 2 readiness tests passed. Original failures retained.",
+  "reuse": "G2.3 quiz/definition/evidence/normalization outcomes retained: G2.4 production change only FillInTheBlanksScreen; quiz/controller/adapters/content remain byte-identical; no changed code invoked by quiz targets.",
+  "acceptance": {
+    "MG-03": "Select/change before explicit submit; committed response locked, retained callback fenced after terminal acceptance",
+    "MG-04": "Typed blank/composing/over160 UI guard; whitespace/case equivalents accepted; arbitrary synonyms not inferred from context",
+    "COV-f09": "Pinned reviewed single-target cloze. Multiple target occurrences rejected as ambiguous rather than creating unpinned multiple answers. Literal underscores preserved. Missing/unreviewed/stale readiness closed.",
+    "COV-f17": "Pinned explanation artifact revision; selected recognition vs independent typed vs guided hints; optional media does not add answers; lost ack retries same occurrence",
+    "G2": "Overall phase gate B06/G2.8"
+  },
+  "review": {
+    "method": "single-writer diff/callers/acceptance review",
+    "requiredOpenFindings": [],
+    "compatibility": "No content/evidence/schema/formula identity changes; current single-target artifact contract retained"
+  },
+  "defectsClosed": [
+    "B05-CLOZE-01",
+    "B05-CLOZE-02"
+  ],
+  "externalGates": [
+    "Physical device/IME/manual accessibility NOT RUN",
+    "Effective service tier unverified"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "status": "HOST_FIX_PASS_FINAL_APK_INSTALLED_NATIVE_POSITIVE_SPEECH_PENDING",
+  "finding": {
+    "id": "MCP-SHADOW-SAVE-042",
+    "severity": "medium",
+    "fileAndLine": "lib/screens/shadowing_challenge_screen.dart:357",
+    "reproduction": "Hold repository recordAnswer acknowledgment while emitting final recognized phrase",
+    "expected": "Similarity available but evidenceSaved=false until acknowledgment",
+    "actualBeforeFix": "evidenceSaved=true before await; AI can report unsaved data as saved",
+    "rootCause": "Saved boolean also used as early admission guard",
+    "repair": "Move saved=true after successful record await; existing pendingEvidence and acceptedFinalEpoch guard concurrent input",
+    "acceptance": "Delayed acknowledgment false then true; duplicate final one write; one session close; no AI actions",
+    "result": "New regression red before fix; full26 shadowing tests pass after fix; two-file analysis clean",
+    "limitation": "Test repository and recognizer doubles; no new successful native recognition/live provider validation"
+  },
+  "receipt": "evidence/shadowing-save-042/host-receipt.json",
+  "sourcePins": "evidence/shadowing-save-042/source-pins.json",
+  "native": {
+    "apk": "build/ari-assistance-042.apk",
+    "sha256": "ff9c7a4dfb449380599bcdf13f470fbf55239e34e4a19f5c10937c2efd26a4df",
+    "build": "Passed",
+    "install": "Success",
+    "smoke": "Baseline home and collapsed optional AI accessible",
+    "probeRecovery": "Initial accessibility helper failed removing shared temp path; path absent on inspection. Changed ignored helper to per-call UUID path and probe passed. Concurrent deletion cause unproven."
+  },
+  "remaining": [
+    "Complete mode-specific baseline/connected/disconnected acceptance",
+    "Successful native speech/camera and remaining sync coverage",
+    "Whole-project review and SDLC/Agile repairs queued after MCP acceptance"
+  ]
+}

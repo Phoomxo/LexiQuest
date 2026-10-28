@@ -1,0 +1,164 @@
+import 'dart:typed_data';
+
+import 'voice_audio_cache.dart';
+import 'voice_audio_player.dart';
+import 'voice_capability.dart';
+import 'voice_models.dart';
+import 'voice_provider_descriptor.dart';
+import 'voice_route_handler.dart';
+import 'voice_synthesis_provider.dart';
+
+const _engineMismatchFailure = VoiceFailure(
+  category: VoiceFailureCategory.synthesis,
+  message: 'Synthesized audio provenance does not match its provider.',
+);
+
+const _unsupportedRouteFailure = VoiceFailure(
+  category: VoiceFailureCategory.unsupportedCapability,
+  message: 'The selected voice provider cannot handle this request.',
+);
+
+/// Adapts a byte-producing synthesis provider to the routed playback contract.
+final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
+  SynthesizedVoiceRouteHandler({
+    required VoiceSynthesisProvider provider,
+    required VoiceAudioPlayer audioPlayer,
+    required VoiceAudioCache audioCache,
+    required String modelVersion,
+  }) : this._(provider, audioPlayer, audioCache, modelVersion);
+
+  SynthesizedVoiceRouteHandler._(
+    this._provider,
+    this._audioPlayer,
+    this._audioCache,
+    this._modelVersion,
+  );
+
+  final VoiceSynthesisProvider _provider;
+  final VoiceAudioPlayer _audioPlayer;
+  final VoiceAudioCache _audioCache;
+  String _modelVersion;
+
+  @override
+  VoiceProviderDescriptor get descriptor => _provider.descriptor;
+
+  @override
+  Future<VoicePlaybackResult> speak(
+    VoiceRequest request,
+    VoiceCancellationToken cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    _validateRoute(request);
+    final cache = request.lessonCache ?? _audioCache;
+
+    final canCache =
+        descriptor.allowsStandardCache &&
+        descriptor.privacyScope == VoicePrivacyScope.standardContent &&
+        request.privacyScope == VoicePrivacyScope.standardContent;
+
+    if (canCache) {
+      final lookupKey = VoiceAudioCacheKey.create(
+        request: request,
+        engine: descriptor.engine,
+        modelVersion: _modelVersion,
+      );
+      final cachedBytes = await cache.get(lookupKey);
+      cancellation.throwIfCancelled();
+      if (cachedBytes != null) {
+        final playback = await _play(cachedBytes, cancellation);
+        cancellation.throwIfCancelled();
+        return _result(
+          request: request,
+          cacheHit: true,
+          modelVersion: _modelVersion,
+          playbackCompleted: playback?.completed,
+        );
+      }
+    }
+
+    final audio = await _provider.synthesize(request);
+    cancellation.throwIfCancelled();
+    if (audio.engine != descriptor.engine) {
+      throw _engineMismatchFailure;
+    }
+
+    _modelVersion = audio.modelVersion;
+    if (canCache) {
+      final storageKey = VoiceAudioCacheKey.create(
+        request: request,
+        engine: descriptor.engine,
+        modelVersion: audio.modelVersion,
+      );
+      await cache.put(storageKey, audio.bytes);
+      cancellation.throwIfCancelled();
+    }
+
+    final playback = await _play(audio.bytes, cancellation);
+    cancellation.throwIfCancelled();
+    return _result(
+      request: request,
+      cacheHit: false,
+      requestId: audio.requestId,
+      modelVersion: audio.modelVersion,
+      playbackCompleted: playback?.completed,
+    );
+  }
+
+  Future<VoiceAudioPlayback?> _play(
+    Uint8List bytes,
+    VoiceCancellationToken cancellation,
+  ) async {
+    final player = _audioPlayer;
+    try {
+      if (player is VoiceAudioPlayerWithCompletion) {
+        return await player.playWithCompletion(bytes);
+      }
+      await player.play(bytes);
+      return null;
+    } on Object {
+      // A failed start acknowledgement does not prove silence. The owning
+      // route must drain possible partial playback before fallback may start.
+      // A retired route must not stop a replacement sharing this player.
+      cancellation.throwIfCancelled();
+      try {
+        await player.stop();
+      } on Object {
+        cancellation.throwIfCancelled();
+        throw const VoiceFailure(
+          category: VoiceFailureCategory.cleanupIncomplete,
+          message: 'Failed audio playback could not be stopped.',
+        );
+      }
+      cancellation.throwIfCancelled();
+      rethrow;
+    }
+  }
+
+  void _validateRoute(VoiceRequest request) {
+    if (!descriptor.supports(request.capability) ||
+        descriptor.privacyScope != request.privacyScope) {
+      throw _unsupportedRouteFailure;
+    }
+  }
+
+  VoicePlaybackResult _result({
+    required VoiceRequest request,
+    required bool cacheHit,
+    String? requestId,
+    String? modelVersion,
+    Future<void>? playbackCompleted,
+  }) {
+    return VoicePlaybackResult(
+      requestedEngine: request.assignedEngine ?? descriptor.engine,
+      actualEngine: descriptor.engine,
+      usedFallback: false,
+      cacheHit: cacheHit,
+      requestId: requestId,
+      modelVersion: modelVersion,
+      playbackCompleted: playbackCompleted,
+    );
+  }
+
+  @override
+  Future<void> stop() => _audioPlayer.stop();
+}

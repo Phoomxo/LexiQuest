@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T17:13:09.583917+00:00",
+  "item": "S01-AP-catalog-recovery",
+  "taskId": "01a0d457-c264-7572-92d3-65b2a83c833f",
+  "status": "HOST_PASS",
+  "hostTests": 412,
+  "newTests": 20,
+  "confirmedRedResolved": 12,
+  "introducedRegressionResolved": 1,
+  "remainingRed": [],
+  "gates": [
+    {
+      "path": "build/ux-delivery/S01-AP/final-catalog.json",
+      "sha256": "d59f56907ef32f9436f886d07ea57d6157946bae7f002e3e0d73b38a0dd7e0c7",
+      "tests": 44,
+      "fingerprint": "37203eaf1e7ddf53478682573504e4b980989236901ab69f5bb33382e221e002",
+      "logs": [
+        {
+          "path": "build/ux-delivery/S01-AP/final-catalog.stdout.log",
+          "sha256": "f4efbf09976d26af056eedb46d4c5efd93dfbb04a44757ec7c6af1be2412a225"
+        },
+        {
+          "path": "build/ux-delivery/S01-AP/final-catalog.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    },
+    {
+      "path": "build/ux-delivery/S01-AP/final-related.json",
+      "sha256": "5dc6104788b06ea0e622c68fa9043ccbba61e51c5b63278e8b4ad96ee112db8f",
+      "tests": 84,
+      "fingerprint": "16c1b94cb3d0f25f26bd361f4fb783456dbba5b7f1f8d7bbe8e354cbd76dd1f5",
+      "logs": [
+        {
+          "path": "build/ux-delivery/S01-AP/final-related.stdout.log",
+          "sha256": "bfd41eef4ca93b52863fe75baa82b2e62f80e5b462722a64cb6b517789757d91"
+        },
+        {
+          "path": "build/ux-delivery/S01-AP/final-related.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    },
+    {
+      "path": "build/ux-delivery/S01-AP/final-regression.json",
+      "sha256": "907fbd66634313df131a91a10b317c0376ee3e1ff0f10a76b24ee681cf34c96c",
+      "tests": 284,
+      "fingerprint": "0e4cb00ac094a95f65418af36355d60ebd3ee4136d441645b585950bcfde080e",
+      "logs": [
+        {
+          "path": "build/ux-delivery/S01-AP/final-regression.stdout.log",
+          "sha256": "388e971ade7f7bf6197cea893fdc8bd90376227b6c501462ffdf87caf45dff83"
+        },
+        {
+          "path": "build/ux-delivery/S01-AP/final-regression.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    }
+  ],
+  "sourcePinsVerified": 1540,
+  "sourcePins": "build/ux-delivery/S01-AP/source-pins.json",
+  "sourcePinsSha256": "0a35208bf5d82dafb6b067d5c4d1225d85f053e72cd75ee71966424a12a9285f",
+  "sourceFingerprint": "10e36c8f6f9aa95510eec8ff8f0a490dd86117c1414826c1d8601cfa43c034b1",
+  "checkpoint": "build/ux-delivery/S01-AP/host-checkpoint-source.zip",
+  "checkpointSha256": "e434bc2383a136c25ae5ed2c01f51669aaa7c6da76fe7645bc9b257ff50ee219",
+  "changes": [
+    {
+      "path": "lib/screens/learning_pack_catalog_screen.dart",
+      "beforeSha256": "49b1ec8dac5823d047dd19c606b4a6ed5d336dcf349aeb6c63cf55b80acefd18",
+      "afterSha256": "cf096085058b730d5db783ae3fa24096342ba2fb7b08b9d1d6bcc15e349223d6"
+    },
+    {
+      "path": "test/screens/learning_pack_catalog_screen_test.dart",
+      "beforeSha256": "2fa4a48a4229fd175ccf3066603e2e9e9987c72f8709301cd814cc8e0752f24d",
+      "afterSha256": "e2a00b8f79328b86fe7aef07b72b804a6e636dabd48b9913ca216d4baa0af44d"
+    }
+  ],
+  "prototypeReuse": {
+    "tests": 115,
+    "compatibilityChecks": 3,
+    "pinsVerified": {
+      "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+      "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+      "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+      "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+      "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+      "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+      "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+      "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+    },
+    "rerun": false
+  },
+  "selfReview": "Sole-writer self-review, no subagents or independent reviewer. Catalog binds only effective dependencies/useCases and owner authority. Immediate failure observation, bounded explicit read-only retry, returned-owner revalidation, read/display generations and tab/route/pop/disposal/app lifecycle fence stale data and actions. Detail and personal-set entries share single admission; children resolve live gates without parent context. Search/filter recovery, pinned identity/revision, empty/no-match and optional metadata context remain; baseline without login/AI retained. Existing content/progress/owner/quality/feature/composition authorities unchanged. No new content, study assignment, scoring, scheduling, schema, statistics, research or provider work.",
+  "diagnostics": [
+    "Initial fixture invoked logout on owner repository instead of account layer; corrected to isolated committed owner transaction. Initial environment InputDrift retained; no PASS claimed.",
+    "Stable original-source run: 13 new cases, 12 meaningful RED and one existing PASS. Missing retry, pending use-case replacement, retired filter/detail actions, duplicate routes, stale registry and stale committed owner context confirmed.",
+    "Expanded fixture captured RawTooltip instead of IconButton; corrected exact widget predicate, assertions unchanged.",
+    "Full catalog gate found an introduced regression for two valid filter taps before the next frame. Display generations now retire at render while route/retry generations retire immediately. Existing test unchanged and passes.",
+    "Final three sequential gates: 44 catalog + 84 connected catalog/detail/quality/planning + 284 navigation/gates/menu/bootstrap. All 1540 source pins identical and current; selection-specific fingerprints differ because targets differ. No source edits during gates. CR-at-EOL-aware diff check passed."
+  ],
+  "originalArchives": [
+    "build/ux-delivery/S01-AP/pre-edit.zip",
+    "build/ux-delivery/S01-AP/state-pre-edit.zip",
+    "build/ux-delivery/S01-AP/docs-pre-edit.zip"
+  ],
+  "runEvidenceIndex": "build/ux-delivery/S01-AP/run-evidence-index.json",
+  "pending": [
+    "native/device",
+    "restart",
+    "real keyboard/screen reader",
+    "permitted visual/user review",
+    "qualified content/media/trials",
+    "release"
+  ],
+  "sprintAccepted": false,
+  "routing": "Astra/medium deterministic fallback, not Jev-selected; Standard/default requested, runtime tier unexposed; original Jev ledger/quota/cache unchanged"
+}

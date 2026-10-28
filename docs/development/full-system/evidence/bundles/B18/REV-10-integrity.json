@@ -1,0 +1,38 @@
+{
+  "sliceId": "B18-G82-REV-10",
+  "checkpointInputSha": "de3b529975de0b517f8d69dc2c9e0b3ff4da7dc6",
+  "verifiedAtUtc": "2026-09-19T12:26:17.227294+00:00",
+  "frozenInventory": 3610,
+  "policyAmendments": 3,
+  "preflightHandoffHashes": 31,
+  "zoneDispositions": 84,
+  "focusedOracles": 5,
+  "totalObservations": 1429,
+  "totalStaticDispositions": 942,
+  "remainingCrossChecks": 487,
+  "completedProductionZoneFiles": 759,
+  "focusedRev12Oracles": 183,
+  "findings": {
+    "total": 61,
+    "static": 19,
+    "candidate": 42,
+    "prior56Unchanged": true
+  },
+  "preservation": {
+    "prior853DispositionEntriesUnchanged": true,
+    "allPriorNotesAndSourceIdentityRetained": true,
+    "REV01Through09ReceiptsByteIdentical": true,
+    "sourceAndPolicyRawHashesUnchanged": true
+  },
+  "nextSliceTests": [
+    "tool/cli/tests/ci-workflow.tests.ps1",
+    "tool/cli/tests/package-field-release.tests.ps1",
+    "tool/cli/tests/release-profile.tests.ps1",
+    "tool/cli/tests/verify-scope.tests.ps1"
+  ],
+  "runtimeTestsRun": false,
+  "applicationSourceChanged": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "validation": "Static evidence integrity and semantic review receipt only, not runtime PASS."
+}

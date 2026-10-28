@@ -1,0 +1,442 @@
+{
+  "zone": "REV-02",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "reviewCompletedAtUtc": "2026-09-19T10:54:45.093902+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "area": "database/migrations/owner",
+      "evidence": [
+        "lib/data/local/app_database.dart",
+        "lib/data/local/research_schema_guards.dart",
+        "test/data/local/legacy_learning_import_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart"
+      ],
+      "disposition": "Generated50table571column manifest and actual sqlite_master inventory cross-checked. Owner active uniqueness remains transactional application invariant; generic cross-row FK is not owner authorization, canonical repository/guards provide it. All migration oracles already read: fresh-current or current-minus-tables fixtures explicitly are not authentic historical schema proofs. Legacy WAL/materialization resource candidateREV02-01 remains. No automatic reset of incompatible database."
+    },
+    {
+      "area": "canonical writes and sync",
+      "evidence": [
+        "lib/features/learning/data/drift_learning_repository.dart",
+        "lib/features/learning/data/drift_learning_event_store.dart",
+        "lib/features/learning/data/drift_learning_projection_rebuilder.dart",
+        "lib/features/sync/data/drift_sync_store.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/features/learning/drift_learning_event_store_test.dart",
+        "test/features/sync/drift_sync_store_test.dart"
+      ],
+      "disposition": "Live recordAnswer wraps attempt/event/receipt/projection transaction. Sync applyPullPage SQL-fences lease and encloses dispatch including evidence append and rebuildWord/Reading in transaction; owner-upgrade transaction reviewed. Immutable historical actor/owner aliases preserve provenance; direct v13 eventless legacy ingress intentionally restricted. Independent owner foreign keys require these semantic checks, no claim DB FK alone provides isolation. Generic new-session final read-to-transaction race candidateREV02-03 retained; inactive owner continuation/replay tests are intentional and must not be broken by its fix."
+    },
+    {
+      "area": "recovery and lifecycle",
+      "evidence": [
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart",
+        "test/features/learning/learning_use_cases_test.dart",
+        "lib/features/learning/application/learning_use_cases.dart"
+      ],
+      "disposition": "Real file-backed fault/close/reopen tests separated from same-memory controller reconstruction.64checkpoint128attempt limits, authenticated pins and exact lostACK identities cross-checked. Terminal timestamp earlier than session start candidateREV02-02 is distinct from valid monotonic active time with backwards wall endpoints. Production postcommit notifier requestDetached catches sync errors; optional observation hook can throw only via injection, not default user path."
+    },
+    {
+      "area": "side effects and retained owners",
+      "evidence": [
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/scenarios/guest_upgrade_restart_test.dart",
+        "test/runtime/app_bootstrap_test.dart"
+      ],
+      "disposition": "Contiguous receipt frontier, blocked source preventing overtaking, exact once effects after trigger faults and owner transition drain/rebase now have fully read oracles. Memory EXPLAIN/manual query checks not traced production query proof. Alias transitions serialized through canonical lifecycle; no independent demonstrated new defect. Reward/SRS replay remains scoped and permanent achievement history preserved."
+    },
+    {
+      "area": "history and source replay",
+      "evidence": [
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "lib/features/history/application/learning_history_use_cases.dart",
+        "lib/features/history/data/drift_learning_history_reader.dart",
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "disposition": "Canonical attempt/event bijection, keyset pagination, malformed selected/off-page evidence, unavailable content and assessment outcome-only policy cross-checked. Live replay launcher final owner fence remains covered by REV02-03 candidate. Pair terminal overview and per-word projection history can read unbounded histories; no current measured failure claimed, retained resource observation for system coverage. Do not silently cap histories and corrupt replay."
+    },
+    {
+      "area": "configuration/DTO boundaries",
+      "evidence": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_store_test.dart",
+        "test/features/learning/session_configuration_mode_matrix_test.dart",
+        "lib/features/learning/application/session_configuration_policy.dart",
+        "lib/features/learning/domain/session_configuration.dart"
+      ],
+      "disposition": "Unkeyed SHA is content identity, not signature. Generic DTO permissiveness is contained by canonical exact codecs/policy/pinned repository and frozen checkpoint boundaries. Protocol binding collection immutable, nested pin lists technically mutable but live baseline standard uses const empty list and no production custom constructor/binding call found; no actual mutation caller. Handwriting has no durable answer ingress. Legacy ReadingSession constructor only self-codec, local repository/adaptive scheduler test-only; delimiter/mutable-list issues not current Drift evidence authority."
+    },
+    {
+      "area": "feedback/evidence policy",
+      "evidence": [
+        "lib/features/learning/application/current_activity_evidence.dart",
+        "lib/features/learning/domain/evidence_eligibility_policy.dart",
+        "lib/features/learning/domain/contrastive_explanation.dart",
+        "test/features/learning/matching_mode_adapter_test.dart",
+        "test/features/learning/learning_use_cases_test.dart"
+      ],
+      "disposition": "Exact reviewed option provenance retained across retry and denied tampering even after recomputed hash; seven evidence classes retain recognition/guided/recreational/assessment floors. Capture freezing is not a mutex but actual controller submit/recovery generation and canonical duplicate ID checks reviewed. First accuracy is ordered semantic first eligible response, not all-attempt score. Formulas retain separate detailed oracle observations; no inferred scientific/model validity."
+    }
+  ],
+  "files": [
+    {
+      "path": "lib/data/local/app_database.dart",
+      "sha256": "dcc15a260fa900ed63421e42ec2fd8bbc95addc439251bfcc5b2c34efad0c253",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/app_database_native_path.dart",
+      "sha256": "7306ac7d41265f2ef822b0e16f4f23f431c2c56f46c965f8c72b3bb35553df96",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/app_database_open_policy.dart",
+      "sha256": "17e8e18102e77136406365240a19ebb8ea198a9508a87a99196dda7acfbd1bfd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/app_database_stub_path.dart",
+      "sha256": "b69bb0fefd7bc56baf299b1592acd7982fedb3879e986b4dedabe82d0ec8207f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "sha256": "078213d0961267da5de7168a1a682cfff44a6f25bb086fc7b6b81c3213a7fae6",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV02-01"
+      ]
+    },
+    {
+      "path": "lib/data/local/research_schema_guards.dart",
+      "sha256": "0a36ee37ed0b2cb4562a57cf7904359aa91b3641a552ca3be4bc14331bcbeb33",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/ai_usage_tables.dart",
+      "sha256": "652479d5f8135cffa0f256813e02f851133c93c2e5775fb162fce165ec5ea558",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/associative_tables.dart",
+      "sha256": "47b18be08bf313493c25820ffc2bd87c1f02c748a02ed00c5a97f13cf90f39da",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/event_tables.dart",
+      "sha256": "f50dad7e0acd9333097a06456d057bf73c55b1cfb894b0eadc404f91bd33b64b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/identity_tables.dart",
+      "sha256": "d0509e0194e9e31ed6a6fe48f3a2fc197d664219e2019b23b888cf01c2e8dcfc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/learning_tables.dart",
+      "sha256": "e1eaa24cb0a6521cd66395f96b53c178e40d376d36f0fd1d90f32234ecb90bba",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/model_tables.dart",
+      "sha256": "3b7485fe786d9c47a2040f49d5bfd9726caa6e05ffdd36a278451f04d5538b1c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/motivation_tables.dart",
+      "sha256": "ab91483107022c24eb0610d6a35fbdc1bccd6624c2b542bf693a35b337874c1a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/planning_tables.dart",
+      "sha256": "e1551010eb1f33e016a1233656dbb075942d13ef0977d21d62b8653b8958dcee",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/preference_tables.dart",
+      "sha256": "af0646ec027f3ee47eaa54bc8856bd2a61a7e9d1aceb5aaa34f84de5e751ec72",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/progress_tables.dart",
+      "sha256": "763e587dfe7fa200d81fbba4e0aa0b10e87f2c786cb8cb03665f24ee14b5eb99",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/quest_tables.dart",
+      "sha256": "b7dc88f318b85cb14b934ca272b69c102592fd4d9384d2889481e1f48d210160",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/research_tables.dart",
+      "sha256": "80e708a2b7760928908cd5d8b9d173fde757ec701ce98a4bfebed3e0c1c0beb9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/review_tables.dart",
+      "sha256": "8c0ef0cd69fdf5389bfaab3034530a0ec9687dc3b1081d61c6d9138bd44caf67",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/runtime_tables.dart",
+      "sha256": "49a094f9be13c2633a29582a1f262040b7263995399e993413ec1deed74e726e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/sync_tables.dart",
+      "sha256": "e48f42222eacb7f630075f6084a5627b844a0d8df976a116072021b6380b3c18",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/time_tracking_tables.dart",
+      "sha256": "c847ad8aeccebd126febe9212c79a11bdd5223f8027f0ee19a6735012be093ed",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/history/application/learning_history_use_cases.dart",
+      "sha256": "10ca1cc022b45b19339ffda36ccd50a12482157ab0262c9ef3461045b4f8d35a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/history/data/drift_learning_history_reader.dart",
+      "sha256": "9cbd23e19cf142bc5afa7be0b5faad9ce5e8b5fa7c534c07dc6855c650bffdec",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/history/domain/learning_history_models.dart",
+      "sha256": "555408efe521291165be1c2599336d4961538fa5f891d70af1d863e2eb0f0d25",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/current_activity_evidence.dart",
+      "sha256": "422f4a30f4789a31ff1928ed4ae1fd51941a49a412fff44d3a7cdc4afca56e38",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/handwriting_self_check_adapter.dart",
+      "sha256": "e05cf77f735f0bb92dca07ad6d03604c5c3b80739645e260215cb4a668f2ade9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/learning_layer_adapter.dart",
+      "sha256": "5b5a755919c65a0c63e08025a740a19ee10ac0bde6d8cdcda7bbece468964efb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/learning_side_effect_reconciler.dart",
+      "sha256": "87cda2ad2057eea0988cac4ae2704f078bbdfef0e19515e2ade58cf33169d84b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/learning_use_cases.dart",
+      "sha256": "f035d8aaa004724637013352102fa89b5c16cccfd77e14a74167b960423c38fd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/data/drift_associative_learning_adapter.dart",
+      "sha256": "d92009208a9fdee04aed858a4fa9bca00dda61702cce907da2651460ed825741",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_event_store.dart",
+      "sha256": "c3bb3a67785ed3a765a68f16bb9feaae7a08d602666f92c5b46aa60ad5c98d43",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_projection_rebuilder.dart",
+      "sha256": "0cfd7bb0257c1f76a32c979996769ab5c2d890c84353f85fcfb239c8bd1db9cb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "981dbe313f05a531a5a8ce6de1e2401accc9e555407973d612cd963216423562",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV02-02",
+        "B18-REV02-03"
+      ]
+    },
+    {
+      "path": "lib/features/learning/data/drift_session_configuration_store.dart",
+      "sha256": "a200d5ee6f71794fd8fb4210177f50c716183a3d204bd69a49a916722ac97a91",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/answer_feedback.dart",
+      "sha256": "3f17da43bb14dcd993728f9d761b4afa653a7eabd230c879429bb80cf628da6b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/associative_reading_checkpoint.dart",
+      "sha256": "312ba05ce984bb310a0330423b318899c8008761ac9714c995b5a03e3ba2c72d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/contrastive_explanation.dart",
+      "sha256": "255fd0fffcbda604513d7e19f54a78878411ad9ae5191f37135fac849a2a3f1d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/evidence_context.dart",
+      "sha256": "05a16400da3f7883c376829e47e8c46b6a4b8363dd4e677c5c61334450539783",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+      "sha256": "c86aa2266b27831b48c799cf55b73016c93ee63ed264d6a7e80522632f662411",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/evidence_policy_rollout.dart",
+      "sha256": "469e32a474b41882a0ee8c94e902d67366f04a5c2529217f01f5d1084ea2dc5c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/first_answer_accuracy.dart",
+      "sha256": "7ab716abc4f03776fe1f6bbcfea1c35fbe95928a5640b94485b60b2c3af78a28",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/hint_policy.dart",
+      "sha256": "cbd27c6fbdcbc88704c0521aaab60bafaaa1e8402f29e51d05a8cc2d6793d7b2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/learning_activity_recovery_limits.dart",
+      "sha256": "fad9eaa74177d8dc5c2ad9174c38bddfe056f2f2b34e634e92bdfc2911771909",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/learning_event_context.dart",
+      "sha256": "ef601b3e7705fd7c12fcc6be164874029965209b43f347187a8d421cedc9be18",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/learning_evidence_contract.dart",
+      "sha256": "e02039c9c649e4321b46f0ea93667d9277656c4b364bfb26489121e8b2f57701",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/learning_models.dart",
+      "sha256": "7e14482ec0c64c7f5d63242e5d7edc03dd5cd3ce92754b97d3c8b56f737bdb9a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/learning_repository.dart",
+      "sha256": "e2dd30be5789bff3004f21fcc1fb290400ad5f4d0c4a3093343bc86fc2d266de",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/lesson_mode.dart",
+      "sha256": "08c9306155b96447c67c12af9f0d9a5b82679e096ed6bd1d7d47c5676ef2a713",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/lesson_session_state.dart",
+      "sha256": "354ec4176d9c82eca4bc7d60d1dd4725a9d6685301c651d933a69586ee90d387",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/session_configuration.dart",
+      "sha256": "48f5a593da99a8c2e5dcc2187b30ef4bdd00d981be33fd4f7f10f510bd70766b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/adaptive_associative_scheduler.dart",
+      "sha256": "6ce8c6532dd51c5d219830770f6784cb4951fffc4d653f4ae236be8126030c3f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/association_record.dart",
+      "sha256": "845ab05e3651f11a4704278404e720d4afe2360a1675b9a7472e1741749ff6db",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/learning_event.dart",
+      "sha256": "b9d9cb2780376cfe90abf920919c1168afe5147243932b3d6a4798632b60c9b8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/local_learning_repository.dart",
+      "sha256": "9f1ec88498d62c20d2dcc57b7595d6ca03e98dd5b44e068ee070b256dd6be2f1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/memory_state.dart",
+      "sha256": "02bbeefa63caf910dffafe85d1f3a7ca124dc0047a2ae3e34ffcc2e123c8b28d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/reading_session.dart",
+      "sha256": "d2090eeccc7b28f3f01c4b3934e1282769e828e66432beb5023ae74679bb138a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/recall_attempt.dart",
+      "sha256": "9a74bf088edc56903018ca34325b4ea1619169fead37a77842c594e9e7e82d0f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    }
+  ],
+  "limitations": "Static semantic review with three open candidates; not runtime acceptance or proof of no unknown defects. Authenticated recovery preserves historical owners; runtime reproduction must not impose blanket active-owner restrictions."
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "baseSha": "72eca4585df9eaea05700e89c23d383770ad8a66",
+  "navigationSource": "lib/navigation/navigation_glossary.dart",
+  "navigationSourceSha256": "092efee7b6f98eedab4693be7ae015c45135c213bce30f07ea85839a06b2cb91",
+  "registeredNavigationAndActionCount": 64,
+  "canonicalLessonModeCount": 14,
+  "countMeaning": "Registered IDs, not test cases or the separate full-system requirement packages.",
+  "metadataContract": "H04 exact navigation glossary and mode registry tests PASS",
+  "interactionCoverage": "PARTIAL; metadata PASS does not imply every click/state variant passed.",
+  "navigationGroups": {
+    "mainDestinationIds": [
+      "home/learn",
+      "home/vocabulary",
+      "home/mastery",
+      "home/achievements",
+      "home/profile"
+    ],
+    "secondaryDestinationIds": [
+      "home/today",
+      "home/study-planning",
+      "home/weakness"
+    ],
+    "drawerDestinationIds": [
+      "drawer/rewards/shop",
+      "drawer/practice/object-scanner",
+      "drawer/practice/shadowing",
+      "drawer/learning/ghost-duel",
+      "drawer/ai-tutor/chat",
+      "drawer/ai-tutor/settings",
+      "drawer/export/center",
+      "drawer/rewards/quests",
+      "drawer/settings"
+    ],
+    "learningModeIds": [
+      "home/learn/today-experience",
+      "home/learn/associative-reading",
+      "home/learn/quiz",
+      "home/learn/quiz/typed-recall",
+      "home/learn/quiz/matching",
+      "home/learn/quiz/cloze",
+      "home/learn/quiz/definition",
+      "home/learn/srs",
+      "home/learn/handwriting-scratchpad",
+      "home/learn/reading/cefr",
+      "home/learn/quiz/dictation",
+      "home/learn/quiz/sentence-scramble",
+      "home/learn/quiz/word-scramble",
+      "home/learn/speech/speaking",
+      "home/learn/speech/shadowing"
+    ],
+    "todayActionIds": [
+      "today-hub-resume-action",
+      "today-hub-start-recommendation",
+      "today-hub-assessment-action",
+      "today-hub-open-review",
+      "today-hub-open-history"
+    ],
+    "studyPlanningActionIds": [
+      "study-planning/open-catalog",
+      "study-planning/open-goals",
+      "study-planning/open-learning-preferences"
+    ],
+    "settingsActionIds": [
+      "settings/display",
+      "theme-system",
+      "theme-light",
+      "theme-dark",
+      "reduced-motion-switch",
+      "settings/account",
+      "settings/offline-content",
+      "settings/research-consent",
+      "settings/cloud-status",
+      "settings/change-password",
+      "settings/logout",
+      "erase-local-data"
+    ],
+    "profileAxisIds": [
+      "profile/mastery",
+      "profile/srs",
+      "profile/effort",
+      "profile/accuracy",
+      "profile/weakness",
+      "profile/engagement"
+    ],
+    "hubChildRouteIds": [
+      "home/today/review",
+      "home/today/history",
+      "research/assessment",
+      "study-planning/catalog",
+      "study-planning/goals",
+      "study-planning/learning-preferences"
+    ]
+  },
+  "lessonModes": [
+    "associative-reading",
+    "meaning-quiz",
+    "typed-recall",
+    "definition-quiz",
+    "cloze",
+    "matching",
+    "flashcard",
+    "handwriting-scratchpad",
+    "dictation",
+    "speaking",
+    "shadowing",
+    "cefr-reading",
+    "sentence-scramble",
+    "word-scramble"
+  ],
+  "behaviorEvidence": [
+    "device-test-matrix.json",
+    "autonomous-run-001.json"
+  ]
+}

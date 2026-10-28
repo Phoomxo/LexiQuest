@@ -1,0 +1,75 @@
+{
+  "status": "verified documentation/source/hash/link consistency only",
+  "verifiedAtUtc": "2026-09-19T20:46:08.799164+00:00",
+  "applicationSourceChanged": false,
+  "testsRun": false,
+  "buildsRun": false,
+  "freezeHashes": 3657,
+  "handoffPins": 301,
+  "referenceImages": 12,
+  "sourceSymbols": 25,
+  "testSourceMappings": 23,
+  "inheritedF07Targets": 21,
+  "screenStateRows": 225,
+  "features": 9,
+  "slices": 13,
+  "retainedGates": 6,
+  "fixtures": 19,
+  "corpusEditorialEntries": 5500,
+  "markdownLinks": 12,
+  "implementationReadiness": "conditional; see report section8",
+  "files": [
+    {
+      "path": "baseline-verification.json",
+      "sha256": "dcf805518b77fa40054c702e2138310ef2c654c0fec53c177c71457c8688a2fc"
+    },
+    {
+      "path": "contracts.json",
+      "sha256": "e261ba7cfa63e5febb06e7e47db483569bd8536b7a4dec63b4696184cf5e7f88"
+    },
+    {
+      "path": "corpus-pins.json",
+      "sha256": "983fb55cd22dd29c936d6cd0d0df2da0ec33c2f14eddbfae9e871e15a79b0f2d"
+    },
+    {
+      "path": "design-fixtures.json",
+      "sha256": "aa842be50e1d96f9cc53cab18477e1e1c3b11f30f63bbf22bb4fe86074612e7b"
+    },
+    {
+      "path": "eol-restoration-proof.json",
+      "sha256": "e2fbd15669faf5d5ffc2d20ddc3efbe8e776bb6c3a6d27192b83375d284191cc"
+    },
+    {
+      "path": "post-g83-v3-boundary.json",
+      "sha256": "324b20999690ae33e61e6ea4e185c488ca8d692f1730ae93ada30997b91e553e"
+    },
+    {
+      "path": "reconciliation.md",
+      "sha256": "03b7a3f5d0f22c2f307adc9765aa81e3f9686f8a3d98f428d0b677652c1e7cf5"
+    },
+    {
+      "path": "recovery-policy.json",
+      "sha256": "a0dfb45efb80cdd59ab5c71d037e299bee3b349431232f432e6b6cba836d1ac4"
+    },
+    {
+      "path": "reference-observations.json",
+      "sha256": "4d1fb1ee385f4aef2bf864776b08daf49a9f0d039941330b57ed82d312ba99ab"
+    },
+    {
+      "path": "retained-gates.json",
+      "sha256": "41fdbe6f8da9d3255ed37dd84122e09c6edc462fc3569715f81cd1413cff4a71"
+    },
+    {
+      "path": "screen-reference-matrix.json",
+      "sha256": "9c69efb893f070207a8870e323dc6a27050be5f3c5bee90ea9d53758ac36f884"
+    },
+    {
+      "path": "slice-plan.json",
+      "sha256": "ed9b44971efd9b211e3333902bf434d8a44df4eb9215e01d1be09bfeab65e02e"
+    },
+    {
+      "path": "source-test-trace.json",
+      "sha256": "f9321e282dea0d50fb291dd9f700a1ba0ab65a2a812530c698515a35fb8b5eb3"
+    }
+  ]
+}

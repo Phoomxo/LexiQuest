@@ -1,0 +1,131 @@
+{
+  "packageId": "G2.6",
+  "bundleId": "B06",
+  "status": "accepted-local-automated",
+  "baseSha": "8d820cc69394c46cfc241bd7eea4c347f87eaf0b",
+  "uniqueTestsPassed": 109,
+  "composite": "Original selected six-file suite 105 tests:100 PASS/5 FAIL. All five failures repaired;18 f16 retests PASS,10 scratchpad component tests PASS,8 route/edition tests PASS (4 edition tests new). Original failed run remains failed. Unchanged passing cases reused; only three test files changed after original suite, no production dependency delta.",
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-4fbd389311bce7461eb981478b32ffac6753fd2ef5a8f2f59177c7f27e3616d4.json",
+      "status": "Failed",
+      "fingerprint": "dcd3e4e0e45dd89cefe76e0e7bc8ad0c3bd93e70a35cbee3a73fabf69d2e4525",
+      "changedInputsSinceRun": [
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/e8b4786cc25a-dcd3e4e0e45d/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-63ce7b63b93c54359ed3663fe502620d3f93da3f3d16759eef876d0506cf9eb5.json",
+      "status": "Failed",
+      "fingerprint": "42c3792d9f3a6ab58a78265e12becaa4537c70f39f682b8c6a1694596c91e03b",
+      "changedInputsSinceRun": [
+        "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+        "lib/screens/choose_mode_screen.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/navigation/navigation_glossary_test.dart",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/88f0b40a4877-42c3792d9f3a/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-74aeef04e545c999c233720ffd93fb54501efa0b89c6507d477338605e1dc316.json",
+      "status": "Passed",
+      "fingerprint": "bbc1b3e2b0b73111860929e11ec011054890af33eb8f5ac367354b797fc30b0a",
+      "changedInputsSinceRun": [],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/b4863599ab82-bbc1b3e2b0b7/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-8afdc85c1e3b95a231e862c84c44bf1ac8692e527ff1a56e95cf2add37260d1e.json",
+      "status": "Passed",
+      "fingerprint": "59657a34c52b1f92633d9282acefdc7f83c3b0b3bf299f590184465441d7e271",
+      "changedInputsSinceRun": [
+        "test/runtime/app_bootstrap_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/3d0a2cbeac36-59657a34c52b/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-b62a2ccbb7cb404d9a5f91bbdf9012033d85af0622d1cf97f19e0f2341f568a6.json",
+      "status": "Passed",
+      "fingerprint": "59657a34c52b1f92633d9282acefdc7f83c3b0b3bf299f590184465441d7e271",
+      "changedInputsSinceRun": [
+        "test/runtime/app_bootstrap_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/81535c271054-59657a34c52b/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-c1ef2cb53832690219d959d48609b66f3256d1e93fedd19b96e65297bcb6991d.json",
+      "status": "Passed",
+      "fingerprint": "789a54605f2370f222d70e1d823c35579d945d1358971c9d8d0df96acc8524bc",
+      "changedInputsSinceRun": [
+        "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+        "lib/screens/choose_mode_screen.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/navigation/navigation_glossary_test.dart",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/screens/choose_mode_screen_test.dart"
+      ],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/64ddd2ee5661-789a54605f23/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/targeted-learning-c90db5730428b027f604cc19dc73e87ea1c50f0fe534c01e695b529c990a7b87.json",
+      "status": "Passed",
+      "fingerprint": "bbc1b3e2b0b73111860929e11ec011054890af33eb8f5ac367354b797fc30b0a",
+      "changedInputsSinceRun": [],
+      "logs": [
+        {
+          "path": "docs/development/full-system/evidence/bundles/B06/G2.6-runs/8e4240804647-bbc1b3e2b0b7/Explicit-Flutter-tests.stdout.log"
+        }
+      ]
+    }
+  ],
+  "acceptance": {
+    "COV-f06/MG-11": "Flashcard front/reveal/self-rating, due SRS, frozen evidence retries, exposure/no SRS rewrite, owner/background/retirement and accessibility tests passed; original policy unchanged.",
+    "COV-f12": "Scratchpad menu and direct route obey registry and local-preview/cloud-off composition. Canonical active owner observed read-only; owner loss or emergency-off permanently retires mounted route.",
+    "ephemeral": "Draw/undo/clear/typed input, controller replacement, exit, privacy background, rotation, narrow200 text pass. No OCR or durable learning session/configuration/evidence from scratchpad. Route test compares all durable tables except intentionally changed local-owner row.",
+    "G2": "Phase gate pending G2.8."
+  },
+  "design": "Reuse bounded existing scratchpad component in ephemeral route; no learning session created; selected edition activation at bootstrap only. Navigation glossary extended with stable route ID.",
+  "review": {
+    "method": "Single writer review of source diff, callers, ownership/stream disposal, registry retirement, canonical data snapshots, edition authority, evidence policy and accepted tests. User prohibits subagents.",
+    "requiredOpenFindings": []
+  },
+  "externalGates": [
+    "Physical device and manual screen-reader NOT RUN",
+    "Actual binary flags and full release NOT RUN",
+    "Effective service tier unverified; no supported inspector"
+  ],
+  "requiredServiceTier": "default",
+  "requiredBranchPrefix": "lexiquest/",
+  "model": "gpt-6-astra",
+  "thinking": "medium"
+}

@@ -1,0 +1,56 @@
+{
+  "packageId": "G1.3",
+  "status": "accepted-local-automated",
+  "requirements": [
+    "COV-f43",
+    "FORM-01",
+    "G1"
+  ],
+  "runs": [
+    {
+      "status": "Passed",
+      "fingerprint": "dd4731d9421a45b933ea4b572a8cfcb1c766d8a27ef1fdc493140dd2e13728ab",
+      "path": "G1.3-runs/2f8a8bde45d84e9a18425a72d851a9fcda0f3f17-targeted-learning-119472d59c20a72496783bb7f6d7251fd778b26b1cf267e3b6ec7a4abb976976.json",
+      "targets": [
+        "test",
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/learning_history_screen_test.dart",
+        "--reporter",
+        "compact"
+      ]
+    },
+    {
+      "status": "Failed",
+      "fingerprint": "7ef58adc87b38377b71d4ea68b7b9e64750696dc1935d3db731c9ad6335d98f7",
+      "path": "G1.3-runs/2f8a8bde45d84e9a18425a72d851a9fcda0f3f17-targeted-learning-65a99da3499778f4d7f61ca179e47335e78a6f844a72b57aaf476b88aeddaea7.json",
+      "targets": [
+        "test",
+        "test/features/history/learning_history_reader_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B02 history first answers"
+      ]
+    }
+  ],
+  "testCount": 56,
+  "acceptance": {
+    "firstResult": "Added derived first/repair display axes; stored correctCount/wrongCount/score not rewritten",
+    "crossReader": "One canonical session, six distinct words(global ordinals1-6), repair ordinal7 => History5/6+1/1, Progress/Calendar5/6; source snapshot unchanged",
+    "historicalContent": "Existing unavailable/deleted/replaced pack, unpinned metadata, immutable event, foreign-owner and replay tests PASS",
+    "replay": "Existing canonical replay command/lost-ack and source-byte-equivalence tests PASS"
+  },
+  "review": [
+    "First selector shared with G1.2; History getters use captured occurrence/ordinal/id ordering",
+    "All evidence and historical aggregates retained; assessment stays separate",
+    "Generic History card shows first/repair or explicit no eligible evidence",
+    "Formatting-only EOL restoration after PASS; normalized test source unchanged"
+  ],
+  "phaseStatus": "G1 partial; G1.4-G1.7 in B03",
+  "G3.5Obligation": "Reuse B02 cross-reader fixture; extend dashboard/profile/read-model consistency. B02 does not claim all G3.5 readers or physical runtime passed",
+  "externalGates": [
+    "Build/device preview config NOT RUN G1.7/G7.5/G7.7",
+    "B01-FORM-02 remains open G6.4/G6.5"
+  ]
+}

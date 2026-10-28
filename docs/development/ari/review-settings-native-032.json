@@ -1,0 +1,19 @@
+{
+  "status": "NATIVE_DISCONNECTED_BASELINE_PASS_REPRESENTATIVE",
+  "source": "6fc67593c2a039e7062166085046d97578f8561b",
+  "apk": "build/ari-assistance-031.apk",
+  "apkSha256": "a6ff46b60b0a911ba7103b269f3535a7443f0c73657988f02b023502ac839b1d",
+  "package": "com.lexiquest.app.ariTest",
+  "evidence": "device-observations.jsonl",
+  "provider": "Disconnected throughout; no bridge started",
+  "review": "Home -> Today (10 review words) -> review center -> book native practice -> selected หนังสือ -> committed correct feedback -> results1correct0incorrect1sample -> return review center. Historical incorrect reason still shown; not falsely asserted cleared.",
+  "settings": "Initial theme system and reducedmotionfalse. Native selection light and reducedmotiontrue persisted across route exit/reentry. Restored system and reducedmotionfalse, confirmed in tree.",
+  "recovery": "Initial /dev/tty accessibility dump intermittently lacked XML while app PID27570 alive, Awake and StayOn true. Screenshot confirmed app home. File-based dump alternative succeeded; local ignored helper now has fallback and removes its temporary device XML. No app crash evidence observed.",
+  "fixture": "One additional successful book review session is retained in isolated test app, automated test evidence not genuine learner data. Original app/accounts preserved.",
+  "deviceSetting": "USBstayawake2 retained",
+  "limits": [
+    "Connected AI review/settings029-030 pending",
+    "No persistent storage readback query or force-stop restart in this native batch",
+    "All14workflow/mode acceptance remains open"
+  ]
+}
