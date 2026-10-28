@@ -115,22 +115,22 @@ class M3Theme {
   static ThemeData darkThemeFor({String? themeId, String? wallpaperId}) {
     final isOcean = themeId == 'theme_ocean';
     final selectedPrimary = isOcean ? oceanDark : primary;
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: selectedPrimary,
-          brightness: Brightness.dark,
-        ).copyWith(
-          primary: selectedPrimary,
-          onPrimary: isOcean ? oceanDarkInk : Colors.white,
-          secondary: mastery,
-          onSecondary: Colors.white,
-          tertiary: momentum,
-          onTertiary: ink,
-          tertiaryContainer: const Color(0xFF513000),
-          onTertiaryContainer: const Color(0xFFFFDDB8),
-          error: error,
-          onError: Colors.white,
-        );
+    final seeded = ColorScheme.fromSeed(
+      seedColor: selectedPrimary,
+      brightness: Brightness.dark,
+    );
+    final colorScheme = seeded.copyWith(
+      primary: isOcean ? oceanDark : seeded.primary,
+      onPrimary: isOcean ? oceanDarkInk : seeded.onPrimary,
+      secondary: mastery,
+      onSecondary: Colors.white,
+      tertiary: momentum,
+      onTertiary: ink,
+      tertiaryContainer: const Color(0xFF513000),
+      onTertiaryContainer: const Color(0xFFFFDDB8),
+      error: seeded.error,
+      onError: seeded.onError,
+    );
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,

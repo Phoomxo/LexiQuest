@@ -18,6 +18,43 @@ void main() {
     expect(theme.colorScheme.brightness, Brightness.dark);
   });
 
+  test('action text remains readable against each theme surface', () {
+    for (final theme in [
+      M3Theme.lightTheme,
+      M3Theme.darkTheme,
+      M3Theme.lightThemeFor(themeId: 'theme_ocean'),
+      M3Theme.darkThemeFor(themeId: 'theme_ocean'),
+      M3Theme.lightThemeFor(wallpaperId: 'wallpaper_focus'),
+      M3Theme.darkThemeFor(wallpaperId: 'wallpaper_focus'),
+    ]) {
+      expect(
+        _contrast(theme.colorScheme.primary, theme.colorScheme.surface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(theme.colorScheme.primary, theme.scaffoldBackgroundColor),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
+  test('dark error text remains readable on surfaces', () {
+    for (final theme in [
+      M3Theme.darkTheme,
+      M3Theme.darkThemeFor(themeId: 'theme_ocean'),
+      M3Theme.darkThemeFor(wallpaperId: 'wallpaper_focus'),
+    ]) {
+      expect(
+        _contrast(theme.colorScheme.error, theme.colorScheme.surface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrast(theme.colorScheme.error, theme.scaffoldBackgroundColor),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
   test('themes expose readable system-bar icon brightness', () {
     final lightOverlay = M3Theme.lightTheme.appBarTheme.systemOverlayStyle;
     final darkOverlay = M3Theme.darkTheme.appBarTheme.systemOverlayStyle;
