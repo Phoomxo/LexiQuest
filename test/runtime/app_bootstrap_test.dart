@@ -19,10 +19,13 @@ import 'package:vocab_learning_app/features/account_deletion/application/account
 import 'package:vocab_learning_app/features/account_deletion/data/drift_local_account_deletion_gateway.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+
+import '../support/fake_owner_write_coordinator.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
   @override
@@ -1367,6 +1370,7 @@ AccountDeletionUseCases _deletionUseCases(
   return AccountDeletionUseCases(
     enabled: enabled,
     owners: owners,
+    ownerWrites: FakeOwnerWriteCoordinator(),
     currentSession: () => null,
     exporter: unused,
     reauthenticator: unused,
@@ -1441,6 +1445,10 @@ AccountDeletionComposition _bootstrapDeletionComposition({
     useCases: AccountDeletionUseCases(
       enabled: newRequestsEnabled,
       owners: owners,
+      ownerWrites: DriftOwnerWriteCoordinator(
+        database,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
       currentSession: currentSession,
       exporter: unused,
       reauthenticator: unused,

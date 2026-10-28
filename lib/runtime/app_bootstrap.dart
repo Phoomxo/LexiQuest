@@ -46,6 +46,7 @@ import '../features/gemini/data/gemini_rest_gateway.dart';
 import '../features/gemini/data/secure_gemini_settings_store.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
+import '../features/identity/data/drift_owner_write_coordinator.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -237,16 +238,19 @@ Future<AccountDeletionComposition> _createProductionAccountDeletion({
   final client = http.Client();
   final secureSettings = SecureGeminiSettingsStore.production();
   final snapshotBuilder = DriftAccountSnapshotBuilder(database, nowUtc: nowUtc);
+  final ownerWrites = DriftOwnerWriteCoordinator(database, nowUtc: nowUtc);
   final journal = SharedPreferencesAccountDeletionJournal(
     await SharedPreferences.getInstance(),
     nowUtc: nowUtc,
     recoveryRetention: Duration(
       hours: _productionAccountDeletionRecoveryRetentionHours,
     ),
+    ownerWrites: ownerWrites,
   );
   final useCases = AccountDeletionUseCases(
     enabled: newRequestsEnabled,
     owners: owners,
+    ownerWrites: ownerWrites,
     currentSession: currentSession,
     exporter: SnapshotFullAccountExporter(
       owners: owners,

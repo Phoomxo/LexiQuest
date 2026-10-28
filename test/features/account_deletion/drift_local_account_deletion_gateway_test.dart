@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/data/local/shared_preferences_account_deletio
 import 'package:vocab_learning_app/features/account_deletion/application/account_deletion_use_cases.dart';
 import 'package:vocab_learning_app/features/account_deletion/data/drift_local_account_deletion_gateway.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -305,6 +306,7 @@ void main() {
     final useCases = AccountDeletionUseCases(
       enabled: true,
       owners: _UnusedOwners(),
+      ownerWrites: DriftOwnerWriteCoordinator(database, nowUtc: () => now),
       currentSession: () => null,
       exporter: unused,
       reauthenticator: unused,

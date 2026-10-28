@@ -18,6 +18,16 @@ String durableAccountDeletionBinding(String idempotencyKey) {
   return 'sha256:${sha256.convert(utf8.encode(idempotencyKey))}';
 }
 
+String accountDeletionReplacementGuestOwnerId(CloudDeletionReceipt receipt) {
+  final operation = jsonEncode([
+    receipt.ownerId,
+    receipt.firebaseUid,
+    receipt.idempotencyKey,
+    receipt.receiptId,
+  ]);
+  return 'local:deleted:${sha256.convert(utf8.encode(operation))}';
+}
+
 enum AccountDeletionFailureCode {
   disabled,
   invalidRequest,

@@ -2,6 +2,7 @@ import '../../account/domain/account_contracts.dart';
 import '../../identity/domain/local_owner.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../domain/account_deletion_contracts.dart';
+import '../domain/owner_write_coordinator.dart';
 
 typedef AccountDeletionUtcNow = DateTime Function();
 typedef AccountDeletionSessionReader = AccountSession? Function();
@@ -16,6 +17,7 @@ final class AccountDeletionUseCases {
     required this.cloud,
     required this.local,
     required this.journal,
+    required this.ownerWrites,
     required this.nowUtc,
   });
 
@@ -30,6 +32,7 @@ final class AccountDeletionUseCases {
   final PrivilegedAccountDeletionGateway cloud;
   final LocalAccountDeletionGateway local;
   final AccountDeletionJournal journal;
+  final OwnerWriteCoordinator ownerWrites;
   final AccountDeletionUtcNow nowUtc;
 
   Future<AccountDeletionReceipt> deleteAccount({
@@ -45,50 +48,86 @@ final class AccountDeletionUseCases {
       );
     }
 
+    final pending = await _loadJournal();
+    if (pending != null) {
+      await _adoptJournal(pending);
+      throw const AccountDeletionException(
+        AccountDeletionFailureCode.unavailable,
+      );
+    }
+
     final identity = await _requireIdentity();
-    late final FullAccountExportReceipt exportReceipt;
-    try {
-      exportReceipt = await exporter.export(ownerId: identity.owner.id);
-    } on AccountDeletionException {
-      rethrow;
-    } catch (error) {
-      throw AccountDeletionException(
-        AccountDeletionFailureCode.fullExportFailed,
-        cause: error,
-      );
+    final previous = await ownerWrites.inspect();
+    if (previous != null &&
+        previous.phase == DeletionIntentPhase.preparing &&
+        previous.casToken!.matchesOwner(identity.owner.id)) {
+      if (!await ownerWrites.abortPreparing(previous.casToken!)) {
+        throw const AccountDeletionException(
+          AccountDeletionFailureCode.unavailable,
+        );
+      }
     }
-    _validateExport(exportReceipt, identity.owner.id);
-
-    await _requireIdentity(
-      ownerId: identity.owner.id,
-      firebaseUid: identity.session.uid,
-    );
-    late final RecentAuthenticationReceipt authenticationReceipt;
-    try {
-      authenticationReceipt = await reauthenticator.reauthenticate(
-        firebaseUid: identity.session.uid,
-      );
-    } on AccountDeletionException {
-      rethrow;
-    } catch (error) {
-      throw AccountDeletionException(
-        AccountDeletionFailureCode.reauthenticationRequired,
-        cause: error,
-      );
-    }
-    _validateAuthentication(authenticationReceipt, identity.session.uid);
-
-    await _requireIdentity(
-      ownerId: identity.owner.id,
-      firebaseUid: identity.session.uid,
-    );
-    await _savePendingOperation(
+    final intent = await ownerWrites.beginDeletion(
       ownerId: identity.owner.id,
       firebaseUid: identity.session.uid,
       idempotencyKey: key,
-      exportReceipt: exportReceipt,
-      authenticationReceipt: authenticationReceipt,
     );
+    late final FullAccountExportReceipt exportReceipt;
+    late final RecentAuthenticationReceipt authenticationReceipt;
+    try {
+      if ((await ownerWrites.inspect())?.phase !=
+          DeletionIntentPhase.preparing) {
+        throw const AccountDeletionException(
+          AccountDeletionFailureCode.unavailable,
+        );
+      }
+      try {
+        exportReceipt = await exporter.export(ownerId: identity.owner.id);
+      } on AccountDeletionException {
+        rethrow;
+      } catch (error) {
+        throw AccountDeletionException(
+          AccountDeletionFailureCode.fullExportFailed,
+          cause: error,
+        );
+      }
+      _validateExport(exportReceipt, identity.owner.id);
+
+      await _requireIdentity(
+        ownerId: identity.owner.id,
+        firebaseUid: identity.session.uid,
+      );
+      try {
+        authenticationReceipt = await reauthenticator.reauthenticate(
+          firebaseUid: identity.session.uid,
+        );
+      } on AccountDeletionException {
+        rethrow;
+      } catch (error) {
+        throw AccountDeletionException(
+          AccountDeletionFailureCode.reauthenticationRequired,
+          cause: error,
+        );
+      }
+      _validateAuthentication(authenticationReceipt, identity.session.uid);
+
+      await _requireIdentity(
+        ownerId: identity.owner.id,
+        firebaseUid: identity.session.uid,
+      );
+      // The durable fence must precede any uncertain journal/cloud write.
+      await ownerWrites.markPending(intent);
+      await _savePendingOperation(
+        ownerId: identity.owner.id,
+        firebaseUid: identity.session.uid,
+        idempotencyKey: key,
+        exportReceipt: exportReceipt,
+        authenticationReceipt: authenticationReceipt,
+      );
+    } catch (_) {
+      await ownerWrites.abortPreparing(intent);
+      rethrow;
+    }
     late final CloudDeletionReceipt serverReceipt;
     try {
       serverReceipt = await cloud.deleteRecursively(
@@ -113,6 +152,7 @@ final class AccountDeletionUseCases {
       idempotencyKey: key,
     );
     final cloudReceipt = serverReceipt.durableMarker();
+    await ownerWrites.markCloud(intent, cloudReceipt);
     await _saveCloudReceipt(cloudReceipt);
 
     await _requireOwner(
@@ -121,6 +161,7 @@ final class AccountDeletionUseCases {
       cloudReceipt: cloudReceipt,
     );
     final localReceipt = await _deleteLocalAndJournal(
+      intent: intent,
       ownerId: identity.owner.id,
       cloudReceipt: cloudReceipt,
     );
@@ -145,84 +186,60 @@ final class AccountDeletionUseCases {
       firebaseUid: cloudReceipt.firebaseUid,
       idempotencyKey: cloudReceipt.idempotencyKey,
     );
-    late final AccountDeletionJournalEntry? entry;
-    try {
-      entry = await journal.load();
-    } catch (error) {
-      throw AccountDeletionException(
-        AccountDeletionFailureCode.unavailable,
-        cause: error,
-        cloudReceipt: cloudReceipt,
-      );
-    }
+    final snapshot = await ownerWrites.inspect();
+    final entry = await _loadJournal();
     if (entry == null) {
-      await _requireOwner(
-        ownerId: cloudReceipt.ownerId,
-        firebaseUid: cloudReceipt.firebaseUid,
-        cloudReceipt: cloudReceipt,
-      );
-      await _saveCloudReceipt(cloudReceipt);
+      if (snapshot == null) {
+        await _requireOwner(
+          ownerId: cloudReceipt.ownerId,
+          firebaseUid: cloudReceipt.firebaseUid,
+          cloudReceipt: cloudReceipt,
+        );
+      }
     } else if (entry.ownerId != cloudReceipt.ownerId ||
         entry.firebaseUid != cloudReceipt.firebaseUid ||
-        entry.idempotencyKey != cloudReceipt.idempotencyKey ||
+        durableAccountDeletionBinding(entry.idempotencyKey) !=
+            cloudReceipt.idempotencyKey ||
         (entry.cloudReceipt != null &&
             !_sameCloudReceipt(entry.cloudReceipt!, cloudReceipt))) {
+      await ownerWrites.preserveRecoveryUncertainty();
       throw AccountDeletionException(
         AccountDeletionFailureCode.invalidCloudReceipt,
         cloudReceipt: entry.cloudReceipt,
       );
-    } else if (entry.localReceipt case final completed?) {
-      _validateLocal(completed, cloudReceipt.ownerId, cloudReceipt);
-      return completed;
-    } else if (entry.cloudReceipt == null) {
-      await _saveCloudReceipt(cloudReceipt);
     }
-    return _deleteLocalAndJournal(
-      ownerId: cloudReceipt.ownerId,
-      cloudReceipt: cloudReceipt,
+    final recovered = await _adoptJournal(
+      AccountDeletionJournalEntry(
+        cloudReceipt: cloudReceipt,
+        localReceipt: entry?.localReceipt,
+      ),
     );
+    return _resumeConfirmed(recovered, journalPresent: entry != null);
   }
 
   Future<LocalDeletionReceipt?> resumePendingDeletion() async {
-    late final AccountDeletionJournalEntry? entry;
-    try {
-      entry = await journal.load();
-    } on AccountDeletionException {
-      rethrow;
-    } catch (error) {
-      throw AccountDeletionException(
+    final snapshot = await ownerWrites.inspect();
+    final entry = await _loadJournal();
+    if (entry == null) {
+      if (snapshot == null) return null;
+      if (snapshot.cloudReceipt != null) {
+        return _resumeConfirmed(snapshot, journalPresent: false);
+      }
+      throw const AccountDeletionException(
         AccountDeletionFailureCode.unavailable,
-        cause: error,
       );
     }
-    if (entry == null) return null;
 
-    var cloudReceipt = entry.cloudReceipt;
-    if (cloudReceipt == null) {
-      final exportReceipt = entry.exportReceipt;
-      final authenticationReceipt = entry.authenticationReceipt;
-      if (entry.ownerId.isEmpty ||
-          entry.firebaseUid.isEmpty ||
-          entry.idempotencyKey.isEmpty ||
-          exportReceipt == null ||
-          authenticationReceipt == null) {
-        throw const AccountDeletionException(
-          AccountDeletionFailureCode.unavailable,
-        );
-      }
-      _validateExport(exportReceipt, entry.ownerId);
-      _validatePersistedAuthentication(
-        authenticationReceipt,
-        entry.firebaseUid,
-      );
+    var recovered = await _adoptJournal(entry);
+    if (recovered.cloudReceipt == null) {
       late final CloudDeletionReceipt serverReceipt;
       try {
         serverReceipt = await cloud.deleteRecursively(
           ownerId: entry.ownerId,
           firebaseUid: entry.firebaseUid,
           idempotencyKey: entry.idempotencyKey,
-          exportReceipt: exportReceipt,
-          authenticationReceipt: authenticationReceipt,
+          exportReceipt: entry.exportReceipt!,
+          authenticationReceipt: entry.authenticationReceipt!,
         );
       } on AccountDeletionException {
         rethrow;
@@ -238,24 +255,94 @@ final class AccountDeletionUseCases {
         firebaseUid: entry.firebaseUid,
         idempotencyKey: entry.idempotencyKey,
       );
-      cloudReceipt = serverReceipt.durableMarker();
+      final cloudReceipt = serverReceipt.durableMarker();
+      await ownerWrites.markCloud(recovered.casToken!, cloudReceipt);
       await _saveCloudReceipt(cloudReceipt);
+      recovered = (await ownerWrites.inspect())!;
     }
+    return _resumeConfirmed(recovered, journalPresent: true);
+  }
+
+  Future<DeletionIntentSnapshot> _adoptJournal(
+    AccountDeletionJournalEntry entry,
+  ) async {
+    try {
+      if (entry.cloudReceipt case final receipt?) {
+        _validateCloud(
+          receipt.durableMarker(),
+          ownerId: entry.ownerId,
+          firebaseUid: entry.firebaseUid,
+          idempotencyKey: durableAccountDeletionBinding(entry.idempotencyKey),
+        );
+        if (entry.localReceipt case final local?) {
+          _validateLocal(local, entry.ownerId, receipt);
+        }
+      } else {
+        final exportReceipt = entry.exportReceipt;
+        final authenticationReceipt = entry.authenticationReceipt;
+        if (entry.ownerId.isEmpty ||
+            entry.firebaseUid.isEmpty ||
+            !RegExp(
+              r'^[A-Za-z0-9._:-]{16,128}$',
+            ).hasMatch(entry.idempotencyKey) ||
+            exportReceipt == null ||
+            authenticationReceipt == null) {
+          throw const AccountDeletionException(
+            AccountDeletionFailureCode.unavailable,
+          );
+        }
+        _validateExport(exportReceipt, entry.ownerId);
+        _validatePersistedAuthentication(
+          authenticationReceipt,
+          entry.firebaseUid,
+        );
+      }
+      return await ownerWrites.adoptRecovery(entry);
+    } catch (_) {
+      await ownerWrites.preserveRecoveryUncertainty();
+      rethrow;
+    }
+  }
+
+  Future<AccountDeletionJournalEntry?> _loadJournal() async {
+    try {
+      return await journal.load();
+    } catch (error) {
+      await ownerWrites.preserveRecoveryUncertainty();
+      if (error is AccountDeletionException) rethrow;
+      throw AccountDeletionException(
+        AccountDeletionFailureCode.unavailable,
+        cause: error,
+      );
+    }
+  }
+
+  Future<LocalDeletionReceipt> _resumeConfirmed(
+    DeletionIntentSnapshot snapshot, {
+    required bool journalPresent,
+  }) async {
+    final cloud = snapshot.cloudReceipt!;
     _validateCloud(
-      cloudReceipt,
-      ownerId: cloudReceipt.ownerId,
-      firebaseUid: cloudReceipt.firebaseUid,
-      idempotencyKey: cloudReceipt.idempotencyKey,
+      cloud,
+      ownerId: cloud.ownerId,
+      firebaseUid: cloud.firebaseUid,
+      idempotencyKey: cloud.idempotencyKey,
     );
-    final completed = entry.localReceipt;
+    final completed = snapshot.localReceipt;
     if (completed != null) {
-      _validateLocal(completed, cloudReceipt.ownerId, cloudReceipt);
+      _validateLocal(completed, cloud.ownerId, cloud);
+      if (journalPresent) {
+        await _saveCloudReceipt(cloud);
+        await _saveLocalReceipt(cloud, completed);
+      }
+      await ownerWrites.clearCompleted(snapshot.casToken!);
       return completed;
     }
-
+    await _saveCloudReceipt(cloud);
     return _deleteLocalAndJournal(
-      ownerId: cloudReceipt.ownerId,
-      cloudReceipt: cloudReceipt,
+      intent: snapshot.casToken!,
+      ownerId: cloud.ownerId,
+      cloudReceipt: cloud,
     );
   }
 
@@ -338,7 +425,8 @@ final class AccountDeletionUseCases {
       left.receiptId == right.receiptId &&
       left.ownerId == right.ownerId &&
       left.firebaseUid == right.firebaseUid &&
-      left.idempotencyKey == right.idempotencyKey &&
+      durableAccountDeletionBinding(left.idempotencyKey) ==
+          durableAccountDeletionBinding(right.idempotencyKey) &&
       left.completedAtUtc == right.completedAtUtc;
 
   void _validateAuthentication(
@@ -415,6 +503,7 @@ final class AccountDeletionUseCases {
   }
 
   Future<LocalDeletionReceipt> _deleteLocalAndJournal({
+    required DeletionIntentToken intent,
     required String ownerId,
     required CloudDeletionReceipt cloudReceipt,
   }) async {
@@ -422,6 +511,16 @@ final class AccountDeletionUseCases {
       ownerId: ownerId,
       cloudReceipt: cloudReceipt,
     );
+    await ownerWrites.markLocal(intent, cloudReceipt, localReceipt);
+    await _saveLocalReceipt(cloudReceipt, localReceipt);
+    await ownerWrites.clearCompleted(intent);
+    return localReceipt;
+  }
+
+  Future<void> _saveLocalReceipt(
+    CloudDeletionReceipt cloudReceipt,
+    LocalDeletionReceipt localReceipt,
+  ) async {
     try {
       await journal.saveLocalReceipt(
         cloudReceipt: cloudReceipt,
@@ -436,7 +535,6 @@ final class AccountDeletionUseCases {
         cloudReceipt: cloudReceipt,
       );
     }
-    return localReceipt;
   }
 
   Future<void> _saveCloudReceipt(CloudDeletionReceipt receipt) async {

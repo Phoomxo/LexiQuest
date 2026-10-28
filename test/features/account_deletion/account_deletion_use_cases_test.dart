@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/account_deletion/application/account_deletion_use_cases.dart';
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
+import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+
+import '../../support/fake_owner_write_coordinator.dart';
 
 void main() {
   final now = DateTime.utc(2026, 10, 24, 12);
@@ -15,6 +20,7 @@ void main() {
   late _CloudDeleter cloud;
   late _LocalDeleter local;
   late _Journal journal;
+  late FakeOwnerWriteCoordinator ownerWrites;
   late AccountSession? session;
 
   AccountDeletionUseCases useCases({bool enabled = true}) =>
@@ -27,6 +33,7 @@ void main() {
         cloud: cloud,
         local: local,
         journal: journal,
+        ownerWrites: ownerWrites,
         nowUtc: () => clock,
       );
 
@@ -50,6 +57,7 @@ void main() {
       ),
     );
     journal = _Journal();
+    ownerWrites = FakeOwnerWriteCoordinator();
   });
 
   test('production path is disabled unless explicitly configured', () async {
@@ -66,6 +74,17 @@ void main() {
 
   test('deletes cloud before local and returns an auditable receipt', () async {
     final order = <String>[];
+    ownerWrites.onCall = (operation) {
+      if (const {
+        'beginDeletion',
+        'markPending',
+        'markCloud',
+        'markLocal',
+        'clearCompleted',
+      }.contains(operation)) {
+        order.add(operation);
+      }
+    };
     exporter.onCall = () => order.add('export');
     reauthenticator.onCall = () => order.add('reauth');
     cloud.onCall = () => order.add('cloud');
@@ -77,13 +96,18 @@ void main() {
     final receipt = await useCases().deleteAccount(idempotencyKey: key);
 
     expect(order, [
+      'beginDeletion',
       'export',
       'reauth',
+      'markPending',
       'journal-pending',
       'cloud',
+      'markCloud',
       'journal-cloud',
       'local',
+      'markLocal',
       'journal-local',
+      'clearCompleted',
     ]);
     expect(receipt.ownerId, 'owner-a');
     expect(receipt.firebaseUid, 'firebase-user');
@@ -91,7 +115,230 @@ void main() {
     expect(receipt.exportReceipt.artifactSha256, 'a' * 64);
     expect(receipt.cloudReceipt.receiptId, 'cloud-receipt-1');
     expect(receipt.localReceipt.newGuestOwnerId, 'local:new-guest');
+    expect(ownerWrites.state, isNull);
   });
+
+  test('owner mutations are fenced while export is still running', () async {
+    exporter.onCall = () async {
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.preparing);
+      await expectLater(
+        ownerWrites.requireOwnerUnfenced('owner-a'),
+        throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+      );
+    };
+    await useCases().deleteAccount(idempotencyKey: key);
+    expect(cloud.calls, 1);
+  });
+
+  test('background recovery cannot cancel a foreground export', () async {
+    final exporting = Completer<void>();
+    final finishExport = Completer<void>();
+    exporter.onCall = () async {
+      exporting.complete();
+      await finishExport.future;
+    };
+    final foreground = useCases().deleteAccount(idempotencyKey: key);
+    final finished = expectLater(foreground, completes);
+    await exporting.future;
+    final token = ownerWrites.state!.casToken!;
+    try {
+      await expectLater(
+        useCases().resumePendingDeletion(),
+        throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+      );
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.preparing);
+      expect(ownerWrites.state?.casToken?.sameAttempt(token), isTrue);
+    } finally {
+      finishExport.complete();
+      await finished;
+    }
+    expect(cloud.calls, 1);
+    expect(local.calls, 1);
+  });
+
+  test(
+    'an explicit request replaces an abandoned preparation with a fresh nonce',
+    () async {
+      final abandoned = await ownerWrites.beginDeletion(
+        ownerId: 'owner-a',
+        firebaseUid: 'firebase-user',
+        idempotencyKey: 'delete:abandoned-operation',
+      );
+      exporter.onCall = () async {
+        expect(ownerWrites.state?.phase, DeletionIntentPhase.preparing);
+        expect(ownerWrites.state?.casToken?.sameAttempt(abandoned), isFalse);
+        await expectLater(
+          ownerWrites.markPending(abandoned),
+          throwsA(isA<AccountDeletionException>()),
+        );
+      };
+      await useCases().deleteAccount(idempotencyKey: key);
+      expect(cloud.keys, [key]);
+      expect(local.calls, 1);
+    },
+  );
+
+  for (final requestedKey in [key, 'delete:synthetic-new-operation']) {
+    test(
+      'adopts an existing legacy journal before a new request $requestedKey',
+      () async {
+        journal.entry = AccountDeletionJournalEntry(
+          ownerId: 'owner-a',
+          firebaseUid: 'firebase-user',
+          idempotencyKey: key,
+          exportReceipt: _exportReceipt(now),
+          authenticationReceipt: reauthenticator.receipt,
+        );
+        await expectLater(
+          useCases().deleteAccount(idempotencyKey: requestedKey),
+          throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+        );
+        expect(ownerWrites.state?.phase, DeletionIntentPhase.pendingCloud);
+        expect(
+          ownerWrites.state?.casToken?.matchesOperation(
+            ownerId: 'owner-a',
+            firebaseUid: 'firebase-user',
+            idempotencyKey: key,
+          ),
+          isTrue,
+        );
+        expect(exporter.calls, 0);
+        expect(reauthenticator.calls, 0);
+        expect(cloud.calls, 0);
+        final completed = await useCases().resumePendingDeletion();
+        expect(completed?.deletedOwnerId, 'owner-a');
+        expect(cloud.keys, [key]);
+        expect(local.calls, 1);
+      },
+    );
+  }
+
+  test('pre-cloud validation failure releases only preparation', () async {
+    exporter.receipt = _exportReceipt(now, scopes: {});
+    await expectLater(
+      useCases().deleteAccount(idempotencyKey: key),
+      throwsA(_failure(AccountDeletionFailureCode.fullExportRequired)),
+    );
+    expect(ownerWrites.state, isNull);
+    await ownerWrites.requireOwnerUnfenced('owner-a');
+  });
+
+  test('uncertain pending journal acknowledgement retains the fence', () async {
+    journal.pendingFailure = StateError(
+      'synthetic journal acknowledgement loss',
+    );
+    journal.onSavePending = () =>
+        expect(ownerWrites.state?.phase, DeletionIntentPhase.pendingCloud);
+    await expectLater(
+      useCases().deleteAccount(idempotencyKey: key),
+      throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+    );
+    expect(ownerWrites.state?.phase, DeletionIntentPhase.pendingCloud);
+    expect(cloud.calls, 0);
+    await expectLater(
+      ownerWrites.requireOwnerUnfenced('owner-a'),
+      throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+    );
+  });
+
+  test(
+    'missing pending journal never clears an uncertain cloud outcome',
+    () async {
+      cloud.failure = StateError('synthetic cloud response loss');
+      await expectLater(
+        useCases().deleteAccount(idempotencyKey: key),
+        throwsA(_failure(AccountDeletionFailureCode.cloudDeleteFailed)),
+      );
+      journal.entry = null;
+      await expectLater(
+        useCases().resumePendingDeletion(),
+        throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+      );
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.pendingCloud);
+      expect(local.calls, 0);
+    },
+  );
+
+  test(
+    'expiry followed by an empty journal remains fenced after restart',
+    () async {
+      journal.loadFailure = const AccountDeletionException(
+        AccountDeletionFailureCode.recoveryExpired,
+      );
+      await expectLater(
+        useCases().resumePendingDeletion(),
+        throwsA(_failure(AccountDeletionFailureCode.recoveryExpired)),
+      );
+      journal.loadFailure = null;
+      expect(journal.entry, isNull);
+      await expectLater(
+        useCases().resumePendingDeletion(),
+        throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+      );
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.recoveryUncertain);
+      for (final owner in ['owner-a', 'owner-b']) {
+        await expectLater(
+          ownerWrites.requireOwnerUnfenced(owner),
+          throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+        );
+      }
+    },
+  );
+
+  test('malformed legacy recovery retains an unbound fence', () async {
+    journal.entry = AccountDeletionJournalEntry(ownerId: 'owner-a');
+    await expectLater(
+      useCases().resumePendingDeletion(),
+      throwsA(_failure(AccountDeletionFailureCode.unavailable)),
+    );
+    expect(ownerWrites.state?.phase, DeletionIntentPhase.recoveryUncertain);
+    expect(cloud.calls, 0);
+  });
+
+  test(
+    'completed proof survives journal clear with a lost acknowledgement',
+    () async {
+      final exactReceipt = LocalDeletionReceipt(
+        deletedOwnerId: 'owner-a',
+        newGuestOwnerId: 'local:new-guest',
+        completedAtUtc: now.subtract(const Duration(microseconds: 1)),
+      );
+      local.receipt = exactReceipt;
+      journal.clearBeforeLosingLocalAcknowledgement = true;
+      await expectLater(
+        useCases().deleteAccount(idempotencyKey: key),
+        throwsA(_failure(AccountDeletionFailureCode.localDeleteFailed)),
+      );
+      expect(journal.entry, isNull);
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.localCompleted);
+      final resumed = await useCases().resumePendingDeletion();
+      expect(resumed, same(exactReceipt));
+      expect(local.calls, 1);
+      expect(cloud.calls, 1);
+      expect(ownerWrites.state, isNull);
+    },
+  );
+
+  test(
+    'restart can use verified cloud proof after journal write loss',
+    () async {
+      journal.cloudFailure = StateError(
+        'synthetic cloud marker acknowledgement loss',
+      );
+      await expectLater(
+        useCases().deleteAccount(idempotencyKey: key),
+        throwsA(_failure(AccountDeletionFailureCode.localDeleteFailed)),
+      );
+      expect(ownerWrites.state?.phase, DeletionIntentPhase.cloudConfirmed);
+      journal
+        ..cloudFailure = null
+        ..entry = null;
+      final resumed = await useCases().resumePendingDeletion();
+      expect(resumed?.deletedOwnerId, 'owner-a');
+      expect(cloud.calls, 1);
+      expect(local.calls, 1);
+    },
+  );
 
   test(
     'requires a complete export before reauthentication or deletion',
@@ -314,6 +561,7 @@ void main() {
       ),
     );
     journal = _Journal();
+    ownerWrites = FakeOwnerWriteCoordinator();
   }
 
   test('accepts only bounded future server clock skew', () async {
@@ -429,12 +677,12 @@ final class _Exporter implements FullAccountExporter {
 
   FullAccountExportReceipt receipt;
   int calls = 0;
-  void Function()? onCall;
+  FutureOr<void> Function()? onCall;
 
   @override
   Future<FullAccountExportReceipt> export({required String ownerId}) async {
     calls++;
-    onCall?.call();
+    await onCall?.call();
     return receipt;
   }
 }
@@ -504,12 +752,19 @@ final class _LocalDeleter implements LocalAccountDeletionGateway {
 final class _Journal implements AccountDeletionJournal {
   AccountDeletionJournalEntry? entry;
   bool loseNextLocalAcknowledgement = false;
+  bool clearBeforeLosingLocalAcknowledgement = false;
+  Object? pendingFailure;
+  Object? cloudFailure;
+  Object? loadFailure;
   void Function()? onSavePending;
   void Function()? onSaveCloud;
   void Function()? onSaveLocal;
 
   @override
-  Future<AccountDeletionJournalEntry?> load() async => entry;
+  Future<AccountDeletionJournalEntry?> load() async {
+    if (loadFailure case final error?) throw error;
+    return entry;
+  }
 
   @override
   Future<void> savePendingOperation({
@@ -527,11 +782,13 @@ final class _Journal implements AccountDeletionJournal {
       exportReceipt: exportReceipt,
       authenticationReceipt: authenticationReceipt,
     );
+    if (pendingFailure case final error?) throw error;
   }
 
   @override
   Future<void> saveCloudReceipt(CloudDeletionReceipt receipt) async {
     onSaveCloud?.call();
+    if (cloudFailure case final error?) throw error;
     final durableReceipt = receipt.durableMarker();
     if (entry?.cloudReceipt != durableReceipt) {
       entry = AccountDeletionJournalEntry(
@@ -556,6 +813,11 @@ final class _Journal implements AccountDeletionJournal {
       cloudReceipt: cloudReceipt,
       localReceipt: localReceipt,
     );
+    if (clearBeforeLosingLocalAcknowledgement) {
+      clearBeforeLosingLocalAcknowledgement = false;
+      entry = null;
+      throw StateError('synthetic clear acknowledgement loss');
+    }
     if (loseNextLocalAcknowledgement) {
       loseNextLocalAcknowledgement = false;
       throw StateError('synthetic acknowledgement loss');

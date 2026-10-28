@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../domain/owner_upgrade.dart';
+import 'drift_owner_write_coordinator.dart';
 
 typedef OwnerUpgradeUtcNow = DateTime Function();
 typedef OwnerUpgradeIdGenerator = String Function();
@@ -17,9 +18,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required this.nowUtc,
     required this.generateConflictId,
     required this.generateOwnerId,
-  });
+  }) : _ownerWrites = DriftOwnerWriteCoordinator(_database, nowUtc: nowUtc);
 
   final db.AppDatabase _database;
+  final DriftOwnerWriteCoordinator _ownerWrites;
   final OwnerUpgradeUtcNow nowUtc;
   final OwnerUpgradeIdGenerator generateConflictId;
   final OwnerUpgradeIdGenerator generateOwnerId;
@@ -34,6 +36,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final uid = _requiredId(firebaseUid, 'firebaseUid');
     return _serialized(
       () => _database.transaction(() async {
+        await _ownerWrites.requireOwnerUnfenced(sourceId);
         final source = await _ownerById(sourceId);
         if (source == null || !source.isActive) {
           throw StateError('active local owner was not found');
@@ -47,6 +50,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         }
 
         final target = await _ownerByFirebaseUid(uid);
+        if (target != null) {
+          await _ownerWrites.requireOwnerUnfenced(target.id);
+        }
         final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
         if (target == null) {
           await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
@@ -66,6 +72,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           );
         }
 
+        await _requireActiveOwnersUnfenced();
         var conflicts = 0;
         conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
         conflicts += await _mergeWords(source.id, target.id, upgradedAt);
@@ -123,6 +130,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     return _serialized(
       () => _database.transaction(() async {
         final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
+        await _ownerWrites.requireOwnerUnfenced(ownerId);
+        await _requireActiveOwnersUnfenced();
         final createdAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
         await _database.customUpdate(
           'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
@@ -154,6 +163,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final guest = _requiredId(guestOwnerId, 'guestOwnerId');
     return _serialized(
       () => _database.transaction(() async {
+        await _ownerWrites.requireOwnerUnfenced(guest);
+        await _ownerWrites.requireOwnerUnfenced(previous);
         final guestRow = await _ownerById(guest);
         final previousRow = await _ownerById(previous);
         if (guestRow == null ||
@@ -170,6 +181,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             .write(const db.LocalOwnersCompanion(isActive: Value(true)));
       }),
     );
+  }
+
+  Future<void> _requireActiveOwnersUnfenced() async {
+    final activeOwners = await (_database.select(
+      _database.localOwners,
+    )..where((row) => row.isActive.equals(true))).get();
+    for (final owner in activeOwners) {
+      await _ownerWrites.requireOwnerUnfenced(owner.id);
+    }
   }
 
   Future<int> _mergeCategories(

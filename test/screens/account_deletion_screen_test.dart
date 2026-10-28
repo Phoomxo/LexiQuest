@@ -9,6 +9,8 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/screens/account_deletion_screen.dart';
 
+import '../support/fake_owner_write_coordinator.dart';
+
 void main() {
   final now = DateTime.utc(2026, 10, 24, 12);
 
@@ -130,6 +132,7 @@ final class _Harness {
     useCases = AccountDeletionUseCases(
       enabled: true,
       owners: _Owners(now),
+      ownerWrites: FakeOwnerWriteCoordinator(),
       currentSession: () => const AccountSession(
         uid: 'firebase-user',
         email: 'learner@example.test',

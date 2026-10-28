@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
@@ -45,7 +42,9 @@ final class DriftLocalAccountDeletionGateway
         cloudReceipt: cloudReceipt,
       );
     }
-    final newGuestOwnerId = _replacementGuestOwnerId(cloudReceipt);
+    final newGuestOwnerId = accountDeletionReplacementGuestOwnerId(
+      cloudReceipt,
+    );
     if (newGuestOwnerId == owner) {
       throw AccountDeletionException(
         AccountDeletionFailureCode.invalidCloudReceipt,
@@ -199,14 +198,4 @@ final class DriftLocalAccountDeletionGateway
       completer.complete();
     }
   }
-}
-
-String _replacementGuestOwnerId(CloudDeletionReceipt receipt) {
-  final operation = jsonEncode([
-    receipt.ownerId,
-    receipt.firebaseUid,
-    receipt.idempotencyKey,
-    receipt.receiptId,
-  ]);
-  return 'local:deleted:${sha256.convert(utf8.encode(operation))}';
 }
