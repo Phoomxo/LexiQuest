@@ -137,6 +137,43 @@ final class DriftSyncStore implements SyncStatusSource {
     return changed == 1;
   }
 
+  Future<bool> renewRunLease({
+    required String ownerId,
+    required String leaseToken,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final key = 'syncRunLease:${_requiredId(ownerId, 'ownerId')}';
+    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    _requireUtc(nowUtc, 'nowUtc');
+    if (leaseDuration <= Duration.zero) {
+      throw ArgumentError.value(
+        leaseDuration,
+        'leaseDuration',
+        'must be positive',
+      );
+    }
+    final changed =
+        await (database.update(database.runtimeFlags)..where(
+              (row) =>
+                  row.key.equals(key) &
+                  row.source.equals(canonicalLeaseToken) &
+                  row.boolValue.equals(true) &
+                  row.expiresAtUtcMs.isBiggerThanValue(
+                    nowUtc.millisecondsSinceEpoch,
+                  ),
+            ))
+            .write(
+              db.RuntimeFlagsCompanion(
+                updatedAtUtcMs: Value(nowUtc.millisecondsSinceEpoch),
+                expiresAtUtcMs: Value(
+                  nowUtc.add(leaseDuration).millisecondsSinceEpoch,
+                ),
+              ),
+            );
+    return changed == 1;
+  }
+
   Future<void> releaseRunLease({
     required String ownerId,
     required String leaseToken,
@@ -203,20 +240,7 @@ final class DriftSyncStore implements SyncStatusSource {
       return database.transaction(() async {
         final nowMs = nowUtc.millisecondsSinceEpoch;
         final candidateLimit = limit * _maxCandidateMultiplier;
-        final query = database.select(database.outboxOperations)
-          ..where(
-            (row) =>
-                row.ownerId.equals(canonicalOwnerId) &
-                (row.state.equals('pending') |
-                    (row.state.equals('retryWaiting') &
-                        (row.nextAttemptAtUtcMs.isNull() |
-                            row.nextAttemptAtUtcMs.isSmallerOrEqualValue(
-                              nowMs,
-                            ))) |
-                    (row.state.equals('inFlight') &
-                        row.leaseExpiresAtUtcMs.isNotNull() &
-                        row.leaseExpiresAtUtcMs.isSmallerOrEqualValue(nowMs))),
-          )
+        final query = _readyOperations(canonicalOwnerId, nowMs)
           ..orderBy([
             (row) => OrderingTerm.asc(row.createdAtUtcMs),
             (row) => OrderingTerm.asc(row.operationId),
@@ -306,6 +330,34 @@ final class DriftSyncStore implements SyncStatusSource {
         return List<ClaimedSyncOperation>.unmodifiable(claimed);
       });
     });
+  }
+
+  Future<bool> hasReadyOperations({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) async {
+    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
+    _requireUtc(nowUtc, 'nowUtc');
+    final query = _readyOperations(
+      canonicalOwnerId,
+      nowUtc.millisecondsSinceEpoch,
+    )..limit(1);
+    return await query.getSingleOrNull() != null;
+  }
+
+  SimpleSelectStatement<db.$OutboxOperationsTable, db.OutboxOperation>
+  _readyOperations(String ownerId, int nowUtcMs) {
+    return database.select(database.outboxOperations)..where(
+      (row) =>
+          row.ownerId.equals(ownerId) &
+          (row.state.equals('pending') |
+              (row.state.equals('retryWaiting') &
+                  (row.nextAttemptAtUtcMs.isNull() |
+                      row.nextAttemptAtUtcMs.isSmallerOrEqualValue(nowUtcMs))) |
+              (row.state.equals('inFlight') &
+                  row.leaseExpiresAtUtcMs.isNotNull() &
+                  row.leaseExpiresAtUtcMs.isSmallerOrEqualValue(nowUtcMs))),
+    );
   }
 
   Future<void> acknowledge({
@@ -968,6 +1020,33 @@ final class DriftSyncStore implements SyncStatusSource {
     SyncEntity entity, {
     bool handlePendingConflict = true,
   }) async {
+    final existing = await (database.select(
+      database.vocabularyCategories,
+    )..where((row) => row.id.equals(entity.entityId))).getSingleOrNull();
+    if (existing != null && existing.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final canonicalId = await _resolveNaturalKeyAlias(
+      ownerId,
+      'category',
+      entity.entityId,
+    );
+    if (canonicalId != entity.entityId) {
+      final target =
+          await (database.select(database.vocabularyCategories)..where(
+                (row) =>
+                    row.id.equals(canonicalId) & row.ownerId.equals(ownerId),
+              ))
+              .getSingleOrNull();
+      if (target == null) throw const InvalidSyncPayloadFailure();
+      await _recordNaturalKeyAlias(
+        ownerId,
+        entity,
+        target.id,
+        target.localRevision,
+      );
+      return;
+    }
     if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
       return;
     }
@@ -975,6 +1054,24 @@ final class DriftSyncStore implements SyncStatusSource {
     final name = _requiredString(payload, 'name');
     final normalizedName =
         _optionalString(payload, 'normalizedName') ?? name.toLowerCase();
+    final duplicate =
+        await (database.select(database.vocabularyCategories)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.normalizedName.equals(normalizedName) &
+                  row.id.equals(entity.entityId).not(),
+            ))
+            .getSingleOrNull();
+    if (duplicate != null) {
+      final target = existing ?? duplicate;
+      await _recordNaturalKeyAlias(
+        ownerId,
+        entity,
+        target.id,
+        target.localRevision,
+      );
+      return;
+    }
     final createdAtUtcMs =
         _optionalInt(payload, 'createdAtUtcMs') ??
         entity.clientUpdatedAtUtc.millisecondsSinceEpoch;
@@ -1007,12 +1104,75 @@ final class DriftSyncStore implements SyncStatusSource {
     SyncEntity entity, {
     bool handlePendingConflict = true,
   }) async {
+    final existing = await (database.select(
+      database.vocabularyWords,
+    )..where((row) => row.id.equals(entity.entityId))).getSingleOrNull();
+    if (existing != null && existing.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final canonicalId = await _resolveNaturalKeyAlias(
+      ownerId,
+      'word',
+      entity.entityId,
+    );
+    if (canonicalId != entity.entityId) {
+      final target =
+          await (database.select(database.vocabularyWords)..where(
+                (row) =>
+                    row.id.equals(canonicalId) & row.ownerId.equals(ownerId),
+              ))
+              .getSingleOrNull();
+      if (target == null) throw const InvalidSyncPayloadFailure();
+      await _recordNaturalKeyAlias(
+        ownerId,
+        entity,
+        target.id,
+        target.localRevision,
+      );
+      return;
+    }
     if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
       return;
     }
     final payload = entity.payload;
     final spelling = _requiredString(payload, 'spelling');
     final meaning = _requiredString(payload, 'meaning');
+    final categoryId = await _resolveNaturalKeyAlias(
+      ownerId,
+      'category',
+      _requiredString(payload, 'categoryId'),
+    );
+    final category =
+        await (database.select(database.vocabularyCategories)..where(
+              (row) => row.id.equals(categoryId) & row.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (category == null) throw const InvalidSyncPayloadFailure();
+    final normalizedSpelling =
+        _optionalString(payload, 'normalizedSpelling') ??
+        spelling.toLowerCase();
+    final normalizedMeaning =
+        _optionalString(payload, 'normalizedMeaning') ?? meaning.toLowerCase();
+    final duplicate =
+        await (database.select(database.vocabularyWords)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.categoryId.equals(categoryId) &
+                  row.normalizedSpelling.equals(normalizedSpelling) &
+                  row.normalizedMeaning.equals(normalizedMeaning) &
+                  row.id.equals(entity.entityId).not(),
+            ))
+            .getSingleOrNull();
+    if (duplicate != null) {
+      final target = existing ?? duplicate;
+      await _recordNaturalKeyAlias(
+        ownerId,
+        entity,
+        target.id,
+        target.localRevision,
+      );
+      return;
+    }
     final createdAtUtcMs =
         _optionalInt(payload, 'createdAtUtcMs') ??
         entity.clientUpdatedAtUtc.millisecondsSinceEpoch;
@@ -1022,15 +1182,11 @@ final class DriftSyncStore implements SyncStatusSource {
           db.VocabularyWordsCompanion.insert(
             id: entity.entityId,
             ownerId: ownerId,
-            categoryId: _requiredString(payload, 'categoryId'),
+            categoryId: categoryId,
             spelling: spelling,
-            normalizedSpelling:
-                _optionalString(payload, 'normalizedSpelling') ??
-                spelling.toLowerCase(),
+            normalizedSpelling: normalizedSpelling,
             meaning: meaning,
-            normalizedMeaning:
-                _optionalString(payload, 'normalizedMeaning') ??
-                meaning.toLowerCase(),
+            normalizedMeaning: normalizedMeaning,
             partOfSpeech: _requiredString(payload, 'partOfSpeech'),
             cefrLevel: Value(_optionalString(payload, 'cefrLevel')),
             source: Value(_optionalString(payload, 'source') ?? 'manual'),
@@ -1075,7 +1231,11 @@ final class DriftSyncStore implements SyncStatusSource {
     }
     final payload = entity.payload;
     final sessionId = _requiredString(payload, 'sessionId');
-    final wordId = _requiredString(payload, 'wordId');
+    final wordId = await _resolveNaturalKeyAlias(
+      ownerId,
+      'word',
+      _requiredString(payload, 'wordId'),
+    );
     final promptMode = _requiredString(payload, 'promptMode');
     final responseTimeMs = _optionalInt(payload, 'responseTimeMs');
     final attemptNumber = _requiredInt(payload, 'attemptNumber');
@@ -1300,15 +1460,15 @@ final class DriftSyncStore implements SyncStatusSource {
     await rewardProjections.rebuild(ownerId);
   }
 
-  /// Apply a pulled [SyncCollection.srsStates] entity.
-  ///
-  /// Uses last-write-wins semantics: the server state unconditionally
-  /// replaces the local projection.  SRS states are derived projections so
-  /// the local rebuild will overwrite on the next review anyway.
   Future<void> _applySrsState(String ownerId, SyncEntity entity) async {
     _requireImmutableEntity(entity, SyncCollection.srsStates);
     final payload = entity.payload;
-    final wordId = _requiredString(payload, 'wordId');
+    final incomingWordId = _requiredString(payload, 'wordId');
+    final wordId = await _resolveNaturalKeyAlias(
+      ownerId,
+      'word',
+      incomingWordId,
+    );
     final stability = _requiredDouble(payload, 'stability');
     final difficulty = _requiredDouble(payload, 'difficulty');
     final intervalDays = _requiredInt(payload, 'intervalDays');
@@ -1324,6 +1484,22 @@ final class DriftSyncStore implements SyncStatusSource {
               ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
             .getSingleOrNull();
     if (word == null) throw const InvalidSyncPayloadFailure();
+
+    if (wordId != incomingWordId ||
+        await _isNaturalKeyAliasTarget(ownerId, 'word', wordId)) {
+      final evidence =
+          await (database.select(database.answerAttempts)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (evidence != null) {
+        await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+        return;
+      }
+    }
 
     // Upsert: server state replaces local.
     final existing =
@@ -1417,7 +1593,10 @@ final class DriftSyncStore implements SyncStatusSource {
     required SyncEntity entity,
     required Map<String, Object?> localPayload,
   }) async {
-    if (_jsonEquivalent(localPayload, entity.payload)) {
+    if (_jsonEquivalent(
+      localPayload,
+      await _canonicalComparisonPayload(ownerId, entity),
+    )) {
       await _resolvePendingImmutableOutbox(
         ownerId: ownerId,
         entity: entity,
@@ -1439,7 +1618,10 @@ final class DriftSyncStore implements SyncStatusSource {
     required DateTime resolvedAtUtc,
   }) async {
     final localPayload = await _localSnapshot(operation);
-    if (_jsonEquivalent(localPayload, cloudEntity.payload)) {
+    if (_jsonEquivalent(
+      localPayload,
+      await _canonicalComparisonPayload(operation.ownerId, cloudEntity),
+    )) {
       await (database.update(
         database.outboxOperations,
       )..where((row) => row.operationId.equals(operation.operationId))).write(
@@ -1527,6 +1709,125 @@ final class DriftSyncStore implements SyncStatusSource {
             failureCode: Value(failureCode),
           ),
         );
+  }
+
+  Future<String> _resolveNaturalKeyAlias(
+    String ownerId,
+    String entityType,
+    String entityId,
+  ) async {
+    final alias =
+        await (database.select(database.syncConflicts)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.entityType.equals(entityType) &
+                    row.entityId.equals(entityId) &
+                    row.resolutionPolicy.equals('naturalKeyLocalTarget'),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.desc(row.cloudRevision),
+                (row) => OrderingTerm.desc(row.resolvedAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    if (alias == null) return entityId;
+    return _naturalKeyAliasTargetId(alias);
+  }
+
+  Future<bool> _isNaturalKeyAliasTarget(
+    String ownerId,
+    String entityType,
+    String entityId,
+  ) async {
+    final aliases =
+        await (database.select(database.syncConflicts)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityType.equals(entityType) &
+                  row.resolutionPolicy.equals('naturalKeyLocalTarget'),
+            ))
+            .get();
+    return aliases.any((alias) => _naturalKeyAliasTargetId(alias) == entityId);
+  }
+
+  String _naturalKeyAliasTargetId(db.SyncConflict alias) {
+    final encodedSnapshot = alias.localSnapshotJson;
+    if (encodedSnapshot == null) throw const InvalidSyncPayloadFailure();
+    try {
+      final snapshot = jsonDecode(encodedSnapshot);
+      if (snapshot is! Map<String, dynamic>) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return _requiredString(snapshot, 'canonicalEntityId');
+    } on FormatException {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  Future<void> _recordNaturalKeyAlias(
+    String ownerId,
+    SyncEntity entity,
+    String canonicalId,
+    int localRevision,
+  ) async {
+    final receiptId =
+        'alias:${jsonEncode([ownerId, entity.collection.entityType, entity.entityId])}';
+    final existing = await (database.select(
+      database.syncConflicts,
+    )..where((row) => row.id.equals(receiptId))).getSingleOrNull();
+    if (existing != null &&
+        (existing.cloudRevision > entity.revision ||
+            (existing.cloudRevision == entity.revision &&
+                existing.resolvedAtUtcMs >=
+                    entity.serverUpdatedAtUtc.millisecondsSinceEpoch))) {
+      return;
+    }
+    await database
+        .into(database.syncConflicts)
+        .insertOnConflictUpdate(
+          db.SyncConflictsCompanion.insert(
+            id: receiptId,
+            ownerId: ownerId,
+            entityType: entity.collection.entityType,
+            entityId: entity.entityId,
+            localRevision: localRevision,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'naturalKeyLocalTarget',
+            outcome: 'localRetained',
+            localSnapshotJson: Value(
+              jsonEncode({'canonicalEntityId': canonicalId}),
+            ),
+            cloudSnapshotJson: Value(
+              jsonEncode({
+                'revision': entity.revision,
+                'isDeleted': entity.isDeleted,
+                'clientUpdatedAtUtcMs':
+                    entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+                'serverUpdatedAtUtcMicros':
+                    entity.serverUpdatedAtUtc.microsecondsSinceEpoch,
+                'payload': entity.payload,
+              }),
+            ),
+            resolvedAtUtcMs: entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+          ),
+        );
+  }
+
+  Future<Map<String, Object?>> _canonicalComparisonPayload(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
+    if (entity.collection != SyncCollection.attempts) return entity.payload;
+    return {
+      ...entity.payload,
+      'wordId': await _resolveNaturalKeyAlias(
+        ownerId,
+        'word',
+        _requiredString(entity.payload, 'wordId'),
+      ),
+    };
   }
 
   Future<bool> _preparePullApply(String ownerId, SyncEntity entity) async {

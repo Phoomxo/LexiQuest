@@ -831,55 +831,15 @@ service cloud.firestore {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // vocabulary/{vocabId} - SHARED, uid-less A1 pool (default-quiz source).
-    //   main_vocabulary seeds entries WITHOUT a uid; the default-quiz reads in
-    //   ChooseModeScreen/QuizService list the whole pool. True uid ownership is
-    //   impossible here, so the pool is read for signed-in users and append-
-    //   only with strict fields. update/delete are denied. See explanation.
-    // -------------------------------------------------------------------------
+    // Retired dictionaries remain readable; only Admin may maintain them.
     match /vocabulary/{vocabId} {
       allow read: if isSignedIn();
-
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['word', 'meaning', 'part_of_speech', 'uid'])
-        && request.resource.data.word is string
-        && request.resource.data.word.size() > 0
-        && request.resource.data.word.size() <= 120
-        && request.resource.data.meaning is string
-        && request.resource.data.meaning.size() <= 500
-        && request.resource.data.part_of_speech is string
-        && request.resource.data.part_of_speech.size() <= 60
-        && (!('uid' in request.resource.data.keys())
-             || (request.resource.data.uid is string
-                 && request.resource.data.uid == request.auth.uid
-                 && ownerWriteAllowed(request.auth.uid)));
-
-      allow update, delete: if false;
+      allow write: if false;
     }
 
-    // -------------------------------------------------------------------------
-    // global_words/{word} - shared, write-once dictionary cache keyed by word.
-    //   GlobalWordService.addWordToDatabase only writes after a cache miss, so
-    //   the evidenced path is create-only. createdAt is server-controlled.
-    // -------------------------------------------------------------------------
     match /global_words/{word} {
       allow read: if isSignedIn();
-
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['word', 'meaning', 'partOfSpeech', 'createdAt'])
-        && request.resource.data.word is string
-        && request.resource.data.word.size() > 0
-        && request.resource.data.word.size() <= 120
-        && request.resource.data.meaning is string
-        && request.resource.data.meaning.size() <= 1000
-        && request.resource.data.partOfSpeech is string
-        && request.resource.data.partOfSpeech.size() <= 60
-        && request.resource.data.createdAt == request.time;
-
-      allow update, delete: if false;
+      allow write: if false;
     }
 
     // -------------------------------------------------------------------------

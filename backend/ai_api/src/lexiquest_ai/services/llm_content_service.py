@@ -204,8 +204,8 @@ def build_provider_chain(settings: Settings) -> list[_ProviderEndpoint]:
         settings.fallback_llm_base_url,
         settings.fallback_llm_api_key,
     )
-    # Round-robin keys share the fallback model/base_url but vary only by key,
-    # which is exactly what multiplies the daily quota.
+    # Additional credentials share the fallback model/base_url. Local limits
+    # are per credential; provider/project quotas remain authoritative.
     for index, key in enumerate(
         k for k in settings.gemini_keys.split(",") if k.strip()
     ):

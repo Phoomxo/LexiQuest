@@ -52,6 +52,19 @@ final class DriftProgressQueries {
     final dueRow =
         await (database.selectOnly(database.srsStates)
               ..addColumns([dueCountExpression])
+              ..join([
+                innerJoin(
+                  database.vocabularyWords,
+                  database.vocabularyWords.id.equalsExp(
+                        database.srsStates.wordId,
+                      ) &
+                      database.vocabularyWords.ownerId.equalsExp(
+                        database.srsStates.ownerId,
+                      ) &
+                      database.vocabularyWords.isDeleted.equals(false),
+                  useColumns: false,
+                ),
+              ])
               ..where(
                 database.srsStates.ownerId.equals(ownerId) &
                     database.srsStates.dueAtUtcMs.isSmallerOrEqualValue(
@@ -63,6 +76,19 @@ final class DriftProgressQueries {
     final masteredRow =
         await (database.selectOnly(database.srsStates)
               ..addColumns([masteredCountExpression])
+              ..join([
+                innerJoin(
+                  database.vocabularyWords,
+                  database.vocabularyWords.id.equalsExp(
+                        database.srsStates.wordId,
+                      ) &
+                      database.vocabularyWords.ownerId.equalsExp(
+                        database.srsStates.ownerId,
+                      ) &
+                      database.vocabularyWords.isDeleted.equals(false),
+                  useColumns: false,
+                ),
+              ])
               ..where(
                 database.srsStates.ownerId.equals(ownerId) &
                     database.srsStates.repetitions.isBiggerOrEqualValue(4) &

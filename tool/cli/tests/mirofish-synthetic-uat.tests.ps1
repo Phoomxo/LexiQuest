@@ -197,10 +197,11 @@ try {
         'JSON-escaped PII is rejected after decoding'
 
     $invalidClassPath = Join-Path $tempRoot 'invalid-class-report.json'
-    (Get-Content -LiteralPath $validReportPath -Raw -Encoding utf8).Replace(
-        '"dataClassification":  "synthetic"',
-        '"dataClassification":  "production"'
-    ) | Set-Content -LiteralPath $invalidClassPath -Encoding utf8
+    $invalidClassReport = Get-Content -LiteralPath $validReportPath -Raw `
+        -Encoding utf8 | ConvertFrom-Json
+    $invalidClassReport.dataClassification = 'production'
+    $invalidClassReport | ConvertTo-Json -Depth 8 | Set-Content `
+        -LiteralPath $invalidClassPath -Encoding utf8
     $invalidClass = Invoke-Cli -ScriptPath $validatorPath -Arguments @(
         '-ReportPath', $invalidClassPath,
         '-ManifestPath', $manifestPath,
@@ -225,10 +226,11 @@ try {
         'report with mismatched seed provenance is rejected'
 
     $invalidManifestPath = Join-Path $tempRoot 'invalid-manifest.json'
-    (Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8).Replace(
-        '"dataClassification":  "synthetic"',
-        '"dataClassification":  "production"'
-    ) | Set-Content -LiteralPath $invalidManifestPath -Encoding utf8
+    $invalidManifestObject = Get-Content -LiteralPath $manifestPath -Raw `
+        -Encoding utf8 | ConvertFrom-Json
+    $invalidManifestObject.dataClassification = 'production'
+    $invalidManifestObject | ConvertTo-Json -Depth 8 | Set-Content `
+        -LiteralPath $invalidManifestPath -Encoding utf8
     $invalidManifest = Invoke-Cli -ScriptPath $validatorPath -Arguments @(
         '-ReportPath', $validReportPath,
         '-ManifestPath', $invalidManifestPath,
@@ -294,10 +296,11 @@ try {
         'manifest hash is recomputed from the supplied simulation request'
 
     $stringSchemaPath = Join-Path $tempRoot 'string-schema-report.json'
-    (Get-Content -LiteralPath $validReportPath -Raw -Encoding utf8).Replace(
-        '"schemaVersion":  1',
-        '"schemaVersion":  "1"'
-    ) | Set-Content -LiteralPath $stringSchemaPath -Encoding utf8
+    $stringSchemaReport = Get-Content -LiteralPath $validReportPath -Raw `
+        -Encoding utf8 | ConvertFrom-Json
+    $stringSchemaReport.schemaVersion = '1'
+    $stringSchemaReport | ConvertTo-Json -Depth 8 | Set-Content `
+        -LiteralPath $stringSchemaPath -Encoding utf8
     $stringSchema = Invoke-Cli -ScriptPath $validatorPath -Arguments @(
         '-ReportPath', $stringSchemaPath,
         '-ManifestPath', $manifestPath,

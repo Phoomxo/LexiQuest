@@ -660,8 +660,24 @@ def test_readiness_probe_caches_complete_attestation_and_fails_closed() -> None:
     assert calls[-1] == "bucket-down"
 
 
+@pytest.mark.parametrize("bucket_overrides,expected_ready", [
+    ({}, True),
+    ({"lifecycle_rules": []}, False),
+    ({"lifecycle_rules": [{"action": {"type": "Delete"}, "condition": {"age": 8}}]}, False),
+    ({"lifecycle_rules": [{"action": {"type": "Delete"}, "condition": {"age": 7, "matchesPrefix": ["other/"]}}]}, False),
+    ({"lifecycle_rules": [{"action": {"type": "Delete"}, "condition": {"age": 7, "matchesPrefix": []}}]}, False),
+    ({"lifecycle_rules": [{"action": {"type": "Delete"}, "condition": {"age": 7, "matchesPrefix": "account-deletion-exports/"}}]}, False),
+    ({"lifecycle_rules": [{"action": {"type": "Delete"}, "condition": {"age": 7, "numNewerVersions": 1}}]}, False),
+    ({"lifecycle_rules": [{"action": {"type": "SetStorageClass"}, "condition": {"age": 1}}]}, False),
+    ({"retention_period": 8 * 24 * 3600}, False),
+    ({"default_event_based_hold": True}, False),
+    ({"versioning_enabled": True}, False),
+    ({"soft_delete_policy": SimpleNamespace(retention_duration_seconds=7 * 24 * 3600)}, False),
+])
 def test_production_readiness_builder_attests_without_deleting_auth_user(
     monkeypatch: pytest.MonkeyPatch,
+    bucket_overrides: dict,
+    expected_ready: bool,
 ) -> None:
     active = _NamedMac(_Mac.key_version, b"synthetic-active-key")
     keyring = TrustedKmsMacAuthority(
@@ -674,6 +690,12 @@ def test_production_readiness_builder_attests_without_deleting_auth_user(
             public_access_prevention="enforced",
             uniform_bucket_level_access_enabled=True,
         )
+        lifecycle_rules = [{"action": {"type": "Delete"}, "condition": {
+            "age": 7, "matchesPrefix": ["account-deletion-exports/v1/"]}}]
+        retention_period = None
+        default_event_based_hold = False
+        versioning_enabled = False
+        soft_delete_policy = SimpleNamespace(retention_duration_seconds=0)
 
         def reload(self) -> None:
             calls.append("bucket-reload")
@@ -732,12 +754,15 @@ def test_production_readiness_builder_attests_without_deleting_auth_user(
         "delete_user",
         missing_user_delete,
     )
+    bucket = _Bucket()
+    for key, value in bucket_overrides.items():
+        setattr(bucket, key, value)
     probe = build_gcp_account_deletion_readiness_probe(
         _settings(),
         mac_authority=keyring,
         bucket_factory=lambda name: (
             calls.append(("bucket", name)),
-            _Bucket(),
+            bucket,
         )[1],
         kms_client_factory=_KmsClient,
         firestore_client_factory=_Firestore,
@@ -745,8 +770,12 @@ def test_production_readiness_builder_attests_without_deleting_auth_user(
         auth_user_not_found_errors=(_MissingUser,),
     )
 
-    assert probe is not None and probe.is_ready()
+    assert probe is not None
+    assert probe.is_ready() is expected_ready
     assert ("bucket", "private-delete-exports") in calls
+    if not expected_ready:
+        assert ("auth-get", "__lexiquest_account_deletion_readiness__") not in calls
+        return
     assert ("kms", active.key_version) in calls
     assert ("firestore", "account_deletion_operations/__readiness__") in calls
     assert ("auth-get", "__lexiquest_account_deletion_readiness__") in calls

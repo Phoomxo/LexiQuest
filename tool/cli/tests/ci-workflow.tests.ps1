@@ -125,6 +125,20 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text 'runtime-probes.tests.ps1' 'job runs runtime probe tests'
     Assert-ContainsString $Text 'run-android.tests.ps1' 'job runs Android command tests'
     Assert-ContainsString $Text 'public-release-pages.tests.ps1' 'job validates public release pages'
+    foreach ($contract in @(
+        'android-release-signing.tests.ps1',
+        'verify-field-release.tests.ps1',
+        'gitleaks-config.tests.ps1',
+        'firestore-rules-security.tests.ps1',
+        'mirofish-synthetic-uat.tests.ps1',
+        'verify-gemini-byok.tests.ps1'
+    )) {
+        Assert-ContainsString $Text $contract ('job runs ' + $contract)
+    }
+    Assert-ContainsString $Text 'pytest tests -q -W error' 'AI tests keep the general warning error gate'
+    Assert-ContainsString $Text "-W 'ignore:You are using a Python version:FutureWarning:google.api_core._python_version_support'" 'AI warning exception is scoped to the upstream Python compatibility notice'
+    Assert-RegexMatches $Text '(?s)release-contracts:\s+runs-on:\s+windows-latest' 'native release contracts run on Windows'
+    Assert-True (([regex]::Matches($Text, 'if \(\$LASTEXITCODE -ne 0\) \{ exit \$LASTEXITCODE \}')).Count -eq 2) 'each CLI contract group stops on its first failing script'
     Assert-ContainsString $Text 'firebase-hosting-headers.test.cjs' 'job verifies Firebase Hosting headers with the emulator'
     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
     Assert-ContainsString $Text 'apk' 'Android build produces an APK'

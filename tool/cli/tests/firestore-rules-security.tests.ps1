@@ -77,7 +77,13 @@ Assert-Match $rules 'request\.auth\.uid\s*!=\s*null' 'authentication is required
 Assert-Match $rules 'function\s+ownerWriteAllowed\s*\(uid\)' 'account deletion owner-write fence helper is declared'
 Assert-Match $rules '!exists\(\s*/databases/\$\(database\)/documents/account_deletion_operations/\$\(uid\)\s*\)' 'owner-write fence is bound to the durable deletion tombstone'
 Assert-Match $rules 'allow\s+create,\s*update\s*:\s*if\s*ownerWriteAllowed\(uid\)' 'owner document writes require the deletion fence'
-Assert-Match $rules 'request\.resource\.data\.uid\s*==\s*request\.auth\.uid\s*&&\s*ownerWriteAllowed\(request\.auth\.uid\)' 'private vocabulary rows bind owner uid and deletion fence'
+foreach ($collection in @('vocabulary', 'global_words')) {
+    $legacyBlock = Get-RuleBlock -Source $rules -Collection $collection
+    Assert-Match $legacyBlock 'allow\s+write\s*:\s*if\s*false' `
+        ($collection + ' denies retired client writes')
+    Assert-Match $legacyBlock 'allow\s+read\s*:\s*if\s*isSignedIn\(\)' `
+        ($collection + ' retains authenticated catalog reads')
+}
 
 # Self-ownership by document id (users, state).
 Assert-Match $rules 'match\s+/users/\{[^}]+\}' 'users collection is matched'

@@ -27,6 +27,7 @@ SECURITY_FLOORS = {
     "h2": "4.4.1",
     "httpcore2": "2.12.0",
     "httpx2": "2.12.0",
+    "msgpack": "1.2.3",
     "pyjwt": "2.15.0",
     "urllib3": "2.8.0",
 }

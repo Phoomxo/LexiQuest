@@ -158,13 +158,13 @@ class Settings(BaseSettings):
     )
     fallback_llm_api_key: str = ""
 
-    # --- Optional additional Gemini keys (round-robin to multiply quota) ---
-    # Comma-separated. Each key has its own 1,500/day ceiling. Empty disables.
+    # --- Optional additional Gemini credentials for fallback ---
+    # Comma-separated. Provider/project quotas still apply. Empty disables.
     gemini_keys: str = ""
 
     # --- Rate limiting (protects every provider in the chain) ---
-    # Max requests per minute to a single provider endpoint. Set to the lowest
-    # provider's limit so the limiter never lets a request through that the
+    # Max requests per minute per provider credential. Set to the lowest
+    # credential's limit so the limiter never lets a request through that the
     # provider will reject. Gemini free tier = 15.
     provider_rpm_limit: int = Field(default=15, ge=1, le=10_000)
 

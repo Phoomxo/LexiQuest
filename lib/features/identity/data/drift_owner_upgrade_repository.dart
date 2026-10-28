@@ -212,7 +212,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         updates: {_database.vocabularyImports},
       );
       await _retireDuplicateOutbox(sourceId, 'category', guestId);
-      await _remapEntityReferences('category', guestId, targetCategoryId);
+      await _remapEntityReferences(
+        sourceId,
+        'category',
+        guestId,
+        targetCategoryId,
+      );
       await _recordMergeConflict(
         ownerId: targetId,
         entityType: 'category',
@@ -278,7 +283,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         updates: {_database.srsStates},
       );
       await _retireDuplicateOutbox(sourceId, 'word', guestId);
-      await _remapEntityReferences('word', guestId, targetWordId);
+      await _remapEntityReferences(sourceId, 'word', guestId, targetWordId);
       await _recordMergeConflict(
         ownerId: targetId,
         entityType: 'word',
@@ -427,16 +432,44 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityType: 'syncCheckpoint',
         join: 'target.collection_name = guest.collection_name',
       ),
+      _DuplicateSpecification(
+        table: 'quest_instances',
+        idColumn: 'instance_id',
+        entityType: 'questInstance',
+        join: 'target.quest_id = guest.quest_id',
+      ),
+      _DuplicateSpecification(
+        table: 'streak_states',
+        idColumn: 'owner_id',
+        entityType: 'streakState',
+        join: '1 = 1',
+      ),
+      _DuplicateSpecification(
+        table: 'learning_day_log',
+        entityType: 'learningDay',
+        join: 'target.learning_day = guest.learning_day',
+      ),
+      _DuplicateSpecification(
+        table: 'association_records',
+        entityType: 'associationRecord',
+        join: 'target.word_key = guest.word_key AND target.type = guest.type',
+      ),
+      _DuplicateSpecification(
+        table: 'associative_memory_states',
+        entityType: 'associativeMemoryState',
+        join: 'target.word_key = guest.word_key',
+      ),
     ]) {
       final duplicates = await _database
           .customSelect(
             '''
-        SELECT guest.id AS guest_id, target.id AS target_id
+        SELECT guest.${specification.idColumn} AS guest_id,
+               target.${specification.idColumn} AS target_id
         FROM ${specification.table} guest
         JOIN ${specification.table} target
           ON target.owner_id = ? AND ${specification.join}
         WHERE guest.owner_id = ?
-        ORDER BY guest.id
+        ORDER BY guest.${specification.idColumn}
         ''',
             variables: [Variable<String>(targetId), Variable<String>(sourceId)],
           )
@@ -444,17 +477,57 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       for (final duplicate in duplicates) {
         final guestId = duplicate.read<String>('guest_id');
         final targetEntityId = duplicate.read<String>('target_id');
+        final guestRow = await _database
+            .customSelect(
+              'SELECT * FROM ${specification.table} '
+              'WHERE ${specification.idColumn} = ? AND owner_id = ?',
+              variables: [
+                Variable<String>(guestId),
+                Variable<String>(sourceId),
+              ],
+            )
+            .getSingle();
+        final targetRow = await _database
+            .customSelect(
+              'SELECT * FROM ${specification.table} '
+              'WHERE ${specification.idColumn} = ? AND owner_id = ?',
+              variables: [
+                Variable<String>(targetEntityId),
+                Variable<String>(targetId),
+              ],
+            )
+            .getSingle();
+        final guestSnapshot = <String, Object?>{
+          'id': guestId,
+          ...guestRow.data,
+        };
+        final targetSnapshot = <String, Object?>{
+          'id': targetEntityId,
+          ...targetRow.data,
+        };
+        if (specification.table == 'quest_instances') {
+          final objectives = await _database
+              .customSelect(
+                'SELECT * FROM quest_objective_progress WHERE instance_id = ? ORDER BY id',
+                variables: [Variable<String>(guestId)],
+              )
+              .get();
+          guestSnapshot['objectiveProgress'] = objectives
+              .map((row) => row.data)
+              .toList(growable: false);
+        }
         await _recordMergeConflict(
           ownerId: targetId,
           entityType: specification.entityType,
           entityId: targetEntityId,
-          localSnapshot: <String, Object?>{'id': guestId},
-          targetSnapshot: <String, Object?>{'id': targetEntityId},
+          localSnapshot: guestSnapshot,
+          targetSnapshot: targetSnapshot,
           resolvedAt: resolvedAt,
         );
         await _database.customUpdate(
-          'DELETE FROM ${specification.table} WHERE id = ?',
-          variables: [Variable<String>(guestId)],
+          'DELETE FROM ${specification.table} '
+          'WHERE ${specification.idColumn} = ? AND owner_id = ?',
+          variables: [Variable<String>(guestId), Variable<String>(sourceId)],
         );
         conflicts += 1;
       }
@@ -626,15 +699,17 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   Future<void> _remapEntityReferences(
+    String ownerId,
     String entityType,
     String sourceEntityId,
     String targetEntityId,
   ) async {
     await _database.customUpdate(
       'UPDATE outbox_operations SET entity_id = ? '
-      'WHERE entity_type = ? AND entity_id = ?',
+      'WHERE owner_id = ? AND entity_type = ? AND entity_id = ?',
       variables: [
         Variable<String>(targetEntityId),
+        Variable<String>(ownerId),
         Variable<String>(entityType),
         Variable<String>(sourceEntityId),
       ],
@@ -642,14 +717,39 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     );
     await _database.customUpdate(
       'UPDATE sync_conflicts SET entity_id = ? '
-      'WHERE entity_type = ? AND entity_id = ?',
+      'WHERE owner_id = ? AND entity_type = ? AND entity_id = ? '
+      "AND resolution_policy <> 'naturalKeyLocalTarget'",
       variables: [
         Variable<String>(targetEntityId),
+        Variable<String>(ownerId),
         Variable<String>(entityType),
         Variable<String>(sourceEntityId),
       ],
       updates: {_database.syncConflicts},
     );
+    final aliases =
+        await (_database.select(_database.syncConflicts)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityType.equals(entityType) &
+                  row.resolutionPolicy.equals('naturalKeyLocalTarget'),
+            ))
+            .get();
+    for (final alias in aliases) {
+      final snapshotText = alias.localSnapshotJson;
+      if (snapshotText == null) continue;
+      final snapshot = jsonDecode(snapshotText) as Map<String, dynamic>;
+      if (snapshot['canonicalEntityId'] != sourceEntityId) continue;
+      snapshot['canonicalEntityId'] = targetEntityId;
+      await (_database.update(_database.syncConflicts)..where(
+            (row) => row.id.equals(alias.id) & row.ownerId.equals(ownerId),
+          ))
+          .write(
+            db.SyncConflictsCompanion(
+              localSnapshotJson: Value(jsonEncode(snapshot)),
+            ),
+          );
+    }
   }
 
   Future<void> _retireDuplicateOutbox(
@@ -735,11 +835,13 @@ final class _DuplicateSpecification {
     required this.table,
     required this.entityType,
     required this.join,
+    this.idColumn = 'id',
   });
 
   final String table;
   final String entityType;
   final String join;
+  final String idColumn;
 }
 
 final class _RehomeSpecification {

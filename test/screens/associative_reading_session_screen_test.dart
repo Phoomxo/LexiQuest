@@ -288,12 +288,6 @@ void main() {
     testWidgets('owner switch blocks association writes', (tester) async {
       final setup = await _ownerScopedLearning();
       addTearDown(setup.database.close);
-      await setup.learning.saveReadingProgress(
-        documentId: 'local-source:test-association',
-        documentRevision: 1,
-        position: 4,
-        isCompleted: false,
-      );
       final adapter = InMemoryAssociativeLearningAdapter();
       await tester.pumpWidget(
         MaterialApp(
@@ -309,7 +303,21 @@ void main() {
           ),
         ),
       );
-      await _pumpUntilText(tester, 'ขั้นที่ 4: สร้างตัวช่วยจำ');
+      await _pumpUntilText(tester, 'ขั้นที่ 1: อ่านพร้อมตัวช่วย');
+      for (var stage = 1; stage <= 3; stage++) {
+        if (stage == 3) {
+          await tester.enterText(find.byType(TextField).first, 'station');
+        }
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _pumpUntilText(
+          tester,
+          stage == 1
+              ? 'ขั้นที่ 2: อ่านโดยลดตัวช่วย'
+              : stage == 2
+              ? 'ขั้นที่ 3: ทดสอบจากความจำ'
+              : 'ขั้นที่ 4: สร้างตัวช่วยจำ',
+        );
+      }
       await _switchOwner(setup.database, setup.ownerId);
       await tester.enterText(find.byType(TextField).first, 'train stop');
 

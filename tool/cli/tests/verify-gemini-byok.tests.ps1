@@ -51,9 +51,11 @@ if ($manifest -notmatch 'android:allowBackup="false"') {
 
 $store = Get-Content -LiteralPath $storePath -Raw -Encoding utf8
 foreach ($needle in @(
-    "storageNamespace: 'lexiquest_gemini_byok'",
-    'KeyCipherAlgorithm.AES_GCM_NoPadding',
-    'StorageCipherAlgorithm.AES_GCM_NoPadding'
+    "storageNamespace: 'lexiquest_gemini_byok_v2'",
+    'KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding',
+    'StorageCipherAlgorithm.AES_GCM_NoPadding',
+    'resetOnError: false',
+    'migrateOnAlgorithmChange: false'
 )) {
     if (-not $store.Contains($needle)) {
         Write-Error "Secure Gemini store is missing: $needle"

@@ -617,10 +617,38 @@ def build_gcp_account_deletion_readiness_probe(
         permissions = set(
             bucket.test_iam_permissions(sorted(_BUCKET_PERMISSIONS))
         )
+        retention_seconds = settings.account_deletion_export_retention_seconds
+        retention_period = bucket.retention_period or 0
+        soft_delete_seconds = (
+            bucket.soft_delete_policy.retention_duration_seconds or 0
+        )
+        deletion_rule = any(
+            rule.get("action", {}).get("type") == "Delete"
+            and set(rule.get("condition", {})) <= {"age", "matchesPrefix"}
+            and type(rule.get("condition", {}).get("age")) is int
+            and 0 <= rule["condition"]["age"] * 24 * 3600 <= retention_seconds
+            and (
+                "matchesPrefix" not in rule["condition"]
+                or (
+                    isinstance(rule["condition"]["matchesPrefix"], list)
+                    and any(
+                        isinstance(prefix, str)
+                        and f"{_OBJECT_PREFIX}/".startswith(prefix)
+                        for prefix in rule["condition"]["matchesPrefix"]
+                    )
+                )
+            )
+            for rule in bucket.lifecycle_rules
+        )
         return bool(
             iam.public_access_prevention == "enforced"
             and iam.uniform_bucket_level_access_enabled is True
             and permissions == _BUCKET_PERMISSIONS
+            and deletion_rule
+            and 0 <= retention_period <= retention_seconds
+            and not bucket.default_event_based_hold
+            and not bucket.versioning_enabled
+            and soft_delete_seconds == 0
         )
 
     def kms_attestation() -> bool:

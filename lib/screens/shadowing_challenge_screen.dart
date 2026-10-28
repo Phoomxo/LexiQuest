@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
@@ -43,6 +44,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   String? _sessionId;
   Future<void>? _learningLoad;
   bool _evidenceSaved = false;
+  RecordAnswerCommand? _pendingAnswer;
+  bool _answerAcknowledged = false;
   bool _listening = false;
   bool _starting = false;
   int _speechEpoch = 0;
@@ -119,6 +122,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   Future<void> _toggleListening() async {
     if (_starting) return;
+    if (_pendingAnswer != null && !_evidenceSaved) {
+      await _recordEvidence();
+      return;
+    }
     if (_listening) {
       await _speech?.stop();
       if (mounted) setState(() => _listening = false);
@@ -189,32 +196,55 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     }
   }
 
-  Future<void> _recordEvidence(
-    SpeechRecognitionEvent event,
-    TranscriptPronunciationAssessment assessment,
-  ) async {
+  Future<void> _recordEvidence([
+    SpeechRecognitionEvent? event,
+    TranscriptPronunciationAssessment? assessment,
+  ]) async {
     final learning = _learning;
     final sessionId = _sessionId;
     final wordId = _wordId;
     if (_evidenceSaved ||
         learning == null ||
         sessionId == null ||
-        wordId == null) {
+        wordId == null ||
+        (_pendingAnswer == null && (event == null || assessment == null))) {
       return;
     }
     _evidenceSaved = true;
     try {
-      await learning.recordAnswer(
+      final owner = await learning.owners.getOrCreateActiveOwner();
+      final answer = _pendingAnswer ??= RecordAnswerCommand(
+        id: 'attempt:shadowing:$sessionId:1',
+        ownerId: owner.id,
         sessionId: sessionId,
         wordId: wordId,
         promptMode: 'shadowing',
-        isCorrect: assessment.similarityPercent >= 80,
+        isCorrect: assessment!.similarityPercent >= 80,
         responseTimeMs: null,
         attemptNumber: 1,
+        occurredAtUtc: event!.recognizedAtUtc,
         providerProvenance:
             '${event.engine}:${event.locale}:transcript-similarity-v1',
       );
+      if (owner.id != answer.ownerId) {
+        throw StateError('shadowing owner changed');
+      }
+      if (!_answerAcknowledged) {
+        await learning.recordAnswer(
+          sessionId: answer.sessionId,
+          wordId: answer.wordId,
+          promptMode: answer.promptMode,
+          isCorrect: answer.isCorrect,
+          responseTimeMs: answer.responseTimeMs,
+          attemptNumber: answer.attemptNumber,
+          attemptId: answer.id,
+          occurredAtUtc: answer.occurredAtUtc,
+          providerProvenance: answer.providerProvenance,
+        );
+        _answerAcknowledged = true;
+      }
       await learning.finishSession(sessionId);
+      if (mounted) setState(() => _error = null);
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
@@ -258,6 +288,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   Widget build(BuildContext context) {
     final assessment = _assessment;
     final reference = _referenceSentence;
+    final retryingSave = _pendingAnswer != null && !_evidenceSaved;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -292,8 +323,20 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                 onPressed: reference == null || _starting
                     ? null
                     : _toggleListening,
-                icon: Icon(_listening ? Icons.stop : Icons.mic),
-                label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
+                icon: Icon(
+                  retryingSave
+                      ? Icons.refresh
+                      : _listening
+                      ? Icons.stop
+                      : Icons.mic,
+                ),
+                label: Text(
+                  retryingSave
+                      ? 'บันทึกอีกครั้ง'
+                      : _listening
+                      ? 'หยุดบันทึก'
+                      : 'พูดตามประโยค',
+                ),
               ),
               if (_transcript.isNotEmpty) ...[
                 const SizedBox(height: 20),

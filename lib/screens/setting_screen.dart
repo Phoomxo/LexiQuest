@@ -440,6 +440,7 @@ class _SettingScreenState extends State<SettingScreen> {
     SyncRunStatus.completed =>
       'ตรวจสอบรอบนี้แล้ว: ส่ง ${result.pushed} รับ ${result.pulled} '
           'จัดการความขัดแย้ง ${result.conflicts} รายการ '
+          '${result.hasMoreWork ? 'ยังมีข้อมูลรอซิงก์ต่อ ' : ''}'
           'ข้อมูลในเครื่องยังอยู่',
     SyncRunStatus.partialFailure =>
       'รอบนี้สำเร็จบางส่วน: ส่ง ${result.pushed} รับ ${result.pulled} '

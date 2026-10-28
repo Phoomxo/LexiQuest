@@ -326,14 +326,6 @@ describe('account deletion owner-write fence', () => {
       }),
     );
     await assertSucceeds(
-      setDoc(doc(db, 'vocabulary', 'private-before-delete'), {
-        word: 'cat',
-        meaning: 'แมว',
-        part_of_speech: 'noun',
-        uid: alice,
-      }),
-    );
-    await assertSucceeds(
       writeFieldCategory(db, {
         entityId: 'before-delete',
         operationId: 'before-delete-operation',
@@ -457,12 +449,12 @@ describe('account deletion owner-write fence', () => {
     await assertFails(purchase.commit());
   });
 
-  it('does not fence other owners or uid-less shared vocabulary', async () => {
+  it('does not fence other owners but rejects uid-less legacy writes', async () => {
     await seedDeletionFence();
     await assertSucceeds(
       setDoc(doc(authDb(bob), 'state', bob), { totalPoints: 5 }),
     );
-    await assertSucceeds(
+    await assertFails(
       setDoc(doc(authDb(), 'vocabulary', 'shared-after-delete'), {
         word: 'bird',
         meaning: 'นก',
@@ -486,6 +478,51 @@ describe('account deletion owner-write fence', () => {
     await assertFails(setDoc(ref, { operationId: 'replace' }));
     await assertFails(updateDoc(ref, { operationId: 'replace' }));
     await assertFails(deleteDoc(ref));
+  });
+});
+
+describe('retired shared dictionary client writes', () => {
+  it('denies vocabulary and dictionary writes with or without an owner field', async () => {
+    for (const anonymous of [false, true]) {
+      const db = authDb(alice, anonymous);
+      for (const owner of [{}, { uid: alice }]) {
+        await assertFails(
+          setDoc(doc(db, 'vocabulary', 'retired-vocabulary'), {
+            word: 'cat',
+            meaning: 'synthetic meaning',
+            part_of_speech: 'noun',
+            ...owner,
+          }),
+        );
+      }
+      await assertFails(
+        setDoc(doc(db, 'global_words', 'cat'), {
+          word: 'cat',
+          meaning: 'synthetic meaning',
+          partOfSpeech: 'noun',
+          createdAt: serverTimestamp(),
+        }),
+      );
+    }
+  });
+
+  it('preserves signed-in reads of administrator-seeded dictionaries', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      for (const collection of ['vocabulary', 'global_words']) {
+        await setDoc(doc(context.firestore(), collection, 'seeded-cat'), {
+          word: 'cat',
+          meaning: 'synthetic meaning',
+        });
+      }
+    });
+    for (const collection of ['vocabulary', 'global_words']) {
+      await assertSucceeds(getDoc(doc(authDb(), collection, 'seeded-cat')));
+      await assertFails(
+        getDoc(doc(testEnv.unauthenticatedContext().firestore(), collection, 'seeded-cat')),
+      );
+      await assertFails(updateDoc(doc(authDb(), collection, 'seeded-cat'), { meaning: 'changed' }));
+      await assertFails(deleteDoc(doc(authDb(), collection, 'seeded-cat')));
+    }
   });
 });
 

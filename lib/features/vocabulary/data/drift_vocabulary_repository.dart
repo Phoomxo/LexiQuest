@@ -50,18 +50,39 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     return database.transaction(() async {
       final existingById = await _categoryById(category.id);
       if (existingById != null) {
-        if (existingById.ownerId == category.ownerId &&
-            existingById.normalizedName == category.normalizedName &&
-            !existingById.isDeleted) {
-          return _categoryToDomain(existingById);
+        if (existingById.ownerId != category.ownerId ||
+            existingById.normalizedName != category.normalizedName) {
+          throw const DuplicateVocabularyFailure();
         }
-        throw const DuplicateVocabularyFailure();
+        if (!existingById.isDeleted) return _categoryToDomain(existingById);
       }
-      if (await _categoryNaturalKeyExists(
+      final previous = await _categoryByNaturalKey(
         category.ownerId,
         category.normalizedName,
-      )) {
-        throw const DuplicateVocabularyFailure();
+      );
+      if (previous != null) {
+        if (!previous.isDeleted) throw const DuplicateVocabularyFailure();
+        final revision = previous.localRevision + 1;
+        await (database.update(
+          database.vocabularyCategories,
+        )..where((row) => row.id.equals(previous.id))).write(
+          db.VocabularyCategoriesCompanion(
+            name: Value(category.name),
+            sortOrder: Value(category.sortOrder),
+            isDeleted: const Value(false),
+            localRevision: Value(revision),
+            updatedAtUtcMs: Value(category.updatedAtUtc.millisecondsSinceEpoch),
+          ),
+        );
+        await _appendOutbox(
+          entityType: 'category',
+          entityId: previous.id,
+          ownerId: category.ownerId,
+          operationKind: 'upsert',
+          revision: revision,
+          nowUtc: category.updatedAtUtc,
+        );
+        return _categoryToDomain((await _categoryById(previous.id))!);
       }
 
       await database
@@ -201,20 +222,49 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       }
       final existingById = await _wordById(word.id);
       if (existingById != null) {
-        if (existingById.ownerId == word.ownerId &&
-            existingById.normalizedSpelling == word.normalizedSpelling &&
-            existingById.normalizedMeaning == word.normalizedMeaning &&
-            !existingById.isDeleted) {
-          return _wordToDomain(existingById);
+        if (existingById.ownerId != word.ownerId ||
+            existingById.categoryId != word.categoryId ||
+            existingById.normalizedSpelling != word.normalizedSpelling ||
+            existingById.normalizedMeaning != word.normalizedMeaning) {
+          throw const DuplicateVocabularyFailure();
         }
-        throw const DuplicateVocabularyFailure();
+        if (!existingById.isDeleted) return _wordToDomain(existingById);
       }
-      if (await _wordNaturalKeyExists(word)) {
+      final previous = await _wordByNaturalKey(word);
+      if (previous != null && !previous.isDeleted) {
         throw const DuplicateVocabularyFailure();
       }
       final activeCount = await _activeWordCount(word.ownerId, word.categoryId);
       if (activeCount >= categoryWordLimit) {
         throw const CategoryWordLimitFailure(categoryWordLimit);
+      }
+
+      if (previous != null) {
+        final revision = previous.localRevision + 1;
+        await (database.update(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals(previous.id))).write(
+          db.VocabularyWordsCompanion(
+            spelling: Value(word.spelling),
+            meaning: Value(word.meaning),
+            partOfSpeech: Value(word.partOfSpeech),
+            cefrLevel: Value(word.cefrLevel),
+            source: Value(word.source),
+            isGlobal: Value(word.isGlobal),
+            isDeleted: const Value(false),
+            localRevision: Value(revision),
+            updatedAtUtcMs: Value(word.updatedAtUtc.millisecondsSinceEpoch),
+          ),
+        );
+        await _appendOutbox(
+          entityType: 'word',
+          entityId: previous.id,
+          ownerId: word.ownerId,
+          operationKind: 'upsert',
+          revision: revision,
+          nowUtc: word.updatedAtUtc,
+        );
+        return _wordToDomain((await _wordById(previous.id))!);
       }
 
       await database
@@ -260,7 +310,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       if (await _activeCategory(word.ownerId, word.categoryId) == null) {
         throw const VocabularyNotFoundFailure();
       }
-      if (await _wordNaturalKeyExists(word, excludingId: word.id)) {
+      if (await _wordByNaturalKey(word, excludingId: word.id) != null) {
         throw const DuplicateVocabularyFailure();
       }
       final revision = current.localRevision + 1;
@@ -372,18 +422,16 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         .getSingleOrNull();
   }
 
-  Future<bool> _categoryNaturalKeyExists(
+  Future<db.VocabularyCategory?> _categoryByNaturalKey(
     String ownerId,
     String normalizedName,
   ) async {
-    final row =
-        await (database.select(database.vocabularyCategories)..where(
-              (candidate) =>
-                  candidate.ownerId.equals(ownerId) &
-                  candidate.normalizedName.equals(normalizedName),
-            ))
-            .getSingleOrNull();
-    return row != null;
+    return (database.select(database.vocabularyCategories)..where(
+          (candidate) =>
+              candidate.ownerId.equals(ownerId) &
+              candidate.normalizedName.equals(normalizedName),
+        ))
+        .getSingleOrNull();
   }
 
   Future<db.VocabularyWord?> _wordById(String wordId) {
@@ -402,7 +450,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         .getSingleOrNull();
   }
 
-  Future<bool> _wordNaturalKeyExists(
+  Future<db.VocabularyWord?> _wordByNaturalKey(
     VocabularyWord word, {
     String? excludingId,
   }) async {
@@ -417,7 +465,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
                 ? const Constant(true)
                 : row.id.equals(excludingId).not()),
       );
-    return await query.getSingleOrNull() != null;
+    return query.getSingleOrNull();
   }
 
   Future<int> _activeWordCount(String ownerId, String categoryId) async {

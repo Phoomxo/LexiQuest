@@ -116,6 +116,7 @@ final class WorkmanagerSyncScheduler implements BackgroundSyncScheduler {
 }
 
 bool workmanagerSuccess(SyncRunResult? result) {
+  if (result?.hasMoreWork ?? false) return false;
   return result == null ||
       result.status != SyncRunStatus.partialFailure ||
       !result.retryRecommended;

@@ -16,6 +16,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Header
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from lexiquest_ai.auth import TokenVerifier, extract_bearer_token
 from lexiquest_ai.account_deletion import (
@@ -46,6 +47,77 @@ from lexiquest_ai.services.rate_limiter import ProviderRateLimited
 logger = logging.getLogger(__name__)
 
 
+class RequestBodyLimitMiddleware:
+    maximum_bytes = 100_000
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
+            await self.app(scope, receive, send)
+            return
+
+        async def reject(status_code: int) -> None:
+            response = JSONResponse(
+                status_code=status_code,
+                content={
+                    "detail": {
+                        "code": (
+                            "PAYLOAD_TOO_LARGE"
+                            if status_code == 413 else "INVALID_CONTENT_LENGTH"
+                        ),
+                        "message": (
+                            "Request body exceeds 100KB."
+                            if status_code == 413 else "Content-Length is invalid."
+                        ),
+                    }
+                },
+            )
+            await response(scope, receive, send)
+
+        lengths = [
+            value.strip() for name, value in scope["headers"]
+            if name.lower() == b"content-length"
+        ]
+        if len(lengths) > 1 or (
+            lengths and (not lengths[0].isdigit() or len(lengths[0]) > 20)
+        ):
+            await reject(400)
+            return
+        if lengths and int(lengths[0]) > self.maximum_bytes:
+            await reject(413)
+            return
+
+        body = bytearray()
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > self.maximum_bytes:
+                await reject(413)
+                return
+            body.extend(chunk)
+            if not message.get("more_body", False):
+                break
+
+        delivered = False
+
+        async def replay() -> Message:
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {
+                    "type": "http.request",
+                    "body": bytes(body),
+                    "more_body": False,
+                }
+            return await receive()
+
+        await self.app(scope, replay, send)
+
+
 class AccountDeletionReadinessProbe(Protocol):
     def is_ready(self) -> bool:
         """Return true only after runtime infrastructure attestation."""
@@ -74,6 +146,7 @@ def create_app(
         openapi_url=None if is_prod else "/openapi.json",
     )
     app.state.settings = settings
+    app.add_middleware(RequestBodyLimitMiddleware)
 
     def account_deletion_infrastructure_ready() -> bool:
         if (
@@ -89,22 +162,6 @@ def create_app(
                 type(error).__name__,
             )
             return False
-
-    @app.middleware("http")
-    async def limit_body_size(request, call_next):
-        if request.method in ("POST", "PUT", "PATCH"):
-            content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > 100_000:
-                return JSONResponse(
-                    status_code=413,
-                    content={
-                        "detail": {
-                            "code": "PAYLOAD_TOO_LARGE",
-                            "message": "Request body size exceeds maximum allowed threshold (100KB).",
-                        }
-                    },
-                )
-        return await call_next(request)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

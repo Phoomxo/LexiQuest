@@ -91,6 +91,156 @@ void main() {
     expect(operation.state, 'pending');
   });
 
+  test(
+    'one run drains a vocabulary backlog larger than one push batch',
+    () async {
+      for (var index = 0; index < 51; index++) {
+        final id = 'category:$index';
+        await database
+            .into(database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: id,
+                ownerId: 'owner-a',
+                name: 'Category $index',
+                normalizedName: 'category $index',
+                createdAtUtcMs: 0,
+                updatedAtUtcMs: 0,
+              ),
+            );
+        await database
+            .into(database.outboxOperations)
+            .insert(
+              OutboxOperationsCompanion.insert(
+                operationId: '$id:1:upsert',
+                ownerId: 'owner-a',
+                entityType: 'category',
+                entityId: id,
+                operationKind: 'upsert',
+                createdAtUtcMs: 0,
+              ),
+            );
+      }
+      final result = await engine().run();
+      expect(result.pushed, 51);
+      expect(gateway.appliedOperationIds, hasLength(51));
+    },
+  );
+
+  test(
+    'one run follows advancing pull cursors until hasMore is false',
+    () async {
+      var categoryPages = 0;
+      gateway.onPull = (collection, after, limit) async {
+        if (collection != SyncCollection.categories) {
+          return PullPage(changes: const [], nextCursor: after, hasMore: false);
+        }
+        categoryPages++;
+        final id = 'pulled:$categoryPages';
+        final timestamp = nowUtc.add(Duration(seconds: categoryPages));
+        return PullPage(
+          changes: [
+            SyncEntity(
+              collection: collection,
+              entityId: id,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: timestamp,
+              serverUpdatedAtUtc: timestamp,
+              payload: {'name': id, 'normalizedName': id},
+            ),
+          ],
+          nextCursor: SyncCursor(serverUpdatedAtUtc: timestamp, documentId: id),
+          hasMore: categoryPages < 2,
+        );
+      };
+      final result = await engine().run();
+      expect(categoryPages, 2);
+      expect(result.pulled, 2);
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  test('hasMore with a stationary cursor fails instead of spinning', () async {
+    gateway.onPull = (collection, after, limit) async => PullPage(
+      changes: const [],
+      nextCursor: after,
+      hasMore: collection == SyncCollection.categories,
+    );
+    final result = await engine().run();
+    expect(result.status, SyncRunStatus.partialFailure);
+    expect(result.failures, 1);
+  });
+
+  test('pull budget retains a checkpoint and requests continuation', () async {
+    var pages = 0;
+    gateway.onPull = (collection, after, limit) async {
+      if (collection != SyncCollection.categories) {
+        return PullPage(changes: const [], nextCursor: after, hasMore: false);
+      }
+      pages++;
+      final id = 'budget:$pages';
+      final timestamp = nowUtc.add(Duration(seconds: pages));
+      return PullPage(
+        changes: [
+          SyncEntity(
+            collection: collection,
+            entityId: id,
+            revision: 1,
+            isDeleted: false,
+            payloadVersion: 1,
+            clientUpdatedAtUtc: timestamp,
+            serverUpdatedAtUtc: timestamp,
+            payload: {'name': id, 'normalizedName': id},
+          ),
+        ],
+        nextCursor: SyncCursor(serverUpdatedAtUtc: timestamp, documentId: id),
+        hasMore: true,
+      );
+    };
+    final result = await engine().run();
+    expect(pages, SyncEngine.maxBatchesPerRun);
+    expect(result.hasMoreWork, isTrue);
+    expect(result.retryRecommended, isTrue);
+    expect(
+      (await store.readCheckpoint(
+        'owner-a',
+        SyncCollection.categories,
+      ))!.documentId,
+      'budget:$pages',
+    );
+  });
+
+  test('pull cannot replace a checkpoint with an older cursor', () async {
+    final checkpoint = SyncCursor(
+      serverUpdatedAtUtc: nowUtc,
+      documentId: 'z-last',
+    );
+    await store.applyPullPage(
+      ownerId: 'owner-a',
+      collection: SyncCollection.categories,
+      page: PullPage(changes: const [], nextCursor: checkpoint, hasMore: false),
+    );
+    gateway.onPull = (collection, after, limit) async => PullPage(
+      changes: const [],
+      nextCursor: collection == SyncCollection.categories
+          ? SyncCursor(serverUpdatedAtUtc: nowUtc, documentId: 'a-old')
+          : after,
+      hasMore: false,
+    );
+    final result = await engine().run();
+    expect(result.status, SyncRunStatus.partialFailure);
+    expect(result.failures, 1);
+    expect(
+      await store.readCheckpoint('owner-a', SyncCollection.categories),
+      checkpoint,
+    );
+  });
+
   test('owner without Firebase UID skips without claiming work', () async {
     owners.owner = identity.LocalOwner(id: 'owner-a', createdAtUtc: nowUtc);
     await _seedCategoryOperation(database);
@@ -236,6 +386,75 @@ void main() {
     },
   );
 
+  test('invalid first batch does not hide later valid pending work', () async {
+    for (var index = 0; index < SyncEngine.pushLimit; index++) {
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: '000-legacy:$index:1:upsert',
+              ownerId: 'owner-a',
+              entityType: 'learningTimeSegment',
+              entityId: 'legacy:$index',
+              operationKind: 'upsert',
+              createdAtUtcMs: 0,
+            ),
+          );
+    }
+    await _seedCategoryOperation(database);
+
+    final result = await engine().run();
+    final valid =
+        await (database.select(database.outboxOperations)..where(
+              (row) => row.operationId.equals('category:travel:1:upsert'),
+            ))
+            .getSingle();
+    final invalid = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.entityType.equals('learningTimeSegment'))).get();
+
+    expect(result.pushed, 1);
+    expect(result.status, SyncRunStatus.completed);
+    expect(result.hasMoreWork, isFalse);
+    expect(valid.state, 'acknowledged');
+    expect(invalid, hasLength(SyncEngine.pushLimit));
+    expect(invalid.every((row) => row.state == 'permanentFailure'), isTrue);
+    expect(gateway.appliedOperationIds, {'category:travel:1:upsert'});
+  });
+
+  test('invalid backlog respects budget and continues the next run', () async {
+    final invalidCount = SyncEngine.pushLimit * SyncEngine.maxBatchesPerRun;
+    for (var index = 0; index < invalidCount; index++) {
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: '000-legacy:$index:1:upsert',
+              ownerId: 'owner-a',
+              entityType: 'learningTimeSegment',
+              entityId: 'legacy:$index',
+              operationKind: 'upsert',
+              createdAtUtcMs: 0,
+            ),
+          );
+    }
+    await _seedCategoryOperation(database);
+
+    final first = await engine().run();
+    final invalid = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.entityType.equals('learningTimeSegment'))).get();
+    expect(first.pushed, 0);
+    expect(first.hasMoreWork, isTrue);
+    expect(first.retryRecommended, isTrue);
+    expect(invalid.every((row) => row.state == 'permanentFailure'), isTrue);
+
+    final second = await engine().run();
+    expect(second.pushed, 1);
+    expect(second.hasMoreWork, isFalse);
+    expect(gateway.appliedOperationIds, {'category:travel:1:upsert'});
+  });
+
   test('missing backing row still fails without quarantining work', () async {
     await database
         .into(database.outboxOperations)
@@ -341,6 +560,177 @@ void main() {
     expect(firstResult.status, SyncRunStatus.completed);
     expect(gateway.appliedOperationIds, hasLength(1));
   });
+
+  test(
+    'slow backlog retains the run lease across more than 300 pushes',
+    () async {
+      for (var index = 0; index < 351; index++) {
+        await _seedCategoryOperation(
+          database,
+          id: 'category:$index',
+          name: 'Category $index',
+        );
+      }
+      final backgroundEngine = engine(mutex: SyncMutex());
+      SyncRunResult? backgroundResult;
+      gateway.onPush = (mutation) async {
+        nowUtc = nowUtc.add(const Duration(seconds: 2));
+        if (gateway.pushCalls == 301) {
+          backgroundResult = await backgroundEngine.run();
+        }
+        return PushAcknowledged(
+          operationId: mutation.operationId,
+          resultingRevision: mutation.localRevision,
+          acknowledgedAtUtc: nowUtc,
+        );
+      };
+
+      final result = await engine(mutex: SyncMutex()).run();
+
+      expect(backgroundResult?.status, SyncRunStatus.alreadyRunning);
+      expect(result.status, SyncRunStatus.completed);
+      expect(result.pushed, 351);
+      expect(gateway.pushCalls, 351);
+      expect(gateway.appliedOperationIds, hasLength(351));
+    },
+  );
+
+  for (final successorAcquires in [false, true]) {
+    test('push outliving its run lease leaves the claim for retry '
+        'with successor=$successorAcquires', () async {
+      await _seedCategoryOperation(database);
+      gateway.onPush = (mutation) async {
+        nowUtc = nowUtc.add(
+          SyncEngine.runLeaseDuration + const Duration(seconds: 1),
+        );
+        if (successorAcquires) {
+          expect(
+            await store.tryAcquireRunLease(
+              ownerId: 'owner-a',
+              leaseToken: 'successor',
+              nowUtc: nowUtc,
+              leaseDuration: SyncEngine.runLeaseDuration,
+            ),
+            isTrue,
+          );
+        }
+        return PushAcknowledged(
+          operationId: mutation.operationId,
+          resultingRevision: mutation.localRevision,
+          acknowledgedAtUtc: nowUtc,
+        );
+      };
+
+      final result = await engine().run();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      final lease =
+          await (database.select(database.runtimeFlags)
+                ..where((row) => row.key.equals('syncRunLease:owner-a')))
+              .getSingleOrNull();
+
+      expect(result.status, SyncRunStatus.partialFailure);
+      expect(result.retryRecommended, isTrue);
+      expect(result.hasMoreWork, isTrue);
+      expect(result.pushed, 0);
+      expect(operation.state, 'inFlight');
+      expect(operation.acknowledgedAtUtcMs, isNull);
+      expect(lease?.source, successorAcquires ? 'successor' : null);
+    });
+  }
+
+  test(
+    'pull outliving its run lease does not apply the page or cursor',
+    () async {
+      var pullCalls = 0;
+      gateway.onPull = (collection, after, limit) async {
+        pullCalls++;
+        if (collection != SyncCollection.categories) {
+          return PullPage(changes: const [], nextCursor: after, hasMore: false);
+        }
+        nowUtc = nowUtc.add(
+          SyncEngine.runLeaseDuration + const Duration(seconds: 1),
+        );
+        final id = 'expired-pull:${collection.wireName}';
+        return PullPage(
+          changes: [
+            SyncEntity(
+              collection: collection,
+              entityId: id,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: nowUtc,
+              serverUpdatedAtUtc: nowUtc,
+              payload: {'name': id, 'normalizedName': id},
+            ),
+          ],
+          nextCursor: SyncCursor(serverUpdatedAtUtc: nowUtc, documentId: id),
+          hasMore: false,
+        );
+      };
+
+      final result = await engine().run();
+
+      expect(result.status, SyncRunStatus.partialFailure);
+      expect(result.retryRecommended, isTrue);
+      expect(result.hasMoreWork, isTrue);
+      expect(result.pulled, 0);
+      expect(pullCalls, 1);
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      expect(
+        await store.readCheckpoint('owner-a', SyncCollection.categories),
+        isNull,
+      );
+    },
+  );
+
+  test(
+    'network failure after lease loss cannot change a successor claim',
+    () async {
+      await _seedCategoryOperation(database);
+      gateway.onPush = (mutation) async {
+        nowUtc = nowUtc.add(
+          SyncEngine.runLeaseDuration + const Duration(seconds: 1),
+        );
+        expect(
+          await store.tryAcquireRunLease(
+            ownerId: 'owner-a',
+            leaseToken: 'successor',
+            nowUtc: nowUtc,
+            leaseDuration: SyncEngine.runLeaseDuration,
+          ),
+          isTrue,
+        );
+        final claimed = await store.claimPending(
+          ownerId: 'owner-a',
+          firebaseUid: 'firebase-a',
+          limit: 1,
+          leaseToken: 'successor-operation',
+          leaseDuration: SyncEngine.leaseDuration,
+          nowUtc: nowUtc,
+        );
+        expect(claimed, hasLength(1));
+        throw const OfflineSyncFailure();
+      };
+
+      final result = await engine().run();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+
+      expect(result.status, SyncRunStatus.partialFailure);
+      expect(result.retryRecommended, isTrue);
+      expect(result.hasMoreWork, isTrue);
+      expect(operation.state, 'inFlight');
+      expect(operation.leaseToken, 'successor-operation');
+      expect(operation.failureCode, isNull);
+    },
+  );
 }
 
 final class _OwnerRepository implements LocalOwnerRepository {
@@ -374,6 +764,12 @@ final class _FakeGateway implements SyncGateway {
   SyncFailure? pushFailure;
   PushResult? pushResult;
   Future<PushResult> Function(PushMutation mutation)? onPush;
+  Future<PullPage> Function(
+    SyncCollection collection,
+    SyncCursor? after,
+    int limit,
+  )?
+  onPull;
   final Set<String> appliedOperationIds = <String>{};
 
   @override
@@ -391,6 +787,7 @@ final class _FakeGateway implements SyncGateway {
     required SyncCursor? after,
     required int limit,
   }) async {
+    if (onPull case final handler?) return handler(collection, after, limit);
     return PullPage(changes: const [], nextCursor: after, hasMore: false);
   }
 
@@ -419,15 +816,19 @@ final class _FakeGateway implements SyncGateway {
   }
 }
 
-Future<void> _seedCategoryOperation(AppDatabase database) async {
+Future<void> _seedCategoryOperation(
+  AppDatabase database, {
+  String id = 'category:travel',
+  String name = 'Travel',
+}) async {
   await database
       .into(database.vocabularyCategories)
       .insert(
         VocabularyCategoriesCompanion.insert(
-          id: 'category:travel',
+          id: id,
           ownerId: 'owner-a',
-          name: 'Travel',
-          normalizedName: 'travel',
+          name: name,
+          normalizedName: name.toLowerCase(),
           createdAtUtcMs: 0,
           updatedAtUtcMs: 0,
         ),
@@ -436,10 +837,10 @@ Future<void> _seedCategoryOperation(AppDatabase database) async {
       .into(database.outboxOperations)
       .insert(
         OutboxOperationsCompanion.insert(
-          operationId: 'category:travel:1:upsert',
+          operationId: '$id:1:upsert',
           ownerId: 'owner-a',
           entityType: 'category',
-          entityId: 'category:travel',
+          entityId: id,
           operationKind: 'upsert',
           createdAtUtcMs: 0,
         ),

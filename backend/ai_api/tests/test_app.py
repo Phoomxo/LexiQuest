@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
+import json
+import asyncio
 
 import pytest
 from fastapi.testclient import TestClient
 
-from lexiquest_ai.app import create_app
+from lexiquest_ai.app import RequestBodyLimitMiddleware, create_app
 from lexiquest_ai.config import Settings
 
 from conftest import (
@@ -25,6 +27,57 @@ _CONTENT_BODY = {
     "cefr": "a1",
     "language": "en",
 }
+
+
+@pytest.mark.parametrize("length", [None, "1"])
+def test_content_limits_actual_chunked_body_bytes(client: TestClient, length) -> None:
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer valid-token"}
+    if length is not None:
+        headers["Content-Length"] = length
+    response = client.post(
+        "/v1/content", headers=headers,
+        content=iter([b" " * 60_000, b" " * 60_000,
+                      json.dumps({"text": "Cat", **_CONTENT_BODY}).encode()]),
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"]["code"] == "PAYLOAD_TOO_LARGE"
+
+
+@pytest.mark.parametrize("length", ["junk", "-1", "1.5"])
+def test_content_rejects_invalid_content_length(client: TestClient, length: str) -> None:
+    response = client.post("/v1/content", content=b"{}", headers={"Content-Length": length})
+    assert response.status_code == 400
+
+
+def test_content_accepts_body_at_byte_limit(client: TestClient) -> None:
+    body = json.dumps({"text": "Cat", **_CONTENT_BODY}).encode()
+    response = client.post(
+        "/v1/content", headers={"Content-Type": "application/json", "Authorization": "Bearer valid-token"},
+        content=iter([b" " * (100_000 - len(body)), body]),
+    )
+    assert response.status_code == 200
+
+
+def test_body_limit_stops_receiving_before_auth_or_json_parsing() -> None:
+    received = 0
+    responses = []
+
+    async def downstream(scope, receive, send):
+        pytest.fail("An oversized request must not reach the application.")
+
+    async def receive():
+        nonlocal received
+        received += 1
+        assert received <= 2
+        return {"type": "http.request", "body": b" " * 60_000, "more_body": True}
+
+    async def send(message):
+        responses.append(message)
+
+    middleware = RequestBodyLimitMiddleware(downstream)
+    asyncio.run(middleware({"type": "http", "method": "POST", "headers": []}, receive, send))
+    assert received == 2
+    assert responses[0]["status"] == 413
 
 
 def test_health_endpoints(client: TestClient) -> None:

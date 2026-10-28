@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import random
 
+import pytest
+
 from generate_synthetic import (
     GeminiAugmenter,
     _explanation_response,
@@ -114,6 +116,16 @@ def test_generate_produces_pos_correct_sentence_for_verb() -> None:
     # A verb must slot into a verb template; it must never read like a noun.
     assert any("accept" in s for s in sentences)
     assert not any(s.startswith("The accept") for s in sentences), sentences
+
+
+@pytest.mark.parametrize("verb", ["go", "do", "have", "study"])
+def test_verb_story_uses_the_base_form_after_will(verb: str) -> None:
+    rows = generate_template_rows(
+        _word(word=verb, part_of_speech="Verb"), rng=random.Random(0)
+    )
+    stories = [str(row["response"]) for row in rows if row["kind"] == "story"]
+    assert any(f"He will {verb} every morning." in story for story in stories)
+    assert not any(f"He {verb}s every morning." in story for story in stories)
 
 
 def test_generate_produces_pos_correct_sentence_for_preposition() -> None:

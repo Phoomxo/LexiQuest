@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,6 +23,35 @@ _SPEECH_BODY = {
     "voice": "teacher_female",
     "speed": 1.0,
 }
+
+
+@pytest.mark.parametrize("length", [None, "1"])
+def test_speech_limits_actual_chunked_body_bytes(client: TestClient, length) -> None:
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer valid-token"}
+    if length is not None:
+        headers["Content-Length"] = length
+    response = client.post(
+        "/v1/speech", headers=headers,
+        content=iter([b" " * 60_000, b" " * 60_000,
+                      json.dumps({"text": "Cat", **_SPEECH_BODY}).encode()]),
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"]["code"] == "PAYLOAD_TOO_LARGE"
+
+
+@pytest.mark.parametrize("length", ["junk", "-1", "1.5"])
+def test_speech_rejects_invalid_content_length(client: TestClient, length: str) -> None:
+    response = client.post("/v1/speech", content=b"{}", headers={"Content-Length": length})
+    assert response.status_code == 400
+
+
+def test_speech_accepts_body_at_byte_limit(client: TestClient) -> None:
+    body = json.dumps({"text": "Cat", **_SPEECH_BODY}).encode()
+    response = client.post(
+        "/v1/speech", headers={"Content-Type": "application/json", "Authorization": "Bearer valid-token"},
+        content=iter([b" " * (100_000 - len(body)), body]),
+    )
+    assert response.status_code == 200
 
 
 def test_health_endpoints(client: TestClient) -> None:

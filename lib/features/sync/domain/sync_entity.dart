@@ -12,7 +12,7 @@ enum SyncCollection {
   rewardTransactions,
 
   /// Mutable FSRS algorithm state per (owner, word).
-  /// Pull semantics: last-write-wins (server state replaces local).
+  /// Pull retains merged answer evidence and otherwise imports server state.
   /// Phase 0 Week 12-13.
   srsStates,
 

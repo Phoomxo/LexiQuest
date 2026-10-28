@@ -1,7 +1,7 @@
 # LexiQuest
 
-Current development source is in [lexiquest-current](../../.codex/worktrees/lexiquest-current/LexiQuest/docs/development/ux-delivery/README.md).
-The checkout containing this README is the historical `feature/associative-reading-loop` branch, not the latest UX source. See the current index for remaining work and the 2026-10-01 cleanup checkpoint.
+The current audit remediation source is this checkout on `codex/cycle12-release`.
+See the [source and artifact index](docs/development/current-source.md) for the retained release baseline, test evidence, and older work in progress.
 
 An AI-enhanced gamified vocabulary learning application built with Flutter, Firebase, and an authenticated OmniVoice text-to-speech engine.
 

@@ -80,6 +80,7 @@ class _AssociativeReadingSessionScreenState
   bool _loading = true;
   bool _saving = false;
   bool _completed = false;
+  bool _restartedRound = false;
   String? _sessionId;
   bool _sessionFinished = false;
   LearningSessionSummary? _sessionSummary;
@@ -146,8 +147,11 @@ class _AssociativeReadingSessionScreenState
         .then((progress) {
           if (!mounted) return;
           setState(() {
-            _currentStage = (progress?.lastPosition ?? 1).clamp(1, 6);
-            _completed = progress?.isCompleted ?? false;
+            final savedStage = (progress?.lastPosition ?? 1).clamp(1, 6);
+            _restartedRound = savedStage >= 4 && widget.targetWordIds != null;
+            _currentStage = _restartedRound ? 1 : savedStage;
+            _completed = !_restartedRound && (progress?.isCompleted ?? false);
+            if (_restartedRound) _sessionId = null;
             _loading = false;
           });
         })
@@ -527,6 +531,13 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_restartedRound) ...[
+              Semantics(
+                liveRegion: true,
+                child: const Text('เริ่มรอบใหม่โดยเก็บประวัติคำตอบเดิมไว้'),
+              ),
+              const SizedBox(height: 12),
+            ],
             const Text('อ่านเรื่องและสังเกตคำศัพท์เป้าหมาย'),
             const SizedBox(height: 12),
             Card(

@@ -40,17 +40,23 @@ jobs:
       - name: CLI contract tests
         shell: pwsh
         run: |
-          ./tool/cli/tests/runtime-probes.tests.ps1
-          ./tool/cli/tests/run-android.tests.ps1
-          ./tool/cli/tests/ci-workflow.tests.ps1
-          ./tool/cli/tests/dependabot-config.tests.ps1
-          ./tool/cli/tests/osv-pr-workflow.tests.ps1
-          ./tool/cli/tests/osv-scheduled-workflow.tests.ps1
-          ./tool/cli/tests/osv-config.tests.ps1
-          ./tool/cli/tests/firebase-seed-security.tests.ps1
-          ./tool/cli/tests/model-loading-security.tests.ps1
-          ./tool/cli/tests/android-manifest-security.tests.ps1
-          ./tool/cli/tests/public-release-pages.tests.ps1
+          $contracts = @(
+            'runtime-probes.tests.ps1',
+            'run-android.tests.ps1',
+            'ci-workflow.tests.ps1',
+            'dependabot-config.tests.ps1',
+            'osv-pr-workflow.tests.ps1',
+            'osv-scheduled-workflow.tests.ps1',
+            'osv-config.tests.ps1',
+            'firebase-seed-security.tests.ps1',
+            'model-loading-security.tests.ps1',
+            'android-manifest-security.tests.ps1',
+            'public-release-pages.tests.ps1'
+          )
+          foreach ($contract in $contracts) {
+            & (Join-Path 'tool/cli/tests' $contract)
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -121,7 +127,7 @@ jobs:
         working-directory: backend/ai_api
         run: |
           uv sync --frozen --group dev
-          uv run --frozen --group dev pytest tests -q -W error
+          uv run --frozen --group dev pytest tests -q -W error -W 'ignore:You are using a Python version:FutureWarning:google.api_core._python_version_support'
 
       - name: LexiQuest-LM CPU-only tests
         working-directory: backend/lexiquest_lm
@@ -138,3 +144,24 @@ jobs:
             --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
             --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 \
             --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+
+  release-contracts:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Signing, release, policy, and synthetic evidence contracts
+        shell: pwsh
+        run: |
+          $contracts = @(
+            'android-release-signing.tests.ps1',
+            'verify-field-release.tests.ps1',
+            'gitleaks-config.tests.ps1',
+            'firestore-rules-security.tests.ps1',
+            'mirofish-synthetic-uat.tests.ps1',
+            'verify-gemini-byok.tests.ps1'
+          )
+          foreach ($contract in $contracts) {
+            & (Join-Path 'tool/cli/tests' $contract)
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }

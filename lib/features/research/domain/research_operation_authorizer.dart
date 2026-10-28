@@ -200,7 +200,10 @@ final class SignedPermitResearchOperationAuthorizer
         return false;
       }
       final state = await states.loadState(permitId: permit.permitId);
+      final finalNow = await _trustedNowUtc();
       return state != null &&
+          finalNow != null &&
+          _matches(permit, ownerId, operation, finalNow) &&
           !state.revoked &&
           state.currentRevision > 0 &&
           state.currentRevision == permit.revision;

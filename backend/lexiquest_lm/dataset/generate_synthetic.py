@@ -150,7 +150,7 @@ _STORY_TEMPLATES: list[tuple[str, str, str]] = [
     ("B1", "noun", "Lena had never seen a {w} before. Curious, she read about it all evening. By morning, she understood it well."),
     ("B2", "noun", "The committee debated the {w} for hours. Opinions clashed, evidence was weighed. In the end, they reached a careful compromise."),
     ("C1", "noun", "For centuries the {w} had been taken for granted. Then a young scholar questioned it, and an entire field was upended."),
-    ("A1", "verb", "Tom likes to {w}. He {w}s every morning. It makes him happy."),
+    ("A1", "verb", "Tom likes to {w}. He will {w} every morning. It makes him happy."),
     ("A2", "verb", "Mai learned to {w} last summer. She practised daily. Now she can {w} well."),
     ("B1", "verb", "Lena tried to {w} but failed at first. She kept trying. After weeks, she succeeded."),
     ("A1", "adjective", "The day was {w}. The {w} weather felt nice. We stayed outside."),

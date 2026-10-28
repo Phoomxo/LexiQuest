@@ -47,7 +47,7 @@ def content_cache_key(request: ContentRequest, model_version: str) -> str:
             request.kind,
             request.cefr,
             request.language,
-            request.text.casefold(),
+            request.text,
         ]
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

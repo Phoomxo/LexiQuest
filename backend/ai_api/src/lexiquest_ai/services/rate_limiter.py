@@ -20,6 +20,7 @@ Design notes:
 
 from __future__ import annotations
 
+import hashlib
 import threading
 import time
 from collections import deque
@@ -86,29 +87,35 @@ class RateLimiter:
 
 @dataclass
 class RateLimitedClient:
-    """Wrap an [HttpClient] with one [RateLimiter] per provider URL.
+    """Wrap an [HttpClient] with one [RateLimiter] per provider credential.
 
-    A separate limiter per URL keeps independent providers independent: hitting
-    Ollama's limit must not also block Gemini. Limiters are created lazily so
-    only providers actually in use pay bookkeeping cost.
+    A separate limiter per URL and credential keeps providers independent:
+    exhausting one Gemini key must not block another. Limiters are created
+    lazily so only providers actually in use pay bookkeeping cost.
     """
 
     inner: object
     max_per_minute: int
-    _limiters: dict[str, RateLimiter] = field(default_factory=dict, repr=False)
+    _limiters: dict[tuple[str, bytes], RateLimiter] = field(default_factory=dict, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def request(self, url: str, *, data: bytes, headers: dict[str, str], timeout: float):
-        limiter = self._get_or_create(url)
+        credential = next(
+            (value for name, value in headers.items()
+             if name.lower() == "authorization"),
+            "",
+        )
+        quota = (url, hashlib.sha256(credential.encode("utf-8")).digest())
+        limiter = self._get_or_create(quota)
         limiter.acquire()  # raises ProviderRateLimited on overflow
         return self.inner.request(
             url, data=data, headers=headers, timeout=timeout
         )
 
-    def _get_or_create(self, url: str) -> RateLimiter:
+    def _get_or_create(self, quota: tuple[str, bytes]) -> RateLimiter:
         with self._lock:
-            limiter = self._limiters.get(url)
+            limiter = self._limiters.get(quota)
             if limiter is None:
                 limiter = RateLimiter(max_per_minute=self.max_per_minute)
-                self._limiters[url] = limiter
+                self._limiters[quota] = limiter
             return limiter
