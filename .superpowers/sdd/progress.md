@@ -1,0 +1,29 @@
+# Adventure Motivation execution ledger
+
+- Checkpoint 0 / Tasks 0.1-0.4: complete; evidence `docs/development/2026-09-04-adventure-motivation-checkpoint-0.md`.
+- Checkpoint 1 / Tasks 1.1-1.3: complete; product source through `e707cd7a` and current architecture tests.
+- Checkpoint 2 / Task 2.1: complete after `5ce6ad15` and corrective `a2583acc`; production wires exactly four canonical supplemental readers, bounds and canonicalizes facts, contains source/corrupt outputs, preserves valid Today missions under supplemental degradation, rejects fabricated Adventure completion, passes 231 bounded tests plus focused analyzer, and independent re-review is clean.
+- Checkpoint 2 / Task 2.2: complete; existing canonical session composition remains green.
+- Checkpoint 2 / Task 2.3: complete after corrective commits `cf9a1492`, `0fdaa94f`, `2d4bb4f6`, and `7165029a`; Standard escape is unconditional, permit/Today resolutions are pinned per opening, preference writes are generation-fenced, 158 bounded tests pass, and independent re-review is clean.
+- Checkpoint 3 / Task 3.1: complete; existing result lifecycle remains green.
+- Checkpoint 3 / Tasks 3.2-3.3: complete after `f8a5f8bb` plus exact-recovery hardening `703aabe4`; production now provides the mixed typed-recall/cloze/definition/flashcard review loop, durable supportive repair scheduling, exact persisted skip/exposure restart intent, immutable session pins and pre-query exact-pin snapshots, atomic active-owner configuration persistence, and fail-closed owner/session drift handling. The corrective five-file focus passes 96 tests, the broad touched-authority suite passes 658 tests, both complete Flutter modes pass 3,542 tests, analyzer is clean, and the exact 8/44 feature map is unchanged.
+- Checkpoint 3 / Task 3.4: complete after `2d3e2c77`, `794a395d`, `2da0719d`, `7cdc2657`, and corrective `b57f3640`; Result resolves its next action from the canonical Review/SRS queue independently of reward receipt state, fences owner/session/reader drift, fails closed on unavailable or non-canonical authorities, passes 167 bounded tests plus focused analyzer, and independent re-review is clean.
+- Checkpoint 4 / Tasks 4.1-4.3: complete; commits `151cc2d1..f5745153`; MS-05 evidence clean.
+- Checkpoint 5 / Tasks 5.1-5.4: governance-blocked; approved MDS/protocol/instrument/privacy-ethics package is absent, so research schema/capture remains intentionally unimplemented.
+- Checkpoint 6 / Task 6.1: complete; bounded diagnostics and offline catalog recovery verified.
+- Checkpoint 6 / Task 6.2 automated scope: complete; accessibility/responsive suites, source-gated Android emulator performance rehearsal, and four deterministic Adventure/Standard golden scenes (light, dark/high-contrast, 200% text/reduced-motion, and recovered Standard state) are verified and visually inspected.
+- Checkpoint 6 / Task 6.2 external scope: pending; physical assistive-technology and certified-device sign-off required.
+- Checkpoint 6 / Task 6.3: complete for local Android/shared engineering; analyzer, 3,542-test default and serial inventories, Gitleaks, six-scope OSV lock gate, exact generated-plan/feature-map checks and final debug APK all pass; evidence `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`.
+- Checkpoint 6 / Task 6.4: external execution pending; participant UAT and MS-08A/MS-08B decisions required.
+- Checkpoint 7 / PM0-PM8: not authorized; Pair v1.2 approval and separate delivery authorization required before implementation.
+
+Last confirmed branch HEAD: `6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d`.
+
+## Goal continuation audit — 2026-09-05
+
+- Previous goal turn: progress; hardened full default/serial Flutter suites, analyzer, APK and bounded secret/dependency gates were completed and recorded at `3c698cdd`.
+- Current continuation: progress; `6968ce97` reconciles SDS, UAT and RTM with the hardened source, removes the false local-completion grouping for research FR-048, and records the retained APK at `build/deliverables/adventure-703aabe4-debug.apk`. All 258 requirement rows and 50 UAT scripts remain unchanged; APK SHA-256 is `951F53BC5551E0DCDA631346F89015F31EDA52BAB01A48F9C9C2691BAFE7E64A`.
+- Revalidated external condition: MDS approval entries remain empty; Task 5.1's approved protocol/instrument/form/response-code/power/analysis/privacy-ethics package and Pair separate authorization remain absent. `adb devices -l` reports no connected device. No external UAT/session/sign-off evidence has appeared.
+- The same external condition has now been observed in two consecutive goal turns, counting the previous engineering-closeout turn. Goal remains active; completion is not claimed. No live process/job or subagent is being awaited. If another continuation confirms the same condition and finds no meaningful independent work, the three-turn blocked threshold is met.
+- Do not retry the temporary worktree cleanup: Git removal hit a long-path error and the subsequent explicit PowerShell removal was rejected by automatic policy. The verified APK was copied out successfully; residual temporary files are not a development blocker.
+- Third consecutive goal turn: no progress; HEAD remains `6968ce97`, only the two protected user files are dirty, MDS approval rows remain blank, no new approval/sign-off package is present, and `adb devices -l` still reports no connected device. The preceding turn is classified as progress because it corrected the handoff documents and retained the verified APK. No remaining independent implementation or verification action can satisfy the external prerequisites. Goal was set to `blocked` on 2026-09-05 after the required three-turn audit; it is not complete. Resume when the approved research package, Pair delivery decision or physical-device/UAT execution inputs become available.

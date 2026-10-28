@@ -1,0 +1,999 @@
+# Review package: 11845c09..0fdaa94f
+
+## Commits
+0fdaa94f fix(adventure): fence saves by permit resolution
+cf9a1492 fix(adventure): make Standard escape unconditional
+
+## Files changed
+ .../application/adventure_entry_use_cases.dart     |   9 +-
+ .../presentation/today_experience_host.dart        | 155 ++++++---
+ .../adventure_entry_use_cases_test.dart            |  49 ++-
+ .../presentation/today_experience_host_test.dart   | 356 ++++++++++++++++++++-
+ 4 files changed, 512 insertions(+), 57 deletions(-)
+
+## Diff
+diff --git a/lib/features/adventure/application/adventure_entry_use_cases.dart b/lib/features/adventure/application/adventure_entry_use_cases.dart
+index 9ff8ff35..1072c400 100644
+--- a/lib/features/adventure/application/adventure_entry_use_cases.dart
++++ b/lib/features/adventure/application/adventure_entry_use_cases.dart
+@@ -45,20 +45,25 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
+ 
+     final availability = rollout.availability;
+     final permit = request.activePresentationPermit;
+     final permitIsActive = _isActivePermit(permit, request);
+     final hadInvalidPermit = permit != null && !permitIsActive;
+ 
+     TodayExperiencePresentation presentation;
+     AdventureFallbackReason fallback = AdventureFallbackReason.none;
+     if (permitIsActive) {
+       presentation = permit!.assignedPresentation;
++      if (presentation == TodayExperiencePresentation.adventure &&
++          request.sessionChoice == TodayExperiencePresentation.standard) {
++        presentation = TodayExperiencePresentation.standard;
++        fallback = AdventureFallbackReason.learnerChoseStandard;
++      }
+     } else if (request.sessionChoice case final choice?) {
+       presentation = choice;
+       if (choice == TodayExperiencePresentation.standard) {
+         fallback = AdventureFallbackReason.learnerChoseStandard;
+       } else if (hadInvalidPermit) {
+         fallback = AdventureFallbackReason.assignmentUnavailable;
+       }
+     } else {
+       presentation =
+           await preferences?.readForOwner(request.ownerId) ??
+@@ -84,21 +89,23 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
+         availability: availability,
+         destination: presentation == TodayExperiencePresentation.adventure
+             ? AdventureEntryDestination.adventure
+             : AdventureEntryDestination.standardToday,
+         fallbackReason: fallback,
+         catalogId: catalog.catalogId,
+         catalogVersion: catalog.catalogVersion,
+         catalogSchemaVersion: catalog.schemaVersion,
+         permitId: permitIsActive ? permit!.permitId : null,
+         assignmentId: permitIsActive ? permit!.assignmentId : null,
+-        treatment: presentation.wireName,
++        treatment: permitIsActive
++            ? permit!.assignedPresentation.wireName
++            : presentation.wireName,
+       ),
+     );
+   }
+ 
+   AdventureProductEntryDecision _record(AdventureProductEntryDecision value) {
+     diagnostics
+       ?..recordEntry(value.destination)
+       ..recordEntryFallback(value.fallbackReason);
+     return value;
+   }
+diff --git a/lib/features/adventure/presentation/today_experience_host.dart b/lib/features/adventure/presentation/today_experience_host.dart
+index c5358383..4a51e4ba 100644
+--- a/lib/features/adventure/presentation/today_experience_host.dart
++++ b/lib/features/adventure/presentation/today_experience_host.dart
+@@ -84,24 +84,25 @@ final class _TodayExperienceModel {
+   final AdventureJourneySnapshot? journey;
+   final RewardAccount? rewardOwnership;
+ }
+ 
+ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
+   late AdventureEntryHost _entryHost;
+   late Future<_TodayExperienceModel> _loadFuture;
+   TodayExperiencePresentation? _sessionChoice;
+   late DateTime _occurredAtUtc;
+   var _refreshGeneration = 0;
++  var _presentationGeneration = 0;
+   var _preferenceGeneration = 0;
+-  var _permitControlsPresentation = false;
++  bool? _permitControlsPresentation;
+   _PresentationSaveRun? _activePresentationSave;
+-  TodayExperiencePresentation? _queuedPresentationSave;
++  _QueuedPresentationSave? _queuedPresentationSave;
+   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+   _presentationSaveFailure;
+ 
+   @override
+   void initState() {
+     super.initState();
+     _startNewOpening();
+   }
+ 
+   @override
+@@ -123,131 +124,178 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
+         !identical(oldWidget.activePermits, widget.activePermits) ||
+         !identical(oldWidget.catalog, widget.catalog) ||
+         !identical(oldWidget.journey, widget.journey) ||
+         !identical(oldWidget.rewardAccounts, widget.rewardAccounts)) {
+       _sessionChoice = null;
+       _startNewOpening();
+     }
+   }
+ 
+   void _startNewOpening() {
++    _sessionChoice = null;
++    _permitControlsPresentation = null;
++    _queuedPresentationSave = null;
+     _refreshGeneration += 1;
++    _presentationGeneration += 1;
+     _occurredAtUtc = widget.nowUtc();
+     _entryHost = AdventureEntryHost(
+       entry: widget.entry,
+       activePermits: widget.activePermits,
+       todayHub: widget.todayHub,
+       createEntryAttemptId: widget.createEntryAttemptId,
+     );
+-    _loadFuture = _load(_refreshGeneration, _entryHost);
++    _loadFuture = _load(
++      _refreshGeneration,
++      _presentationGeneration,
++      _entryHost,
++      _sessionChoice,
++    );
+   }
+ 
+   Future<_TodayExperienceModel> _load(
+-    int generation,
++    int refreshGeneration,
++    int presentationGeneration,
+     AdventureEntryHost host,
++    TodayExperiencePresentation? sessionChoice,
+   ) async {
+     final result = await host.open(
+       ownerId: widget.ownerId,
+       occurredAtUtc: _occurredAtUtc,
+-      sessionChoice: _sessionChoice,
++      sessionChoice: sessionChoice,
+     );
+-    if (generation != _refreshGeneration || result?.today == null) {
++    if (refreshGeneration != _refreshGeneration || result?.today == null) {
++      return _TodayExperienceModel(result: result);
++    }
++    if (presentationGeneration != _presentationGeneration) {
+       return _TodayExperienceModel(result: result);
+     }
+     _permitControlsPresentation = result!.decision.permitId != null;
++    if (_permitControlsPresentation == false && sessionChoice != null) {
++      _queuePresentationSave(
++        sessionChoice,
++        presentationGeneration: presentationGeneration,
++      );
++    }
+     final decision = result.decision;
+     if (decision.destination != AdventureEntryDestination.adventure) {
+       return _TodayExperienceModel(result: result);
+     }
+     final journeyNow = widget.nowUtc();
+     final evaluatedAt = journeyNow.isBefore(result.today!.evaluatedAtUtc)
+         ? result.today!.evaluatedAtUtc
+         : journeyNow;
+     final projected = await widget.journey.compose(
+       AdventureJourneyRequest(
+         ownerId: widget.ownerId,
+         evaluatedAtUtc: evaluatedAt,
+         catalog: widget.catalog,
+         today: result.today!,
+       ),
+     );
+     final rewardOwnership = await widget.rewardAccounts.loadForOwner(
+       widget.ownerId,
+     );
+-    if (generation != _refreshGeneration) {
++    if (refreshGeneration != _refreshGeneration ||
++        presentationGeneration != _presentationGeneration) {
+       return const _TodayExperienceModel(result: null);
+     }
+     return _TodayExperienceModel(
+       result: result,
+       journey: projected,
+       rewardOwnership: rewardOwnership,
+     );
+   }
+ 
+   void _switch(TodayExperiencePresentation choice) {
+     if (_sessionChoice == choice) return;
++    final presentationGeneration = _presentationGeneration + 1;
+     setState(() {
+       _sessionChoice = choice;
+-      _loadFuture = _load(_refreshGeneration, _entryHost);
++      _presentationGeneration = presentationGeneration;
++      _permitControlsPresentation = null;
++      _queuedPresentationSave = null;
++      _loadFuture = _load(
++        _refreshGeneration,
++        presentationGeneration,
++        _entryHost,
++        choice,
++      );
+     });
+-    if (!_permitControlsPresentation) {
+-      _queuePresentationSave(choice);
+-    }
++    _clearPresentationSaveFailure();
+   }
+ 
+-  void _queuePresentationSave(TodayExperiencePresentation choice) {
++  void _queuePresentationSave(
++    TodayExperiencePresentation choice, {
++    int? presentationGeneration,
++  }) {
++    final queuedGeneration = presentationGeneration ?? _presentationGeneration;
+     final saver = widget.presentationPreferences;
+-    if (saver == null || _permitControlsPresentation) return;
+-    _queuedPresentationSave = choice;
++    if (saver == null ||
++        _permitControlsPresentation != false ||
++        queuedGeneration != _presentationGeneration) {
++      return;
++    }
++    _queuedPresentationSave = _QueuedPresentationSave(
++      presentationGeneration: queuedGeneration,
++      choice: choice,
++    );
+     final current = _activePresentationSave;
+     if (current != null && current.generation == _preferenceGeneration) return;
+     final run = _PresentationSaveRun(
+       generation: _preferenceGeneration,
+       ownerId: widget.ownerId,
+       saver: saver,
+     );
+     _activePresentationSave = run;
+     unawaited(_drainPresentationSaves(run));
+   }
+ 
+   Future<void> _drainPresentationSaves(_PresentationSaveRun run) async {
+     try {
+       while (_isCurrentSaveRun(run)) {
+-        final choice = _queuedPresentationSave;
+-        if (choice == null) return;
++        final queued = _queuedPresentationSave;
++        if (queued == null) return;
+         _queuedPresentationSave = null;
++        if (!_isCurrentPresentationSave(queued)) continue;
+         try {
+-          await run.saver.saveForOwner(run.ownerId, choice);
++          await run.saver.saveForOwner(run.ownerId, queued.choice);
+           if (!_isCurrentSaveRun(run)) return;
+-          if (_queuedPresentationSave == null && _sessionChoice == choice) {
++          if (_queuedPresentationSave == null &&
++              _isCurrentPresentationSave(queued)) {
+             _clearPresentationSaveFailure();
+           }
+         } catch (_) {
+           if (!_isCurrentSaveRun(run)) return;
+-          if (_queuedPresentationSave == null && _sessionChoice == choice) {
+-            _showPresentationSaveFailure(choice);
++          if (_queuedPresentationSave == null &&
++              _isCurrentPresentationSave(queued)) {
++            _showPresentationSaveFailure(queued.choice);
+           }
+         }
+       }
+     } finally {
+       if (identical(_activePresentationSave, run)) {
+         _activePresentationSave = null;
+       }
+     }
+   }
+ 
+   bool _isCurrentSaveRun(_PresentationSaveRun run) =>
+       mounted &&
+       identical(_activePresentationSave, run) &&
+       run.generation == _preferenceGeneration &&
+       run.ownerId == widget.ownerId;
+ 
++  bool _isCurrentPresentationSave(_QueuedPresentationSave queued) =>
++      queued.presentationGeneration == _presentationGeneration &&
++      _permitControlsPresentation == false &&
++      _sessionChoice == queued.choice;
++
+   void _showPresentationSaveFailure(TodayExperiencePresentation choice) {
+     final messenger = ScaffoldMessenger.of(context);
+     _clearPresentationSaveFailure();
+     _presentationSaveFailure = messenger.showSnackBar(
+       SnackBar(
+         key: const ValueKey('today-presentation-save-failure'),
+         content: const Text('บันทึกรูปแบบหน้าวันนี้ไม่สำเร็จ'),
+         action: SnackBarAction(
+           label: 'ลองอีกครั้ง',
+           onPressed: () {
+@@ -276,36 +324,36 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
+     super.dispose();
+   }
+ 
+   @override
+   Widget build(BuildContext context) => FutureBuilder<_TodayExperienceModel>(
+     future: _loadFuture,
+     builder: (context, state) {
+       if (state.connectionState != ConnectionState.done) {
+         return Scaffold(
+           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
+-          body: const TodayHubLoading(),
++          body: _standardEscapeBody(const TodayHubLoading()),
+         );
+       }
+       if (state.hasError) {
+         return Scaffold(
+           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
+-          body: TodayHubLoadFailure(onRetry: _refresh),
++          body: _standardEscapeBody(TodayHubLoadFailure(onRetry: _refresh)),
+         );
+       }
+       final model = state.data;
+       final result = model?.result;
+       final today = result?.today;
+       if (result == null || today == null) {
+         return Scaffold(
+           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
+-          body: _UnavailableState(onRefresh: _refresh),
++          body: _standardEscapeBody(_UnavailableState(onRefresh: _refresh)),
+         );
+       }
+       final journey = model?.journey;
+       final rewardOwnership = model?.rewardOwnership;
+       if (result.decision.destination == AdventureEntryDestination.adventure &&
+           journey != null &&
+           rewardOwnership != null) {
+         final reaction = journey.primaryMission == null
+             ? null
+             : const AdventureReactionSelector().select(
+@@ -337,59 +385,78 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
+           title: const Text('กิจกรรมวันนี้'),
+           actions: <Widget>[
+             IconButton(
+               key: const ValueKey('adventure-refresh'),
+               onPressed: _refresh,
+               tooltip: 'รีเฟรชกิจกรรมวันนี้',
+               icon: const Icon(Icons.refresh),
+             ),
+           ],
+         ),
+-        body: Column(
+-          children: <Widget>[
+-            Padding(
+-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+-              child: Align(
+-                alignment: AlignmentDirectional.centerEnd,
+-                child: AdventureStandardSwitch(
+-                  value: TodayExperiencePresentation.standard,
+-                  onChanged: _switch,
+-                ),
+-              ),
+-            ),
+-            Expanded(
+-              child: TodayHubView(
+-                snapshot: today,
+-                actions: widget.actions,
+-                features: widget.features,
+-                assessmentAvailable: widget.assessmentAvailable,
+-              ),
+-            ),
+-          ],
++        body: _standardEscapeBody(
++          TodayHubView(
++            snapshot: today,
++            actions: widget.actions,
++            features: widget.features,
++            assessmentAvailable: widget.assessmentAvailable,
++          ),
++          presentation: TodayExperiencePresentation.standard,
+         ),
+       );
+     },
+   );
++
++  Widget _standardEscapeBody(
++    Widget child, {
++    TodayExperiencePresentation? presentation,
++  }) => Column(
++    children: <Widget>[
++      Padding(
++        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
++        child: Align(
++          alignment: AlignmentDirectional.centerEnd,
++          child: AdventureStandardSwitch(
++            value:
++                presentation ??
++                _sessionChoice ??
++                TodayExperiencePresentation.adventure,
++            onChanged: _switch,
++          ),
++        ),
++      ),
++      Expanded(child: child),
++    ],
++  );
+ }
+ 
+ final class _PresentationSaveRun {
+   const _PresentationSaveRun({
+     required this.generation,
+     required this.ownerId,
+     required this.saver,
+   });
+ 
+   final int generation;
+   final String ownerId;
+   final AdventurePresentationPreferenceWriter saver;
+ }
+ 
++final class _QueuedPresentationSave {
++  const _QueuedPresentationSave({
++    required this.presentationGeneration,
++    required this.choice,
++  });
++
++  final int presentationGeneration;
++  final TodayExperiencePresentation choice;
++}
++
+ final class _UnavailableState extends StatelessWidget {
+   const _UnavailableState({required this.onRefresh});
+ 
+   final VoidCallback onRefresh;
+ 
+   @override
+   Widget build(BuildContext context) => Center(
+     child: Padding(
+       padding: const EdgeInsets.all(24),
+       child: Column(
+diff --git a/test/features/adventure/application/adventure_entry_use_cases_test.dart b/test/features/adventure/application/adventure_entry_use_cases_test.dart
+index 6df6d20e..7f126cc2 100644
+--- a/test/features/adventure/application/adventure_entry_use_cases_test.dart
++++ b/test/features/adventure/application/adventure_entry_use_cases_test.dart
+@@ -151,34 +151,63 @@ void main() {
+       );
+ 
+       expect(gate.canStartNewMission, isTrue);
+       registry.emergencyOff(Feature.adventureMotivation);
+       expect(gate.canStartNewMission, isFalse);
+       expect(gate.canCloseAcceptedSession, isTrue);
+     },
+   );
+ 
+   test(
+-    'ENT-010 active permit takes precedence without mutating preference',
++    'ENT-010 active permit starts assigned and Standard escape keeps assignment',
+     () async {
+       final preferences = _Preferences(TodayExperiencePresentation.standard);
+       final permit = _permit(now);
+-      final result =
+-          await _host(_useCases(preferences: preferences), permit: permit).open(
+-            ownerId: 'owner-001',
+-            occurredAtUtc: now,
+-            sessionChoice: TodayExperiencePresentation.standard,
+-          );
++      final today = _TodayLoader(_snapshot('owner-001', now));
++      final host = _host(
++        _useCases(preferences: preferences),
++        permit: permit,
++        today: today,
++      );
+ 
+-      expect(result?.decision.destination, AdventureEntryDestination.adventure);
+-      expect(result?.decision.permitId, permit.permitId);
+-      expect(result?.decision.assignmentId, permit.assignmentId);
++      final assigned = await host.open(
++        ownerId: 'owner-001',
++        occurredAtUtc: now,
++      );
++      final escaped = await host.open(
++        ownerId: 'owner-001',
++        occurredAtUtc: now,
++        sessionChoice: TodayExperiencePresentation.standard,
++      );
++
++      expect(
++        assigned?.decision.destination,
++        AdventureEntryDestination.adventure,
++      );
++      expect(assigned?.decision.treatment, 'adventure');
++      expect(
++        escaped?.decision.destination,
++        AdventureEntryDestination.standardToday,
++      );
++      expect(
++        escaped?.decision.fallbackReason,
++        AdventureFallbackReason.learnerChoseStandard,
++      );
++      expect(escaped?.decision.permitId, permit.permitId);
++      expect(escaped?.decision.assignmentId, permit.assignmentId);
++      expect(escaped?.decision.treatment, 'adventure');
++      expect(
++        escaped?.decision.entryAttemptId,
++        assigned?.decision.entryAttemptId,
++      );
++      expect(escaped?.today, same(assigned?.today));
++      expect(today.calls, 1);
+       expect(preferences.calls, 0);
+     },
+   );
+ 
+   test(
+     'ENT-011 nonparticipant product mode has no research write boundary',
+     () async {
+       final result = await _host(_useCases()).open(
+         ownerId: 'owner-001',
+         occurredAtUtc: now,
+diff --git a/test/features/adventure/presentation/today_experience_host_test.dart b/test/features/adventure/presentation/today_experience_host_test.dart
+index 44d1d964..6e2e7832 100644
+--- a/test/features/adventure/presentation/today_experience_host_test.dart
++++ b/test/features/adventure/presentation/today_experience_host_test.dart
+@@ -12,20 +12,311 @@ import 'package:vocab_learning_app/features/adventure/presentation/today_experie
+ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+ import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
+ import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
+ import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
+ import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
+ import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
+ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+ import 'package:vocab_learning_app/screens/today_hub_view.dart';
+ 
+ void main() {
++  testWidgets('Standard escape is visible and usable while Today is loading', (
++    tester,
++  ) async {
++    final pending = Completer<TodayHubSnapshot>();
++    final loader = _PendingLoader(pending.future);
++    await tester.pumpWidget(
++      _app(
++        loader: loader,
++        journey: _Journey(),
++        createId: () => '11111111-1111-4111-8111-111111111111',
++      ),
++    );
++    await tester.pump();
++
++    expect(find.byType(TodayHubLoading), findsOneWidget);
++    expect(
++      find.byKey(const ValueKey('adventure-standard-switch')),
++      findsOneWidget,
++    );
++    expect(
++      tester
++          .widget<SegmentedButton<TodayExperiencePresentation>>(
++            find.byKey(const ValueKey('adventure-standard-switch')),
++          )
++          .onSelectionChanged,
++      isNotNull,
++    );
++
++    await tester.tap(find.text('มาตรฐาน'));
++    await tester.pump();
++    expect(
++      tester
++          .widget<SegmentedButton<TodayExperiencePresentation>>(
++            find.byKey(const ValueKey('adventure-standard-switch')),
++          )
++          .selected,
++      <TodayExperiencePresentation>{TodayExperiencePresentation.standard},
++    );
++
++    pending.complete(_today());
++    await tester.pumpAndSettle();
++    expect(find.byType(TodayHubView), findsOneWidget);
++    expect(loader.calls, 1);
++  });
++
++  testWidgets('Standard escape recovers from Adventure load failure', (
++    tester,
++  ) async {
++    final loader = _Loader(_today());
++    final savedChoices = <TodayExperiencePresentation>[];
++    await tester.pumpWidget(
++      _app(
++        loader: loader,
++        journey: _FailingJourney(),
++        createId: () => '11111111-1111-4111-8111-111111111111',
++        activePermits: _Permits(_permit()),
++        presentationPreferences: _CallbackPreferenceWriter(
++          (_, choice) async => savedChoices.add(choice),
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(find.byType(TodayHubLoadFailure), findsOneWidget);
++    expect(
++      find.byKey(const ValueKey('adventure-standard-switch')),
++      findsOneWidget,
++    );
++
++    await tester.tap(find.text('มาตรฐาน'));
++    await tester.pumpAndSettle();
++
++    expect(find.byType(TodayHubView), findsOneWidget);
++    expect(loader.calls, 1);
++    expect(savedChoices, isEmpty);
++  });
++
++  testWidgets('Standard escape stays usable in the unavailable state', (
++    tester,
++  ) async {
++    final loader = _Loader(_today(ownerId: 'owner:other'));
++    await tester.pumpWidget(
++      _app(
++        loader: loader,
++        journey: _Journey(),
++        createId: () => '11111111-1111-4111-8111-111111111111',
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(
++      find.text(
++        'กิจกรรมแบบผจญภัยยังไม่พร้อม รายการเรียนเดิมของคุณไม่เปลี่ยนแปลง',
++      ),
++      findsOneWidget,
++    );
++    expect(
++      find.byKey(const ValueKey('adventure-standard-switch')),
++      findsOneWidget,
++    );
++
++    await tester.tap(find.text('มาตรฐาน'));
++    await tester.pumpAndSettle();
++
++    expect(
++      tester
++          .widget<SegmentedButton<TodayExperiencePresentation>>(
++            find.byKey(const ValueKey('adventure-standard-switch')),
++          )
++          .selected,
++      <TodayExperiencePresentation>{TodayExperiencePresentation.standard},
++    );
++    expect(loader.calls, 1);
++  });
++
++  testWidgets(
++    'active Adventure permit escapes to Standard without reopening or saving',
++    (tester) async {
++      final today = _today();
++      final loader = _Loader(today);
++      final journey = _Journey();
++      final ids = <String>[];
++      final savedChoices = <TodayExperiencePresentation>[];
++      final app = _app(
++        loader: loader,
++        journey: journey,
++        createId: () {
++          const id = '11111111-1111-4111-8111-111111111111';
++          ids.add(id);
++          return id;
++        },
++        activePermits: _Permits(_permit()),
++        presentationPreferences: _CallbackPreferenceWriter(
++          (_, choice) async => savedChoices.add(choice),
++        ),
++      );
++
++      await tester.pumpWidget(app);
++      await tester.pumpAndSettle();
++      expect(find.byKey(const ValueKey('adventure-hub')), findsOneWidget);
++
++      await tester.tap(find.text('มาตรฐาน'));
++      await tester.pumpAndSettle();
++      expect(find.byType(TodayHubView), findsOneWidget);
++      expect(
++        tester.widget<TodayHubView>(find.byType(TodayHubView)).snapshot,
++        same(today),
++      );
++
++      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
++      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
++      await tester.pumpWidget(app);
++      await tester.pumpAndSettle();
++
++      expect(loader.calls, 1);
++      expect(ids, hasLength(1));
++      expect(journey.today, same(today));
++      expect(savedChoices, isEmpty);
++    },
++  );
++
++  testWidgets(
++    'Standard escape during unresolved permit read never saves protocol preference',
++    (tester) async {
++      final permits = _PendingPermits();
++      final loader = _Loader(_today());
++      final ids = <String>[];
++      final savedChoices = <TodayExperiencePresentation>[];
++      await tester.pumpWidget(
++        _app(
++          loader: loader,
++          journey: _Journey(),
++          createId: () {
++            const id = '11111111-1111-4111-8111-111111111111';
++            ids.add(id);
++            return id;
++          },
++          activePermits: permits,
++          presentationPreferences: _CallbackPreferenceWriter(
++            (_, choice) async => savedChoices.add(choice),
++          ),
++        ),
++      );
++      await tester.pump();
++
++      expect(find.byType(TodayHubLoading), findsOneWidget);
++      await tester.tap(find.text('มาตรฐาน'));
++      await tester.pump();
++      expect(savedChoices, isEmpty);
++
++      permits.complete(_permit());
++      await tester.pumpAndSettle();
++
++      expect(find.byType(TodayHubView), findsOneWidget);
++      expect(savedChoices, isEmpty);
++      expect(loader.calls, 1);
++      expect(ids, hasLength(1));
++    },
++  );
++
++  testWidgets(
++    'permit activation before a switch resolution blocks the Standard save',
++    (tester) async {
++      final permits = _MutablePermits();
++      final loader = _Loader(_today());
++      final ids = <String>[];
++      final savedChoices = <TodayExperiencePresentation>[];
++      await tester.pumpWidget(
++        _app(
++          loader: loader,
++          journey: _Journey(),
++          createId: () {
++            const id = '11111111-1111-4111-8111-111111111111';
++            ids.add(id);
++            return id;
++          },
++          activePermits: permits,
++          presentationPreferences: _CallbackPreferenceWriter(
++            (_, choice) async => savedChoices.add(choice),
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++
++      await tester.tap(find.text('ผจญภัย'));
++      await tester.pumpAndSettle();
++      expect(savedChoices, <TodayExperiencePresentation>[
++        TodayExperiencePresentation.adventure,
++      ]);
++
++      permits.permit = _permit();
++      await tester.tap(find.text('มาตรฐาน'));
++      await tester.pumpAndSettle();
++
++      expect(find.byType(TodayHubView), findsOneWidget);
++      expect(savedChoices, <TodayExperiencePresentation>[
++        TodayExperiencePresentation.adventure,
++      ]);
++      expect(loader.calls, 1);
++      expect(ids, hasLength(1));
++    },
++  );
++
++  testWidgets(
++    'permit activation fences an in-flight nonparticipant save drain',
++    (tester) async {
++      final permits = _MutablePermits();
++      final loader = _Loader(_today());
++      final ids = <String>[];
++      final saver = _ControlledPreferenceSaver();
++      await tester.pumpWidget(
++        _app(
++          loader: loader,
++          journey: _Journey(),
++          createId: () {
++            const id = '11111111-1111-4111-8111-111111111111';
++            ids.add(id);
++            return id;
++          },
++          activePermits: permits,
++          presentationPreferences: saver,
++        ),
++      );
++      await tester.pumpAndSettle();
++
++      await tester.tap(find.text('ผจญภัย'));
++      await tester.pumpAndSettle();
++      expect(saver.started, <TodayExperiencePresentation>[
++        TodayExperiencePresentation.adventure,
++      ]);
++
++      permits.permit = _permit();
++      await tester.tap(find.text('มาตรฐาน'));
++      await tester.pumpAndSettle();
++      saver.failNext();
++      await tester.pumpAndSettle();
++
++      expect(find.byType(TodayHubView), findsOneWidget);
++      expect(saver.started, <TodayExperiencePresentation>[
++        TodayExperiencePresentation.adventure,
++      ]);
++      expect(saver.completed, isEmpty);
++      expect(
++        find.byKey(const ValueKey('today-presentation-save-failure')),
++        findsNothing,
++      );
++      expect(loader.calls, 1);
++      expect(ids, hasLength(1));
++    },
++  );
++
+   testWidgets(
+     'loads Today once and reuses the exact snapshot and UUID across switches',
+     (tester) async {
+       final today = _today();
+       final loader = _Loader(today);
+       final journey = _Journey();
+       final ids = <String>[];
+       final savedChoices = <TodayExperiencePresentation>[];
+       await tester.pumpWidget(
+         _app(
+@@ -306,37 +597,39 @@ void main() {
+ }
+ 
+ Widget _app({
+   String ownerId = 'owner:one',
+   required TodayHubSnapshotLoader loader,
+   required AdventureJourneyReader journey,
+   required String Function() createId,
+   Future<void> Function(AdventureMissionLaunchContext)? onStartMission,
+   AdventurePresentationPreferenceWriter? presentationPreferences,
+   RewardAccountReader? rewardAccounts,
++  ActivePresentationPermitReader activePermits =
++      const NoActivePresentationPermitReader(),
+ }) {
+   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
+   final entry = AdventureEntryUseCases(
+     rollout: AdventureRolloutGate(
+       features: const BuildFeatureRegistry.allEnabled(),
+       requiredDependenciesReady: () => true,
+       catalogReadiness: () => AdventureCatalogReadiness.ready,
+     ),
+     catalog: catalog,
+     todayHubIdentity: loader,
+     learningIdentity: Object(),
+   );
+   return MaterialApp(
+     home: TodayExperienceHost(
+       ownerId: ownerId,
+       entry: entry,
+-      activePermits: const NoActivePresentationPermitReader(),
++      activePermits: activePermits,
+       todayHub: loader,
+       catalog: catalog,
+       journey: journey,
+       rewardAccounts: rewardAccounts ?? _RewardAccounts(_rewardAccount()),
+       createEntryAttemptId: createId,
+       nowUtc: () => _now,
+       actions: _Actions(),
+       features: const BuildFeatureRegistry.allEnabled(),
+       assessmentAvailable: false,
+       presentationPreferences: presentationPreferences,
+@@ -407,23 +700,62 @@ final class _Loader implements TodayHubSnapshotLoader {
+   @override
+   Future<TodayHubSnapshot> load() async {
+     calls += 1;
+     return snapshot;
+   }
+ }
+ 
+ final class _PendingLoader implements TodayHubSnapshotLoader {
+   _PendingLoader(this.pending);
+   final Future<TodayHubSnapshot> pending;
++  int calls = 0;
++
++  @override
++  Future<TodayHubSnapshot> load() {
++    calls += 1;
++    return pending;
++  }
++}
++
++final class _Permits implements ActivePresentationPermitReader {
++  _Permits(this.permit);
++
++  final ActivePresentationPermit? permit;
++
++  @override
++  Future<ActivePresentationPermit?> readActivePermit({
++    required String ownerId,
++    required DateTime evaluatedAtUtc,
++  }) async => permit;
++}
++
++final class _PendingPermits implements ActivePresentationPermitReader {
++  final Completer<ActivePresentationPermit?> _pending =
++      Completer<ActivePresentationPermit?>();
+ 
+   @override
+-  Future<TodayHubSnapshot> load() => pending;
++  Future<ActivePresentationPermit?> readActivePermit({
++    required String ownerId,
++    required DateTime evaluatedAtUtc,
++  }) => _pending.future;
++
++  void complete(ActivePresentationPermit? permit) => _pending.complete(permit);
++}
++
++final class _MutablePermits implements ActivePresentationPermitReader {
++  ActivePresentationPermit? permit;
++
++  @override
++  Future<ActivePresentationPermit?> readActivePermit({
++    required String ownerId,
++    required DateTime evaluatedAtUtc,
++  }) async => permit;
+ }
+ 
+ final class _ControlledPreferenceSaver
+     implements AdventurePresentationPreferenceWriter {
+   final List<TodayExperiencePresentation> started =
+       <TodayExperiencePresentation>[];
+   final List<TodayExperiencePresentation> completed =
+       <TodayExperiencePresentation>[];
+   final List<Completer<void>> _pending = <Completer<void>>[];
+ 
+@@ -433,20 +765,23 @@ final class _ControlledPreferenceSaver
+     TodayExperiencePresentation presentation,
+   ) async {
+     started.add(presentation);
+     final gate = Completer<void>();
+     _pending.add(gate);
+     await gate.future;
+     completed.add(presentation);
+   }
+ 
+   void completeNext() => _pending.removeAt(0).complete();
++
++  void failNext() =>
++      _pending.removeAt(0).completeError(StateError('save unavailable'));
+ }
+ 
+ final class _CallbackPreferenceWriter
+     implements AdventurePresentationPreferenceWriter {
+   const _CallbackPreferenceWriter(this.callback);
+ 
+   final Future<void> Function(
+     String ownerId,
+     TodayExperiencePresentation presentation,
+   )
+@@ -483,20 +818,37 @@ final class _Journey implements AdventureJourneyReader {
+             for (final authority in AdventureJourneyAuthority.values)
+               authority: AdventureJourneyDependencyState.ready,
+           },
+       nodes: const [],
+       primaryMission: mission,
+       inputFingerprintSha256: 'a' * 64,
+     );
+   }
+ }
+ 
++final class _FailingJourney implements AdventureJourneyReader {
++  @override
++  Future<AdventureJourneySnapshot> compose(
++    AdventureJourneyRequest request,
++  ) async => throw StateError('Adventure projection unavailable');
++}
++
++ActivePresentationPermit _permit() => ActivePresentationPermit(
++  permitId: 'permit:one',
++  ownerId: 'owner:one',
++  assignedPresentation: TodayExperiencePresentation.adventure,
++  protocolId: 'protocol:one',
++  protocolVersion: '1.0.0',
++  assignmentId: 'assignment:one',
++  expiresAtUtc: _now.add(const Duration(days: 1)),
++);
++
+ final class _Actions implements TodayHubActionDelegate {
+   @override
+   Future<void> openHistory() async {}
+   @override
+   Future<void> openReview(List<TodayHubReviewWorkItem> work) async {}
+   @override
+   Future<void> resume(LearningSessionSummary session) async {}
+   @override
+   Future<void> startAssessment(TodayHubAssignedAssessment assessment) async {}
+   @override

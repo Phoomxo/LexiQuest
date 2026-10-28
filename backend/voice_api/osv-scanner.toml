@@ -1,0 +1,47 @@
+# OSV-Scanner exceptions scoped to backend/voice_api/uv.lock.
+#
+# Torch is locked only in this service's optional `gpu` dependency group. The
+# unshipped research stack binds OmniVoice 0.2.1, Torch/Torchaudio 2.8.0, and
+# CUDA 12.8. It is excluded from the default CPU/product path, and remote voice
+# remains release-blocked until a compatible GPU stack is verified end to end.
+# These exceptions do not assert that vulnerable code is safe or fixed.
+
+[[IgnoredVulns]]
+id = "PYSEC-2025-203"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "PYSEC-2025-204"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "PYSEC-2025-206"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-139"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2286"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "GHSA-qfhq-4f3w-5fph"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "GHSA-rrmf-rvhw-rf47"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
+
+[[IgnoredVulns]]
+id = "GHSA-vgrw-7cvw-pwgx"
+reason = "torch is locked only in the optional OmniVoice GPU research group; remote voice is not production or field certified and remains release-blocked pending a compatible Torch, Torchaudio, OmniVoice, CUDA, and physical-GPU verification."
+ignoreUntil = 2026-09-11
