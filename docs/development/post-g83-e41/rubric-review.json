@@ -1,0 +1,25 @@
+{
+  "rubricRevision": 1,
+  "senses": [
+    "book/starter-object-v1",
+    "pencil/starter-object-v1",
+    "bottle/starter-object-v1"
+  ],
+  "scenarios": [
+    "library/reading",
+    "class/writing",
+    "lunch/drinking"
+  ],
+  "assessedOraclePatterns": 15,
+  "uncertainOracleExamples": 8,
+  "policy": "Final nonempty speech transcript requires explicit confirmation. Case, terminal punctuation and whitespace do not penalize lexical feedback. Supplied provider confidence is displayed without inferring calibrated accuracy. Text fallback is separately labeled and stored.",
+  "dimensions": [
+    "meaning",
+    "contextual use",
+    "grammatical pattern"
+  ],
+  "scale": "0/1/2 for displayed sentence only; no aggregate or Boolean canonical correctness",
+  "provenance": "Original local catalog, source/AI-assisted engineering self-review; not human calibration, held-out ASR evaluation or free-speaking accuracy",
+  "retention": "Preserve written revision1 and speaking revision1 decoders/policy for future revisions",
+  "test": "test/features/media_practice/speaking_rubric_test.dart"
+}

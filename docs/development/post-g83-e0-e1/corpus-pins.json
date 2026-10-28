@@ -1,0 +1,74 @@
+{
+  "identityScheme": "SHA256 sorted JSON of recorded artifact rows; supplemental design identity, not existing ContentIdentity",
+  "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+  "files": [
+    {
+      "path": "assets/content/cefr_editorial/batch-1.json",
+      "sha256": "d7ab58a1cce6d7d30b92418b234161ab1a75088da7934516f33d5791159b027b",
+      "count": 678,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/batch-2.json",
+      "sha256": "9a53ab6653d1fcebd61d8cf9a6251e11b5075e26ea865cc819e3fb29d100e46e",
+      "count": 678,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/batch-3.json",
+      "sha256": "b2534412e7ee71bb913f229952902f25e5d46265931a094dd6cd1316d3642f06",
+      "count": 678,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-1.json",
+      "sha256": "c615817a58afb6ecb9b5c24d8c35b8b5d9f1af133a9ba659697858d8ff953551",
+      "count": 1156,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-2.json",
+      "sha256": "f173b57c3540c4e44b39fe8ade0be7c6b1c75961ff39d74fbc90a930c3cab0c9",
+      "count": 1155,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-3.json",
+      "sha256": "3c0d6c460b99f99c99b51371f101dbd668de48c2dc93e8ebde1cd99e24647d3f",
+      "count": 1155,
+      "kind": "presentation editorial"
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-1.json",
+      "sha256": "c3fcc05d70288e528517a6cbea1881cd285dbb7410fcd43243e80a4c8fa223eb",
+      "count": 1834,
+      "kind": "sense-review indices"
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-2.json",
+      "sha256": "ebb94097be4a1d6a47f24849b0a76f2967af70c3f6c662e9d9e321f4d498278a",
+      "count": 1833,
+      "kind": "sense-review indices"
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-3.json",
+      "sha256": "a2c9b8f1178fd0e6c5b4370fc46d7fd597cf477812dfbc5b326491ab5e3fd804",
+      "count": 1833,
+      "kind": "sense-review indices"
+    }
+  ],
+  "editorialRecords": 5500,
+  "uniqueEditorialIds": 5500,
+  "senseKeys": [
+    "primary-v1"
+  ],
+  "statuses": [
+    "ai-reviewed"
+  ],
+  "scoredApproval": false,
+  "humanReview": false,
+  "manifest": {
+    "path": "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+    "sha256": "54472620eb6c6907792ebc07c147d6d4ba5c57581e8ad5598f38947fb04213bb"
+  }
+}

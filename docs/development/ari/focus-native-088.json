@@ -1,0 +1,22 @@
+{
+  "checkpoint": "088",
+  "status": "CHAT_FOCUS_087_NATIVE_RETEST_PASS",
+  "apk": "087",
+  "sourceCommit": "74b2d396",
+  "evidence": "evidence/focus-native-088",
+  "native": {
+    "send": "Focused baseline numeric form,then chat,then sendactualprovider: numericfieldfocusedfalse,inputShownfalse;visualscreenshotconfirmsno keyboard",
+    "reply": "Actual AI replied preferences40minutes,balancedGrowth,mixedPractice,planningnotproficiency",
+    "manualForm": "Afterreply,tappingbaselineform restoredfocusandkeyboardtrue",
+    "disconnect": "Afterrefocusingbaselineform,focusedchatthenexplicitdisconnect:numericfieldfocusedfalse,inputShownfalse"
+  },
+  "reusedHost": "087sixpaneltests;unchangedsource,no rerun",
+  "cleanup": "bridge87830stopped;reverse/configremoved;isolatedpreferences40minutes;originalaccountsunchanged",
+  "remaining": [
+    "Goals optionalowner-boundcontext",
+    "Native new-itemplan",
+    "W10 nativeacceptance",
+    "Remaining14workflow14modefinalaudits"
+  ],
+  "wholeGoalComplete": false
+}

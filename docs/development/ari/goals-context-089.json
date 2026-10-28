@@ -1,0 +1,38 @@
+{
+  "checkpoint": "089",
+  "workflows": [
+    "W08"
+  ],
+  "status": "GOAL_LIST_CONTEXT_HOST_VERIFIED_NATIVE_BASELINE_CREATE_REOPEN",
+  "implementation": [
+    "Optionalowner-boundread-onlysummaryandper-loaded-rowcontext",
+    "Ownercheckedbeforeandafterlistread;lookupfailuredoesnotblockbaseline",
+    "Loading/unavailablestatuscontainno personalentry;readycontextsuppressedifownerunverified",
+    "NativeCRUD/remindersremainexistingusecases;no AI mutationactions",
+    "Context hidden behind edit dialog and for foreign owner"
+  ],
+  "host": {
+    "red": "Two newtests failedmissingcontext;two owner/failurebaselineguards passed before implementation",
+    "final": "19 tests across assistance and existinggoalsscreen filesPASS;2fileDartanalysisclean",
+    "addedCoverage": [
+      "lateattachwithoutrebuild",
+      "disconnectmanualdeleteandreconnectempty",
+      "foreignownerhidden",
+      "ownerchangedduringread",
+      "optionalidentityfailurebaselineavailable",
+      "loading/errorprivateerroromission",
+      "lateoldsourcecannotrebindreplacement",
+      "editdialoghidesunderlyinglist"
+    ],
+    "limitations": "Fixture repository;doesnotreplacephysicalprovideracceptance"
+  },
+  "evidence": "evidence/goals-context-089",
+  "remaining": [
+    "Actualprovidergoallistandupdateson089",
+    "Nativeconnected/disconnectededit/status/deleteacceptance",
+    "Goal dialog assistance availability audit",
+    "Native nonemptynew-itemplan",
+    "W10andremaining14workflow14modeacceptance"
+  ],
+  "wholeGoalComplete": false
+}

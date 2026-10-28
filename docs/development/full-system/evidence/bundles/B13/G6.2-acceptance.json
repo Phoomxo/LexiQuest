@@ -1,0 +1,9 @@
+{
+  "packageId":"G6.2","status":"accepted-local",
+  "verification":[{"run":"G6.2-gate.log","testsPassed":48,"scope":"UI and actual local socket adapter matrix before explicit-stop fix"},{"run":"G6.2-green.log","testsPassed":40,"scope":"Complete UI plus speech lifecycle tests after fix"}],
+  "requirements":{"speechEpoch":"reset/scenario/level/intent/settings and permission/start callbacks retire stale attempts; one explicit cancel asserted","lateResults":"Network/lifecycle/owner/newchat fences retain new draft","readability":"SelectableText preserves literal formatted/Thai/multiline text; existing light/dark large-text widget checks; no markdown parser hiding text","cancelFailure":"Explicit mic stop now catches native failure and only displays it for current attempt; stale transcript ignored"},
+  "defects":[{"id":"B13-03","cause":"Explicit mic stop awaited raw native cancel error outside catch","red":"G6.2-red-corrected.log","green":"G6.2-green.log","status":"closed"},{"id":"B13-TEST-01","cause":"New regression omitted required locale constructor argument","evidence":"G6.2-red.log","resolution":"Added actual en-US locale; observed behavioral red before production fix","status":"closed"}],
+  "reuse":"Loopback transport source/dependencies unchanged by scoped UI catch; retained48-test run, no repeated socket gate. G6.1 behavior unchanged by UI-only edit; no claim of identical global fingerprint.",
+  "review":"Local diff and speech cancellation queue inspected; no required open implementation defects; no subagents",
+  "limitations":["Fake speech hardware; native cancel success and physical permissions NOT RUN","No live provider quality or screen-reader physical claim"]
+}

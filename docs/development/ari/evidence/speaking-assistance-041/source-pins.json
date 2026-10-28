@@ -1,0 +1,7 @@
+{
+  "base": "25450753349c101ec08f5b14b17c9df6f26254b5",
+  "files": {
+    "lib/screens/speak_to_text_screen.dart": "72c3ef96ce596b4ffabbd9fb6ed4dbbccc612312e115ddc5e948b2fe848fd3dd",
+    "test/screens/speak_to_text_screen_voice_test.dart": "0cda5b0cfd1aee57a9d70f3f7f0b6536ecfc80177c0a2271e99cb748c347eadd"
+  }
+}

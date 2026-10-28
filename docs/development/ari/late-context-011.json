@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_PENDING",
+  "baseCommit": "8824e404",
+  "defect": "Mounted owner-bound contexts registered before AI login were dropped and never admitted without rebuild",
+  "fix": "Explicit dataOwner binding keeps mounted context through no-provider and same-owner reconnect; mismatch to another non-null owner retires context. Session-only contexts retain original clearing. Identity listener preserves context for registry owner validation.",
+  "verification": {
+    "red": "New widget test failed with No element on late attachment",
+    "green": [
+      "evidence/late-context-011/registry-binding.json",
+      "evidence/late-context-011/baseline.json"
+    ],
+    "analysis": "No issues found",
+    "cases": [
+      "late attachment without widget rebuild",
+      "hidden while disconnected",
+      "same-owner reconnect restores",
+      "different owner clears permanently until re-registration",
+      "baseline absent/failing/pending/available AI preserves route"
+    ]
+  },
+  "native": "NOT_BUILT_OR_INSTALLED_THIS_CHANGE",
+  "wholeScopeComplete": false
+}

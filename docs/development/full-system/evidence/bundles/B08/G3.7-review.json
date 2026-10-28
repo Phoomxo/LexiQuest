@@ -1,0 +1,53 @@
+{
+  "packageId": "G3.7",
+  "requirements": [
+    "COV-f04",
+    "COV-f44",
+    "G3"
+  ],
+  "design": [
+    "Optional OfflineContentDownloadControl leaves existing manager implementations compatible",
+    "Cancellation is accepted before publication, drains current adapter stage, removes manager temporary bytes and persists interrupted state; retry uses normal verified pipeline",
+    "After publication starts cancellation returns false and never claims success; existing adapter-owned/pinned canonical bytes are not deleted",
+    "Read manifest byteLength for minimum file size; UI explicitly allows extra temporary storage, not an OS free-space guarantee"
+  ],
+  "verification": [
+    "Cancel while staging; interrupted/no publish/no files; repair; cancel after completion false",
+    "Injected FileSystemException after partial byte: interrupted and repair",
+    "Same pack revisions have distinct paths; removing new revision preserves pinned old bytes and canonical session across manager reopen",
+    "All G3.1-G3.6 actual final target selections plus G3.7 targets form47-file targeted phase gate"
+  ],
+  "defects": [
+    {
+      "fix": "Controlled cancellation before publish, UI pending feedback and capability check",
+      "status": "resolved",
+      "cause": "No cancellation capability or action",
+      "id": "B08-G37-01"
+    },
+    {
+      "fix": "Manifest minimum bytes label",
+      "status": "resolved",
+      "cause": "Only downloaded bytes shown before download",
+      "id": "B08-G37-02"
+    },
+    {
+      "fix": "Correct helper name; keep all cancel/no-publication/retry assertions",
+      "status": "resolved",
+      "cause": "New test used _insertManifest instead of existing _seedManifest",
+      "evidence": "G3.7-fixture-failure",
+      "id": "B08-G37-FIXTURE-01"
+    },
+    {
+      "fix": "Added braces",
+      "status": "resolved",
+      "cause": "Two unbraced control blocks",
+      "id": "B08-G37-LINT-01"
+    }
+  ],
+  "review": "Single writer inspected queue serialization, commit boundary, optional interface consumers, cancellation false/success reporting, pin lease and staged file cleanup; no schema migration",
+  "external": [
+    "Injected disk-full test is synthetic, not physical-device storage pressure",
+    "Cancellation waits for adapter current stage; no claim of instantaneous network abort",
+    "Device/manual/live/fullrelease not run"
+  ]
+}

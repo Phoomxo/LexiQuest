@@ -1,0 +1,75 @@
+[
+  {
+    "receipt": "G7.6-flutter",
+    "exactDartImportAndPubspecInputs": 374,
+    "changed": [],
+    "scope": "Own-package import/export/part closure; dynamic historical manifest immutable checksum exercised by review test, no blanket verifier equality"
+  },
+  {
+    "receipt": "G7.7-architecture-green",
+    "exactDartImportAndPubspecInputs": 133,
+    "changed": [],
+    "scope": "Own-package import/export/part closure; dynamic historical manifest immutable checksum exercised by review test, no blanket verifier equality"
+  },
+  {
+    "receipt": "G7.6-ai-green",
+    "checkedInputs": 22,
+    "changed": [],
+    "scope": "backend/ai_api/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.6-voice",
+    "checkedInputs": 29,
+    "changed": [],
+    "scope": "backend/voice_api/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.6-lm",
+    "checkedInputs": 35,
+    "changed": [],
+    "scope": "backend/lexiquest_lm/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.6-flutter",
+    "checkedInputs": 618,
+    "changed": [],
+    "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.7-bundle",
+    "checkedInputs": 618,
+    "changed": [],
+    "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.7-architecture-green",
+    "checkedInputs": 618,
+    "changed": [],
+    "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+  },
+  {
+    "receipt": "G7.7-tooling-green",
+    "conservativeClosureDeltas": [
+      "test/architecture/final_8_44_test_plan_review_contract_test.dart",
+      "tool/cli/tests/release-profile.tests.ps1",
+      "tool/cli/tests/verify-field-package.tests.ps1",
+      "tool/final_test_plan/generate_final_test_plan.dart"
+    ],
+    "disposition": "Later generator/review tests do not execute in these CLI fixtures; profile vector and package verifier test changes retested in native-config receipt. Selected command functions and production helper unchanged."
+  },
+  {
+    "receipt": "G7.7-native-config",
+    "conservativeClosureDeltas": [],
+    "disposition": "Later generator/review tests do not execute in these CLI fixtures; profile vector and package verifier test changes retested in native-config receipt. Selected command functions and production helper unchanged."
+  },
+  {
+    "bundle": "B15",
+    "inheritedArtifacts": 106,
+    "changed": []
+  },
+  {
+    "bundle": "B16",
+    "inheritedArtifacts": 115,
+    "changed": []
+  }
+]

@@ -1,0 +1,2 @@
+# Preserve generated schema bytes pinned by the binary smoke receipt.
+*.json -text whitespace=cr-at-eol

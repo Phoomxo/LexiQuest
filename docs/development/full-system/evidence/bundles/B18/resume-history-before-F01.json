@@ -1,0 +1,36 @@
+{
+  "bundleId": "B18",
+  "threadId": "01a0b9b3-8fc2-7882-9aaa-c6fd5419bb14",
+  "worktree": "C:/Users/Phet/.codex/worktrees/894c/LexiQuest",
+  "branch": "lexiquest/b18-g82-rev12",
+  "sliceId": "B18-G82-REV-12",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "currentPackageId": "G8.3",
+  "applicationSourceChanged": false,
+  "writerReleased": false,
+  "G82Accepted": true,
+  "G83Started": false,
+  "B19Dispatched": false,
+  "historyPath": "resume-history-before-REV12.json",
+  "nextWork": [
+    "Commit G8.2 acceptance and release writer with exact source SHA; dispatch exactly one fresh G8.3/F01.",
+    "F01 owns9 IDs in G8.3-owner-plan.json; all69 findings remain open. Reproduce/fix/regression, do not claim completion from group assignment.",
+    "Read real verify-scope options first. Until F06 fixes cache closure/drift, use fresh bounded evidence and independently pin actual inputs; do not trust stale reuse. No runtime/provider/device/research/release PASS from this review."
+  ],
+  "evidence": [
+    "REV-12-zone-review.json",
+    "REV-12-tooling-review.json",
+    "G8.3-owner-plan.json",
+    "G8.2-review-ledger.json",
+    "defects.json",
+    "G8.2-acceptance.json",
+    "REV-12-integrity.json",
+    "REV-12-cross-zone-reconciliation.json"
+  ],
+  "authorization": "Continuous through B20/G8.9; no repeat approval needed. One writer, no subagents/background implementation, no prohibited workflow, no deployment/spending/live/research activation. Policies remain inherited in G8.1-acceptance.json and latest external schema2 controls.",
+  "toolingCaution": "Do not rerun historical B18 evidence writers. Final gate uses exact checkpoint preservation checks.",
+  "runtimeEvidence": "No B18 runtime tests yet. Device/human/live/installedflags/fullrelease NOT RUN. Existing gate evidence has its original scoped interpretation only.",
+  "continuationPolicy": "Latest 2026-09-19 instruction authorizes each released successor to dispatch exactly the next slice; overrides master-only dispatch wording without modifying frozen policy bytes.",
+  "recoverySincePreviousCheckpoint": "2052 proven EOL-only raw restorations;3610inventory/39handoff/3policy equality; nonexistent guessed brief path corrected by rg discovery; no command retried blindly."
+}

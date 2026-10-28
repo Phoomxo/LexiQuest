@@ -1,0 +1,7 @@
+{
+  "base": "a01512ad",
+  "files": {
+    "lib/screens/learning_history_screen.dart": "738810631d85ce3ff79c0f248601d2acf8515aa02279fe27aff9d3ce546fbcbe",
+    "test/screens/learning_history_screen_test.dart": "7ca664c613a5ea9d5485f4e169f0caf846c1bf61dfb68a9accf193bbdc0a3771"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0bf9c-3cc6-7a91-8355-6b857c613a75",
+  "phase": "V1-R1",
+  "status": "diagnostic-complete",
+  "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
+  "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
+  "branch": "feature/ari-app-server-probe",
+  "worktree": "C:/Users/Phet/.codex/worktrees/2b4a/LexiQuest",
+  "report": "V1-R1.md",
+  "evidence": "V1-R1-evidence.json",
+  "binaryEvidence": "V1-R1-binary-smoke.json",
+  "writerReleased": true,
+  "fakeTests": {
+    "status": "PASS",
+    "count": 17
+  },
+  "realBinary": {
+    "status": "PASS_UNAUTHENTICATED_ONLY",
+    "version": "0.146.0",
+    "login": "NOT_RUN",
+    "inference": "NOT_RUN",
+    "cancelLogin": "NOT_RUN",
+    "remoteRevoke": "NOT_RUN"
+  },
+  "v2Gate": {
+    "decision": "NOT_MET",
+    "reason": "Local stdio capability confirmed; hosted route/entitlement/quota-only/revoke prerequisites still unconfirmed",
+    "beforeV2": [
+      "Supported backend-hosted per-user distribution and credential lifecycle for intended Free Thailand users",
+      "Supported quota-only exhaustion behavior without billing/fallback and host infrastructure ownership",
+      "Supported provider revoke plus local deletion semantics",
+      "Device-code beta/security-setting UX compatibility decision"
+    ],
+    "laterLiveTestInputs": [
+      "Explicitly authorized Free Thailand account",
+      "Mobile/browser test device and consent for authenticated test"
+    ],
+    "doNotRequire": "Do not demand successful V2 live acceptance tests before creating a gated prototype; separate route evidence from later T01-T08 execution"
+  },
+  "integrationPoints": [
+    {
+      "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+      "symbol": "AiTutorGateway.generateTutorReply / AiCancellation",
+      "limitation": "BYOK-key contract; no managed ChatGPT session provider"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "symbol": "AiTutorUseCases",
+      "futureWork": "Map authenticated backend session, owner binding and lifecycle to reply/cancellation only after gate"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+      "symbol": "AiTutorGatewayFactory",
+      "limitation": "Existing provider enum and BYOK gateways remain unchanged"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/app.py",
+      "symbol": "POST /v1/content",
+      "limitation": "Content generation; no managed-account tutor streaming route"
+    }
+  ],
+  "unchanged": [
+    "lib",
+    "backend",
+    "production API/schema/provider gates",
+    "docs/development/ari/evidence"
+  ],
+  "notRun": {
+    "V2": "NOT_RUN",
+    "T01-T08": "NOT_RUN",
+    "pilot": "NOT_RUN 0/5",
+    "E7": "UNCHANGED_NOT_CLOSED"
+  },
+  "nextPhase": null,
+  "successor": null,
+  "nextAction": "Use this tested diagnostic and exact prerequisites for a route decision; no duplicate documentation task and no V2 dispatch while NOT_MET. Authorized useful V1 coding/checks are complete.",
+  "policy": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "speed": "Standard/default requested; effective tier not observable",
+    "subagents": false,
+    "writerCount": 1,
+    "recovery": "Stop failed methods, diagnose/correct/retest and continue authorized scope. Repeated errors alone never authorize ending the task; no skipped defects or weakened assertions."
+  }
+}

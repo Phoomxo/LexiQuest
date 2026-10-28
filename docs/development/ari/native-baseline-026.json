@@ -1,0 +1,22 @@
+{
+  "status": "PARTIAL_NATIVE_BASELINE_ONLY",
+  "source": "d527c531adf55d5d79299dc2ffc2228394b90e7d",
+  "apk": "build/ari-assistance-025.apk",
+  "apkSha256": "fcd9045ebd78b90b66786d4530f330aedfe3df1b46c1a9d73a4f438cb36da747",
+  "package": "com.lexiquest.app.ariTest",
+  "evidence": "device-observations.jsonl",
+  "provider": "Disconnected; no bridge started in this batch",
+  "observed": [
+    "Quest daily-correct-5-v1 completed 5/5; details show conditional 50 XP explicitly not earned balance.",
+    "Shop level4 lifetime XP75, next level5XP, coins15 and 2 transactions. Tap ocean theme buy price80 returned to top with unchanged displayed balance. Error toast and persisted ownership still require verification.",
+    "Export CSV to Anki selection worked; unrelated dataset checkboxes disappeared, create/save remained. No file export performed in this batch.",
+    "Offline voice-installation-check revision1 transitioned not-downloaded -> ready 3.0KB after download -> not-downloaded after deleting only the just-downloaded fixture. Existing ready 5.7KB item preserved.",
+    "USB stay-awake setting remains2."
+  ],
+  "reviewCandidates": [
+    "Quest/offline accessibility trees say collapse when details hidden, expand when visible; investigate Flutter localization/semantics before classifying defect.",
+    "Insufficient-coins purchase resets scroll; verify error visibility/accessibility and no ownership mutation."
+  ],
+  "limits": "No live-provider acceptance for019-025; no whole-workflow or whole-project review completion. All14 groups/modes remain open.",
+  "next": "Live-provider context checks against mounted native values; missing mode/workflow acceptance; then authorized whole-project review plan."
+}

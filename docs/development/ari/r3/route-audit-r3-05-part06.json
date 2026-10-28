@@ -1,0 +1,63 @@
+{
+  "taskId": "01a0cfb2-6a0a-7940-9f53-c0aaaef50aa4",
+  "atUtc": "2026-09-23T19:33:33.782360+00:00",
+  "sourceFingerprint": "b6ade277692668fba6de65f332fc9a5c1dc0f949ec786ad84214c639cb88a0c7",
+  "sourceManifest": "source-manifest-r3-05-part06.json",
+  "productSourceChanged": [
+    "lib/screens/categories_page.dart",
+    "lib/screens/add_multiple_words_screen.dart"
+  ],
+  "wholeScopeComplete": false,
+  "assertions": [
+    {
+      "id": "A18",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Four file-backed tests: category/import x reconcile-before-restart/restart-while-unknown",
+        "Single mutation despite fresh request IDs after throw/missing/mismatch; category revision mismatch and import counts mismatch remain unknown",
+        "Disconnect/foreign-owner action suppression/reconnect; optional fill busy and native fields/save disabled during unresolved outcome",
+        "Exact original record/result identity after recovery; survivor categories and all categories/words/imports/row-results/outbox match after DB reopen as applicable",
+        "Existing successful category receipt and manual form behavior assertions unchanged"
+      ],
+      "evidence": "category-import-readback-r3-05-part06.json",
+      "limits": [
+        "No durable provider request-ID or process-death reconciliation protocol claim; restart tests verify database integrity only",
+        "Exceptions inside mutation methods or their post-mutation notifier before returning success remain unaudited; not certified",
+        "Native exercised ordinary create/import baseline; injected verification faults are host-only",
+        "Actual provider/foreign-owner-native/other route lifecycle combinations remain pending; no whole W03/R3-05 completion"
+      ]
+    },
+    {
+      "id": "A19",
+      "groups": [
+        "W03"
+      ],
+      "proven": [
+        "Fresh main/WAL/SHM backup before install; aapt package checked, installed hash matches",
+        "Create R305Part06 category; native category draft preserved on AI expand/collapse while unpaired",
+        "Import r306import,book,noun twice plus invalid,,noun: native result 1 accepted/1duplicate/1rejected; exact multiline draft survives AI expand/collapse",
+        "Force-stop/relaunch; revisit category shows r306import/book/noun",
+        "58 tables compared by actual PK: category+1 word+1 revision1 import+1 rows+3 outbox+2upserts; original vocabulary/import/outbox rows preserved; owner/answer/session/AIusage unchanged",
+        "Runtime/content timestamps and quest refresh separately recorded",
+        "Fresh main/WAL/SHM restored byte-exact and isolated app force-stopped"
+      ],
+      "evidence": "native-category-import-r3-05-part06.json",
+      "limits": [
+        "No durable provider request-ID or process-death reconciliation protocol claim; restart tests verify database integrity only",
+        "Exceptions inside mutation methods or their post-mutation notifier before returning success remain unaudited; not certified",
+        "Native exercised ordinary create/import baseline; injected verification faults are host-only",
+        "Actual provider/foreign-owner-native/other route lifecycle combinations remain pending; no whole W03/R3-05 completion"
+      ]
+    }
+  ],
+  "nextByGroup": {
+    "W01": "Connection/reauth/lifecycle and lease/restart route combinations; unpaired alone does not close these.",
+    "W02": "Questionnaire/main/drawer combinations and explicit applicability/fixture for absent account controls; reuse settings evidence where source closure unchanged.",
+    "W03": "Create/edit/delete/category/import post-success verification now bounded-proven. NEXT inspect real mutation-return and onLocalMutation notifier boundaries (vocabulary_use_cases.dart createCategory/createWord/updateWord/deleteWord; import_vocabulary.dart call) before claiming outcome certainty. Reproduce with actual SQLite before fixing; preserve manual behavior and read-only reconciliation. Then route-level owner/connection/lifecycle completeness. No reproduced unresolved defect currently; these are static candidates.",
+    "W04": "Reuse Python26+4 applicability; native/provider lifecycle still unpaired."
+  },
+  "remainingScope": "Preserve215rows,4passed,211remainingIDs. W05-W14 and all14nested modes remain after actionable W01-W04.",
+  "localReview": "Coordinator reviewed source diff, exact pending identity, mutation vs verification revision guards, owner admission, disabled native controls, existing successful-form semantics; no subagents."
+}

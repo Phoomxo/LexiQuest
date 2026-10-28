@@ -1,0 +1,30 @@
+{
+  "checkpoint": "058",
+  "defect": "FLASHCARD-PROGRESS-057",
+  "status": "FIXED_HOST_AND_NATIVE_RETEST",
+  "rootCause": "Native flashcard controller persisted evidence without reflecting acknowledged counts into shared lesson controller; shared UI/MCP progress stayed zero.",
+  "fix": "Monotonic count set only after evidence acknowledgement; native listener reflects count through existing read-only lifecycle bridge. No second write.",
+  "host": {
+    "selection": "Full srs_flashcards_screen_test.dart",
+    "tests": 26,
+    "red": "3 connection variants expected committed1 but got0",
+    "green": [
+      "Absent/connected/disconnected reveal updates shared count1 and progress1 while keeping exposure/SRS assertions",
+      "Both self-rating failure/retry variants stay0 on failure and become1 after success; frozen evidence identity preserved"
+    ],
+    "receipt": "evidence/flashcard-progress-058/host-receipt.json"
+  },
+  "analysis": "No issues found for3 changed files",
+  "native": [
+    "APK058 build/install success",
+    "10-card start correctly reported shortage after earlier self-ratings; changed canonical prestart count to2",
+    "Two-card review shows0 then50 after first exposure and100 after second;Continue returns home"
+  ],
+  "evidence": "evidence/flashcard-progress-058/observations.json",
+  "pins": "evidence/flashcard-progress-058/source-pins.json",
+  "limitations": [
+    "This native retest was disconnected; live provider not rerun on058",
+    "No new native DB snapshot; host checks durable writes",
+    "Remaining all-mode/workflow acceptance stays open"
+  ]
+}

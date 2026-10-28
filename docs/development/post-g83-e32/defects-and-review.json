@@ -1,0 +1,40 @@
+{
+  "reviewType": "writer-self-review",
+  "unresolvedInScope": [],
+  "findings": [
+    {
+      "issue": "Restart accepted reordered initial session or missing wrong-choice provenance",
+      "resolution": "Validate saved member order/sense/hash before first attempt and exact reviewed alternative digest for every wrong selected attempt",
+      "verification": "Two meaningful red regressions now pass in final399"
+    },
+    {
+      "issue": "Provenance digest was treated as encoded content",
+      "resolution": "Reconstruct reviewed frozen context and compare digest; authenticate canonical replay",
+      "verification": "Real SQLite close/reopen and guided repair test passes"
+    },
+    {
+      "issue": "Research-off fixture incorrectly expected all personal outbox rows absent",
+      "resolution": "Assert research tables/events/ResearchSyncContract outbox zero; preserve ordinary personal attempt and SRS synchronization",
+      "verification": "Canonical personal evidence retained and research oracle passes"
+    },
+    {
+      "issue": "Widget fixture async load never settled",
+      "resolution": "Stop timed-out method; real runAsync waits and initialized parent authorities; full reachable navigator screenshot",
+      "verification": "320px text200 Thai widget plus three actual runtime retirement tests pass"
+    },
+    {
+      "issue": "Initial environment input drift and fixture compile/path failures",
+      "resolution": "Allow Flutter initialization, discover exact paths and constructors, correct fixtures and rerun bounded verifier",
+      "verification": "Final pre/post fingerprint identical"
+    }
+  ],
+  "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E3.2\\all-runs",
+  "baselineAnalysis": "Six identical inherited informational diagnostics; zero new infos/errors/warnings",
+  "sourceReview": [
+    "No separate SRS/scoring authority or schema migration",
+    "Inventory requires exact source and both reviewed options before/after admission",
+    "Owner generation checks span asynchronous commit and replay boundaries",
+    "Default-off runtime injection; parent feature gates and shell retirement exercised",
+    "No assets changed; generated platform EOL-only noise restored to accepted bytes"
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "taskId": "01a0d04e-41e0-7dc1-be2c-a944d2b6a910",
+  "sourceFingerprint": "1a6fb05ff4c103e1225cab065f90b12b5e58a4009d680548346ed7b909c474cc",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-455c9e25b1990a34879f3f1f93bcf679b4ce0fca7830f8902241cccf62b59607.json",
+      "sha256": "6c485b439b01f8a7d5ab1acebbdd922040877d3b94a5b94a6d27a08175bca251",
+      "passingCases": 64,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/pair_matching/pair_matching_engine_test.dart",
+            "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "00c7f58e9e94996f31d8a248e954064113a0be8c4a31af43abb5e69ce03d7d92"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "00c7f58e9e94996f31d8a248e954064113a0be8c4a31af43abb5e69ce03d7d92",
+          "fingerprint": "0c4bca8b4a70cacda5461663e0ae9b6bb780331ad6bcefd6e18c019e02e20671",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T22:35:35.3182917+00:00",
+          "FinishedAt": "2026-09-23T22:36:35.7226589+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\00c7f58e9e94-0c4bca8b4a70-e5fa1efb\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\00c7f58e9e94-0c4bca8b4a70-e5fa1efb\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "0c4bca8b4a70cacda5461663e0ae9b6bb780331ad6bcefd6e18c019e02e20671",
+          "StdoutHash": "85BB56693682481DA5B18829F062DEA6BB373D9069CECAC88B2A5480AA8B84F0",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "932292c0e2c0288f09a7470d649daf71a362f78bad99dedeadae8d318a5a1bcf",
+      "closurePins": 1536,
+      "currentClosureMismatches": []
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-119472d59c20a72496783bb7f6d7251fd778b26b1cf267e3b6ec7a4abb976976.json",
+      "sha256": "def27911dbe5fa924cc1ce9876815cac4eb7311b1f4754b582fbf76232d183af",
+      "passingCases": 65,
+      "status": "Passed",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/history/learning_history_reader_test.dart",
+            "test/features/history/learning_history_replay_test.dart",
+            "test/screens/learning_history_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "d63237078e84d3c95af287b7d9fb9bcbb783181fefa5bd670a273df349a0c35c"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "d63237078e84d3c95af287b7d9fb9bcbb783181fefa5bd670a273df349a0c35c",
+          "fingerprint": "0c4bca8b4a70cacda5461663e0ae9b6bb780331ad6bcefd6e18c019e02e20671",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T22:37:07.3947732+00:00",
+          "FinishedAt": "2026-09-23T22:37:27.7141659+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\d63237078e84-0c4bca8b4a70-c0a7f0b0\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\d63237078e84-0c4bca8b4a70-c0a7f0b0\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "0c4bca8b4a70cacda5461663e0ae9b6bb780331ad6bcefd6e18c019e02e20671",
+          "StdoutHash": "B98C959613C1535138618CA0385AD5F69BEF4A6C0B9F0E47B7B0456DC5FAB197",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "environmentFingerprint": "932292c0e2c0288f09a7470d649daf71a362f78bad99dedeadae8d318a5a1bcf",
+      "closurePins": 1536,
+      "currentClosureMismatches": []
+    }
+  ],
+  "uniquePassingCases": 129,
+  "newPassingCases": 6,
+  "revalidatedCases": 123,
+  "productSourceChanged": [
+    "lib/features/history/data/drift_learning_history_reader.dart",
+    "lib/features/learning/pair_matching/domain/pair_matching_engine.dart"
+  ],
+  "testSourceChanged": [
+    "test/features/history/learning_history_reader_test.dart",
+    "test/features/learning/pair_matching/pair_matching_engine_test.dart",
+    "test/features/learning/pair_matching/pair_matching_experience_host_test.dart"
+  ],
+  "analysis": {
+    "part15-analysis.log": "d07874b03cee3d43a20112202fc3919954a0c383245a0dac0fd91682175c497d",
+    "part15-pair-analysis.log": "2d009432517afc4832cb068acd22652b094ca3b214fc3474561f92090592ddfa"
+  },
+  "limits": [
+    "129 unique current full-file tests across five files; six new regression cases. Earlier 66 history/probe result overlaps and is not additive. Native fixture probe is diagnostic only, preserved outside test directory.",
+    "Native four fresh-backup cycles on isolated Ari package only. Final native completed wrong/repair/support and result-button replay; no active-board process-death, History-origin replay, native cap boundary, provider/account matrix or endurance certification.",
+    "Part14 receipts may now have changed reachable inputs: inspect exact closure before reusing. No blind carry-forward of179 as current.",
+    "All215 criteria retain4passed/211remaining; all14 workflow/mode acceptance OPEN. Camera ground truth, actual scanner accept/file SQLite, reward file durability, hosted sync and broader native matrix remain."
+  ],
+  "ownedJobs": []
+}

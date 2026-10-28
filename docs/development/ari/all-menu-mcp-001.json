@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "status": "DEBUG_MENU_INTEGRATION_ACCEPTED_NOT_WHOLE_APP_RELEASE",
+  "baseCommit": "503864cac44d7ebeaffa101a79a82c324d820f9e",
+  "apkSha256": "4bfc126357324a47cf3eeb535c6f9b4b50395e287835ff08a7a6fd512a30633d",
+  "apk": "build/ari-all-menu.apk",
+  "native": {
+    "device": "Vivo V2041",
+    "package": "com.lexiquest.app.ariTest",
+    "passed": [
+      "Cached browser account login without touching original sessions",
+      "Live provider lists real application actions",
+      "MCP opens drawer then settings with actual native route change",
+      "Same conversation changes theme-light; native selected state verified",
+      "Same conversation restores theme-system then navigation/back then home/vocabulary; native selected tab verified",
+      "Chat remains alive through route changes and display preference writes"
+    ],
+    "failureAndRecovery": [
+      "Initial execute_menu_action was rejected before reaching the mailbox: diagnostic adapter rejects approval requests. Applied documented per-tool approval_mode=approve only for this explicitly authorized local tool, in isolated config; reconnected and original prompt passed. All other tools/approval categories unchanged.",
+      "Old revision rejected during follow-up; model refreshed list and invoked current action. No fabricated success."
+    ],
+    "inputLanguage": "English via native ADB input; Thai responses. Native Thai text input not certified.",
+    "evidence": "evidence/all-menu-mcp-001/vivo-vocabulary-after-menu-tools.png",
+    "expandedRun": {
+      "apkSha256": "5a24d54f52f24223193c0c3dc5d59f8d5c808f1b9db766f9f009b14f544c7fe9",
+      "passed": [
+        "Fresh factory-generated MCP per-tool approval configuration; cached browser login without original account logout",
+        "Prompt opened profile, expanded details and read all six actual profile metrics through MCP",
+        "Follow-up opened learning then offscreen dictation configuration without manual app navigation",
+        "Cancelled pending go-back/settings turn left dictation configuration unchanged; no late reply observed",
+        "Removed only owned reverse mapping; send became offline without changing app route",
+        "Restored reverse mapping and explicitly reconnected to ready",
+        "Background transition removed this run isolated provider home"
+      ],
+      "evidence": [
+        "device-observations.jsonl",
+        "evidence/all-menu-mcp-001/vivo-dictation-from-chat.png"
+      ]
+    },
+    "finalRun": {
+      "apkSha256": "eece7ee7187b28fa8c2eda57b9973cf34f054e017f518b43d877737e7207c782",
+      "passed": [
+        "Installed final runtime including reconnect receipt reset and corrected data-use copy",
+        "Fresh cached browser login and chat connection succeeded",
+        "Prompt opened Today then actual learning history; history finished loading with existing records",
+        "Native receipts show list_menu_actions and execute_menu_action invoked",
+        "Disconnected and reconnected conversation; new prompt read current context and correctly answered Learning History",
+        "Background transition removed owned ephemeral provider session"
+      ],
+      "evidence": [
+        "device-observations.jsonl",
+        "evidence/all-menu-mcp-001/vivo-history-final.png"
+      ],
+      "note": "Native representatives do not claim that all 64 entries were individually exercised by a live model; complete callback/context coverage is in Flutter fixtures."
+    }
+  },
+  "verification": {
+    "python": {
+      "passed": 42,
+      "command": "python -m unittest discover -s tool/experiments/ari_app_server -p 'test_*.py'"
+    },
+    "flutterReceipts": [
+      "targeted-ai-9dfc61ac3b30d13c79842a64a308687c651dac4bfed26292dc63ddaee5fe1856.json",
+      "targeted-ai-f57c0fc6120cca96a0a8558447a0794f93dda742302dae94eb8404d774e43efb.json",
+      "targeted-ai-e65741052567f73473f3e4e7fb2e88dede2e61ee4357a27442c0e3f99e143449.json",
+      "targeted-ai-1404c489144e1a94deedaa5c86dab1990b491b62038884a5bb16dfbaa2d56c5c.json",
+      "targeted-ai-9f153ca9859c87b09a8d9fc16dccd8eead2bd9cced6e0223555c2462a0bfd462.json",
+      "targeted-ai-d815ec15d5b31ada65acd086c44f1912473ccd03b88df9478112187814d112cd.json"
+    ],
+    "note": "Receipts are incremental and overlap; do not sum. Python 42 passed on final runtime source. CRLF-aware git diff --check passed.",
+    "focusedAnalyze": "NO_ISSUES on final modified Dart runtime/tests; final extra route assertions also compiled and passed",
+    "androidBuild": "PASS",
+    "flutterRegression": {
+      "initialRun": {
+        "passed": 285,
+        "failed": 2,
+        "log": "6c9a2cbf4e56-e1628da4226c-b2fd8b23/Explicit-Flutter-tests.stdout.log"
+      },
+      "recovery": {
+        "passed": 44,
+        "receipt": "targeted-ai-6feddb3ffd30d2063ad1974162da345c6ac132a46c685a3d71d37df5667d48cd.json",
+        "cause": "Mounted offscreen controls changed fixture assumptions: require hit-testable profile button and scope duplicate shadowing label to Drawer. Original route, retained state and semantics assertions preserved."
+      },
+      "latestSettingsAndComposedMenus": "targeted-ai-3661a60e88f0a13abd4cab77497871de3fddf1c5b25f731817fcd93de3a69c8d.json",
+      "uniqueSelectedTests": 287,
+      "note": "Not 287 passes from one clean run: 285 passed initially; the affected 44-test file passed after correcting two fixture locators; expanded settings/composed traversal passed separately. No skips."
+    },
+    "finalManagedRegression": {
+      "passed": 63,
+      "receipt": "targeted-ai-44037dbdc5bac06998c2c7ecbd8836293d929723475ce3808e70374a927c47c7.json",
+      "includes": "Actual composed 32 destinations, extra plan/personal-set/profile/mastery routes, registry/route context, HTTP callback delivery, cancellation/disconnect/dispose races and old-receipt clearing"
+    },
+    "extraRouteReceipt": "targeted-ai-4799e94f0b98ab5130adaaf1015a74372a02ef31d937f49a88f35f7f935b95c5.json"
+  },
+  "remaining": [],
+  "officialPermissionReference": "https://learn.chatgpt.com/docs/config-file/config-reference",
+  "latestApk": {
+    "path": "build/ari-all-menu-release-check.apk",
+    "sha256": "eece7ee7187b28fa8c2eda57b9973cf34f054e017f518b43d877737e7207c782",
+    "nativeStatus": "INSTALL_LOGIN_MCP_NAVIGATION_RECONNECT_CONTEXT_PASS",
+    "installedPackage": "com.lexiquest.app.ariTest"
+  },
+  "defects": [
+    {
+      "id": "MENU-01",
+      "cause": "Provider requested approval for the write-annotated tool before app delivery",
+      "fix": "Only owned execute_menu_action configured approval_mode=approve under explicit user authorization; all other approval categories unchanged",
+      "evidence": "Fresh generated configuration accepted native profile, dictation and final Today/history journeys without manually modifying the isolated config"
+    },
+    {
+      "id": "MENU-02",
+      "cause": "Navigation futures finish on route pop, leaving MCP waiting while the next page is open",
+      "fix": "Dispatch acknowledgment with separately retained late-failure receipt; never equate invocation with completed learning or persistence",
+      "evidence": "Regression timeout reproduced then passed; 32 composed destinations invoke without route-close deadlock"
+    },
+    {
+      "id": "MENU-03",
+      "cause": "Lazy finite menu sections below viewport were not mounted and unavailable to MCP",
+      "fix": "Eager finite menu sections; data lists remain virtualized",
+      "evidence": "Missing associative-reading and Today actions reproduced; all 15 learning entries and all 5 Today callbacks now covered without scrolling"
+    },
+    {
+      "id": "MENU-04",
+      "cause": "Closed drawer duplicate registration could shadow an active main tab",
+      "fix": "Choose newest currently available binding; unmounted/disabled/covered controls remain unavailable",
+      "evidence": "Registry duplicate-availability regression passed"
+    },
+    {
+      "id": "MENU-05",
+      "cause": "Menu receipts survived explicit reconnect/disconnect and could exhaust the finite replay window across conversations",
+      "fix": "Transport session boundaries invalidate receipt epoch and revision while preserving current-owner live context; disposal releases registry reference",
+      "evidence": "Disconnect test reproduced retained receipt then passed; final managed 63 passed; native reconnect read current history context correctly"
+    }
+  ],
+  "coverage": {
+    "baselineCount": 64,
+    "actions": 48,
+    "readOnlyContexts": 15,
+    "manualOnly": 1,
+    "rows": [
+      {
+        "id": "home/learn",
+        "group": "mainDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/vocabulary",
+        "group": "mainDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/mastery",
+        "group": "mainDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/achievements",
+        "group": "mainDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/profile",
+        "group": "mainDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/today",
+        "group": "secondaryDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/study-planning",
+        "group": "secondaryDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/weakness",
+        "group": "secondaryDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/rewards/shop",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/practice/object-scanner",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/practice/shadowing",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/learning/ghost-duel",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/ai-tutor/chat",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/ai-tutor/settings",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/export/center",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/rewards/quests",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "drawer/settings",
+        "group": "drawerDestinationIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/today-experience",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/associative-reading",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/typed-recall",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/matching",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/cloze",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/definition",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/srs",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/handwriting-scratchpad",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/reading/cefr",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/dictation",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/sentence-scramble",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/quiz/word-scramble",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/speech/speaking",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "home/learn/speech/shadowing",
+        "group": "learningModeIds",
+        "kind": "action",
+        "evidence": "composed app callback and resulting route/tab/configuration surface"
+      },
+      {
+        "id": "today-hub-resume-action",
+        "group": "todayActionIds",
+        "kind": "action",
+        "evidence": "actual Today widget callback with exact snapshot payload; unavailable dependencies remain gated"
+      },
+      {
+        "id": "today-hub-start-recommendation",
+        "group": "todayActionIds",
+        "kind": "action",
+        "evidence": "actual Today widget callback with exact snapshot payload; unavailable dependencies remain gated"
+      },
+      {
+        "id": "today-hub-assessment-action",
+        "group": "todayActionIds",
+        "kind": "action",
+        "evidence": "actual Today widget callback with exact snapshot payload; unavailable dependencies remain gated"
+      },
+      {
+        "id": "today-hub-open-review",
+        "group": "todayActionIds",
+        "kind": "action",
+        "evidence": "actual Today widget callback with exact snapshot payload; unavailable dependencies remain gated"
+      },
+      {
+        "id": "today-hub-open-history",
+        "group": "todayActionIds",
+        "kind": "action",
+        "evidence": "actual Today widget callback with exact snapshot payload; unavailable dependencies remain gated"
+      },
+      {
+        "id": "study-planning/open-catalog",
+        "group": "studyPlanningActionIds",
+        "kind": "action",
+        "evidence": "real planning control opens exact destination widget"
+      },
+      {
+        "id": "study-planning/open-goals",
+        "group": "studyPlanningActionIds",
+        "kind": "action",
+        "evidence": "real planning control opens exact destination widget"
+      },
+      {
+        "id": "study-planning/open-learning-preferences",
+        "group": "studyPlanningActionIds",
+        "kind": "action",
+        "evidence": "real planning control opens exact destination widget"
+      },
+      {
+        "id": "settings/display",
+        "group": "settingsActionIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "theme-system",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "theme-light",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "theme-dark",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "reduced-motion-switch",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "settings/account",
+        "group": "settingsActionIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "settings/offline-content",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "settings/research-consent",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "settings/cloud-status",
+        "group": "settingsActionIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "settings/change-password",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "settings/logout",
+        "group": "settingsActionIds",
+        "kind": "manual_only",
+        "evidence": "not advertised to MCP, preserving explicit user instruction to retain account session"
+      },
+      {
+        "id": "erase-local-data",
+        "group": "settingsActionIds",
+        "kind": "action",
+        "evidence": "real settings callback; persisted theme/motion or opened existing dialog only; confirmation excluded"
+      },
+      {
+        "id": "profile/mastery",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "profile/srs",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "profile/effort",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "profile/accuracy",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "profile/weakness",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "profile/engagement",
+        "group": "profileAxisIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "home/today/review",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "home/today/history",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "research/assessment",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "study-planning/catalog",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "study-planning/goals",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      },
+      {
+        "id": "study-planning/learning-preferences",
+        "group": "hubChildRouteIds",
+        "kind": "read_only_context",
+        "evidence": "explicit bounded context widget/observer test; no arbitrary account fields or route arguments"
+      }
+    ],
+    "limits": [
+      "Route/configuration opening does not certify every lesson answer, CRUD form, sensor or external service.",
+      "Research activation and actual account/password/destructive confirmations are not automated.",
+      "Guest/disabled/unavailable capabilities stay unavailable; tests do not bypass application gates.",
+      "Device distribution still requires the debug USB bridge; not standalone production deployment."
+    ],
+    "extraActions": [
+      "navigation/back",
+      "navigation/open-menu",
+      "profile/show-learning-details",
+      "profile-open-mastery",
+      "mastery-open-review",
+      "study-planning/open-plan",
+      "study-planning/open-personal-sets"
+    ]
+  },
+  "acceptedScope": "64 registered navigation/menu entries classified and connected, plus seven explicit extra controls; actual callbacks, read-only context, real stdio MCP and global debug-app chat. All original feature/account/data gates retained.",
+  "notCertified": [
+    "Standalone production mobile backend/distribution; debug USB bridge is required",
+    "Every answer, CRUD form, sensor, external service and all full-system endurance/usability criteria; retain existing autonomous ledger",
+    "Native Thai keyboard entry (English test prompts, Thai replies; Thai transport covered by fixtures)",
+    "Production research activation, live account changes, destructive confirmation and release deployment"
+  ],
+  "cleanup": {
+    "originalApp": "com.lexiquest.app versionCode 23 unchanged",
+    "originalBrowserAndChatGptAccounts": "not logged out",
+    "installedTestApp": "final isolated APK remains installed; bridge stopped, not a persistent service",
+    "providerSession": "Current run ephemeral directory removed on background; older unrelated directory dated 00:49 left untouched",
+    "capabilityFile": "absent after app read",
+    "usbReverse8765": "removed",
+    "listener8765": "none",
+    "stayAwake": "restored to 0",
+    "backgroundWorkers": "none created or left by this slice"
+  },
+  "sourceManifest": "evidence/all-menu-mcp-001/source-manifest.json"
+}

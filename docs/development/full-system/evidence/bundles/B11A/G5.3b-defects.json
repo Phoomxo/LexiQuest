@@ -1,0 +1,53 @@
+[
+  {
+    "id": "B11A-D01",
+    "status": "fixed",
+    "expected": "Photo-specific CC BY page parsed",
+    "actual": "Real Flickr pages rejected",
+    "cause": "ImageObject nested in JSON-LD @graph; initial parser supported only top-level objects",
+    "fix": "Read @graph without relaxing matching photo/CC BY requirement; preserve cached pages and failed acquisition logs",
+    "retest": [
+      "G5.3b-graph-red.log",
+      "G5.3b-graph-green.log",
+      "G5.3b-regressions.log"
+    ]
+  },
+  {
+    "id": "B11A-D02",
+    "status": "fixed",
+    "expected": "Validator rechecks actual rights content",
+    "actual": "Hash-only rights evidence could contain unrelated license",
+    "cause": "Missing validator call to owner_license",
+    "fix": "Reparse pinned evidence during dataset validation",
+    "retest": [
+      "G5.3b-validator-red.log",
+      "G5.3b-validator-green.log"
+    ]
+  },
+  {
+    "id": "B11A-ACCESS",
+    "status": "source-excluded",
+    "expected": "Use accessible appropriately licensed sources",
+    "actual": "BigC403; some Flickr404 or image403",
+    "cause": "External availability/access restrictions",
+    "fix": "No bypass; per-image exclusion with alternative licensed images; raw requests.jsonl retained"
+  },
+  {
+    "id": "B11A-PATH",
+    "status": "corrected-method",
+    "actual": "rg with wildcard Windows path returned os error123",
+    "fix": "Use rg --files -g discovery and literal paths; no repeat"
+  },
+  {
+    "id": "B11A-D03",
+    "status": "fixed",
+    "expected": "Acquisition order independent of development split",
+    "actual": "Initial acquired subset all validation",
+    "cause": "Shared seed:id hash for acquisition ordering and split threshold",
+    "fix": "Use split-v1 namespace with unchanged seed20260914; no model metrics examined",
+    "retest": [
+      "G5.3b-split-red.log",
+      "G5.3b-split-green.log"
+    ]
+  }
+]

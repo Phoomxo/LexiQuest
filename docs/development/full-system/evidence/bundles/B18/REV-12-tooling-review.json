@@ -1,0 +1,455 @@
+{
+  "inputCheckpointSha": "1cbda74cea099bafad9776e722accb8227e76715",
+  "reviewedAtUtc": "2026-09-19T12:55:34.373029+00:00",
+  "artifacts": [
+    {
+      "path": "docs/development/2026-09-13-rule-supersession-register.md",
+      "sha256": "521bcb926cc05e43253f4a2f704d1a12851a334c0b00e3bd5945621ef9e739ea",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Preserved policy amendment with hash-pinned authority"
+    },
+    {
+      "path": "docs/development/full-system-active-index.md",
+      "sha256": "7986d13f32a4e4d58b126068b5604c15cd81314c6b9889b5cf5f7e4801a562db",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Preserved policy amendment with hash-pinned authority"
+    },
+    {
+      "path": "docs/development/full-system-package-workflow.md",
+      "sha256": "6051601803a652fdd1aaaa90369ec559b9c6caaefb230eed4a3aebf368669ce3",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Preserved policy amendment with hash-pinned authority"
+    },
+    {
+      "path": "docs/development/full-system/bundles/B18.md",
+      "sha256": "7c60d3aa0b3de600143deff3cc3fe4dec1f528c766cd4b0a6a87504025309e76",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/G8.1-acceptance.json",
+      "sha256": "c40f39e4fe766c777459694e02988d4d7be03604d4d03ca7fc1b3b5011d28d37",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/G8.1-inventory.json",
+      "sha256": "5c3261b32ca54ebaee95112300b4cdae9a84f7fe97c91b8b6f1dc32a686cfce4",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/G8.2-review-ledger.json",
+      "sha256": "a9df32eaafa972c320b9c631fd9bccc639504924cafde1c214490a6368252e61",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-01-zone-review.json",
+      "sha256": "20a35b318df64c1af18a560c611ac32964be21562f152aff93da81fac9317086",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-02-zone-review.json",
+      "sha256": "651e3b07884e4655316b9d50d0d6146c16e3bd818ee3b4af2798aa2f3869cbf2",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-03-zone-review.json",
+      "sha256": "c86ece96a7b9ea6e1d72e3733bb56423cd050c990325f406eb78f4d35b8aa0e2",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-04-zone-review.json",
+      "sha256": "5e94a17158a478a126eff5d21353236ef8a810d229d581f5799e11046bab7c18",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-05-integrity.json",
+      "sha256": "51a9c95eed015e516d6156ac828072a101ce9f6d3098307c52bea56f087061a1",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-05-zone-review.json",
+      "sha256": "82e35fc26944b97a54452fb73afca67144fa8272b0af17fd8c0b7e3695447f58",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-06-integrity.json",
+      "sha256": "5632776d8eebb3cd111ca5b28f27cc0d63815ceec22c16fec5426be14216b861",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-06-zone-review.json",
+      "sha256": "b5fc288e2d9706048252f4e33b6f6f8c6d8fddfb006da6066d212037fff3aa4c",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-07-integrity.json",
+      "sha256": "70a8dfff834a99f74e78fda2bee6b2f9bc154b64f8906ec8a5088ac68ca8440d",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-07-zone-review.json",
+      "sha256": "1ff7eb54b2c352f4c2335fdfdb0a08d894d21daab284468bff8e8ed626085565",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-08-integrity.json",
+      "sha256": "7def93de454eee0092b98e1e4b700dd6f0976b5ed3528ff9e51e6ccc3da45114",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-08-zone-review.json",
+      "sha256": "f18336430364d5bcedac00211b9798ccdc49d875945b9355776f29983d2dc128",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-09-integrity.json",
+      "sha256": "e7bb4e3a1f057b6553eb97ef4ad93519202512a66a8897bbea0b3744c704f572",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-09-zone-review.json",
+      "sha256": "39fa6a7ce6f3aa008e60e53a08d50273649bde037ab1f52dc5ac411a845077c1",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-10-integrity.json",
+      "sha256": "c792da352f86dcb9e46dfafaf3e6bb1b9bfa47eed6b874775b94896a14b4f0ed",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-10-zone-review.json",
+      "sha256": "b4afef1d02faeaaf2e7b7592c61210b3317be1f8118724e67410bdf6807d474f",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-11-integrity.json",
+      "sha256": "0d62e6b2154cab77422dbce543d110f71f2ae4f9b068240c7215c606c43bc8c8",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-11-zone-review.json",
+      "sha256": "d821aa3120f04d735b6c24b2df77494630d562d2c405b5281fedcc2f13a9ebc9",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/accept_freeze.py",
+      "sha256": "a8124b0a25904ad8f8fbc469b429f570fb681a5980a9d95a8c4a25662134fb17",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Historical B17-head/prior-package/artifact/pin validator and acceptance writer. Exact old HEAD precondition; not current acceptance or runtime verifier. Do not rerun."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/checkout-byte-audit.json",
+      "sha256": "bbb67fe79c37f8f28680dbf681d9e6b4ae20b30a66c87e6af11bfcadf3af2642",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/checkpoint-integrity.json",
+      "sha256": "e6e709902c9222656547e52a37e53bc4a9340f5a9c6f39110c5d3b679524a06e",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/checkpoint_audit.py",
+      "sha256": "6512f452d7558baaea16b55c99742caf73d8337a71a26a34ad80d7dad43df3aa",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Exact3 policy allowlist/hash comparison, source status metadata and AST/untracked checks. Writes historical incomplete acceptance flags; not current gate. Do not rerun over final output."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/context-continuation-amendment.json",
+      "sha256": "d321227d8f583d3dc1b918c17cd9e50b11a588f8e9914b2883c4133099e9fc56",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/continuation-context.json",
+      "sha256": "4c2e602efee8e5419d46b938747e2ed16eba7456863a4752c256b94f79469ebe",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/defects.json",
+      "sha256": "a6e42c63aed50c2b7de852173be77381e5522816b91fc1aa29a64bcdd3a51385",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/freeze_inventory.py",
+      "sha256": "310595b8f80378915a1934e1e2f2b9c30d80be81df193cdea8586ead3f372306",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Historical EOL-only restoration and classification writer; BASE fixed, assertion equality before replace. Can overwrite inventory/audit; not resumable current verifier. Do not rerun."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/generated-drift-structural-review.json",
+      "sha256": "b684bf2a517bcd842ec6fbd2fc949cef1fc761f46b25a671ed6ee29877309de3",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/merge_review_observations.py",
+      "sha256": "fbd92392c779d58cfdd044f97fd15452f1f03ae3485aae9222ac38c60558ab95",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Rejects duplicate paths/hash drift/empty notes and completed-row replacement, writes temp replace. Historical findings merge; a full-range annotation means recorded observation, not proof tool performed semantic read. Do not rerun."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/record_review.py",
+      "sha256": "8c84eaa8346644924ee74282e8cd9d084fa14a2296d56dc5484c88b338b8afbb",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Initial explicit-note writer can reset statuses and findings if rerun; no completed-state guard. Historical only. Current ledger/receipts authoritative, never rerun."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/recovery-policy-delta.json",
+      "sha256": "d37f0f210ba139bd131c10a92adbecdaa227ae4102026ff68fcfb2ef6112fbde",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV05.json",
+      "sha256": "25fa3dbc6cb0cac95d4c246d835a742b8acf3cb4593d66eeee6ec50e11bb146c",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV06.json",
+      "sha256": "399052e56176d7bc9d3766aa84bd9d92a9a261bf6bcad1866900697965617ab3",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV07.json",
+      "sha256": "2f5372693eac8edf9f1001a953e0b23cac5cbe1a5566080316b5eedab1bd21e0",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV08.json",
+      "sha256": "e5afa4ea43b45a5878c9cf04f8a0a38124788f49a6d28f022d0cec8f9f614d34",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV09.json",
+      "sha256": "db42ec0b826b0a40a86ff47687ab214b81aee9e0ac97c28250d520972b8035f6",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV10.json",
+      "sha256": "0765c0ab782672048b60996e9f2ff6be4a7c7f31e8fc5b7cd5179a80e91d61d1",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV11.json",
+      "sha256": "1dc59a5882732ff5e728be615b70c26d797fabd2f9bef816c1c30c7c53d3d988",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume-history-through-22a8075b.json",
+      "sha256": "768a00fca9e8c17c8c63be43ed293c1b4224b86ddc5431286dc29ba7da933be0",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/resume.json",
+      "sha256": "220abc50e5a7809be69a8affcc5b9caf93a0f5158abf3d8993df297b8573b414",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-cross-checks-rev03.json",
+      "sha256": "f8a1bfe794d22368f9089f81aa3b547e25a46c4a05ed931666b15a2406feae79",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV05.json",
+      "sha256": "373cde0665fd5240660e7aa5f7c8f4a8cbfefb1b74044aab4b4d803b7b2e1b8d",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV06.json",
+      "sha256": "497dd5874568e14810adfbf28cb4d7289a71db9a27dd225341eaf10b01aa1ca6",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV07.json",
+      "sha256": "6b6a7b90140686e01e8eefd459a26b37b5ce6c9d12c2eb9c70854ebc598ec6bd",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV08.json",
+      "sha256": "d07d91000502f368a9edbb8d9be38520187ea26269f7519b62da1770006e7525",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV09.json",
+      "sha256": "f926e8c9a7797756f206d43de09fb02749f21b4d6213ddb3c89987023e636004",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV10.json",
+      "sha256": "eec227037de9f7647dafc30f5cda5331905359ac5104421c570f148be7088e3c",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV11.json",
+      "sha256": "13087370e79fb8ce67dda881d529208fd373e046e260d887223c6be8e0037ff6",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review_generated_drift.py",
+      "sha256": "71cec5329e404daa9b86f70ddd9251b62669877eb828e904a52378047bd8f23e",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Regex extraction covers inherited tables/columns/defaults/keys/serialization markers, records issues. Does not prove full Dart AST/constraint semantics or deterministic regeneration; prior manifest retained."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review_observations_rev02.json",
+      "sha256": "f49ecc022493e17a1bc25a4b56255d3a928915bc34a5c0882af72c1a0006f58f",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review_observations_rev03.json",
+      "sha256": "b995f45df150ad9fb753d58de6654e48a0f7cbcf4f1fe181d23066b90ffa0f06",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review_observations_rev12.json",
+      "sha256": "e375833c1bc37848bb519c7daff3fc637d12e5f26637d4facd3149281a5434de",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/review_queue.py",
+      "sha256": "fecdf940bd3869aa59ada03dad9e48d55867b90dcd9f103790a2f1ab11fba0f1",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Path precedence/classification seeds zones; refuses existing ledger. Historical zone refinement retained, not rerun or evidence of semantic review."
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/zone-assignment-refinement.json",
+      "sha256": "cbb9d72d2355ecbd0acc5384bb0ee8cac6664af7d864ca2548370cd25140fd11",
+      "identityAt": "1cbda74cea099bafad9776e722accb8227e76715",
+      "owner": "B18-G82-REV-12",
+      "disposition": "Structured semantic receipt/history/observation or concise bundle report; retained original scope, hashes and no runtime inference"
+    }
+  ],
+  "externalTools": [
+    {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/record_REV08.py",
+      "sha256": "be6fe4418eadb3c8351f3ce74a294c18ecd723d0dedb168c7e4af1a7d7d63ec6",
+      "owner": "B18 historical respective slice",
+      "disposition": "Evidence writer or independent integrity checker; input count/HEAD assumptions are historical and outputs mutable. Manual declarative data retained in receipts; not runtime or current acceptance. Do not rerun."
+    },
+    {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/verify_REV08.py",
+      "sha256": "41fa9ef9e680bc51119c14735e4309e1a586cd5784b02cb1c2eb8080887bb13b",
+      "owner": "B18 historical respective slice",
+      "disposition": "Evidence writer or independent integrity checker; input count/HEAD assumptions are historical and outputs mutable. Manual declarative data retained in receipts; not runtime or current acceptance. Do not rerun."
+    },
+    {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/record_REV11.py",
+      "sha256": "a3acacdb37c26196e40e278169d8b1e4570c304ca63ebd4b65d126438fa43c15",
+      "owner": "B18 historical respective slice",
+      "disposition": "Evidence writer or independent integrity checker; input count/HEAD assumptions are historical and outputs mutable. Manual declarative data retained in receipts; not runtime or current acceptance. Do not rerun."
+    },
+    {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/verify_REV11.py",
+      "sha256": "66316a10223e2544db8c0ec723680ae20c12e661952d60eb860b78826851405a",
+      "owner": "B18 historical respective slice",
+      "disposition": "Evidence writer or independent integrity checker; input count/HEAD assumptions are historical and outputs mutable. Manual declarative data retained in receipts; not runtime or current acceptance. Do not rerun."
+    }
+  ],
+  "method": "Manual source control-flow review of seven new B18 Python tools, historical external updater/checker mechanics and final receipt/identity reconciliation. No execution of historical writers.",
+  "newOutputPolicy": "Final REV12 outputs validated independently against exact checkpoint; recorder remains external with digest in integrity receipt.",
+  "runtimeTestsRun": false
+}

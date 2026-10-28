@@ -1,0 +1,22 @@
+{
+  "checkpoint": "055",
+  "sourceCommit": "a47586d6",
+  "apkEvidence": "evidence/handwriting-assistance-054/source-pins.json",
+  "status": "NATIVE_LIVE_GUIDANCE_AND_DISCONNECT_PASS",
+  "observed": [
+    "Target-free prompt asks current screen tools for activity guidance and assessment/storage capabilities",
+    "Live Thai response identifies unscored scratchpad, undo/clear/self-check, denies access to strokes/typed answers and denies grading/rewards",
+    "list_menu_actions available",
+    "Stroke drawn while connected retained after explicit disconnect; undo enabled",
+    "Clear after disconnect disables undo",
+    "Fresh disconnected stroke and self-check displays no-points/rewards feedback"
+  ],
+  "observationCaveat": "First self-check tap after disconnect did not capture transient snackbar; repeated with fresh stroke captured exact message. No claim inferred from first tap alone.",
+  "evidence": "evidence/handwriting-native-055/observations.json",
+  "limits": [
+    "No native DB snapshot; host054 all-table invariant reused",
+    "Other modes and whole goal remain open"
+  ],
+  "cleanup": "Bridge63287 exited1 on CtrlC;owned reverse8765/private config removed;no listener",
+  "next": "Flashcard actualscreen MCP coverage"
+}

@@ -1,0 +1,10 @@
+{
+ "bundleId":"B14","baseSha":"c02b612a9b287b0cbd8aac2a49d00736d3e004c7","revision":"2026-09-14-camera-training-5",
+ "constraints":["single writer sequential packages","lexiquest/ branch","no live paid provider or physical PASS","preserve failed logs and reuse unchanged passes","transcript comparison is not acoustic quality","no research activation"],
+ "steps":[
+ {"package":"G6.4","paths":["lib/features/media_practice/application/speech_practice_use_cases.dart","lib/features/media_practice/data/plugin_speech_recognition_gateway.dart","lib/screens/speak_to_text_screen.dart","lib/screens/shadowing_challenge_screen.dart"],"design":"Fence every failed recognition attempt before callbacks can create assessment. Preserve final-before-start-completion and serialized takeover cleanup. Inspect exception and stop failure paths; retain text/manual and TTS fallback.","verification":"verify-scope Targeted AI: speech use cases, plugin gateway, shadowing, speaking, sentence panel, AI Tutor and dictation/audio consumers selected from actual paths","acceptance":"No late assessment after failure; retry and ownership locks valid; no audio collection inferred"},
+ {"package":"G6.5","design":"Read own brief at entry; inspect transcript assessment and durable scored/unscored evidence end to end; close inherited FORM02 missing-evidence issue without zero skill or acoustic claims.","verification":"Targeted real evidence repository/usecase and relevant mode UI regressions; inspect migration/serialization compatibility"},
+ {"package":"G6.6","design":"Read own brief at entry; evaluate local quality rubric/no-key journey, audit G6.1-G6.5 receipts and affected fingerprints, retain live/native quality NOT RUN.","verification":"Bounded affected checks plus evidence/hash/diff review; no unchanged gate rerun"}
+ ],
+ "delivery":"One concise Thai B14.md, structured acceptance/defect/fingerprint artifacts, package commits and external actual-SHA receipts; locked atomic release/reserve B15 only after acceptance"
+}

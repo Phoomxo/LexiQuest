@@ -1,0 +1,33 @@
+{
+  "status": "REPRESENTATIVE_LIVE_NATIVE_PASS_NOT_FULL_ACCEPTANCE",
+  "installedSource": "6fc67593c2a039e7062166085046d97578f8561b",
+  "apk": "build/ari-assistance-031.apk",
+  "evidence": "device-observations.jsonl",
+  "cases": [
+    {
+      "area": "W02/W14 settings030",
+      "observed": "Live list_menu_actions read system theme/reducedmotionfalse. Thai response explicitly distinguished cloud readiness from completed synchronization. Live execute_menu_action changed theme to light and read back light; second request restored system and verified it. Native selected chips agreed and reducedmotion remainedfalse."
+    },
+    {
+      "area": "W07 review029",
+      "observed": "Live response10queue items/0dueSRS, book included for incorrect-answer history. Today screen showed10queue, review card incorrect reason, dashboard0due. No start/answer requested or observed."
+    },
+    {
+      "area": "W09 progress016",
+      "observed": "Live response28/42weekly correct,1523seconds,0due. Native dashboard28/42,25m23s,0due. Response explicitly limited inference to weekly activity, not overall proficiency."
+    },
+    {
+      "area": "W07 weakness019",
+      "observed": "Live response42sample,11weak words,0due,spoon incorrect1. Native header42,first rowspoon1/1,disabled0due control,scroll to last row11bag confirmed. Historical wrong answers distinguished from SRS due."
+    }
+  ],
+  "tools": "list_menu_actions receipts for reads; execute_menu_action invoked receipts for theme changes.",
+  "disconnected": "Explicit disconnect; weakness native scrolling continued through last row11. No additional practice answer in this batch.",
+  "cleanup": "Bridge16335 terminal exit1 after CtrlC, reverse8765 removed, no listener returned; theme system/reducedmotionfalse restored; original accounts preserved; USBstayawake retained.",
+  "limits": [
+    "Same-owner representative live tests only; wrong-owner fences have host evidence, not native account switching",
+    "No real cloud synchronization completion verified",
+    "No all14workflow/mode closure",
+    "History/camera/shadowing and mode-specific gaps remain"
+  ]
+}

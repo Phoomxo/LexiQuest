@@ -1,0 +1,7 @@
+{
+  "lib/screens/categories_page.dart": "954386fb6e926bb08cee3fca8ccdbb6960f4c8d707d6a3d7e03929e8cd3f9c33",
+  "lib/screens/add_vocab_screen.dart": "4f587bc7fd49540c1ed7ae6cdd86675b998a60a8248b492fc6215483ed3b2262",
+  "lib/features/vocabulary/application/vocabulary_use_cases.dart": "157d651f1ae7912396f45ff31801200996ec858630087627d0722c99f7272f93",
+  "test/screens/offline_vocabulary_journey_test.dart": "53d1af3d8a5b41135608abd58744cdb37cff696b6769436f947e31ef3f2f620b",
+  "test/features/vocabulary/vocabulary_use_cases_test.dart": "b9497ff3def9ac968261e0d1cd4d3c92b07cddfe90dcd733ba0f586821feecb0"
+}

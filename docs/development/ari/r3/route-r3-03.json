@@ -1,0 +1,19 @@
+{
+  "routeStatus": "DETERMINISTIC_FALLBACK",
+  "reason": "Fresh billing/free-credit/shared-spend evidence unavailable; model_route live Choice adapter remains offline-only. Continue authorized coordinator work.",
+  "selectedModel": "gpt-6-astra",
+  "effort": "medium",
+  "sourceFingerprint": "592b95e31940f33b3a50a9831adf72c908c51379c966fa39f6179b1dc5a0cc13",
+  "jevChoiceCalled": false,
+  "dispatch": "NONE_COORDINATOR_CONTINUES",
+  "paidSpend": 0,
+  "tierPolicy": "Standard/default requested; runtime tier not exposed",
+  "taskId": "01a0cf33-006f-7b02-aed1-92ee5c3fe61c",
+  "observedAtUtc": "2026-09-23T17:13:32.456292+00:00",
+  "liveCallsThisTask": 0,
+  "workerDispatched": false,
+  "liveChoiceAcceptance": "PENDING",
+  "billingSnapshotReused": false,
+  "eligibleWorkerPool": "NOT_REFRESHED_NO_DISPATCH",
+  "incidentExecution": "OFFLINE_CONTRACT_ONLY_CONTROLLER_REVIEW"
+}

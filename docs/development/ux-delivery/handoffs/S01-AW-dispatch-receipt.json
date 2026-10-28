@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-aw-20260925-4635",
+  "atUtc": "2026-09-24T20:10:13.474332+00:00",
+  "sourceThreadId": "01a0d4f0-d037-7132-a19c-038386c8e35f",
+  "sourceWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\4635\\LexiQuest",
+  "sourceImmutable": true,
+  "writerReleased": true,
+  "status": "SETUP_PENDING",
+  "clientThreadId": "client-new-thread:cf2dbcb8-e949-4041-adbe-89c325e555a3",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "instruction": "Exactly one successor created; reuse this ID, never duplicate.",
+  "lastSetupCheckAtUtc": "2026-09-24T20:12:35.432811+00:00",
+  "setupVerification": "Created once; app listing and bounded read-only local task lookup do not yet expose an actual task ID. Keep SETUP_PENDING and reuse client ID; never pass client ID to wait_threads or dispatch a duplicate.",
+  "sourceManifestSha256": "ad9bc8cc03ff7270184651a773a9f13e6e190a16e6fe103dc7d7319fffcfc03d",
+  "sourceArchiveSha256": "e9747ff6c5c83ffafde28fb2f12dbcb6cb21616841bd8f8de63d94402d51211d",
+  "controllerNotified": true,
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "routing": "Deterministic fallback, not Jev-selected; Standard/default requested, runtime tier unexposed"
+}

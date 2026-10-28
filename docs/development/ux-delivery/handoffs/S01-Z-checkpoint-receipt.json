@@ -1,0 +1,13 @@
+{
+  "atUtc": "2026-09-24T08:54:29.741488+00:00",
+  "threadId": "01a0d289-6c33-7d71-92d2-0e3c2f9b68c6",
+  "manifestPath": "docs/development/ux-delivery/handoffs/S01-Z-checkpoint-manifest.json",
+  "manifestSha256": "d79435c4a5173b4def32b0be063595bdd1b992e1a0ef98b249b98d16b54f5af3",
+  "archivePath": "build/ux-delivery/S01-Z-checkpoint/source-overlay.zip",
+  "archiveSha256": "2dde5a8daabd45cdd331e2f3e894ddcfa49307910134fe80639bb1af2a76ccd0",
+  "archiveBytes": 25685219,
+  "entries": 492,
+  "archiveRoundtripVerified": true,
+  "writerReleased": false,
+  "successorThreadId": null
+}

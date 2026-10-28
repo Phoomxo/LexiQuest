@@ -1,0 +1,362 @@
+[
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\896bf1280c1c-345deabbde31-545ab12a\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\896bf1280c1c-345deabbde31-545ab12a\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "4322b968034b461ddafa4e5beaf3f1247991a685f3a2564ec066e989e71c0abb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\4322b968034b461d-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\896bf1280c1c-cda49c509e50-36a22597\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\896bf1280c1c-cda49c509e50-36a22597\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "7dda8c388ca3ce0262deed479197cc2aec3c01b74a330b4370a5067bf323cf56",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\7dda8c388ca3ce02-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\b5c237286e71-662700baeec1-6afbaad8\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\b5c237286e71-662700baeec1-6afbaad8\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "ca421780d3421fd6b268868114f8718558fde5b9f270f48bb8402b3e7126e90a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ca421780d3421fd6-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\e105c19a626c-f00f16667530-0bc39ce0\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "9d055caaa3e096ffcd0f7a416e57310dc939d0b420751573e3f5937a87a78129",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9d055caaa3e096ff-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\e105c19a626c-f00f16667530-0bc39ce0\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "1d71213de0676168b4e9948045d0112dcd4d882f3a8612eddc9c7576c16cfb57",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\1d71213de0676168-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\targeted-learning-7068e11f3950efdd31227a71f63dff2ec6b454160790eab8808a68f263b2ccad.json",
+    "sha256": "86e5b882e5a2de5a849ca76eb688daca642fce70ff215593187936438cb0857b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\86e5b882e5a2de5a-targeted-learning-7068e11f3950efdd31227a71f63dff2ec6b454160790eab8808a68f263b2ccad.json"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json",
+    "sha256": "58991f354895bfc1d134647f43ef869534eb57bff7b41d3458a70f800278abd9",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\58991f354895bfc1-targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json"
+  },
+  {
+    "source": "build\\verification\\5535da0e29bb32a70c65a62a88dc33b41de7930d\\targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json",
+    "sha256": "c58163628ce211ab5802f4b8ec2d732b7bf04bf6d5aca901ed0c44d68b326f87",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c58163628ce211ab-targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\1da75ed4e44f-0303067e38b2-c4ee4649\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\1da75ed4e44f-0303067e38b2-c4ee4649\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "f15a3746a08518ee54577263135a6915a6d2c5a1d2bef53c327cb1f2bfac882f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\f15a3746a08518ee-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\31c903d620c8-267b91a682ec-0c943b9e\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\31c903d620c8-267b91a682ec-0c943b9e\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "aa219fcb31eb1ff3e68620f76961ebdd939b88461f53bfe229660f82a744ef1a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\aa219fcb31eb1ff3-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\3ccf866735e6-c1acfc2f0f77-f13106f2\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "64606e0f9226cf98e9b8cf90aa0d4fefda0f25ed5d182ae05bcd02d3b90bf1cf",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\64606e0f9226cf98-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\3ccf866735e6-c1acfc2f0f77-f13106f2\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "16922c4340d1f16ad7c8c504c69eb05cdb4fa0620a59aed8fd821865cb5ad91d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\16922c4340d1f16a-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\e2f5541fe695-cd9dcecdb3cc-fa0544f2\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\e2f5541fe695-cd9dcecdb3cc-fa0544f2\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "6291e5d845d2a1cccea057626a69f293aa2bdacf95df301d27a571b53602c4fc",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6291e5d845d2a1cc-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\targeted-learning-0c71f3187526ad69753d214c0858c98318a1b30a608f18e5a29ad545733bf6c6.json",
+    "sha256": "c5b998e27939b705b16e5ee703e9ba4e7bcf3c1dad7394fbb3fb5f6e1c186863",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c5b998e27939b705-targeted-learning-0c71f3187526ad69753d214c0858c98318a1b30a608f18e5a29ad545733bf6c6.json"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\targeted-learning-42719f7d32a218393ecf3735a5cfbd91d8d096c2d97cceba7ae5782adc9e02f1.json",
+    "sha256": "354755d33bac2caed48591cf92e0ec3d96121f8a3027e8ec87b9400ed8192463",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\354755d33bac2cae-targeted-learning-42719f7d32a218393ecf3735a5cfbd91d8d096c2d97cceba7ae5782adc9e02f1.json"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\targeted-learning-7f408c86ae68f91c029bfd51505e4e6b2dce2d32ffaa38f2d5dd8984fd5f72e3.json",
+    "sha256": "abdbe232325ff2b9c23649a63b6659a930e115d512695e180ee1035b04f92915",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\abdbe232325ff2b9-targeted-learning-7f408c86ae68f91c029bfd51505e4e6b2dce2d32ffaa38f2d5dd8984fd5f72e3.json"
+  },
+  {
+    "source": "build\\verification\\ae29ec3dd1107d6b6196ecdb3020e221da6f19da\\targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json",
+    "sha256": "85ceaa2ed5156f6cdc59de0ba8d0145101caf46d7435e413b6972bb91bc3518c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\85ceaa2ed5156f6c-targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\4700116416ec-754d2065d6f5-f07a87c0\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\4700116416ec-754d2065d6f5-f07a87c0\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "3fae7bb0bef057ead2c497d149f4eaa74bd1463ccdd6edcaa40373158dbe8f90",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\3fae7bb0bef057ea-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\dc61faaaca76-de87d41c8691-f45da52c\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\dc61faaaca76-de87d41c8691-f45da52c\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "92690a366617539cd0fd29114cc2547f28b710e477aa9a076fef1ee97790de98",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\92690a366617539c-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\decb6faaa880-32ed281eb6ba-ac0f2da2\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\decb6faaa880-32ed281eb6ba-ac0f2da2\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "c88c7f85a1d0bf766e774d93f9ca3252bcee37787508c31d16ca6b597ca58d10",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c88c7f85a1d0bf76-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\targeted-learning-a8a327eb02e9d7705da9057dcbf79fbf1787057c492463c87637b53bd613c3f5.json",
+    "sha256": "4809d24ed2f99bc7232a3885292be7e15a153cbf60a245f0a77fdf3cebb3741c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\4809d24ed2f99bc7-targeted-learning-a8a327eb02e9d7705da9057dcbf79fbf1787057c492463c87637b53bd613c3f5.json"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\targeted-learning-e6edb2e5f4e6339cd5f3482bc8b835381f759b1dc841aefa01015fbb12dbbe3f.json",
+    "sha256": "7d7f6218d18856e495678149020ac9cbd2f3d9370816a78f104f72c8817a38f1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\7d7f6218d18856e4-targeted-learning-e6edb2e5f4e6339cd5f3482bc8b835381f759b1dc841aefa01015fbb12dbbe3f.json"
+  },
+  {
+    "source": "build\\verification\\0fdcf59e38e363376803044114be439b545347c6\\targeted-learning-f946f39844a564e87918dc737f2e5ab359884a4e02f1c2fc159cefbf7a2a8bf8.json",
+    "sha256": "b582f186a94996d53bbc272a994e15799441468c32e61369d9bb194ff7736e2c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\b582f186a94996d5-targeted-learning-f946f39844a564e87918dc737f2e5ab359884a4e02f1c2fc159cefbf7a2a8bf8.json"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\3cf4d7059b12-2eb44b301c88-05ca0ab4\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\3cf4d7059b12-2eb44b301c88-05ca0ab4\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "6855ff89c1b2389ded8943ed1aaec5dc8bc5c5331858fab4f21a1f3fe415f3d2",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6855ff89c1b2389d-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\5b0c89b11f09-321097dfe023-d9364401\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\5b0c89b11f09-321097dfe023-d9364401\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "c033b962a4a9012c2d9793adb87f8bc86609534aaa34d40789c47cec3e7e17b6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c033b962a4a9012c-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\77a513263baf-93eae16bea52-a4a6e6f1\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\77a513263baf-93eae16bea52-a4a6e6f1\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "efbeb9ff3b75f121b5e75fe351a41e6ae46f906679b99c2afb16490365e20775",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\efbeb9ff3b75f121-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\targeted-learning-b3d2c14a7bfab2b8b949ac526da0f70f3c3508d086c55971a35e50087192b20c.json",
+    "sha256": "972454abe88a12d8216a5466f0b0ef041f6f124509761298e6ffefe8c85c3577",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\972454abe88a12d8-targeted-learning-b3d2c14a7bfab2b8b949ac526da0f70f3c3508d086c55971a35e50087192b20c.json"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\targeted-learning-e73411f4fddd8f0f4bf8a3fd884bf8fce1570b9cbf4b2dd0e9eae4ed20aacb91.json",
+    "sha256": "cbdd28cee01f842409c42d6e079664a7d6b71c2916942936af47aed812976866",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\cbdd28cee01f8424-targeted-learning-e73411f4fddd8f0f4bf8a3fd884bf8fce1570b9cbf4b2dd0e9eae4ed20aacb91.json"
+  },
+  {
+    "source": "build\\verification\\e25c3bf53cd77355ea376a5d435bd5c5a86a1015\\targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json",
+    "sha256": "0549b4a9405ec55c21cfbb2d987866cfaabe18bfc607ca129db0fc48f553a6a9",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0549b4a9405ec55c-targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json",
+    "sha256": "53c5386638fd7fbfa38879a27449cb6b5c46728fe73b8b68014231cbb036823f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\53c5386638fd7fbf-targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\targeted-learning-db762efd7a85348bc94bfa96c8f29be90a6c1c2e245c6f6c26e61edea26e7490.json",
+    "sha256": "c892b96fe8d0a1d1eb9146dab3625efced1ca8f5b9df0608edeaaf4371243268",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\c892b96fe8d0a1d1-targeted-learning-db762efd7a85348bc94bfa96c8f29be90a6c1c2e245c6f6c26e61edea26e7490.json"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\1a51b25c8bc4-dc6a409ed633-1297f203\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\1a51b25c8bc4-dc6a409ed633-1297f203\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "b4b1d637b3556d21bdddbcbbb6bd8a334e74868656ada66023c2de9fa74fc7cb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\b4b1d637b3556d21-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\59e4d601672a-60de5aa32875-ec353b01\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\75b44bab67872c8a785eff3228839bbb1e3815c8\\59e4d601672a-60de5aa32875-ec353b01\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "e4420fe68bab19e35a6ab1a6b3963b32cdcebad6668a279e298935fcfb05da93",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\e4420fe68bab19e3-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\targeted-learning-22217e142907cd53f514afa75874ba4843cee4715a8146e276683eb3ad48880d.json",
+    "sha256": "0ad3c827b127e7197b01f6947f165a737fd58a786a3a1dd85637057c711c3e44",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\0ad3c827b127e719-targeted-learning-22217e142907cd53f514afa75874ba4843cee4715a8146e276683eb3ad48880d.json"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\targeted-learning-378a4ca30d8a91a241e65d3fa5d5ab302ee5196ddaf1b246ea12ce50267144bb.json",
+    "sha256": "37339bdc3cab8c681f2da3844c747c044e67bec055e02a9df57511ca9c2e3afe",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\37339bdc3cab8c68-targeted-learning-378a4ca30d8a91a241e65d3fa5d5ab302ee5196ddaf1b246ea12ce50267144bb.json"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\targeted-learning-8d94ba4b6eb1f8e3571fdaa9f6a671f22c7a5c050eec6e218a481156b61e6eb7.json",
+    "sha256": "76c5c0a5536f4d3adc81d2ce38c8ab9679d61f29f33a0ed3d0259f57c7e6c22c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\76c5c0a5536f4d3a-targeted-learning-8d94ba4b6eb1f8e3571fdaa9f6a671f22c7a5c050eec6e218a481156b61e6eb7.json"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\targeted-learning-e12c8b895713898dcf6849384fea1d5df0f27bb92e5158629fc1cb49c6527149.json",
+    "sha256": "4d33a1783f595d9c59ff496c5c2baecf446d21d18becb9015f124d757a1d8875",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\4d33a1783f595d9c-targeted-learning-e12c8b895713898dcf6849384fea1d5df0f27bb92e5158629fc1cb49c6527149.json"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\targeted-learning-eaf57345f079d1a8426799df64d9da516c3af578feefe031c3998d07c1a61b4b.json",
+    "sha256": "fa155ff106c2cd6f4fa5c4dd4bffd7548c49de7cc858335aad1a208ca3def566",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\fa155ff106c2cd6f-targeted-learning-eaf57345f079d1a8426799df64d9da516c3af578feefe031c3998d07c1a61b4b.json"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\10c196501fb5-358791f26841-91b49115\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\10c196501fb5-358791f26841-91b49115\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "07f7f0dedcd0fc4cecf6a10758a80b901a0e3b87773081de356ab591b1d7f18d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\07f7f0dedcd0fc4c-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-3fd21358f037-08543410\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-3fd21358f037-08543410\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "b763662b68b126211678197b29981fcbf9bf636ec07ee5981ed9cf1e7192137b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\b763662b68b12621-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-e31d90c126ec-9479e714\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a43bd10e71a7703d48dc8e03b9e0c20cba66c224ffe034021494b2e3b54f3220",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a43bd10e71a7703d-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-e31d90c126ec-9479e714\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "ca8969492b8d08c8bf5ad98b7f00e35b5b31b5aa0a572dcf6be7492e728c5737",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\ca8969492b8d08c8-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-e7655690da7b-de2776e4\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3640e6a8996c-e7655690da7b-de2776e4\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "73cae18770dd88e7adccbc9218fc66be4a3059a2cb98ab1e68c790aae66acd52",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\73cae18770dd88e7-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3e8dd471fda9-be09da518967-636c1d02\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\3e8dd471fda9-be09da518967-636c1d02\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "83210f9913c26f269426d41823007c7fe68b3006f4198da0a0ad4f7c48efd18e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\83210f9913c26f26-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\405559cc48e9-b3104fa2ecf5-722eee25\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\405559cc48e9-b3104fa2ecf5-722eee25\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "6563912e8b967aebff2364f4a1df4ef4108cd934d43d7cace90976963aab2291",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\6563912e8b967aeb-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-247ab65fa9d5-3c0650be\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a43bd10e71a7703d48dc8e03b9e0c20cba66c224ffe034021494b2e3b54f3220",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a43bd10e71a7703d-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-247ab65fa9d5-3c0650be\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "2028a240403f64c629d8c9c67b32495e7ddc5bc55f7e6f4dd96dca57ccd66d82",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2028a240403f64c6-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-50a377fb60b5-c38294ba\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-50a377fb60b5-c38294ba\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "3938a0e1ba4b187b2c01365b8768c1433afde4647037a8d998f9f74567640523",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\3938a0e1ba4b187b-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-b3104fa2ecf5-d2e5f93e\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-b3104fa2ecf5-d2e5f93e\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "965a78e96424f2b40881fb6bb64482e30618c9c87a09d07cae20b5249534c98f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\965a78e96424f2b4-Explicit-Flutter-tests.stdout.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-c52a8fc84152-1547a236\\Explicit-Flutter-tests.stderr.log",
+    "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+  },
+  {
+    "source": "build\\verification\\4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444\\aa6b8bf0092a-c52a8fc84152-1547a236\\Explicit-Flutter-tests.stdout.log",
+    "sha256": "7eef333ba8eccd0d4c2f5381c8d72d11ee1f0ae0f43612d4a1605cea92538e24",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\7eef333ba8eccd0d-Explicit-Flutter-tests.stdout.log"
+  }
+]

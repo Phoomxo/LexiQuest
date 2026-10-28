@@ -1,0 +1,29 @@
+{
+  "checkpoint": "080",
+  "status": "ASSOCIATIVE_LIVE_STAGES2_TO6_AND_EFFORT_LIMIT_PASS",
+  "apk": "079",
+  "productionChanged": false,
+  "hostEvidenceReused": [
+    "associative-live-079.json",
+    "associative-availability-078.json",
+    "associative-restoration-077.json"
+  ],
+  "live": {
+    "stage2": "Reduced-cue reading,manual next,collapse/scroll;no answer supplied",
+    "stage3": "Recall all words manually from memory,complete all fields,no supplied answer",
+    "stage4": "Personal keyword/story is saved separately,not another graded answer",
+    "stage5": "New sentence is ephemeral,not persisted or graded",
+    "stage6": "Last stage alone is not completion;manual finish required",
+    "effortLimit": "New60second round set through UI,waited for actual cap;provider identifies newStage1 operations unavailable,no submit/advance/reset-time/completion claim"
+  },
+  "durable": {
+    "completedRound": "Exactly1associativeRecall independentRecall true;correct1wrong0;completed",
+    "expiredRound": "Durable effort60000000us with60second configuration;0attempts0correct0wrong;left via normal navigation -> abandoned"
+  },
+  "cleanup": "Explicit disconnect;bridge70539 stopped;reverse/config removed;10minute configuration restored via UI;isolated home;original app/accounts preserved;no active native round",
+  "remaining": [
+    "Full14workflow14mode acceptance audit",
+    "Native export artifact reconciliation and remaining workflow-specific gaps"
+  ],
+  "wholeGoalComplete": false
+}

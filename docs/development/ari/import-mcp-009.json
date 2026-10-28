@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_PROGRESS_NATIVE_PENDING",
+  "baseCommit": "1278f6e41568698da40f2ed905d1a843626864eb",
+  "scope": "Optional bulk vocabulary import fill, format preview and persisted ledger verification",
+  "host": {
+    "receipt": "evidence/import-mcp-009/host-verification.json",
+    "flutter": "Three targeted files passed; real Drift mixed outcomes and replay covered",
+    "pythonMenuTransportTests": 9,
+    "analysis": "No issues found after braces-only lint correction",
+    "redGreen": "Actual stdio preview receipt initially isError=true; previewed now recognized without implying persistence",
+    "adversarialReceipt": "evidence/import-mcp-009/adversarial-verification.json",
+    "adversarialCases": [
+      "wrong owner does not write",
+      "cancellation after owner lookup does not write",
+      "readback rejects wrong owner/category/import ID/counts/rejected rows/codes"
+    ],
+    "adversarialTests": 9,
+    "postTestChanges": "Braces-only lint correction and unchanged-line EOL restoration"
+  },
+  "native": {
+    "adb": "9582188822004C6 device",
+    "install": "PASS streamed install -r into isolated com.lexiquest.app.ariTest",
+    "launch": "PASS local data ready, optional AI collapsed",
+    "baselineObserved": [
+      "Vocabulary tab opens without bridge/provider",
+      "Add category dialog opens and cancels without provider"
+    ],
+    "connectedImportDeleteCategory": "NOT_RUN",
+    "evidence": "device-observations.jsonl"
+  },
+  "open": [
+    "Native category/delete/import baseline, connected and disconnected journeys",
+    "Remaining 14 workflow groups and 14 mode acceptance remain OPEN"
+  ],
+  "limitations": [
+    "Preview validates row format only, not duplicates or database capacity",
+    "Existing manual comma-separated format, not a full quoted CSV parser",
+    "Rejected row details bounded to 20 with explicit truncation; fill bounded to 4000 characters"
+  ],
+  "build": {
+    "status": "PASS",
+    "sha256": "f72a2eb8f8ed8e7ae5b03dd2f16ad1c6c03ff170e4fd308fc8235d270b20cb5b",
+    "artifact": "build/ari-import-009.apk"
+  }
+}

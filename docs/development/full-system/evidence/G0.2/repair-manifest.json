@@ -1,0 +1,38 @@
+[
+  {
+    "path": "lib/screens/ai_tutor_screen.dart",
+    "sha256": "b7efd2a957fcb09604e54be89ac9be0bb0584d32072e99683f350341bc2ef171",
+    "originalSha256": "b7efd2a957fcb09604e54be89ac9be0bb0584d32072e99683f350341bc2ef171",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  },
+  {
+    "path": "test/screens/ai_tutor_screen_test.dart",
+    "sha256": "8cfbff8be2aef6dd6b49623e04cad7db1bdc4f01c221043395bd9abb41bcf01f",
+    "originalSha256": "8cfbff8be2aef6dd6b49623e04cad7db1bdc4f01c221043395bd9abb41bcf01f",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  },
+  {
+    "path": "tool/cli/verify-scope.ps1",
+    "sha256": "c3c06c6c9c548c9fe990fc3ae883f3447d4b411dfebaf116a609048eedf39eae",
+    "originalSha256": "c3c06c6c9c548c9fe990fc3ae883f3447d4b411dfebaf116a609048eedf39eae",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  },
+  {
+    "path": "tool/cli/tests/r15-scope.tests.ps1",
+    "sha256": "27f28146b2c0202abdd54f35d26537536051a4df1bbd653cea4a817bdb42ac66",
+    "originalSha256": "27f28146b2c0202abdd54f35d26537536051a4df1bbd653cea4a817bdb42ac66",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  },
+  {
+    "path": "tools/camera_accuracy.py",
+    "sha256": "fdc666c9cb238c7441784facba0cf98081acfdf146569df9cd29e1931d274476",
+    "originalSha256": "fdc666c9cb238c7441784facba0cf98081acfdf146569df9cd29e1931d274476",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  },
+  {
+    "path": "tools/test_camera_accuracy.py",
+    "sha256": "f2b854db94784a34957e766586ff077a6e7ecc34f76373819b5b6bf293587412",
+    "originalSha256": "f2b854db94784a34957e766586ff077a6e7ecc34f76373819b5b6bf293587412",
+    "disposition": "Accepted byte-for-byte; no second repair"
+  }
+]

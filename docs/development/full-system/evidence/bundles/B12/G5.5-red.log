@@ -1,0 +1,50 @@
+test_development_split_provenance_and_config (test_camera_development_evaluation.DevelopmentFreezeTests.test_development_split_provenance_and_config) ... ok
+test_freeze_recomputes_and_has_no_fresh_authority (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_recomputes_and_has_no_fresh_authority) ... ok
+test_freeze_tampering_rejected (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_tampering_rejected) ... ok
+test_pinned_cli_actual_bytes_contract_and_exclusive_output (test_camera_development_evaluation.DevelopmentFreezeTests.test_pinned_cli_actual_bytes_contract_and_exclusive_output) ... ok
+test_prediction_closure_and_scores_fail_closed (test_camera_development_evaluation.DevelopmentFreezeTests.test_prediction_closure_and_scores_fail_closed) ... ok
+test_empty_denominators_and_nonfinite_threshold (test_camera_development_evaluation.MetricsTests.test_empty_denominators_and_nonfinite_threshold) ... ERROR
+test_known_reject_and_null_unknown (test_camera_development_evaluation.MetricsTests.test_known_reject_and_null_unknown) ... ERROR
+test_uniform_threshold_cannot_pass_and_bad_scores_rejected (test_camera_development_evaluation.MetricsTests.test_uniform_threshold_cannot_pass_and_bad_scores_rejected) ... ERROR
+test_unknown_and_paired_baseline_explicit_acceptance (test_camera_development_evaluation.MetricsTests.test_unknown_and_paired_baseline_explicit_acceptance) ... ERROR
+
+======================================================================
+ERROR: test_empty_denominators_and_nonfinite_threshold (test_camera_development_evaluation.MetricsTests.test_empty_denominators_and_nonfinite_threshold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\test_camera_development_evaluation.py", line 172, in test_empty_denominators_and_nonfinite_threshold
+    result = evaluation.prediction_metrics(['book','cup'], .6, [])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'camera_development_evaluation' has no attribute 'prediction_metrics'
+
+======================================================================
+ERROR: test_known_reject_and_null_unknown (test_camera_development_evaluation.MetricsTests.test_known_reject_and_null_unknown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\test_camera_development_evaluation.py", line 129, in test_known_reject_and_null_unknown
+    report = evaluation.prediction_metrics(config['labels'], .6, predictions)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'camera_development_evaluation' has no attribute 'prediction_metrics'
+
+======================================================================
+ERROR: test_uniform_threshold_cannot_pass_and_bad_scores_rejected (test_camera_development_evaluation.MetricsTests.test_uniform_threshold_cannot_pass_and_bad_scores_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\test_camera_development_evaluation.py", line 163, in test_uniform_threshold_cannot_pass_and_bad_scores_rejected
+    result = evaluation.prediction_metrics(labels, .25, predictions)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'camera_development_evaluation' has no attribute 'prediction_metrics'
+
+======================================================================
+ERROR: test_unknown_and_paired_baseline_explicit_acceptance (test_camera_development_evaluation.MetricsTests.test_unknown_and_paired_baseline_explicit_acceptance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\test_camera_development_evaluation.py", line 147, in test_unknown_and_paired_baseline_explicit_acceptance
+    report = evaluation.prediction_metrics(config['labels'], .6, predictions, baseline, mapping)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'camera_development_evaluation' has no attribute 'prediction_metrics'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.223s
+
+FAILED (errors=4)
