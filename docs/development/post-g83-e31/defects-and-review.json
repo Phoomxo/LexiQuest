@@ -1,0 +1,56 @@
+{
+  "reviewRefinements": [
+    "Repair content/core checksum and source revalidation",
+    "Fresh contrastive explanation resolution on repair reopen",
+    "Strict archive identities and contiguous-state replay",
+    "Definite StateError offers reopen; uncertain IO retains exact operation",
+    "Route cover/background cancels late display and commit via generation",
+    "SQLite file reopen proves durable repair reconstruction"
+  ],
+  "pending": "Acceptance receipt records final verification",
+  "review": "writer self-review only; user single-writer/no-subagent policy retained",
+  "defects": [
+    {
+      "status": "fixed",
+      "id": "E31-D01",
+      "cause": "Initial personal evidence fixture incorrectly used enforced research mode without protocol",
+      "fix": "Use explicit legacy personal rollout; no research activation"
+    },
+    {
+      "status": "resolved",
+      "id": "E31-D02",
+      "cause": "Flutter generated platform files changed line endings on initial pub setup",
+      "fix": "Inspected semantic diff; retained actual tested bytes; no platform behavior changes"
+    },
+    {
+      "status": "fixed",
+      "id": "E31-D03",
+      "cause": "Broad edit placed new trigger in pre-v3 migration before table creation",
+      "fix": "Create new repair guards only in beforeOpen after additive transaction"
+    },
+    {
+      "status": "fixed",
+      "id": "E31-D04",
+      "cause": "New direct-owner table changes exact lifecycle inventory",
+      "fix": "Inventory extended and count45 required without weakening table coverage"
+    },
+    {
+      "status": "fixed",
+      "id": "E31-D05",
+      "cause": "General hint preservation would trust caller hint claims",
+      "fix": "Retain original applyToEvidence; new applyToRepairEvidence only on authenticated origin"
+    },
+    {
+      "status": "fixed",
+      "id": "E31-D06",
+      "cause": "Guest-merge fixture reused constant ID for multiple rehome outbox entries",
+      "fix": "Unique sequential fixture IDs preserve real upgrade assertions"
+    }
+  ],
+  "slice": "E3.1",
+  "schemaVersion": 1,
+  "methodRecoveries": [
+    "Invalid Windows path/wildcard reads replaced by repository discovery and literal paths",
+    "CRLF test-anchor mismatch corrected by normalizing in-memory text before replacement"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "B05-CLOZE-02",
+  "initial": "16 passed / 2 failed; new IME case passed",
+  "cause": "Mode selection taps missed widgets at y412 during bounded shell layout/transition",
+  "evidence": "G2.4-first: hit-test warnings precede missing typed input/selected option assertions",
+  "fix": "Wait transitions, ensureVisible and assert hitTestable before actual mode taps",
+  "status": "closed",
+  "second": "9 passed / 1 failed; mode selection and terminal fence passed",
+  "diagnosis": "Remaining failure moved to typed submit: test entered text then tapped stale disabled widget without pumping. Stop repeating mode-wait approach; update after text change before real submit tap.",
+  "fix2": "Pump text-controller frame, ensure submit visible, assert enabled/hitTestable then tap",
+  "verification": "G2.4-verification.json"
+}

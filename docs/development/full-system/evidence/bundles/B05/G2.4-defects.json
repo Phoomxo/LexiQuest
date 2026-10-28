@@ -1,0 +1,8 @@
+{
+  "id": "B05-CLOZE-01",
+  "red": "G2.4-red",
+  "cause": "UI did not gate empty or composing text; empty adapter rejection surfaced as save failure",
+  "fix": "Controller listener and guarded submit for empty, over160 scalars, active composition",
+  "status": "closed",
+  "verification": "G2.4-verification.json"
+}

@@ -1,0 +1,558 @@
+{
+  "sourceSha": "09a4d747903b1624e80fea8b1f9b605830858ebc",
+  "executionOrder": "sequential single writer; no automatic dispatch",
+  "slices": [
+    {
+      "slice": "E0",
+      "feature": null,
+      "dependencies": [],
+      "status": "analysis/design only",
+      "applicationImplementationAllowed": false
+    },
+    {
+      "slice": "E1",
+      "feature": null,
+      "dependencies": [
+        "E0"
+      ],
+      "status": "analysis/design only",
+      "applicationImplementationAllowed": false
+    },
+    {
+      "slice": "E2.1",
+      "feature": "F01",
+      "dependencies": [
+        "E1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/learning_packs/domain/learning_pack.dart",
+          "symbol": "LearningPackFilter",
+          "line": 7,
+          "sha256": "8f10ce091ffe845d13d415a20b56f0ebf1c960a843f72e8e0d3d7b777879ab8e"
+        },
+        {
+          "path": "lib/features/learning_packs/application/learning_pack_use_cases.dart",
+          "symbol": "StudyPlanningUseCases",
+          "line": 9,
+          "sha256": "ec8437ec3cd935643ca8986de383804b4c3f1b42ef4125074ceaaf148e7dbd7d"
+        },
+        {
+          "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+          "symbol": "LearningPackDetailUseCases",
+          "line": 23,
+          "sha256": "ba4c576fbf5e3e06e035c4d79fd9f2a2d2f3aab2ce75c94c978f4c80c0da4f88"
+        },
+        {
+          "path": "lib/features/vocabulary/domain/vocabulary_word.dart",
+          "symbol": "VocabularyWord",
+          "line": 371,
+          "sha256": "bfed7b1da50e579d39025df791703031b9a7da0bca338d648a713aca0e8e9632"
+        },
+        {
+          "path": "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
+          "symbol": "CefrEditorialCatalog",
+          "line": 5,
+          "sha256": "90fa341747bb8a73193a821ced0ef35bec0b683a2d034ac9537fe060ab633d80"
+        }
+      ],
+      "existingTests": [
+        "test/features/learning_packs/learning_pack_catalog_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/features/vocabulary/cefr_editorial_catalog_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/learning_packs/domain/personal_sets.dart",
+        "lib/features/learning_packs/application/personal_sets_use_cases.dart",
+        "lib/features/learning_packs/presentation/personal_sets_screen.dart",
+        "lib/data/local/tables/vocabulary_extension_tables.dart",
+        "lib/features/learning_packs/domain/sense_crosswalk.dart",
+        "lib/features/learning_packs/data/drift_personal_set_repository.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/learning_packs/personal_sets_use_cases_test.dart",
+        "test/features/learning_packs/personal_set_owner_lifecycle_test.dart",
+        "test/features/learning_packs/sense_crosswalk_test.dart"
+      ],
+      "fixtures": [
+        "SET-REV",
+        "SET-DUP",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/learning_packs/learning_pack_catalog_test.dart','test/features/learning_packs/personal_sets_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "requiredExistingIntegrationPaths": [
+        "lib/data/local/app_database.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/export/application/owner_lifecycle_archive.dart"
+      ]
+    },
+    {
+      "slice": "E2.2",
+      "feature": "F02",
+      "dependencies": [
+        "E2.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/goals/application/learning_goal_use_cases.dart",
+          "symbol": "LearningGoalUseCases",
+          "line": 29,
+          "sha256": "15a48732b6885c34b6f993452de11dba3fc3282e4c59ace17b80435535167626"
+        },
+        {
+          "path": "lib/screens/study_planning_hub_screen.dart",
+          "symbol": "StudyPlanningHubScreen",
+          "line": 14,
+          "sha256": "e3da84a2c39d216ee2b5ccf9ed9c3cdbba191c067957f0fe22c6275392300377"
+        }
+      ],
+      "existingTests": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/study_planning_hub_screen_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/goals/domain/study_plan.dart",
+        "lib/features/goals/application/study_plan_use_cases.dart",
+        "lib/features/goals/presentation/study_plan_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/goals/study_plan_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "PLAN-BUDGET",
+        "PLAN-CONFLICT",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/goals/learning_goal_use_cases_test.dart','test/features/goals/study_plan_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "storageDependency": "Extend shared vocabulary_extension_tables.dart only as required; allocate migration version at implementation, not in this plan."
+    },
+    {
+      "slice": "E3.1",
+      "feature": "F03",
+      "dependencies": [
+        "E2.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+          "symbol": "ContrastiveFeedbackUseCases",
+          "line": 28,
+          "sha256": "f66a246c20011a40d3eaad33ab202697986347bcfd0c961735a723ec226611dd"
+        },
+        {
+          "path": "lib/features/learning/domain/hint_policy.dart",
+          "symbol": "HintPolicy",
+          "line": 82,
+          "sha256": "cbd27c6fbdcbc88704c0521aaab60bafaaa1e8402f29e51d05a8cc2d6793d7b2"
+        },
+        {
+          "path": "lib/features/learning/application/unified_lesson_controller.dart",
+          "symbol": "UnifiedLessonController",
+          "line": 56,
+          "sha256": "18a9f8754954f98ee749ba1c9830f0dd0b031d9ded539ca21bd4cb1fb804e5b3"
+        },
+        {
+          "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+          "symbol": "AiTutorUseCases",
+          "line": 19,
+          "sha256": "b2cb3f3d240e2517b5421f17e0630b7b1bfb3295d1ba9c227ef66d5052f4cb44"
+        }
+      ],
+      "existingTests": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/learning/domain/guided_repair.dart",
+        "lib/features/learning/application/guided_repair_use_cases.dart",
+        "lib/features/learning/presentation/guided_repair_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/learning/guided_repair_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "ASSISTANCE",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/learning/contrastive_feedback_test.dart','test/features/learning/guided_repair_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions"
+    },
+    {
+      "slice": "E3.2",
+      "feature": "F06",
+      "dependencies": [
+        "E3.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+          "symbol": "ContrastiveFeedbackUseCases",
+          "line": 28,
+          "sha256": "f66a246c20011a40d3eaad33ab202697986347bcfd0c961735a723ec226611dd"
+        },
+        {
+          "path": "lib/features/review/application/review_center_use_cases.dart",
+          "symbol": "ReviewCenterUseCases",
+          "line": 122,
+          "sha256": "fc422a5acf8db0ed5a7f42d5097163d2aaae3393d7f59c1c8f3cd6667aed4efb"
+        }
+      ],
+      "existingTests": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/review/review_center_reader_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/learning/domain/context_practice.dart",
+        "lib/features/learning/application/context_practice_use_cases.dart",
+        "lib/features/learning/presentation/context_practice_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/learning/context_practice_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "CONTEXT-AMBIGUOUS",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/learning/contrastive_feedback_test.dart','test/features/learning/context_practice_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions"
+    },
+    {
+      "slice": "E3.3",
+      "feature": "F04",
+      "dependencies": [
+        "E2.1",
+        "E3.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/learning/presentation/sentence_practice_panel.dart",
+          "symbol": "SentencePracticePanel",
+          "line": 16,
+          "sha256": "29bcaa1025ead807f317e7ad08d8efa0babc9a44b65c34d2dc2b4e97f8a0d364"
+        },
+        {
+          "path": "lib/features/learning/application/learning_use_cases.dart",
+          "symbol": "LearningUseCases",
+          "line": 338,
+          "sha256": "f035d8aaa004724637013352102fa89b5c16cccfd77e14a74167b960423c38fd"
+        },
+        {
+          "path": "lib/features/learning/domain/srs_policy.dart",
+          "symbol": "BinarySm2SrsPolicy",
+          "line": 17,
+          "sha256": "2e97f27682947ab5863e6aefb9cf054866d3880f6f68b857647794749da4c453"
+        }
+      ],
+      "existingTests": [
+        "test/features/learning/sentence_practice_panel_test.dart",
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/learning/srs_policy_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/learning/domain/lexical_rubric.dart",
+        "lib/features/learning/application/lexical_rubric_use_cases.dart",
+        "lib/features/learning/presentation/lexical_rubric_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/learning/lexical_rubric_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "RUBRIC-VALID",
+        "RUBRIC-UNCERTAIN",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/learning/sentence_practice_panel_test.dart','test/features/learning/lexical_rubric_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "storageDependency": "Extend shared vocabulary_extension_tables.dart only as required; allocate migration version at implementation, not in this plan."
+    },
+    {
+      "slice": "E4.1",
+      "feature": "F05",
+      "dependencies": [
+        "E3.3"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "symbol": "SpeechPracticeUseCases",
+          "line": 6,
+          "sha256": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "symbol": "SpeechPracticeSession",
+          "line": 267,
+          "sha256": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        }
+      ],
+      "existingTests": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/media_practice/domain/speaking_scenario.dart",
+        "lib/features/media_practice/application/speaking_scenario_use_cases.dart",
+        "lib/features/media_practice/presentation/speaking_scenario_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/media_practice/speaking_scenario_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "ASR-UNCERTAIN",
+        "OWNER-LATE",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Voice -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/media_practice/speech_practice_use_cases_test.dart','test/features/media_practice/speaking_scenario_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions"
+    },
+    {
+      "slice": "E4.2",
+      "feature": "F08",
+      "dependencies": [
+        "E2.1",
+        "E4.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/voice/application/voice_use_cases.dart",
+          "symbol": "VoiceUseCases",
+          "line": 15,
+          "sha256": "2f918d3f7de7c54cb770894dd1349ceadb2566be90b964de799008e766aa1eff"
+        },
+        {
+          "path": "lib/features/voice/application/voice_use_cases.dart",
+          "symbol": "VoiceSession",
+          "line": 488,
+          "sha256": "2f918d3f7de7c54cb770894dd1349ceadb2566be90b964de799008e766aa1eff"
+        }
+      ],
+      "existingTests": [
+        "test/features/voice/voice_use_cases_test.dart",
+        "test/voice/voice_response_lifecycle_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/voice/domain/audio_lesson.dart",
+        "lib/features/voice/application/audio_lesson_use_cases.dart",
+        "lib/features/voice/presentation/audio_lesson_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/voice/audio_lesson_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "AUDIO-STALE",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Voice -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/voice/voice_use_cases_test.dart','test/features/voice/audio_lesson_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "storageDependency": "Extend shared vocabulary_extension_tables.dart only as required; allocate migration version at implementation, not in this plan."
+    },
+    {
+      "slice": "E5.1",
+      "feature": "F07",
+      "dependencies": [
+        "E3.2",
+        "E4.1"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/adventure/application/adventure_session_composer.dart",
+          "symbol": "CanonicalAdventureSessionComposer",
+          "line": 23,
+          "sha256": "658427af57862a84607e92737aba1987fc774296b2a1c40e1380ac4ec3e8bbb5"
+        },
+        {
+          "path": "lib/features/adventure/domain/adventure_world_catalog.dart",
+          "symbol": "AdventureNodeDefinition",
+          "line": 28,
+          "sha256": "432085d0f31aaf7dabdd5e978dadfc112f030a2c2f0e6758d1d81480e64ea6b6"
+        },
+        {
+          "path": "lib/features/adventure/data/adventure_world_catalog_validator.dart",
+          "symbol": "AdventureWorldCatalogValidator",
+          "line": 47,
+          "sha256": "013b391c897482dd38d0801c4a5bbdfbea422ad754f386cec80a781ef62fc117"
+        }
+      ],
+      "existingTests": [
+        "test/features/adventure/application/adventure_session_composer_test.dart",
+        "test/features/adventure/data/adventure_world_catalog_validator_test.dart",
+        "test/scenarios/adventure_learning_restart_test.dart",
+        "test/architecture/adventure_authority_boundary_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/adventure/domain/dialogue_mission.dart",
+        "lib/features/adventure/application/dialogue_mission_use_cases.dart",
+        "lib/features/adventure/presentation/dialogue_mission_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/adventure/dialogue_mission_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "GRAPH-EXIT",
+        "GRAPH-CYCLE",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/adventure/application/adventure_session_composer_test.dart','test/features/adventure/dialogue_mission_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "storageDependency": "Extend shared vocabulary_extension_tables.dart only as required; allocate migration version at implementation, not in this plan."
+    },
+    {
+      "slice": "E5.2",
+      "feature": "F09",
+      "dependencies": [
+        "E3.2"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false,
+      "existingSymbols": [
+        {
+          "path": "lib/features/review/application/review_center_use_cases.dart",
+          "symbol": "ReviewCenterUseCases",
+          "line": 122,
+          "sha256": "fc422a5acf8db0ed5a7f42d5097163d2aaae3393d7f59c1c8f3cd6667aed4efb"
+        },
+        {
+          "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+          "symbol": "EvidenceEligibilityPolicySet",
+          "line": 30,
+          "sha256": "c86aa2266b27831b48c799cf55b73016c93ee63ed264d6a7e80522632f662411"
+        }
+      ],
+      "existingTests": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/review/review_center_reader_test.dart"
+      ],
+      "proposedNewFiles": [
+        "lib/features/review/domain/transfer_probe.dart",
+        "lib/features/review/application/transfer_probe_use_cases.dart",
+        "lib/features/review/presentation/transfer_probe_screen.dart"
+      ],
+      "proposedNewTests": [
+        "test/features/review/transfer_probe_use_cases_test.dart"
+      ],
+      "fixtures": [
+        "PROBE-DELAY",
+        "PROBE-DISTINCT",
+        "PROBE-CLOCK",
+        "LOST-ACK",
+        "RESEARCH-OFF",
+        "RESTORE-OLDER"
+      ],
+      "focusedCommand": "& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -BaseSha <actual-reviewed-slice-base> -TestTargets @('test/features/learning/evidence_eligibility_policy_test.dart','test/features/review/transfer_probe_use_cases_test.dart') -Resume",
+      "commandStatus": "planned only; new target must exist before invocation",
+      "lifecycleTargets": [
+        "test/data/local/app_database_migration_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "rollback": "disable entry, retire async work, drain media, retain compatible schema/readers and immutable receipts",
+      "completion": "feature-specific criteria in reconciliation.md plus fixture oracles and owner/restart/lifecycle regressions",
+      "storageDependency": "Extend shared vocabulary_extension_tables.dart only as required; allocate migration version at implementation, not in this plan."
+    },
+    {
+      "slice": "E6",
+      "feature": null,
+      "dependencies": [
+        "E2.2",
+        "E3.3",
+        "E4.1",
+        "E4.2",
+        "E5.1",
+        "E5.2"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false
+    },
+    {
+      "slice": "E7",
+      "feature": null,
+      "dependencies": [
+        "E6"
+      ],
+      "status": "proposed; implementation not authorized by this task",
+      "applicationImplementationAllowed": false
+    }
+  ]
+}

@@ -1,0 +1,849 @@
+[
+  {
+    "DefectID": "E7-D01",
+    "TestCaseID": "LOCAL-002",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Lifecycle inventory stale at 50 tables",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Fitness test retained pre-extension cardinality; exact current named inventory has 58 tables.",
+    "files": [
+      "test/architecture/fitness_test.dart"
+    ],
+    "steps": "Execute LOCAL-002 architecture batch",
+    "expected": "Exact inventory and all participant pages use typed navigation",
+    "actual": "Failed assertion; original stdout retained",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D02",
+    "TestCaseID": "LOCAL-002",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Reading screens bypass typed navigation",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Three reading/catalog entry paths directly constructed MaterialPageRoute rather than AppPage, losing uniform route identity.",
+    "files": [
+      "lib/screens/cefr_vocabulary_catalog_screen.dart",
+      "lib/screens/choose_mode_screen.dart",
+      "lib/screens/local_reading_library_screen.dart"
+    ],
+    "steps": "Execute LOCAL-002 architecture batch",
+    "expected": "Exact inventory and all participant pages use typed navigation",
+    "actual": "Failed assertion; original stdout retained",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D03",
+    "TestCaseID": "BATCH-01",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Legacy v26 migration fixture retained later schema",
+    "severity": "medium",
+    "ownerPackage": "G7.4/G8.5",
+    "rootCause": "The old test created current schema, dropped only the v27 table and asserted 27; post-v27 structures remained installed.",
+    "files": [
+      "test/data/local/legacy_learning_import_test.dart"
+    ],
+    "steps": "Run legacy_learning_import_test.dart B15 schema26 fixture",
+    "expected": "Genuine v26 shape upgrades to exact current 58-table inventory and preserves populated owner",
+    "actual": "Expected 27, actual 34; fixture retained eight extensions and v28 column",
+    "evidence": "BATCH-01 original verifier logs",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-f2d02d1b7af92373c4b91c8d57739cb77ed834d60f3f1cfad1daaa5ac6cc4769.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D04",
+    "TestCaseID": "BATCH-01 / same host fallback",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Fallback test settles before durable terminal presentation",
+    "severity": "medium",
+    "ownerPackage": "G2.2/G8.5",
+    "rootCause": "After decoration is removed no animation keeps frames scheduled; pumpAndSettle returns while terminal receipt is acknowledged but presentation pending (busy=true, retry=0).",
+    "expected": "Result visible after async terminal presentation; four unique attempts and exact terminal events",
+    "actual": "Assertion ran at acknowledged=true/presented=false and busy=true",
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6797ccf46cc1-c9cad23dc91d-9c7b9ef2/Explicit-Flutter-tests.stdout.log",
+    "files": [
+      "test/features/adventure/adventure_pair_renderer_parity_test.dart"
+    ],
+    "fix": "Bounded condition-based frame pumping before original visible and durable assertions; no assertion removed",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-85d01be73d854af0c8ef0c3326e41cd3374d7d08043e744a506dae4abfc4c405.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D05",
+    "TestCaseID": "BATCH-02",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Mixed-review goldens predate accepted M3 theme",
+    "severity": "low",
+    "ownerPackage": "G2.8/G8.5",
+    "rootCause": "Historical images center appbar titles; accepted lib/config/m3_theme.dart explicitly sets centerTitle:false (light/dark) and updated outlines.",
+    "expected": "Exact images of accepted design with current fixture, no new overflow",
+    "actual": "Four golden pixel diffs; behavior cases passed",
+    "evidence": "golden-review.json; BATCH-02 logs",
+    "files": [
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_active_typed_light.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\standard_recovered_active_typed_light.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_support_dark_high_contrast.png",
+      "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+    ],
+    "fix": "Reviewed all eight original/current images; updated only four obsolete snapshots, exact equality remains required.",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-3ba17442bfde50c2f23e2c9d2d783d656785b9fe9cce190cd4d83770213e5c65.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D06",
+    "TestCaseID": "BATCH-02",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Export fixture assumes 50 tables",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "Export assertions were not updated for eight accepted extension tables; verify exact canonical inventory and retain owner/export content assertions.",
+    "files": [
+      "test/features/export/research_lifecycle_export_test.dart"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D07",
+    "TestCaseID": "BATCH-04",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Replay fixture clock precedes replay start",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "PairHarness fixed 00:01 clock conflicts with replay start 00:02/00:03. Expose controlled fixture clock and explicitly advance it after replay preparation; preserve production negative-time rejection.",
+    "files": [
+      "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+      "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+      "test/features/learning/pair_matching/pair_practice_replay_test.dart"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D08",
+    "TestCaseID": "BATCH-04",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Pair host goldens predate accepted theme",
+    "severity": "medium",
+    "ownerPackage": "G8.5",
+    "rootCause": "Same accepted centerTitle:false theme delta as E7-D05; both before/after pairs reviewed.",
+    "files": [
+      "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png",
+      "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+    ],
+    "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
+    "actual": "Recorded assertion or pixel comparison failure",
+    "evidence": "Original batch stdout retained externally",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D09",
+    "TestCaseID": "BATCH-05",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester; synthetic local research",
+    "title": "Recommendation fixtures record under inactive or ambiguous owner",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Multi-owner synthetic setup predates unique-active-owner enforcement. Explicit transitions now record each owner history and restore owner-1 before read-only isolation assertions.",
+    "files": [
+      "test/features/recommendation/recommendation_policy_test.dart",
+      "test/features/recommendation/recommendation_use_cases_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": {
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
+      "result": "PASS",
+      "testsInCombinedCommand": 318,
+      "countInterpretation": "overlapping combined command, not unique per defect"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D10",
+    "TestCaseID": "BATCH-05",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester; synthetic local research",
+    "title": "Research and assessment transport reject current schema34",
+    "severity": "high",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Explicit client and Firestore schema allowlists stopped at28 despite schema29-34 migrations. Extended known versions only, retained exact issuer pins and rejection of future and noninteger versions. No rollout or deployment.",
+    "files": [
+      "lib/features/sync/domain/research_sync.dart",
+      "lib/features/sync/domain/sync_entity.dart",
+      "firestore.rules",
+      "test/features/research/research_sync_authorizer_test.dart",
+      "test/features/sync/assessment_run_sync_test.dart",
+      "test/security/firestore-rules.test.cjs"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": {
+      "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
+      "result": "PASS",
+      "testsInCombinedCommand": 318,
+      "countInterpretation": "overlapping combined command, not unique per defect"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "rulesRetest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-economy-rules.json",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D11",
+    "TestCaseID": "BATCH-06",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Fake cloud-ID wrapper corrupts local retry snapshot identity",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Test wrapper forwarded a cloud-translated category claim to the local store. Bidirectional fixture translation now preserves local persisted identity; assertions verify both local snapshot and cloud retry identity.",
+    "files": [
+      "test/features/sync/sync_engine_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/0153c5563fcf-a1ef2f6baaf5-8e38654a/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-a53ff962810dd17ff9418500c89dc0f1e6e6345f45f18fcec4d0cdd65c7dc740.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D12",
+    "TestCaseID": "INTEGRATION-CONTROLS/INTEGRATION-MEDIA",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/PowerShell synthetic CLI fixtures",
+    "title": "Integration verifier references removed entrypoints and rejects current bounded tests",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Inherited runner retained production_learning_flow_test.dart and verify-android-e2e.ps1 after entrypoints moved. Current integration target selection now binds flutter-tester, hashes integration helpers and rejects traversal or broader-scope substitution. Defaults reference actual core-journey and selected-device smoke runner.",
+    "files": [
+      "tool/cli/verify-scope.ps1",
+      "tool/cli/tests/verify-scope-integration.tests.ps1"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/3095beabbdc7-c60646767053-5fae7ff6/verify-scope-integration.tests.ps1.stderr.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D13",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Restart fixture treats repeated answer as an independent accuracy sample",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "FirstAnswerAccuracy intentionally selects one first answer per owner/session/word identity. Scenario now creates a second pinned session, retaining exact two-attempt, correct/wrong, SRS, reward and outbox assertions.",
+    "files": [
+      "test/scenarios/production_learning_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": {
+      "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+      "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D14",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Complete inventory fixture finishes an inactive owner assessment",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Canonical assessment completion requires unique active owner. Seeding temporarily activates the intended synthetic owner and restores the original owner in finally; foreign inventory and merge isolation assertions remain.",
+    "files": [
+      "test/scenarios/guest_upgrade_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D15",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Mastery navigation fixture taps an unbuilt lazy-list action",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Weekly summary moves weakness action below the initial viewport. Test now scrolls the actual mastery list and asserts hit-testability before tapping, retaining route and live emergency-off checks.",
+    "files": [
+      "test/scenarios/production_feature_navigation_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": {
+      "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+      "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D16",
+    "TestCaseID": "BATCH-08",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Complete upgrade scenario lacks newer owner table inventory",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Scenario inventory seed and identity columns predate eight extension tables and retained legacy rows. Added canonical plan/personal-set fixtures plus opaque ownership sentinels, explicit identities and owner-specific references, preserving positive-table and foreign-owner isolation checks.",
+    "files": [
+      "test/scenarios/guest_upgrade_restart_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D17",
+    "TestCaseID": "BATCH-09",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter-tester",
+    "title": "Matching support fixture taps below the viewport after hint expansion",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Focused trace shows word-button center at y606 outside800x600 viewport after hint expansion. Fixture now settles hint layout, scrolls each actual control into view, asserts hit-testability and selected state, and retains exact feedback, guided class, hint level and empty SRS checks. Initial async-only hypothesis was insufficient; production diagnostics removed.",
+    "files": [
+      "test/screens/matching_mode_screen_test.dart"
+    ],
+    "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d68b3f8db0c4-71c43cceb4b2-0500554d/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-bf66f655b04095db53f910fa0427f72cb7a18173da54f888c6199e6dbe1929ff.json",
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D18",
+    "TestCaseID": "static-analysis",
+    "sourceSHA": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "environment": "Windows/flutter analyze",
+    "title": "Static analysis gate reports source lints and disposable fixture syntax",
+    "severity": "medium",
+    "ownerPackage": "G8.5/G8.8",
+    "rootCause": "Inherited single-statement style, redundant casts/imports and equivalent constructor forms; analyzer cannot infer mounted through _isCurrent helper; matrix evidence uses print. Disposable fingerprint fixtures had invalid placeholder Dart under build.",
+    "files": [
+      "37 files in dart-fix-apply.log",
+      "lib/screens/study_reminder_settings_screen.dart",
+      "test/features/learning/session_configuration_mode_matrix_test.dart",
+      "tool/cli/tests/r15-scope.tests.ps1",
+      "tool/cli/tests/verify-scope-selection.tests.ps1"
+    ],
+    "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "retest": {
+      "static": "No issues found",
+      "regression": [
+        "BATCH-R01",
+        "BATCH-R02"
+      ],
+      "cli": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-e763c76181530b4ed06722eda7a6737ea2b15325ee6c3351f987cefdb85f3c6d.json"
+    },
+    "staticRetest": {
+      "status": "PASS",
+      "log": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze-retest.log",
+      "sha256": "a43ccdc6e7a44328f37379c3538caaf9facaf87a51091043c06cf3f0fc25d23c",
+      "result": "No issues found"
+    },
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D19",
+    "TestCaseID": "G86-native-typed-recall-layout",
+    "sourceSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "environment": "LexiQuest_API_35 emulator and focused flutter-tester regression",
+    "title": "Lesson auxiliary flex leaves activity space unused and shell has no background",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Flexible loose auxiliary and Expanded mode split available height equally. A short hint consumes less than its allocation, leaving unused space below the mode; shell has no opaque Material surface.",
+    "files": [
+      "lib/features/learning/presentation/unified_lesson_shell.dart",
+      "test/features/learning/unified_lesson_controller_test.dart"
+    ],
+    "steps": "Open preview typed/definition activity after configuration; observe shortened activity and unpainted background; reproduce under 800x600 widget viewport.",
+    "expected": "Activity fills all remaining space beneath a short hint; opaque background covers shell; long auxiliary content stays bounded and scrollable.",
+    "actual": "Activity bottom376 rather than600; no Material ancestor; native screenshot retained black areas.",
+    "evidence": "build/verification/5535da0e29bb32a70c65a62a88dc33b41de7930d/896bf1280c1c-cda49c509e50-36a22597/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "retest": "targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json",
+    "affectedRegression": "9 shared shell consumers, 280 tests passed: targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json",
+    "fix": "Opaque themed Material and bounded intrinsic-height auxiliary scroll; activity Expanded gets remaining actual height.",
+    "nativeRetest": [
+      "g86-d19-feedback.png",
+      "g86-d19-typed-result.xml"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D20",
+    "TestCaseID": "G86-sentence-scramble-content",
+    "sourceSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "title": "Sentence route fabricates mixed-language sentence from word and meaning",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "environment": "LexiQuest_API_35 local preview",
+    "rootCause": "Route interpolated spelling means meaning instead of loading reviewed example metadata.",
+    "expected": "Use an exact reviewed example at pinned revision, or unavailable state.",
+    "actual": "bag means Thai bag translation used as English sentence activity.",
+    "evidence": [
+      "g86-sentence-board.xml",
+      "build/verification/ae29ec3dd1107d6b6196ecdb3020e221da6f19da/31c903d620c8-267b91a682ec-0c943b9e/Explicit-Flutter-tests.stdout.log"
+    ],
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "0fdcf59e38e363376803044114be439b545347c6",
+    "fix": "ReviewedSentenceScrambleLoader uses existing reviewed cloze example pinning; no fabricated fallback; cached load retired on session replacement.",
+    "retest": [
+      "targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json (93, earlier loader)",
+      "targeted-learning-0c71f3187526ad69753d214c0858c98318a1b30a608f18e5a29ad545733bf6c6.json (77, final route/loader)",
+      "g86-d20-analyze.log (No issues)"
+    ],
+    "nativeRetest": [
+      "g86-d20-board.xml",
+      "g86-d20-result.xml"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D21",
+    "TestCaseID": "G86-associative-cue-fading",
+    "sourceSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "title": "Cue-fading reading stage retains embedded translations",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Launcher constructs passage from word means translation; both reading stages show same passage.",
+    "expected": "Cue-fading stage removes translation cues.",
+    "actual": "All ten Thai meanings remain visible under without translations instruction.",
+    "evidence": [
+      "g86-associative-reading.xml",
+      "g86-associative-step2.xml"
+    ],
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+    "fix": "Stage-two view removes inline meanings only from an exact app-generated glossary with its generated document ID. Ordinary passages and persisted original document identity remain unchanged. Bounded deterministic parsing avoids dynamic backtracking.",
+    "retest": [
+      "targeted-learning-e6edb2e5f4e6339cd5f3482bc8b835381f759b1dc841aefa01015fbb12dbbe3f.json (initial3targets)",
+      "targeted-learning-a8a327eb02e9d7705da9057dcbf79fbf1787057c492463c87637b53bd613c3f5.json (finalparser2targets)",
+      "g86-d21-analyze.log (No issues)"
+    ],
+    "nativeRetest": [
+      "g86-d21-stage2.xml",
+      "g86-d21-resumed-stage2.xml",
+      "g86-reading-stage6.xml"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D22",
+    "TestCaseID": "G86-reading-completion-return",
+    "sourceSHA": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
+    "title": "Completed reading shows false launcher failure before route disposal",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Navigator result resumes launcher before reverse-animation disposal marks terminal authority. Launcher then tries to abandon the already-completed session.",
+    "expected": "Successful durable completion returns without error and exposes new round immediately.",
+    "actual": "Native session and10attempts are complete, but launcher shows cannot start reading snackbar.",
+    "evidence": [
+      "g86-reading-completed.xml",
+      "g86-reading-after-completion-db/rows.json",
+      "77a513263baf-93eae16bea52-a4a6e6f1/Explicit-Flutter-tests.stdout.log"
+    ],
+    "fix": "Observe committed controller terminal state immediately; remove listener before disposal. Preserve existing compensation and owner/session identity checks.",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "retest": "targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json; g86-d22-analyze.log",
+    "diagnostic": "Copied native database recovery and10correct canonical attempts pass; exact diagnostic source archived externally, excluded from portable tests.",
+    "nativeRetest": [
+      "g86-d22-native-return.xml",
+      "g86-final-durable-proof.json"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D23",
+    "TestCaseID": "G86-srs-insufficient-due-count",
+    "sourceSHA": "75b44bab67872c8a785eff3228839bbb1e3815c8",
+    "title": "Configured SRS shortage falsely reports zero due words",
+    "severity": "low",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Exact-count admission returns an empty session when fewer than the requested items are due; UI used the zero-due message for both outcomes.",
+    "expected": "Explain insufficient requested count and suggest reducing it without admitting a partial or fake session.",
+    "actual": "Two due words with ten requested showed no due words.",
+    "fix": "Use count-shortage copy for multi-item configuration; admission and evidence policies unchanged.",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+    "evidence": "59e4d601672a-60de5aa32875-ec353b01/Explicit-Flutter-tests.stdout.log",
+    "retest": "targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json; g86-d23-analyze.log",
+    "nativeRetest": [
+      "g86-d23-message.xml",
+      "g86-d23-final-db/rows.json"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D24",
+    "TestCaseID": "G86-single-question-recognition-options",
+    "sourceSHA": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "title": "One-question choice lesson offers only its correct answer",
+    "rootCause": "Normal quiz and mixed typed-recall sessions derived choices only from selected question words; only attached review loaded an external owner-scoped distractor bank.",
+    "expected": "Provide distinct non-equivalent alternatives or fail closed without answer/reward evidence.",
+    "actual": "One-question bag lesson presented only its correct meaning and accepted it as recognition.",
+    "evidence": [
+      "g86-ghost-seed-question.xml",
+      "g86-single-choice-feedback.xml",
+      "g86-single-result-view.xml",
+      "3640e6a8996c-e7655690da7b-de2776e4/Explicit-Flutter-tests.stdout.log"
+    ],
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+    "fix": "Read owner-scoped distractors when a question lacks options; preserve selected question count and attached-review authority; pass bank to mixed typed recall; retain admitted session for explicit cleanup if preparation is unavailable.",
+    "fixtureCorrection": "Existing one-question lifecycle fixtures now include a genuine alternative in a different category; original one-question lifecycle/persistence assertions unchanged. Six route fixtures explicitly opt into a real alternate word; no assertions relaxed.",
+    "testMethodIncident": "First typed-regression attempt used a nonexistent constructor parameter and failed compilation. Corrected to QuizScreen.typedRecall, then verified both normal and typed cases fail on original screen source before restoring fixed source.",
+    "retest": {
+      "combined": "3e8dd471fda9-be09da518967-636c1d02/Explicit-Flutter-tests.stdout.log",
+      "combinedDisposition": "299 passing tests; six failures restricted to choose_mode_screen_test one-word fixtures. Six other target files unchanged and passing evidence retained.",
+      "correctedRoute": "targeted-learning-eaf57345f079d1a8426799df64d9da516c3af578feefe031c3998d07c1a61b4b.json;67passed",
+      "analyzer": "g86-d24-analyze.log;No issues",
+      "negative": "Unavailable quiz exits to abandoned session; no answer or reward; selected session count retained."
+    },
+    "nativeRetest": [
+      "g86-d24-native-proof.json"
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D25",
+    "TestCaseID": "E7-COV-f16",
+    "sourceSHA": "5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f",
+    "environment": "Windows/flutter-tester",
+    "title": "Native composition guard omits reviewed sentence intermediary",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "rootCause": "D20 introduced a pinned-content helper within the existing native loader but the structural constructor allowlist still names only prior roots.",
+    "files": [
+      "test/architecture/lesson_mode_adapter_coverage_test.dart"
+    ],
+    "steps": "Run G88 bounded regression batch01; native screens composition test",
+    "expected": "Pinned reviewed sentence helper is permitted only for SentenceScrambleScreen and remains reachable only through existing authorized composition roots",
+    "actual": "Guard rejects SentenceScrambleScreen constructor in reviewed_sentence_scramble_loader.dart",
+    "evidence": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/56b564bbea3b-c3b018a4b252-3720ffd2/Explicit-Flutter-tests.stdout.log",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "fixSHA": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+    "retest": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/targeted-learning-a91911da26da6ff0d0ffbfd8f11a2ae023d32189adc634cebd76bdc9be161269.json",
+    "affectedRegression": "g88-evidence-reconciliation.json; reviewed_sentence_scramble_loader and route tests retained or rerun against final imports",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D26",
+    "TestCaseID": "E7-COV-f10",
+    "sourceSHA": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+    "environment": "Windows/flutter-tester 412x915 Thai",
+    "title": "Pair host goldens predate explicit shell background",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "files": [
+      "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+    ],
+    "steps": "Run G88 batch04 actual host goldens",
+    "expected": "Settled timeout/result controls remain visible and match reviewed layout",
+    "actual": "Two golden comparisons differ only in top shell surface;4.60percent timeout and4.74percent measured-result pixels.",
+    "rootCause": "D19 Material paints scaffoldBackgroundColor in top companion region, replacing implicit surface tint. RGB comparison confines mismatch to y4..64, with all pixels below identical. Initial visual suspicion of missing timeout content was not confirmed in settled captures.",
+    "evidence": "build/verification/3a56a391b9ef1b911e49c05dc8edaca6ebf8981d/ed65d8b3ec25-b78066201b5f-cbbb99d7/Explicit-Flutter-tests.stdout.log",
+    "imageEvidence": [
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2207b3aa97b96163-host_result_thai_measured_isolatedDiff.png",
+        "sha256": "2207b3aa97b961637a3c7604d9d7fb966543bcf94c04ae5d4eb646db0ad038cb"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\d248791186e703c9-host_result_thai_measured_maskedDiff.png",
+        "sha256": "d248791186e703c924ee3c257d6689604eb8d6fb9d33347efb0f8cfebcb828df"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\3e97bb7c00b8b0d6-host_result_thai_measured_masterImage.png",
+        "sha256": "3e97bb7c00b8b0d699b55d49f51894ec2e3b1af6ef0d5eba3498922bdf9fbc04"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\aadec3bb321af358-host_result_thai_measured_testImage.png",
+        "sha256": "aadec3bb321af35805571b3b8e75552e79e36d75d5247591f38b6f3f91d32f19"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\5aa330c2f7d2a4bb-host_timeout_thai_isolatedDiff.png",
+        "sha256": "5aa330c2f7d2a4bb8e072b5d65359a05bade0bf179e23bf3d70e433475da6451"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2f42150eaea5ebb2-host_timeout_thai_maskedDiff.png",
+        "sha256": "2f42150eaea5ebb2be702612189729db2752db5640e6acda19c4607148074490"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\c76c9f57aceb1215-host_timeout_thai_masterImage.png",
+        "sha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\679784a10a7a575f-host_timeout_thai_testImage.png",
+        "sha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399"
+      }
+    ],
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "review": "g88-d26-golden-review.json",
+    "testStrengthening": "Bounded readiness assertion now precedes capture; no screenshot matcher tolerance or business assertions weakened.",
+    "fixSHA": "0ae0bdf9263e3388b0ee02187ea710128f02d2c6",
+    "retest": "build/verification/3a56a391b9ef1b911e49c05dc8edaca6ebf8981d/targeted-learning-43c47ea71d6b0f23f07d9bcbdf18ed779ecdcf46e19445467fcac48ffd45f3f4.json",
+    "affectedRegression": "Actual Pair host golden file all3tests pass; other Pair behavior targets retain individual successful results from G88 batch04 with failed golden target explicitly superseded.",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
+  },
+  {
+    "DefectID": "E7-D27",
+    "TestCaseID": "E7-COV-f42",
+    "sourceSHA": "0ae0bdf9263e3388b0ee02187ea710128f02d2c6",
+    "environment": "Windows/flutter-tester",
+    "title": "Today review fixture skips attached-session exit confirmation",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "rootCause": "D24 preserves the admitted session before preparation can fail. Back correctly requires explicit abandonment; the integration-style navigation fixture expected an immediate pop.",
+    "files": [
+      "test/screens/main_navigation_screen_test.dart"
+    ],
+    "steps": "G88 regression batch07 and isolated named reproduction",
+    "expected": "Insufficient-options session remains active until confirmed exit, then abandons exactly once without answers; subsequent review sessions complete normally.",
+    "actual": "Test expected ReviewCenterScreen while exit confirmation remained open.",
+    "evidence": [
+      "87956c5d3ad6-3974f68b53f4-88b10d0e/Explicit-Flutter-tests.stdout.log",
+      "839bf3f81962-3974f68b53f4-cafb334a/Explicit-Flutter-tests.stdout.log"
+    ],
+    "fix": "Exercise explicit confirmation; strengthen active-before/abandoned-after and no-answer assertions. No production change.",
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "retest": "build/verification/0ae0bdf9263e3388b0ee02187ea710128f02d2c6/targeted-learning-6feddb3ffd30d2063ad1974162da345c6ac132a46c685a3d71d37df5667d48cd.json",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    },
+    "fixSHA": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+    "retestFormatFinal": "g88-navigation-formatted-retest.log; same named command receipt updated by verified final run",
+    "analyzer": "g88-final-analyze.log; No issues found"
+  }
+]

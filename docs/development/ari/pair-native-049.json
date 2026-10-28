@@ -1,0 +1,52 @@
+{
+  "status": "NATIVE_BASELINE_CONNECTED_RESULT_DISCONNECTED_REPLAY_PASS_REMAINING_CASES_OPEN",
+  "installedSource": "APK048, a004ea3f canonical result binding; no app source changes049",
+  "baseline": {
+    "path": "Home matching tile -> 4pairs, en-to-th, untimed -> manual bag/chair/book/bottle pairs",
+    "firstAnswers": "4/4",
+    "matched": 4,
+    "independent": 4,
+    "assisted": 0,
+    "stars": 3,
+    "interactiveSeconds": 136,
+    "provider": "disconnected"
+  },
+  "connected": {
+    "login": "Existing sole account; private device-code match and browser login success; no credentials saved",
+    "prompt": "Read the current matching result using tools. In Thai report first answers, matched pairs, independent and assisted pairs, stars and elapsed time. Does replay add progress or rewards? Do not change anything.",
+    "reply": "Thai reply correctly reported4/4,4pairs,4independent,0hints,3stars,2min16sec and replay adds no progress/rewards",
+    "toolReceipt": "list_menu_actions: available",
+    "limitation": "One live result interpretation, not all AI outputs or active-board guidance"
+  },
+  "disconnected": {
+    "explicitDisconnect": true,
+    "resultRetained": true,
+    "practiceReplayCompleted": true,
+    "firstAnswers": "4/4",
+    "matched": 4,
+    "independent": 4,
+    "assisted": 0,
+    "stars": 3,
+    "interactiveSeconds": 65,
+    "uiLabel": "Practice Replay and no added progress/rewards",
+    "limitation": "No before/after reward database reconciliation in049; do not infer it from label"
+  },
+  "methodRecovery": [
+    "UIAutomator failed on active board; screenshot-guided ADB used instead; no app failure inferred from dump cleanup failure",
+    "Initial target tap arrived before selection settled; repeated target after observed selected state; exactly four successful visible matches in baseline",
+    "Auth/composer waits used observed input state; target-free prompt contains no expected scores"
+  ],
+  "cleanup": {
+    "bridgeTerminal": true,
+    "ownedReverseRemoved": true,
+    "privatePairConfigRemoved": true,
+    "port8765Listener": false,
+    "deviceEnd": "Disconnected replay result,AIcollapsed,USB2; originalapp/accounts preserved"
+  },
+  "remaining": [
+    "Native wrong-answer/repair/support and active-board liveMCP",
+    "Replay result connected interpretation and durable reward/evidence reconciliation",
+    "CEFR session connected/disconnected,dictation,speech,camera,sync and all14coverage",
+    "Whole-project review after MCP acceptance"
+  ]
+}

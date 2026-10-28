@@ -1,0 +1,15 @@
+{
+  "dispatchId": "ux-s01-i-20260924-897e",
+  "receivedAtUtc": "2026-09-24T07:10:34.598658+00:00",
+  "threadId": "01a0d23e-93d1-7403-bc39-0a98b8785433",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\1d7b\\LexiQuest",
+  "branch": "feature/ux-s01-i-1d7b",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "verifiedEntries": 316,
+  "manifestSha256": "1d5c0ca24a1a542c07f2505f0f816513bdb436beb885946c3cd07716747381c9",
+  "archiveSha256": "aca0cdad3616898b68866183d1f674cef97497be06e996ff548e76fb985be1f8",
+  "overlayFingerprintSha256": "c210ca88438906f91d5e1caa3f9c2bcbf0a9e2a7e98543fea7aa42abac3c5cdd",
+  "originPreserved": true,
+  "routing": "current-model deterministic fallback, not Jev-selected; fresh billing/shared-spend/quota unavailable",
+  "runtimeTier": "not exposed; Standard/default requested; no savings claims"
+}

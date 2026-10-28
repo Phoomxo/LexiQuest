@@ -1,0 +1,41 @@
+{
+  "python": "3.12.14",
+  "tensorflow": "2.20.0",
+  "devices": [
+    "PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU')"
+  ],
+  "forwardShape": [
+    1,
+    1024
+  ],
+  "parameters": 3228864,
+  "weights": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\keras-cache\\models\\mobilenet_1_0_224_tf_no_top.h5",
+      "sha256": "9f9cfd8c925431c06ce96744e1d201575f6a681bf38ae2de38e2ae8f7d7829d3"
+    }
+  ],
+  "executable": "C:/Users/Phet/.cache/lq12-20260911/Scripts/python.exe",
+  "ramBytes": 17127862272,
+  "logicalProcessors": 12,
+  "gpu": "RTX3050 8192MiB, driver610.88; TensorFlow CPU only",
+  "policy": "Sequential CPU training 4 intra/2 inter threads; no paid resources",
+  "toolAudit": {
+    "tools/train_camera_pilot.py": {
+      "sha256": "5fcafa376eba2e0032f5da5e6cf96c45c4a7ed095e86224f23fea49b29eeaf1d"
+    },
+    "tools/export_camera_pilot.py": {
+      "sha256": "e33abd102bea043fc5e6d2835d15684d82b7ab9b5d03217816b20e87f4a91418"
+    },
+    "tools/camera_accuracy.py": {
+      "sha256": "8e79da10b2b0062d3f07ec16b5fc010b42c5f15e542a43efc52faa5fd2429286"
+    },
+    "lib/features/device_model/domain/model_manifest.dart": {
+      "sha256": "4f2c764194e99426aa91f3eaf7b06bb8a404caa6f7243a84d1c32297cbc6d89d"
+    },
+    "lib/features/device_model/data/litert_image_classifier.dart": {
+      "sha256": "e8e024b9921eb5cdfbe83da8ef3765a86cf691347a5d587f5230ae59824ef273"
+    }
+  },
+  "finding": "Legacy trainer preflight requires unknown coverage and then rejects unknown labels; do not weaken camera audit. Implement separate versioned web-development trainer. Legacy export four classes/topK mismatch; new candidate 16 labels, null background index, uint8 RGB [1,224,224,3], float32 [1,16], embedded labels.txt. Baseline remains rollback; no rollout before B12/device gates."
+}

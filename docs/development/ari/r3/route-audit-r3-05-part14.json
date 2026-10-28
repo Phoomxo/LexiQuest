@@ -1,0 +1,108 @@
+{
+  "taskId": "01a0d040-3e4f-74b1-b0ca-2adb6050caba",
+  "sourceFingerprint": "36b6433309cf16ca6962751cf89ecf7d7f9c7a0154eba86d3d53eb40826ced65",
+  "assertions": [
+    {
+      "id": "A44",
+      "groups": [
+        "W09"
+      ],
+      "proven": [
+        "89current-host history/progress tests after changedreachabledependency audit."
+      ],
+      "tests": [
+        "test/screens/learning_history_screen_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart",
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/progress/progress_projector_test.dart"
+      ],
+      "limits": [
+        "W09 89 tests across history screen,mastery dashboard,history reader,progress projector. Mixed doubles and real in-memory SQLite;screen display/context assertions do not certify full file durability/connection matrix/native history. Pair actual-host10 frompart11 not rerun."
+      ]
+    },
+    {
+      "id": "A45",
+      "groups": [
+        "W10"
+      ],
+      "proven": [
+        "18current-host quest/reward tests;in-memory owner/context/dailyrefresh/preview distinctions."
+      ],
+      "tests": [
+        "test/screens/quest_status_screen_test.dart",
+        "test/screens/avatar_equipment_screen_test.dart"
+      ],
+      "limits": [
+        "W10 18 tests across quest and avatar. Quest dailyrefresh real in-memorySQLite plus repository doubles. Avatar preview/cancel/manual equipment/canonicalownership real in-memorySQLite;second database is a fresh memory database,not file reopen. No purchases made on native."
+      ]
+    },
+    {
+      "id": "A46",
+      "groups": [
+        "W12",
+        "W13",
+        "W14"
+      ],
+      "proven": [
+        "71current-host scanner/export/offline tests with exact recorded closure."
+      ],
+      "tests": [
+        "test/screens/object_scanner_screen_test.dart",
+        "test/screens/export_center_flow_test.dart",
+        "test/screens/export_center_screen_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart"
+      ],
+      "limits": [
+        "W12/W13/W14 71 tests across scanner,export flow+screen,offline manager. Scanner uses _FakeScanner;test named real adapter/persists accepted vocabulary checks acceptCalls,not real camera recognition or DBpersistence. Offline manager uses _FakeManager.",
+        "Export generator/Drift readers and temporary artifact bytes exercised;document picker outcomes injected. Export tests include synthetic consent guard coverage,not research activation or real Android picker certification."
+      ]
+    },
+    {
+      "id": "A47",
+      "groups": [
+        "W14"
+      ],
+      "proven": [
+        "1file-backed local sync lostACK/reopen with gatewaydouble and4idempotentoperations."
+      ],
+      "tests": [
+        "test/scenarios/file_backed_sync_recovery_test.dart"
+      ],
+      "limits": [
+        "Sync1 uses file-backed SQLite and _RestartCloud gateway double:offline/lostACK,4operations appliedonce,checkpoint and localinventory survive reopen;not hosted sync,network auth or abruptprocessdeath."
+      ]
+    },
+    {
+      "id": "A48",
+      "groups": [
+        "W09",
+        "W10"
+      ],
+      "proven": [
+        "Nativeprogress54/77andXP148read-onlyreconciliation;quest0/5and5/5 conditionalreward;58tablecomparison/freshrestore."
+      ],
+      "tests": [],
+      "limits": [
+        "Native read-only progress/quest navigation on same part09 APK;58tables compared,13protectedtables unchanged. One dailyquest+progress and refresh timestamps. No history/review-center/Pair native run,provider or new answers. All215criterionrows/211remaining preserved."
+      ]
+    }
+  ],
+  "reuseAudit": "reuse-audit-r3-05-part14.json",
+  "native": "native-progress-quests-r3-05-part14.json",
+  "configAudit": "native-route-config-r3-05-part14.json",
+  "limits": [
+    "W09 89 tests across history screen,mastery dashboard,history reader,progress projector. Mixed doubles and real in-memory SQLite;screen display/context assertions do not certify full file durability/connection matrix/native history. Pair actual-host10 frompart11 not rerun.",
+    "W10 18 tests across quest and avatar. Quest dailyrefresh real in-memorySQLite plus repository doubles. Avatar preview/cancel/manual equipment/canonicalownership real in-memorySQLite;second database is a fresh memory database,not file reopen. No purchases made on native.",
+    "W12/W13/W14 71 tests across scanner,export flow+screen,offline manager. Scanner uses _FakeScanner;test named real adapter/persists accepted vocabulary checks acceptCalls,not real camera recognition or DBpersistence. Offline manager uses _FakeManager.",
+    "Export generator/Drift readers and temporary artifact bytes exercised;document picker outcomes injected. Export tests include synthetic consent guard coverage,not research activation or real Android picker certification.",
+    "Sync1 uses file-backed SQLite and _RestartCloud gateway double:offline/lostACK,4operations appliedonce,checkpoint and localinventory survive reopen;not hosted sync,network auth or abruptprocessdeath.",
+    "Native read-only progress/quest navigation on same part09 APK;58tables compared,13protectedtables unchanged. One dailyquest+progress and refresh timestamps. No history/review-center/Pair native run,provider or new answers. All215criterionrows/211remaining preserved."
+  ],
+  "next": [
+    "First resolve native build configuration gap from native-route-config-r3-05-part14.json:canonical learningpreview profile enables Today/history andPair;part09APK lacks flag. Verify productioncloud flag then build isolatedAriAPK with canonicaldefinefile,retainoldAPK andfreshbackup beforeinstall/everycycle. Run nativePairwrongrepair/support/activeboard/replayDBreconciliation andToday/history/review-center as available;no providerrequired.",
+    "Next hostgap W12 actual cameraacceptusecases/repository/fileSQLite with mapped result,owner/AIabsent-connected-disconnected/retry/reopen. CurrentFakeScanner acceptCalls is not storageproof. W10 reward filedurability alsoopen;do not treat freshmemorydatabase as reopen.",
+    "Reuse179currentPASS with exactrecordedclosure;do not rerununchanged59/37/58 orPair10. Prior W01/W02native/provider/account/processdeath,W03delayedpreadmission,W06eligibility,speechpositive/cameragroundtruth,hostedsync and180minendurance remain.",
+    "All215rows4passed211remainingIDs unchanged;all14workflow/modeOPEN. NoR3-06untilactualexit. NoJev/provider/cost/research/security/subagents/backgroundimplementers. Preserveallbackups andnativeoriginals."
+  ],
+  "wholeScopeComplete": false
+}

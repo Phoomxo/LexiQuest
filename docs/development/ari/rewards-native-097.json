@@ -1,0 +1,20 @@
+{
+  "checkpoint": "097",
+  "workflow": "W10",
+  "status": "REWARDS_CONTEXT_096_NATIVE_RETEST_PASS",
+  "apk": "096",
+  "sourceChanged": false,
+  "connected": "Actual provider lists both owned/equipped wallpaper_focus and theme_default;84coins144XPlevel8; no proficiency claim. Native IPApreview thenactualAI identifies headgear_ipa previewonly, unowned, unequipped.",
+  "disconnected": "ExplicitAI disconnect; native cancelpreview;leave/reopen restored nohat/defaulttheme; balances retained",
+  "durable": "Eight reward/learning tables exactly unchanged since095",
+  "evidence": "evidence/rewards-native-097",
+  "defectClosed": "REWARDS-CONTEXT-096",
+  "limits": "Representative actual-provider retest; no wholeW10/all14 acceptance claim",
+  "cleanup": "Bridge3066 stopped;reverse/configremoved;isolatedrestarted;originalaccounts untouched",
+  "remaining": [
+    "W08 personalsets dedicatedoptionalcontext missing",
+    "W10 finalcoverageaudit",
+    "Remaining14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

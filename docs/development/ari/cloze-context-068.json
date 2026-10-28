@@ -1,0 +1,25 @@
+{
+  "checkpoint": "068",
+  "status": "HOST_FIXED_NATIVE_PENDING",
+  "rootCause": [
+    "Shared method context omitted actual selected/typed input state",
+    "Native cloze acknowledged answers not reflected in shared progress",
+    "Feedback continuation based on correctness rather than actual next/results"
+  ],
+  "changes": [
+    "Always mounted owner-bound readonly current-item binding;index/languages/input-mode/phase/skip reason;no hidden answer/draft/mutation",
+    "Distinct acknowledged index count reflected via existing lifecycle;no duplicate persistence",
+    "Next/results feedback label follows actual button"
+  ],
+  "red": "Absent case expected progress1 got0;connected/disconnected missing context",
+  "green": "22 full cloze screen/adapter tests passed;3 new variants absent/connected/disconnected preserve draft and owner fencing,complete typed correct plus selected wrong with exact2 distinct evidence classes;retry count0 until acknowledgment then1",
+  "analysis": "4 files no issues",
+  "native": "Installed067 unchanged;build/install and native live/disconnect pending",
+  "remaining": [
+    "Cloze native acceptance",
+    "Cloze skip context and skipped-progress host assertions should be expanded",
+    "Definition native live skip guidance",
+    "Other14-mode/workflow acceptance gaps"
+  ],
+  "wholeGoalComplete": false
+}

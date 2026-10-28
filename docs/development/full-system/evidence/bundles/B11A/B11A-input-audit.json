@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "runtimeInputHashesVerified": 1307,
+  "probeRelocation": "test/b11a_candidate_runtime_probe_test.dart byte-identical to preserved candidate_runtime_test.dart; temporary test removed after passed gate",
+  "sourceReceipts": "G5.3b inputs and G5.3c sourceFingerprints verified unchanged; G5.3a historical plan pin belongs to accepted a9d9c485 and was refined before G5.3b",
+  "generatedDisposition": "Only tool-generated platform registrants restored to accepted HEAD; no production Dart changes",
+  "gateReuse": "No rerun of passed gates whose relevant inputs remain unchanged",
+  "requiredOpenDefects": []
+}

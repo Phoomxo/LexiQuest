@@ -1,0 +1,16 @@
+{
+  "checkpoint": "111",
+  "workflow": "W07",
+  "status": "NATIVE_EMPTY_BASELINE_PASS_PROVIDER_PENDING",
+  "build": "Isolated debug110 built and installed successfully on Vivo",
+  "fixture": "Stopped isolated app; preserved original SQLite/main/WAL/SHM on-device and host; fresh database bootstrapped; original application untouched",
+  "native": [
+    "No provider configured: clinic shows no answers/sample0",
+    "Opening unpaired AI displays unavailable pairing while clinic remains usable",
+    "Manual bag correct answer then confirmed early exit of unfinished10-item quiz;clinic shows no incorrect words/sample1"
+  ],
+  "cleanup": "Temporary database retained separately under app_flutter/ari-empty-result-111;original files restored byte-identically before restart",
+  "recovery": "Initial listing was column formatted and failed assertion before any move;ls -1 corrected discovery. Exit/navigation taps re-observed after asynchronous state changes;no claim of quiz completion.",
+  "remaining": "Actual provider replies for empty/no-incorrect states not tested. Installed110 remains with original117-answer fixture. Full objective open.",
+  "wholeGoalComplete": false
+}

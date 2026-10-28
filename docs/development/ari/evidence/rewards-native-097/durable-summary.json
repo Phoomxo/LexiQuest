@@ -1,0 +1,37 @@
+{
+  "tables": {
+    "reward_transactions": {
+      "rows": 49,
+      "exactRowsUnchangedSince095": true
+    },
+    "owned_reward_items": {
+      "rows": 1,
+      "exactRowsUnchangedSince095": true
+    },
+    "equipped_reward_items": {
+      "rows": 2,
+      "exactRowsUnchangedSince095": true
+    },
+    "answer_attempts": {
+      "rows": 108,
+      "exactRowsUnchangedSince095": true
+    },
+    "srs_states": {
+      "rows": 12,
+      "exactRowsUnchangedSince095": true
+    },
+    "points_ledger_entries": {
+      "rows": 46,
+      "exactRowsUnchangedSince095": true
+    },
+    "reading_progress_entries": {
+      "rows": 4,
+      "exactRowsUnchangedSince095": true
+    },
+    "reading_events": {
+      "rows": 39,
+      "exactRowsUnchangedSince095": true
+    }
+  },
+  "rawSnapshot": "ignored build/rewards-native-097"
+}

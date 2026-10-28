@@ -1,0 +1,1695 @@
+{
+  "policy": "Historical bounded claims preserved; receipt integrity is not source applicability. No re-execution in adoption. Review linked assertion and dependency closure before promoting a complete criterion.",
+  "receipts": [
+    {
+      "id": "associative-availability-078",
+      "path": "associative-availability-078.json",
+      "receiptSha256": "1f77b66f810d3a323004859723206e37a17dee86fe9d8d85726eea1dab96e910",
+      "reportedStatus": "ASSOCIATIVE_UNAVAILABLE_GUIDANCE_HOST_PASS_NATIVE_PROVIDER_PENDING",
+      "historicalSourceFingerprint": "faca34f1e0d8edf5d50b80466d367fe51afb1ed47611bb7dc789f6538e8d3c64",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-availability-078/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/associative_reading_session_screen.dart",
+            "test/screens/associative_reading_session_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Live provider capped-session guidance",
+        "Fresh associative stage1-6 assistance and explicit disconnect",
+        "Full original14workflow14mode gaps"
+      ]
+    },
+    {
+      "id": "associative-baseline-075",
+      "path": "associative-baseline-075.json",
+      "receiptSha256": "26d5ed4c8d815848e46d10c242d47cf559b48394f023023722b374f7f85a1c3f",
+      "reportedStatus": "NATIVE_BASELINE_COMPLETION_PASS_PROGRESS_HOST_FIXED_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "d1df7c26fdfe3b9915eb59b5c0c1108d448efcc03e301669cbb10c7bef5c8bb5",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-baseline-075/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/associative_reading_session_screen.dart",
+            "test/screens/associative_reading_session_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native progress retest on075",
+        "Owner-bound stage-specific AI context and absent/connected/disconnected host coverage",
+        "Native live associative guidance/disconnect",
+        "Whole14workflow/14mode acceptance"
+      ]
+    },
+    {
+      "id": "associative-blank-074",
+      "path": "associative-blank-074.json",
+      "receiptSha256": "ec337b02808e8dab67808944960ce0f285fee2bd871d3c70fb4afc92306e7741",
+      "reportedStatus": "ASSOCIATIVE_BLANK_DEFECT_HOST_AND_NATIVE_RETEST_PASS",
+      "historicalSourceFingerprint": "a3c81c2e633a8b93e5d9399b2ad57777864fb5543283734431d637d0091b3bd7",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-blank-074/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/associative_reading_session_screen.dart",
+            "test/screens/associative_reading_session_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native valid answer continuation across stages4-6",
+        "Implement actual associative stage context;current screen lacks mode-specific binding",
+        "Native connected/disconnected assistance for associative mode",
+        "Original14workflow/14mode acceptance"
+      ]
+    },
+    {
+      "id": "associative-context-076",
+      "path": "associative-context-076.json",
+      "receiptSha256": "b2a213749aa3d25811b6cb055ce2e518d04e76916782c90c05d9d9cab662d9d6",
+      "reportedStatus": "ASSOCIATIVE_STAGE_CONTEXT_HOST_PASS_NATIVE_LIVE_PENDING",
+      "historicalSourceFingerprint": "8144a017d1cfb9b43aafefb79fe5a9e0c0419ddfb8eab83a052547c0af7b98b1",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-context-076/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/associative_reading_session_screen.dart",
+            "test/screens/associative_reading_session_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Live associative stage guidance/disconnect",
+        "Restored shared progress after process death atStage4",
+        "Retry/feature-disabled stage assistance details need audit",
+        "Original fullscope gaps"
+      ]
+    },
+    {
+      "id": "associative-live-079",
+      "path": "associative-live-079.json",
+      "receiptSha256": "6f0912ec75ba7cb08e456f4738be6bad23a96af4e669b8fa907b4f5e58411949",
+      "reportedStatus": "LIVE_STAGE1_AND_DISCONNECTED_COMPLETION_PASS_LAYOUT_FIXED",
+      "historicalSourceFingerprint": "beac13f379ab08ccc0788f82dda3f52b41dbb93b8c3ca95efd1de0f98661c76e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-live-079/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Live provider stages2-6 and expired-state response",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "associative-restoration-077",
+      "path": "associative-restoration-077.json",
+      "receiptSha256": "ae33bf01cad63c8a3817ae31498c9d4471d885a0a35c4e3988e4ed7434e27dac",
+      "reportedStatus": "RESTORED_PROGRESS_HOST_AND_NATIVE_PASS",
+      "historicalSourceFingerprint": "642c7063005487246ce8a0bd76b33041941107a4a3de666bb7124801cb9154e3",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-restoration-077/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/associative_reading_session_screen.dart",
+            "test/screens/associative_reading_launcher_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Fresh associative live context/disconnect across stages",
+        "Audit expired-session guidance/restart and feature-off context",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "associative-stages-080",
+      "path": "associative-stages-080.json",
+      "receiptSha256": "6fa2727d654f9c8df183a3da46248e001bae068e3ad9a74839281168133e3842",
+      "reportedStatus": "ASSOCIATIVE_LIVE_STAGES2_TO6_AND_EFFORT_LIMIT_PASS",
+      "historicalSourceFingerprint": "beac13f379ab08ccc0788f82dda3f52b41dbb93b8c3ca95efd1de0f98661c76e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/associative-stages-080/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Full14workflow14mode acceptance audit",
+        "Native export artifact reconciliation and remaining workflow-specific gaps"
+      ]
+    },
+    {
+      "id": "camera-result-036",
+      "path": "camera-result-036.json",
+      "receiptSha256": "69ac80fb05c59753824990502bbf7aebb81794057a3f9dabe5431a3399ac12aa",
+      "reportedStatus": "REPRODUCED_CAMERA_CONTEXT_DEFECT_FIXED_LIVE_RETEST_PASS_FULL_SCOPE_OPEN",
+      "historicalSourceFingerprint": "9ed206da59b86c588fbabff1f7d0a82ff718cbfd631fa1374d449e54a50da187",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/camera-result-036/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "tool/experiments/ari_app_server/chat_bridge.py"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Native history and speech guidance;camera no-result projection defect red/green and live retest;baseline afterdisconnect",
+      "remaining": null
+    },
+    {
+      "id": "catalog-context-113",
+      "path": "catalog-context-113.json",
+      "receiptSha256": "a46c8210d74e4aa85e26cc63cf0f73aece566ccefdb228ebe7c3e3c4e1ccdd2a",
+      "reportedStatus": "CATALOG_CONTEXT_HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "740a34a0f36c0d5f81a33a18a14bfa7a6ad12d4f2f1abb93e44981054f3a6953",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/catalog-context-113/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/learning_pack_catalog_screen.dart",
+            "test/screens/learning_pack_catalog_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Pack detail optional context not implemented yet",
+        "Native actual-provider catalog/filter/no-match acceptance not run;installed110 predates113",
+        "Late attach/reconnect without remount and adversarial metadata coverage need explicit verification",
+        "FullW08 and14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "catalog-owner-114",
+      "path": "catalog-owner-114.json",
+      "receiptSha256": "b797c2da46314e3d1557f3fd759a874f6f170cfdfe4897e45f8097f9c99163c8",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "cefr-assistance-043",
+      "path": "cefr-assistance-043.json",
+      "receiptSha256": "4041ebc00ceffe6d1c7edc68306299430b6dfc7a9d29cc672695fb4946fc1eb0",
+      "reportedStatus": "HOST_PASS_NATIVE_BASELINE_PASS_LIVE_PROVIDER_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "7production-loader/Drift and6reader cases; native library baseline;live provider pending",
+      "remaining": [
+        "Live CEFR guidance and screen-only completed interpretation",
+        "Native CEFR session reading-exposure and connected/disconnected paths",
+        "Other14workflow/mode acceptance and successful native speech/camera/sync",
+        "Whole-project code review queued after MCP acceptance"
+      ]
+    },
+    {
+      "id": "cefr-session-045",
+      "path": "cefr-session-045.json",
+      "receiptSha256": "9759fcdec94a02994840f7df4b2f652bd568e39a9f8c8d32304f1fcbbefb6404",
+      "reportedStatus": "NATIVE_SESSION_BASELINE_DURABILITY_AND_HISTORY_INTERPRETATION_PASS_FULL_SCOPE_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Native no-provider session exposure survives restart;history interpretation21hosttests/native retest",
+      "remaining": [
+        "Connected/disconnected native CEFR session evidence; use retained AriCEFR045 fixture",
+        "Remaining14workflow/mode native gaps including successful speech,camera,sync",
+        "Whole-project review queued after MCP acceptance"
+      ]
+    },
+    {
+      "id": "cefr-session-native-051",
+      "path": "cefr-session-native-051.json",
+      "receiptSha256": "560c2745e3388832327933bf0beb63988bf891f0f1bbe629c1c0c416240e96d6",
+      "reportedStatus": "NATIVE_CONNECTED_COMPLETION_DISCONNECTED_SELECTION_DURABILITY_PASS_FULL_SCOPE_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Vivo liveAIbefore/aftercompletion;disconnectselection;restartdurableoneexposure",
+      "remaining": [
+        "Native dictation/audio connection variants",
+        "Assess remaining14workflow/mode acceptance gaps",
+        "Native Pair wrong/repair/support and active-board AI",
+        "Whole-project review after MCP acceptance"
+      ]
+    },
+    {
+      "id": "chat-mcp-001",
+      "path": "chat-mcp-001.json",
+      "receiptSha256": "56e756119f26eea13a2452db81587f68f350da3e8c77d1ca9c0fcb3fc7b5ee47",
+      "reportedStatus": "BOUNDED_LIVE_DEMONSTRATION_PASS_PRODUCTION_OPEN",
+      "historicalSourceFingerprint": "3112683fd8ea1f09b6673c3840f21ca7da1adb963da9992402efb53ee6cd024d",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "chat-mcp-001.json#/sourcePins",
+          "selectedFiles": 10,
+          "changedOrMissing": [
+            "lib/main_ari_test.dart",
+            "lib/features/ai_tutor/data/local_login_bridge.dart",
+            "lib/features/ai_tutor/presentation/managed_tutor_panel.dart",
+            "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart",
+            "tool/experiments/ari_app_server/chat_bridge.py",
+            "tool/experiments/ari_app_server/tutor_mcp.py",
+            "tool/experiments/ari_app_server/login_bridge.py"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "cloze-context-068",
+      "path": "cloze-context-068.json",
+      "receiptSha256": "ff2b6b8f679b3c0c350fe04fb847e46d3610c3dd671551da880360f57e52a55f",
+      "reportedStatus": "HOST_FIXED_NATIVE_PENDING",
+      "historicalSourceFingerprint": "310bed41d3d54803a2f549c4e2f8c5f6041a8af095360d03e7f9f4e860842294",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/cloze-context-068/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [
+            "lib/screens/fill_in_the_blanks_screen.dart",
+            "test/screens/fill_in_the_blanks_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Cloze native acceptance",
+        "Cloze skip context and skipped-progress host assertions should be expanded",
+        "Definition native live skip guidance",
+        "Other14-mode/workflow acceptance gaps"
+      ]
+    },
+    {
+      "id": "cloze-guidance-072",
+      "path": "cloze-guidance-072.json",
+      "receiptSha256": "bfd38cd29eafe5d5d6e217d816c95b16e8e43bc4bd1f0d7ae85fbb9dc8158464",
+      "reportedStatus": "NATIVE_CLOZE_GUIDANCE_RETEST_PASS",
+      "historicalSourceFingerprint": "1fe2bd1bcb3d23c6211cd3f606d69ae6757649b34081548bb783674960dace97",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/cloze-live-071/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Definition live skip-state guidance",
+        "Associative native context",
+        "Other workflow/mode audit gaps incl exports/rewards/speech/camera/sync",
+        "Whole14workflow/14mode acceptance audit"
+      ]
+    },
+    {
+      "id": "cloze-live-071",
+      "path": "cloze-live-071.json",
+      "receiptSha256": "94ef970a99f819e6c4e8d5373f2b8d0c0c70d940ab62a39718786822e76a4a19",
+      "reportedStatus": "NATIVE_CONTINUITY_PASS_GUIDANCE_DEFECT_HOST_FIXED_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "1fe2bd1bcb3d23c6211cd3f606d69ae6757649b34081548bb783674960dace97",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/cloze-live-071/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "cloze-native-070",
+      "path": "cloze-native-070.json",
+      "receiptSha256": "59f840147907ab2dcaec3a2ce6b1b858a4f2577c98f90afcca4bcb45ac4c236e",
+      "reportedStatus": "NATIVE_CLOZE_BASELINE_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native cloze live guidance and disconnect draft continuity",
+        "Physical speech recognition not exercised",
+        "Definition live skip context and other original workflow/mode gaps"
+      ]
+    },
+    {
+      "id": "cloze-skip-069",
+      "path": "cloze-skip-069.json",
+      "receiptSha256": "7262244c6899d4f6ecd6760e43662eb8120c546f822b34c4b5a101d27c383737",
+      "reportedStatus": "HOST_SKIP_AND_NATIVE_SKIP_BASELINE_PASS",
+      "historicalSourceFingerprint": "c9333bcfb5bad2bbe7b4765cace3e1514a0669382aa3284c4666827607f98d2c",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/cloze-skip-069/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/fill_in_the_blanks_screen.dart",
+            "test/screens/fill_in_the_blanks_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Set cloze itemCount3 for skip a then reviewed bag/book;native typed/selected and progress",
+        "Native live cloze guidance/disconnect",
+        "Definition live skip and other original gaps"
+      ]
+    },
+    {
+      "id": "definition-context-064",
+      "path": "definition-context-064.json",
+      "receiptSha256": "98cb710959bf623356575d86a9874b756e66a2877faaf9cb08e3b08ac606b53f",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "208b6b260715dda48b3503c80c27382b69adfeaa200f22fdf403897d6679c0ed",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/definition-context-064/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/definition_quiz_screen.dart",
+            "test/screens/definition_quiz_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Build/install new source and native definition guidance/disconnect/skip acceptance",
+        "Other original14 workflow/mode acceptance"
+      ]
+    },
+    {
+      "id": "definition-live-067",
+      "path": "definition-live-067.json",
+      "receiptSha256": "9fbbf2cdcc13ccfa1fa54240e66e16c2216a7c55a7500045ba790ef43e8ee0d7",
+      "reportedStatus": "NATIVE_PROGRESS_RETEST_AND_LIVE_CHOICE_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native live skip-state guidance not yet observed",
+        "Cloze/associative and original workflow gaps",
+        "Shared displayed progress before completion excludes skips;no claim skipped items are answers"
+      ]
+    },
+    {
+      "id": "definition-native-065",
+      "path": "definition-native-065.json",
+      "receiptSha256": "dce7b4bb7dd95dd113de338117abeb1eaeaf7b5ca2d8f94db16ebac9185996ee",
+      "reportedStatus": "BASELINE_NATIVE_PASS_WITH_PROGRESS_DEFECT",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "definition-progress-066",
+      "path": "definition-progress-066.json",
+      "receiptSha256": "e11e87fa4db9ab9ea5eecf35accf45c33d407bd8ae7c5ea3cc24d5d688f2a386",
+      "reportedStatus": "HOST_FIXED_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "79ba337878927b6d34f9ed235a40c9ff4b95c0ef86d6c2ef9eb60db7f46a02bf",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/definition-progress-066/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "definition-skip-live-073",
+      "path": "definition-skip-live-073.json",
+      "receiptSha256": "055a0de916bd31f80c2fee6e1ac77dd50373a2dbe8079e87a9879edc17d58a1e",
+      "reportedStatus": "NATIVE_DEFINITION_SKIP_GUIDANCE_AND_DISCONNECTED_COMPLETION_PASS",
+      "historicalSourceFingerprint": "33cfe683227b864249bbb197881872c4800842ffb163a6c1b899aeecde113da4",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/definition-skip-live-073/source-pins.json",
+          "selectedFiles": 1,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "dictation-disconnect-046",
+      "path": "dictation-disconnect-046.json",
+      "receiptSha256": "0d9511a0cc98bdf9732f2f3ba842bf2fb9b3f30d8d59a24c67203abffb9d1efe",
+      "reportedStatus": "HOST_NATIVE_DICTATION_SCREEN_REGISTRY_PARITY_PASS_NATIVE_PROVIDER_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Actual dictation screen/loader with real Drift;6newregistryvariants+4existing tests;notphysicalaudio/provider",
+      "remaining": [
+        "Dictation liveprovider/no-provider/disconnected physical audio and answer interactions",
+        "Native CEFR connected/disconnected session tests with retained AriCEFR045 fixture",
+        "Remaining14workflow/mode acceptance including speech/camera/sync;whole-project review queued"
+      ]
+    },
+    {
+      "id": "dictation-native-052",
+      "path": "dictation-native-052.json",
+      "receiptSha256": "35c34bccc55541b43e0d2893e36652ff8be687a7478a0741b05cf127bf71c790",
+      "reportedStatus": "NATIVE_DICTATION_WRONG_LIVEAI_DISCONNECTED_CORRECTION_DURABLE_PASS_AUDIO_QUALITY_UNVERIFIED",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Vivo wrong answer/liveAIexactfeedback/disconnectedcorrection;2durableguidedattempts;audioqualityunverified",
+      "remaining": [
+        "Cross-mode/workflow evidence audit and remaining concrete acceptance gaps",
+        "Physical successful speech/audio quality and camera/sync",
+        "Whole-project review after full MCP acceptance"
+      ]
+    },
+    {
+      "id": "export-assistance-020",
+      "path": "export-assistance-020.json",
+      "receiptSha256": "57a929d8027efef346e00b06d64bde136944b25ef125df051079f16ded565e2f",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "export-context-082",
+      "path": "export-context-082.json",
+      "receiptSha256": "b71efb92527766071d4db86fe9ca4c371dcb449be743a4d8edbc985b277f54f0",
+      "reportedStatus": "HOST_OWNER_BOUND_REATTACHMENT_PASS_NATIVE_INSTALLED_PROVIDER_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native live format/selection/status guidance on APK082",
+        "Explicit native disconnect and manual save continuity",
+        "Remaining original 14 workflow and 14 mode acceptance; full project review after acceptance"
+      ]
+    },
+    {
+      "id": "export-live-083",
+      "path": "export-live-083.json",
+      "receiptSha256": "fe6273ef862b2f60c39fda99fe4d9b224293d5fd079fd35582ecd8ccc7285c96",
+      "reportedStatus": "LIVE_CSV_AND_DISCONNECTED_EXPORT_PASS_RECONNECT_DEFECT_FIXED_HOST_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Live reconnect and export saved-state guidance with corrected bridge",
+        "Additional format-specific live guidance and selected-data variants",
+        "W01 background/picker re-login usability and standalone delivery remain open",
+        "Remaining full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "export-native-081",
+      "path": "export-native-081.json",
+      "receiptSha256": "bd418b245c9a9dbb31858ee44bff1b8935b2e3bdea1a786cc4bb2a8af2a3a67b",
+      "reportedStatus": "NATIVE_PERSONAL_EXPORT_BASELINE_BYTES_VERIFIED_CONNECTED_PENDING",
+      "historicalSourceFingerprint": "484ee2db76ce3a9d5bf67801e35b321844cebd1337373697a573be11790dc54a",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/export-native-081/source-pins.json",
+          "selectedFiles": 5,
+          "changedOrMissing": [
+            "lib/screens/export_center_screen.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native live export-format guidance and disconnect/save continuity",
+        "Failure-code context assertions if missing after source audit",
+        "Final W13/full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "export-reconnect-084",
+      "path": "export-reconnect-084.json",
+      "receiptSha256": "a04b0938694050d6775820c93394941c677bee8462c491080fe9843bbd301ee9",
+      "reportedStatus": "NATIVE_RECONNECT_AND_SAVED_CONTEXT_PASS_ANKI_METADATA_CORRECTED_HOST",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Brief live Anki metadata retest on084",
+        "Final W13 acceptance/source audit without rerunning unchanged verified exports",
+        "W08 nonempty plan/goals and W10 native reward state gaps",
+        "Standalone/background re-login UX and full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "feedback-action-060",
+      "path": "feedback-action-060.json",
+      "receiptSha256": "21d409622dbca8fa2bb29da1e3948a6eadec34c22251916517ae8c01e12b5e73",
+      "reportedStatus": "HOST_FIXED_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "8aae7185c717f4e31325bc4f40eb5f059709290903be54df221e173796e2601a",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/feedback-action-060/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/quiz_screen.dart",
+            "test/screens/quiz_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Build/install and native wrong typed feedback retest",
+        "Native live/disconnect typed input coverage",
+        "Other acceptance-audit-053 gaps"
+      ]
+    },
+    {
+      "id": "flashcard-assistance-056",
+      "path": "flashcard-assistance-056.json",
+      "receiptSha256": "36f67e20b9a132de76e2e96498238c4fd5188a0aa51b60c3176c37bd6b70ddb9",
+      "reportedStatus": "HOST_PASS_NATIVE_INSTALL_PASS_MODE_LIVE_PENDING",
+      "historicalSourceFingerprint": "f9e17be5541e8a1a33ddcb32c218e711208c11198f2aa74bd7c8ea2a233a1193",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/flashcard-assistance-056/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/srs_flashcards_screen.dart",
+            "test/screens/srs_flashcards_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native actual flashcard route prestart/due conditions, live guidance and disconnect",
+        "Host independent self-rating and persistence retry MCP transitions",
+        "Other acceptance-audit-053 gaps"
+      ]
+    },
+    {
+      "id": "flashcard-native-057",
+      "path": "flashcard-native-057.json",
+      "receiptSha256": "72aa2a545cb12d04c9cc573a7c94e65d64c821a4a43152508fafd40558628bca",
+      "reportedStatus": "LIVE_GUIDANCE_DISCONNECT_COMPLETION_PASS_PROGRESS_DEFECT_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "flashcard-progress-058",
+      "path": "flashcard-progress-058.json",
+      "receiptSha256": "19d60dbf08b13f66e808a23786bf569a5665158988df847d13679149f9b5ac91",
+      "reportedStatus": "FIXED_HOST_AND_NATIVE_RETEST",
+      "historicalSourceFingerprint": "928030a7c7c1af957f79b82009002454460524c5a4aeee05191b306b79d63607",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/flashcard-progress-058/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [
+            "lib/screens/srs_flashcards_screen.dart",
+            "test/screens/srs_flashcards_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "focus-native-088",
+      "path": "focus-native-088.json",
+      "receiptSha256": "1ae119e10b3cccbbcb0bf87ece9b4ff9124d50c797a4205a59a437923c537320",
+      "reportedStatus": "CHAT_FOCUS_087_NATIVE_RETEST_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Goals optionalowner-boundcontext",
+        "Native new-itemplan",
+        "W10 nativeacceptance",
+        "Remaining14workflow14modefinalaudits"
+      ]
+    },
+    {
+      "id": "goal-editor-091",
+      "path": "goal-editor-091.json",
+      "receiptSha256": "6bdadbb1f06fc807bda63fc47c64f6336e5e3e65dfa6cfc5ba61b1bbdfb7b72b",
+      "reportedStatus": "GOAL_EDITOR_CONTEXT_IMPLEMENTED_HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "11ac38bb965f428909d0d94c5681fe95514c82edb0c5a2a733637f29b917140e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/goal-editor-091/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actualproviderdialogdraft/confirmed/save/cancel/disconnectedacceptanceon091",
+        "Nonemptynew-itemplan",
+        "W10andremaining14workflow14modeacceptance"
+      ]
+    },
+    {
+      "id": "goals-context-089",
+      "path": "goals-context-089.json",
+      "receiptSha256": "36912355eedf056ffdc77a75283e42fdfcaef7078df2dc775eff2167c5622f9b",
+      "reportedStatus": "GOAL_LIST_CONTEXT_HOST_VERIFIED_NATIVE_BASELINE_CREATE_REOPEN",
+      "historicalSourceFingerprint": "8548fb83c4813d32e6167fe18a79f7e339a4b0ab4505c6ea95abec757adb734b",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/goals-context-089/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/learning_goals_screen.dart",
+            "test/screens/learning_goals_assistance_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actualprovidergoallistandupdateson089",
+        "Nativeconnected/disconnectededit/status/deleteacceptance",
+        "Goal dialog assistance availability audit",
+        "Native nonemptynew-itemplan",
+        "W10andremaining14workflow14modeacceptance"
+      ]
+    },
+    {
+      "id": "goals-editor-native-092",
+      "path": "goals-editor-native-092.json",
+      "receiptSha256": "30f72847b8f41e85e99b782fe6d3f5367cf6fb1f0bf862c9b68a79b955c60188",
+      "reportedStatus": "REPRESENTATIVE_GOAL_EDITOR_NATIVE_CONNECTED_DISCONNECTED_VERIFIED",
+      "historicalSourceFingerprint": "11ac38bb965f428909d0d94c5681fe95514c82edb0c5a2a733637f29b917140e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/goals-editor-native-092/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "goals-native-090",
+      "path": "goals-native-090.json",
+      "receiptSha256": "8cb4b1fbb420d9851e442d353d9b5e4d00342695b0b55963f27c6cc16a29c149",
+      "reportedStatus": "GOALS_REPRESENTATIVE_NATIVE_BASELINE_CONNECTED_DISCONNECTED_VERIFIED",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Goaleditingdialogassistanceaudit;onlyunderlyinglistcontextcurrentlyhidden",
+        "Native nonemptynew-itemplan",
+        "W10nativeacceptance",
+        "Allremaining14workflow14modefinalaudits"
+      ]
+    },
+    {
+      "id": "handwriting-assistance-054",
+      "path": "handwriting-assistance-054.json",
+      "receiptSha256": "ff3771303dce25e704e0c9fea506a54e64b1d5718c5676839c3bd7fc728b52b6",
+      "reportedStatus": "HOST_PASS_NATIVE_BASELINE_PASS_LIVE_PENDING",
+      "historicalSourceFingerprint": "a8ce4e2b6a4138671c737d7d12bb9c89e81440eee7eaf2e87e5ad89986c1d213",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/handwriting-assistance-054/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "native provider guidance and explicit disconnect on this screen",
+        "flashcard actual mode coverage",
+        "all other open acceptance from acceptance-audit-053.json"
+      ]
+    },
+    {
+      "id": "handwriting-native-055",
+      "path": "handwriting-native-055.json",
+      "receiptSha256": "9b4c25943229d1b1392c6a07e6c7009d07d30d352380b4922a1c91646238b6a9",
+      "reportedStatus": "NATIVE_LIVE_GUIDANCE_AND_DISCONNECT_PASS",
+      "historicalSourceFingerprint": "a8ce4e2b6a4138671c737d7d12bb9c89e81440eee7eaf2e87e5ad89986c1d213",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/handwriting-assistance-054/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "lesson-assistance-006",
+      "path": "lesson-assistance-006.json",
+      "receiptSha256": "a224e5f52d01bd032eceaa69ef1963ab9924d0d52b00a701b6cb2d57fcdd7015",
+      "reportedStatus": "NATIVE_FEEDBACK_AND_WORD_CREATE_DUPLICATE_EDIT_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Fresh native visible-feedback retest and live word creation; provider routing correction",
+      "remaining": null
+    },
+    {
+      "id": "lesson-disconnect-031",
+      "path": "lesson-disconnect-031.json",
+      "receiptSha256": "2602c578969ea78892648355f9c73dbd4a6272f752c80584e68967349265d894",
+      "reportedStatus": "HOST_REGISTRY_DISCONNECT_DURABLE_CONTROLLER_PASS",
+      "historicalSourceFingerprint": "754d9cdbec921fd98870da5fbf6cb95b7381f40927899767bef5288781725d42",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/lesson-disconnect-031/source-manifest.json",
+          "selectedFiles": 1,
+          "changedOrMissing": [
+            "test/features/learning/unified_lesson_controller_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Four registered adapters shared controller durable-write disconnect/replay; simulated registry loss not native input acceptance",
+      "remaining": null
+    },
+    {
+      "id": "matching-disconnect-047",
+      "path": "matching-disconnect-047.json",
+      "receiptSha256": "8338503466cfdf787285391a26113faad5c413ec0644794808cf8f205772de2f",
+      "reportedStatus": "LEGACY_MATCHING_HOST_MCP_PARITY_PASS_CANONICAL_PAIR_NATIVE_PENDING",
+      "historicalSourceFingerprint": "c28e4fc327a734b8681df879601b998c6b7a5b7d541b98fb522a766f7d993ba3",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/matching-disconnect-047/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Actual legacy matching screen plus real Drift;6 connection/answer variants;notcanonicalPair/nativeprovider",
+      "remaining": [
+        "Canonical Pair experience active/result MCP coverage and native acceptance",
+        "CEFR connected/disconnected session with retained AriCEFR045 fixture",
+        "Native dictation/audio and remaining14workflow/mode acceptance",
+        "Whole-project SDLC/Agile review after MCP acceptance"
+      ]
+    },
+    {
+      "id": "native-context-028",
+      "path": "native-context-028.json",
+      "receiptSha256": "21e773fde0329c9fd0e5175a413912d3461a56c06a78ddb2b44e75b49f762b82",
+      "reportedStatus": "REPRESENTATIVE_NATIVE_CONNECTED_CONTEXT_PASS_NOT_WHOLE_WORKFLOW_ACCEPTANCE",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Live offline byte interpretation retest, quest progress, reward balance and Anki guidance; disconnected PDF selection",
+      "remaining": null
+    },
+    {
+      "id": "new-item-plan-093",
+      "path": "new-item-plan-093.json",
+      "receiptSha256": "c7481a360845c89a661637aac2980abb9ce57deeafee9524c61f9759f26471d0",
+      "reportedStatus": "NATIVE_BASELINE_NONEMPTY_NEW_ITEM_PLAN_VERIFIED_CONNECTED_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actual provider reads nonempty new-item accepted/pending plan correctly",
+        "Disconnected proposal rejection preserves accepted new-item plan",
+        "W10 and full14workflow14mode finalacceptance"
+      ]
+    },
+    {
+      "id": "new-item-plan-native-094",
+      "path": "new-item-plan-native-094.json",
+      "receiptSha256": "2a32d5335599471c872e438f2b5537d7c9ef72f2376561e5072a60da1e9d4a59",
+      "reportedStatus": "REPRESENTATIVE_NEW_ITEM_PLAN_CONNECTED_DISCONNECTED_VERIFIED",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "W08 final coverage audit including personal-set context",
+        "W10 native preview/equip/readback/insufficient coins",
+        "Remaining14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "offline-native-027",
+      "path": "offline-native-027.json",
+      "receiptSha256": "f4f447a7524fbf2b5ad9fa9e934a4fbdc12db1efccb94653396f3c129385e01d",
+      "reportedStatus": "NATIVE_CONTEXT_REFRESH_PROVEN_BYTE_INTERPRETATION_FIX_HOST_PASS_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "eea83cb99d4a3c888aeddf5b1c647097879a603cd184987b02c32f130ad1f100",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/offline-native-027/source-manifest.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "pack-detail-context-116",
+      "path": "pack-detail-context-116.json",
+      "receiptSha256": "25d8afb058cde77e44a73ca17c862826db1acb8aaa383b6d044f06249a483dcb",
+      "reportedStatus": "HOST_PASS_NATIVE_EMPTY_BASELINE_PASS_DETAIL_PROVIDER_PENDING",
+      "historicalSourceFingerprint": "6e5d246d4de78884ba28a3e2fa29ba88dc1c746d6f8d44f6f0c9531ff0264f1e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "pack-detail-context-116.json#/sourcePins",
+          "selectedFiles": 6,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Nonempty filtering and pack detail require an explicitly isolated verified content fixture",
+        "Actual provider context/replies not tested in116"
+      ]
+    },
+    {
+      "id": "pair-adversarial-050",
+      "path": "pair-adversarial-050.json",
+      "receiptSha256": "69a21ecd84d62452208d854a6f300ddf42400e09b22d32fbeee742b91776688f",
+      "reportedStatus": "HOST_GUIDED_REPAIR_AND_REPLAY_CONTEXT_PASS",
+      "historicalSourceFingerprint": "4fe78c8d79977f5609cc7b4dba48a149fcebe8e7866f5278a0ac7b08c97a4b18",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/pair-adversarial-050/source-pins.json",
+          "selectedFiles": 1,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Host guided repair projection and disconnected replay reconnect;16effect tables unchanged;10targetedtests",
+      "remaining": [
+        "CEFR session connected/disconnected with retained AriCEFR045 fixture",
+        "Native dictation/audio; remaining mode/workflow coverage",
+        "Native Pair wrong/repair/support and active-board AI assistance",
+        "Whole-project review after full MCP acceptance"
+      ]
+    },
+    {
+      "id": "pair-native-049",
+      "path": "pair-native-049.json",
+      "receiptSha256": "8b54ae49b9843da98f91d76cf989723d322e25c9632aba3967fe50cb757493b6",
+      "reportedStatus": "NATIVE_BASELINE_CONNECTED_RESULT_DISCONNECTED_REPLAY_PASS_REMAINING_CASES_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Vivo normal no-provider completion,authenticatedAIexactresult,explicitdisconnect then replaycompletion;notalladversarialcases",
+      "remaining": [
+        "Native wrong-answer/repair/support and active-board liveMCP",
+        "Replay result connected interpretation and durable reward/evidence reconciliation",
+        "CEFR session connected/disconnected,dictation,speech,camera,sync and all14coverage",
+        "Whole-project review after MCP acceptance"
+      ]
+    },
+    {
+      "id": "pair-result-048",
+      "path": "pair-result-048.json",
+      "receiptSha256": "439b5509cfd117e02f5ea2014742152b0036ce59fb1a3e49b8310b5cd7bbd9e8",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "1e58125397cd76dd62080791b52854672cfaf2c725c69b5da9bb971846a02c82",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/pair-result-048/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "test/features/learning/pair_matching/pair_matching_experience_host_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Canonical Pair acknowledged result projection;6registry/fault tests plus full55hosttests;APK048home smoke only",
+      "remaining": null
+    },
+    {
+      "id": "personalsets-confirmation-101",
+      "path": "personalsets-confirmation-101.json",
+      "receiptSha256": "e68880362649f63da1af9554a565e2ee0e69affd2d283065e820d3b8ba8d96c5",
+      "reportedStatus": "HOST_POSTCOMMIT_READBACK_FAILURE_RETRY_PASS",
+      "historicalSourceFingerprint": "7f57761c5215ae4d751f91a493833307219afc7e6470010e146415c1a181b4ba",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/personalsets-confirmation-101/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Final W08 coverage audit",
+        "W07 native review through connection change",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "personalsets-context-098",
+      "path": "personalsets-context-098.json",
+      "receiptSha256": "ceccc250cf534642abc0091a5b85f2f6d28e44cfe1dd384cd3f15dff20cfad90",
+      "reportedStatus": "OPTIONAL_PERSONALSET_CONTEXT_IMPLEMENTED_HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "f3e9258d068cd8b80fb89fcf3546beda3d9488fea81f523ce05aa569072c745c",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/personalsets-context-098/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "test/screens/personal_sets_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actualprovider list/detail/draft/preview/readback/cancel anddisconnectednative acceptance",
+        "Deeper pending operation/failure lifecycle contextaudit",
+        "All14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "personalsets-failure-100",
+      "path": "personalsets-failure-100.json",
+      "receiptSha256": "70825fa2d57762dd89cd3a6785ec0ca755626fb3f89d5fad70286ded1f263cd6",
+      "reportedStatus": "HOST_PREWRITE_FAILURE_RETRY_PASS",
+      "historicalSourceFingerprint": "2c1ff7d622a476317bcc11c5c7fc540c5020da0e89986f30f1229ece1311cf64",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/personalsets-failure-100/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [
+            "test/screens/personal_sets_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Post-commit/readback failure lifecycle audit",
+        "Final W08 coverage audit",
+        "W07 native review through provider connection change",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "personalsets-native-099",
+      "path": "personalsets-native-099.json",
+      "receiptSha256": "fa06b0d8c448bdf5c84952c45fd39ad9335b2772352da79b813cd96119a689d2",
+      "reportedStatus": "REPRESENTATIVE_PERSONALSET_CONNECTED_DRAFT_PREVIEW_DISCONNECTED_CANCEL_VERIFIED",
+      "historicalSourceFingerprint": "f3e9258d068cd8b80fb89fcf3546beda3d9488fea81f523ce05aa569072c745c",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/personalsets-native-099/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "test/screens/personal_sets_screen_test.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Personalset pendingoperation/failure lifecycle audit",
+        "W07 review connection-change acceptance",
+        "Remaining14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "preferences-context-086",
+      "path": "preferences-context-086.json",
+      "receiptSha256": "3bdfe08a6392b86c7f97201695823a0651253400926f0224f52edfddb94222b7",
+      "reportedStatus": "IMPLEMENTED_HOST_VERIFIED_NATIVE_BASELINE_ONLY",
+      "historicalSourceFingerprint": "045ac05e5ba02c2bda8f67997d78456ac4c65cf60c24ed734065d5f394041e31",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/preferences-context-086/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native actual provider preferences draft/saved and disconnected acceptance",
+        "Goal-screen optional assistance",
+        "Native nonempty new-item plan",
+        "Remaining 14workflow/14mode acceptance and subsequent whole-project review"
+      ]
+    },
+    {
+      "id": "preferences-native-087",
+      "path": "preferences-native-087.json",
+      "receiptSha256": "3f928819e97b56bfbb24182faf1029dec3ae5954fb171ff2734c230cf1f216e7",
+      "reportedStatus": "PREFERENCES_NATIVE_CONNECTION_STATES_VERIFIED_FOCUS_RETEST_PENDING",
+      "historicalSourceFingerprint": "c20d94fc8a383a7c8d226df78259573f9163a9ac906328a9146f8b6baceb0dd1",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/preferences-native-087/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native focus retest with actual provider on087",
+        "Goals optionalcontext",
+        "Nonemptynew-itemplan",
+        "W10 and allremaining14workflow14modeacceptance"
+      ]
+    },
+    {
+      "id": "process-recovery-037",
+      "path": "process-recovery-037.json",
+      "receiptSha256": "8e143ad05c8b34d54db32e71975af6a96b19f62234fc4b576158213ba234a8f3",
+      "reportedStatus": "EXPLICIT_REAUTH_RECOVERY_VERIFIED_AUTOMATIC_RESTORE_NOT_CLAIMED",
+      "historicalSourceFingerprint": "187d8287fa31475f39763498b22c3654c4de9eb427619012ebbdfc46f127c67e",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/process-recovery-037/source-pins.json",
+          "selectedFiles": 1,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": "Native process death and explicit reauth/read reply, host durable owner-change invalidation; unchanged learning evidence",
+      "remaining": null
+    },
+    {
+      "id": "quest-assistance-022",
+      "path": "quest-assistance-022.json",
+      "receiptSha256": "f2f7a6b40dd2826d96b0094aa65aff1c24d7d46b561ea081fe05299abdf257a8",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "quiz-context-062",
+      "path": "quiz-context-062.json",
+      "receiptSha256": "00a52a95eed93ff577c6d8358a46d8c73be876e03705dd16e405894075a77576",
+      "reportedStatus": "HOST_PASS_NATIVE_PROVIDER_RETEST_PENDING",
+      "historicalSourceFingerprint": "b67718ec8c0af62f8e297b01d4421252c597769ed119e9d374ba292429a13c39",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/quiz-context-062/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "quiz-context-native-063",
+      "path": "quiz-context-native-063.json",
+      "receiptSha256": "ffd0bff83dac4e8d6c447b673945191bfde80e8d75048ba8bcb59d8a58eacf75",
+      "reportedStatus": "NATIVE_REPRESENTATIVE_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "review-context-108",
+      "path": "review-context-108.json",
+      "receiptSha256": "087df3ee56bb27aa844f9de0333613b1f583b355bfe591792f00acc347ddab97",
+      "reportedStatus": "HOST_REVIEW_CONNECTION_TRANSITIONS_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "cf170acd6077c644a3d6987f1d158a1ef17e1915ddcc1ffc1e04eabed37b7f18",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/review-context-108/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "review-native-102",
+      "path": "review-native-102.json",
+      "receiptSha256": "44daf5943414df2f224001fbf878c02e22380a2f50e2e0ad4ea6c299bdeecdcd",
+      "reportedStatus": "BASELINE_REVIEW_ANSWER_VERIFIED_SRS_ACCEPTANCE_OPEN",
+      "historicalSourceFingerprint": "5ec2bc4fff518ad0aeb6b032abe9a18dd1dc97aec2555befdb8cf08a35d47ff9",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/review-native-102/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "review-native-109",
+      "path": "review-native-109.json",
+      "receiptSha256": "d09abebda80acda856c7f8d71102544f7f16968fd9dc11396f32efe8ef7dae7a",
+      "reportedStatus": "REPRESENTATIVE_NATIVE_REVIEW_CONNECTED_DISCONNECTED_PASS",
+      "historicalSourceFingerprint": "7c26928b788f4089009051a16c57d768eb87e4d99b1da6c44920363868fc76a3",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/review-native-109/source-pins.json",
+          "selectedFiles": 4,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "rewards-assistance-023",
+      "path": "rewards-assistance-023.json",
+      "receiptSha256": "21b08dcaa95827c5da327c9858644273368faa4f5587b138d935f54821eb4f8e",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "rewards-context-096",
+      "path": "rewards-context-096.json",
+      "receiptSha256": "b4b6a215235f8ff504ba39ed5918b6a46f745246c17ae49cf22c02e04805e25e",
+      "reportedStatus": "NATIVE_DEFECT_REPRODUCED_SOURCE_FIXED_HOST_PASS_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "dfe830fa8e4867d30c0df77c234d183d97bdfe56c9ec3e792f9f493112f259bf",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/rewards-context-096/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actualprovider completeownership andIPApreview identity retest",
+        "Disconnect andcancelpreview/reopen",
+        "W08personalset dedicated assistance missing",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "rewards-native-095",
+      "path": "rewards-native-095.json",
+      "receiptSha256": "4787e7451e1a36e1d795271eb66eace6a17a350385e5e2d5baeb8dbf2d82f753",
+      "reportedStatus": "NATIVE_NO_PROVIDER_PREVIEW_EQUIP_INSUFFICIENT_BALANCE_VERIFIED",
+      "historicalSourceFingerprint": "d056647b5717f8b669b1b9e3404ec6143c8f826f84e0590e114f53009a8de070",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/rewards-native-095/source-pins.json",
+          "selectedFiles": 1,
+          "changedOrMissing": [
+            "lib/screens/avatar_equipment_screen.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actual AI preview versus equipped/owned interpretation",
+        "Connected and disconnected native interaction",
+        "WholeW10 and all14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "rewards-native-097",
+      "path": "rewards-native-097.json",
+      "receiptSha256": "74ca55164cb13a3aa7233d33fc9e80f09ea132587ecd23272a6e8e4f32e3391f",
+      "reportedStatus": "REWARDS_CONTEXT_096_NATIVE_RETEST_PASS",
+      "historicalSourceFingerprint": "dfe830fa8e4867d30c0df77c234d183d97bdfe56c9ec3e792f9f493112f259bf",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/rewards-native-097/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "W08 personalsets dedicatedoptionalcontext missing",
+        "W10 finalcoverageaudit",
+        "Remaining14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "scramble-feedback-039",
+      "path": "scramble-feedback-039.json",
+      "receiptSha256": "d9dadfd5955f335286a6db55e1690725f80a6f7d3cb013f74957be5d2f10692a",
+      "reportedStatus": "TWO_DEFECTS_FIXED_HOST_AND_NATIVE_BASELINE_VERIFIED_LIVE_PROVIDER_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Two native scramble committed feedback and loader remount defects fixed;6real production-host registry states,24screen77loader tests,native baseline word/sentence results;liveprovider pending",
+      "remaining": [
+        "Live provider reply against newly committed word/sentence results",
+        "Other mode-specific persistence and disconnection gaps",
+        "All14workflow/mode acceptance remainsOPEN; whole-project review queued"
+      ]
+    },
+    {
+      "id": "scramble-native-040",
+      "path": "scramble-native-040.json",
+      "receiptSha256": "1e076030e2eb2676aac5d692bcb78b6116bd6a49f23e7245d511b57d2b0295a2",
+      "reportedStatus": "LIVE_PROVIDER_SCRAMBLE_CONTEXT_AND_NATIVE_DISCONNECT_PASS_FULL_SCOPE_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Live sentence guidance/result and word current-mode result;explicit provider disconnect preserves partial sentence and native completion",
+      "remaining": [
+        "Whole14workflow/mode acceptance OPEN",
+        "Other native direct evidence paths require mode-specific interpretation; speaking/CEFR must not mislabel transcript matching or reading exposure as proficiency",
+        "Native successful-camera/speech and remaining sync/mode acceptance",
+        "Whole-project review after current MCP acceptance"
+      ]
+    },
+    {
+      "id": "settings-review-progress-native-033",
+      "path": "settings-review-progress-native-033.json",
+      "receiptSha256": "ba0a547954194ff919e58e45acba29e3dde029f82db34041bf82c8ee8670cf88",
+      "reportedStatus": "REPRESENTATIVE_LIVE_NATIVE_PASS_NOT_FULL_ACCEPTANCE",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Live settings owner-bound command success/restoration and read-only review/progress/weakness; native baseline after disconnect",
+      "remaining": null
+    },
+    {
+      "id": "shadowing-save-042",
+      "path": "shadowing-save-042.json",
+      "receiptSha256": "75c9064b917288fd3265452d3217be9477dc60682b509a4d39a33e7279ae4f9f",
+      "reportedStatus": "HOST_FIX_PASS_FINAL_APK_INSTALLED_NATIVE_POSITIVE_SPEECH_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Premature saved state red/green;26host tests; native installation/home only",
+      "remaining": [
+        "Complete mode-specific baseline/connected/disconnected acceptance",
+        "Successful native speech/camera and remaining sync coverage",
+        "Whole-project review and SDLC/Agile repairs queued after MCP acceptance"
+      ]
+    },
+    {
+      "id": "speaking-assistance-041",
+      "path": "speaking-assistance-041.json",
+      "receiptSha256": "18d08ae8137f36575c0412e19a2ef8531a4b4637a9a36edc53fdf91b81ba5ace",
+      "reportedStatus": "HOST_PASS_NATIVE_NO_MATCH_SUCCESSFUL_RECOGNITION_PENDING",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": "Read-only speaking context;50host pass; native noMatch trials and final installation smoke",
+      "remaining": [
+        "Successful physical recognition and connected/disconnected speaking evidence",
+        "Other mode-specific acceptance including CEFR",
+        "Inspect shadowing premature evidenceSaved=true before record acknowledgment; not yet fixed",
+        "Complete MCP acceptance before queued whole-project SDLC/Agile review"
+      ]
+    },
+    {
+      "id": "srs-context-104",
+      "path": "srs-context-104.json",
+      "receiptSha256": "a244bbd4c613b574c8fddd7a50f9da065f57ebfbca94a605e55511ebf308ce72",
+      "reportedStatus": "HOST_RETRY_CONNECTION_CHANGE_PASS",
+      "historicalSourceFingerprint": "a2c759a6891d513ed14b9f8888014325ecec0632d49c4607962a70e5e1dae4f2",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/srs-context-104/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "test/screens/srs_flashcards_screen_test.dart",
+            "lib/screens/srs_flashcards_screen.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actual provider native connected/disconnected SRS",
+        "Full acceptance audit"
+      ]
+    },
+    {
+      "id": "srs-guidance-106",
+      "path": "srs-guidance-106.json",
+      "receiptSha256": "3aa9a59505c58c83e219d055136ae4f66c35c84a36b44c77fc36dcc223e514f8",
+      "reportedStatus": "CONTEXT_GUIDANCE_HOST_PASS_NATIVE_RETEST_PENDING",
+      "historicalSourceFingerprint": "155fd42ebd514ef525a5f0d1d1df590173bcc8d2f20691870c1c25490c8a65ac",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/srs-guidance-106/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "srs-native-103",
+      "path": "srs-native-103.json",
+      "receiptSha256": "730f2e73a8d5452c0b1701716679e2b221a62f856f89b99533d56ab3d5af71f8",
+      "reportedStatus": "BASELINE_SRS_RATING_AND_EXPOSURE_VERIFIED",
+      "historicalSourceFingerprint": "48c6fa6235f17df791f2c61c08826fff94250649101bc969b5a67288ad418e67",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/srs-native-103/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [
+            "lib/screens/srs_flashcards_screen.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Actual provider connected/disconnected SRS context journey",
+        "Final W07/full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "srs-native-105",
+      "path": "srs-native-105.json",
+      "receiptSha256": "0992bfeb0934f991c2092a4cd06f4647a7916dacfdf0b81f1e44ae854f3cdbcc",
+      "reportedStatus": "REPRESENTATIVE_CONNECTED_DISCONNECTED_SRS_VERIFIED",
+      "historicalSourceFingerprint": "aba09ee248f5d910a416163f6c5cd4e6a6faa1ab6d40dcd0a5166325c2b4cde8",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/srs-native-105/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [
+            "lib/screens/srs_flashcards_screen.dart"
+          ],
+          "applicability": "source_changed_review_required"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Final W07 coverage and response quality audit",
+        "All14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "srs-native-107",
+      "path": "srs-native-107.json",
+      "receiptSha256": "32d97bf852974119655d168405c86fc3aeda9fdeb06d9a19504080e90ab2bf8a",
+      "reportedStatus": "REPRESENTATIVE_NATIVE_GUIDANCE_RETEST_PASS",
+      "historicalSourceFingerprint": "51bde28ab6409ed5986113c5fc40fed13a91535cc4be20f99a27e83927aa5347",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/srs-native-107/source-pins.json",
+          "selectedFiles": 3,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "study-plan-native-018",
+      "path": "study-plan-native-018.json",
+      "receiptSha256": "41e10ba5ba9f59520965f2a98ca4d9b8b463962fce7e40d9cce3b3d314756391",
+      "reportedStatus": "REPRESENTATIVE_NATIVE_BASELINE_CONNECTED_DISCONNECTED_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "study-plan-native-085",
+      "path": "study-plan-native-085.json",
+      "receiptSha256": "bd76b8348155de626caca8f07f1aa940f38dba0f69a0fb7f216c63363b698a7e",
+      "reportedStatus": "NONEMPTY_DUE_CARRYOVER_NATIVE_THREE_CONNECTION_STATES_VERIFIED_ANKI_RETEST_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native nonempty new-item selection/plan",
+        "Goals and learner-preference optional context implementation/audit",
+        "Plan reload after background remains explicit;pure no-rebuild late-attach after browser is not claimed",
+        "W10 native preview/equip/readback and full remaining workflow/mode acceptance",
+        "Final W13 current-source acceptance audit"
+      ]
+    },
+    {
+      "id": "typed-recall-native-059",
+      "path": "typed-recall-native-059.json",
+      "receiptSha256": "8e04ca29cf25242407f0f8aa4bc43df36ad15939201a7e4d4876f80fd4eed226",
+      "reportedStatus": "NATIVE_BASELINE_PASS_FEEDBACK_ACTION_DEFECT_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "typed-recall-native-061",
+      "path": "typed-recall-native-061.json",
+      "receiptSha256": "a6dcb00a34cde6a073cdc722e317585a2dd92b951729e72a83128a054d776cb5",
+      "reportedStatus": "NATIVE_REPRESENTATIVE_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "vocabulary-native-010",
+      "path": "vocabulary-native-010.json",
+      "receiptSha256": "dc39519e5b7441e1ec1044e5e4e9537b14cb72333bc2ba8eb4ecedddad8eec33",
+      "reportedStatus": "REPRESENTATIVE_NATIVE_PASS_WHOLE_SCOPE_OPEN",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": null
+    },
+    {
+      "id": "weakness-empty-110",
+      "path": "weakness-empty-110.json",
+      "receiptSha256": "258fca9d5c09c11970496aab44080c7efc1109333bc6bdfd06ea43ce4d425cba",
+      "reportedStatus": "HOST_PASS_NATIVE_PENDING",
+      "historicalSourceFingerprint": "020748b1f9fbf932a88866c58cb20c3dde237db8cb05df9107ae1eab8649c0ed",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/weakness-empty-110/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": [
+        "Native empty-state retest;installed106 predates110;preserve existing fixture/accounts",
+        "Transfer-probe actual-provider path remains behind implementedOff rollout038;no research activation",
+        "Full14workflow14mode acceptance"
+      ]
+    },
+    {
+      "id": "weakness-live-112",
+      "path": "weakness-live-112.json",
+      "receiptSha256": "d648ad8fdf841651ad6810927e513bfa3817e33ff0654ef9561ebe190d7bd08a",
+      "reportedStatus": "EMPTY_WEAKNESS_ACTUAL_PROVIDER_REPRESENTATIVE_PASS",
+      "historicalSourceFingerprint": null,
+      "currentSelectedPinChecks": [],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": "W07 transfer-probe actual-provider path behind disabled rollout;whole14workflow14mode acceptance and source-pin audit remain"
+    },
+    {
+      "id": "weakness-native-111",
+      "path": "weakness-native-111.json",
+      "receiptSha256": "599e44278222fa44cb05c1e6873bbd18376f65a14d63632d591b4958dc3a67eb",
+      "reportedStatus": "NATIVE_EMPTY_BASELINE_PASS_PROVIDER_PENDING",
+      "historicalSourceFingerprint": "42e9334f49de1c6387afcaab6e6768beb09c3b6281837fbe046ea1f640c89f76",
+      "currentSelectedPinChecks": [
+        {
+          "reference": "evidence/weakness-native-111/source-pins.json",
+          "selectedFiles": 2,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "historicalClaimOnly": true,
+      "scope": null,
+      "remaining": "Actual provider replies for empty/no-incorrect states not tested. Installed110 remains with original117-answer fixture. Full objective open."
+    },
+    {
+      "id": "r3-02-device",
+      "path": "r3/device-receipt.json",
+      "receiptSha256": "e7f0ff2f0251d26873c66d7d8e9c20620225a118c7b4dd8c533614c8b9339f47",
+      "reportedStatus": "HOST_NATIVE_STORAGE_DONE_PROVIDER_EXTERNAL_PENDING",
+      "historicalSourceFingerprint": "1355fee0971e467335454862f736cea4ae43e4cb2624ba191c752ce0f8631ccb",
+      "historicalClaimOnly": false,
+      "scope": "isolated native catalog/search/filter/detail and restored durable DB; provider pending",
+      "remaining": [
+        "02.2/provider_semantics",
+        "02.2/owner_and_lifecycle"
+      ]
+    }
+  ],
+  "boundedVerifiedAssertions": [
+    {
+      "id": "catalog_detail_host_116",
+      "scope": "Catalog/detail owner provenance and tested transitions; detail/use-case24 plus catalog/progress35 tests, overlapping prior gates not additive",
+      "level": "host",
+      "status": "passed",
+      "evidence": [
+        "pack-detail-context-116.json"
+      ],
+      "sourceFingerprint": "76144dbad1f1b35bff653eb30c25de931d64a1d01e1ff320a7bd9dfa159d4c0e",
+      "sourceChecks": [
+        {
+          "reference": "pack-detail-context-116.json#/sourcePins",
+          "fingerprint": "6e5d246d4de78884ba28a3e2fa29ba88dc1c746d6f8d44f6f0c9531ff0264f1e",
+          "selectedFiles": 6,
+          "changedOrMissing": [],
+          "applicability": "selected_pins_match_dependency_audit_pending"
+        }
+      ],
+      "satisfiesWholeCriterion": false
+    },
+    {
+      "id": "empty_catalog_unpaired_native_116",
+      "scope": "Home/planning/empty catalog, opening and collapsing unpaired AI on isolated Vivo app",
+      "level": "native",
+      "status": "passed",
+      "evidence": [
+        "pack-detail-context-116.json"
+      ],
+      "sourceFingerprint": null,
+      "apkSha256": "9ccf005d67cd465ce0eced711b0a32e48c049de55329daf009e45f4a26473ad2",
+      "satisfiesWholeCriterion": false
+    }
+  ]
+}

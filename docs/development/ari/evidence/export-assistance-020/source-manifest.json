@@ -1,0 +1,8 @@
+{
+  "files": {
+    "lib/screens/export_center_screen.dart": "5053727096a6322116e9680dbc5b08e02c5c1377d9c944c56165ec9b799737c2",
+    "test/screens/export_center_screen_test.dart": "a6ce1a64159a5f064e1d5ade9e14afbaa0f99bdb59e5772ce5aaa3a8e0f2658a",
+    "test/screens/export_center_flow_test.dart": "78f15e141455c4e8d1038147ac4994db7c9b418cf3812b213986dc03283b4709"
+  },
+  "normalization": "Original equal lines restored post verification; tokens unchanged"
+}

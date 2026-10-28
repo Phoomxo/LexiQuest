@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "continuationId": "B18-G83-F03-C05",
+  "status": "accepted-slice",
+  "recordedAtUtc": "2026-09-19T17:10:08.867295+00:00",
+  "threadId": "01a0ba91-3440-7c10-b271-2213c222ce68",
+  "inputCheckpointSha": "c2a4f95f998b25aee263991cdf27c39a4af2e8da",
+  "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "findings": [
+    {
+      "findingId": "B18-REV05-01",
+      "status": "closed-regression-verified",
+      "redRun": "owner-red; foreground-red",
+      "greenRun": "final",
+      "outcome": "Configured assessment rechecks current canonical owner after authority awaits, during existing presentation and foreground use, and after time start. Final completion SQL predicates require the uniquely active owner, including an owner switch after authorityGuard. Real Drift retains old consent/assignment and accepted answer, rejects stale presentation/terminal/outbox, and permits same-owner retry. Foreground rejection is observed and rendered as failure. Pinned abandonment cleanup semantics are retained."
+    },
+    {
+      "findingId": "B18-REV05-02",
+      "status": "closed-regression-verified",
+      "redRun": "terminal-red",
+      "greenRun": "final",
+      "outcome": "An actual Drift adapter commits completion then throws non-conflict StateError; application reconciles durable completion and renders result without duplicate answer or terminal outbox. Failure before commit remains retryable; opposite terminal conflicts remain rejected. This proves the configured adapter fault seam, not an installed transport failure."
+    },
+    {
+      "findingId": "B18-REV05-03",
+      "status": "closed-regression-verified",
+      "redRun": "clock-red",
+      "greenRun": "final",
+      "outcome": "Two-item configured widget holds the first durable response acknowledgement across pause. The next response stopwatch starts only when resumed. Canonical durations are200ms and300ms, excluding60000ms paused; separate monotonic effort totals500ms. First response identity remains unchanged."
+    },
+    {
+      "findingId": "B18-REV05-04",
+      "status": "closed-regression-verified",
+      "redRun": "flash-red",
+      "greenRun": "final",
+      "outcome": "Real authorized Legacy compatibility route admits one rating during reverse animation, rejects repeated retained callbacks, settles cancelled handlers on disposal and advances exactly one card under normal/reduced motion. Answer attempts and learning sessions remain empty. No SRS/points/research evidence is granted."
+    }
+  ],
+  "allF03Outcomes": [
+    {
+      "findingId": "B18-REV03-03",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Real checkpointed recovered closing session with one transient finish or acknowledgement failure: visible retry succeeds using same terminal identity, one canonical completion, and no new answer evidence; test controller phase and widget with null prompt",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-02",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Real migrated-owner Pair recovery with retained original plan: finish final match, advance feedback hold/fade, assert result visible and original plan/evidence actor history unchanged; owner replacement still cancels stale feedback",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-01",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/definition_quiz_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Widget tests for definition and cloze with last skipped item and finish failing once: exact retry visible and succeeds, no answer evidence inserted, stable captured terminal intent and no duplicate completion",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-04",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/email_action_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-05",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/vocab_list_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-06",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/adventure/domain/adventure_reaction.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Exercise original skip with empty prior review authorities, assert no fabricated answer/SRS/bookmark, and render truthful Thai/English/semantics copy. Preserve existing incorrect-source repair deferral.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-07",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/quiz_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Meaningful widget/real repository journey commits an answer, opens exit confirmation, verifies truthful retention copy, abandons and verifies same evidence remains with abandoned session. Do not change canonical retention to match the false copy.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-08",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/setting_screen.dart",
+      "originalStatus": "open-candidate-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-09",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/ghost_shadow_duel_screen.dart",
+      "originalStatus": "open-candidate-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Use bounded real repository or faithful lifecycle fake with delayed startup and failed cleanup. Verify unfinished retirement does not invent completed play, accepted evidence remains, no unhandled future, and completed games still close once. Add controllable monotonic clock/lifecycle background case if timing contract confirms active response duration; never replace historical recreational classification or manufacture progress.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "receipt": "G8.3-F03-C04-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-10",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Render actual flashcard occurrence through reveal/continue, assert answered view has no enabled invalid reveal action and tapping retained callback cannot create unhandled error or duplicate evidence; Next still advances and accepted content stays visible as appropriate. Include retry phases.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-11",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/register_screen.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [
+        "Coordinate account registration state contract with F05/REV09-04; do not repeat successful account creation. F03 can record interface result for F05 final integration."
+      ],
+      "regression": "Fake successful account and failing local consent repository; assert no unhandled exception, no false consent success, and recoverable verification/consent state without a second account registration. No real account creation or research activation.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV03-12",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Fail onOpen with a bounded fake, verify no unhandled error and visible accessible retry state, then succeed once after retry; retain double-tap lock and disposed handling.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV04-01",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "originalStatus": "open-static-confirmed-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV05-01",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/assessment/application/assessment_use_cases.dart",
+      "originalStatus": "candidate-owner-transition-reproduction-pending",
+      "dependencies": [],
+      "regression": "Real Drift plus controlled await: owner A valid configured presentation, switch to B while authority/completion held; assert no A terminal/outbox mutation or content reuse under B, while exact same-owner retry still works. Cover existing-presentation foreground and post-finish completion separately; no research activation.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV05-02",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/features/assessment/application/assessment_use_cases.dart",
+      "originalStatus": "candidate-terminal-ack-reproduction-pending",
+      "dependencies": [],
+      "regression": "Wrap actual Drift complete to commit once then throw StateError; complete a fully answered configured form through real widget and retry. Expect durable completion/comparison visible, one terminal revision/outbox and no extra evidence. Also failed-before-commit retry and abandon conflict remain distinct.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV05-03",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/pre_post_assessment_screen.dart",
+      "originalStatus": "candidate-background-response-clock-reproduction-pending",
+      "dependencies": [],
+      "regression": "Configured two-item widget, controlled first response persistence, pause app before ACK, release ACK, advance fake time while paused, resume and answer second. Assert second canonical response duration excludes paused interval and first receipt unchanged; compare monotonic effort separately.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV05-04",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/srs_flashcards_screen.dart",
+      "originalStatus": "candidate-compatibility-animation-reproduction-pending",
+      "dependencies": [],
+      "regression": "Use real compatibility route with Legacy owner/feature gate, three cards, rapid ratings during flip under normal and reduced motion and pop mid-transition. Assert no skipped card, stale setState, uncaught error or permanently pending handler; canonical evidence remains empty.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV06-06",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/profile_settings_screen.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Widget with distinct A/B profile evidence and current account headers: hold A loader, replace dependencies while TickerMode remains active, release A after B; then repeat already-loaded case and actual owner transition shell. Assert no A axes under B and same-owner tab reactivation still loads.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "receipt": "G8.3-F03-C04-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV06-08",
+      "ownerSlice": "B18-G83-F03",
+      "sourceFile": "lib/screens/learning_goals_screen.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Hold actual screen owner lookup, tap Add twice then release; assert one dialog/one prepared command. Inject lookup failure then retry successfully. Repeat edit and owner switch during opening; retain existing save retry/owner denial tests.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
+    }
+  ],
+  "priorReceipts": [
+    "G8.3-F03-C01-checkpoint.json",
+    "G8.3-F03-C02-checkpoint.json",
+    "G8.3-F03-C03-checkpoint.json",
+    "G8.3-F03-C04-checkpoint.json"
+  ],
+  "closedInThisContinuation": 4,
+  "closedF03": 19,
+  "remainingF03": [],
+  "totalClosed": 38,
+  "remainingOpenFindings": 31,
+  "dartTestsPassed": 136,
+  "testTargetCount": 7,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 9,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/assessment/application/assessment_use_cases.dart",
+      "sha256": "5e150a6b42afaa9610d4a035428d32be8cabfcbe86f2f4099bb344ed57b94588"
+    },
+    {
+      "path": "lib/features/assessment/data/drift_assessment_repository.dart",
+      "sha256": "df12950a1414fd0c77e177904427fbdd5a79288e6bf1c39877dead9e4973af8e"
+    },
+    {
+      "path": "lib/screens/pre_post_assessment_screen.dart",
+      "sha256": "3100958f5940e1b04dc426942b768dbcd4e0d7182639688e5aa1ae49c8d2872b"
+    },
+    {
+      "path": "lib/screens/srs_flashcards_screen.dart",
+      "sha256": "feb5932cbf4e113564d3b505c9af46be742dc68c35f028ae92e5bbffb6d067d9"
+    },
+    {
+      "path": "test/features/assessment/assessment_comparison_test.dart",
+      "sha256": "efb5d22bfaec60007828092ba7c406b0c8f054f1134ec8fde09f4600f6742b7b"
+    },
+    {
+      "path": "test/features/assessment/assessment_use_cases_test.dart",
+      "sha256": "0845cc179c5b8be381da2588fe9f07593f1c2433caecdb7fde1bbeaa6d85d719"
+    },
+    {
+      "path": "test/features/assessment/drift_assessment_repository_test.dart",
+      "sha256": "3a1ced45982050b99b6bacbae2dcaad78dc0b3af3e4ab3d0f470fc1d2158dbaf"
+    },
+    {
+      "path": "test/screens/pre_post_assessment_screen_test.dart",
+      "sha256": "d6084b32d161151796451569786656a587a84fe933d1246728598d0ddeb5c8f7"
+    },
+    {
+      "path": "test/screens/srs_flashcards_screen_test.dart",
+      "sha256": "04df842ee5939e66c6b0552b4126b4e2615749c84ddd80a859ed020cf80cfd4f"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03\\C05",
+  "evidenceManifestSha256": "5ea6aee1f36be0dab2cdedaae86c37640a55bf9a4c74cc9c7cceff1a477f6945",
+  "limitations": [
+    "Configured synthetic/local assessment; no installed/live/research activation claim.",
+    "Legacy flashcard route remains nonpersistent.",
+    "No whole-app/native/device/provider/full-release claim."
+  ],
+  "F03Accepted": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

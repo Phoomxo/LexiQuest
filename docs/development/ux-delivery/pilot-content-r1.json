@@ -1,0 +1,459 @@
+{
+  "schemaVersion": 1,
+  "revision": "s01-content-r1",
+  "status": "DRAFT_UNREVIEWED",
+  "purpose": "Navigation prototype and qualified reviewer packet only",
+  "author": "AI-assisted draft in S01; no human approval recorded",
+  "reviewers": [],
+  "ruleVersion": "pilot-routing-v1",
+  "trialAllowed": false,
+  "tracks": [
+    {
+      "id": "phonics",
+      "title": "เริ่มอ่านคำสั้น",
+      "objectiveId": "blend-cvc-mastpin-r1",
+      "sequenceRevision": "ph-sequence-draft-r1",
+      "accent": "Proposed General American; reviewer must confirm all actual recordings and accepted variants",
+      "mapping": {
+        "m": "/m/",
+        "a": "/æ/",
+        "s": "/s/",
+        "t": "/t/",
+        "p": "/p/",
+        "i": "/ɪ/",
+        "n": "/n/"
+      },
+      "prerequisites": "None for opening; unfamiliar graphemes are demonstrated before blending. No A–Z or microphone gate.",
+      "reviewQuestions": [
+        "Is this sequence appropriate for Thai adult beginners?",
+        "Are stop consonants free of misleading added vowels?",
+        "Are all novel words decodable using only these mappings?",
+        "Are contrast sets and item difficulty comparable without prior answer exposure?"
+      ],
+      "steps": [
+        {
+          "id": "welcome",
+          "title": "ดูตัวอย่างก่อน",
+          "thai": "วันนี้ลองฟังเสียงและผสมคำสั้น ๆ ยังไม่ต้องตอบ คุณเลือกฟังเรื่องแทนได้เสมอ",
+          "english": "",
+          "media": []
+        },
+        {
+          "id": "sounds",
+          "title": "รูปตัวเขียนกับเสียง",
+          "thai": "แตะเพื่อฟังเสียงของรูปตัวเขียนทีละตัว เสียงนี้ต่างจากชื่อตัวอักษร",
+          "english": "m · a · s · t · p · i · n",
+          "media": [
+            "ph-sounds-r1",
+            "ph-letter-names-r1"
+          ]
+        },
+        {
+          "id": "blend",
+          "title": "ดูวิธีผสมคำ",
+          "thai": "ดู m–a–t แล้วฟังเสียงต่อกันเป็น mat จากนั้นดูตัวอย่าง s–i–t ภาพและความหมายเปิดหลังสาธิต",
+          "english": "mat = เสื่อ · sit = นั่ง",
+          "media": [
+            "ph-model-r1",
+            "ph-pictures-r1"
+          ]
+        },
+        {
+          "id": "segment",
+          "title": "ลองแยกและเรียงเสียง",
+          "thai": "ฟังคำตัวอย่าง แล้วแตะรูปตัวเขียนตามลำดับ ไม่ต้องลาก มีคำใบ้ให้เปิดดูได้",
+          "english": "mat / sit",
+          "media": [
+            "ph-model-r1"
+          ]
+        },
+        {
+          "id": "try",
+          "title": "ลองคำใหม่เมื่อสื่อพร้อม",
+          "thai": "ตอนตรวจการอ่าน ผู้ตรวจจะแสดงคำใหม่ทีละคำโดยยังไม่เปิดเสียงหรือภาพ หากไม่สะดวกอ่านออกเสียง ให้ข้ามได้และบันทึกว่ายังไม่ได้ตรวจ",
+          "english": "",
+          "media": [
+            "ph-review-r1"
+          ]
+        },
+        {
+          "id": "finish",
+          "title": "เลือกทางต่อได้",
+          "thai": "ต้นแบบนี้ยังไม่ได้ตรวจการอ่านออกเสียง เลือกฝึกอีกครั้ง ฟังเรื่อง หรือพักได้ ไม่มีคะแนนปลดล็อกบท",
+          "english": "",
+          "media": []
+        }
+      ],
+      "assessment": {
+        "construct": "Oral decoding of novel CVC words; separate from tile recognition/copy/typing",
+        "practiceWords": [
+          "mat",
+          "sit"
+        ],
+        "forms": [
+          {
+            "id": "ph-pre-r1",
+            "phase": "before",
+            "items": [
+              {
+                "id": "ph-pre-map",
+                "family": "map",
+                "prompt": "map",
+                "meaning": "แผนที่"
+              },
+              {
+                "id": "ph-pre-pin",
+                "family": "pin",
+                "prompt": "pin",
+                "meaning": "เข็มหมุด"
+              }
+            ]
+          },
+          {
+            "id": "ph-post-r1",
+            "phase": "after",
+            "items": [
+              {
+                "id": "ph-post-tap",
+                "family": "tap",
+                "prompt": "tap",
+                "meaning": "แตะ"
+              },
+              {
+                "id": "ph-post-tin",
+                "family": "tin",
+                "prompt": "tin",
+                "meaning": "ดีบุก/ภาชนะดีบุก ตามบริบทที่ผู้ตรวจรับ"
+              }
+            ]
+          },
+          {
+            "id": "ph-follow-r1",
+            "phase": "followup-3-7-days",
+            "items": [
+              {
+                "id": "ph-follow-pan",
+                "family": "pan",
+                "prompt": "pan",
+                "meaning": "กระทะ"
+              },
+              {
+                "id": "ph-follow-nip",
+                "family": "nip",
+                "prompt": "nip",
+                "meaning": "หยิก/งับเบา ๆ ตามบริบทที่ผู้ตรวจรับ"
+              }
+            ]
+          }
+        ],
+        "equivalenceRationale": "Each draft form has one /æ/ and one /ɪ/ three-phoneme CVC word within the same seven mappings, never a taught word. Onsets/meaning familiarity differ; qualified review and calibration required.",
+        "allowedSupport": [
+          "Thai procedural instructions without saying the target word",
+          "Larger text if it does not pronounce the target"
+        ],
+        "answerRevealingSupport": [
+          "Target-word audio",
+          "Target picture or translation before decoding",
+          "Pronounced phoneme cue",
+          "Screen reader pronouncing the target"
+        ],
+        "rubric": {
+          "independent": "Human observes intelligible decoding with no answer-revealing support; accent need not copy model. Record exact response and self-correction.",
+          "assisted": "Target cue or correction required; preserve first response and cue separately.",
+          "incorrect": "Valid observed attempt does not communicate the word under reviewer-pinned acceptance.",
+          "skipped": "Learner chooses not to answer; not incorrect.",
+          "unobserved": "No qualified observer or learner declines oral observation; no oral claim.",
+          "invalid": "Broken media/UI prevents intended task; exclude from ability inference."
+        },
+        "acceptedVariants": "Qualified reviewer must pin intelligibility and self-correction rules before trial; unresolved now",
+        "allowedClaim": "Only observed decoding of the named items and conditions; never reading fluency or level mastery"
+      }
+    },
+    {
+      "id": "story",
+      "title": "ฟังหรืออ่านเรื่องในร้าน",
+      "objectiveId": "understand-request-and-response-r1",
+      "sequenceRevision": "story-sequence-draft-r1",
+      "prerequisites": "Independent access without phonics score, account, microphone or AI",
+      "steps": [
+        {
+          "id": "welcome",
+          "title": "ฟังหรืออ่านเรื่องสั้น",
+          "thai": "เรื่องนี้เกี่ยวกับการขอน้ำในร้าน ฟังหรืออ่านต่อได้โดยไม่ต้องตอบทุกช่วง เปิดคำไทยช่วยได้",
+          "english": "",
+          "media": []
+        },
+        {
+          "id": "story",
+          "title": "น้ำหนึ่งแก้ว",
+          "thai": "มะลิไปที่ร้าน เธอขอน้ำ พนักงานถามว่าเย็นไหม มะลิบอกว่าเย็น พนักงานยื่นน้ำให้ มะลิขอบคุณ",
+          "english": "Mali is at a cafe. ‘Water, please,’ she says. ‘Cold water?’ asks the server. ‘Yes, please.’ The server gives Mali water. ‘Thank you,’ she says.",
+          "media": [
+            "story-audio-r1",
+            "story-picture-r1"
+          ]
+        },
+        {
+          "id": "meaning",
+          "title": "ดูเหตุการณ์พร้อมคำช่วย",
+          "thai": "มะลิขออะไร? พนักงานถามอะไร? เปิดคำไทยหรือกลับไปฟังซ้ำได้ นี่คือการฝึกพร้อมตัวช่วย ยังไม่ใช่ข้อใหม่สำหรับตรวจ",
+          "english": "Water, please. → Cold water? → Yes, please. → Thank you.",
+          "media": []
+        },
+        {
+          "id": "try",
+          "title": "เรื่องใหม่เมื่อพร้อมทดลอง",
+          "thai": "ผู้ดำเนินกิจกรรมจะใช้เรื่องใหม่และถามสารสำคัญ ตอบไทยได้ ไม่ตัดสินจากการเขียนอังกฤษ ฟังกับอ่านต้องบันทึกแยกกัน",
+          "english": "",
+          "media": [
+            "story-assessment-audio-r1"
+          ]
+        },
+        {
+          "id": "finish",
+          "title": "เลือกสิ่งที่อยากทำต่อ",
+          "thai": "การดูเรื่องจบไม่ใช่ผลยืนยันความเข้าใจ เลือกอ่านคำสั้น ดูเรื่องอีกครั้ง หรือพักได้",
+          "english": "",
+          "media": []
+        }
+      ],
+      "difficulty": {
+        "vocabulary": "cafe/water/cold/server/please/thank you",
+        "structure": "short request, clarification, confirmation, delivery",
+        "speed": "Not recorded; reviewer must pin actual rate and pauses",
+        "length": "Six short narrative/dialogue units",
+        "context": "Adult service encounter; no child scenario assumption"
+      },
+      "assessment": {
+        "construct": "Meaning of a request and its response in a new service encounter",
+        "forms": [
+          {
+            "id": "ci-pre-r1",
+            "phase": "before",
+            "text": "Nok is at a cafe. ‘Tea, please.’ ‘Cold tea?’ asks the server. ‘No, hot tea, please.’ The server brings hot tea.",
+            "items": [
+              {
+                "id": "ci-pre-request",
+                "family": "tea-request",
+                "prompt": "นกขออะไร",
+                "accepted": [
+                  "ชา",
+                  "tea"
+                ]
+              },
+              {
+                "id": "ci-pre-detail",
+                "family": "tea-temperature",
+                "prompt": "ชาที่ตกลงรับเป็นอย่างไร",
+                "accepted": [
+                  "ร้อน",
+                  "ชาร้อน",
+                  "hot",
+                  "hot tea"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ci-post-r1",
+            "phase": "after",
+            "text": "Tom is at a cafe. ‘Milk, please.’ ‘Cold milk?’ asks the server. ‘No, hot milk, please.’ The server brings hot milk.",
+            "items": [
+              {
+                "id": "ci-post-request",
+                "family": "milk-request",
+                "prompt": "ทอมขออะไร",
+                "accepted": [
+                  "นม",
+                  "milk"
+                ]
+              },
+              {
+                "id": "ci-post-detail",
+                "family": "milk-correction",
+                "prompt": "สุดท้ายทอมรับนมแบบไหน",
+                "accepted": [
+                  "ร้อน",
+                  "นมร้อน",
+                  "hot",
+                  "hot milk"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "ci-follow-r1",
+            "phase": "followup-3-7-days",
+            "text": "Ann is at a cafe. ‘Coffee, please.’ ‘Hot coffee?’ asks the server. ‘No, cold coffee, please.’ The server brings cold coffee.",
+            "items": [
+              {
+                "id": "ci-follow-request",
+                "family": "coffee-request",
+                "prompt": "แอนขออะไร",
+                "accepted": [
+                  "กาแฟ",
+                  "coffee"
+                ]
+              },
+              {
+                "id": "ci-follow-detail",
+                "family": "coffee-correction",
+                "prompt": "สุดท้ายแอนรับกาแฟแบบไหน",
+                "accepted": [
+                  "เย็น",
+                  "กาแฟเย็น",
+                  "cold",
+                  "cold coffee"
+                ]
+              }
+            ]
+          }
+        ],
+        "equivalenceRationale": "All forms now use request/clarification/correction/delivery and a negated temperature correction. Lexical familiarity and temperature direction still require reviewer calibration; no standardized or gain-score equivalence is claimed.",
+        "allowedSupport": [
+          "Thai question/instructions",
+          "Neutral context picture without the answer"
+        ],
+        "recordSupport": [
+          "Replay count",
+          "Slowed audio",
+          "Thai meaning",
+          "Transcript",
+          "Helper prompt",
+          "Chosen reading versus listening modality"
+        ],
+        "rubric": {
+          "independent": "Communicates requested item and final response/detail without answer-revealing help; paraphrases accepted by reviewer, not exact string matching.",
+          "assisted": "Understands with translation/transcript/helper; preserve first response and conditions.",
+          "incorrect": "Valid response contradicts the new story or does not identify its meaning.",
+          "skipped": "Learner declines; not wrong.",
+          "unobserved": "No response/observer evidence; do not infer understanding from finishing.",
+          "invalid": "Audio/tool failure prevents chosen modality; offer reading but do not relabel it listening."
+        },
+        "allowedClaim": "Comprehension of this new story under recorded conditions; transcript-assisted work is not listening-only evidence"
+      }
+    }
+  ],
+  "media": [
+    {
+      "id": "ph-sounds-r1",
+      "role": "Individual phoneme audio",
+      "revision": "draft-r1",
+      "status": "NOT_PRODUCED",
+      "sha256": null,
+      "rights": "Pending actual recording/source license",
+      "review": "PENDING"
+    },
+    {
+      "id": "ph-letter-names-r1",
+      "role": "Distinct letter-name audio",
+      "revision": "draft-r1",
+      "status": "NOT_PRODUCED",
+      "sha256": null,
+      "rights": "Pending actual recording/source license",
+      "review": "PENDING"
+    },
+    {
+      "id": "ph-model-r1",
+      "role": "Blend/segment mat and sit",
+      "revision": "draft-r1",
+      "status": "NOT_PRODUCED",
+      "sha256": null,
+      "rights": "Pending actual recording/source license",
+      "review": "PENDING"
+    },
+    {
+      "id": "ph-pictures-r1",
+      "role": "Meaning pictures shown after modeling only",
+      "revision": "draft-r1",
+      "status": "PRODUCED_UNREVIEWED",
+      "sha256": "9472aa9a1df2373f34df9f9e5c0def44578d47de6d779467c3f86e07e4303bc7",
+      "rights": "Original project vector artwork draft; editorial/rights review pending",
+      "review": "PENDING",
+      "path": "docs/development/ux-delivery/media/phonics-meaning-r1.svg"
+    },
+    {
+      "id": "ph-review-r1",
+      "role": "Reviewer reference pronunciations; never pre-answer playback",
+      "revision": "draft-r1",
+      "status": "NOT_PRODUCED",
+      "sha256": null,
+      "rights": "Pending actual recording/source license",
+      "review": "PENDING"
+    },
+    {
+      "id": "story-audio-r1",
+      "role": "Main cafe story audio",
+      "revision": "draft-r1",
+      "status": "PRODUCED_UNREVIEWED",
+      "sha256": "d99106f06965002e91b853596fc8321b69d2758e49f61a658b28572a4550200d",
+      "rights": "Installed voice used for local draft review only; redistribution terms UNCONFIRMED; not a production asset",
+      "review": "PENDING",
+      "path": "docs/development/ux-delivery/media/story-main-r1.wav",
+      "scriptSha256": "f8a647771a0fc1f02dfd7cec08145779c29a79f570cbb27dc062f8b5c4d94050",
+      "engine": "Windows System.Speech offline / Microsoft Zira Desktop",
+      "rate": -2
+    },
+    {
+      "id": "story-picture-r1",
+      "role": "Neutral cafe context, no answer-bearing labels",
+      "revision": "draft-r1",
+      "status": "PRODUCED_UNREVIEWED",
+      "sha256": "858e7dfefc8dd4c9d3271d07512ce189a73f8aa880e8a75a0d01b93730f881ea",
+      "rights": "Original project vector artwork draft; editorial/rights review pending",
+      "review": "PENDING",
+      "path": "docs/development/ux-delivery/media/cafe-context-r1.svg"
+    },
+    {
+      "id": "story-assessment-audio-r1",
+      "role": "Three separate novel assessment stories",
+      "revision": "draft-r1",
+      "status": "PRODUCED_UNREVIEWED",
+      "sha256": null,
+      "rights": "Local draft review only; redistribution terms UNCONFIRMED",
+      "review": "PENDING",
+      "files": [
+        {
+          "path": "docs/development/ux-delivery/media/ci-pre-r1.wav",
+          "sha256": "4bfc564e36254cab5d68f2ec3ee26c7198e691851b2dab39e9963e88a061f61e",
+          "scriptSha256": "f465eaebeca61f6dcd0d1257c477bccd68828e0cfdaf4e7137acc96cbb5be394",
+          "engine": "Windows System.Speech offline / Microsoft Zira Desktop",
+          "rate": -2,
+          "status": "PRODUCED_UNREVIEWED",
+          "review": "PENDING",
+          "rights": "Installed voice used for local draft review only; redistribution terms UNCONFIRMED; not a production asset"
+        },
+        {
+          "path": "docs/development/ux-delivery/media/ci-post-r1.wav",
+          "sha256": "034226076d84ac778a377a30a89fe5473c6e701c48c2f87a85f4c2a2d75ed1a1",
+          "scriptSha256": "c3021dc1c9711e89da1166095c637c1583ff2af8df93b585eaad11bf892980d9",
+          "engine": "Windows System.Speech offline / Microsoft Zira Desktop",
+          "rate": -2,
+          "status": "PRODUCED_UNREVIEWED",
+          "review": "PENDING",
+          "rights": "Installed voice used for local draft review only; redistribution terms UNCONFIRMED; not a production asset"
+        },
+        {
+          "path": "docs/development/ux-delivery/media/ci-follow-r1.wav",
+          "sha256": "7ad3c12d06ee79665c1d50c8ad919351c8c643e595d97292dbbacd30b626934e",
+          "scriptSha256": "4646f6ce2310d67de6933645ed66cf6db379b85dcfe4d8656aa6b48bdec57ddf",
+          "engine": "Windows System.Speech offline / Microsoft Zira Desktop",
+          "rate": -2,
+          "status": "PRODUCED_UNREVIEWED",
+          "review": "PENDING",
+          "rights": "Installed voice used for local draft review only; redistribution terms UNCONFIRMED; not a production asset"
+        }
+      ]
+    }
+  ],
+  "textRights": "Original AI-assisted project draft; no third-party passages copied. Human editorial/rights approval remains pending.",
+  "reviewGate": [
+    "Qualified reading and Thai-adult appropriateness review",
+    "Language/audio review of actual assets",
+    "Pinned accepted variants and calibrated novel forms",
+    "Actual media paths/checksums/licenses",
+    "Named actual facilitator and data owner",
+    "Participant readiness under plan section 14"
+  ],
+  "results": []
+}

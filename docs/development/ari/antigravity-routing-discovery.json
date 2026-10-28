@@ -1,0 +1,97 @@
+{
+  "status": "BOTH_EXECUTORS_OFFLINE_ROUTE_CONTRACT_PASS_LIVE_JEV_PENDING",
+  "observedAt": "2026-09-23T15:09:53.653134+00:00",
+  "authorization": "User requested Jev model selection across local Antigravity and this development workflow. No parallel writers or paid fallback authorized.",
+  "cliVersion": "1.2.9",
+  "cliPath": "C:/Users/Phet/AppData/Local/agy/bin/agy.exe",
+  "installation": "Official reviewed installer; SHA512 validation; --skip-aliases --skip-path",
+  "verified": [
+    "models command succeeded",
+    "headless /usage JSON succeeded with zero input/output/thinking tokens"
+  ],
+  "models": [
+    "gemini-3.8-flash-high",
+    "gemini-3.8-flash-medium",
+    "gemini-3.8-flash-low",
+    "gemini-3.7-flash-high",
+    "gemini-3.7-flash-medium",
+    "gemini-3.7-flash-low",
+    "gemini-3.6-flash-high",
+    "gemini-3.6-flash-medium",
+    "gemini-3.6-flash-low",
+    "gemini-3.1-pro-high",
+    "gemini-3.1-pro-low",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6-thinking",
+    "gpt-oss-120b-medium"
+  ],
+  "quotaSnapshot": {
+    "geminiWeeklyRemainingFraction": 0.7842776775360107,
+    "geminiFiveHourRemainingFraction": 1,
+    "claudeGptWeeklyRemainingFraction": 1,
+    "claudeGptFiveHourRemainingFraction": 1
+  },
+  "routingContract": {
+    "input": [
+      "bounded task",
+      "required capabilities",
+      "risk",
+      "permitted models",
+      "fresh quota",
+      "measured quality/latency/cost when available"
+    ],
+    "decision": [
+      "model from allowlist",
+      "uncertainty",
+      "defer when unsupported"
+    ],
+    "execution": "Official headless --model with JSON/stream-json result; bounded duration; scoped tool permissions; sequential worker in isolated workspace; no automatic paid fallback",
+    "review": "Main writer reviews result; decisions do not grant permissions or bypass owner/data-loss gates",
+    "cost": "Quota snapshots are not dollar prices. Unknown cost and capability measurements must remain unknown."
+  },
+  "remaining": [
+    "Migrate same Jev ledger with separate synthetic/review/routing batch policy before live route inference",
+    "Reconcile provider billing/shared spending; current metadata query does not prove free Jev capacity",
+    "Bind returned Jev decision to reviewed, sequential dispatch with fresh model/quota checks and separate token telemetry",
+    "Validate real routes against representative tasks; no automatic source writer under current project guardrails"
+  ],
+  "sources": [
+    "https://antigravity.google/docs/cli/headless/",
+    "https://antigravity.google/docs/cli/install/",
+    "https://docs.typesafe.ai/introduction/coding-agents"
+  ],
+  "requestedPool": {
+    "antigravity": [
+      "gemini-3.8-flash-low",
+      "gemini-3.8-flash-medium",
+      "gemini-3.8-flash-high"
+    ],
+    "codex": [
+      "gpt-6-astra",
+      "gpt-6-sol",
+      "gpt-6-luna"
+    ],
+    "codexEfforts": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "aliases": {
+      "light": "low",
+      "extra high": "xhigh"
+    },
+    "unsupported": "ultra is not in the verified CLI/API effort set; fail closed instead of silently lowering."
+  },
+  "routePrototype": {
+    "file": "tool/experiments/jev_review/model_route.py",
+    "tests": "24 local unittest cases across Jev suite; six model-route tests; no model inference or work dispatch",
+    "capabilities": "Constructs18 allowlisted targets from observed Antigravity slugs plus documented Codex pool; bounded Jev Choice+Noul question; confidence and critical-risk gates; reviewable argv for both CLIs.",
+    "sourcePins": {
+      "tool/experiments/jev_review/model_route.py": "6d7801393282d636eb10fc75b009f31d3fc9a005c22aac5c10e46f3c10e1461c",
+      "tool/experiments/jev_review/test_model_route.py": "9b8299c875acf3a5e8d79329675c8e23f006fcfc66b9beb23b3b4b7caab1ca38"
+    },
+    "actualRouterActive": false
+  }
+}

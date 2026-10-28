@@ -1,0 +1,34 @@
+{
+  "goal": {
+    "title": "Saved goal 092 revised",
+    "kind": "languageTest",
+    "status": "active",
+    "deadlineUtcMs": 1790334600000,
+    "timezone": "Asia/Bangkok",
+    "deleted": 0
+  },
+  "cancelledDraftRows": 0,
+  "learningTables": {
+    "answer_attempts": {
+      "rows": 108,
+      "exactRowsUnchangedSince090": true
+    },
+    "srs_states": {
+      "rows": 12,
+      "exactRowsUnchangedSince090": true
+    },
+    "points_ledger_entries": {
+      "rows": 46,
+      "exactRowsUnchangedSince090": true
+    },
+    "reading_progress_entries": {
+      "rows": 4,
+      "exactRowsUnchangedSince090": true
+    },
+    "reading_events": {
+      "rows": 39,
+      "exactRowsUnchangedSince090": true
+    }
+  },
+  "rawDatabase": "ignored build/goals-editor-native-092; not committed"
+}

@@ -1,0 +1,14 @@
+{
+  "dispatchId": "ux-s01-af-20260924-304c",
+  "atUtc": "2026-09-24T13:17:30.756862+00:00",
+  "taskId": "01a0d38f-078f-7dd3-befa-c3aeaee00203",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\854b\\LexiQuest",
+  "branch": "feature/ux-s01-af-854b",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "35a20d563af7dbd1f07715ec978179bb56951d3f1602a7ef8a9c98982c8ed51f",
+  "archiveSha256": "e647de2d729056ec0b742bb00f9926ba57b6bd1e58e3dff042938c3a6bf81ca4",
+  "overlayFingerprintSha256": "e92ebdb500bd54a0e2f90fc846a2dd82b1218134feec0d43aa8eef6bf5699d49",
+  "verifiedEntries": 754,
+  "verification": "PASS: raw segments/containment/casefold uniqueness/exact ZIP membership/CRC/all sizes and hashes/deletions/post-import bytes",
+  "sourceUntouched": true
+}

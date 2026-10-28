@@ -1,0 +1,41 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "defect": "Canonical Pair result screen had no dedicated MCP result projection despite acknowledged durable result.",
+  "change": "Read-only matching/result-assistance binding under local owner, mounted only for visible result accepted by canonical reader. Provides purpose, first/repair answers, matched/independent/assisted counts, nullable stars/time and no replay progress/rewards. Does not submit answers or alter score/navigation.",
+  "verification": {
+    "newTests": 6,
+    "fullHostFileTests": 55,
+    "analysis": "No issues found",
+    "variants": [
+      "No scope",
+      "Connected registry",
+      "Disconnected between prompt and target; reconnect after completion"
+    ],
+    "faults": [
+      "Successful canonical read",
+      "Canonical result read fails once, retry same host"
+    ],
+    "assertions": [
+      "No result projection before completed canonical read",
+      "One answer row per four pairs; same controller survives disconnect",
+      "Result matches four correct first answers, four matched, three stars",
+      "Wrong owner sees no context",
+      "No AI write actions"
+    ]
+  },
+  "redGreen": "Initial test setup required reduced-motion to let result render without queued feedback episodes; corrected setup then four connected/disconnected cases failed solely on missing result context. Added binding; six targeted and55 full host tests passed.",
+  "limitations": [
+    "Real Drift host tests; registry states are not authenticated provider tests",
+    "Native Pair MCP and replay-specific result context remain pending",
+    "Active board assistance uses generic lesson guidance; richer board context remains to assess",
+    "Whole14workflow/mode acceptance open"
+  ],
+  "build": {
+    "status": "PASS",
+    "apk": "build/ari-assistance-048.apk",
+    "sha256": "7cc9e459031231653f74b1bbefe87800fc860a0b8d1a67e2a451dcb067032544",
+    "install": "adb install -r Success isolated com.lexiquest.app.ariTest",
+    "nativeSmoke": "Launched home; local data ready, AI collapsed; USB stayawake2. Not a native Pair MCP test."
+  },
+  "deviceProbeRecovery": "sdcard temporary dump deletion failed; switched helper fallback to /data/local/tmp unique files; app-only accessibility probe passed."
+}

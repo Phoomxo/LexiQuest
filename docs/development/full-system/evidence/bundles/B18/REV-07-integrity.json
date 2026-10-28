@@ -1,0 +1,43 @@
+{
+  "sliceId": "B18-G82-REV-07",
+  "checkpointInputSha": "0ce5c5952ce0112636c67ed68c4700c9d498e8b7",
+  "verifiedAtUtc": "2026-09-19T11:51:03.282737+00:00",
+  "frozenInventory": 3610,
+  "authorizedExactPolicyAmendments": 3,
+  "handoffEvidenceHashesVerifiedAtPreflight": 19,
+  "checkoutEolEquivalentRestored": 245,
+  "semanticDispositions": {
+    "production": 13,
+    "focusedOracles": 15,
+    "total": 565,
+    "pending": 864,
+    "observations": 1429
+  },
+  "findings": {
+    "total": 43,
+    "staticConfirmed": 17,
+    "candidates": 26,
+    "prior40Unchanged": true,
+    "newIDs": [
+      "B18-REV07-01",
+      "B18-REV07-02",
+      "B18-REV07-03"
+    ]
+  },
+  "formula": "FORM09 domain only; REV11 CLI final",
+  "historicalReceiptsUnchanged": {
+    "REV-01-zone-review.json": "20a35b318df64c1af18a560c611ac32964be21562f152aff93da81fac9317086",
+    "REV-02-zone-review.json": "651e3b07884e4655316b9d50d0d6146c16e3bd818ee3b4af2798aa2f3869cbf2",
+    "REV-03-zone-review.json": "c86ece96a7b9ea6e1d72e3733bb56423cd050c990325f406eb78f4d35b8aa0e2",
+    "REV-04-zone-review.json": "5e94a17158a478a126eff5d21353236ef8a810d229d581f5799e11046bab7c18",
+    "REV-05-zone-review.json": "82e35fc26944b97a54452fb73afca67144fa8272b0af17fd8c0b7e3695447f58",
+    "REV-06-zone-review.json": "b5fc288e2d9706048252f4e33b6f6f8c6d8fddfb006da6066d212037fff3aa4c"
+  },
+  "priorIntegrityFilesUnchanged": true,
+  "nextSliceOracleCount": 53,
+  "runtimeTestsRun": false,
+  "applicationSourceChanged": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "validation": "Static disposition coverage, exact hashes and reference integrity; no runtime/native/quality acceptance"
+}

@@ -1,0 +1,1860 @@
+{
+  "bundleId": "B18",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "findings": [
+    {
+      "id": "B18-REV03-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "relatedFiles": [
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart"
+      ],
+      "trigger": "Initialize a recovered mixed-review run in closing phase; retrying its exact close or durable acknowledgement fails transiently",
+      "expected": "Retain the exact pending close and expose an actionable completion retry even though no question prompt has been restored",
+      "actual": "_complete sets completionRetryRequired and rethrows, then initialize catch overwrites phase with failed. UI displays a fixed failure message without retry. Merely preserving the retry phase is insufficient because _retryControls is nested inside the nonnull prompt branch and recovered closing run has no prompt",
+      "ownerPackage": "G2.1/G2.2",
+      "proposedRegression": "Real checkpointed recovered closing session with one transient finish or acknowledgement failure: visible retry succeeds using same terminal identity, one canonical completion, and no new answer evidence; test controller phase and widget with null prompt",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-03",
+        "redRun": "adventure-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Exact durable closing checkpoint rehydration retains completionRetryRequired with null prompt; visible retry uses the same terminal time, one canonical session, zero answer attempts."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "trigger": "Recover an authenticated unfinished Pair session after owner merge; plan retains original owner while runtimeOwnerId is current custodian; acknowledge a correct match with animations enabled",
+      "expected": "Transient feedback expires for the same live runtime owner/session so completed result becomes visible without changing historical plan identity",
+      "actual": "_presentAccepted adds feedback episodes, but timer current() compares _liveOwner to after.plan.ownerId. Those differ for valid migrated recovery, so neither fade nor removal executes. Result UI waits for _feedbackEpisodes.isEmpty, leaving completed board displayed",
+      "ownerPackage": "G1.2/G2.1",
+      "proposedRegression": "Real migrated-owner Pair recovery with retained original plan: finish final match, advance feedback hold/fade, assert result visible and original plan/evidence actor history unchanged; owner replacement still cancels stale feedback",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-02",
+        "redRun": "c02-pair-red",
+        "greenRun": "c02-final",
+        "outcome": "Migrated owner Pair recovery expires feedback under runtime custodian, exposes result, preserves historical plan/start event actor and payload; owner/dispose stale callback tests pass."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/definition_quiz_screen.dart",
+      "relatedFiles": [
+        "lib/screens/fill_in_the_blanks_screen.dart",
+        "lib/features/learning/application/definition_quiz_mode_adapter.dart",
+        "lib/features/learning/application/cloze_mode_adapter.dart"
+      ],
+      "trigger": "Last item is skipped because reviewed content is missing/stale/ambiguous; finishing the session fails",
+      "expected": "User can explicitly retry the exact pending terminal command while skip produces no answer evidence",
+      "actual": "Both screens render completionRetryRequired action only inside question != null branch. Skipped last item keeps question null; controller transitions to completionRetryRequired, disabling advance and locking PopScope without any visible retry action",
+      "ownerPackage": "G2.1/G2.2",
+      "proposedRegression": "Widget tests for definition and cloze with last skipped item and finish failing once: exact retry visible and succeeds, no answer evidence inserted, stable captured terminal intent and no duplicate completion",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-01",
+        "redRun": "skip-red;definition-red2",
+        "greenRun": "final;skip-final",
+        "outcome": "Real Drift Definition/Cloze last skipped items expose completion retry outside null-question branch; precommit fault then exact terminal retry produces one completed session and zero answer attempts."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV01-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/runtime/app_bootstrap.dart",
+      "trigger": "offlineContent.reconcile throws during composition",
+      "expected": "Every already-composed manager is disposed before database closes, preserving original initialization failure",
+      "actual": "offlineContent.dispose is registered only after reconcile, catalog recovery and device-model construction; failed reconcile skips ownership registration",
+      "ownerPackage": "G1.7/G7.7",
+      "proposedRegression": "Injected OfflineContentManager whose reconcile throws; assert dispose exactly once and original error preserved, including throwing cleanup",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-01",
+        "redRun": "bootstrap-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV01-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/login_screen.dart",
+      "trigger": "Guest entry consent await permits duplicate taps; guest.start or consent persistence throws",
+      "expected": "Single admitted entry operation with recoverable visible failure and busy cleared",
+      "actual": "busy starts after first await; guest path lacks catch/finally",
+      "ownerPackage": "G1.1",
+      "proposedRegression": "Deferred consent/guest fake, rapid taps and throwing result; inspect canonical provider error contract before changing",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-02",
+        "redRun": "entry-red-fixture-corrected",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-needs-caller-and-runtime-confirmation"
+    },
+    {
+      "id": "B18-REV01-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/runtime/circuit_breaker.dart",
+      "trigger": "Closed-state request remains in flight while newer failures open circuit; old request then succeeds",
+      "expected": "Confirm intended generation semantics before treating stale completion as fresh half-open health probe",
+      "actual": "Every success calls _onSuccess without generation/state ownership",
+      "ownerPackage": "G6.1/G7.6",
+      "proposedRegression": "Controlled overlapping futures and provider caller analysis",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-03",
+        "redRun": "entry-circuit-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-needs-concurrency-contract-confirmation"
+    },
+    {
+      "id": "B18-REV02-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/data/local/legacy_learning_import.dart",
+      "trigger": "Legacy source has a small main file but large live WAL rows, or one oversized row",
+      "expected": "Enforce bounded snapshot allocation before loading payload rows while preserving read-only WAL semantics",
+      "actual": "Main-file size checked, then source.select materializes up to100001 rows before encoded maxBytes check",
+      "ownerPackage": "G7.2",
+      "proposedRegression": "Synthetic read-only WAL fixture over declared budget; ensure rejection without mutating source/destination and bound preflight reads",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-01",
+        "redRun": "budget-fold-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-resource-reproduction-pending"
+    },
+    {
+      "id": "B18-REV02-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/learning/data/drift_learning_repository.dart",
+      "trigger": "Wall clock moves backward during a generic quiz; captured finish or abandon time precedes stored session start",
+      "expected": "Canonical terminal mutation preserves a valid temporal interval; history remains readable and original captured intent is handled explicitly",
+      "actual": "finishSession and abandonSession validate UTC but do not compare terminal with startedAtUtcMs; history entry constructor rejects endedAtUtc before startedAtUtc",
+      "ownerPackage": "G1.4/G2.1",
+      "proposedRegression": "Controlled clock generic session close before start, then read history; verify atomic rejection or explicitly defined clock policy without hiding invalid timestamps",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-02",
+        "redRun": "session-red-corrected",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-clock-regression-reproduction-pending"
+    },
+    {
+      "id": "B18-REV02-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/learning/data/drift_learning_repository.dart",
+      "trigger": "Active owner changes between generic startQuiz owner lookup/scheduling and startSession insertion",
+      "expected": "Generic session start either admits the still-active owner atomically or reports owner drift",
+      "actual": "Generic _insertLearningSession performs insertOrIgnore with an owner FK but no active-owner transaction check; exact pinned/Pair starts have a stronger check. QuizScreen uses generic startQuiz in its ordinary path",
+      "ownerPackage": "G1.4/G2.1",
+      "proposedRegression": "Deferred start boundary with real Drift owner switch; inspect lifecycle initializeSession before asserting user-visible effect. Also confirm collision replay behavior of insertOrIgnore",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-03",
+        "redRun": "session-red-corrected",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-admission-race-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/email_action_screen.dart",
+      "trigger": "Open valid reset-password action route and submit a password shorter than8 characters",
+      "expected": "Local password validation keeps the editable reset form and same action code so learner can correct input and retry",
+      "actual": "AccountUseCases._password throws weakPassword before gateway request; EmailActionScreen catch writes nonnull _status, while reset form and submit are rendered only when _status is null. Only return-to-login remains. Network AccountException likewise hides retry and uses invalid-link copy.",
+      "ownerPackage": "G1.1",
+      "proposedRegression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-04",
+        "redRun": "entry-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Real AccountUseCases plus recording gateway: weak password causes zero gateway calls, recoverable network error retains editable form, same original code succeeds on correction/retry; terminal invalid/expired/success state is distinct."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/vocab_list_screen.dart",
+      "trigger": "Open production Vocabulary tab, push a personal category and AddWordScreen, then emergencyOff Feature.vocabulary while editor remains on Navigator stack; submit a valid new word",
+      "expected": "Withdrawal disables the open vocabulary route and rejects any newly initiated mutation through retained UI callbacks",
+      "actual": "MainNavigation gates only CategoriesPage. CategoriesPage pushes bare VocabListScreen, which pushes bare editor/import routes. AppNavigator.pushPage directly builds MaterialPageRoute with no feature wrapper. Editor/usecases/repository ordinary create path has no live feature check; parent gate rebuild cannot remove sibling Navigator routes, so a new word and outbox write remain admissible after withdrawal. Existing widget tests do not toggle registry on these pushed routes.",
+      "ownerPackage": "G4.1",
+      "proposedRegression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-05",
+        "redRun": "vocab-red4/vocab-red5",
+        "greenRun": "final2",
+        "outcome": "Every vocabulary category/editor/import/examples route uses its originating registry; current admission fences retained mutation/navigation callbacks and pending dialogs. Production services still resolve from scope; explicit fixture injection remains supported. Real Drift proves no word/outbox additions after withdrawal, enabled writes succeed and committed writes survive withdrawal."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV09-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/sync/data/drift_sync_store.dart",
+      "relatedFiles": [
+        "lib/features/sync/data/firestore_sync_gateway.dart",
+        "test/features/sync/drift_sync_store_test.dart",
+        "test/features/sync/learning_event_sync_test.dart"
+      ],
+      "trigger": "Category revision1 commits remotely but its ACK is lost; local category edited to revision2 before expired operation1 is replayed; also SRS revision1 remote commit followed by a second recorded review before replay",
+      "expected": "Replay validates and records original remote receipt without losing later edit, then sends revision2 exactly once",
+      "actual": "claimPending preserves attempted operation1 ID but _reconstructMutation uses current category.localRevision2. FirestoreSyncCodec.decodeAcknowledgement requires receipt resultingRevision equal expectedMutation.localRevision, so real revision1 receipt throws InvalidSyncPayloadFailure. Existing file-backed regression bypasses codec: _IdempotentFakeCloud returns saved PushAcknowledged directly and store accepts it. Thus regression does not cover production gateway rejection; later pull may resolve newer local edit as cloudWins. Cross-check learning_event_sync_test lost-SRS-ACK fixture explicitly expects replay localRevision2 and saved ACK1 through _SrsIdempotentFakeCloud, confirming the same mismatch for real recordAnswer-produced SRS work.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks. Include SRS via actual recordAnswer plus reopen, using the same real codec boundary and preserving immutable answer evidence/projection authority.",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-01",
+        "redRuns": [
+          "rev09-01-red",
+          "rev09-01-legacy-both-red"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Schema28 persists exact first-send mutable category/word/SRS snapshot atomically with attempt reservation. Lost ACK category uses actual repository edit, file reopen and real SyncEngine; actual recordAnswer SRS reopens and sends original then second revision through real Firestore codec. Legacy nullable snapshots retain operation-encoded original revision; unavailable historical payload is not fabricated. Strict receipt mismatch validation is unchanged. Never-committed first-send control uses actual codec. Migration preserves old unresolved attempt metadata."
+      }
+    },
+    {
+      "id": "B18-REV12-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "test/features/research/research_sync_authorizer_test.dart",
+      "relatedFiles": [
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/data/local/app_database.dart"
+      ],
+      "trigger": "Schema transport table includes integer27 but line867 accepts only24/25/26, after current schema and transport allowlist advanced to27.",
+      "expected": "Oracle accepts exactly supported integer schemas24/25/26/27 and rejects unsupported schemas and noninteger/coerced values.",
+      "actual": "research_sync.dart369 accepts27 and currentSchemaVersion is27; existing test requires SyncFailure for27. Static deterministic oracle mismatch; B18 test not run yet.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Run bounded targeted existing schema matrix to record RED; correct expected supported set to include27 and add28 plus string/floating27 negatives. Retain24 historical pin rejection in current-run authorizer and every malformed-type assertion. This is a stale oracle correction, not relaxing transport.",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-01",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter",
+        "outcome": "Explicit integer schemas24–28; unsupported29 and string/double27/28 denied. Historical issuer/schema pins unchanged."
+      }
+    },
+    {
+      "id": "B18-REV09-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "relatedFiles": [
+        "lib/features/sync/data/drift_research_sync_adapter.dart",
+        "test/features/research/research_session_proof_source_integrity_test.dart"
+      ],
+      "trigger": "Bounded proof candidate page begins with limit-many structurally eligible opportunities that fail current source/permit admission, while later opportunities have valid current authority. Repeated preparation starts with absent or unchanged local cursor.",
+      "expected": "Later independently authorized proofs are eventually inspected within bounded work, without admitting denied facts or weakening no-unauthorized-persistence rules.",
+      "actual": "Candidate SQL sorts opportunity ID/phase and limits before authority validation. Every denied candidate continues without setting frontier; scheduling cursor writes only after admitted frontier. Repeated calls can reread the same entirely denied page forever. Existing 50-ACK progress test uses admitted rows and does not cover denied-prefix starvation. Other research collection enqueue queries likewise bound before allowed checks, so related scope needs RED confirmation.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Synthetic local real-Drift fixture with limit1 denied leading opportunity and separately valid later opportunity, repeat bounded preparation and recreate repository; later valid proof/outbox must appear, denied evidence/ACK/consent must remain unchanged. Preserve all-denied no-cursor-write, rollout-off, owner-fence, finite scan and late-withdrawal invariants; no live research activity. Confirm intended no-write authority constraints before selecting local scheduling design; do not simply persist denial as authorization.",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-02",
+        "redRuns": [
+          "rev09-02-red-schema28"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Bounded finite keyset scan hints are weakly AppDatabase-scoped and owner/UID/collection-separated, surviving repository/adapter recreation without persisting denial. Later independently authorized proof and opportunity reach outbox beyond denied prefix. All-denied finite wrap writes no proof/outbox/cursor and leaves consent/evidence unchanged. Current authorization, owner/rollout fences and late-withdrawal persistent-cursor checks remain. Database reopen discards volatile hints; persisted admitted frontier retains prior semantics."
+      }
+    },
+    {
+      "id": "B18-REV08-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "relatedFiles": [
+        "lib/screens/ai_tutor_settings_screen.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "test/features/gemini/gemini_tutor_use_cases_test.dart",
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart"
+      ],
+      "trigger": "An active reply is draining cancellation while removeKey() or updateConsents(providerConsent:false) is awaiting _cancelActiveOperations(); another reply enters the same live controller before the revoke mutation is queued.",
+      "expected": "Revocation reserves ordering immediately so newly arriving replies cannot use the credential being revoked; already accepted operations drain without weakening owner/lease or paid-result accounting.",
+      "actual": "Live AiTutorUseCases queues the mutation only after awaited drain, allowing the new reply to reserve _transitionGate first and escape the cancellation snapshot. Legacy Gemini controller already has explicit regression for this sequence and reserves transition before draining. Production bootstrap instantiates AiTutorUseCases; settings calls its revoke/remove methods. Current settings page has local saving guard but shared controller boundary is still callable. Runtime confirmation pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Deferred cancellation-aware provider, actual AiTutorUseCases with unique operation/event IDs and actual secure/Drift fenced composition where practical: start replyA; request remove/revoke; synchronously submit replyB during drain; releaseA; assert only one provider generation and replyB blocked, credential revoked, pending/terminal records truthful. Repeat for both operations; preserve paid-completed-result and lease-loss oracles.",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV08-01",
+        "redRun": "ai-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Revocation snapshots cancellation and reserves its serial transition before yielding. Replies submitted during drain fail missing-key/consent without a second provider call. Actual Drift owner gate, usage repository and credential-version index verify one terminal attempt for both remove/revoke and paid-success/cancelled provider outcomes; paid results retained."
+      }
+    },
+    {
+      "id": "B18-REV08-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+      "relatedFiles": [
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "test/features/ai_tutor/ai_gateway_adapters_test.dart"
+      ],
+      "trigger": "A200 OpenAI-compatible response contains valid reply text but usage.cost is an extremely large nonnegative JSON number whose multiplication by1e6 cannot be rounded as a finite integer.",
+      "expected": "Malformed advisory usage must become unknown and preserve the successfully received reply without encouraging another paid request; finite legitimate cost and zero retain meaning.",
+      "actual": "Gateway calls (value*1000000).round() inside _parseUsage before returning AiGatewayReply; only FormatException is caught by _parseReply. Later use-case _sanitizedUsage protects invalid AiTokenUsage values but cannot recover a gateway parse exception before reply exists. Current rawHTTP fixtures cover normalcost12micros only. Runtime JSON/nonfinite behavior reproduction pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV08-02",
+        "redRun": "ai-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Real raw JSON overflow1e308 and saturating1e30 costs preserve paid reply with unknown cost. Finite positive/zero costs retained; negative/type-invalid ignored. Scaled microUSD is limited to exact cross-platform integer range. Real gateway plus AiTutorUseCases and fenced Drift records one success with totalTokens5 and unknown cost."
+      }
+    },
+    {
+      "id": "B18-REV12-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/add_default_categories.js",
+      "relatedFiles": [
+        "package.json",
+        "tool/cli/tests/firebase-seed-security.tests.ps1"
+      ],
+      "trigger": "Maintainer invokes the registered npm seed command or imports its exported helpers.",
+      "expected": "The guarded maintenance module must parse before any initialization or seed mutation; source-only checks must not report executable validity from regex presence.",
+      "actual": "The defaultCategories array closes its Nature object then immediately contains a naked quoted words property without a comma/object boundary, followed by duplicated category data. This is invalid JavaScript syntax. package.json routes seed directly to this file, while existing PowerShell contract only matches strings and cannot detect the parse failure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use bounded non-executing node --check or equivalent parser oracle to demonstrate RED and GREEN after repairing duplicated splice; add syntax oracle to targeted maintainer scope. Do not run seed or initialize Firebase. Preserve environment guard and inspect reviewed vocabulary changes rather than silently bulk-seeding remote data.",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-02",
+        "redRun": "seed-red + seed-import-red",
+        "greenRun": "final-cli",
+        "outcome": "Removed exact duplicated8-category suffix, retained10 unique categories/197 words. Parse and import/denied-seed checks load no SDK. Guard now precedes lazy initialization; no seed executed."
+      }
+    },
+    {
+      "id": "B18-REV12-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "test/architecture/pair_matching_f10_boundary_test.dart",
+      "relatedFiles": [
+        "lib/data/local/app_database.dart",
+        "lib/data/local/app_database.g.dart",
+        "test/support/current_database_contract.dart"
+      ],
+      "trigger": "Existing TC-PMT-001 builds current generated allTables snapshot after schema27 added the50th table, then calls the49-table validator.",
+      "expected": "Architecture oracle validates current accepted schema inventory while preserving f10-only routing and prohibition of separate star authority tables.",
+      "actual": "The baseline expects returnsNormally but validator line83 rejects tableNames.length !=49. Current source annotation and generated allSchemaEntities36909-36960 contain50tables; current_database_contract also enumerates50. No application schema change is warranted. Runtime RED pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Run targeted existing Pair boundary test to record RED, align to exact current database table inventory and keep f45/extra-route/star-table and same-count substitution negatives meaningful. Do not regenerate historic final test plan or reduce schema27 to26.",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-03",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter",
+        "outcome": "Current exact50-table inventory replaces49 count; wrong same-count table, star table, route and f45 mutations remain rejected."
+      }
+    },
+    {
+      "id": "B18-REV12-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/tests/verify-gemini-byok.tests.ps1",
+      "relatedFiles": [
+        "lib/data/local/app_database.dart",
+        "tool/cli/verify-gemini-byok.ps1",
+        "tool/cli/verify-scope.ps1"
+      ],
+      "trigger": "Run existing Gemini BYOK CLI contract (direct legacy gate prerequisite or explicit Targeted/Runtime CliTestTargets).",
+      "expected": "Validate the current schema authority and credential metadata invariants without rejecting accepted schema27.",
+      "actual": "Lines133-135 require literal currentSchemaVersion =26 and emit schema-26 error; app_database.dart92 declares27. All prior checks succeeding necessarily reaches this rejection. Runtime reproduction pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use verify-scope Targeted/Runtime with only verify-gemini-byok.tests.ps1 for RED then GREEN. Replace stale26 assertion with current contract authority while preserving schema getter, credential namespace/owner fences/secret negatives. Do not lower application schema or run full legacy gate/APK/network.",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-04",
+        "redRun": "gemini-red",
+        "greenRun": "final-cli",
+        "outcome": "Gemini oracle follows current declared schema authority/getter; credential owner namespaces and no-secret assertions retained."
+      }
+    },
+    {
+      "id": "B18-REV03-06",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/adventure/domain/adventure_reaction.dart",
+      "relatedFiles": [
+        "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
+        "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+        "lib/features/learning/application/unified_lesson_controller.dart",
+        "lib/features/review/domain/review_queue_item.dart"
+      ],
+      "trigger": "Skip an original mixed-review item with no prior incorrect/SRS/saved/report evidence while Adventure companion is visible.",
+      "expected": "Companion copy describes skip without promising a persisted review item unless the canonical Review authority actually contains it.",
+      "actual": "Skipped reaction promises in Thai/English and accessibility text that the item is kept for review. Actual original skip only stores recovery checkpoint and increments presentation skippedItemCount; Review authorities are SRS/incorrect attempts/reports/saved intent and none is created by this path. Repair skips can already have an incorrect-source item, but the unconditional original-skip claim is false.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Exercise original skip with empty prior review authorities, assert no fabricated answer/SRS/bookmark, and render truthful Thai/English/semantics copy. Preserve existing incorrect-source repair deferral.",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-06",
+        "redRun": "c02-skip-copy-red",
+        "greenRun": "c02-final",
+        "outcome": "Thai/English visible and semantics skip copy no longer promises saved review. Real Drift original skip leaves answers/SRS/saved/review empty; repair/retry cases preserved."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-07",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/quiz_screen.dart",
+      "relatedFiles": [
+        "lib/features/learning/application/unified_lesson_controller.dart",
+        "lib/features/learning/data/drift_learning_repository.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "trigger": "After a canonical answer has committed, ask to leave the Quiz route.",
+      "expected": "Exit confirmation explains that accepted answers remain saved and the unfinished session ends.",
+      "actual": "Confirmation line799 states session progress will not be saved, while abandon preserves canonical answer/events/projections and only marks session abandoned. This contradicts durable behavior and can mislead users about retained learning data.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Meaningful widget/real repository journey commits an answer, opens exit confirmation, verifies truthful retention copy, abandons and verifies same evidence remains with abandoned session. Do not change canonical retention to match the false copy.",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-07",
+        "redRun": "c02-quiz-red",
+        "greenRun": "c02-final",
+        "outcome": "Real Drift committed answer and existing event rows survive abandon; exit dialog truthfully explains retention and unfinished session termination."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-08",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/setting_screen.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/features/account/application/local_data_deletion.dart"
+      ],
+      "trigger": "Open local erase confirmation for ownerA, then active owner changes to B before confirming.",
+      "expected": "Confirmation applies to the owner whose deletion was presented, or rejects stale confirmation.",
+      "actual": "_eraseLocalData reads active owner only after confirmation. Canonical eraser correctly checks that newly supplied B is active, so its guard cannot detect that the user confirmed while viewing A. Need bounded owner-transition widget reproduction; do not run real erasure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-08",
+        "redRun": "erase-red",
+        "greenRun": "final2",
+        "outcome": "Erasure captures the presented owner before confirmation, rejects a replacement owner, contains lookup failure/cancellation, releases confirmation state for retry and retains production atomic owner lease enforcement."
+      },
+      "reviewStatusAtG82": "open-candidate-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-09",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/ghost_shadow_duel_screen.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart",
+        "lib/features/learning/application/learning_use_cases.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "trigger": "Retire an unfinished production Ghost route, especially while session creation is delayed or terminal persistence fails; background/resume before a response.",
+      "expected": "Unfinished route retirement must preserve accepted evidence and truthful terminal status, contain cleanup failures, and response timing must exclude inactive background time if used for speed comparison.",
+      "actual": "Live drawer route builds Ghost screen directly. Its dispose always calls _closeSession/finish for any nonempty session, irrespective of _finished; then onError handles load failure only, not exceptions thrown inside async success callback. Stopwatch has no lifecycle/route pause. Existing disposed callback test checks no answers and no error with successful fake close, but not abandoned status/failed close; completed close retry test does not exercise unfinished retirement. Recreational evidence classification means this is not a recall-SRS bug.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use bounded real repository or faithful lifecycle fake with delayed startup and failed cleanup. Verify unfinished retirement does not invent completed play, accepted evidence remains, no unhandled future, and completed games still close once. Add controllable monotonic clock/lifecycle background case if timing contract confirms active response duration; never replace historical recreational classification or manufacture progress.",
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "retest": {
+        "receipt": "G8.3-F03-C04-checkpoint.json",
+        "findingId": "B18-REV03-09",
+        "redRun": "ghost-red; ghost-timing-red",
+        "greenRun": "final2",
+        "outcome": "Unfinished Ghost retirement abandons the pinned session after pending evidence settles; completed turns close once, failed terminal persistence stays unresolved without implicit retry, cleanup exceptions are contained and accepted evidence is preserved. Response clock pauses across app/background and route coverage; retained inactive callbacks cannot submit. Deterministic clock proves 200+300ms active response excludes60000ms background."
+      },
+      "reviewStatusAtG82": "open-candidate-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-10",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "relatedFiles": [
+        "lib/features/adventure/application/adventure_mixed_review_controller.dart"
+      ],
+      "trigger": "Reveal and continue a flashcard occurrence in mixed review, then press the response-area reveal button while answered and before Next.",
+      "expected": "Answered flashcard keeps a stable answered/revealed presentation and only valid next actions are enabled.",
+      "actual": "Response area renders for every nonnull prompt. revealed is true only in flashcardRevealed phase. continueAfterFlashcard transitions to answered, making revealed false while isBusy is false, so Show translation becomes enabled again and invokes revealFlashcard directly; controller throws StateError outside its only allowed awaitingFlashcardReveal phase. Existing Next is also visible.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Render actual flashcard occurrence through reveal/continue, assert answered view has no enabled invalid reveal action and tapping retained callback cannot create unhandled error or duplicate evidence; Next still advances and accepted content stays visible as appropriate. Include retry phases.",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-10",
+        "redRun": "adventure-red;flashcard-review-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Flashcard reveal state persists through answered/close phases; stale reveal callback is fenced, Next advances, skipped flashcards remain unrevealed and no duplicate evidence is created. Existing checkpoint-retry controller cases retained."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-11",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/register_screen.dart",
+      "relatedFiles": [
+        "lib/features/consent/application/research_consent_use_cases.dart",
+        "test/screens/registration_flow_test.dart"
+      ],
+      "trigger": "Account registration succeeds, then primary local research-consent decision persistence or owner lookup throws.",
+      "expected": "Contain the local failure, preserve truthful account-created and consent-uncommitted state, and allow recovery without registering the account again.",
+      "actual": "Only AccountException is caught. ResearchConsentUseCases deliberately propagates primary repository/owner errors, unlike detached sync errors. The registration handler finally clears busy but escapes before verification navigation; subsequent submit repeats registration. Existing two widget tests only cover absent privacy agreement/provider.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake successful account and failing local consent repository; assert no unhandled exception, no false consent success, and recoverable verification/consent state without a second account registration. No real account creation or research activation.",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-11",
+        "redRun": "register-red",
+        "greenRun": "final2",
+        "outcome": "Successful registration is retained independently from unresolved local consent persistence. Owner lookup/repository failures are contained; explicit accept/decline is retained; retry completes verification without a second account registration. Credentials/initial agreement are locked after registration. Synthetic services only."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV03-12",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "Tap Adventure Today while requireSingleActiveOwnerId fails or the entry becomes unavailable.",
+      "expected": "Contain failed entry, show a truthful retryable unavailable state, and restore button availability.",
+      "actual": "Entry card awaits onOpen inside try/finally without catch; live _openTodayExperience throws on unavailable dependency/gate and propagates owner lookup errors. Finally restores _opening but the void UI callback future escapes with no user-facing failure. Later TodayExperienceHost loading guards cannot catch failures before navigation.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fail onOpen with a bounded fake, verify no unhandled error and visible accessible retry state, then succeed once after retry; retain double-tap lock and disposed handling.",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-12",
+        "redRun": "entry-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Today entry contains failed owner/open callbacks, shows accessible retry copy, prevents concurrent openings, retries once successfully and contains late failure after disposal."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV04-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "relatedFiles": [
+        "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+        "lib/features/vocabulary/application/import_vocabulary.dart",
+        "lib/features/review/domain/review_queue_item.dart",
+        "lib/features/review/data/drift_review_center_reader.dart"
+      ],
+      "trigger": "Create/import a valid authored word with a canonical meaning of257-500 ASCII characters, then load available learning/review content.",
+      "expected": "Accepted supported content remains usable in downstream learning/review without truncation or identity/hash changes.",
+      "actual": "Vocabulary maxMeaningLength is500; ContentQualityPolicy.isAvailableVocabulary applies default256 rune bound to meaning and normalizedMeaning, silently excluding it. ReviewQueueItem independently imposes256 even if upstream availability is corrected, while ReviewedLexicalContentSnapshot allows1024. Therefore reader does not currently throw: it excludes the valid word before constructing the item.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV04-01",
+        "redRun": "c02-meaning-red",
+        "greenRun": "c02-final",
+        "outcome": "Canonical create/import at256,257,500 ASCII and500 Thai/UTF16 supplementary boundaries remain available to saved review and learning with exact meanings/identity/checksum.501 ASCII/502 UTF16 rejected by authoring. Only meaning bounds expanded downstream; identity validation unchanged."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
+    },
+    {
+      "id": "B18-REV05-01",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "lib/features/assessment/application/assessment_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/assessment/data/drift_assessment_repository.dart",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "In an explicitly configured assessment path, change active owner after presentation authority is captured or while completion awaits authority, without revoking the old owner consent/assignment.",
+      "expected": "Old-owner presentation/terminal mutation must be fenced by the current owner generation, independently of historical consent.",
+      "actual": "beginPresentation existing branch 436-449 and _resolveAuthority 766-855 validate pinned owner grants, not current owner. _writeTerminal 427-440 predicates only run ID/state. Response and effort writers have active-owner checks, so a terminal exploit requires proving a race after their checks; default bootstrap has only assessmentOverride, not installed activation.",
+      "ownerPackage": "G1.1/G1.2/G7.3",
+      "proposedRegression": "Real Drift plus controlled await: owner A valid configured presentation, switch to B while authority/completion held; assert no A terminal/outbox mutation or content reuse under B, while exact same-owner retry still works. Cover existing-presentation foreground and post-finish completion separately; no research activation.",
+      "evidenceLocations": [
+        "assessment_use_cases.dart:436-449,766-855",
+        "drift_assessment_repository.dart:393-440",
+        "main_navigation_screen.dart:1116-1148"
+      ],
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-01",
+        "redRun": "owner-red; foreground-red",
+        "greenRun": "final",
+        "outcome": "Configured assessment rechecks current canonical owner after authority awaits, during existing presentation and foreground use, and after time start. Final completion SQL predicates require the uniquely active owner, including an owner switch after authorityGuard. Real Drift retains old consent/assignment and accepted answer, rejects stale presentation/terminal/outbox, and permits same-owner retry. Foreground rejection is observed and rendered as failure. Pinned abandonment cleanup semantics are retained."
+      },
+      "reviewStatusAtG82": "candidate-owner-transition-reproduction-pending"
+    },
+    {
+      "id": "B18-REV05-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/assessment/application/assessment_use_cases.dart",
+      "relatedFiles": [
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/features/assessment/domain/assessment_repository.dart"
+      ],
+      "trigger": "Configured assessment completes durably but repository adapter loses terminal acknowledgement with a non-AssessmentRunConflict exception.",
+      "expected": "Retry reconciles durable completion and displays result without recreating answers or requiring an active presentation.",
+      "actual": "_completeAt reconciles AssessmentRunConflict only; completePresentation catches other failures, settlement observes terminal and discards presentation, then rethrows. UI Retry invokes beginPresentation; start returns terminal then line459 rejects it. Actual Drift terminal has no postcommit notifier, so real transport/fault seam reachability still needs reproduction; no default installed failure asserted.",
+      "ownerPackage": "G1.2/G2.1",
+      "proposedRegression": "Wrap actual Drift complete to commit once then throw StateError; complete a fully answered configured form through real widget and retry. Expect durable completion/comparison visible, one terminal revision/outbox and no extra evidence. Also failed-before-commit retry and abandon conflict remain distinct.",
+      "evidenceLocations": [
+        "assessment_use_cases.dart:291-339,457-459,682-722,1189-1226",
+        "pre_post_assessment_screen.dart:85-112,150-175,207"
+      ],
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-02",
+        "redRun": "terminal-red",
+        "greenRun": "final",
+        "outcome": "An actual Drift adapter commits completion then throws non-conflict StateError; application reconciles durable completion and renders result without duplicate answer or terminal outbox. Failure before commit remains retryable; opposite terminal conflicts remain rejected. This proves the configured adapter fault seam, not an installed transport failure."
+      },
+      "reviewStatusAtG82": "candidate-terminal-ack-reproduction-pending"
+    },
+    {
+      "id": "B18-REV05-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/pre_post_assessment_screen.dart",
+      "relatedFiles": [
+        "lib/features/assessment/application/assessment_use_cases.dart"
+      ],
+      "trigger": "Nonfinal assessment response save is pending when app becomes paused; acknowledgement returns while still paused.",
+      "expected": "Next item response stopwatch stays stopped until foreground resume; background wait must not inflate durable responseTimeMs.",
+      "actual": "didChangeAppLifecycleState stops the stopwatch on pause, but successful nonfinal _submit continuation 137-144 unconditionally resets and starts it. Foreground resume starts the already running stopwatch. Active-learning duration has separate authority and must not be conflated with this response latency.",
+      "ownerPackage": "G1.6/G2.1",
+      "proposedRegression": "Configured two-item widget, controlled first response persistence, pause app before ACK, release ACK, advance fake time while paused, resume and answer second. Assert second canonical response duration excludes paused interval and first receipt unchanged; compare monotonic effort separately.",
+      "evidenceLocations": [
+        "pre_post_assessment_screen.dart:58-82,115-144"
+      ],
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-03",
+        "redRun": "clock-red",
+        "greenRun": "final",
+        "outcome": "Two-item configured widget holds the first durable response acknowledgement across pause. The next response stopwatch starts only when resumed. Canonical durations are200ms and300ms, excluding60000ms paused; separate monotonic effort totals500ms. First response identity remains unchanged."
+      },
+      "reviewStatusAtG82": "candidate-background-response-clock-reproduction-pending"
+    },
+    {
+      "id": "B18-REV05-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/srs_flashcards_screen.dart",
+      "relatedFiles": [
+        "lib/screens/cefr_selection_screen.dart",
+        "lib/screens/wordbook_import_screen.dart"
+      ],
+      "trigger": "Authorized Legacy compatibility deck rating is tapped repeatedly while reverse flip is pending, or route is disposed during transition.",
+      "expected": "One admitted rating advances one card and disposed state is never updated; animations do not leave pending handlers or skip cards.",
+      "actual": "Compatibility _actionLocked excludes review lifecycle; _nextCompatibilityCard checks index before awaiting reverse and increments afterwards without busy flag or mounted check. Repeated AnimationController calls can cancel a previous TickerFuture, so exact skip/hang/dispose manifestation requires widget oracle. CEFR/import routes actually enter compatibility under Legacy, unlike dormant SrsService. This path is nonpersistent and does not grant SRS evidence.",
+      "ownerPackage": "G2.6/G3.1",
+      "proposedRegression": "Use real compatibility route with Legacy owner/feature gate, three cards, rapid ratings during flip under normal and reduced motion and pop mid-transition. Assert no skipped card, stale setState, uncaught error or permanently pending handler; canonical evidence remains empty.",
+      "evidenceLocations": [
+        "srs_flashcards_screen.dart:181-185,381-394,470-481",
+        "cefr_selection_screen.dart:174",
+        "wordbook_import_screen.dart:172"
+      ],
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-04",
+        "redRun": "flash-red",
+        "greenRun": "final",
+        "outcome": "Real authorized Legacy compatibility route admits one rating during reverse animation, rejects repeated retained callbacks, settles cancelled handlers on disposal and advances exactly one card under normal/reduced motion. Answer attempts and learning sessions remain empty. No SRS/points/research evidence is granted."
+      },
+      "reviewStatusAtG82": "candidate-compatibility-animation-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-01",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "lib/features/rewards/application/reward_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/rewards/data/drift_reward_repository.dart",
+        "lib/screens/avatar_equipment_screen.dart",
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "trigger": "Owner A opens shop; switch active owner while purchase/equip awaits projection availability or queued repository work, then release old operation.",
+      "expected": "An obsolete owner command cannot create a new purchase/equip/outbox or publish completion into the replacement owner view; exact same-owner replay remains valid.",
+      "actual": "Use case captures owner once. _avatarOperation checks projection availability, not current ownership; repository purchase/equip transactions never check active owner or a caller generation. Bootstrap gives this live repository to shop. Widget continuation checks mounted only and finally reloads the current dependency, with busy/message state retained across replacement. Owner-transition coordinator drains learning reconciliation, not this reward queue. No runtime race reproduced.",
+      "ownerPackage": "G4.4/G4.5/G1.1",
+      "proposedRegression": "Real Drift two active-owner transitions plus controlled await before purchase/equip transaction; compare complete A/B reward/outbox/coin snapshots. Test owner switch after preflight and dependency replacement while ACK/readback held. Positive same-owner purchase, exact replay, failed-before-commit and lost-ACK remain distinct.",
+      "evidenceLocations": [
+        "reward_use_cases.dart:45-91,125-173",
+        "drift_reward_repository.dart:63-168,170-260",
+        "avatar_equipment_screen.dart:29-50,104-190",
+        "app_bootstrap.dart:1149-1164"
+      ],
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-01",
+        "redRun": "reward-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-02",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "trigger": "Actual local erasure holds reminder pending/cancel await while its owner-operation lease expires or is replaced; resume cleanup after another authorized operation proceeds.",
+      "expected": "Every native operation in erasure must verify its exact lease before and after awaits; stale cleanup cannot cancel fresh reminders or obscure authoritative erasure result.",
+      "actual": "coordinateOwnerErasure begins a fence but never assigns _transitionNativeGuard. _pendingNativeEntries/_cancelNative therefore have nullable no-op guard on this path, unlike coordinateOwnerChange. Bootstrap passes current lease token and outer deletion checks, which do not surround native enumeration and final cleanup. Exact pre-delete platform IDs are reused after operation returns. Actual OS consequence remains unexecuted.",
+      "ownerPackage": "G4.3/G7.3/G7.4",
+      "proposedRegression": "Use actual bootstrap erasure binding or equivalent exact composition with Drift owner gate and controllable native fake. Hold enumeration/cancel, replace token and reactivate a fresh reminder, then release. Assert stale actor issues no subsequent cancel, authoritative result preserved, cleanup does not unfence new token. Keep positive same-lease deletion and failure recovery.",
+      "evidenceLocations": [
+        "study_reminder_use_cases.dart:423-524,606-647,1231-1289",
+        "app_bootstrap.dart:725-777"
+      ],
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-02",
+        "redRun": "prefs-erasure-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/reminders/domain/study_reminder.dart",
+      "relatedFiles": [
+        "lib/features/reminders/application/study_reminder_use_cases.dart",
+        "lib/screens/study_reminder_settings_screen.dart"
+      ],
+      "trigger": "Opt in on the second occurrence of 01:15 during America/New_York fall-back, with quiet hours ending at ambiguous 01:30.",
+      "expected": "Quiet-hour adjustment must return a future instant at or after the requested instant, outside quiet hours, with deterministic fold handling.",
+      "actual": "shiftOutside converts requested instant to local fields then constructs a new TZDateTime without fold/offset or lower-bound check. The repeated-hour end can resolve to the earlier fold. Existing oracle covers spring DST only. Exact locked timezone-library result must be reproduced; no claim it has run.",
+      "ownerPackage": "G4.3",
+      "proposedRegression": "Using actual locked timezone package, cover both folds around 2026-11-01, overnight/daytime quiet windows and end boundary. Assert effective>=requested, outside quiet interval, and optIn keeps future native schedule; include ordinary/spring cases and saved requested instant unchanged.",
+      "evidenceLocations": [
+        "study_reminder.dart:83-101,182-184"
+      ],
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-03",
+        "redRun": "budget-fold-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+        "lib/features/adventure/application/adventure_presentation_preferences.dart"
+      ],
+      "trigger": "Adventure home selection and learning-preference quiz save overlap after both read the same owner row.",
+      "expected": "Updating home presentation preserves a concurrent committed goal/minutes/activity edit, and editing semantic preferences preserves a concurrent home choice.",
+      "actual": "save and saveHomeExperience read outside repository transaction and submit full semantic snapshots. Adventure serializes its own save tails only; core preference save is outside that queue. Repository preserves display fields and serializes writes, but has no expected semantic revision or transactional field merge. Concurrent UI reachability and lost update require controlled reproduction.",
+      "ownerPackage": "G4.6/G2.8",
+      "proposedRegression": "Actual Drift, hold home read before semantic quiz save commits, release home write; repeat reverse order. Assert both independent edits, monotonic timestamps and single correct superseding cloud intent; preserve display revision and assignment payload. Positive conflicting same-field policy must be explicit.",
+      "evidenceLocations": [
+        "learner_preferences_use_cases.dart:23-75",
+        "drift_learner_preferences_repository.dart:34-145",
+        "adventure_presentation_preferences.dart:30-58"
+      ],
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-04",
+        "redRun": "prefs-erasure-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/preferences/application/display_preferences_controller.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/resource_disposer_stack.dart",
+        "lib/main.dart"
+      ],
+      "trigger": "A theme/motion/read operation is queued or awaiting persistence while owning AppDependencies is replaced or disposed.",
+      "expected": "Retired controller must drain or cancel pending work safely without notifying a disposed ChangeNotifier; persistence outcome must remain truthful.",
+      "actual": "Controller inherits dispose with no retired generation and _enqueue/_replace can continue to notifyListeners. Bootstrap resources.own(displayPreferences.dispose) and MyApp dependency replacement dispose it; resource stack does not await the controller private queue. Existing tests cover owner queue, not disposal. Debug assertion versus release behavior must be separated.",
+      "ownerPackage": "G4.6/G0.1",
+      "proposedRegression": "Hold actual preference read/write, dispose runtime/controller, release and await all futures; assert no notify-after-dispose/unhandled asynchronous error and no stale presentation. Compare before-commit and after-commit paths without discarding durable acknowledged preference.",
+      "evidenceLocations": [
+        "display_preferences_controller.dart:35-117",
+        "app_bootstrap.dart:1136-1138",
+        "main.dart:97-108",
+        "resource_disposer_stack.dart:28-41"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV06-05",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-06",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/profile_settings_screen.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "Profile stays active with a loaded or pending profile when dependencies/loader or owner identity changes.",
+      "expected": "Profile axes and header refer to the same current owner; replaced loader invalidates retained result.",
+      "actual": "didChangeDependencies returns early while active with nonnull _load; no didUpdateWidget handles loader replacement. build samples current account separately. Main navigation constructs live ProfileSettingsScreen without an owner key. This establishes a stale-view seam, not proof of data leaving the device; actual account/root lifecycle race remains candidate.",
+      "ownerPackage": "G4.1/G1.1",
+      "proposedRegression": "Widget with distinct A/B profile evidence and current account headers: hold A loader, replace dependencies while TickerMode remains active, release A after B; then repeat already-loaded case and actual owner transition shell. Assert no A axes under B and same-owner tab reactivation still loads.",
+      "evidenceLocations": [
+        "profile_settings_screen.dart:22-62",
+        "main_navigation_screen.dart:199-210"
+      ],
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "retest": {
+        "receipt": "G8.3-F03-C04-checkpoint.json",
+        "findingId": "B18-REV06-06",
+        "redRun": "profile-red; owner-red3; profile-offline-red; final",
+        "greenRun": "final2",
+        "outcome": "Profile invalidates loader/dependency replacement and committed owner transition. Header and axes share a load snapshot; stale completions cannot restore retired values. Active-only canonical owner observation uses table notifications subscribed before the initial read, revision-fences obsolete owner reads, and cancels without retained query-stream timers. Real Drift logout preserves old SRS and displays new local owner. Unavailable account services allow local data; a different signed-in account fails closed. Synchronous failures remain visible and superseded asynchronous failures are observed."
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-07",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/ai_tutor_settings_screen.dart",
+      "relatedFiles": [
+        "lib/runtime/app_dependencies.dart"
+      ],
+      "trigger": "AI settings dependency is replaced while old settings/usage load is pending, or injected aiTutor widget property changes without inherited dependency notification.",
+      "expected": "Only current tutor generation may publish saved-consent/key/usage state; unavailable or failed replacement must not retain known flags from old tutor.",
+      "actual": "didChangeDependencies rebinds _tutor but _load captures old tutor and checks mounted only after each await; no didUpdateWidget/property generation fence. _settingsKnown/_usageKnown are not cleared on reload failure. Old load may overwrite newer saved-state display. No provider call or credential leak reproduced; backend settings authority remains separate.",
+      "ownerPackage": "G6.1/G6.3/G2.1",
+      "proposedRegression": "Deferred fake A/B settings and usage loads through actual widget: replace dependency/property, complete B then A, assert B-only consent/key/model/usage with unknown values on failure. Cover null initial tutor unavailable instead of endless loading, and confirmation returning after replacement before mutation. No live provider.",
+      "evidenceLocations": [
+        "ai_tutor_settings_screen.dart:96-149,403-435,459-492"
+      ],
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV06-07",
+        "redRun": "settings-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Controller binding generation fences injected/inherited replacement across settings,usage,model/mutation/readback/finally and confirmation/leave dialogs. Reset clears old known flags, secret draft and saved provider/model/usage; initial null visibly unavailable. Deferred old results cannot restore retired state; failed replacement shows unknown. Old remove/clear confirmation performs zero mutations; stale consent failure does not read back old controller."
+      }
+    },
+    {
+      "id": "B18-REV06-08",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/learning_goals_screen.dart",
+      "relatedFiles": [
+        "lib/features/goals/application/learning_goal_use_cases.dart"
+      ],
+      "trigger": "Rapid add/edit taps while activeOwnerId awaits, or active-owner lookup fails before opening goal dialog.",
+      "expected": "One opening flow per user action remains available for recovery; lookup failure is handled without an unobserved async error or stacked duplicate dialogs.",
+      "actual": "_createGoal awaits owner before showDialog without a busy/opening fence or catch. Per-dialog submit guard prevents duplicate submit only after separate dialogs are already created. Canonical repository owner/idempotency safeguards remain valid and this is not a demonstrated duplicate durable write.",
+      "ownerPackage": "G4.2/G2.1",
+      "proposedRegression": "Hold actual screen owner lookup, tap Add twice then release; assert one dialog/one prepared command. Inject lookup failure then retry successfully. Repeat edit and owner switch during opening; retain existing save retry/owner denial tests.",
+      "evidenceLocations": [
+        "learning_goals_screen.dart:137-156",
+        "test/screens/learning_goals_screen_test.dart"
+      ],
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV06-08",
+        "redRun": "goals-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Add and edit each fence concurrent owner lookup/dialog opening; lookup failure and owner mismatch show retryable error; no stacked dialogs, retained repository mutation guards and save tests pass."
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV06-09",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/reminders/domain/reminder_scheduler.dart",
+      "relatedFiles": [
+        "lib/features/reminders/application/study_reminder_use_cases.dart",
+        "lib/features/reminders/data/platform_reminder_scheduler.dart"
+      ],
+      "trigger": "Two valid persisted reminder identities hash to the same positive 31-bit platform ID.",
+      "expected": "An unrelated reminder is not silently overwritten/cancelled while both durable intents appear acknowledged; collision handling must be deterministic.",
+      "actual": "FNV output is truncated to 31 bits (zero remapped to1); payload preserves owner/reminder but native schedule/cancel keys only integer ID. Repair checks tuple identity yet schedules with the same colliding key; no allocation registry or conflict rejection observed. Concrete admitted collision pair and effect must be reproduced, not inferred as common frequency.",
+      "ownerPackage": "G4.3",
+      "proposedRegression": "Find and pin a real hash collision using valid IDs accepted by domain and actual generator-compatible shape. Actual Drift + native fake keyed by integer: create both, reconcile/restart/cancel one; assert other retained and statuses truthful. Keep exactID orphan cleanup, owner-change gates and ordinary idempotency.",
+      "evidenceLocations": [
+        "reminder_scheduler.dart:82-92",
+        "study_reminder_use_cases.dart:1062-1084,1164-1184,1231-1260,1409-1428",
+        "platform_reminder_scheduler.dart:101-129"
+      ],
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-09",
+        "redRun": "collision-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV07-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/device_model/application/model_download_manager.dart",
+      "relatedFiles": [
+        "test/features/device_model/model_download_manager_test.dart",
+        "lib/screens/object_scanner_screen.dart"
+      ],
+      "trigger": "Cancellation or dispose occurs while cached final artifact verifier is awaiting, before a ready/recovered artifact becomes active.",
+      "expected": "A cancelled operation before activation must not newly activate the cached artifact or report fresh success.",
+      "actual": "Cached branch309-332 awaits verification then activates/returns without checking cancellation/disposed; fresh partial branch441-448 checks. Existing tests cover cancellation during partial verifier, not cached verifier. Already-active verified artifact is a separate no-new-activation case.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Real temporary valid final bytes and ready/missing row with deferred verifier: cancel/dispose then release; assert no new activation or completion event, truthful cancellation, subsequent uncancelled recovery succeeds. Retain fresh commit-boundary and diagnostics exactly-once tests.",
+      "evidenceLocations": [
+        "model_download_manager.dart:295-332,441-458,520-533"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-01",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV07-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/device_model/data/litert_image_classifier.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart"
+      ],
+      "trigger": "Runtime.close throws during scanner disposal with an initialized camera.",
+      "expected": "Remaining camera/native cleanup is attempted exactly once despite an earlier cleanup failure; lease/result invalidation remains immediate.",
+      "actual": "_dispose nulls runtime then invokes close before camera.dispose without finally; memoized failed dispose cannot later retry camera cleanup. LiteRt close similarly marks closed before sequential interpreter/delegate/options cleanup. Failure injection/native throw reachability requires G8.3 reproduction.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Inject throwing runtime.close and count camera.dispose through actual ObjectScannerUseCases; assert camera attempted once and error retained. Exercise repeated disposal/late initialization and native resource wrapper failure where injectable; no physical leak claim from fake.",
+      "evidenceLocations": [
+        "object_scanner_use_cases.dart:474-483",
+        "litert_image_classifier.dart:201-207"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-02",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV07-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/device_model/application/device_model_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/device_model/application/model_benchmark.dart",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/screens/object_scanner_screen.dart",
+        "test/features/device_model/device_model_use_cases_test.dart"
+      ],
+      "trigger": "Application resources dispose while a screen-started benchmark awaits repository/openRuntime, or a benchmark request starts after disposal.",
+      "expected": "No unowned late native interpreter starts after disposal completes; in-flight benchmark resources settle/close before teardown, or explicit cancellation invalidates admission.",
+      "actual": "DeviceModelUseCases.dispose delegates only to downloadManager. benchmarkActive/openActive lack lifecycle guard/tracking; scanner.dispose only owns its _runtime, benchmark opens separate handles. Screen epoch suppresses display but does not cancel benchmark. Native sync runtime may limit interleaving during inference; awaits during admission are real.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Deferred repository/openRuntime and fake runtime through actual DeviceModelUseCases: start benchmark, dispose, complete open; assert bounded drain/cancellation and all handles closed, postdispose admission denied. Also cover route background stale display and ordinary CPU/XNN results.",
+      "evidenceLocations": [
+        "device_model_use_cases.dart:44-80,83-111",
+        "object_scanner_use_cases.dart:284-293,474-483",
+        "object_scanner_screen.dart:307-344"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-03",
+        "redRun": "device-drain-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV08-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/voice/vox_cpm_standard_provider.dart",
+      "relatedFiles": [
+        "lib/voice/omni_voice_provider.dart",
+        "lib/voice/synthesized_voice_route_handler.dart",
+        "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
+        "test/voice/vox_cpm_standard_provider_test.dart",
+        "test/voice/omni_voice_provider_test.dart",
+        "test/voice/voice_service_factory_test.dart"
+      ],
+      "trigger": "A WAV response reports a different nonblank engine from selected descriptor.",
+      "expected": "Actual provenance must match allowed route or fail closed before caching/playback/telemetry.",
+      "actual": "Header engine is checked only nonempty then replaced by hardcoded enum; actual backend emits omnivoice, factory default is VoxCPM. Matching enum validation downstream is bypassed. Deployment configuration not executed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Synthetic wrong-engine responses through both clients and actual synthesized handler/factory; assert no falsely attributed playback/cache, correct matching endpoints retain behavior. No server call.",
+      "evidenceLocations": [
+        "vox_cpm_standard_provider.dart:204-228",
+        "omni_voice_provider.dart:229-254"
+      ],
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "retest": {
+        "receipt": "G8.3-F04-C02-checkpoint.json",
+        "findingId": "B18-REV08-03",
+        "redRun": "provenance-red",
+        "greenRun": "provenance-final;scanner-final",
+        "outcome": "Both clients validate explicit engine identity before enum normalization. Reject wrong engine/unknown/suffix; retain backend omnivoice and established omnivoice-prod alias, and voxcpm2. Actual factory/handler/native/telemetry/cache composition proves no wrongly attributed audio is played or cached; matching response and subsequent cache hit retained for both configurations. Existing rollback fixtures corrected without weakening assertions."
+      }
+    },
+    {
+      "id": "B18-REV08-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/voice/vox_cpm_standard_provider.dart",
+      "relatedFiles": [
+        "lib/voice/omni_voice_provider.dart",
+        "test/voice/vox_cpm_standard_provider_test.dart",
+        "test/voice/omni_voice_provider_test.dart"
+      ],
+      "trigger": "Configured remote returns oversized or continuing WAV/error stream, or response arrives after public timeout.",
+      "expected": "Finite response byte budget and terminated stream/request work; timeout must not leave unbounded accumulating work.",
+      "actual": "Response.fromStream materializes entire body; Future.timeout does not cancel original future. Dynamic slot is released when public wrapper ends, not proof raw work ended.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled streamed client boundary/over-bound/stalled/late chunks and cancellation counter; retain 401 retry/circuit/quota and no live requests. Mirror/legacy analogous risks dormant.",
+      "evidenceLocations": [
+        "vox_cpm_standard_provider.dart:120-168",
+        "omni_voice_provider.dart:168-183"
+      ],
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-04",
+        "redRun": "stream-red;stream-boundary",
+        "greenRun": "stream-final",
+        "outcome": "Shared operation bounds WAV8MiB/error64KiB and uses one deadline across token/auth retry/body. Abortable request retirement and subscription cancellation stop accumulation; late tokens cannot send, late responses discarded. Exact byte boundary, oversize declared/actual, stalled/late and existing401/quota/breaker/provenance/factory regression passed. Custom client abort support and noncancellable auth futures explicitly limited."
+      }
+    },
+    {
+      "id": "B18-REV08-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/voice/voice_audio_player.dart",
+      "relatedFiles": [
+        "lib/voice/synthesized_voice_route_handler.dart",
+        "lib/voice/voice_orchestrator.dart",
+        "lib/features/voice/application/voice_use_cases.dart",
+        "test/voice/voice_audio_player_test.dart",
+        "test/voice/voice_orchestrator_test.dart"
+      ],
+      "trigger": "Player starts underlying audio then its start acknowledgment fails; standard route falls back to native.",
+      "expected": "Stop/drain failed player before next route or report cleanupIncomplete and fail closed.",
+      "actual": "Adapter only retires completion on start error; handler propagates and orchestrator allows playback failure fallback without stop. Start-only facade may clear stop obligation. Physical partial failure not reproduced.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "SDK-shaped player sets active then throws; compose handler/orchestrator/facade, verify fallback waits stop, stop error blocks fallback; preserve completion-owned cleanup.",
+      "evidenceLocations": [
+        "voice_audio_player.dart:99-108",
+        "voice_orchestrator.dart:103-112",
+        "voice_use_cases.dart:192-208"
+      ],
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "retest": {
+        "receipt": "G8.3-F04-acceptance.json",
+        "findingId": "B18-REV08-05",
+        "redRun": "composition-red",
+        "greenRun": "final",
+        "outcome": "Actual AudioplayersAdapter/PluginVoiceAudioPlayer/SynthesizedVoiceRouteHandler/VoiceOrchestrator/VoiceUseCases composed with SDK-shaped boundary. Partial-start failure drains audio before fallback for fresh/cache and completion/start-only paths. Cleanup failure reports cleanupIncomplete, blocks fallback, retains start-only facade stop obligation; completion-owned cleanup preserved. Late retired start failure cannot issue replacement stop. No physical acoustic claim."
+      }
+    },
+    {
+      "id": "B18-REV08-06",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/voice/voice_audio_player.dart",
+      "relatedFiles": [
+        "test/voice/voice_audio_player_test.dart",
+        "lib/features/voice/application/voice_use_cases.dart"
+      ],
+      "trigger": "Old untagged global onPlayerComplete event arrives after interrupted playback and new subscription.",
+      "expected": "Do not accept old event as natural completion of new content.",
+      "actual": "take(1) new subscription accepts first global completion without utterance identity; generation only fences retired closures, unlike conservative native TTS policy.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled SDK stream: startA stopA startB emit lateA then actualB; prove B completion not prematurely trusted. Document platform event contract/device pending; no acoustic claim.",
+      "evidenceLocations": [
+        "voice_audio_player.dart:71-104"
+      ],
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "retest": {
+        "receipt": "G8.3-F04-acceptance.json",
+        "findingId": "B18-REV08-06",
+        "redRun": "composition-red",
+        "greenRun": "final",
+        "outcome": "Controlled global SDK stream reproduces delayed A completion falsely completing B after stop/start. Adapter now withholds natural completion proof after interruption, plain untracked playback or uncertain terminal events. Ordinary speech remains available; completion-required facade stops and reports unsupportedCapability. Uninterrupted natural ends retain proof for subsequent playback. No utterance ID or timing guarantee invented; fresh adapter required to restore trust."
+      }
+    },
+    {
+      "id": "B18-REV08-07",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/voice/voice_orchestrator.dart",
+      "relatedFiles": [
+        "lib/features/voice/application/voice_use_cases.dart",
+        "test/voice/voice_orchestrator_cancellation_test.dart",
+        "test/features/voice/voice_use_cases_test.dart"
+      ],
+      "trigger": "Old speak holds first handler stop; explicit stop/new speak completes through other stop invocations; old stop resumes.",
+      "expected": "Retired control chain must not stop newer audible generation.",
+      "actual": "Stop-all retains cancellation as first error but continues subsequent stops. Facade controlTail serializes explicit stop, not raw speak pre-stop sequence; original provider future need not drain before newer speak.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use actual VoiceUseCases+VoiceOrchestrator with per-call deferred stop handlerA and recording handlerB; prove old chain cannot stop B after replacement playback; retain best-effort all-handler cleanup on genuine explicit stop failure.",
+      "evidenceLocations": [
+        "voice_orchestrator.dart:192-213",
+        "voice_use_cases.dart:115-139,300-311"
+      ],
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "retest": {
+        "receipt": "G8.3-F04-C02-checkpoint.json",
+        "findingId": "B18-REV08-07",
+        "redRun": "stop-red",
+        "greenRun": "stop-final;scanner-final",
+        "outcome": "Generation cancellation exits retired pre-speak/explicit stop chains before any subsequent handler; before/after awaited stop checks also fence delayed failing stops. Actual VoiceUseCases+orchestrator proves newer audio remains active with unchanged stop count. Existing genuine cleanup failure tests still exhaust every handler and preserve failure."
+      }
+    },
+    {
+      "id": "B18-REV08-08",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "relatedFiles": [
+        "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+        "backend/lexiquest_lm/deploy/hf_space/app.py"
+      ],
+      "trigger": "Formatting completion or truncating a sequence above max_length.",
+      "expected": "One terminal marker and explicit valid assistant boundary/masking under chosen truncation contract.",
+      "actual": "Completion template and EOS each contain im_end; overflow removes prompt tail including assistant header while retaining completion. Current stub tests assert contains marker/length, not exact template/boundary.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Pure synthetic tokenizer fixtures exact EOS count, short/long prompt and long completion, mask alignment and nonpositive length rejection; no training/model/network. Resolve intended truncation policy before fix.",
+      "evidenceLocations": [
+        "tokenise_dataset.py:46-65,148-165"
+      ],
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-08",
+        "redRun": "tokenise-red",
+        "greenRun": "lm-final",
+        "outcome": "One EOS; full prompt/header preserved; response-only right truncation reserves EOS. Invalid budget/no answer room rejected. Separate token segments define exact mask boundary; synthetic merge/mask/short/long fixtures and serving-template regressions passed. No real tokenizer/model run."
+      }
+    },
+    {
+      "id": "B18-REV08-09",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "backend/lexiquest_lm/train/lora_finetune.py",
+      "relatedFiles": [
+        "backend/lexiquest_lm/train/tokenise_dataset.py",
+        "backend/lexiquest_lm/tests/test_tokenise_dataset.py"
+      ],
+      "trigger": "Dry training example begins with masked prompt tokens.",
+      "expected": "Use unmasked completion positions as features; dry check must exercise actual masking behavior.",
+      "actual": "Label index is len(feats); first masked position keeps length zero so all subsequent tokens skipped and fallback[0] returned. No loop execution this slice.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Extract or intercept pure feature conversion with varying unmasked suffix after masked prefix, all-masked and zero-epoch cases; no GPU, dataset generation or research execution.",
+      "evidenceLocations": [
+        "lora_finetune.py:129-135"
+      ],
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-09",
+        "redRun": "dormant-red",
+        "greenRun": "lm-final",
+        "outcome": "Actual synthetic dry-loop returns features from corresponding unmasked token positions for two varying suffixes. All-masked and zero-epoch checks fail without success marker. No real dataset/model/GPU execution."
+      }
+    },
+    {
+      "id": "B18-REV08-10",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "relatedFiles": [],
+      "trigger": "Maintainer invokes --dry-run with existing adapter and no --username.",
+      "expected": "No network as promised by CLI help.",
+      "actual": "whoami invoked before dry-run branch; network/error possible despite documented no-network mode. Dormant tool, not production runtime.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake huggingface_hub whose network functions fail if called, synthetic temp adapter; dry-run no username must plan offline or require explicit username without network. Never upload.",
+      "evidenceLocations": [
+        "upload_to_huggingface.py:145-147,170-190"
+      ],
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-10",
+        "redRun": "dormant-red",
+        "greenRun": "lm-final",
+        "outcome": "Dry-run branches before hub import/network. Missing username fails offline with explicit instruction; supplied username plans without hub dependency and writes no model card or upload."
+      }
+    },
+    {
+      "id": "B18-REV08-11",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/screens/object_scanner_screen.dart",
+      "relatedFiles": [
+        "lib/features/voice/presentation/route_voice_session_mixin.dart",
+        "test/screens/object_scanner_screen_test.dart"
+      ],
+      "trigger": "Scanner speech cancelled by cover/background/replacement or older speak fails after newer state.",
+      "expected": "Cancelled/stale request must not overwrite current scanner error state with voice unavailable.",
+      "actual": "Catch at393-410 checks only mounted, no captured session/request generation or cancellation filter. Route mixin correctly invalidates session but public cancellation can still enter catch. Existing REV07 supplemental issue now assigned here.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Widget fake deferred voice through actual route session: cover/resume or speak replacement, settle old failure/cancel; current UI remains unchanged, genuine current failure visible.",
+      "evidenceLocations": [
+        "object_scanner_screen.dart:393-410"
+      ],
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "retest": {
+        "receipt": "G8.3-F04-C02-checkpoint.json",
+        "findingId": "B18-REV08-11",
+        "redRun": "scanner-red",
+        "greenRun": "scanner-final",
+        "outcome": "Scanner suppresses cancellation/stale error using current session, speech epoch and capture epoch. Actual widget/facade/route mixin proves replacement/background/cover/newscan cannot show retired error; current failure remains visible. No device/acoustic claim."
+      }
+    },
+    {
+      "id": "B18-REV09-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "firestore.rules",
+      "relatedFiles": [
+        "lib/features/sync/data/drift_sync_store.dart",
+        "test/features/sync/learning_event_sync_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "trigger": "An owner synchronizes SRS revision1, then records another first-answer review for the same word and sends the resulting revision2 cache.",
+      "expected": "The explicitly mutable SRS mirror and operation receipt must advance together under owner/revision checks, preserving local immutable answer authority.",
+      "actual": "Client reconstructs SRS entityId=wordId and increasing localRevision (drift_sync_store.dart2262-2287); actual recordAnswer/reopen oracle expects base1/result2 at learning_event_sync_test.dart1893-1913. Rules fieldSrsStatePayloadOk pins revision1 (728-760), fieldOperationMatchesSrsState requires absent entity/base0/result1 (1532-1545), and match denies all updates (1810-1816). Thus revision2 is rejected by source rules independently of lost-ACK codec finding REV09-01. Rules tests2423-2549 intentionally test create-only behavior; fake client ACKs mask this cross-layer disagreement. Source mismatch confirmed, emulator/runtime NOT RUN. Rules also omit payload.wordId==entityId; client _requireMutableSrsEntity6405-6411 fails closed before applying mismatched identity, so no local identity corruption claimed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "G8.3 bounded local emulator rules+actual recordAnswer/store/gateway-codec regression: revision1 create then revision2 update with linked receipts succeeds, replay exact-once, stale/gap/cross-owner/tombstone/extra-field and payload-wordId/entityId mismatch denied. Preserve immutable answers and local projection dominance. Do not deploy rules or weaken receipt validation.",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-03",
+        "redRuns": [
+          "rev09-03-red-ready"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Local emulator verifies mutable SRS mirror with reciprocal fresh immutable receipt/current base and increasing resulting revision, matching payload word/entity identity, owner isolation and exact fields. Revision1 create/revision2 and3 updates pass; stale/gap bases, nonadvance, replay writes, missing receipts, cross-owner, tombstone, extra fields and identity mismatch fail. Coalesced result revision jumps remain compatible with client monotonic revision semantics; no rules deployment."
+      }
+    },
+    {
+      "id": "B18-REV09-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/account/data/firebase_account_gateway.dart",
+      "relatedFiles": [
+        "lib/features/account/application/account_use_cases.dart",
+        "lib/screens/register_screen.dart",
+        "test/features/account/account_use_cases_test.dart"
+      ],
+      "trigger": "Firebase credential create/link succeeds, but sendEmailVerification fails before register returns.",
+      "expected": "Account UI/local owner/provider session reach an explicit recoverable consistent state; retry must not falsely repeat completed account creation.",
+      "actual": "Gateway17-45 awaits verification after successful create/link and translates failure without returning session or compensating auth. AccountUseCases43-52 only binds after gateway returns, so its bind-failure signout is bypassed. RegisterScreen39-76 reports failure and remains on registration; repeated create may encounter existing account while provider already has a session and local owner remains old. Bootstrap reconcile827 runs at next composition, not this catch. Existing fakes never exercise Firebase post-create verification failure. Distinct from REV03-11, which starts after account.register returns successfully.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Inject SDK-shaped create/link success then verification-send failure through actual FirebaseAccountGateway+AccountUseCases/UI. Assert provider and local identity consistency, explicit verification recovery and repeat attempt behavior for anonymous link and fresh create. No live Firebase calls or deleting created user as an assumed compensation.",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-04",
+        "redRun": "rev09-04-red-corrected",
+        "greenRun": "final-affected",
+        "outcome": "Actual Firebase gateway returns committed registration identity with verificationEmailPending when delivery fails. AccountUseCases binds the real local owner; UI explicitly retries only verification, then consent/navigation. Real Drift owner upgrade and SDK-shaped create/link tests cover repeated delivery failure then success and normal controls. Prior consent recovery and bind-failure compensation retained; no provider signout/deletion used as assumed email compensation."
+      }
+    },
+    {
+      "id": "B18-REV09-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/export/application/owner_lifecycle_archive.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/learning_preview_feature_registry.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ],
+      "trigger": "Export owner archive under learning preview or injected build feature registry, with an inactive/expired feature override row for a feature whose build state differs from field defaults.",
+      "expected": "An exported field named effectiveState describes actual configured feature state at its snapshot or explicitly labels a different baseline.",
+      "actual": "Archive969-1004 instantiates const BuildFeatureRegistry.fieldDefaults and emits defaults.stateOf whenever override is not active. Bootstrap454-456 wraps build registry in LearningPreviewFeatureRegistry and638 composes RuntimeFeatureRegistry from it; preview dailyContinuity hidden becomes enabled (learning_preview_feature_registry.dart11-15). Archive exporter receives database/time but no effective registry. Existing archive exact-field tests do not compare exported state against preview/custom runtime. No installed release flag claim.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Compose preview/custom registry with expired and false override rows, export via production-composed exporter and compare diagnostic state to runtime registry; include active emergencyOff and normal-field positive controls. Retain deterministic snapshot, owner/global-data privacy and archive schema compatibility.",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-05",
+        "redRun": "rev09-05-red",
+        "greenRun": "final-affected",
+        "outcome": "Exporter receives bootstrap configured base registry including learning preview, and evaluates persisted runtime override/expiry in its existing Drift transaction. Preview/custom/field combinations cover expired/false overrides and active emergencyOff; archive schema, hashes and privacy contract unchanged."
+      }
+    },
+    {
+      "id": "B18-REV09-06",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "lib/features/consent/application/research_consent_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/consent/data/drift_research_consent_repository.dart",
+        "test/features/consent/research_consent_use_cases_test.dart"
+      ],
+      "trigger": "Active owner changes after consent use case resolves owner A but before its awaited repository mutation; old owner remains a valid local row.",
+      "expected": "A current-learner consent decision must be admitted for its intended owner at the commit boundary or rejected for retry after transition.",
+      "actual": "Use case34-46 samples time then resolves current owner and awaits repository.decide without generation/gate admission. Repository decide uses explicit owner/version transaction but no active-owner fence; it can change old owner consent and withdrawal intents after transition. Strong participation/sync authorizers recheck active owner later, so this is a local decision-attribution candidate, not a claim that unauthorized remote research was activated. Existing consent tests cover time/version/callback, not switch-before-commit. Separate from REV03-08 destructive confirmation race.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Real Drift two-owner fixture with deferred repository boundary: invoke consent accept/withdraw for A, switch active owner to B, release old call; verify intended owner admission semantics, unchanged unrelated consent/withdrawal/outbox and positive same-owner controls. Keep deny withdrawal independent of remote receipt availability; no research activation.",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-06",
+        "redRun": "rev09-06-red",
+        "greenRun": "final-affected",
+        "outcome": "Consent mutation acquires SQLite write lock with a no-op active-owner update and validates unique active intended owner before consent/withdrawal writes. Deferred accept and withdraw after owner A to B switch fail atomically with unchanged owner/consent/secondary snapshots; fresh B action and same-owner lifecycle controls pass. No remote research activity."
+      }
+    },
+    {
+      "id": "B18-REV10-01",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "relatedFiles": [
+        "lib/features/export/data/file_selector_export_store.dart",
+        "android/app/src/main/AndroidManifest.xml"
+      ],
+      "trigger": "Activity or process is recreated while ACTION_CREATE_DOCUMENT is pending, or after a document write but before finishExportFile. Ordinary orientation is handled by manifest configChanges and is not asserted to recreate it.",
+      "expected": "A surviving operation settles truthfully; recreated sessions can reconcile uncommitted created documents without silently reporting success or losing rollback authority.",
+      "actual": "pendingExportResult/pendingExportBytes/unsettledExportUris exist only in the Activity instance. A callback with null pending state returns without settlement; a new instance rejects finish for an old URI. No saved-state/reconciliation or destruction settlement is implemented. Process death also destroys Dart, so a hung surviving Future is not claimed for that case. Native reproduction remains required.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native recreation and retained-engine versus process-restart cases around picker/write/finish; assert truthful Dart settlement, no unauthorized artifact retention, and cleanup failure visibility. Keep positive finish and cancel cases.",
+      "evidenceLocations": [
+        "MainActivity.kt:24-26,34-44,122-149",
+        "lib/features/export/data/file_selector_export_store.dart:146-205"
+      ],
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "retest": {
+        "receipt": "G8.3-F02-acceptance.json",
+        "findingId": "B18-REV10-01",
+        "redRun": "native-red-invocation",
+        "greenRun": "native-normalized; dart-pinned"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV10-02",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "relatedFiles": [
+        "lib/features/export/data/file_selector_export_store.dart",
+        "lib/features/export/domain/export_contracts.dart",
+        "lib/features/export/application/export_use_cases.dart"
+      ],
+      "trigger": "A large owner export or a slow SAF provider is accepted.",
+      "expected": "Export remains responsive and has a bounded resource/cancellation policy; success is acknowledged only after the supported provider completion boundary.",
+      "actual": "Artifact is a full Uint8List with no byte ceiling in its contract or saver. Native onActivityResult writes the full ByteArray synchronously, flushes and closes before acknowledging. Large/slow work can block the Activity callback; no stream/chunk cancellation or admission bound. This is a resource candidate, not measured ANR/OOM.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled slow provider and large bounded fixtures measure callback responsiveness and cancellation at write/flush/close; verify no success on close failure and cleanupFailed on deletion failure. Do not introduce arbitrary truncation.",
+      "evidenceLocations": [
+        "MainActivity.kt:63-77,137-168",
+        "lib/features/export/data/file_selector_export_store.dart:197-205",
+        "export_contracts.dart:43-72"
+      ],
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "retest": {
+        "receipt": "G8.3-F02-acceptance.json",
+        "findingId": "B18-REV10-02",
+        "redRun": "native-red-invocation",
+        "greenRun": "native-normalized; dart-pinned"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV10-03",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "windows/runner/utils.cpp",
+      "relatedFiles": [
+        "windows/runner/utils.h",
+        "windows/runner/main.cpp"
+      ],
+      "trigger": "WideCharToMultiByte size query returns zero for invalid UTF-16 command-line input.",
+      "expected": "Conversion returns the documented empty failure result without a huge allocation or exception escaping startup.",
+      "actual": "Size query result is decremented before assigning unsigned target_length. Zero becomes UINT_MAX; on a 64-bit string whose max_size exceeds that value, resize attempts roughly 4 GiB before the second conversion error check. Actual native input/API/allocator behavior has not run.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native invalid-surrogate and mocked size-query failure tests with allocation bound, plus null/empty/ASCII/Thai/supplementary Unicode positives. Preserve error result without accepting malformed encoding.",
+      "evidenceLocations": [
+        "utils.cpp:44-64",
+        "utils.h:12-19",
+        "main.cpp:22-26"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV10-03",
+        "redRun": "native-red-compiler-env-corrected",
+        "greenRun": "final-native"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV10-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "windows/runner/flutter_window.cpp",
+      "relatedFiles": [
+        "windows/runner/win32_window.cpp"
+      ],
+      "trigger": "WM_FONTCHANGE is delivered during a creation/destruction interval when the object is attached to HWND but flutter_controller_ is null.",
+      "expected": "Messages arriving outside controller lifetime safely fall through or are ignored.",
+      "actual": "Plugin dispatch checks flutter_controller_, but WM_FONTCHANGE dereferences it unconditionally. Base WndProc routes after WM_NCCREATE and controller is set only in OnCreate, reset in OnDestroy. A real delivery ordering in that interval remains to be reproduced; no crash is claimed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native lifecycle harness delivers font-change before controller initialization and during teardown; confirm actual dispatch eligibility, then keep normal font reload behavior.",
+      "evidenceLocations": [
+        "flutter_window.cpp:41-69",
+        "win32_window.cpp:136-158,164-172,218-228"
+      ],
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV10-04",
+        "redRun": "native-red-compiler-env-corrected",
+        "greenRun": "final-native"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
+    },
+    {
+      "id": "B18-REV10-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "test/runtime/app_build_info_test.dart",
+      "relatedFiles": [
+        "lib/runtime/app_build_info.dart",
+        "pubspec.yaml",
+        "tool/cli/package-field-release.ps1"
+      ],
+      "trigger": "Start a development build without LEXIQUEST_VERSION override; execute the test claiming the default equals pubspec.",
+      "expected": "Displayed development version and oracle reflect the chosen current version authority; explicit release identity remains authoritative.",
+      "actual": "pubspec.yaml declares 1.0.0+14, while AppBuildInfo.fromEnvironment defaults to 1.0.0+1 and the test explicitly expects +1 under a pubspec-default title. This is a static fallback/oracle mismatch. package-field-release supplies LEXIQUEST_VERSION and native build-name/build-number, so installed signed release mismatch is not inferred.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Targeted test compares default to deliberate version authority and tests explicit injected identity independently; preserve disposal/resume/accessibility assertions in this mixed test file. Do not silently change public release version or historical receipts.",
+      "evidenceLocations": [
+        "app_build_info_test.dart:85-91",
+        "app_build_info.dart:11-19",
+        "pubspec.yaml:5",
+        "package-field-release.ps1:277-280"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV10-05",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter + final-cli02",
+        "outcome": "Development fallback now matches unchanged pubspec1.0.0+14. Real dart-define version/build injection independently checked; release version parameter untouched."
+      }
+    },
+    {
+      "id": "B18-REV11-01",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/collect-android-field-evidence.ps1",
+      "relatedFiles": [
+        "tool/cli/lib/field-release-evidence.ps1",
+        "tool/cli/tests/verify-field-release.tests.ps1"
+      ],
+      "trigger": "Prior dumpsys fails or produces no version, then install -r, launch and pulled APK checks succeed.",
+      "expected": "Unknown prior state must not establish package absence or a clean-install pass.",
+      "actual": "Get-InstalledVersionCode ignores native exit and returns null on any unmatched output. Null selects a signed cleanInstall pass with absence prose. Downstream verifies signed journey/source payload but has no prior-state proof. This can falsely satisfy this individual journey; all other release requirements still apply. No device or full gate execution occurred.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake ADB success-absent, present, nonzero, malformed and transient-error cases; unknown must abort or stay pending, never sign pass. Keep real lower-version upgrade and installed-byte checks.",
+      "evidenceLocations": [
+        "collect-android-field-evidence.ps1:145-161",
+        "collect-android-field-evidence.ps1:298-308",
+        "collect-android-field-evidence.ps1:416-450",
+        "field-release-evidence.ps1:1142-1172",
+        "verify-field-release.tests.ps1:1934-1943"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-01",
+        "redRun": "adb-red",
+        "greenRun": "final-cli + final-cli02",
+        "outcome": "Prior package state requires successful well-formed listing; installed version requires successful unambiguous positive version query. Unknown aborts before install/signing; absent/present and six error controls use fakeADB."
+      }
+    },
+    {
+      "id": "B18-REV11-02",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/ci-workflow.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1",
+        "package.json",
+        ".github/dependabot.yml",
+        "osv-scanner.toml"
+      ],
+      "trigger": "Resume a passed targeted CLI oracle after editing a root input it reads while HEAD and tool/environment remain unchanged.",
+      "expected": "Every selected command input must invalidate its cached result when changed.",
+      "actual": "Runtime pattern includes lib/test/assets/tool/android/workflows and selected Flutter configs, but excludes package.json/package-lock.json, .github/dependabot.yml, root OSV files and docs read by CLI oracles. ci-workflow explicitly reads package.json. Reuse compares only this incomplete fingerprint plus retained log hashes. Source-level omission is confirmed; stale PASS demonstration remains pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Disposable runner fixture with real selected-oracle input dependency: change package.json and another non-tool config/doc, require rerun; unchanged control must reuse. Do not broaden actual execution scope to full suite.",
+      "evidenceLocations": [
+        "verify-scope.ps1:94-129",
+        "verify-scope.ps1:134-164",
+        "verify-scope.ps1:198-209",
+        "ci-workflow.tests.ps1:229-237",
+        "verify-scope.tests.ps1:112-132"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-02",
+        "redRun": "verifier-red + verifier-mixed-red",
+        "greenRun": "final-verifier",
+        "outcome": "Repository-reading CLI selections, implicit Runtime CLI and release gate conservatively hash all Git-visible repository inputs. Root/doc edits invalidate reuse; commands executed remain bounded."
+      }
+    },
+    {
+      "id": "B18-REV11-03",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "trigger": "A command or concurrent editor changes covered source/environment after the pre-command fingerprint is captured.",
+      "expected": "Passed evidence must bind the inputs actually verified and must not silently certify pre-run bytes after mutation.",
+      "actual": "Fingerprint and inputClosure are captured before dispatch; result records Passed on exit0 without a post-command comparison. Backend uv run may materialize environment after the initial hash. No actual mutation/reuse failure has been executed; source restoration to the original prehash and mixed-command closure need a controlled reproduction.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Child changes a covered input during execution: require explicit drift rejection/invalidation; unchanged run still reuses. Separate legitimate environment setup from the verified phase and test it without installing real dependencies.",
+      "evidenceLocations": [
+        "verify-scope.ps1:257-278",
+        "verify-scope.ps1:731-749",
+        "verify-scope.ps1:757-812"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-03",
+        "redRun": "verifier-red + verifier-mixed-red",
+        "greenRun": "final-verifier",
+        "outcome": "Per-command pre/post and per-selected-area initial/final fingerprints reject source/environment drift; old unbound results cannot resume. Stable setup then verification succeeds. Endpoint checks are not a continuous filesystem lock."
+      }
+    },
+    {
+      "id": "B18-REV11-04",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/verify-hosted-asset-links.ps1",
+      "relatedFiles": [
+        "hosting/public/.well-known/assetlinks.json",
+        "tool/cli/tests/android-manifest-security.tests.ps1"
+      ],
+      "trigger": "HTTP200 JSON has the expected package/certificate but omits or changes the URL-handling relation.",
+      "expected": "Hosted association verification must require the relation used by the repository Android app-link contract.",
+      "actual": "Verifier matches target identity/certificate only; relation is never inspected before writing evidence and printing verified. Local assetlinks declares delegate_permission/common.handle_all_urls. A matching target with no relation therefore satisfies this verifier logic. No hosted response or device association was tested; final release is not claimed passed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Inject HTTP fixtures with missing/wrong relation and correct relation; test multiple statements and content-type/redirect contract as appropriate. No live hosting or deployment.",
+      "evidenceLocations": [
+        "verify-hosted-asset-links.ps1:37-69",
+        "hosting/public/.well-known/assetlinks.json:3-5"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-04",
+        "redRun": "assetlinks-red03",
+        "greenRun": "final-cli",
+        "outcome": "One matching statement must bind exact package/namespace, release certificate and URL-handling relation; missing/wrong/split statements denied and later valid statement accepted. Injected HTTP only."
+      }
+    },
+    {
+      "id": "B18-REV11-05",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/configure-firebase-budget.cjs",
+      "relatedFiles": [
+        "tool/cli/tests/verify-field-release.tests.ps1"
+      ],
+      "trigger": "Billing account has same displayName for another project, or intended budget exists beyond first response page.",
+      "expected": "Identify the intended project budget uniquely and reconcile complete listing before create/update.",
+      "actual": "Single list response is searched by displayName only; nextPageToken is not followed. Match gets wildcard patch replacing filter/amount; no match creates. Could modify an unrelated same-name budget or create duplicates. No cloud state or API behavior has been observed. Budget alerts are not a spending cap.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Injected client only: paginated target, same-name foreign project, duplicates and response mismatch; ensure no unintended mutation and validate project/currency/amount, not thresholds alone.",
+      "evidenceLocations": [
+        "configure-firebase-budget.cjs:84-91",
+        "configure-firebase-budget.cjs:94-141"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-05",
+        "redRun": "budget-red",
+        "greenRun": "final-cli",
+        "outcome": "Enumerate every page before deciding mutation; same-name foreign project or duplicate identity aborts. Validate returned project/name/period/currency/amount/threshold basis/recipients before evidence. Injected clients only; no cloud activity."
+      }
+    },
+    {
+      "id": "B18-REV11-06",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": ".github/dependabot.yml",
+      "relatedFiles": [
+        "tool/cli/tests/dependabot-config.tests.ps1"
+      ],
+      "trigger": "Dependency updater parses nine groups containing version-update:semver-minor/patch values.",
+      "expected": "Grouping values must conform to the groups update-types schema.",
+      "actual": "All nine group blocks use version-update:semver-* strings; local regex oracle checks ecosystem/path presence but no group schema. Potential confusion with ignore.update-types remains an unverified schema candidate; no external schema/service request was made in this source-only slice.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use authoritative pinned schema or supported local parser fixture to confirm group enum, reject invalid values and preserve nine ecosystem scopes; no dependency update service invocation.",
+      "evidenceLocations": [
+        ".github/dependabot.yml:10-13",
+        "tool/cli/tests/dependabot-config.tests.ps1:30-38"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-06",
+        "redRun": "dependabot-red",
+        "greenRun": "final-cli",
+        "outcome": "All9groups use documented minor/patch enums; existing ecosystem/path scopes preserved and wrong enum controls rejected. Local scoped schema oracle, not hosted service validation."
+      }
+    },
+    {
+      "id": "B18-REV11-07",
+      "severity": "P1",
+      "status": "closed-regression-verified",
+      "file": ".github/workflows/ci.yml",
+      "relatedFiles": [
+        "tool/cli/tests/ci-workflow.tests.ps1"
+      ],
+      "trigger": "An early CLI script returns exit1 without terminating the invoking pwsh step and a later script succeeds.",
+      "expected": "Any failed CLI contract must fail the CI step.",
+      "actual": "Ten scripts are invoked sequentially with no explicit per-call LASTEXITCODE assertion. Local CI oracle only inspects text. Exact GitHub pwsh wrapper/exit behavior is not exercised; possible masking remains candidate, not an observed green CI failure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled same-shell early exit1 followed by success using the CI invocation contract; assert nonzero step result for first/middle/last failure without running hosted workflow.",
+      "evidenceLocations": [
+        ".github/workflows/ci.yml:40-52",
+        "tool/cli/tests/ci-workflow.tests.ps1:227-250"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-07",
+        "redRun": "ci-exit-red02",
+        "greenRun": "final-cli",
+        "outcome": "Actual extracted CI body checks each script exit. Local pwsh success/first/middle/last failure cases model documented GitHub wrapper; no hosted workflow triggered."
+      }
+    },
+    {
+      "id": "B18-REV11-08",
+      "severity": "P2",
+      "status": "closed-regression-verified",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "trigger": "Wrapper-level stderr fills its redirected pipe before the parent reads it.",
+      "expected": "Drain redirected wrapper streams during execution and retain bounded timeout/failure evidence.",
+      "actual": "Parent waits for process exit before StandardError.ReadToEnd. Ordinary child output is redirected to log files, so it does not itself prove pipe blockage. A large wrapper error could block until timeout; no deadlock or timeout was observed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Bounded fake child/wrapper failure producing enough wrapper stderr; concurrently drain and verify complete evidence/exit plus timeout-tree cleanup. Preserve ordinary child log behavior.",
+      "evidenceLocations": [
+        "verify-scope.ps1:599-615",
+        "verify-scope.ps1:627-650"
+      ],
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-08",
+        "redRun": "verifier-red",
+        "greenRun": "final-verifier",
+        "outcome": "Drain wrapper stderr asynchronously from process start. 256KiB pressure completes with exit7; timeout kills descendant and retains emitted stderr. Preserve child UTF16 log encoding, unique attempt log directory."
+      }
+    }
+  ],
+  "toolingObservations": [
+    {
+      "id": "B18-ENV-02",
+      "status": "resolved-scoped-whitespace-check",
+      "command": "git -c core.autocrlf=false diff --check",
+      "rawFailureExcerpt": "docs/development/full-system/evidence/bundles/B18/G8.2-review-ledger.json:31639: trailing whitespace.\n+      \"status\": \"source-read-awaiting-cross-check\",",
+      "rawOutputLimitation": "Initial tool result truncated after reporting 1160 output lines; excerpt retained, no claim of full raw log capture",
+      "rootCause": "Python write_text used Windows newline translation; working ledger had51159 CRLF lines and HEAD50713. New CRLF lines were flagged under core.autocrlf=false, not semantic whitespace inside JSON values",
+      "action": "Set newline LF explicitly in current merge_review_observations.py and checkpoint_audit.py writers; regenerated only their B18 outputs",
+      "validation": "Same diff --check returned exit0 after fix; original3610 frozen files still exact raw bytes; no assertions weakened or application tests rerun"
+    },
+    {
+      "id": "B18-ENV-01",
+      "status": "resolved-byte-audit",
+      "actual": "245 inherited files had checkout EOL-only changes",
+      "action": "Compared raw accepted blobs; restored only equivalent EOL bytes; subsequent all-file audit matched",
+      "limitation": "Initial per-path restoration list overwritten by classification rerun; initial count retained in command output and report, final audit proves all current bytes"
+    },
+    {
+      "id": "B18-READ-01",
+      "status": "method-corrected",
+      "actual": "A broad rg search included nonexistent lib/providers; large combined source output truncated",
+      "action": "Use discovered paths and bounded line reads; unread ranges remain pending and no review PASS inferred"
+    },
+    {
+      "id": "B18-READ-03",
+      "status": "method-corrected",
+      "actual": "Two rg arguments in one cross-check used guessed absent paths lib/features/learning/domain/evidence_capture.dart and lib/app_bootstrap.dart; existing evidence_context and sync_entity results remained readable.",
+      "action": "Stopped guessed-path method; used rg --files discovery and existing lib/runtime/app_bootstrap.dart, then symbol discovery located lib/config/research_runtime_config.dart. No source mutation or tests skipped."
+    },
+    {
+      "id": "B18-READ-04",
+      "status": "method-corrected",
+      "actual": "One rg cross-check included nonexistent guessed tool/cli/lib/verification-scopes.ps1; existing app_database and verify-scope results readable.",
+      "action": "Stopped guessedpath method, enumerated rg --files tool/cli/lib and read existing verify-scope selector lines. No repeated failure, source edits or runtime tests."
+    },
+    {
+      "id": "B18-READ-05",
+      "status": "method-corrected",
+      "actual": "Initial checkpoint read guessed nonexistent resume.md; actual resume.json discovered immediately. Some multi-file source outputs truncated.",
+      "action": "No repeated absent-path read. Used rg --files and exact bounded recovery of omitted source ranges before recording full-source observations. No application changes or tests."
+    },
+    {
+      "id": "B18-READ-06",
+      "status": "method-corrected",
+      "actual": "Resume cross-check guessed presentation controller/resume-state/register-test paths; one rg Windows path contained *.dart. Combined output also truncated.",
+      "action": "Discovered application controller, resume.json and registration_flow_test.dart using rg --files/symbol search; corrected glob to directory plus -g. No absent-path retry or source change; bounded relevant reads recovered."
+    },
+    {
+      "id": "B18-ENV-REV05",
+      "status": "resolved-checkout-and-bounded-read-recovery",
+      "rootCause": "Native checkout autocrlf changed raw hashes; git archive also respected conversion. Status retained stale stat markers despite empty diff. One list_threads limit100 rejected; UTF8 implicit cp874 decode failed; guessed source paths not present.",
+      "action": "Used raw cat-file blob stream with EOL-equivalence guard and verified all13 handoff+3610 inventory hashes; index refresh via core.autocrlf=false add --update yielded empty stage/clean status. Resolved task through CODEX_THREAD_ID and read_thread, master creation receipt confirmed. Used rg --files discovery and explicit UTF8. No historical evidence regenerated, assertions weakened or runtime tests run.",
+      "externalPreflight": "B18-REV05-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV06",
+      "status": "method-corrected",
+      "actual": "Native checkout changed2028 raw EOL hashes; console cp874 failed on non-Thai Unicode. Several guessed file paths and one Windows wildcard-path search failed; combined output truncation occurred.",
+      "action": "Restored only EOL-equivalent exact checkpoint blobs after clean precondition; verified3610 inventory,15handoff evidence and3hash-pinned amendments; core.autocrlf=false index refresh left no staged delta. Changed console to UTF8, used rg --files and directory/symbol searches and bounded reads. No application tests, source changes or historical evidence regeneration.",
+      "externalPreflight": "B18-REV06-preflight.json",
+      "receiptGenerationRecovery": "First next-oracle selection included excluded binary fixture and count assertion rejected it before ledger writes. Restricted selection to test source; retained exact15/allREV12/pending assertions.",
+      "integrityRecovery": "First validator counted only candidate-prefixed statuses and missed5historical open-candidate statuses. Inspected full status histogram, counted candidate classification anywhere in status, retained exact23candidate/17static totals and unchanged prior31 finding assertion.",
+      "stagingRecovery": "First git diff --cached --check detected CRLF as trailing whitespace in newly written evidence/report; PowerShell/Python default newline translation caused it. Normalize only this slice nine staged output files to LF, preserve prior historical files, and explicitly capture check exit code before commit."
+    },
+    {
+      "id": "B18-ENV-REV08",
+      "status": "method-corrected",
+      "actual": "Native checkout altered2036 raw EOL hashes; one guessed brief directory failed; some broad multi-file output truncated.",
+      "action": "Restored only EOL-equivalent checkpoint raw blobs, checked3610 inventory/23handoff/3policy hashes and empty index; discovered actual brief with rg --files and bounded omitted ranges. UTF8/LF evidence outputs. No historical regeneration or runtime execution.",
+      "externalPreflight": "REV08-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV10",
+      "status": "method-corrected",
+      "actual": "Checkout produced2061 EOL-only raw differences. Python default cp874 decode failed once. Guessed brief/dart_test/release-profile paths caused missing-path diagnostics.",
+      "action": "Compared raw Git blobs and restored only EOL-equivalent bytes;3610inventory/31handoff/3policy equality plus empty stage. Explicit UTF8 decoding/LF writing. Stopped guessed-path search, used rg --files discovery and existing literal paths. No historical regeneration; all application/runtime checks NOT RUN.",
+      "externalPreflight": "B18-REV10-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV11",
+      "status": "method-corrected",
+      "actual": "2048 checkout EOL-only differences; broad note output truncation and two guessed absent search paths (.github/workflows/production-release.yml, firebase directory).",
+      "action": "Restored only exact raw checkpoint blobs after EOL-equivalence and clean-index checks;3610inventory/35handoff/3policy equality. Stopped guessed-path method, discovered hosting/public/.well-known/assetlinks.json and actual workflow inventory via rg --files; bounded recovered relevant notes/source. UTF8/LF outputs; no runtime or historical regeneration.",
+      "externalPreflight": "B18-REV11-preflight.json"
+    }
+  ]
+}

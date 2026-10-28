@@ -1,0 +1,669 @@
+import 'dart:convert';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
+import '../runtime/app_dependencies.dart';
+import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
+
+class ShadowingChallengeScreen extends StatefulWidget {
+  const ShadowingChallengeScreen({
+    super.key,
+    this.referenceSentence,
+    this.voice,
+    this.speechPractice,
+    this.learning,
+    this.evidenceAdapter,
+    this.ownerId,
+    this.sessionId,
+    this.wordId,
+    this.modeAdapter = const ShadowingModeAdapter(),
+  });
+
+  final String? referenceSentence;
+  final VoiceUseCases? voice;
+  final SpeechPracticeUseCases? speechPractice;
+  final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final String? ownerId;
+  final String? sessionId;
+  final String? wordId;
+  final ShadowingModeAdapter modeAdapter;
+
+  @override
+  State<ShadowingChallengeScreen> createState() =>
+      _ShadowingChallengeScreenState();
+}
+
+class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
+    with
+        WidgetsBindingObserver,
+        RouteVoiceSessionMixin<ShadowingChallengeScreen>
+    implements EphemeralLessonState {
+  VoiceUseCases? _voice;
+  SpeechPracticeUseCases? _speech;
+  SpeechPracticeSession? _speechSession;
+  LearningUseCases? _learning;
+  String? _referenceSentence;
+  String? _wordId;
+  String? _ownerId;
+  String? _sessionId;
+  Future<void>? _learningLoad;
+  bool _evidenceSaved = false;
+  bool _listenPending = false;
+  int _listenEpoch = 0;
+  int? _acceptedFinalEpoch;
+  bool _listening = false;
+  String _transcript = '';
+  String? _error;
+  TranscriptPronunciationAssessment? _assessment;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lifecycle;
+  UnifiedLessonSessionLifecycleScope? _lifecycleScope;
+
+  ShadowingModeAdapter get _modeAdapter => widget.modeAdapter;
+  bool get _acceptsModeOperations =>
+      mounted && (_lifecycle?.acceptsOperations ?? true);
+
+  bool get _persistenceLocked =>
+      _pendingEvidence != null || _pendingSessionClose != null;
+  bool get _sessionCloseRetryRequired =>
+      (_pendingSessionClose?.requiresRetry ?? false) ||
+      (_lifecycle?.sessionCompletionRetryRequired ?? false);
+
+  @override
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  Future<void> onVoiceRouteCovered() async {
+    _clearRawSpeechState();
+    final session = _speechSession;
+    _speechSession = null;
+    await session?.release();
+  }
+
+  @override
+  void onVoiceRouteResumed() => _bindDependencies(refreshVoice: false);
+
+  @override
+  void initState() {
+    super.initState();
+    _referenceSentence = widget.referenceSentence;
+    _ownerId = widget.ownerId;
+    _sessionId = widget.sessionId;
+    _wordId = widget.wordId;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextScope = UnifiedLessonSessionLifecycleScope.maybeScopeOf(context);
+    if (!identical(nextScope, _lifecycleScope)) {
+      _lifecycleScope?.unregisterEphemeralState(this);
+      _lifecycleScope = nextScope;
+      nextScope?.registerEphemeralState(this);
+    }
+    _bindDependencies();
+  }
+
+  @override
+  void didUpdateWidget(ShadowingChallengeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  void _bindDependencies({bool refreshVoice = true}) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
+    final speech = widget.speechPractice ?? dependencies?.speechPractice;
+    if (!identical(speech, _speech) || !routeIsCurrent) {
+      _listenEpoch += 1;
+      _listenPending = false;
+      _listening = false;
+      _speechSession?.release().ignore();
+      _speechSession = null;
+    }
+    _voice = widget.voice ?? dependencies?.voice;
+    _lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
+    if (refreshVoice) refreshRouteVoiceSession();
+    _speech = speech;
+    _learning = widget.learning ?? dependencies?.learning;
+    final learning = _learning;
+    if (learning != null) {
+      _evidenceAdapter =
+          widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
+      if (_evidenceAdapter == null) {
+        throw StateError('current activity evidence dependency unavailable');
+      }
+    }
+    if (routeIsCurrent &&
+        speech != null &&
+        (_speechSession == null || !_speechSession!.isCurrent)) {
+      _speechSession?.release().ignore();
+      _speechSession = speech.acquireSession();
+    }
+    if (routeIsCurrent &&
+        _voice != null &&
+        _speech != null &&
+        _referenceSentence == null &&
+        _learningLoad == null) {
+      _learningLoad = _loadLocalPrompt();
+    }
+  }
+
+  Future<void> _loadLocalPrompt() async {
+    final learning = _learning;
+    if (learning == null) {
+      if (mounted) {
+        setState(() => _error = 'ไม่สามารถอ่านคำศัพท์ในเครื่องได้');
+      }
+      return;
+    }
+    try {
+      final load = learning.startQuiz(limit: 1);
+      final session = await (_lifecycle?.initializeSession(load) ?? load);
+      if (!_acceptsModeOperations) return;
+      if (session.isEmpty) {
+        setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');
+        return;
+      }
+      setState(() {
+        _ownerId = session.ownerId;
+        _sessionId = session.id;
+        _wordId = session.questions.single.word.id;
+        _referenceSentence = session.questions.single.word.spelling;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _error = 'ไม่สามารถเริ่มการฝึกพูดได้');
+    }
+  }
+
+  Future<void> _playReference() async {
+    if (_persistenceLocked || !_acceptsModeOperations) return;
+    final reference = _referenceSentence;
+    final session = routeVoiceSession;
+    if (reference == null || session == null) return;
+    try {
+      await session.speak(
+        VoiceRequest.create(
+          text: reference,
+          language: 'en',
+          voiceId: 'device-default',
+          speed: 1,
+          mode: VoiceMode.practice,
+          contentId: 'shadowing:${reference.hashCode}',
+          contentType: 'shadowing-reference',
+        ),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _error = 'ระบบอ่านเสียงต้นแบบไม่พร้อมใช้งาน');
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    if (_listenPending ||
+        _persistenceLocked ||
+        _evidenceSaved ||
+        !_acceptsModeOperations) {
+      return;
+    }
+    if (_listening) {
+      final epoch = _listenEpoch;
+      _listenPending = false;
+      try {
+        await _speechSession?.stop();
+      } on Object {
+        if (!_acceptsModeOperations ||
+            epoch != _listenEpoch ||
+            _acceptedFinalEpoch == epoch) {
+          return;
+        }
+        _listenEpoch += 1;
+        _speechSession?.cancel().ignore();
+        setState(() {
+          _listening = false;
+          _error = _failureText(SpeechFailureCode.engine);
+        });
+        return;
+      }
+      if (_acceptsModeOperations && epoch == _listenEpoch) {
+        setState(() => _listening = false);
+      }
+      return;
+    }
+    final speech = _speech;
+    var session = _speechSession;
+    if (speech == null) {
+      setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งาน');
+      return;
+    }
+    if (session == null || !session.isCurrent) {
+      session?.release().ignore();
+      session = speech.acquireSession();
+      _speechSession = session;
+    }
+    final activeSession = session;
+    final epoch = ++_listenEpoch;
+    _acceptedFinalEpoch = null;
+    _listenPending = true;
+    setState(() {
+      _error = null;
+      _transcript = '';
+      _assessment = null;
+    });
+    try {
+      final started = await activeSession.start(
+        locale: 'en-US',
+        onEvent: (event) {
+          if (!_acceptsModeOperations ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
+          if (!event.isFinal) {
+            setState(() => _transcript = event.transcript);
+            return;
+          }
+          _acceptedFinalEpoch = epoch;
+          _listenPending = false;
+          activeSession.stop().ignore();
+          final reference = _referenceSentence;
+          if (reference == null) return;
+          final assessment = speech.assess(target: reference, event: event);
+          setState(() {
+            _transcript = event.transcript;
+            _assessment = assessment;
+            _listening = false;
+            _error = assessment == null
+                ? _failureText(SpeechFailureCode.noMatch)
+                : null;
+          });
+          if (assessment != null) unawaited(_recordEvidence(assessment));
+        },
+        onFailure: (failure) {
+          if (!_acceptsModeOperations ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
+          // Once this screen offers retry, callbacks from the failed attempt
+          // must not create an assessment or a durable learning answer.
+          _listenEpoch += 1;
+          _listenPending = false;
+          activeSession.cancel().ignore();
+          setState(() {
+            _listening = false;
+            _error = _failureText(failure);
+          });
+        },
+        onStatus: (status) {
+          if (_acceptsModeOperations &&
+              epoch == _listenEpoch &&
+              _acceptedFinalEpoch != epoch) {
+            setState(() => _listening = status == 'listening');
+          }
+        },
+      );
+      if (!_acceptsModeOperations || epoch != _listenEpoch) return;
+      if (_acceptedFinalEpoch == epoch) {
+        _listenPending = false;
+        return;
+      }
+      if (!started) {
+        _listenPending = false;
+        setState(() => _listening = false);
+        return;
+      }
+      _listenPending = false;
+      setState(() => _listening = activeSession.isListening);
+    } on SpeechPracticeException catch (error) {
+      if (!_acceptsModeOperations ||
+          epoch != _listenEpoch ||
+          _acceptedFinalEpoch == epoch) {
+        return;
+      }
+      _listenPending = false;
+      setState(() => _error = _failureText(error.code));
+    }
+  }
+
+  Future<void> _recordEvidence(
+    TranscriptPronunciationAssessment assessment,
+  ) async {
+    final learning = _learning;
+    final sessionId = _sessionId;
+    final wordId = _wordId;
+    if (_evidenceSaved ||
+        learning == null ||
+        sessionId == null ||
+        wordId == null ||
+        !_acceptsModeOperations) {
+      return;
+    }
+    final pending = _pendingEvidence ??= _modeAdapter
+        .capture(
+          evidence: _evidenceAdapter!,
+          ownerId: _ownerId,
+          sessionId: sessionId,
+          wordId: wordId,
+          assessment: assessment,
+          responseTimeMs: null,
+          attemptNumber: 1,
+        )
+        .pending;
+    if (mounted) setState(() {});
+    try {
+      await (_lifecycle?.runAcceptedOperation(pending.record) ??
+          pending.record());
+      _evidenceSaved = true;
+    } catch (_) {
+      _evidenceSaved = false;
+      if (mounted) {
+        setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
+      }
+      return;
+    }
+    await _beginSessionClose(learning: learning, sessionId: sessionId);
+  }
+
+  Future<void> _retryEvidence() async {
+    final pending = _pendingEvidence;
+    final learning = _learning;
+    final sessionId = _sessionId;
+    if (pending == null ||
+        learning == null ||
+        sessionId == null ||
+        !_acceptsModeOperations) {
+      return;
+    }
+    setState(() => _error = null);
+    try {
+      await (_lifecycle?.runAcceptedOperation(pending.retry) ??
+          pending.retry());
+      _evidenceSaved = true;
+    } catch (_) {
+      _evidenceSaved = false;
+      if (mounted) {
+        setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
+      }
+      return;
+    }
+    await _beginSessionClose(learning: learning, sessionId: sessionId);
+  }
+
+  Future<void> _beginSessionClose({
+    required LearningUseCases learning,
+    required String sessionId,
+  }) async {
+    try {
+      final pending = _pendingSessionClose ??= learning.captureSessionClose(
+        sessionId: sessionId,
+        ownerId: _ownerId,
+      );
+      _pendingEvidence = null;
+      if (mounted) setState(() {});
+      await (_lifecycle?.complete(pending) ?? pending.finish());
+      _pendingSessionClose = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ');
+      }
+    }
+  }
+
+  Future<void> _retrySessionClose() async {
+    final pending = _pendingSessionClose;
+    if (pending == null ||
+        !_sessionCloseRetryRequired ||
+        !_acceptsModeOperations) {
+      return;
+    }
+    setState(() => _error = null);
+    try {
+      await (_lifecycle?.complete(pending) ?? pending.retry());
+      _pendingSessionClose = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ');
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      clearEphemeralState();
+    }
+  }
+
+  @override
+  void clearEphemeralState() {
+    final session = _speechSession;
+    _clearRawSpeechState();
+    session?.cancel().ignore();
+  }
+
+  void _clearRawSpeechState({bool notify = true}) {
+    _listenEpoch += 1;
+    _listenPending = false;
+    _acceptedFinalEpoch = null;
+    _listening = false;
+    if (notify && mounted) {
+      setState(() {
+        _transcript = '';
+        _assessment = null;
+        _error = null;
+      });
+    } else {
+      _transcript = '';
+      _assessment = null;
+      _error = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _lifecycleScope?.unregisterEphemeralState(this);
+    _clearRawSpeechState(notify: false);
+    _speechSession?.release().ignore();
+    _speechSession = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_voice == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
+    if (_speech == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.speechPractice,
+      );
+    }
+    final assessment = _assessment;
+    final reference = _referenceSentence;
+    final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
+    final sessionCloseRetryRequired = _sessionCloseRetryRequired;
+    final persistenceLocked = _persistenceLocked;
+    return MenuActionBinding(
+      id: 'speech/shadowing-assistance',
+      label: 'Shadowing transcript evidence',
+      ownerId: _ownerId,
+      onInvoke: null,
+      // The provider session owner does not establish the prompt's provenance.
+      readValue: _ownerId == null ? null : jsonEncode({
+        'interpretation': 'transcript-similarity-not-acoustic-pronunciation',
+        'listening': _listening,
+        'retryRequired': evidenceRetryRequired || sessionCloseRetryRequired,
+        'evidenceSaved': _evidenceSaved,
+        'reference': reference == null
+            ? null
+            : String.fromCharCodes(reference.runes.take(40)),
+        if (_ownerId != null && assessment != null) ...{
+          'similarityPercent': assessment.similarityPercent,
+          'finalTranscript': String.fromCharCodes(_transcript.runes.take(40)),
+          'textTruncated':
+              (reference?.runes.length ?? 0) > 40 ||
+              _transcript.runes.length > 40,
+          'correctnessThresholdPercent': 80,
+          'algorithmVersion': 1,
+        },
+      }),
+      child: PopScope(
+        canPop: !persistenceLocked,
+        child: AccessibilityModeScaffold(
+          appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.prompt,
+                  child: reference == null && _error == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : reference != null
+                      ? Text(
+                          reference,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 16),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      OutlinedButton.icon(
+                        key: const ValueKey<String>('shadowing-play-reference'),
+                        onPressed: reference == null || persistenceLocked
+                            ? null
+                            : _playReference,
+                        icon: const Icon(Icons.volume_up_outlined),
+                        label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        key: const ValueKey<String>('shadowing-listen-button'),
+                        onPressed:
+                            reference == null ||
+                                _listenPending ||
+                                persistenceLocked ||
+                                _evidenceSaved
+                            ? null
+                            : _toggleListening,
+                        icon: Icon(_listening ? Icons.stop : Icons.mic),
+                        label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
+                      ),
+                      if (evidenceRetryRequired ||
+                          sessionCloseRetryRequired) ...[
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          key: const ValueKey<String>('current-evidence-retry'),
+                          onPressed: evidenceRetryRequired
+                              ? _retryEvidence
+                              : _retrySessionClose,
+                          child: Text(
+                            evidenceRetryRequired
+                                ? 'ลองบันทึกผลการพูดอีกครั้ง'
+                                : 'ลองจบการเรียนอีกครั้ง',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (_transcript.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  AccessibilitySemanticRegion(
+                    role: assessment == null
+                        ? AccessibilitySemanticRole.responseAndInput
+                        : AccessibilitySemanticRole.feedback,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('ข้อความที่ได้ยิน: $_transcript'),
+                            if (assessment != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'ความใกล้เคียงของข้อความที่ระบบได้ยิน: '
+                                '${assessment.similarityPercent}%',
+                              ),
+                              const Text(
+                                'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
+                              ),
+                              Text(
+                                'เอนจิน: ${assessment.engine} '
+                                '(${assessment.locale})',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
+                                'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  if (reference != null && !persistenceLocked) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'ฝึกอ่านข้อความต้นแบบต่อได้ แล้วลองใช้ไมโครโฟนอีกครั้งเมื่อพร้อม',
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _failureText(SpeechFailureCode code) => switch (code) {
+    SpeechFailureCode.permissionDenied => 'ไม่ได้รับสิทธิ์ใช้ไมโครโฟน',
+    SpeechFailureCode.permissionPermanentlyDenied =>
+      'สิทธิ์ไมโครโฟนถูกปิดถาวร กรุณาเปิดจากการตั้งค่าระบบ',
+    SpeechFailureCode.noMatch => 'ไม่ได้ยินเสียงพูดที่ชัดเจน',
+    SpeechFailureCode.cancelled => 'ยกเลิกการฟังแล้ว',
+    SpeechFailureCode.unavailable ||
+    SpeechFailureCode.engine => 'ระบบรู้จำเสียงไม่พร้อมใช้งาน',
+  };
+}

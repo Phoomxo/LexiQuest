@@ -1,0 +1,70 @@
+{
+  "packageId": "G1.4",
+  "requirements": [
+    "COV-f40",
+    "COV-f43",
+    "G1"
+  ],
+  "status": "accepted-local-automated",
+  "runs": [
+    {
+      "path": "G1.4-runs/targeted-learning-b7d5139a27e8928a8d75523d036ac20f72ec82d6e95f19f98311bb9daab2c437.json",
+      "status": "Passed",
+      "fingerprint": "399318a921a9d6bd8f4911d0a10adabb684962dafe9bd5e448b06e4e24885d67",
+      "targets": [
+        "test",
+        "test/database/migration_v25_to_v26_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "59"
+      ]
+    },
+    {
+      "path": "G1.4-runs/targeted-learning-c14a127703bbd2edfe9fd51685313424e66bf08c4904b5fbb6b07bfdcf695b93.json",
+      "status": "Passed",
+      "fingerprint": "9e62d59f4734c4bd8ee4f373366502fff23fafb349cb41964efe229869f17c8c",
+      "targets": [
+        "test",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "51"
+      ]
+    },
+    {
+      "path": "G1.4-runs/targeted-learning-c505a0095a64a018947ffb2b7f6a565c770e377512d46b8ab7e0d2d6f7b34bf6.json",
+      "status": "Passed",
+      "fingerprint": "7e625bb9ea645f0bac1450fe67b337a5c91b44310175cda170ed5ae29c548129",
+      "targets": [
+        "test",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "file-backed exact recovery"
+      ],
+      "counts": [
+        "1"
+      ]
+    }
+  ],
+  "acceptance": {
+    "restart": "51 required tests passed; file-backed new repository/use-case/owner instances before and after lost ack, exact evidence/event/outbox/SRS/reward counts",
+    "partialWrite": "SQLite AFTER INSERT abort; seven ledger tables identical after close/reopen, followed by exactly-once retry/lost ack recovery; targeted fixture passed",
+    "migration": "59 schema26 boundary tests passed: raw25 values preserved, raw23 path, two file reopens, invalid authority abort atomically preserves version/pragma/data",
+    "compatibility": "D02 keeps AppDatabase schema26. No second learning.sqlite store or automatic schema1 import. Legacy import unsupported, preserve and report under G7.2; no installed legacy file encountered",
+    "reuse": "Required baseline and migration reused after isolated fixture-only change, targeted fixture rerun passed; no production/migration change"
+  },
+  "phaseStatus": "G1-partial",
+  "review": [
+    "No production or historical receipt changes",
+    "Temporary test directory; trigger removed before recovery",
+    "No schema or dependency delta"
+  ]
+}

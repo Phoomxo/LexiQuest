@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "status": "HOST_VERIFIED_NATIVE_PENDING",
+  "workflow": "W09 learning history",
+  "baseCommit": "0f31135c57c478361a798f0365a69979aa3c19bd",
+  "scope": "Read-only owner-bound context for mounted ordinary history cards",
+  "fields": [
+    "mode",
+    "terminal state",
+    "active seconds",
+    "first answers",
+    "repair answers",
+    "mode interpretation",
+    "local CEFR metadata availability",
+    "assessment phase/correct/sample size when present"
+  ],
+  "preservation": "Original native history and replay controls retained; no AI score or persistence writes",
+  "verification": {
+    "red": "New context assertions failed before implementation: missing context",
+    "flutterTests": 18,
+    "host": "evidence/history-assistance-013/host-verification.json",
+    "pythonChatTests": 7,
+    "analysis": "No issues found",
+    "newCases": "Five mode semantics, first-answer zero total, no invented score, no write actions, mismatching owner hides data",
+    "fixture": "New context cases use fixture reader; not real-storage or live-provider evidence"
+  },
+  "native": "NOT_RUN_NEW_SOURCE",
+  "open": [
+    "Pair-specific history context",
+    "Assessment context-specific acceptance",
+    "Live-provider and disconnected native checks",
+    "Full W09 and all14 workflow/mode acceptance"
+  ]
+}

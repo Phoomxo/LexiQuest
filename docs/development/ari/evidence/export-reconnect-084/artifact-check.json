@@ -1,0 +1,9 @@
+{
+  "format": "CSV",
+  "selection": "reading only",
+  "recordCount": 4,
+  "excludedVocabularyAndAttempts": true,
+  "exactRowsMatch081ReconciledReading": true,
+  "bytes": 1214,
+  "sha256": "ab20f4876c0dab02bfcadb25e72e11e2cfde4b3ca1c43ec0c41cb7c71aa4ee52"
+}

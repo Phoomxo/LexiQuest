@@ -1,0 +1,12 @@
+{
+  "stage": "after-disconnect",
+  "numericFields": [
+    {
+      "minutes": 40,
+      "focused": "false"
+    }
+  ],
+  "inputShown": [
+    "false"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "dispatchId": "ux-s01-at-20260925-6898",
+  "atUtc": "2026-09-24T18:42:02.247178+00:00",
+  "status": "ACTIVE_VERIFIED",
+  "clientThreadId": "client-new-thread:28c43458-5b12-46aa-830d-0868bd9b1324",
+  "hostId": "local",
+  "sourceThreadId": "01a0d4a4-fce4-7a23-b49a-939287b44bb6",
+  "sourceRevision": 86,
+  "predecessorImmutable": true,
+  "createAnotherSuccessorAllowed": false,
+  "successorThreadId": "01a0d4b9-6fca-7643-8c7a-445df8474f0b",
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/5581/LexiQuest",
+  "observedAtUtc": "2026-09-24T18:43:30.036131+00:00",
+  "observation": "wait_threads confirms active/inProgress and source verification commentary; actual ID verified via session_meta"
+}

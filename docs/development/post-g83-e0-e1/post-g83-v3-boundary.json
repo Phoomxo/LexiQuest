@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "authority": "Explicit user instruction 2026-09-19: after accepted G8.3 reconcile Engineering Spec v3 and reference images against current code using SDLC and concise teaching explanations",
+  "afterPackage": "G8.3",
+  "continueCurrentB18": true,
+  "directB19DispatchAllowed": false,
+  "nextAction": "E0/E1 analysis and design reconciliation before G8.4; do not start feature implementation solely from this analysis instruction",
+  "specPath": "C:/Users/Phet/.codex/visualizations/2026/09/14/01a09d79-4b81-70c2-b4f8-069f62bf6e7f/post-g89/02-engineering-spec.md",
+  "referencePath": "C:/Users/Phet/.codex/visualizations/2026/09/14/01a09d79-4b81-70c2-b4f8-069f62bf6e7f/post-g89/15-reference-and-handoff.md",
+  "deliverables": [
+    "Accepted G8.3 SHA/receipt and defect baseline",
+    "Read every mapped reference image; separate observed behavior from proposed LexiQuest design",
+    "F01-F09 reuse/extend/new/drop matrix with exact source symbols and test evidence",
+    "SDLC requirements, architecture/data/migration, LexiQuest wireflows, dependency slices, test/rollback/acceptance plan",
+    "Concise teaching notes: objective, reason, tradeoff, worked example where useful, completion benchmark"
+  ],
+  "preserve": "Single writer; sequential B18 continuation allowed; no weakened gates; retain all G8.4-G8.9 coverage; no app source changes during reconciliation",
+  "supersedes": "Direct B18 to B19 succession only; current B18 work continues"
+}

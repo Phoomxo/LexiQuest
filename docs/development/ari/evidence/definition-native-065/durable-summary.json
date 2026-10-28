@@ -1,0 +1,31 @@
+{
+  "skipOnly": {
+    "state": "completed",
+    "activity_type": "quiz",
+    "correct_count": 0,
+    "wrong_count": 0,
+    "score": 0,
+    "attemptCount": 0
+  },
+  "skipThenTwoWrong": {
+    "state": "completed",
+    "activity_type": "quiz",
+    "correct_count": 0,
+    "wrong_count": 2,
+    "score": 0,
+    "attempts": [
+      {
+        "prompt_mode": "definitionChoice",
+        "evidence_class": "recognition",
+        "is_correct": 0,
+        "attempt_number": 2
+      },
+      {
+        "prompt_mode": "definitionChoice",
+        "evidence_class": "recognition",
+        "is_correct": 0,
+        "attempt_number": 3
+      }
+    ]
+  }
+}
