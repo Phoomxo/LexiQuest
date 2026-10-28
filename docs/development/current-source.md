@@ -7,6 +7,8 @@ Updated 2026-10-28. This index identifies the audit remediation work. It does no
 | Current audit fixes | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/cycle12-release` | Use this source for the 20 audit fixes. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
+| Superseded-file cleanup | [2026-10-28 cleanup round 2](../field/2026-10-28-storage-cleanup-round2.md) | Another 51.572 GiB net reclaimed. GitHub snapshots cover 39 old worktrees; 9 local worktrees removed. |
+| Old worktree recovery | GitHub branch `codex/archive/lexiquest-obsolete-20261028`, commit `48d34f7c9f7bf134417294acecd280673df2245c` | Manifest and parent snapshots preserve old source/WIP without keeping every checkout as active development source. |
 | Signed baseline | Tag `adlc-cycle12-release-1.0.0+18` at `6500cbf399083b872f8c8337c560ffb177297485` | Retain. Existing signed APKs do not contain these fixes. |
 | New execution evidence | `D:\LexiQuest-Storage\maintenance\2026-10-28` | Test logs, dependency findings, cleanup allowlist and receipts. |
 | Original audit evidence | `C:\Users\Phet\.codex\visualizations\2026\10\28\01a181ed-87c6-7e71-ac08-e678cb4e4681\lexiquest-audit` | Retain as evidence of the pre-fix state. |
@@ -14,6 +16,6 @@ Updated 2026-10-28. This index identifies the audit remediation work. It does no
 | Earlier UX checkout | `C:\Users\Phet\.codex\worktrees\lexiquest-current\LexiQuest` | Retain unique uncommitted work. The directory name does not imply newer source. |
 | Prior storage archive | `D:\LexiQuest-Storage\archives\lexiquest-current\2026-10-26` | Retain hash-verified archives and migration manifests. |
 
-Cleanup is limited to exact ignored compiler caches and an APK duplicate with a matching SHA-256. Source checkouts, branches, release outputs, evidence, model assets, signing keys and unique work remain. The 56 native build runs whose removal was previously denied remain outside this cleanup allowlist.
+The latest cleanup follows the user's explicit instruction to delete superseded versions after Git backup. Old generated evidence, packages and inactive Python environments may be removed; current source, +18 baseline, model sources and signing material remain. Link-related approval blocks leave 30 archived old checkouts in place. The 56 native build runs whose removal was previously denied remain outside the cleanup allowlist. See the round-2 report for exact retained and blocked paths.
 
 Engineering tests, a signed field build, human UAT, production infrastructure and research authorization have separate completion states. Research enrollment/upload and production rollout remain disabled until their existing gates are satisfied.
