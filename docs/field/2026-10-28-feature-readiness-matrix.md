@@ -1,7 +1,9 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `4a4cbdd8` (v16), on
-2026-10-29. Full Flutter 2728, analysis 0, CLI 23 and normal debug APK pass.
+Source: `codex/remaining-system-readiness`, through `2c94d4a3` (v16), on
+2026-10-29. Latest full suite/APK: `4a4cbdd8`, Flutter 2728, analysis 0 and
+CLI 23. The later study-consent component passes 133 focused and 700 integration
+checks with analysis 0; it has no new full-suite/APK claim.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
