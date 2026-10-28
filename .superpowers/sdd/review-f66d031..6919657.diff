@@ -1,0 +1,768 @@
+# Review package: f66d0316daff57c83ed972a11f6425cb326f482a..6919657073fb70e145a28f6711060feed55c0b3f
+
+## Commits
+6919657 fix(research): reject undefined latency changes
+82fda65 fix(research): enforce observation integrity
+
+## Files changed
+ lib/screens/choose_mode_screen.dart                |  36 ------
+ lib/screens/export_center_screen.dart              |  35 ------
+ lib/screens/setting_screen.dart                    |  17 ---
+ lib/screens/thesis_chart_screen.dart               |  18 ++-
+ .../research_report_pdf_exporter_service.dart      | 138 +++++++++++++--------
+ ...esearch_integrity_navigation_contract_test.dart |  31 +++++
+ test/screens/thesis_chart_screen_test.dart         |  26 +++-
+ .../research_report_pdf_exporter_service_test.dart | 100 +++++++++++++--
+ 8 files changed, 240 insertions(+), 161 deletions(-)
+
+## Diff
+diff --git a/lib/screens/choose_mode_screen.dart b/lib/screens/choose_mode_screen.dart
+index c7e9989..e2f4f7f 100644
+--- a/lib/screens/choose_mode_screen.dart
++++ b/lib/screens/choose_mode_screen.dart
+@@ -10,22 +10,20 @@ import 'dictation_quiz_screen.dart';
+ import 'learning_world_map_screen.dart';
+ import 'mastery_dashboard_screen.dart';
+ import 'object_scanner_screen.dart';
+ import 'phonetic_explorer_screen.dart';
+ import 'quiz_screen.dart';
+ import 'select_category_for_quiz.dart';
+ import 'sentence_scramble_screen.dart';
+ import 'shadowing_challenge_screen.dart';
+ import 'smart_audio_playlist_screen.dart';
+ import 'srs_flashcards_screen.dart';
+-import 'thesis_chart_screen.dart';
+-import 'export_center_screen.dart';
+ import 'ghost_shadow_duel_screen.dart';
+ import 'interactive_storybook_screen.dart';
+ import 'wordbook_import_screen.dart';
+ 
+ class ChooseModeScreen extends StatelessWidget {
+   const ChooseModeScreen({super.key});
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+@@ -307,71 +305,37 @@ class ChooseModeScreen extends StatelessWidget {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+                     builder: (context) => const WordbookImportScreen(),
+                   ),
+                 );
+               },
+             ),
+             const SizedBox(height: 12),
+ 
+-            // 📄 11.1 ระบบส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)
+-            _buildModeButton(
+-              context,
+-              title: "📄 ส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)",
+-              icon: Icons.download_for_offline,
+-              color: Colors.indigo.shade800,
+-              onPressed: () {
+-                Navigator.push(
+-                  context,
+-                  MaterialPageRoute(
+-                    builder: (context) => const ExportCenterScreen(),
+-                  ),
+-                );
+-              },
+-            ),
+-            const SizedBox(height: 12),
+-
+             // 🔤 12. สำรวจสัทอักษร IPA (Phonetic Explorer)
+             _buildModeButton(
+               context,
+               title: "สำรวจสัทอักษร IPA (Phonetic Explorer)",
+               icon: Icons.record_voice_over,
+               color: Colors.teal.shade800,
+               onPressed: () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+                     builder: (context) => const PhoneticExplorerScreen(),
+                   ),
+                 );
+               },
+             ),
+             const SizedBox(height: 12),
+ 
+-            // 📊 13. กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)
+-            _buildModeButton(
+-              context,
+-              title: "กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)",
+-              icon: Icons.bar_chart,
+-              color: Colors.indigo.shade900,
+-              onPressed: () {
+-                Navigator.push(
+-                  context,
+-                  MaterialPageRoute(
+-                    builder: (context) => const ThesisChartScreen(),
+-                  ),
+-                );
+-              },
+-            ),
+-            const SizedBox(height: 12),
+-
+             // 🛡️ 13.1 อุปกรณ์สวมใส่ตัวละคร & บัฟพลัง RPG (Avatar Equipment)
+             _buildModeButton(
+               context,
+               title: "🛡️ อุปกรณ์ตัวละคร & บัฟพลัง RPG (Avatar Gear)",
+               icon: Icons.shield,
+               color: Colors.deepPurple.shade700,
+               onPressed: () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(
+diff --git a/lib/screens/export_center_screen.dart b/lib/screens/export_center_screen.dart
+index ec11237..e0cc018 100644
+--- a/lib/screens/export_center_screen.dart
++++ b/lib/screens/export_center_screen.dart
+@@ -1,29 +1,25 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter/services.dart';
+ import '../services/anki_dictionary_exporter_service.dart';
+ import '../services/pdf_glossary_exporter_service.dart';
+-import '../services/research_data_exporter_service.dart';
+ 
+ class ExportCenterScreen extends StatefulWidget {
+   const ExportCenterScreen({super.key});
+ 
+   @override
+   State<ExportCenterScreen> createState() => _ExportCenterScreenState();
+ }
+ 
+ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+   final PdfGlossaryExporterService _pdfService =
+       const PdfGlossaryExporterService();
+-  final ResearchDataExporterService _researchService =
+-      const ResearchDataExporterService();
+-
+   String _previewContent = '';
+   String _activeTab = 'anki';
+ 
+   final List<VocabularyCardExport> _sampleCards = const [
+     VocabularyCardExport(
+       word: 'perseverance',
+       ipa: '/ˌpɜːsɪˈvɪərəns/',
+       translation: 'ความอุตสาหะ พากเพียร',
+       exampleSentence: 'Success requires dedication and perseverance.',
+     ),
+@@ -65,45 +61,20 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+             'example': c.exampleSentence,
+           },
+         )
+         .toList();
+     setState(() {
+       _activeTab = 'pdf';
+       _previewContent = _pdfService.generateGlossaryDocument(list);
+     });
+   }
+ 
+-  void _generateResearchCsv() {
+-    final records = [
+-      {
+-        'word': 'perseverance',
+-        'cefr_level': 'B2',
+-        'latency_ms': 2400,
+-        'accuracy_percent': 95.0,
+-        'srs_box': 4,
+-        'reviewed_at': DateTime.now().toIso8601String(),
+-      },
+-      {
+-        'word': 'resilience',
+-        'cefr_level': 'B2',
+-        'latency_ms': 1800,
+-        'accuracy_percent': 100.0,
+-        'srs_box': 5,
+-        'reviewed_at': DateTime.now().toIso8601String(),
+-      },
+-    ];
+-    setState(() {
+-      _activeTab = 'csv';
+-      _previewContent = _researchService.generateCsvReport(records);
+-    });
+-  }
+-
+   void _copyToClipboard() {
+     Clipboard.setData(ClipboardData(text: _previewContent));
+     ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(
+         content: Text('📋 คัดลอกข้อมูลไปยัง คลิปบอร์ด เรียบร้อย!'),
+         backgroundColor: Colors.indigo,
+       ),
+     );
+   }
+ 
+@@ -129,32 +100,26 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
+                 ButtonSegment(
+                   value: 'anki',
+                   label: Text('Anki Deck'),
+                   icon: Icon(Icons.style, size: 16),
+                 ),
+                 ButtonSegment(
+                   value: 'pdf',
+                   label: Text('PDF Glossary'),
+                   icon: Icon(Icons.picture_as_pdf, size: 16),
+                 ),
+-                ButtonSegment(
+-                  value: 'csv',
+-                  label: Text('Research CSV'),
+-                  icon: Icon(Icons.table_chart, size: 16),
+-                ),
+               ],
+               selected: {_activeTab},
+               onSelectionChanged: (Set<String> newSelection) {
+                 final selected = newSelection.first;
+                 if (selected == 'anki') _generateAnkiExport();
+                 if (selected == 'pdf') _generatePdfGlossary();
+-                if (selected == 'csv') _generateResearchCsv();
+               },
+             ),
+             const SizedBox(height: 16),
+ 
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 Text(
+                   'ตัวอย่างไฟล์ที่สร้าง ($_activeTab.txt):',
+                   style: const TextStyle(
+diff --git a/lib/screens/setting_screen.dart b/lib/screens/setting_screen.dart
+index 5915e89..8590346 100644
+--- a/lib/screens/setting_screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -1,17 +1,16 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import '../services/local_user_progress_store.dart';
+ import 'achievements_screen.dart';
+ import 'avatar_equipment_screen.dart';
+-import 'export_center_screen.dart';
+ import 'select_wallpaper_screen.dart';
+ 
+ class SettingScreen extends StatefulWidget {
+   const SettingScreen({super.key});
+ 
+   @override
+   State<SettingScreen> createState() => _SettingScreenState();
+ }
+ 
+ class _SettingScreenState extends State<SettingScreen> {
+@@ -256,36 +255,20 @@ class _SettingScreenState extends State<SettingScreen> {
+                             ),
+                           );
+                         },
+                         icon: const Icon(Icons.emoji_events, size: 18),
+                         label: const Text('เหรียญรางวัล'),
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: Colors.amber.shade800,
+                           foregroundColor: Colors.white,
+                         ),
+                       ),
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => const ExportCenterScreen(),
+-                            ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.download_for_offline, size: 18),
+-                        label: const Text('ส่งออกข้อมูล'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.indigo.shade800,
+-                          foregroundColor: Colors.white,
+-                        ),
+-                      ),
+                     ],
+                   ),
+                   const SizedBox(height: 16),
+                   OutlinedButton.icon(
+                     onPressed: () async {
+                       final messenger = ScaffoldMessenger.of(context);
+                       await LocalUserProgressStore().clearAll();
+                       if (!mounted) return;
+                       messenger.showSnackBar(
+                         const SnackBar(
+diff --git a/lib/screens/thesis_chart_screen.dart b/lib/screens/thesis_chart_screen.dart
+index 59c5a22..f3ffd72 100644
+--- a/lib/screens/thesis_chart_screen.dart
++++ b/lib/screens/thesis_chart_screen.dart
+@@ -1,23 +1,23 @@
+ import 'package:fl_chart/fl_chart.dart';
+ import 'package:flutter/material.dart';
+ 
+ class ThesisChartScreen extends StatelessWidget {
+   final double preTestScore;
+   final double postTestScore;
+   final List<double> latencyTrend;
+ 
+   const ThesisChartScreen({
+     super.key,
+-    this.preTestScore = 52.0,
+-    this.postTestScore = 88.5,
+-    this.latencyTrend = const [2400, 2100, 1850, 1600, 1300, 1150],
++    required this.preTestScore,
++    required this.postTestScore,
++    required this.latencyTrend,
+   });
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)',
+           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+         ),
+@@ -64,22 +64,30 @@ class ThesisChartScreen extends StatelessWidget {
+                           width: 28,
+                         ),
+                       ],
+                     ),
+                   ],
+                   titlesData: FlTitlesData(
+                     bottomTitles: AxisTitles(
+                       sideTitles: SideTitles(
+                         showTitles: true,
+                         getTitlesWidget: (val, meta) {
+-                          if (val == 0) return const Text('Pre-Test (52%)');
+-                          if (val == 1) return const Text('Post-Test (88.5%)');
++                          if (val == 0) {
++                            return Text(
++                              'Pre-Test (${preTestScore.toStringAsFixed(1)}%)',
++                            );
++                          }
++                          if (val == 1) {
++                            return Text(
++                              'Post-Test (${postTestScore.toStringAsFixed(1)}%)',
++                            );
++                          }
+                           return const Text('');
+                         },
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+             ),
+             const Divider(height: 40),
+             const Text(
+diff --git a/lib/services/research_report_pdf_exporter_service.dart b/lib/services/research_report_pdf_exporter_service.dart
+index 5ab28f4..2923bea 100644
+--- a/lib/services/research_report_pdf_exporter_service.dart
++++ b/lib/services/research_report_pdf_exporter_service.dart
+@@ -1,12 +1,37 @@
+ import 'dart:math';
+ 
++class ResearchObservation {
++  final double preTestScore;
++  final double postTestScore;
++  final double preLatencyMs;
++  final double postLatencyMs;
++
++  const ResearchObservation({
++    required this.preTestScore,
++    required this.postTestScore,
++    required this.preLatencyMs,
++    required this.postLatencyMs,
++  });
++}
++
++class InsufficientData implements Exception {
++  final String message;
++
++  const InsufficientData([
++    this.message = 'At least two real research observations are required.',
++  ]);
++
++  @override
++  String toString() => 'InsufficientData: $message';
++}
++
+ class ThesisAcademicStats {
+   final double preTestMean;
+   final double preTestSd;
+   final double postTestMean;
+   final double postTestSd;
+   final double meanGainPercentage;
+   final double preLatencyMs;
+   final double postLatencyMs;
+   final double latencyReductionPercentage;
+   final int sampleSize;
+@@ -21,104 +46,109 @@ class ThesisAcademicStats {
+     required this.postLatencyMs,
+     required this.latencyReductionPercentage,
+     required this.sampleSize,
+   });
+ }
+ 
+ class ResearchReportPdfExporterService {
+   const ResearchReportPdfExporterService();
+ 
+   ThesisAcademicStats calculateAcademicStats(
+-    List<Map<String, dynamic>> records,
++    List<ResearchObservation> observations,
+   ) {
+-    if (records.isEmpty) {
+-      return const ThesisAcademicStats(
+-        preTestMean: 45.0,
+-        preTestSd: 12.5,
+-        postTestMean: 87.5,
+-        postTestSd: 6.2,
+-        meanGainPercentage: 94.4,
+-        preLatencyMs: 3400.0,
+-        postLatencyMs: 1250.0,
+-        latencyReductionPercentage: 63.2,
+-        sampleSize: 30,
+-      );
++    if (observations.length < 2) {
++      throw const InsufficientData();
+     }
+ 
+-    final latencies = records
+-        .map((e) => (e['latencyMs'] as num).toDouble())
++    final preTestScores = observations
++        .map((observation) => observation.preTestScore)
+         .toList();
+-    final sampleSize = records.length;
++    final postTestScores = observations
++        .map((observation) => observation.postTestScore)
++        .toList();
++    final preLatencies = observations
++        .map((observation) => observation.preLatencyMs)
++        .toList();
++    final postLatencies = observations
++        .map((observation) => observation.postLatencyMs)
++        .toList();
++    final preTestMean = _mean(preTestScores);
++    final postTestMean = _mean(postTestScores);
++    final preLatencyMs = _mean(preLatencies);
++    final postLatencyMs = _mean(postLatencies);
+ 
+-    final meanLatency = latencies.reduce((a, b) => a + b) / sampleSize;
+-    final variance =
+-        latencies.map((x) => pow(x - meanLatency, 2)).reduce((a, b) => a + b) /
+-        sampleSize;
+-    final sd = sqrt(variance);
++    if (preLatencyMs == 0) {
++      throw const InsufficientData(
++        'A non-zero pre-test latency baseline is required to calculate change.',
++      );
++    }
+ 
+     return ThesisAcademicStats(
+-      preTestMean: 48.0,
+-      preTestSd: 11.2,
+-      postTestMean: 86.4,
+-      postTestSd: sd,
+-      meanGainPercentage: 80.0,
+-      preLatencyMs: 3200.0,
+-      postLatencyMs: meanLatency,
+-      latencyReductionPercentage: ((3200.0 - meanLatency) / 3200.0 * 100).clamp(
+-        0,
+-        100,
+-      ),
+-      sampleSize: sampleSize,
++      preTestMean: preTestMean,
++      preTestSd: _populationStandardDeviation(preTestScores, preTestMean),
++      postTestMean: postTestMean,
++      postTestSd: _populationStandardDeviation(postTestScores, postTestMean),
++      meanGainPercentage: postTestMean - preTestMean,
++      preLatencyMs: preLatencyMs,
++      postLatencyMs: postLatencyMs,
++      latencyReductionPercentage:
++          (preLatencyMs - postLatencyMs) / preLatencyMs * 100,
++      sampleSize: observations.length,
+     );
+   }
+ 
+-  String generateAcademicPdfReport(List<Map<String, dynamic>> records) {
+-    final stats = calculateAcademicStats(records);
++  String generateAcademicPdfReport(List<ResearchObservation> observations) {
++    final stats = calculateAcademicStats(observations);
+     final buffer = StringBuffer();
+ 
+     buffer.writeln(
+       '===============================================================',
+     );
+-    buffer.writeln('   LEXIQUEST RESEARCH SUMMARY REPORT (THESIS CHAPTER 4)');
++    buffer.writeln('LEXIQUEST RESEARCH SUMMARY REPORT');
+     buffer.writeln(
+       '===============================================================\n',
+     );
+-    buffer.writeln('1. EXECUTIVE SUMMARY & STATISTICAL OVERVIEW');
++    buffer.writeln('1. OBSERVED SUMMARY STATISTICS');
+     buffer.writeln('   - Sample Size (N): ${stats.sampleSize} participants');
+     buffer.writeln(
+-      '   - Pre-Test Score (Mean ± SD): ${stats.preTestMean.toStringAsFixed(1)}% ± ${stats.preTestSd.toStringAsFixed(1)}',
++      '   - Pre-Test Score (Mean +/- SD): ${stats.preTestMean.toStringAsFixed(1)}% +/- ${stats.preTestSd.toStringAsFixed(1)}',
+     );
+     buffer.writeln(
+-      '   - Post-Test Score (Mean ± SD): ${stats.postTestMean.toStringAsFixed(1)}% ± ${stats.postTestSd.toStringAsFixed(1)}',
++      '   - Post-Test Score (Mean +/- SD): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
+     );
+     buffer.writeln(
+-      '   - Overall Achievement Gain: +${stats.meanGainPercentage.toStringAsFixed(1)}%',
++      '   - Mean Score Change: ${_formatSigned(stats.meanGainPercentage)} percentage points',
+     );
+     buffer.writeln(
+       '   - Pre-Test Recall Latency: ${stats.preLatencyMs.toStringAsFixed(0)} ms',
+     );
+     buffer.writeln(
+       '   - Post-Test Recall Latency: ${stats.postLatencyMs.toStringAsFixed(0)} ms',
+     );
+     buffer.writeln(
+-      '   - Recall Latency Reduction: -${stats.latencyReductionPercentage.toStringAsFixed(1)}%\n',
+-    );
+-    buffer.writeln(
+-      '---------------------------------------------------------------',
+-    );
+-    buffer.writeln('2. SPSS / R STATISTICAL ANALYSIS RECOMMENDATION');
+-    buffer.writeln(
+-      '   - Perform Paired-Samples t-Test comparing Pre vs Post Scores.',
+-    );
+-    buffer.writeln(
+-      '   - Null Hypothesis (H0): No statistically significant difference.',
+-    );
+-    buffer.writeln(
+-      '   - Expected Significance: p < 0.001 (Strong Rejection of H0).\n',
++      '   - Recall Latency Change: ${stats.latencyReductionPercentage.toStringAsFixed(1)}%',
+     );
+     buffer.writeln(
+       '===============================================================',
+     );
+ 
+     return buffer.toString();
+   }
++
++  static double _mean(List<double> values) {
++    return values.reduce((sum, value) => sum + value) / values.length;
++  }
++
++  static double _populationStandardDeviation(List<double> values, double mean) {
++    final variance =
++        values
++            .map((value) => pow(value - mean, 2))
++            .reduce((sum, value) => sum + value) /
++        values.length;
++    return sqrt(variance);
++  }
++
++  static String _formatSigned(double value) {
++    final sign = value > 0 ? '+' : '';
++    return '$sign${value.toStringAsFixed(1)}';
++  }
+ }
+diff --git a/test/screens/research_integrity_navigation_contract_test.dart b/test/screens/research_integrity_navigation_contract_test.dart
+new file mode 100644
+index 0000000..3cffa56
+--- /dev/null
++++ b/test/screens/research_integrity_navigation_contract_test.dart
+@@ -0,0 +1,31 @@
++import 'dart:io';
++
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test(
++    'production navigation does not expose research export or thesis routes',
++    () {
++      final chooseModeSource = File(
++        'lib/screens/choose_mode_screen.dart',
++      ).readAsStringSync();
++      final settingsSource = File(
++        'lib/screens/setting_screen.dart',
++      ).readAsStringSync();
++
++      expect(chooseModeSource, isNot(contains('ExportCenterScreen')));
++      expect(chooseModeSource, isNot(contains('ThesisChartScreen')));
++      expect(settingsSource, isNot(contains('ExportCenterScreen')));
++    },
++  );
++
++  test('Export Center does not offer a sample Research CSV export', () {
++    final source = File(
++      'lib/screens/export_center_screen.dart',
++    ).readAsStringSync();
++
++    expect(source, isNot(contains('Research CSV')));
++    expect(source, isNot(contains('_generateResearchCsv')));
++    expect(source, isNot(contains('ResearchDataExporterService')));
++  });
++}
+diff --git a/test/screens/thesis_chart_screen_test.dart b/test/screens/thesis_chart_screen_test.dart
+index 8ce0ff4..f1e2e17 100644
+--- a/test/screens/thesis_chart_screen_test.dart
++++ b/test/screens/thesis_chart_screen_test.dart
+@@ -1,26 +1,48 @@
++import 'dart:io';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/screens/thesis_chart_screen.dart';
+ 
+ void main() {
+   testWidgets(
+-    'ThesisChartScreen renders Pre/Post test scores and Latency trend chart',
++    'ThesisChartScreen renders labels from caller-supplied observations',
+     (WidgetTester tester) async {
+       await tester.pumpWidget(
+         const MaterialApp(
+-          home: ThesisChartScreen(preTestScore: 50, postTestScore: 90),
++          home: ThesisChartScreen(
++            preTestScore: 50,
++            postTestScore: 90,
++            latencyTrend: [2000, 1000],
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+ 
++      expect(find.text('Pre-Test (50.0%)'), findsOneWidget);
++      expect(find.text('Post-Test (90.0%)'), findsOneWidget);
++
+       expect(
+         find.text('กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)'),
+         findsOneWidget,
+       );
+       expect(
+         find.text('1. กราฟเปรียบเทียบคะแนน Pre-Test vs Post-Test'),
+         findsOneWidget,
+       );
+     },
+   );
++
++  test('ThesisChartScreen has no fabricated constructor defaults', () {
++    final source = File(
++      'lib/screens/thesis_chart_screen.dart',
++    ).readAsStringSync();
++
++    expect(source, contains('required this.preTestScore'));
++    expect(source, contains('required this.postTestScore'));
++    expect(source, contains('required this.latencyTrend'));
++    expect(source, isNot(contains('this.preTestScore =')));
++    expect(source, isNot(contains('this.postTestScore =')));
++    expect(source, isNot(contains('this.latencyTrend =')));
++  });
+ }
+diff --git a/test/services/research_report_pdf_exporter_service_test.dart b/test/services/research_report_pdf_exporter_service_test.dart
+index 6863817..7e3a26c 100644
+--- a/test/services/research_report_pdf_exporter_service_test.dart
++++ b/test/services/research_report_pdf_exporter_service_test.dart
+@@ -1,24 +1,100 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/services/research_report_pdf_exporter_service.dart';
+ 
+ void main() {
+   const service = ResearchReportPdfExporterService();
+ 
+-  test('calculateAcademicStats calculates mean and SD correctly', () {
+-    final records = [
+-      {'latencyMs': 2000},
+-      {'latencyMs': 1000},
+-    ];
++  const observations = [
++    ResearchObservation(
++      preTestScore: 60,
++      postTestScore: 80,
++      preLatencyMs: 3000,
++      postLatencyMs: 1500,
++    ),
++    ResearchObservation(
++      preTestScore: 70,
++      postTestScore: 90,
++      preLatencyMs: 1000,
++      postLatencyMs: 500,
++    ),
++  ];
++
++  test(
++    'calculateAcademicStats rejects empty research observations explicitly',
++    () {
++      expect(
++        () => service.calculateAcademicStats(const []),
++        throwsA(isA<InsufficientData>()),
++      );
++    },
++  );
++
++  test('calculateAcademicStats derives statistics from typed observations', () {
++    final stats = service.calculateAcademicStats(observations);
+ 
+-    final stats = service.calculateAcademicStats(records);
+     expect(stats.sampleSize, 2);
+-    expect(stats.postLatencyMs, 1500.0);
++    expect(stats.preTestMean, 65.0);
++    expect(stats.postTestMean, 85.0);
++    expect(stats.preLatencyMs, 2000.0);
++    expect(stats.postLatencyMs, 1000.0);
++    expect(stats.latencyReductionPercentage, 50.0);
++  });
++
++  test('calculateAcademicStats rejects a zero pre-test latency baseline', () {
++    const zeroPreTestLatency = [
++      ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 80,
++        preLatencyMs: 0,
++        postLatencyMs: 200,
++      ),
++      ResearchObservation(
++        preTestScore: 70,
++        postTestScore: 90,
++        preLatencyMs: 0,
++        postLatencyMs: 300,
++      ),
++    ];
++
++    expect(
++      () => service.calculateAcademicStats(zeroPreTestLatency),
++      throwsA(isA<InsufficientData>()),
++    );
+   });
+ 
+-  test('generateAcademicPdfReport formats research report text', () {
+-    final report = service.generateAcademicPdfReport([]);
+-    expect(report.contains('LEXIQUEST RESEARCH SUMMARY REPORT'), true);
+-    expect(report.contains('Sample Size (N)'), true);
+-    expect(report.contains('Paired-Samples t-Test'), true);
++  test('generateAcademicPdfReport contains only derived statistics', () {
++    final report = service.generateAcademicPdfReport(observations);
++
++    expect(report, contains('Sample Size (N): 2 participants'));
++    expect(report, contains('65.0%'));
++    expect(report, contains('85.0%'));
++    expect(report, contains('2000 ms'));
++    expect(report, contains('1000 ms'));
++    expect(report, isNot(contains('Expected Significance')));
++    expect(report, isNot(contains('p <')));
++    expect(report, isNot(contains('Paired-Samples t-Test')));
++  });
++
++  test('generateAcademicPdfReport formats a score decline with one sign', () {
++    const decliningObservations = [
++      ResearchObservation(
++        preTestScore: 80,
++        postTestScore: 60,
++        preLatencyMs: 1000,
++        postLatencyMs: 1200,
++      ),
++      ResearchObservation(
++        preTestScore: 60,
++        postTestScore: 60,
++        preLatencyMs: 1000,
++        postLatencyMs: 1200,
++      ),
++    ];
++
++    final report = service.generateAcademicPdfReport(decliningObservations);
++
++    expect(report, contains('Mean Score Change: -10.0 percentage points'));
++    expect(report, isNot(contains('Mean Score Gain')));
++    expect(report, isNot(contains('+-10.0')));
+   });
+ }
