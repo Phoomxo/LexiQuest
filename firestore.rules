@@ -1,0 +1,315 @@
+rules_version = '2';
+
+// =============================================================================
+// LexiQuest Firestore Security Rules
+// -----------------------------------------------------------------------------
+// Least-privilege, default-deny rules covering ONLY the collections evidenced
+// by the Flutter client under lib/ and the lib/add_default_categories.js
+// maintainer seed. The maintainer seed runs through the Firebase Admin SDK,
+// which bypasses these rules entirely, so it is intentionally granted no
+// client path here.
+//
+// Posture
+//   * Shared curated reads are available to signed-in identities, including
+//     anonymous guests. Private records require a non-anonymous account.
+//   * Per-user collections (users, state, categories, categories/.../words,
+//     purchased_items) enforce self-ownership via the Firebase Auth uid.
+//   * Shared/catalog/telemetry collections that carry no owner uid
+//     (products, global_words, vocabulary, quiz, voice_telemetry_events) use
+//     the strongest safe alternative (read-only, or create-only) and are
+//     documented inline.
+//   * The trailing match /{document=**} denies everything else, including any
+//     collection not yet authored here.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth.uid != null;
+    }
+
+    function isRegisteredUser() {
+      return isSignedIn()
+        && 'firebase' in request.auth.token
+        && 'sign_in_provider' in request.auth.token.firebase
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // True when the categories/{categoryId} document is owned by the signed-in
+    // user. Used to authorize the nested words subcollection, whose own
+    // user_id field is unreliably populated (incl. empty strings from the
+    // Datamuse path) and is therefore never used for authorization.
+    function ownsCategory(database, categoryId) {
+      return get(/databases/$(database)/documents/categories/$(categoryId))
+              .data.uid
+        == request.auth.uid;
+    }
+
+    // Strict allow-list + types for a categories/{id}/words document. The
+    // redundant camelCase userId marker written by the Datamuse path is
+    // tolerated in the allow-list (see accompanying explanation).
+    function wordFieldsOk() {
+      return request.resource.data is map
+        && request.resource.data.keys().hasOnly([
+             'word', 'meaning', 'part_of_speech', 'user_id', 'is_global',
+             'created_at', 'userId'
+           ])
+        && request.resource.data.word is string
+        && request.resource.data.word.size() > 0
+        && request.resource.data.word.size() <= 120
+        && request.resource.data.meaning is string
+        && request.resource.data.meaning.size() <= 500
+        && request.resource.data.part_of_speech is string
+        && request.resource.data.part_of_speech.size() <= 60
+        && request.resource.data.user_id is string
+        && request.resource.data.is_global is bool
+        && request.resource.data.created_at is timestamp
+        && (!('userId' in request.resource.data.keys())
+             || request.resource.data.userId is string);
+    }
+
+    // Strict allow-list + types for a voice_telemetry_events document (the
+    // VoiceTelemetryEvent privacy-safe field set).
+    function voiceTelemetryFieldsOk() {
+      return request.resource.data is map
+        && request.resource.data.keys().hasOnly([
+             'schemaVersion', 'outcome', 'mode', 'requestedEngine',
+             'actualEngine', 'usedFallback', 'fallbackReason',
+             'failureCategory', 'cacheHit', 'latencyMs', 'contentId',
+             'contentType', 'requestId', 'modelVersion', 'occurredAtUtc'
+           ])
+        && request.resource.data.schemaVersion is string
+        && request.resource.data.outcome is string
+        && request.resource.data.mode is string
+        && request.resource.data.requestedEngine is string
+        && (!('actualEngine' in request.resource.data.keys())
+             || request.resource.data.actualEngine is string
+             || request.resource.data.actualEngine == null)
+        && request.resource.data.usedFallback is bool
+        && (!('fallbackReason' in request.resource.data.keys())
+             || request.resource.data.fallbackReason is string
+             || request.resource.data.fallbackReason == null)
+        && (!('failureCategory' in request.resource.data.keys())
+             || request.resource.data.failureCategory is string
+             || request.resource.data.failureCategory == null)
+        && request.resource.data.cacheHit is bool
+        && request.resource.data.latencyMs is int
+        && request.resource.data.latencyMs >= 0
+        && request.resource.data.latencyMs <= 86400000
+        && request.resource.data.contentId is string
+        && request.resource.data.contentId.size() <= 200
+        && request.resource.data.contentType is string
+        && request.resource.data.contentType.size() <= 60
+        && (!('requestId' in request.resource.data.keys())
+             || request.resource.data.requestId is string
+             || request.resource.data.requestId == null)
+        && (!('modelVersion' in request.resource.data.keys())
+             || request.resource.data.modelVersion is string
+             || request.resource.data.modelVersion == null)
+        && request.resource.data.occurredAtUtc is string
+        && request.resource.data.occurredAtUtc.size() <= 40;
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{uid} - profile + legacy per-user counters. Keyed by uid; self only.
+    //   create: AuthService.registerUser (first_name, last_name, email, age,
+    //           createdAt via serverTimestamp)
+    //   update: profile fields; legacy counter fields have no active writer
+    //   read  : SettingScreen, UserService.getUserData
+    //   createdAt is server-controlled and immutable after creation.
+    // -------------------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isRegisteredUser() && request.auth.uid == uid;
+
+      allow create: if isRegisteredUser()
+        && request.auth.uid == uid
+        && request.resource.data is map
+        && request.resource.data.keys().hasOnly([
+             'first_name', 'last_name', 'email', 'age', 'createdAt'
+           ])
+        && request.resource.data.first_name is string
+        && request.resource.data.first_name.size() > 0
+        && request.resource.data.first_name.size() <= 100
+        && request.resource.data.last_name is string
+        && request.resource.data.last_name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.age is int
+        && request.resource.data.age >= 0
+        && request.resource.data.age <= 150
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if isRegisteredUser()
+        && request.auth.uid == uid
+        && request.resource.data is map
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['first_name', 'last_name', 'email', 'age'])
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.first_name is string
+        && request.resource.data.first_name.size() > 0
+        && request.resource.data.first_name.size() <= 100
+        && request.resource.data.last_name is string
+        && request.resource.data.last_name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.age is int
+        && request.resource.data.age >= 0
+        && request.resource.data.age <= 150;
+
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // state/{uid} - legacy per-user game stats + selected wallpaper.
+    //   read  : authenticated owner only
+    //   write : clients may update selectedWallpaper only
+    // Remote counters stay read-only until a trusted server writer is deployed.
+    // -------------------------------------------------------------------------
+    match /state/{uid} {
+      allow read: if isRegisteredUser() && request.auth.uid == uid;
+
+      allow create: if false;
+
+      allow update: if isRegisteredUser()
+        && request.auth.uid == uid
+        && request.resource.data is map
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['selectedWallpaper'])
+        && 'selectedWallpaper' in request.resource.data
+        && (request.resource.data.get('selectedWallpaper', null) is string
+            || request.resource.data.get('selectedWallpaper', null) == null);
+
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // categories/{categoryId} - user-owned vocabulary groups.
+    //   create: CategoryService.addCategory / addCategoryForUser /
+    //           addDefaultCategoriesForNewUser (uid == current user)
+    //   read  : CategoryService.getCategoriesStream, SelectCategoryForQuiz
+    //           (both filter .where('uid', '==', currentUser.uid))
+    //   delete: CategoryService.deleteCategory
+    //   No update path is evidenced; updates are denied.
+    // -------------------------------------------------------------------------
+    match /categories/{categoryId} {
+      allow read: if isRegisteredUser()
+        && resource.data.uid == request.auth.uid;
+
+      allow create: if isRegisteredUser()
+        && request.resource.data is map
+        && request.resource.data.keys().hasOnly(['category_name', 'created_at', 'uid'])
+        && request.resource.data.uid is string
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.category_name is string
+        && request.resource.data.category_name.size() > 0
+        && request.resource.data.category_name.size() <= 120
+        && request.resource.data.created_at is timestamp;
+
+      allow delete: if isRegisteredUser()
+        && resource.data.uid == request.auth.uid;
+
+      allow update: if false;
+
+      // -----------------------------------------------------------------------
+      // categories/{categoryId}/words/{wordId}
+      //   Authorization derives from the PARENT category's uid (see
+      //   ownsCategory). create/update: CategoryService.addWord,
+      //   WordService.addWord*/updateWord (preserves created_at).
+      //   read/delete: WordService, VocabService, CategoriesPage.
+      //   Per-category size is capped at 50 by WordService on the client.
+      // -----------------------------------------------------------------------
+      match /words/{wordId} {
+        allow read: if isRegisteredUser()
+          && ownsCategory(database, categoryId);
+
+        allow create: if isRegisteredUser()
+          && ownsCategory(database, categoryId)
+          && wordFieldsOk();
+
+        allow update: if isRegisteredUser()
+          && ownsCategory(database, categoryId)
+          && wordFieldsOk()
+          && request.resource.data.created_at == resource.data.created_at;
+
+        allow delete: if isRegisteredUser()
+          && ownsCategory(database, categoryId);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // vocabulary/{vocabId} - SHARED, uid-less A1 pool (default-quiz source).
+    //   main_vocabulary seeds entries WITHOUT a uid; the default-quiz reads in
+    //   ChooseModeScreen/QuizService list the whole pool. True uid ownership is
+    //   impossible here, so the admin-seeded pool is read-only for signed-in
+    //   identities, including anonymous guests.
+    // -------------------------------------------------------------------------
+    match /vocabulary/{vocabId} {
+      allow read: if isSignedIn();
+
+      allow create, update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // global_words/{word} - shared dictionary keyed by word.
+    //   The admin-seeded collection is read-only for signed-in identities,
+    //   including anonymous guests.
+    // -------------------------------------------------------------------------
+    match /global_words/{word} {
+      allow read: if isSignedIn();
+
+      allow create, update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // products/{productId} - shop catalog (prices, image refs).
+    //   Clients only READ. The client-side seeding in ShopPage._seedDefault
+    //   Products and the in-app "restore" button are DENIED on purpose: a price
+    //   catalog must not be client-writable. The shop falls back to its
+    //   in-memory defaults when persistence is denied. Seeding belongs to Admin.
+    // -------------------------------------------------------------------------
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // purchased_items/{purchaseId} - legacy per-user ownership records.
+    //   read  : authenticated owner only
+    //   write : disabled until purchases use a trusted server writer
+    // -------------------------------------------------------------------------
+    match /purchased_items/{purchaseId} {
+      allow read: if isRegisteredUser()
+        && resource.data.user_id == request.auth.uid;
+
+      allow create, update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // quiz/{quizId} - DENIED. QuizService is the only writer and is never
+    // instantiated in the app (dead code), the documents carry no uid, and no
+    // reader exists. Do not enable until ownership and a reader are designed.
+    // -------------------------------------------------------------------------
+    match /quiz/{quizId} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // voice_telemetry_events/{eventId} - privacy-safe, uid-less telemetry.
+    //   create-only with the VoiceTelemetryEvent allow-list; reads/updates/
+    //   deletes are denied so the client never exfiltrates accumulated events.
+    //   See explanation re: adding a server-stamped uid.
+    // -------------------------------------------------------------------------
+    match /voice_telemetry_events/{eventId} {
+      allow create: if isRegisteredUser() && voiceTelemetryFieldsOk();
+      allow read, update, delete: if false;
+    }
+
+    // ---- default deny -------------------------------------------------------
+    // Anything not explicitly matched above is denied. This also closes any
+    // collection introduced in the future until a tested rule is authored.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
