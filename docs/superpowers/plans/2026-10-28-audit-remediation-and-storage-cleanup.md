@@ -24,9 +24,9 @@
 | APP | 3,7,8,11 | fix_app; Shadowing/Reading, learning restore, progress counts, vocabulary lifecycle + tests | lost ack exactly once, resume honest/repeatable, deleted counts 0, safe revive logical row | Done; focused43 |
 | TOOL-LM | 13,14,18,19,20 | fix_tooling_lm; CI, two CLI tests, Firestore rules/tests, LM generator/dry-run/tests | native JSON mutations, existing contracts in CI, closed legacy grants, correct grammar/features | Done; CLI23/LM83/rules39 |
 | DATA | 1,2,12,15,17 | root; sync/identity/research + tests | owner isolation, deterministic natural-key reconciliation, bounded backlog drain, late-state merge, expiry recheck | Done; focused126 |
-| VERIFY | all | root with independent read-only review | focused RED/GREEN then full Flutter/backend/policy/contracts/analysis + final diff | Flutter1851/analysis0 pass; Android build pending |
+| VERIFY | all | root with independent read-only review | focused RED/GREEN then full Flutter/backend/policy/contracts/analysis + final diff | Done; Flutter1851/analysis0/Android debug pass |
 | ORGANIZE | current source/docs/artifacts | root | current version index and exact retained artifact manifest; no historical evidence rewritten as new PASS | Done; source index and retention manifest written |
-| CLEANUP | superseded recoverable files only | root | exact approved candidates, no unique WIP/active or pinned work removed, actual free-space delta and receipts | Pending |
+| CLEANUP | superseded recoverable files only | root | exact approved candidates, no unique WIP/active or pinned work removed, actual free-space delta and receipts | Done; 12 targets/40.579GiB freed; 43 worktrees retained |
 
 ## Verification
 
@@ -47,3 +47,5 @@
 ## Completion evidence
 
 Final checkpoint records changed files, tests with exact results, review disposition, retained/removed paths, released bytes and remaining dependencies. No full-completion claim until the source and storage predicates are verified.
+
+Completed evidence is recorded in [the remediation checkpoint](../../field/2026-10-28-audit-remediation-checkpoint.md). Source fixes are committed as `5cad746d1873ab7aae7726619dcc7219b0db1ef8`. Execution logs, the debug artifact, cleanup script/manifests and per-target receipts are retained on D:.
