@@ -1,10 +1,15 @@
 # Current source and retained artifacts
 
-Updated 2026-10-28. This index identifies the audit remediation work. It does not declare a production rollout.
+Updated 2026-10-28. This index identifies the audit fixes and continuing system integration. It does not declare a production rollout.
 
 | Item | Location | Disposition |
 | --- | --- | --- |
-| Current audit fixes | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/cycle12-release` | Use this source for the 20 audit fixes. |
+| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, learning history, LM content serving, research export hardening and locally verified v11 evidence metadata. |
+| Completed audit baseline | Branch `codex/cycle12-release`, commit `1aa189a3` | Historical audit/cleanup checkpoint retained before the continuing integration branch. |
+| Remaining-system plan | [Complete the remaining LexiQuest systems](../superpowers/plans/2026-10-28-unfinished-system-integration.md) | Current execution board and acceptance checks. |
+| Capability coverage | [44-capability runtime matrix](../field/2026-10-28-feature-readiness-matrix.md) | Source-backed connected/partial/missing states; not production or UAT certification. |
+| Verified v11 integration | [Evidence metadata checkpoint](../field/2026-10-28-remaining-systems-wave2.md) | Source `efff26a6`, Flutter 2191, analysis 0, rules 45, CLI 23 and Android debug pass. |
+| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Build ID `efff26a6`, debug `1.0.0+1`; not installed or published. Hash and scope are in the v11 checkpoint. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
 | Superseded-file cleanup | [2026-10-28 cleanup round 2](../field/2026-10-28-storage-cleanup-round2.md) | Another 51.572 GiB net reclaimed. GitHub snapshots cover 39 old worktrees; 9 local worktrees removed. |
