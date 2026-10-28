@@ -8,6 +8,7 @@ import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'achievements_screen.dart';
+import 'learning_history_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 
@@ -161,6 +162,15 @@ class _ProgressActions extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
+          OutlinedButton.icon(
+            onPressed: () => _push(
+              context,
+              'progress/history',
+              const LearningHistoryScreen(),
+            ),
+            icon: const Icon(Icons.history),
+            label: const Text('ประวัติการเรียน'),
+          ),
           if (features.isVisible(FieldFeature.weakness))
             OutlinedButton.icon(
               onPressed: () async {
