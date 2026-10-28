@@ -1,0 +1,401 @@
+diff --git a/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart b/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
+index ed5c063f..ae8640f8 100644
+--- a/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
++++ b/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
+@@ -46,28 +46,29 @@ final class PairMatchingSessionCoordinator {
+   final Future<LearningSessionSummary> Function(PendingLearningSessionClose)?
+   completeSession;
+   final void Function(PendingLearningSessionClose, Future<void> Function())?
+   ownClose;
+   bool _closeOwned = false;
+   Future<void>? _closeCheckpointInFlight;
+   LearningActivityCheckpoint _checkpoint;
+   PairMatchingCheckpointSnapshot _snapshot;
+   PairMatchingState _state;
+   PairMatchingState get state => _state;
+   final PairActiveClock _clock;
+   PairTimerState get timer => _clock.value;
+   bool get timerPaused => _clock.isPaused;
+   PairPauseLease? _operationPause;
++  PairPauseLease? _capacityPause;
+   PairPauseLease? _completedPause;
+   PendingLearningSessionClose? _close;
+   LearningSessionSummary? _summary;
+   LearningSessionSummary? get completedSummary => _summary;
+   bool get summaryPresented => _snapshot.terminal?.presented == true;
+   int get checkpointRevision => _checkpoint.revision;
+   bool _disposed = false, _busy = false;
+   PendingCurrentActivityEvidence? _pending;
+   FrozenPendingCurrentActivityEvidence? _frozen;
+   LearningActivityCheckpoint? _pendingAppend;
+   PairMatchingCheckpointSnapshot? _pendingSnapshot;
+   PairMatchingState? _capturedState;
+ 
+   static Future<PairMatchingSessionCoordinator> restore({
+@@ -256,28 +257,31 @@ final class PairMatchingSessionCoordinator {
+       if (runner == null) {
+         await guarded();
+       } else {
+         await runner(guarded);
+       }
+       _requireLive(checkLease: false);
+     } finally {
+       _busy = false;
+       if (state.complete) {
+         _completedPause ??= _clock.pause(PairPauseReason.boardUnavailable);
+       }
+       if (_pendingAppend == null && _pending == null && _close == null) {
+         final pause = _operationPause;
+         _operationPause = null;
++        // The write is already acknowledged. Hold capacity instead of failing
++        // that accepted operation or opening an interval we cannot flush.
++        _prepareClockResume(failIfFull: false);
+         if (pause != null) _clock.release(pause);
+       }
+     }
+   }
+ 
+   Future<void> dispatch(PairMatchingCommand command) => _admit(() async {
+     if (_pendingAppend != null || _pending != null) {
+       throw StateError('Pair exact retry required');
+     }
+     if (_snapshot.terminal != null || _close != null) {
+       throw StateError('Pair terminal is read only');
+     }
+     if (command is PairTimerDecision) {
+       await _decideTimer(command);
+@@ -482,85 +486,104 @@ final class PairMatchingSessionCoordinator {
+ 
+   void dispose() {
+     _disposed = true;
+     _clock.pause(PairPauseReason.boardUnavailable);
+   }
+ 
+   void resumeInteraction() {
+     _requireLive(checkLease: false);
+     if (state.complete ||
+         _pendingAppend != null ||
+         _pending != null ||
+         _snapshot.terminal != null) {
+       throw StateError('Pair exact recovery required');
+     }
+-    if (timer.timed) _requireCapacity(state, timer, 1);
++    _prepareClockResume();
+     _clock.resumeInteraction();
+   }
+ 
+   /// Host acquires immediately, then awaits flush before acknowledging a
+   /// lifecycle boundary. A burst folds into one flush; tokens are never reused.
+   PairPauseLease pause(PairPauseReason reason) {
+     _requireLive(checkLease: false);
+     return _clock.pause(reason);
+   }
+ 
+   void releasePause(PairPauseLease token) {
+     _requireLive(checkLease: false);
+     if (!_clock.owns(token)) return;
+-    if (timer.timed) _requireCapacity(state, timer, 1);
++    _prepareClockResume();
+     _clock.release(token);
+   }
+ 
+   Future<void> expire() {
+     if (!timer.timed || timer.remainingActiveMs > 0 || state.complete) {
+       return Future.value();
+     }
+     return dispatch(
+       PairTimerDecision(
+         operationId: '${state.operationRevision}:expire',
+         ownerId: operation.plan.ownerId,
+         sessionId: operation.plan.learningSessionId,
+         roundOrdinal: state.roundOrdinal,
+         expectedRevision: state.operationRevision,
+         action: PairTimerAction.expire,
+       ),
+     );
+   }
+ 
+   void _requireCapacity(
+     PairMatchingState candidate,
+     PairTimerState clock,
+     int cost,
++  ) {
++    if (!_hasCapacity(candidate, clock, cost)) {
++      throw StateError('Pair persistence capacity reserved');
++    }
++  }
++
++  void _prepareClockResume({bool failIfFull = true}) {
++    if (!state.complete && timer.timed && !_hasCapacity(state, timer, 1)) {
++      _capacityPause ??= _clock.pause(PairPauseReason.capacity);
++      if (failIfFull) throw StateError('Pair persistence capacity reserved');
++      return;
++    }
++    final capacity = _capacityPause;
++    _capacityPause = null;
++    if (capacity != null) _clock.release(capacity);
++  }
++
++  bool _hasCapacity(
++    PairMatchingState candidate,
++    PairTimerState clock,
++    int cost,
+   ) {
+     final remaining = candidate.remainingRepairAttemptBound;
+     final reveals = candidate.plan.orderedLexicalItems
+         .where(
+           (i) =>
+               !candidate.matchedWordIds.contains(i.wordId) &&
+               !candidate.supportedWordIds.contains(i.wordId),
+         )
+         .length;
+-    if (!PairMatchingCheckpointBudget.canTransition(
++    return PairMatchingCheckpointBudget.canTransition(
+       revision: _checkpoint.revision,
+       cost: cost,
+       attempts: candidate.attempts.length,
+       remainingAttemptBound: remaining,
+       revealReserve: reveals,
+       timerReserve: clock.decisionReserve,
+-    )) {
+-      throw StateError('Pair persistence capacity reserved');
+-    }
++    );
+   }
+ 
+   Future<void> _decideTimer(PairTimerDecision command) async {
+     var next = timer;
+     if (command.ownerId != operation.plan.ownerId ||
+         command.sessionId != operation.plan.learningSessionId) {
+       throw StateError('Stale Pair timer owner/session');
+     }
+     if (next.lastOperationId == command.operationId) {
+       if (next.lastFingerprint != command.fingerprint) {
+         throw StateError('Pair timer payload conflict');
+       }
+       return;
+     }
+@@ -570,29 +593,33 @@ final class PairMatchingSessionCoordinator {
+         if (!next.timed || next.remainingActiveMs != 0) {
+           throw StateError('Pair timer has not expired');
+         }
+         next = next.copy(mode: PairTimerMode.timeoutDecision);
+       case PairTimerAction.continueUntimed:
+         if (next.mode != PairTimerMode.timeoutDecision &&
+             !next.reasons.contains(PairPauseReason.clockFault) &&
+             !next.timed) {
+           throw StateError('Pair Continue unavailable');
+         }
+         next = next.copy(
+           mode: PairTimerMode.continuedUntimed,
+           remainingActiveMs: 0,
+           reasons: next.reasons
+-              .where((r) => r != PairPauseReason.clockFault)
++              .where(
++                (r) =>
++                    r != PairPauseReason.clockFault &&
++                    r != PairPauseReason.capacity,
++              )
+               .toSet(),
+         );
+       case PairTimerAction.extend:
+         if (next.mode != PairTimerMode.timeoutDecision || next.extensionUsed) {
+           throw StateError('Pair extension unavailable');
+         }
+         next = next.copy(
+           mode: PairTimerMode.extendedRunning,
+           remainingActiveMs: 30000,
+           extensionUsed: true,
+         );
+       case PairTimerAction.restart:
+         if (next.mode != PairTimerMode.timeoutDecision) {
+           throw StateError('Pair restart unavailable');
+diff --git a/lib/features/learning/pair_matching/domain/pair_active_clock.dart b/lib/features/learning/pair_matching/domain/pair_active_clock.dart
+index 07a47b53..ab597e4a 100644
+--- a/lib/features/learning/pair_matching/domain/pair_active_clock.dart
++++ b/lib/features/learning/pair_matching/domain/pair_active_clock.dart
+@@ -6,28 +6,29 @@ enum PairTimerMode {
+   running,
+   timeoutDecision,
+   extendedRunning,
+   continuedUntimed,
+ }
+ 
+ enum PairPauseReason {
+   recovery,
+   boardUnavailable,
+   background,
+   modal,
+   persistence,
+   narration,
+   clockFault,
++  capacity,
+ }
+ 
+ /// Folded active time only. No process-local monotonic anchor is serialized.
+ final class PairTimerState {
+   PairTimerState({
+     required this.mode,
+     required this.remainingActiveMs,
+     this.elapsedActiveMs = 0,
+     this.extensionUsed = false,
+     Set<PairPauseReason> reasons = const {},
+     this.lastOperationId,
+     this.lastFingerprint,
+   }) : reasons = Set.unmodifiable(reasons);
+   factory PairTimerState.initial(PairTimerPreset preset) => PairTimerState(
+diff --git a/test/features/learning/pair_matching/pair_timeout_race_test.dart b/test/features/learning/pair_matching/pair_timeout_race_test.dart
+index 7548b9db..975dec7f 100644
+--- a/test/features/learning/pair_matching/pair_timeout_race_test.dart
++++ b/test/features/learning/pair_matching/pair_timeout_race_test.dart
+@@ -4,28 +4,79 @@ import 'package:flutter/foundation.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_repair_policy.dart';
+ import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+ import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
+ import 'pair_matching_evidence_contract_test.dart';
+ import 'pair_timeout_recovery_test.dart';
+ import 'pair_matching_source_composer_test.dart' as f;
+ 
+ void main() {
++  for (final lostAck in [false, true]) {
++    test(
++      'direct flush holds capacity before automatic resume lostAck=$lostAck',
++      () async {
++        var micros = 0;
++        final h = PairHarness(
++          pinnedPlan: timedPlan(density: PairDensity.standard6),
++        );
++        addTearDown(h.db.close);
++        await h.initialize();
++        final c = await clocked(h, () => micros);
++        c.resumeInteraction();
++        for (var i = 0; i < 22; i++) {
++          micros += 1000;
++          if (lostAck && i == 21) {
++            h.repository.checkpointFault = 23;
++            h.repository.afterWrite = true;
++            await expectLater(c.flush(), throwsStateError);
++            await c.retryPending();
++          } else {
++            await c.flush();
++          }
++        }
++        expect(c.checkpointRevision, 23);
++        expect(c.timerPaused, true);
++        final elapsed = c.timer.elapsedActiveMs;
++        micros += 1000000;
++        expect(c.timer.elapsedActiveMs, elapsed);
++        final modal = c.pause(PairPauseReason.modal),
++            narration = c.pause(PairPauseReason.narration);
++        final background = c.pause(PairPauseReason.background);
++        await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++        expect(c.timer.reasons, {
++          PairPauseReason.modal,
++          PairPauseReason.narration,
++          PairPauseReason.background,
++        });
++        c.releasePause(modal);
++        c.releasePause(narration);
++        expect(c.timerPaused, true);
++        c.releasePause(background);
++        expect(c.timerPaused, false);
++        await h.finishBounded(c);
++        await c.finish();
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, lessThanOrEqualTo(64));
++        expect(c.state.attempts.where((a) => !a.isCorrect), isNotEmpty);
++        expect((await h.restore()).summaryPresented, true);
++      },
++    );
++  }
+   test(
+     'tight admission with five independent matches retains last correct and three receipts',
+     () async {
+       var micros = 0;
+       final h = PairHarness(
+         pinnedPlan: timedPlan(density: PairDensity.standard6),
+       );
+       addTearDown(h.db.close);
+       await h.initialize();
+       final c = await clocked(h, () => micros);
+       c.resumeInteraction();
+       for (var i = 0; i < 5; i++) {
+         await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+         await h.tap(c, 'synthetic-$i', PairTileSide.target);
+@@ -223,52 +274,63 @@ void main() {
+     },
+   );
+   for (final density in PairDensity.values) {
+     test(
+       'worst admitted restart sequence reserves full PM3 round and real close $density',
+       () async {
+         var micros = 0;
+         final h = PairHarness(pinnedPlan: timedPlan(density: density));
+         addTearDown(h.db.close);
+         await h.initialize();
+         final c = await clocked(h, () => micros);
+         c.resumeInteraction();
+         var restarts = 0;
+         while (true) {
++          if (c.timer.reasons.contains(PairPauseReason.capacity)) {
++            final revision = c.checkpointRevision;
++            expect(() => c.resumeInteraction(), throwsStateError);
++            expect(c.checkpointRevision, revision);
++            final elapsed = c.timer.elapsedActiveMs;
++            micros += 60000000;
++            expect(c.timer.elapsedActiveMs, elapsed);
++            break;
++          }
+           micros += 60000000;
+           await c.expire();
+           final revision = c.checkpointRevision, round = c.state.roundOrdinal;
+           try {
+             await c.dispatch(decision(c, PairTimerAction.restart));
+             restarts++;
+           } on StateError catch (e) {
+             expect(e.message, contains('capacity'));
+             expect(c.checkpointRevision, revision);
+             expect(c.state.roundOrdinal, round);
+             break;
+           }
+           expect(restarts, lessThan(32));
+         }
+         expect(restarts, greaterThan(0));
+         // Optional extension must be admitted with a subsequent expiry+Continue
+         // reserve or refused before entitlement changes.
+-        try {
+-          await c.dispatch(decision(c, PairTimerAction.extend));
+-          micros += 30000000;
+-          await c.expire();
+-        } on StateError catch (e) {
+-          expect(e.message, contains('capacity'));
+-          expect(c.timer.extensionUsed, false);
++        if (c.timer.mode == PairTimerMode.timeoutDecision) {
++          try {
++            await c.dispatch(decision(c, PairTimerAction.extend));
++            micros += 30000000;
++            await c.expire();
++          } on StateError catch (e) {
++            expect(e.message, contains('capacity'));
++            expect(c.timer.extensionUsed, false);
++          }
+         }
+         await c.dispatch(decision(c, PairTimerAction.continueUntimed));
+         await h.finishBounded(c);
+         await c.finish();
+         await c.markSummaryPresented();
+         expect(c.checkpointRevision, lessThanOrEqualTo(64));
+         expect(c.state.attempts.where((a) => !a.isCorrect), isNotEmpty);
+         expect(
+           c.state.attempts.where((a) => a.isCorrect),
+           hasLength(density.pairCount),
+         );
+         expect((await h.restore()).summaryPresented, true);
+         debugPrint(
+           'PM4 $density admitted restarts=$restarts; terminal revision=${c.checkpointRevision}; attempts=${c.state.attempts.length}',

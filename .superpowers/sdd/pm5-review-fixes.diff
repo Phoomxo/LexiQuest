@@ -1,0 +1,503 @@
+PM5 P2 fixes: prior staged reviewed snapshot to current two-file working tree. No other source edits.
+ .../data/drift_learning_history_reader.dart        | 157 ++++++++---------
+ .../history/learning_history_reader_test.dart      | 194 +++++++++++++++++++++
+ 2 files changed, 273 insertions(+), 78 deletions(-)
+diff --git a/lib/features/history/data/drift_learning_history_reader.dart b/lib/features/history/data/drift_learning_history_reader.dart
+index 54e6e737..c7c77e1b 100644
+--- a/lib/features/history/data/drift_learning_history_reader.dart
++++ b/lib/features/history/data/drift_learning_history_reader.dart
+@@ -76,87 +76,106 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
+     final identity = jsonEncode(<String, Object>{
+       'version': 1,
+       'sourceSessionId': source,
+       'replayOperationId': operation,
+     });
+     return 'session:history-replay:${sha256.convert(utf8.encode(identity))}';
+   }
+ 
+   @override
+   Future<List<LearningHistoryEntry>> list(HistoryFilter filter) async {
+     final ownerId = _canonicalText(filter.ownerId, 'filter.ownerId');
+     if (filter.limit < 1 || filter.limit > 100) {
+       throw RangeError.range(filter.limit, 1, 100, 'filter.limit');
+     }
+-    final terminalSessions =
+-        await (database.select(database.learningSessions)
+-              ..where(
+-                (row) =>
+-                    row.ownerId.equals(ownerId) &
+-                    row.state.isIn(const <String>['completed', 'abandoned']),
+-              )
+-              ..orderBy(<OrderingTerm Function($LearningSessionsTable)>[
+-                (row) => OrderingTerm.desc(row.endedAtUtcMs),
+-                (row) => OrderingTerm.desc(row.startedAtUtcMs),
+-                (row) => OrderingTerm.asc(row.id),
+-              ]))
++    return database.transaction(() async {
++      // Merge canonical terminal ordering in SQL before paging. Assessment
++      // completion can precede the generic session-close acknowledgement.
++      const candidates = '''
++WITH terminal_assessments AS (
++ SELECT learning_session_id AS id,
++ MAX(CASE state WHEN 'completed' THEN completed_at_utc_ms
++                ELSE abandoned_at_utc_ms END) AS terminal_at,
++ MAX(started_at_utc_ms) AS started_at
++ FROM assessment_runs
++ WHERE owner_id = ? AND state IN ('completed','abandoned')
++ GROUP BY learning_session_id
++), candidates AS (
++ SELECT s.*, COALESCE(a.terminal_at,s.ended_at_utc_ms,-1) AS history_end,
++ s.started_at_utc_ms AS history_start, s.id AS history_id
++ FROM learning_sessions s
++ LEFT JOIN terminal_assessments a ON a.id = s.id
++ WHERE s.owner_id = ? AND (s.state IN ('completed','abandoned') OR a.id IS NOT NULL)
++ UNION ALL
++ SELECT s.*, COALESCE(a.terminal_at,-1) AS history_end,
++ a.started_at AS history_start, a.id AS history_id
++ FROM terminal_assessments a
++ LEFT JOIN learning_sessions s ON s.id = a.id AND s.owner_id = ?
++ WHERE s.id IS NULL
++)
++SELECT * FROM candidates
++''';
++      final batchSize = filter.limit < 20 ? 20 : filter.limit;
++      QueryRow? cursor;
++      final result = <LearningHistoryEntry>[];
++      while (result.length < filter.limit) {
++        final rows = await database
++            .customSelect(
++              '$candidates ${cursor == null ? "" : "WHERE history_end < ? OR (history_end = ? AND history_start < ?) OR (history_end = ? AND history_start = ? AND history_id > ?)"} ORDER BY history_end DESC, history_start DESC, history_id ASC LIMIT $batchSize',
++              variables: [
++                Variable(ownerId),
++                Variable(ownerId),
++                Variable(ownerId),
++                if (cursor != null) ...[
++                  Variable(cursor.read<int>('history_end')),
++                  Variable(cursor.read<int>('history_end')),
++                  Variable(cursor.read<int>('history_start')),
++                  Variable(cursor.read<int>('history_end')),
++                  Variable(cursor.read<int>('history_start')),
++                  Variable(cursor.read<String>('history_id')),
++                ],
++              ],
++            )
+             .get();
+-    final assessmentRows = <AssessmentRunRow>[
+-      ...await _terminalAssessmentRows(
+-        ownerId: ownerId,
+-        state: AssessmentRunState.completed,
+-        limit: filter.limit,
+-      ),
+-      ...await _terminalAssessmentRows(
+-        ownerId: ownerId,
+-        state: AssessmentRunState.abandoned,
+-        limit: filter.limit,
+-      ),
+-    ];
+-    final sessions = <String, LearningSession>{
+-      for (final session in terminalSessions) session.id: session,
+-    };
+-    for (final assessment in assessmentRows) {
+-      if (sessions.containsKey(assessment.learningSessionId)) continue;
+-      final session =
+-          await (database.select(database.learningSessions)..where(
+-                (row) =>
+-                    row.id.equals(assessment.learningSessionId) &
+-                    row.ownerId.equals(ownerId),
+-              ))
+-              .getSingleOrNull();
+-      if (session == null) {
+-        throw StateError('assessment history session is missing');
+-      }
+-      sessions[session.id] = session;
+-    }
+-    final result = <LearningHistoryEntry>[];
+-    for (final session in sessions.values) {
+-      final purpose = await _purpose(session);
+-      if (!filter.includePracticeReplay &&
+-          purpose?.allowsLearningAuthority != true) {
+-        continue;
++        for (final row in rows) {
++          if (row.data['id'] == null) {
++            throw StateError('assessment history session is missing');
++          }
++          final session = database.learningSessions.map(row.data);
++          final filterMatching =
++              !filter.includePracticeReplay &&
++              session.activityType == 'matching';
++          final purpose = filterMatching ? await _purpose(session) : null;
++          if (filterMatching && purpose?.allowsLearningAuthority != true) {
++            continue;
++          }
++          // Only selected entries load answers/events/content/time. Reuse any
++          // purpose already resolved for filtering instead of reading it twice.
++          result.add(
++            await _entry(
++              session,
++              filterMatching ? purpose : await _purpose(session),
++            ),
++          );
++          if (result.length == filter.limit) {
++            return List<LearningHistoryEntry>.unmodifiable(result);
++          }
++        }
++        if (rows.length < batchSize) break;
++        cursor = rows.last;
+       }
+-      result.add(await _entry(session));
+-    }
+-    result.sort((left, right) {
+-      final terminalOrder = right.endedAtUtc.compareTo(left.endedAtUtc);
+-      if (terminalOrder != 0) return terminalOrder;
+-      final startOrder = right.startedAtUtc.compareTo(left.startedAtUtc);
+-      if (startOrder != 0) return startOrder;
+-      return left.sessionId.compareTo(right.sessionId);
++      return List<LearningHistoryEntry>.unmodifiable(result);
+     });
+-    return List<LearningHistoryEntry>.unmodifiable(result.take(filter.limit));
+   }
+ 
+   @override
+   Future<LessonStartCommand> replayAsNewSession(
+     String sourceSessionId, {
+     required String replayOperationId,
+   }) async {
+     final sourceId = _canonicalText(sourceSessionId, 'sourceSessionId');
+     final sessionId = canonicalReplaySessionId(
+       sourceSessionId: sourceId,
+       replayOperationId: replayOperationId,
+     );
+     if (sessionId == sourceId) {
+       throw StateError('replay session identity must differ from its source');
+@@ -196,30 +215,32 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
+         persisted.startedAtUtcMs,
+         'persistedReplay.startedAtUtcMs',
+       );
+     }
+     return LessonStartCommand(
+       mode: configuration.mode,
+       sessionId: sessionId,
+       startedAtUtc: startedAtUtc,
+       itemCount: configuration.itemCount,
+       ownerId: configuration.ownerId,
+       configuration: configuration,
+     );
+   }
+ 
+-  Future<LearningHistoryEntry> _entry(LearningSession session) async {
+-    final purpose = await _purpose(session);
++  Future<LearningHistoryEntry> _entry(
++    LearningSession session,
++    PairMatchingSessionPurpose? purpose,
++  ) async {
+     final assessmentRows =
+         await (database.select(database.assessmentRuns)..where(
+               (row) =>
+                   row.ownerId.equals(session.ownerId) &
+                   row.learningSessionId.equals(session.id),
+             ))
+             .get();
+     if (assessmentRows.length > 1) {
+       throw StateError('history session has multiple assessment runs');
+     }
+     final assessmentRun = assessmentRows.isEmpty
+         ? null
+         : _assessmentRun(assessmentRows.single);
+     final assessmentTerminalAtUtc = assessmentRun == null
+@@ -435,48 +456,28 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
+           : session.wrongCount,
+       score: isAssessment ? null : session.score,
+       sessionConfiguration: isAssessment ? null : configuration,
+       evidence: isAssessment ? const <LearningHistoryEvidence>[] : evidence,
+       assessmentSummary: assessmentSummary,
+       pairPurposeUnavailable:
+           session.activityType == 'matching' &&
+           (purpose == null || purpose.unknownMatching),
+       pairSummary: purpose?.snapshot == null
+           ? null
+           : PairMatchingHistoryProjection(purpose!.snapshot!),
+     );
+   }
+ 
+-  Future<List<AssessmentRunRow>> _terminalAssessmentRows({
+-    required String ownerId,
+-    required AssessmentRunState state,
+-    required int limit,
+-  }) {
+-    final query = database.select(database.assessmentRuns)
+-      ..where(
+-        (row) => row.ownerId.equals(ownerId) & row.state.equals(state.name),
+-      )
+-      ..orderBy(<OrderingTerm Function($AssessmentRunsTable)>[
+-        state == AssessmentRunState.completed
+-            ? (row) => OrderingTerm.desc(row.completedAtUtcMs)
+-            : (row) => OrderingTerm.desc(row.abandonedAtUtcMs),
+-        (row) => OrderingTerm.desc(row.startedAtUtcMs),
+-        (row) => OrderingTerm.asc(row.id),
+-      ])
+-      ..limit(limit);
+-    return query.get();
+-  }
+-
+   SessionConfiguration? _configuration(LearningSession session) {
+     final serialized = session.sessionConfigurationJson;
+     final identity = session.sessionConfigurationIdentity;
+     if (serialized == null && identity == null) return null;
+     if (serialized == null || identity == null) {
+       throw StateError('history session configuration is incomplete');
+     }
+     final configuration = SessionConfiguration.fromStableSerialization(
+       serialized,
+     );
+     final packIdentity = configuration.packIdentity;
+     if (configuration.contentIdentity != identity ||
+         configuration.ownerId != session.ownerId ||
+         configuration.mode.id != session.activityType ||
+diff --git a/test/features/history/learning_history_reader_test.dart b/test/features/history/learning_history_reader_test.dart
+index 02b9b6fe..1edf27c7 100644
+--- a/test/features/history/learning_history_reader_test.dart
++++ b/test/features/history/learning_history_reader_test.dart
+@@ -9,49 +9,243 @@ import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_ad
+ import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+ import 'package:vocab_learning_app/features/history/data/drift_learning_history_reader.dart';
+ import 'package:vocab_learning_app/features/history/domain/learning_history_models.dart';
+ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+     as identity;
+ import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+ import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+ import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+ import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+ import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+ import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
+ import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
++import '../../support/pair_purpose_fixture.dart';
++import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
++import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
++
++final class _ObservedHistoryTime implements LearningTimeRepository {
++  _ObservedHistoryTime(this.delegate);
++  final LearningTimeRepository delegate;
++  final hydrated = <String>[];
++  @override
++  Future<void> append(LearningTimeSegment segment) => delegate.append(segment);
++  @override
++  Future<Duration> activeDuration(String sessionId) {
++    hydrated.add(sessionId);
++    return delegate.activeDuration(sessionId);
++  }
++}
+ 
+ void main() {
+   late AppDatabase database;
+   late DriftLearningHistoryReader reader;
+ 
+   setUp(() async {
+     database = AppDatabase(NativeDatabase.memory());
+     reader = DriftLearningHistoryReader(
+       database,
+       learningTime: DriftLearningTimeRepository(
+         database,
+         owners: const _Owners('owner:history'),
+       ),
+       nowUtc: () => DateTime.utc(2026, 8, 31, 12),
+     );
+     await _seedOwnerAndWord(database);
+     await _seedPack(database);
+   });
+ 
+   tearDown(() => database.close());
+ 
++  for (final state in ['completed', 'abandoned']) {
++    test(
++      'candidate page merges $state assessment terminal time and stable ties before hydration',
++      () async {
++        const assessment = 'session:m-assessment';
++        await database
++            .into(database.learningSessions)
++            .insert(
++              LearningSessionsCompanion.insert(
++                id: assessment,
++                ownerId: 'owner:history',
++                activityType: 'assessment',
++                state: 'active',
++                startedAtUtcMs: DateTime.utc(
++                  2026,
++                  8,
++                  31,
++                  9,
++                ).millisecondsSinceEpoch,
++                appVersion: 'test',
++                buildId: 'f43',
++              ),
++            );
++        await _seedAssessmentRun(database, sessionId: assessment);
++        if (state == 'abandoned') {
++          await database.customStatement(
++            "UPDATE assessment_runs SET state='abandoned',abandoned_at_utc_ms=completed_at_utc_ms,completed_at_utc_ms=NULL",
++          );
++        }
++        final configuration = _configuration(
++          mode: LessonMode.meaningQuiz,
++          itemCount: 1,
++        );
++        for (final item in [
++          ('session:newest', 0, 8),
++          ('session:newer-start', 1, 7),
++          ('session:a-before', 0, 7),
++          ('session:z-after', 0, 7),
++          ('session:older', 0, 6),
++        ]) {
++          await _seedTerminalSession(
++            database,
++            id: item.$1,
++            state: 'completed',
++            startedAtUtc: DateTime.utc(2026, 8, 31, 9, item.$2),
++            endedAtUtc: DateTime.utc(2026, 8, 31, 9, item.$3),
++            configuration: configuration,
++          );
++        }
++        final observed = _ObservedHistoryTime(
++          DriftLearningTimeRepository(
++            database,
++            owners: const _Owners('owner:history'),
++          ),
++        );
++        final bounded = DriftLearningHistoryReader(
++          database,
++          learningTime: observed,
++          nowUtc: () => DateTime.utc(2026, 8, 31, 12),
++        );
++        const ordered = [
++          'session:newest',
++          'session:newer-start',
++          'session:a-before',
++          assessment,
++          'session:z-after',
++          'session:older',
++        ];
++        for (final limit in [1, 3, 4, 6]) {
++          observed.hydrated.clear();
++          final entries = await bounded.list(
++            HistoryFilter(
++              ownerId: 'owner:history',
++              limit: limit,
++              includePracticeReplay: false,
++            ),
++          );
++          expect(entries.map((e) => e.sessionId), ordered.take(limit));
++          expect(observed.hydrated, ordered.take(limit));
++          if (limit >= 4) {
++            expect(entries[3].assessmentSummary!.state.name, state);
++          }
++        }
++      },
++    );
++  }
++
++  test(
++    'page hydrates only selected normal after newer replay batches and leaves old corruption off-page',
++    () async {
++      final configuration = _configuration(
++        mode: LessonMode.meaningQuiz,
++        itemCount: 1,
++      );
++      for (final name in ['old', 'recent']) {
++        await _seedTerminalSession(
++          database,
++          id: 'session:$name',
++          state: 'completed',
++          startedAtUtc: DateTime.utc(2026, 8, 31, name == 'old' ? 8 : 9),
++          endedAtUtc: DateTime.utc(2026, 8, 31, name == 'old' ? 8 : 9, 5),
++          configuration: configuration,
++        );
++      }
++      await _seedOrphanAnswerEvent(
++        database,
++        sessionId: 'session:old',
++        attemptId: 'attempt:orphan-old',
++        occurredAtUtc: DateTime.utc(2026, 8, 31, 8, 2),
++        evidence: EvidenceContext.legacyCompatibility(
++          evidenceClass: EvidenceClass.independentRecall,
++          skillId: 'typed-recall',
++          hintLevel: 0,
++          contentRevision: 'pack:travel@1',
++          engagementAllowed: false,
++        ),
++      );
++      for (var i = 0; i < 21; i++) {
++        final id = await seedSyntheticReplayPurpose(
++          database,
++          owner: 'owner:history',
++          at: DateTime.utc(2026, 8, 31, 10, i),
++          operationId: 'synthetic-page-replay-$i',
++        );
++        await database.customStatement(
++          "UPDATE learning_sessions SET state='abandoned',ended_at_utc_ms=started_at_utc_ms WHERE id=?",
++          [id],
++        );
++      }
++      final observed = _ObservedHistoryTime(
++        DriftLearningTimeRepository(
++          database,
++          owners: const _Owners('owner:history'),
++        ),
++      );
++      final bounded = DriftLearningHistoryReader(
++        database,
++        learningTime: observed,
++        nowUtc: () => DateTime.utc(2026, 8, 31, 12),
++      );
++      expect(
++        (await bounded.list(
++          const HistoryFilter(
++            ownerId: 'owner:history',
++            limit: 1,
++            includePracticeReplay: false,
++          ),
++        )).single.sessionId,
++        'session:recent',
++      );
++      expect(observed.hydrated, ['session:recent']);
++      observed.hydrated.clear();
++      await expectLater(
++        bounded.list(
++          const HistoryFilter(
++            ownerId: 'owner:history',
++            limit: 2,
++            includePracticeReplay: false,
++          ),
++        ),
++        throwsStateError,
++      );
++      expect(observed.hydrated, ['session:recent', 'session:old']);
++      observed.hydrated.clear();
++      expect(
++        await bounded.list(
++          const HistoryFilter(ownerId: 'owner:history', limit: 1),
++        ),
++        hasLength(1),
++      );
++      expect(
++        observed.hydrated,
++        hasLength(1),
++        reason: 'default page must not hydrate lifetime history',
++      );
++    },
++  );
++
+   test(
+     'f43 reader joins terminal sessions evidence events and active duration without mutation',
+     () async {
+       final olderConfiguration = _configuration(
+         mode: LessonMode.typedRecall,
+         itemCount: 1,
+       );
+       final newerConfiguration = _configuration(
+         mode: LessonMode.meaningQuiz,
+         itemCount: 2,
+       );
+       await _seedTerminalSession(
+         database,
+         id: 'session:older',

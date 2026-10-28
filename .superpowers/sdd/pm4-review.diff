@@ -1,0 +1,3111 @@
+PM4 staged review against HEAD cc0ec26b (source baseline bccb7735); twelve source/test files only.
+ .../application/matching_mode_adapter.dart         |   6 +
+ .../learning/data/drift_learning_repository.dart   |  15 +
+ .../pair_matching_session_coordinator.dart         | 369 +++++++++++++++++--
+ .../data/pair_matching_checkpoint_codec.dart       | 231 +++++++++++-
+ .../pair_matching/domain/pair_active_clock.dart    | 224 ++++++++++++
+ .../domain/pair_matching_checkpoint_budget.dart    |  44 ++-
+ .../pair_matching/domain/pair_matching_engine.dart |  96 ++++-
+ .../pair_matching/domain/pair_repair_policy.dart   |  57 ++-
+ .../pair_matching/pair_active_timer_test.dart      | 110 ++++++
+ .../pair_matching_evidence_contract_test.dart      |  27 +-
+ .../pair_matching/pair_timeout_race_test.dart      | 401 +++++++++++++++++++++
+ .../pair_matching/pair_timeout_recovery_test.dart  | 353 ++++++++++++++++++
+ 12 files changed, 1855 insertions(+), 78 deletions(-)
+diff --git a/lib/features/learning/application/matching_mode_adapter.dart b/lib/features/learning/application/matching_mode_adapter.dart
+index a0ba02fb..20b625a7 100644
+--- a/lib/features/learning/application/matching_mode_adapter.dart
++++ b/lib/features/learning/application/matching_mode_adapter.dart
+@@ -554,33 +554,39 @@ final class MatchingModeAdapter
+       meaningOrder: List<MatchingPair>.unmodifiable(meaningOrder),
+     );
+   }
+ 
+   /// Restores an already admitted v6 Pair through the same M12 lifecycle
+   /// leases supplied by the host. This never launches or enables delivery.
+   Future<PairMatchingSessionCoordinator> preparePairSession({
+     required PairMatchingStartOperation operation,
+     required LearningUseCases learning,
+     required CurrentActivityEvidenceAdapter evidence,
+     required String? Function() activeOwnerId,
+     MatchingOperationAcceptance? acceptsOperation,
+     MatchingAdmittedOperation? runAdmittedOperation,
+     MatchingRecoveryOperation? runRecoveryOperation,
++    int Function()? monotonicMicros,
++    MatchingSessionCompleter? completeSession,
++    MatchingCloseOwner? ownClose,
+   }) => PairMatchingSessionCoordinator.restore(
+     operation: operation,
+     learning: learning,
+     evidence: evidence,
+     activeOwnerId: activeOwnerId,
++    monotonicMicros: monotonicMicros,
++    completeSession: completeSession,
++    ownClose: ownClose,
+     acceptsOperation: acceptsOperation,
+     runAdmittedOperation: runAdmittedOperation == null
+         ? null
+         : (action) => runAdmittedOperation<void>(action),
+     runRecoveryOperation: runRecoveryOperation == null
+         ? null
+         : (action) => runRecoveryOperation<void>(action),
+   );
+ 
+   /// Reconstructs the newest canonical legacy Matching session, or atomically
+   /// starts one. Vocabulary snapshots preserve an interrupted board.
+   Future<MatchingPreparedSession> prepareSession({
+     required LearningUseCases learning,
+     required CurrentActivityEvidenceAdapter evidence,
+diff --git a/lib/features/learning/data/drift_learning_repository.dart b/lib/features/learning/data/drift_learning_repository.dart
+index 0699858c..cf1c87b6 100644
+--- a/lib/features/learning/data/drift_learning_repository.dart
++++ b/lib/features/learning/data/drift_learning_repository.dart
+@@ -1620,28 +1620,33 @@ final class DriftLearningRepository
+         frozen.declaredEvidenceClass !=
+             snapshot.engine.classificationFor(role).evidenceClass ||
+         frozen.contrastiveFeedback != null) {
+       throw StateError('Pair occurrence pin/classification changed');
+     }
+     return frozen;
+   }
+ 
+   Future<void> _validatePinnedPairAnswer(
+     RecordAnswerCommand command,
+     LearningActivityCheckpoint checkpoint,
+   ) async {
+     await _requireActivePairOwner(command.ownerId);
+     final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
++    if (snapshot.terminal?.atUtc != checkpoint.terminalAtUtc ||
++        (snapshot.terminal?.acknowledged ?? false) !=
++            checkpoint.terminalAcknowledged) {
++      throw StateError('Pair terminal envelope changed');
++    }
+     if (snapshot.frozenEvidence == null) {
+       throw StateError('Pair answer has no durable reservation');
+     }
+     final frozen = _pinnedPairOccurrence(snapshot);
+     final event = command.event;
+     if (event == null ||
+         command.ownerId != frozen.ownerId ||
+         command.sessionId != frozen.sessionId ||
+         command.id != frozen.sourceEvidenceId ||
+         command.wordId != frozen.wordId ||
+         command.promptMode != frozen.promptMode ||
+         command.isCorrect != frozen.isCorrect ||
+         command.responseTimeMs != frozen.responseTimeMs ||
+         command.attemptNumber != frozen.attemptNumber ||
+@@ -1660,52 +1665,62 @@ final class DriftLearningRepository
+       throw StateError('Pair answer differs from reserved occurrence');
+     }
+   }
+ 
+   Future<void> _validatePinnedPairCheckpoint({
+     required db.LearningSession session,
+     required LearningActivityCheckpoint checkpoint,
+     required LearningActivityCheckpoint? latest,
+   }) async {
+     await _requireActivePairOwner(session.ownerId);
+     if (checkpoint.state['schemaVersion'] != 6) {
+       throw StateError('Pair writer cannot downgrade');
+     }
+     final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
++    if (snapshot.terminal?.atUtc != checkpoint.terminalAtUtc ||
++        (snapshot.terminal?.acknowledged ?? false) !=
++            checkpoint.terminalAcknowledged) {
++      throw StateError('Pair terminal envelope changed');
++    }
+     final plan = snapshot.engine.plan;
+     final start = jsonDecode(snapshot.startOperation) as Map<String, dynamic>;
+     if (plan.ownerId != session.ownerId ||
+         plan.learningSessionId != session.id ||
+         plan.createdAtUtc.millisecondsSinceEpoch != session.startedAtUtcMs ||
+         start['appVersion'] != session.appVersion ||
+         start['buildId'] != session.buildId) {
+       throw StateError('Pair checkpoint session changed');
+     }
+     if (latest == null &&
+         jsonEncode(checkpoint.state) !=
+             jsonEncode(
+               PairMatchingCheckpointCodec.initialState(
+                 plan,
+                 snapshot.startOperation,
+               ),
+             )) {
+       throw StateError('Pair initial checkpoint must be empty');
+     }
+     if (latest == null) {
+       PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
+     }
+     if (latest != null) {
+       final prior = _decodePinnedPairCheckpoint(latest.state);
++      // An exact immutable replay is validated by the ordinary repository
++      // identity comparison below; it is not another lifecycle transition.
++      if (checkpoint.revision != latest.revision) {
++        PairMatchingCheckpointCodec.validateTransition(prior, snapshot);
++      }
+       if (prior.startOperation != snapshot.startOperation ||
+           prior.engine.plan.planFingerprint != plan.planFingerprint ||
+           snapshot.engine.operationRevision < prior.engine.operationRevision ||
+           snapshot.engine.attempts.length < prior.engine.attempts.length ||
+           !snapshot.engine.supportedWordIds.containsAll(
+             prior.engine.supportedWordIds,
+           )) {
+         throw StateError('Pair checkpoint lineage regressed');
+       }
+       for (var i = 0; i < prior.engine.attempts.length; i++) {
+         if (jsonEncode(snapshot.engine.attempts[i].toJson()) !=
+                 jsonEncode(prior.engine.attempts[i].toJson()) ||
+             snapshot.evidenceIds[i] != prior.evidenceIds[i]) {
+           throw StateError('Pair committed ledger changed');
+diff --git a/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart b/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
+index 618c877c..ed5c063f 100644
+--- a/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
++++ b/lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart
+@@ -1,71 +1,99 @@
+ import 'dart:convert';
+ import '../../application/current_activity_evidence.dart';
+ import '../../application/learning_use_cases.dart';
+ import '../../domain/evidence_context.dart';
+ import '../../domain/learning_models.dart';
+ import '../../domain/lexical_prompt_artifact_identity.dart';
+ import '../data/pair_matching_checkpoint_codec.dart';
+ import '../domain/pair_matching_engine.dart';
++import '../domain/pair_active_clock.dart';
+ import '../domain/pair_matching_checkpoint_budget.dart';
+ import 'pair_matching_atomic_start.dart';
+ import '../../../review/application/pair_review_deferral.dart';
+ import '../../../review/domain/review_queue_item.dart';
+ 
+ typedef PairSessionOperation =
+     Future<void> Function(Future<void> Function() action);
+ 
+ /// M12 application owner for the v6 session. Hosts dispatch typed intents and
+ /// await acknowledgement; they never write answers/checkpoints themselves.
+ final class PairMatchingSessionCoordinator {
+   PairMatchingSessionCoordinator._(
+     this._checkpoint, {
+     required this.operation,
+     required this.learning,
+     required this.evidence,
+     required this.activeOwnerId,
+     required this.acceptsOperation,
+     required this.runAdmittedOperation,
+     required this.runRecoveryOperation,
+     required PairMatchingCheckpointSnapshot snapshot,
++    required int Function() monotonicMicros,
++    this.completeSession,
++    this.ownClose,
+   }) : _snapshot = snapshot,
+-       _state = snapshot.engine;
++       _state = snapshot.engine,
++       _clock = PairActiveClock(
++         snapshot.timer ?? PairTimerState.initial(operation.plan.timerPreset),
++         monotonicMicros,
++       );
+   final PairMatchingStartOperation operation;
+   final LearningUseCases learning;
+   final CurrentActivityEvidenceAdapter evidence;
+   final String? Function() activeOwnerId;
+   final bool Function()? acceptsOperation;
+   final PairSessionOperation? runAdmittedOperation, runRecoveryOperation;
++  final Future<LearningSessionSummary> Function(PendingLearningSessionClose)?
++  completeSession;
++  final void Function(PendingLearningSessionClose, Future<void> Function())?
++  ownClose;
++  bool _closeOwned = false;
++  Future<void>? _closeCheckpointInFlight;
+   LearningActivityCheckpoint _checkpoint;
+   PairMatchingCheckpointSnapshot _snapshot;
+   PairMatchingState _state;
+   PairMatchingState get state => _state;
++  final PairActiveClock _clock;
++  PairTimerState get timer => _clock.value;
++  bool get timerPaused => _clock.isPaused;
++  PairPauseLease? _operationPause;
++  PairPauseLease? _completedPause;
++  PendingLearningSessionClose? _close;
++  LearningSessionSummary? _summary;
++  LearningSessionSummary? get completedSummary => _summary;
++  bool get summaryPresented => _snapshot.terminal?.presented == true;
+   int get checkpointRevision => _checkpoint.revision;
+   bool _disposed = false, _busy = false;
+   PendingCurrentActivityEvidence? _pending;
+   FrozenPendingCurrentActivityEvidence? _frozen;
+   LearningActivityCheckpoint? _pendingAppend;
+   PairMatchingCheckpointSnapshot? _pendingSnapshot;
+   PairMatchingState? _capturedState;
+ 
+   static Future<PairMatchingSessionCoordinator> restore({
+     required PairMatchingStartOperation operation,
+     required LearningUseCases learning,
+     required CurrentActivityEvidenceAdapter evidence,
+     required String? Function() activeOwnerId,
+     bool Function()? acceptsOperation,
+     PairSessionOperation? runAdmittedOperation,
+     PairSessionOperation? runRecoveryOperation,
++    int Function()? monotonicMicros,
++    Future<LearningSessionSummary> Function(PendingLearningSessionClose)?
++    completeSession,
++    void Function(PendingLearningSessionClose, Future<void> Function())?
++    ownClose,
+   }) async {
+     if (!identical(evidence.learning, learning) ||
+         activeOwnerId() != operation.plan.ownerId) {
+       throw StateError('Pair learning authority/owner changed');
+     }
+     final recovery = await learning.loadExactActivityRecovery(
+       ownerId: operation.plan.ownerId,
+       sessionId: operation.plan.learningSessionId,
+       activityType: 'matching',
+     );
+     if (activeOwnerId() != operation.plan.ownerId ||
+         recovery == null ||
+         recovery.checkpoint == null ||
+         recovery.session.ownerId != operation.plan.ownerId ||
+@@ -81,38 +109,59 @@ final class PairMatchingSessionCoordinator {
+         snapshot.engine.plan.planFingerprint !=
+             operation.plan.planFingerprint) {
+       throw StateError('Pair recovery plan changed');
+     }
+     final c = PairMatchingSessionCoordinator._(
+       recovery.checkpoint!,
+       operation: operation,
+       learning: learning,
+       evidence: evidence,
+       activeOwnerId: activeOwnerId,
+       acceptsOperation: acceptsOperation,
+       runAdmittedOperation: runAdmittedOperation,
+       runRecoveryOperation: runRecoveryOperation,
+       snapshot: snapshot,
++      monotonicMicros:
++          monotonicMicros ?? (Stopwatch()..start()).elapsedMicrosecondsReader,
++      completeSession: completeSession,
++      ownClose: ownClose,
+     );
+     c._validateRecovery(recovery);
+     final frozen = snapshot.frozenEvidence;
+     if (frozen != null) {
+       c._frozen = FrozenPendingCurrentActivityEvidence.fromJson(frozen);
+       c._validateFrozen(c._frozen!);
+       c._pending = evidence.restore(c._frozen!);
+     }
+-    // A terminal session is readable, but PM4 owns exact terminal dispatch.
+-    if (recovery.session.state != 'active') c._disposed = true;
++    final terminal = snapshot.terminal;
++    if (terminal?.atUtc != recovery.checkpoint!.terminalAtUtc ||
++        (terminal?.acknowledged ?? false) !=
++            recovery.checkpoint!.terminalAcknowledged ||
++        (recovery.session.state != 'active' &&
++            recovery.session.state != 'completed') ||
++        (recovery.session.state == 'completed' &&
++            (terminal == null ||
++                recovery.session.endedAtUtc != terminal.atUtc))) {
++      throw StateError('Pair terminal recovery identity changed');
++    }
++    if (terminal != null) {
++      c._close = learning.restoreSessionClose(
++        sessionId: operation.plan.learningSessionId,
++        ownerId: operation.plan.ownerId,
++        completedAtUtc: terminal.atUtc,
++      );
++      if (recovery.session.state == 'completed') c._summary = recovery.session;
++    }
+     return c;
+   }
+ 
+   void _validateRecovery(LearningActivityRecovery recovery) {
+     final expected = [
+       ...state.attempts,
+       if (state.pending != null) state.pending!,
+     ];
+     if (recovery.attempts.length < state.attempts.length ||
+         recovery.attempts.length > expected.length) {
+       throw StateError('Pair attempt ledger mismatch');
+     }
+     for (var i = 0; i < recovery.attempts.length; i++) {
+       final actual = recovery.attempts[i], role = expected[i];
+@@ -184,72 +233,86 @@ final class PairMatchingSessionCoordinator {
+     if (_disposed ||
+         activeOwnerId() != operation.plan.ownerId ||
+         (checkLease && acceptsOperation?.call() == false)) {
+       throw StateError('Stale Pair coordinator owner/lifecycle');
+     }
+   }
+ 
+   Future<void> _admit(
+     Future<void> Function() action, {
+     bool recovery = false,
+   }) async {
+     _requireLive(checkLease: false);
+     if (_busy) throw StateError('Pair operation already admitted');
+     _busy = true;
++    _operationPause ??= _clock.pause(PairPauseReason.persistence);
+     try {
+       Future<void> guarded() async {
+         _requireLive();
+         await action();
+         _requireLive();
+       }
+ 
+       final runner = recovery ? runRecoveryOperation : runAdmittedOperation;
+       if (runner == null) {
+         await guarded();
+       } else {
+         await runner(guarded);
+       }
+       _requireLive(checkLease: false);
+     } finally {
+       _busy = false;
++      if (state.complete) {
++        _completedPause ??= _clock.pause(PairPauseReason.boardUnavailable);
++      }
++      if (_pendingAppend == null && _pending == null && _close == null) {
++        final pause = _operationPause;
++        _operationPause = null;
++        if (pause != null) _clock.release(pause);
++      }
+     }
+   }
+ 
+   Future<void> dispatch(PairMatchingCommand command) => _admit(() async {
+     if (_pendingAppend != null || _pending != null) {
+       throw StateError('Pair exact retry required');
+     }
++    if (_snapshot.terminal != null || _close != null) {
++      throw StateError('Pair terminal is read only');
++    }
++    if (command is PairTimerDecision) {
++      await _decideTimer(command);
++      return;
++    }
++    if (timer.mode == PairTimerMode.timeoutDecision ||
++        (timer.timed && timer.remainingActiveMs == 0)) {
++      throw StateError('Pair timeout decision required');
++    }
+     final transition = PairMatchingEngine.reduce(_state, command);
+     if (identical(transition.state, _state)) return;
+-    if (transition.attempt != null &&
+-        !PairMatchingCheckpointBudget.canAnswer(
+-          revision: _checkpoint.revision,
+-          attempts: state.attempts.length,
+-          remainingPairs:
+-              operation.plan.orderedLexicalItems.length -
+-              state.matchedWordIds.length,
+-          isCorrect: transition.attempt!.isCorrect,
+-          remainingAttemptBound: PairMatchingEngine.acknowledge(
+-            transition.state,
+-            transition.attempt!.operationId,
+-          ).remainingRepairAttemptBound,
+-          revealReserve:
+-              operation.plan.orderedLexicalItems.length -
+-              state.supportedWordIds.length,
+-        )) {
+-      throw StateError('Pair persistence capacity reserved');
++    if (transition.attempt != null) {
++      _requireCapacity(
++        PairMatchingEngine.acknowledge(
++          transition.state,
++          transition.attempt!.operationId,
++        ),
++        timer,
++        2,
++      );
++    }
++    if (command is PairRevealMapping) {
++      _requireCapacity(transition.state, timer, 1);
+     }
+-    if (command is PairRevealMapping) _requireFlushCapacity();
+     PairMatchingCheckpointCodec.requireCompletionCapacity(
+       _currentSnapshot(engine: transition.state),
+     );
+     final attempt = transition.attempt;
+     if (attempt == null) {
+       _state = transition.state;
+       if (command is PairRevealMapping) await _append(_currentSnapshot());
+       return;
+     }
+     _pending = evidence.captureMatching(
+       ownerId: operation.plan.ownerId,
+       sessionId: operation.plan.learningSessionId,
+       wordId: attempt.promptWordId,
+       isCorrect: attempt.isCorrect,
+@@ -260,33 +323,38 @@ final class PairMatchingSessionCoordinator {
+     );
+     _capturedState = transition.state;
+     await _resumeEvidence();
+   });
+ 
+   PairMatchingCheckpointSnapshot _currentSnapshot({
+     PairMatchingState? engine,
+     List<String>? evidenceIds,
+     Map<String, Object?>? frozen,
+   }) => PairMatchingCheckpointSnapshot(
+     engine: engine ?? state,
+     startOperation: operation.stableSerialization,
+     evidenceIds: evidenceIds ?? _snapshot.evidenceIds,
+     frozenEvidence: frozen,
++    timer: timer,
++    terminal: _snapshot.terminal,
+   );
+   Future<void> _resumeEvidence() async {
+     final pending = _pending;
+     if (pending == null) {
+-      if (_pendingSnapshot != null) await _append(_pendingSnapshot!);
++      if (_pendingSnapshot != null) {
++        await _append(_pendingSnapshot!);
++        _state = _snapshot.engine;
++      }
+       return;
+     }
+     if (_pendingSnapshot != null && _pendingSnapshot!.engine.pending == null) {
+       await _append(_pendingSnapshot!);
+       _state = _snapshot.engine;
+       _pending = null;
+       _frozen = null;
+       _capturedState = null;
+       return;
+     }
+     _frozen ??= await pending.freezeForRecovery();
+     _requireLive();
+     final candidate = _capturedState ?? _state;
+     _validateFrozen(_frozen!, capturedState: candidate);
+@@ -322,96 +390,327 @@ final class PairMatchingSessionCoordinator {
+       _state.pending!.operationId,
+     );
+     await _append(
+       _currentSnapshot(
+         engine: committed,
+         evidenceIds: [..._snapshot.evidenceIds, pending.sourceEvidenceId],
+       ),
+     );
+     _state = committed;
+     _pending = null;
+     _frozen = null;
+     _capturedState = null;
+   }
+ 
+-  Future<void> retryPending() => _admit(_resumeEvidence, recovery: true);
++  Future<void> retryPending() => _admit(() async {
++    await _resumeEvidence();
++    if (_close != null || _snapshot.terminal != null) await _finishRecovery();
++  }, recovery: true);
+   Future<List<ReviewQueueItem>> deferredReview(
+     PairReviewDeferral adapter,
+   ) async {
+     _requireLive(checkLease: false);
+     final result = <ReviewQueueItem>[];
+     // Only the durable acknowledged snapshot supplies provenance identities.
+     for (final ticket in _snapshot.engine.repairTickets.where(
+       (t) => t.deferred,
+     )) {
+       final item = operation.plan.orderedLexicalItems.singleWhere(
+         (i) => i.wordId == ticket.wordId,
+       );
+       final need = await adapter.expose(
+         ownerId: operation.plan.ownerId,
+         sessionId: operation.plan.learningSessionId,
+         wordId: ticket.wordId,
+         contentRevision: item.contentRevision,
+         answerId: _snapshot.evidenceIds[ticket.originalOrdinal],
+       );
+       _requireLive(checkLease: false);
+       if (need != null) result.add(need);
+     }
+     return List.unmodifiable(result);
+   }
+ 
+   void _requireFlushCapacity() {
+-    final remaining =
+-        operation.plan.orderedLexicalItems.length - state.matchedWordIds.length;
+-    if (_checkpoint.revision +
+-            1 +
+-            state.remainingRepairAttemptBound * 2 +
+-            remaining +
+-            PairMatchingCheckpointBudget.terminalReserve +
+-            PairMatchingCheckpointBudget.continueUntimedReserve >
+-        PairMatchingCheckpointBudget.maximumRevisions) {
+-      throw StateError('Pair flush capacity reserved');
+-    }
++    _requireCapacity(state, timer, 1);
+   }
+ 
+   Future<void> flush() => _admit(() async {
+     if (_pending != null || _pendingAppend != null) {
+       throw StateError('Pair exact retry required');
+     }
+     if (jsonEncode(_snapshot.engine.toJson()) == jsonEncode(state.toJson())) {
+-      return;
++      final stored =
++          _snapshot.timer ?? PairTimerState.initial(operation.plan.timerPreset);
++      if (stored.remainingActiveMs == timer.remainingActiveMs &&
++          stored.elapsedActiveMs == timer.elapsedActiveMs) {
++        return;
++      }
+     }
+     _requireFlushCapacity();
+     PairMatchingCheckpointCodec.requireCompletionCapacity(_currentSnapshot());
+     await _append(_currentSnapshot());
+   });
+   Future<void> _append(PairMatchingCheckpointSnapshot snapshot) async {
+     _requireLive();
+     final map = snapshot.toJson();
+     PairMatchingCheckpointCodec.decode(map);
+     if (_pendingAppend != null &&
+         jsonEncode(_pendingAppend!.state) != jsonEncode(map)) {
+       throw StateError('Cannot replace uncertain Pair checkpoint');
+     }
+     _pendingSnapshot ??= snapshot;
+     _pendingAppend ??= LearningActivityCheckpoint(
+       sessionId: operation.plan.learningSessionId,
+       activityType: 'matching',
+       revision: _checkpoint.revision + 1,
+       occurredAtUtc: learning.nowUtc(),
+       state: map,
++      terminalAtUtc: snapshot.terminal?.atUtc,
++      terminalAcknowledged: snapshot.terminal?.acknowledged ?? false,
+     );
+     await learning.appendActivityCheckpoint(
+       _pendingAppend!,
+       ownerId: operation.plan.ownerId,
+     );
+     _requireLive();
+     _checkpoint = _pendingAppend!;
+     _snapshot = _pendingSnapshot!;
++    if (_snapshot.timer != null) _clock.replace(_snapshot.timer!);
+     _pendingAppend = null;
+     _pendingSnapshot = null;
+   }
+ 
+   void dispose() {
+     _disposed = true;
++    _clock.pause(PairPauseReason.boardUnavailable);
++  }
++
++  void resumeInteraction() {
++    _requireLive(checkLease: false);
++    if (state.complete ||
++        _pendingAppend != null ||
++        _pending != null ||
++        _snapshot.terminal != null) {
++      throw StateError('Pair exact recovery required');
++    }
++    if (timer.timed) _requireCapacity(state, timer, 1);
++    _clock.resumeInteraction();
+   }
++
++  /// Host acquires immediately, then awaits flush before acknowledging a
++  /// lifecycle boundary. A burst folds into one flush; tokens are never reused.
++  PairPauseLease pause(PairPauseReason reason) {
++    _requireLive(checkLease: false);
++    return _clock.pause(reason);
++  }
++
++  void releasePause(PairPauseLease token) {
++    _requireLive(checkLease: false);
++    if (!_clock.owns(token)) return;
++    if (timer.timed) _requireCapacity(state, timer, 1);
++    _clock.release(token);
++  }
++
++  Future<void> expire() {
++    if (!timer.timed || timer.remainingActiveMs > 0 || state.complete) {
++      return Future.value();
++    }
++    return dispatch(
++      PairTimerDecision(
++        operationId: '${state.operationRevision}:expire',
++        ownerId: operation.plan.ownerId,
++        sessionId: operation.plan.learningSessionId,
++        roundOrdinal: state.roundOrdinal,
++        expectedRevision: state.operationRevision,
++        action: PairTimerAction.expire,
++      ),
++    );
++  }
++
++  void _requireCapacity(
++    PairMatchingState candidate,
++    PairTimerState clock,
++    int cost,
++  ) {
++    final remaining = candidate.remainingRepairAttemptBound;
++    final reveals = candidate.plan.orderedLexicalItems
++        .where(
++          (i) =>
++              !candidate.matchedWordIds.contains(i.wordId) &&
++              !candidate.supportedWordIds.contains(i.wordId),
++        )
++        .length;
++    if (!PairMatchingCheckpointBudget.canTransition(
++      revision: _checkpoint.revision,
++      cost: cost,
++      attempts: candidate.attempts.length,
++      remainingAttemptBound: remaining,
++      revealReserve: reveals,
++      timerReserve: clock.decisionReserve,
++    )) {
++      throw StateError('Pair persistence capacity reserved');
++    }
++  }
++
++  Future<void> _decideTimer(PairTimerDecision command) async {
++    var next = timer;
++    if (command.ownerId != operation.plan.ownerId ||
++        command.sessionId != operation.plan.learningSessionId) {
++      throw StateError('Stale Pair timer owner/session');
++    }
++    if (next.lastOperationId == command.operationId) {
++      if (next.lastFingerprint != command.fingerprint) {
++        throw StateError('Pair timer payload conflict');
++      }
++      return;
++    }
++    if (state.complete) throw StateError('Pair board already complete');
++    switch (command.action) {
++      case PairTimerAction.expire:
++        if (!next.timed || next.remainingActiveMs != 0) {
++          throw StateError('Pair timer has not expired');
++        }
++        next = next.copy(mode: PairTimerMode.timeoutDecision);
++      case PairTimerAction.continueUntimed:
++        if (next.mode != PairTimerMode.timeoutDecision &&
++            !next.reasons.contains(PairPauseReason.clockFault) &&
++            !next.timed) {
++          throw StateError('Pair Continue unavailable');
++        }
++        next = next.copy(
++          mode: PairTimerMode.continuedUntimed,
++          remainingActiveMs: 0,
++          reasons: next.reasons
++              .where((r) => r != PairPauseReason.clockFault)
++              .toSet(),
++        );
++      case PairTimerAction.extend:
++        if (next.mode != PairTimerMode.timeoutDecision || next.extensionUsed) {
++          throw StateError('Pair extension unavailable');
++        }
++        next = next.copy(
++          mode: PairTimerMode.extendedRunning,
++          remainingActiveMs: 30000,
++          extensionUsed: true,
++        );
++      case PairTimerAction.restart:
++        if (next.mode != PairTimerMode.timeoutDecision) {
++          throw StateError('Pair restart unavailable');
++        }
++        next = next.copy(
++          mode: PairTimerMode.running,
++          remainingActiveMs: PairTimerState.initial(
++            operation.plan.timerPreset,
++          ).remainingActiveMs,
++        );
++    }
++    next = next.copy(
++      lastOperationId: command.operationId,
++      lastFingerprint: command.fingerprint,
++    );
++    final candidate = PairMatchingEngine.reduce(state, command).state;
++    _requireCapacity(candidate, next, 1);
++    final snapshot = PairMatchingCheckpointSnapshot(
++      engine: candidate,
++      startOperation: operation.stableSerialization,
++      evidenceIds: _snapshot.evidenceIds,
++      timer: next,
++    );
++    PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
++    await _append(snapshot);
++    _state = candidate;
++  }
++
++  Future<LearningSessionSummary> finish() async {
++    await _admit(_finishRecovery, recovery: true);
++    return _summary!;
++  }
++
++  Future<void> _finishRecovery() async {
++    if (_pending != null || _capturedState != null) {
++      throw StateError('Pair answer retry required');
++    }
++    if (_pendingSnapshot != null) {
++      await _append(_pendingSnapshot!);
++      _state = _snapshot.engine;
++    }
++    if (!state.complete) throw StateError('Pair planned completion required');
++    if (_snapshot.terminal?.acknowledged == true) return;
++    final close = _close ??= learning.captureSessionClose(
++      sessionId: operation.plan.learningSessionId,
++      ownerId: operation.plan.ownerId,
++    );
++    if (!_closeOwned) {
++      ownClose?.call(close, _ensureCloseCheckpoint);
++      _closeOwned = true;
++    }
++    await _ensureCloseCheckpoint();
++    final summary =
++        await (completeSession?.call(close) ??
++            (close.requiresRetry ? close.retry() : close.finish()));
++    _requireLive();
++    if (summary.id != operation.plan.learningSessionId ||
++        summary.ownerId != operation.plan.ownerId ||
++        summary.state != 'completed' ||
++        summary.endedAtUtc != close.completedAtUtc ||
++        summary.correctCount !=
++            state.attempts.where((a) => a.isCorrect).length ||
++        summary.wrongCount !=
++            state.attempts.where((a) => !a.isCorrect).length) {
++      throw StateError('Pair canonical summary changed');
++    }
++    _summary = summary;
++    await _append(
++      _terminalSnapshot(
++        PairTerminalState(close.completedAtUtc, acknowledged: true),
++      ),
++    );
++  }
++
++  PairMatchingCheckpointSnapshot _terminalSnapshot(
++    PairTerminalState terminal,
++  ) => PairMatchingCheckpointSnapshot(
++    engine: state,
++    startOperation: operation.stableSerialization,
++    evidenceIds: _snapshot.evidenceIds,
++    timer: timer,
++    terminal: terminal,
++  );
++  Future<void> _ensureCloseCheckpoint() async {
++    _requireLive();
++    final existing = _closeCheckpointInFlight;
++    if (existing != null) return existing;
++    final close = _close;
++    if (close == null) throw StateError('Pair close identity unavailable');
++    if (_snapshot.terminal != null) return;
++    final write = _append(
++      _terminalSnapshot(PairTerminalState(close.completedAtUtc)),
++    );
++    _closeCheckpointInFlight = write;
++    try {
++      await write;
++    } finally {
++      if (identical(_closeCheckpointInFlight, write)) {
++        _closeCheckpointInFlight = null;
++      }
++    }
++  }
++
++  Future<void> markSummaryPresented() => _admit(() async {
++    if (_pendingSnapshot != null) await _append(_pendingSnapshot!);
++    final terminal = _snapshot.terminal;
++    if (terminal == null || !terminal.acknowledged) {
++      throw StateError('Pair terminal acknowledgement required');
++    }
++    if (terminal.presented) return;
++    await _append(
++      _terminalSnapshot(
++        PairTerminalState(terminal.atUtc, acknowledged: true, presented: true),
++      ),
++    );
++  }, recovery: true);
++}
++
++extension on Stopwatch {
++  int elapsedMicrosecondsReader() => elapsedMicroseconds;
+ }
+diff --git a/lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart b/lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart
+index 31fa4d14..dc97d817 100644
+--- a/lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart
++++ b/lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart
+@@ -1,45 +1,82 @@
+ import 'dart:convert';
+ import '../domain/pair_matching_engine.dart';
++import '../domain/pair_active_clock.dart';
+ import '../domain/pair_matching_plan.dart';
+ import '../domain/pair_matching_launch.dart';
+ import '../domain/pair_matching_checkpoint_budget.dart';
+ import '../../domain/learning_evidence_contract.dart';
+ 
++final class PairTerminalState {
++  const PairTerminalState(
++    this.atUtc, {
++    this.acknowledged = false,
++    this.presented = false,
++  });
++  final DateTime atUtc;
++  final bool acknowledged, presented;
++  Map<String, Object?> toJson() => {
++    'atUtc': atUtc.toIso8601String(),
++    'acknowledged': acknowledged,
++    'presented': presented,
++  };
++  static PairTerminalState fromJson(Object? value) {
++    final j = pairJson(value, {'atUtc', 'acknowledged', 'presented'});
++    final t = PairTerminalState(
++      DateTime.parse(j['atUtc'] as String),
++      acknowledged: j['acknowledged'] as bool,
++      presented: j['presented'] as bool,
++    );
++    if (!t.atUtc.isUtc || (t.presented && !t.acknowledged)) {
++      throw const FormatException('Invalid Pair terminal');
++    }
++    return t;
++  }
++}
++
+ final class PairMatchingCheckpointSnapshot {
+   PairMatchingCheckpointSnapshot({
+     required this.engine,
+     required this.startOperation,
+     Iterable<String> evidenceIds = const [],
+     Map<String, Object?>? frozenEvidence,
++    this.timer,
++    this.terminal,
+   }) : evidenceIds = List.unmodifiable(evidenceIds),
+        frozenEvidence = frozenEvidence == null
+            ? null
+            : _freeze(frozenEvidence) as Map<String, Object?>;
+   final PairMatchingState engine;
+   final String startOperation;
+   final List<String> evidenceIds;
+   final Map<String, Object?>? frozenEvidence;
++  final PairTimerState? timer;
++  final PairTerminalState? terminal;
+   Map<String, Object?> toJson() =>
+       _freeze({
+             'schemaVersion': 6,
+-            'codecVersion': 2,
++            'codecVersion': timer == null ? 2 : 3,
+             'planFingerprint': engine.plan.planFingerprint,
+             'plan': engine.plan.toJson(),
+             'startOperation': _compactStart(startOperation),
+             'engine': _compactEngine(engine),
+             'evidenceIds': evidenceIds,
+             'frozenEvidence': frozenEvidence,
++            if (timer != null) ...{
++              'timer': timer!.toJson(),
++              'roundSeed': engine.roundSeed,
++              'terminal': terminal?.toJson(),
++            },
+           })
+           as Map<String, Object?>;
+ }
+ 
+ Object? _freeze(Object? value) => switch (value) {
+   Map value => Map<String, Object?>.unmodifiable(
+     value.map((key, value) => MapEntry(key as String, _freeze(value))),
+   ),
+   List value => List<Object?>.unmodifiable(value.map(_freeze)),
+   _ => value,
+ };
+ 
+ Map<String, Object?> _compactStart(String operation) {
+   final j = jsonDecode(operation) as Map<String, dynamic>;
+@@ -99,56 +136,173 @@ Map<String, Object?> _expandEngine(
+         !a.containsKey('promptIndex') ||
+         !a.containsKey('targetIndex')) {
+       throw const FormatException('Invalid Pair compact identity');
+     }
+     return a.map(
+       (key, value) => switch (key) {
+         'promptIndex' => MapEntry('promptWordId', ids[value as int]),
+         'targetIndex' => MapEntry('targetWordId', ids[value as int]),
+         _ => MapEntry(key, value),
+       },
+     );
+   }
+ 
+   final j = Map<String, Object?>.of((value as Map).cast<String, Object?>());
+-  if (version == 2) {
++  if (version >= 2) {
+     j['selected'] = j['selected'] == null
+         ? null
+         : {
+             'side': (j['selected'] as Map)['side'],
+             'wordId': ids[(j['selected'] as Map)['wordId'] as int],
+           };
+     j['matchedWordIds'] =
+         (j['matchedWordIds'] as List).map((i) => ids[i as int]).toList()
+           ..sort();
+     j['supportedWordIds'] =
+         (j['supportedWordIds'] as List).map((i) => ids[i as int]).toList()
+           ..sort();
+     final support = (j['supportAtRevision'] as Map).map(
+       (key, value) => MapEntry(ids[int.parse(key as String)], value),
+     );
+     j['supportAtRevision'] = {
+       for (final key in support.keys.toList()..sort()) key: support[key],
+     };
+   }
+   return {
+     ...j,
+     'attempts': (j['attempts'] as List).map(attempt).toList(),
+     'pending': j['pending'] == null ? null : attempt(j['pending']),
+   };
+ }
+ 
+ abstract final class PairMatchingCheckpointCodec {
++  static void validateTransition(
++    PairMatchingCheckpointSnapshot prior,
++    PairMatchingCheckpointSnapshot next,
++  ) {
++    if (prior.timer != null && next.timer == null) {
++      throw StateError('Pair timer writer cannot downgrade');
++    }
++    final a =
++        prior.timer ?? PairTimerState.initial(prior.engine.plan.timerPreset);
++    final b =
++        next.timer ?? PairTimerState.initial(next.engine.plan.timerPreset);
++    final delta = b.elapsedActiveMs - a.elapsedActiveMs;
++    if (delta < 0 ||
++        delta > a.remainingActiveMs ||
++        (a.extensionUsed && !b.extensionUsed)) {
++      throw StateError('Pair active time/entitlement regressed');
++    }
++    final newDecision = b.lastOperationId != a.lastOperationId;
++    if (!newDecision) {
++      if (a.lastFingerprint != b.lastFingerprint ||
++          a.mode != b.mode ||
++          a.extensionUsed != b.extensionUsed ||
++          a.remainingActiveMs - b.remainingActiveMs != delta ||
++          prior.engine.roundOrdinal != next.engine.roundOrdinal) {
++        throw StateError('Pair timer changed without decision');
++      }
++    } else {
++      final roundChanged =
++          next.engine.roundOrdinal != prior.engine.roundOrdinal;
++      final action = roundChanged
++          ? PairTimerAction.restart
++          : switch (b.mode) {
++              PairTimerMode.timeoutDecision => PairTimerAction.expire,
++              PairTimerMode.continuedUntimed => PairTimerAction.continueUntimed,
++              PairTimerMode.extendedRunning => PairTimerAction.extend,
++              _ => throw StateError('Invalid Pair timer decision mode'),
++            };
++      final command = PairTimerDecision(
++        operationId: b.lastOperationId!,
++        ownerId: prior.engine.plan.ownerId,
++        sessionId: prior.engine.plan.learningSessionId,
++        roundOrdinal: prior.engine.roundOrdinal,
++        expectedRevision: next.engine.operationRevision - 1,
++        action: action,
++      );
++      if (command.fingerprint != b.lastFingerprint ||
++          next.engine.lastOperationId != command.operationId ||
++          next.engine.lastFingerprint != command.fingerprint ||
++          next.engine.attempts.length != prior.engine.attempts.length ||
++          prior.engine.pending != null ||
++          next.engine.pending != null ||
++          next.engine.selected != null ||
++          jsonEncode(prior.engine.supportAtRevision) !=
++              jsonEncode(next.engine.supportAtRevision) ||
++          (!roundChanged &&
++              jsonEncode(prior.engine.matchedWordIds.toList()..sort()) !=
++                  jsonEncode(next.engine.matchedWordIds.toList()..sort()))) {
++        throw StateError('Pair decision identity changed');
++      }
++      switch (action) {
++        case PairTimerAction.expire:
++          if (!a.timed ||
++              a.remainingActiveMs != delta ||
++              b.remainingActiveMs != 0 ||
++              b.extensionUsed != a.extensionUsed) {
++            throw StateError('Invalid Pair expiry');
++          }
++        case PairTimerAction.extend:
++          if (a.mode != PairTimerMode.timeoutDecision ||
++              a.extensionUsed ||
++              !b.extensionUsed ||
++              b.remainingActiveMs != 30000 ||
++              delta != 0) {
++            throw StateError('Invalid Pair extension');
++          }
++        case PairTimerAction.continueUntimed:
++          if ((!a.timed &&
++                  a.mode != PairTimerMode.timeoutDecision &&
++                  !a.reasons.contains(PairPauseReason.clockFault)) ||
++              b.remainingActiveMs != 0 ||
++              b.extensionUsed != a.extensionUsed) {
++            throw StateError('Invalid Pair Continue');
++          }
++        case PairTimerAction.restart:
++          if (a.mode != PairTimerMode.timeoutDecision ||
++              next.engine.roundOrdinal != prior.engine.roundOrdinal + 1 ||
++              b.mode != PairTimerMode.running ||
++              b.remainingActiveMs !=
++                  PairTimerState.initial(
++                    next.engine.plan.timerPreset,
++                  ).remainingActiveMs ||
++              delta != 0 ||
++              b.extensionUsed != a.extensionUsed ||
++              next.engine.matchedWordIds.isNotEmpty) {
++            throw StateError('Invalid Pair restart');
++          }
++      }
++    }
++    final old = prior.terminal, terminal = next.terminal;
++    if (old != null &&
++        (terminal == null ||
++            old.atUtc != terminal.atUtc ||
++            (old.acknowledged && !terminal.acknowledged) ||
++            (old.presented && !terminal.presented) ||
++            jsonEncode(prior.engine.toJson()) !=
++                jsonEncode(next.engine.toJson()) ||
++            delta != 0 ||
++            newDecision)) {
++      throw StateError('Pair terminal changed');
++    }
++    if (terminal != null &&
++        ((old == null && terminal.acknowledged) ||
++            (terminal.presented && old?.acknowledged != true))) {
++      throw StateError('Pair terminal receipt skipped');
++    }
++  }
++
+   static int encodedBytes(Object? value) =>
+       utf8.encode(jsonEncode(value)).length;
+ 
+   /// Size-only upper bound for captureMatching's full frozen schema: its ten
+   /// research identifier occurrences (five in each context) may each contain
+   /// 256 scalars, each requiring six JSON bytes. Owner/actor/session and the
+   /// largest word are measured exactly. Source IDs use their canonical bound.
+   /// 4096 covers fixed keys, declarations, hashes, timestamps, booleans and
+   /// 64-bit numeric fields; matching capture emits no assessment or contrastive
+   /// payload. The actual frozen envelope is checked against this bound before
+   /// admission, so a future schema expansion cannot silently consume reserve.
+   static int frozenOccurrenceByteBound(PairMatchingPlanV1 plan) =>
+       4096 +
+       10 * 6 * LearningEvidenceContract.maxIdentifierLength +
+@@ -192,43 +346,56 @@ abstract final class PairMatchingCheckpointCodec {
+         'operationId': maxOperationId,
+         'fingerprint': 'f' * 64,
+         'promptIndex': 5,
+         'targetIndex': 5,
+         'roundOrdinal': maxInt,
+         'role': 'independentRetry',
+         'responseTimeMs': LearningEvidenceContract.maxResponseTimeMs,
+         'resolutionFingerprint': 'f' * 64,
+       });
+       ids.add(maxEvidenceId);
+     }
+     engine['pending'] = null;
+     engine['selected'] = {'side': 'prompt', 'wordId': 5};
+     engine['operationRevision'] = maxInt;
++    engine['roundOrdinal'] = maxInt;
+     engine['lastOperationId'] = maxOperationId;
+     engine['lastFingerprint'] = 'f' * 64;
+     engine['matchedWordIds'] = List.generate(
+       state.plan.orderedLexicalItems.length,
+       (i) => i,
+     );
+     engine['supportedWordIds'] = List.generate(
+       state.plan.orderedLexicalItems.length,
+       (i) => i,
+     );
+     engine['supportAtRevision'] = {
+       for (var i = 0; i < state.plan.orderedLexicalItems.length; i++)
+         '$i': maxInt,
+     };
+     map['frozenEvidence'] = null;
++    // Reserve the actual bounded timer schema even for immutable PM1 starts.
++    map['timer'] = PairTimerState.initial(state.plan.timerPreset)
++        .copy(
++          mode: PairTimerMode.continuedUntimed,
++          remainingActiveMs: maxInt,
++          elapsedActiveMs: maxInt,
++          reasons: PairPauseReason.values.toSet(),
++          lastOperationId: maxOperationId,
++          lastFingerprint: 'f' * 64,
++        )
++        .toJson();
++    map['roundSeed'] = 2147483647;
+     return encodedBytes(map) +
+         ((remaining > 0 || pending != null)
+             ? frozenOccurrenceByteBound(state.plan)
+             : 0) +
+         1024;
+   }
+ 
+   static void requireCompletionCapacity(
+     PairMatchingCheckpointSnapshot snapshot,
+   ) {
+     if (reservedCompletionBytes(snapshot) >
+         PairMatchingCheckpointBudget.maximumBytes) {
+       throw StateError('Pair byte capacity reserved for remaining completion');
+     }
+@@ -262,29 +429,29 @@ abstract final class PairMatchingCheckpointCodec {
+             'pendingOperation': null,
+           })
+           as Map<String, Object?>;
+ 
+   static PairMatchingCheckpointSnapshot decode(Map<String, Object?> source) {
+     try {
+       if (utf8.encode(jsonEncode(source)).length >
+           PairMatchingCheckpointBudget.maximumBytes) {
+         throw const FormatException('Pair checkpoint too large');
+       }
+       final plan = PairMatchingPlanV1.fromStableSerialization(
+         jsonEncode(source['plan']),
+       );
+       final version = source['codecVersion'];
+-      final compactStart = version == 2
++      final compactStart = version == 2 || version == 3
+           ? pairJson(source['startOperation'], {
+               'schemaVersion',
+               'launchOperationId',
+               'appVersion',
+               'buildId',
+             })
+           : null;
+       final operation = compactStart == null
+           ? source['startOperation'] as String
+           : jsonEncode({
+               'schemaVersion': compactStart['schemaVersion'],
+               'plan': plan.toJson(),
+               'launchOperationId': compactStart['launchOperationId'],
+               'appVersion': compactStart['appVersion'],
+@@ -321,64 +488,118 @@ abstract final class PairMatchingCheckpointCodec {
+         return PairMatchingCheckpointSnapshot(
+           engine: PairMatchingState.initial(plan),
+           startOperation: operation,
+         );
+       }
+       final j = pairJson(source, {
+         'schemaVersion',
+         'codecVersion',
+         'planFingerprint',
+         'plan',
+         'startOperation',
+         'engine',
+         'evidenceIds',
+         'frozenEvidence',
++        if (version == 3) ...{'timer', 'roundSeed', 'terminal'},
+       });
+       final engine = PairMatchingState.fromJson(
+         plan,
+         _expandEngine(plan, j['engine'], j['codecVersion'] as int),
+       );
+-      if (version == 2 &&
++      if ((version == 2 || version == 3) &&
+           jsonEncode(_compactEngine(engine)) != jsonEncode(j['engine'])) {
+         throw const FormatException('Invalid Pair compact engine');
+       }
+       final ids = (j['evidenceIds'] as List).cast<String>();
+       final frozen = j['frozenEvidence'] == null
+           ? null
+           : (j['frozenEvidence'] as Map).cast<String, Object?>();
+-      if ((j['codecVersion'] != 1 && j['codecVersion'] != 2) ||
++      if ((j['codecVersion'] != 1 &&
++              j['codecVersion'] != 2 &&
++              j['codecVersion'] != 3) ||
+           ids.length != engine.attempts.length ||
+           ids.toSet().length != ids.length ||
+           ids.any(
+             (id) => !LearningEvidenceContract.validSourceEvidenceId(id),
+           ) ||
+           (frozen == null) != (engine.pending == null)) {
+         throw const FormatException('Invalid Pair pending binding');
+       }
+       if (frozen != null) {
+         final a = engine.pending!;
+         if (frozen['ownerId'] != plan.ownerId ||
+             frozen['actorIdentity'] != plan.ownerId ||
+             frozen['sessionId'] != plan.learningSessionId ||
+             frozen['wordId'] != a.promptWordId ||
+             frozen['isCorrect'] != a.isCorrect ||
+             frozen['responseTimeMs'] != a.responseTimeMs ||
+             frozen['attemptNumber'] != ids.length + 1 ||
+             ids.contains(frozen['sourceEvidenceId']) ||
+             frozen['promptMode'] != 'matchingPair' ||
+             frozen['providerProvenance'] != 'pinned-lexical-matching' ||
+             frozen['input'] != 'matchingPair' ||
+             frozen['hintLevel'] != engine.classificationFor(a).hintLevel) {
+           throw const FormatException('Invalid Pair frozen occurrence');
+         }
+       }
++      final timer = version == 3 ? PairTimerState.fromJson(j['timer']) : null;
++      final terminal = version == 3 && j['terminal'] != null
++          ? PairTerminalState.fromJson(j['terminal'])
++          : null;
++      if (timer?.lastOperationId != null) {
++        final id = timer!.lastOperationId!;
++        final revision = int.parse(id.split(':').first);
++        final action = switch (timer.mode) {
++          PairTimerMode.timeoutDecision => PairTimerAction.expire,
++          PairTimerMode.extendedRunning => PairTimerAction.extend,
++          PairTimerMode.continuedUntimed => PairTimerAction.continueUntimed,
++          PairTimerMode.running => PairTimerAction.restart,
++          PairTimerMode.off => throw const FormatException(
++            'OFF cannot have timer decision',
++          ),
++        };
++        final command = PairTimerDecision(
++          operationId: id,
++          ownerId: plan.ownerId,
++          sessionId: plan.learningSessionId,
++          roundOrdinal:
++              engine.roundOrdinal - (action == PairTimerAction.restart ? 1 : 0),
++          expectedRevision: revision,
++          action: action,
++        );
++        if (revision >= engine.operationRevision ||
++            command.fingerprint != timer.lastFingerprint ||
++            (revision == engine.operationRevision - 1 &&
++                (engine.lastOperationId != id ||
++                    engine.lastFingerprint != command.fingerprint))) {
++          throw const FormatException('Pair timer decision binding changed');
++        }
++      } else if (timer != null &&
++          (timer.extensionUsed ||
++              engine.roundOrdinal != 0 ||
++              (timer.mode != PairTimerMode.off &&
++                  timer.mode != PairTimerMode.running))) {
++        throw const FormatException('Pair timer decision missing');
++      }
++      if ((version != 3 && engine.roundOrdinal != 0) ||
++          (version == 3 && j['roundSeed'] != engine.roundSeed) ||
++          (terminal != null && (!engine.complete || engine.pending != null)) ||
++          (timer != null &&
++              plan.timerPreset == PairTimerPreset.off &&
++              (timer.mode != PairTimerMode.off ||
++                  timer.extensionUsed ||
++                  timer.elapsedActiveMs != 0))) {
++        throw const FormatException('Invalid Pair timer/terminal pins');
++      }
+       return PairMatchingCheckpointSnapshot(
+         engine: engine,
+         startOperation: operation,
+         evidenceIds: ids,
+         frozenEvidence: frozen,
++        timer: timer,
++        terminal: terminal,
+       );
+     } catch (_) {
+       throw const FormatException('Invalid Pair checkpoint');
+     }
+   }
+ }
+diff --git a/lib/features/learning/pair_matching/domain/pair_active_clock.dart b/lib/features/learning/pair_matching/domain/pair_active_clock.dart
+new file mode 100644
+index 00000000..07a47b53
+--- /dev/null
++++ b/lib/features/learning/pair_matching/domain/pair_active_clock.dart
+@@ -0,0 +1,224 @@
++import 'pair_matching_launch.dart';
++import 'pair_matching_plan.dart';
++
++enum PairTimerMode {
++  off,
++  running,
++  timeoutDecision,
++  extendedRunning,
++  continuedUntimed,
++}
++
++enum PairPauseReason {
++  recovery,
++  boardUnavailable,
++  background,
++  modal,
++  persistence,
++  narration,
++  clockFault,
++}
++
++/// Folded active time only. No process-local monotonic anchor is serialized.
++final class PairTimerState {
++  PairTimerState({
++    required this.mode,
++    required this.remainingActiveMs,
++    this.elapsedActiveMs = 0,
++    this.extensionUsed = false,
++    Set<PairPauseReason> reasons = const {},
++    this.lastOperationId,
++    this.lastFingerprint,
++  }) : reasons = Set.unmodifiable(reasons);
++  factory PairTimerState.initial(PairTimerPreset preset) => PairTimerState(
++    mode: preset == PairTimerPreset.off
++        ? PairTimerMode.off
++        : PairTimerMode.running,
++    remainingActiveMs: switch (preset) {
++      PairTimerPreset.off => 0,
++      PairTimerPreset.seconds60 => 60000,
++      PairTimerPreset.seconds90 => 90000,
++      PairTimerPreset.seconds120 => 120000,
++    },
++  );
++  final PairTimerMode mode;
++  final int remainingActiveMs, elapsedActiveMs;
++  final bool extensionUsed;
++  final Set<PairPauseReason> reasons;
++  final String? lastOperationId, lastFingerprint;
++  bool get timed =>
++      mode == PairTimerMode.running || mode == PairTimerMode.extendedRunning;
++  int get decisionReserve => timed
++      ? 2
++      : mode == PairTimerMode.timeoutDecision ||
++            reasons.contains(PairPauseReason.clockFault)
++      ? 1
++      : 0;
++  PairTimerState copy({
++    PairTimerMode? mode,
++    int? remainingActiveMs,
++    int? elapsedActiveMs,
++    bool? extensionUsed,
++    Set<PairPauseReason>? reasons,
++    String? lastOperationId,
++    String? lastFingerprint,
++  }) => PairTimerState(
++    mode: mode ?? this.mode,
++    remainingActiveMs: remainingActiveMs ?? this.remainingActiveMs,
++    elapsedActiveMs: elapsedActiveMs ?? this.elapsedActiveMs,
++    extensionUsed: extensionUsed ?? this.extensionUsed,
++    reasons: Set.unmodifiable(reasons ?? this.reasons),
++    lastOperationId: lastOperationId ?? this.lastOperationId,
++    lastFingerprint: lastFingerprint ?? this.lastFingerprint,
++  );
++  Map<String, Object?> toJson() => {
++    'mode': mode.name,
++    'remainingActiveMs': remainingActiveMs,
++    'elapsedActiveMs': elapsedActiveMs,
++    'extensionUsed': extensionUsed,
++    'reasons': reasons.map((r) => r.name).toList()..sort(),
++    'lastOperationId': lastOperationId,
++    'lastFingerprint': lastFingerprint,
++  };
++  static PairTimerState fromJson(Object? value) {
++    final j = pairJson(value, {
++      'mode',
++      'remainingActiveMs',
++      'elapsedActiveMs',
++      'extensionUsed',
++      'reasons',
++      'lastOperationId',
++      'lastFingerprint',
++    });
++    final state = PairTimerState(
++      mode: PairTimerMode.values.byName(j['mode'] as String),
++      remainingActiveMs: j['remainingActiveMs'] as int,
++      elapsedActiveMs: j['elapsedActiveMs'] as int,
++      extensionUsed: j['extensionUsed'] as bool,
++      reasons: Set.unmodifiable(
++        (j['reasons'] as List).map(
++          (v) => PairPauseReason.values.byName(v as String),
++        ),
++      ),
++      lastOperationId: j['lastOperationId'] as String?,
++      lastFingerprint: j['lastFingerprint'] as String?,
++    );
++    if (state.remainingActiveMs < 0 ||
++        state.remainingActiveMs > 120000 ||
++        state.elapsedActiveMs < 0 ||
++        state.elapsedActiveMs > 9223372036854775807 ||
++        (state.mode == PairTimerMode.timeoutDecision &&
++            state.remainingActiveMs != 0) ||
++        ((state.mode == PairTimerMode.off ||
++                state.mode == PairTimerMode.continuedUntimed) &&
++            state.remainingActiveMs != 0) ||
++        (state.mode == PairTimerMode.extendedRunning &&
++            (!state.extensionUsed || state.remainingActiveMs > 30000)) ||
++        (state.lastOperationId == null) != (state.lastFingerprint == null) ||
++        (state.lastOperationId != null &&
++            (state.lastOperationId!.length > 128 ||
++                !RegExp(r'^[0-9a-f]{64}$').hasMatch(state.lastFingerprint!))) ||
++        (j['reasons'] as List).length != state.reasons.length) {
++      throw const FormatException('Invalid Pair timer');
++    }
++    return state;
++  }
++}
++
++final class PairPauseLease {
++  PairPauseLease._(this.reason);
++  final PairPauseReason reason;
++}
++
++/// One runtime owner. Leases are identity objects, never transferable between
++/// restored clocks; old callbacks cannot release a newer reason's ownership.
++final class PairActiveClock {
++  PairActiveClock(this._state, this.monotonicMicros) {
++    _recovery = pause(PairPauseReason.recovery);
++    for (final reason in _state.reasons) {
++      if (reason == PairPauseReason.clockFault) {
++        _leases.add(PairPauseLease._(reason));
++      }
++    }
++  }
++  final int Function() monotonicMicros;
++  PairTimerState _state;
++  final _leases = <PairPauseLease>{};
++  late final PairPauseLease _recovery;
++  int? _anchor;
++  int _carryMicros = 0;
++  bool get isPaused => _leases.isNotEmpty;
++  Set<PairPauseReason> get reasons =>
++      Set.unmodifiable(_leases.map((l) => l.reason));
++  PairTimerState get value {
++    fold();
++    return _state.copy(reasons: reasons);
++  }
++
++  void replace(PairTimerState value) {
++    _state = value;
++    if (value.mode == PairTimerMode.continuedUntimed) {
++      _leases.removeWhere((l) => l.reason == PairPauseReason.clockFault);
++    }
++    _anchor = null;
++    _open();
++  }
++
++  bool owns(PairPauseLease lease) => _leases.contains(lease);
++  void resumeInteraction() => release(_recovery);
++  PairPauseLease pause(PairPauseReason reason) {
++    fold();
++    final lease = PairPauseLease._(reason);
++    _leases.add(lease);
++    _anchor = null;
++    return lease;
++  }
++
++  void release(PairPauseLease lease) {
++    if (!_leases.remove(lease)) return;
++    _open();
++  }
++
++  void _open() {
++    if (isPaused || !_state.timed || _anchor != null) return;
++    try {
++      final n = monotonicMicros();
++      if (n < 0) throw StateError('clock');
++      _anchor = n;
++    } catch (_) {
++      _fault();
++    }
++  }
++
++  void _fault() {
++    _anchor = null;
++    if (!reasons.contains(PairPauseReason.clockFault)) {
++      _leases.add(PairPauseLease._(PairPauseReason.clockFault));
++    }
++  }
++
++  void fold() {
++    final anchor = _anchor;
++    if (anchor == null || isPaused || !_state.timed) return;
++    try {
++      final now = monotonicMicros();
++      if (now < anchor) {
++        _fault();
++        return;
++      }
++      final total = now - anchor + _carryMicros;
++      final delta = total ~/ 1000;
++      final used = delta > _state.remainingActiveMs
++          ? _state.remainingActiveMs
++          : delta;
++      _state = _state.copy(
++        remainingActiveMs: _state.remainingActiveMs - used,
++        elapsedActiveMs: _state.elapsedActiveMs + used,
++      );
++      _carryMicros = _state.remainingActiveMs == 0 ? 0 : total % 1000;
++      _anchor = now;
++    } catch (_) {
++      _fault();
++    }
++  }
++}
+diff --git a/lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart b/lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart
+index f3774fdb..c37b1193 100644
+--- a/lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart
++++ b/lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart
+@@ -1,36 +1,52 @@
+ import '../../domain/learning_activity_recovery_limits.dart';
+ 
+ /// Optional actions must reserve the worst allowed
+ /// remaining answers, Continue untimed, and exact terminal receipts.
+ abstract final class PairMatchingCheckpointBudget {
+   static const maximumRevisions =
+       LearningActivityRecoveryLimits.maximumCheckpoints;
+   static const maximumAttempts = LearningActivityRecoveryLimits.maximumAttempts;
+   static const maximumBytes =
+       LearningActivityRecoveryLimits.maximumCheckpointBytes;
+   static const terminalReserve = 3;
+   static const continueUntimedReserve = 1;
++  static bool canTransition({
++    required int revision,
++    required int cost,
++    required int attempts,
++    required int remainingAttemptBound,
++    required int revealReserve,
++    required int timerReserve,
++  }) =>
++      revision >= 1 &&
++      cost >= 0 &&
++      attempts >= 0 &&
++      remainingAttemptBound >= 0 &&
++      attempts + remainingAttemptBound <= maximumAttempts &&
++      revision +
++              cost +
++              remainingAttemptBound * 2 +
++              revealReserve +
++              timerReserve +
++              terminalReserve <=
++          maximumRevisions;
+   static bool canAnswer({
+     required int revision,
+     required int attempts,
+     required int remainingPairs,
+     bool isCorrect = false,
+     int? remainingAttemptBound,
+     int revealReserve = 0,
++    int timerReserve = continueUntimedReserve,
+   }) =>
+-      revision >= 1 &&
+-      attempts >= 0 &&
+       remainingPairs > 0 &&
+-      attempts +
+-              1 +
+-              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) <=
+-          maximumAttempts &&
+-      revision +
+-              2 +
+-              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) *
+-                  2 +
+-              revealReserve +
+-              terminalReserve +
+-              continueUntimedReserve <=
+-          maximumRevisions;
++      canTransition(
++        revision: revision,
++        cost: 2,
++        attempts: attempts + 1,
++        remainingAttemptBound:
++            remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0),
++        revealReserve: revealReserve,
++        timerReserve: timerReserve,
++      );
+ }
+diff --git a/lib/features/learning/pair_matching/domain/pair_matching_engine.dart b/lib/features/learning/pair_matching/domain/pair_matching_engine.dart
+index 2f29e52d..ca091262 100644
+--- a/lib/features/learning/pair_matching/domain/pair_matching_engine.dart
++++ b/lib/features/learning/pair_matching/domain/pair_matching_engine.dart
+@@ -1,23 +1,42 @@
+ import 'dart:convert';
+ import 'pair_matching_plan.dart';
+ import 'pair_repair_policy.dart';
+ import 'pair_support_policy.dart';
+ import '../../domain/hint_policy.dart';
+ import '../../domain/learning_activity_recovery_limits.dart';
+ 
+ enum PairTileSide { prompt, target }
+ 
++enum PairTimerAction { expire, continueUntimed, extend, restart }
++
++final class PairTimerDecision extends PairMatchingCommand {
++  PairTimerDecision({
++    required super.operationId,
++    required super.ownerId,
++    required super.sessionId,
++    required super.roundOrdinal,
++    required super.expectedRevision,
++    required this.action,
++  });
++  final PairTimerAction action;
++  @override
++  Map<String, Object?> get payload => {
++    'kind': 'timerDecision',
++    'action': action.name,
++  };
++}
++
+ enum PairAttemptRole {
+   firstOpportunity,
+   independentRetry,
+   delayedRepair,
+   guidedCompletion,
+ }
+ 
+ final class PairTile {
+   const PairTile(this.side, this.wordId);
+   final PairTileSide side;
+   final String wordId;
+   Map<String, Object?> toJson() => {'side': side.name, 'wordId': wordId};
+   static PairTile fromJson(Object? value) {
+     final j = pairJson(value, {'side', 'wordId'});
+@@ -214,29 +233,34 @@ final class PairMatchingState {
+         lastOperationId: null,
+         lastFingerprint: null,
+       );
+   final PairMatchingPlanV1 plan;
+   final int roundOrdinal, operationRevision;
+   final PairTile? selected;
+   final Set<String> matchedWordIds, supportedWordIds;
+   final Map<String, int> supportAtRevision;
+   final List<PairAttemptRequested> attempts;
+   final PairAttemptRequested? pending;
+   final String? lastOperationId, lastFingerprint;
+   List<PairRepairTicket> get repairTickets => PairRepairPolicy.project(
+     plan.orderedLexicalItems.map((i) => i.wordId).toList(),
+     attempts.map(
+-      (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
++      (a) => PairRepairAnswer(
++        a.operationId,
++        a.promptWordId,
++        a.isCorrect,
++        roundOrdinal: a.roundOrdinal,
++      ),
+     ),
+   );
+   PairRepairTicket? repairFor(String wordId) {
+     for (final t in repairTickets) {
+       if (t.wordId == wordId) return t;
+     }
+     return null;
+   }
+ 
+   HintEvidenceClassification classificationFor(PairAttemptRequested a) =>
+       PairSupportPolicy.classify(
+         supportRevision: supportAtRevision[a.promptWordId],
+         attemptRevision: int.parse(a.operationId.split(':').first),
+       );
+@@ -248,45 +272,66 @@ final class PairMatchingState {
+       if (matchedWordIds.contains(item.wordId)) continue;
+       final ticket = repairFor(item.wordId);
+       count += ticket == null
+           ? 3
+           : ticket.status == PairRepairStatus.guidedRequired
+           ? 1
+           : 2;
+       if (ticket?.status == PairRepairStatus.guidedRequired) {
+         guided++;
+       } else {
+         final delay = ticket == null
+             ? plan.orderedLexicalItems.length ~/ 2
+             : ticket.status == PairRepairStatus.available
+             ? 0
+-            : ticket.dueOrdinal - matchedWordIds.length;
++            : ticket.remainingSpacing;
+         if (firstRepairDelay == null || delay < firstRepairDelay) {
+           firstRepairDelay = delay;
+         }
+       }
+     }
+     // Before any further scheduled failure, distinct other pairs must finish.
+     // Each costs at least one theoretical third attempt; already-forced
+     // confirmations can supply that spacing without another deduction.
+     final delay = firstRepairDelay ?? 0;
+     final deduction = delay > guided ? delay - guided : 0;
+     return count == 0 ? 0 : count - (deduction < count ? deduction : count - 1);
+   }
+ 
+   Set<String> get firstOpportunityWordIds =>
+       Set.unmodifiable(attempts.map((a) => a.promptWordId));
+   bool get complete => matchedWordIds.length == plan.orderedLexicalItems.length;
++  int get roundSeed => roundOrdinal == 0
++      ? plan.shuffleSeed
++      : int.parse(
++          pairHash(
++            '${plan.shuffleSeed}:round:$roundOrdinal:v1',
++          ).substring(0, 7),
++          radix: 16,
++        );
++  List<String> orderFor(PairTileSide side) {
++    if (roundOrdinal == 0) {
++      return side == PairTileSide.prompt ? plan.sourceOrder : plan.targetOrder;
++    }
++    final ids = plan.orderedLexicalItems.map((i) => i.wordId).toList();
++    ids.sort(
++      (a, b) => pairHash(
++        '$roundSeed:${side.name}:$a',
++      ).compareTo(pairHash('$roundSeed:${side.name}:$b')),
++    );
++    return List.unmodifiable(ids);
++  }
++
+   Map<String, Object?> toJson() => {
+     'roundOrdinal': roundOrdinal,
+     'operationRevision': operationRevision,
+     'selected': selected?.toJson(),
+     'matchedWordIds': matchedWordIds.toList()..sort(),
+     'supportedWordIds': supportedWordIds.toList()..sort(),
+     'supportAtRevision': {
+       for (final id in supportedWordIds.toList()..sort())
+         id: supportAtRevision[id],
+     },
+     'attempts': attempts.map((a) => a.toJson()).toList(),
+     'pending': pending?.toJson(),
+     'lastOperationId': lastOperationId,
+     'lastFingerprint': lastFingerprint,
+@@ -310,108 +355,123 @@ final class PairMatchingState {
+       operationRevision: j['operationRevision'] as int,
+       selected: j['selected'] == null ? null : PairTile.fromJson(j['selected']),
+       matchedWordIds: (j['matchedWordIds'] as List).cast<String>(),
+       supportedWordIds: (j['supportedWordIds'] as List).cast<String>(),
+       supportAtRevision: (j['supportAtRevision'] as Map).cast<String, int>(),
+       attempts: (j['attempts'] as List).map(PairAttemptRequested.fromJson),
+       pending: j['pending'] == null
+           ? null
+           : PairAttemptRequested.fromJson(j['pending']),
+       lastOperationId: j['lastOperationId'] as String?,
+       lastFingerprint: j['lastFingerprint'] as String?,
+     );
+     final ids = plan.orderedLexicalItems.map((i) => i.wordId).toSet();
+     final seen = <String>{}, operations = <String>{}, matched = <String>{};
+-    var previousRevision = -1;
++    var previousRevision = -1, previousRound = 0;
+     final repairHistory = <PairRepairAnswer>[];
+     for (final a in [
+       ...state.attempts,
+       if (state.pending != null) state.pending!,
+     ]) {
++      if (a.roundOrdinal < previousRound ||
++          a.roundOrdinal > state.roundOrdinal) {
++        throw const FormatException('Pair round history changed');
++      }
++      if (a.roundOrdinal != previousRound) matched.clear();
++      previousRound = a.roundOrdinal;
+       final revision = int.tryParse(a.operationId.split(':').first);
+       final supportRevision = state.supportAtRevision[a.promptWordId];
+       final tickets = PairRepairPolicy.project(ids.toList(), repairHistory);
+       final priorTickets = tickets.where((t) => t.wordId == a.promptWordId);
+       final ticket = priorTickets.isEmpty ? null : priorTickets.single;
+       final hiddenTarget = tickets.any(
+         (t) =>
+             t.wordId == a.targetWordId &&
+             (t.status == PairRepairStatus.waiting ||
+                 (t.status == PairRepairStatus.guidedRequired &&
+                     a.role != PairAttemptRole.guidedCompletion)),
+       );
+       if ((a.role == PairAttemptRole.delayedRepair &&
+               ticket?.status != PairRepairStatus.available) ||
+           (ticket?.status == PairRepairStatus.guidedRequired &&
+               a.role != PairAttemptRole.independentRetry &&
+               (a.role != PairAttemptRole.guidedCompletion || !a.isCorrect)) ||
+           (identical(a, state.pending) &&
+               (hiddenTarget ||
+                   ticket?.status == PairRepairStatus.waiting ||
+                   (a.role == PairAttemptRole.independentRetry &&
+-                      ticket != null)))) {
++                      ticket != null &&
++                      ticket.status != PairRepairStatus.completed)))) {
+         throw const FormatException('Pair repair chronology changed');
+       }
+       if ((a.role == PairAttemptRole.guidedCompletion &&
+               !(supportRevision != null &&
+                   revision != null &&
+                   supportRevision < revision)) ||
+           (a.role != PairAttemptRole.guidedCompletion &&
+               a.role != PairAttemptRole.delayedRepair &&
+               supportRevision != null &&
+               revision != null &&
+               supportRevision < revision)) {
+         throw const FormatException('Pair support chronology changed');
+       }
+       if (!ids.contains(a.promptWordId) ||
+           !ids.contains(a.targetWordId) ||
+-          a.roundOrdinal != state.roundOrdinal ||
++          a.roundOrdinal < 0 ||
+           a.responseTimeMs < 0 ||
+           a.operationId.length > 128 ||
+           !RegExp(r'^[0-9a-f]{64}$').hasMatch(a.fingerprint) ||
+           !operations.add(a.operationId) ||
+           revision == null ||
+           revision <= previousRevision ||
+           revision >= state.operationRevision ||
+           matched.contains(a.promptWordId) ||
+           matched.contains(a.targetWordId) ||
+           (a.role == PairAttemptRole.firstOpportunity &&
+               seen.contains(a.promptWordId)) ||
+           (a.role == PairAttemptRole.independentRetry &&
+               !seen.contains(a.promptWordId)) ||
+           (a.role == PairAttemptRole.delayedRepair &&
+               !seen.contains(a.promptWordId)) ||
+           (a.role == PairAttemptRole.guidedCompletion &&
+               !state.supportedWordIds.contains(a.promptWordId))) {
+         throw const FormatException('Invalid Pair attempt ledger');
+       }
+       previousRevision = revision;
+       repairHistory.add(
+-        PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
++        PairRepairAnswer(
++          a.operationId,
++          a.promptWordId,
++          a.isCorrect,
++          roundOrdinal: a.roundOrdinal,
++        ),
+       );
+       seen.add(a.promptWordId);
+       if (!identical(a, state.pending) && a.isCorrect) {
+         matched.add(a.promptWordId);
+       }
+     }
+     if (state.supportAtRevision.length != state.supportedWordIds.length ||
+         !state.supportedWordIds.containsAll(state.supportAtRevision.keys) ||
+         state.supportAtRevision.values.any(
+           (r) => r < 0 || r >= state.operationRevision,
+         )) {
+       throw const FormatException('Invalid Pair support ledger');
+     }
+-    if (state.roundOrdinal != 0 ||
++    if (previousRound != state.roundOrdinal) matched.clear();
++    if (state.roundOrdinal < 0 ||
++        state.roundOrdinal >
++            LearningActivityRecoveryLimits.maximumCheckpoints ||
+         state.operationRevision < 0 ||
+         !ids.containsAll(state.supportedWordIds) ||
+         !ids.containsAll(state.matchedWordIds) ||
+         (state.selected != null &&
+             (!ids.contains(state.selected!.wordId) ||
+                 matched.contains(state.selected!.wordId))) ||
+         jsonEncode(matched.toList()..sort()) !=
+             jsonEncode(state.matchedWordIds.toList()..sort()) ||
+         (state.pending != null && state.selected != null) ||
+         (state.operationRevision == 0) !=
+             (state.lastOperationId == null && state.lastFingerprint == null) ||
+         (state.lastOperationId != null &&
+             (!state.lastOperationId!.startsWith(
+                   '${state.operationRevision - 1}:',
+@@ -459,28 +519,30 @@ abstract final class PairMatchingEngine {
+       }
+       return PairMatchingTransition(state);
+     }
+     if (command.expectedRevision != state.operationRevision ||
+         state.pending != null ||
+         state.complete) {
+       throw StateError('Stale or busy Pair operation');
+     }
+     final ids = state.plan.orderedLexicalItems.map((i) => i.wordId).toSet();
+     var selected = state.selected;
+     final supported = {...state.supportedWordIds};
+     final supportRevisions = {...state.supportAtRevision};
+     PairAttemptRequested? pending;
+     switch (command) {
++      case PairTimerDecision():
++        selected = null;
+       case PairConfirmGuidedMapping(
+         :final wordId,
+         :final shownSupportRevision,
+         :final responseTimeMs,
+       ):
+         if (!ids.contains(wordId) ||
+             state.matchedWordIds.contains(wordId) ||
+             state.supportAtRevision[wordId] != shownSupportRevision ||
+             shownSupportRevision >= command.expectedRevision ||
+             responseTimeMs < 0 ||
+             (state.repairFor(wordId) != null &&
+                 state.repairFor(wordId)?.status !=
+                     PairRepairStatus.guidedRequired)) {
+           throw StateError('Invalid Pair guided confirmation');
+@@ -531,58 +593,72 @@ abstract final class PairMatchingEngine {
+                 ? PairAttemptRole.delayedRepair
+                 : supported.contains(prompt)
+                 ? PairAttemptRole.guidedCompletion
+                 : state.firstOpportunityWordIds.contains(prompt)
+                 ? PairAttemptRole.independentRetry
+                 : PairAttemptRole.firstOpportunity,
+             responseTimeMs: responseTimeMs,
+           );
+           selected = null;
+         }
+     }
+     return PairMatchingTransition(
+       PairMatchingState._(
+         plan: state.plan,
+-        roundOrdinal: state.roundOrdinal,
++        roundOrdinal:
++            state.roundOrdinal +
++            (command is PairTimerDecision &&
++                    command.action == PairTimerAction.restart
++                ? 1
++                : 0),
+         operationRevision: state.operationRevision + 1,
+         selected: selected,
+-        matchedWordIds: state.matchedWordIds,
++        matchedWordIds:
++            command is PairTimerDecision &&
++                command.action == PairTimerAction.restart
++            ? const {}
++            : state.matchedWordIds,
+         supportedWordIds: supported,
+         supportAtRevision: supportRevisions,
+         attempts: state.attempts,
+         pending: pending,
+         lastOperationId: command.operationId,
+         lastFingerprint: command.fingerprint,
+       ),
+       pending,
+     );
+   }
+ 
+   static PairMatchingState acknowledge(
+     PairMatchingState state,
+     String operationId,
+   ) {
+     final pending = state.pending;
+     if (pending == null || pending.operationId != operationId) {
+       throw StateError('Stale Pair acknowledgement');
+     }
+     final attempts = [...state.attempts, pending];
+     final supported = {...state.supportedWordIds};
+     final supportRevisions = {...state.supportAtRevision};
+     final tickets = PairRepairPolicy.project(
+       state.plan.orderedLexicalItems.map((i) => i.wordId).toList(),
+       attempts.map(
+-        (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
++        (a) => PairRepairAnswer(
++          a.operationId,
++          a.promptWordId,
++          a.isCorrect,
++          roundOrdinal: a.roundOrdinal,
++        ),
+       ),
+     );
+     for (final t in tickets) {
+       if (t.status == PairRepairStatus.guidedRequired) {
+         supported.add(t.wordId);
+         // Equal to this attempted revision: it cannot reclassify that answer.
+         supportRevisions.putIfAbsent(
+           t.wordId,
+           () => state.operationRevision - 1,
+         );
+       }
+     }
+     return PairMatchingState._(
+       plan: state.plan,
+diff --git a/lib/features/learning/pair_matching/domain/pair_repair_policy.dart b/lib/features/learning/pair_matching/domain/pair_repair_policy.dart
+index 13d488e2..e89b0032 100644
+--- a/lib/features/learning/pair_matching/domain/pair_repair_policy.dart
++++ b/lib/features/learning/pair_matching/domain/pair_repair_policy.dart
+@@ -1,86 +1,119 @@
+ enum PairRepairStatus { waiting, available, guidedRequired, completed }
+ 
+ final class PairRepairAnswer {
+-  const PairRepairAnswer(this.operationId, this.wordId, this.isCorrect);
++  const PairRepairAnswer(
++    this.operationId,
++    this.wordId,
++    this.isCorrect, {
++    this.roundOrdinal = 0,
++  });
++  final int roundOrdinal;
+   final String operationId, wordId;
+   final bool isCorrect;
+ }
+ 
+ final class PairRepairTicket {
+   const PairRepairTicket({
+     required this.wordId,
+     required this.sourceOperationId,
+     required this.originalOrdinal,
+     required this.dueOrdinal,
+     required this.status,
+     this.deferred = false,
++    this.remainingSpacing = 0,
+   });
+   final String wordId, sourceOperationId;
+   final int originalOrdinal, dueOrdinal;
+   final PairRepairStatus status;
+   final bool deferred;
+-  PairRepairTicket withStatus(PairRepairStatus value) => PairRepairTicket(
++  final int remainingSpacing;
++  PairRepairTicket withStatus(
++    PairRepairStatus value, {
++    int? remainingSpacing,
++  }) => PairRepairTicket(
+     wordId: wordId,
+     sourceOperationId: sourceOperationId,
+     originalOrdinal: originalOrdinal,
+     dueOrdinal: dueOrdinal,
+     status: value,
+     deferred: deferred || value == PairRepairStatus.guidedRequired,
++    remainingSpacing: remainingSpacing ?? this.remainingSpacing,
+   );
+ }
+ 
+ /// Rebuildable from the retained authenticated attempt ledger. No second
+ /// persisted queue or duplicate lexical identities are needed in checkpoints.
+ abstract final class PairRepairPolicy {
+   static List<PairRepairTicket> project(
+     List<String> wordIds,
+     Iterable<PairRepairAnswer> answers,
+   ) {
+     final tickets = <String, PairRepairTicket>{};
+     final matched = <String>{};
++    final sinceFailure = <String, Set<String>>{};
++    var round = 0, successOrdinal = 0;
+     var ordinal = 0;
+     for (final a in answers) {
++      if (a.roundOrdinal != round) {
++        matched.clear();
++        round = a.roundOrdinal;
++      }
+       final previous = tickets[a.wordId];
+       if (a.isCorrect) {
+-        matched.add(a.wordId);
++        if (matched.add(a.wordId)) successOrdinal++;
++        for (final entry in sinceFailure.entries) {
++          if (entry.key != a.wordId) entry.value.add(a.wordId);
++        }
+         if (previous != null) {
+           tickets[a.wordId] = previous.withStatus(PairRepairStatus.completed);
+         }
+       } else if (previous == null) {
+         tickets[a.wordId] = PairRepairTicket(
+           wordId: a.wordId,
+           sourceOperationId: a.operationId,
+           originalOrdinal: ordinal,
+-          dueOrdinal: matched.length + wordIds.length ~/ 2,
++          dueOrdinal: successOrdinal + wordIds.length ~/ 2,
+           status: PairRepairStatus.waiting,
++          remainingSpacing: wordIds.length ~/ 2,
+         );
++        sinceFailure[a.wordId] = <String>{};
+       } else {
+         tickets[a.wordId] = previous.withStatus(
+           PairRepairStatus.guidedRequired,
+         );
+       }
+       for (final t in tickets.values.toList()) {
+-        if (t.status == PairRepairStatus.waiting &&
+-            matched.length >= t.dueOrdinal) {
+-          tickets[t.wordId] = t.withStatus(PairRepairStatus.available);
++        final since = sinceFailure[t.wordId]!;
++        final needed = wordIds.length ~/ 2 - since.length;
++        if (t.status == PairRepairStatus.waiting && needed <= 0) {
++          tickets[t.wordId] = t.withStatus(
++            PairRepairStatus.available,
++            remainingSpacing: 0,
++          );
++        } else if (t.status == PairRepairStatus.waiting) {
++          tickets[t.wordId] = t.withStatus(t.status, remainingSpacing: needed);
+         }
+         if (t.status == PairRepairStatus.waiting &&
+-            matched.length +
+-                    wordIds
+-                        .where((id) => id != t.wordId && !matched.contains(id))
+-                        .length <
+-                t.dueOrdinal) {
++            wordIds
++                    .where(
++                      (id) =>
++                          id != t.wordId &&
++                          !matched.contains(id) &&
++                          !since.contains(id),
++                    )
++                    .length <
++                needed) {
+           tickets[t.wordId] = t.withStatus(PairRepairStatus.guidedRequired);
+         }
+       }
+       // When all remaining pairs wait on one another, expose one deterministic
+       // guided tail. Its real confirmation can advance the other tickets.
+       final playable = wordIds.where(
+         (id) =>
+             !matched.contains(id) &&
+             tickets[id]?.status != PairRepairStatus.waiting,
+       );
+       if (playable.isEmpty) {
+         final waiting =
+             tickets.values
+                 .where((t) => t.status == PairRepairStatus.waiting)
+diff --git a/test/features/learning/pair_matching/pair_active_timer_test.dart b/test/features/learning/pair_matching/pair_active_timer_test.dart
+new file mode 100644
+index 00000000..181c30c9
+--- /dev/null
++++ b/test/features/learning/pair_matching/pair_active_timer_test.dart
+@@ -0,0 +1,110 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_repair_policy.dart';
++import 'pair_matching_evidence_contract_test.dart';
++
++void main() {
++  test('repeated submillisecond pauses retain runtime rounding remainder', () {
++    var micros = 0;
++    final clock = PairActiveClock(
++      PairTimerState.initial(PairTimerPreset.seconds60),
++      () => micros,
++    );
++    clock.resumeInteraction();
++    for (var i = 0; i < 10; i++) {
++      micros += 500;
++      final token = clock.pause(PairPauseReason.modal);
++      clock.release(token);
++    }
++    expect(clock.value.elapsedActiveMs, 5);
++  });
++  test('timer state owns an immutable copy of pause reasons', () {
++    final reasons = {PairPauseReason.modal};
++    final state = PairTimerState(
++      mode: PairTimerMode.running,
++      remainingActiveMs: 1000,
++      reasons: reasons,
++    );
++    reasons.clear();
++    expect(state.reasons, {PairPauseReason.modal});
++    expect(() => state.reasons.clear(), throwsUnsupportedError);
++  });
++  test(
++    'restart spacing counts previously correct other words since failure',
++    () {
++      final answers = [
++        const PairRepairAnswer('0', 'a', true),
++        const PairRepairAnswer('1', 'b', true),
++        const PairRepairAnswer('2', 'c', false, roundOrdinal: 1),
++        const PairRepairAnswer('3', 'a', true, roundOrdinal: 1),
++      ];
++      var tickets = PairRepairPolicy.project(['a', 'b', 'c', 'd'], answers);
++      expect(tickets.single.status, PairRepairStatus.waiting);
++      tickets = PairRepairPolicy.project(
++        ['a', 'b', 'c', 'd'],
++        [...answers, const PairRepairAnswer('4', 'b', true, roundOrdinal: 1)],
++      );
++      expect(tickets.single.status, PairRepairStatus.available);
++    },
++  );
++  for (final preset in PairTimerPreset.values) {
++    test('active time and owned overlapping pause leases $preset', () {
++      var micros = 0;
++      final clock = PairActiveClock(
++        PairTimerState.initial(preset),
++        () => micros,
++      );
++      micros += 9000000;
++      expect(clock.value.elapsedActiveMs, 0);
++      clock.resumeInteraction();
++      micros += 1250000;
++      final a = clock.pause(PairPauseReason.modal);
++      final b = clock.pause(PairPauseReason.modal);
++      final narration = clock.pause(PairPauseReason.narration);
++      final elapsed = preset == PairTimerPreset.off ? 0 : 1250;
++      expect(clock.value.elapsedActiveMs, elapsed);
++      micros += 999000000;
++      clock.release(a);
++      clock.release(a);
++      clock.release(narration);
++      expect(clock.isPaused, true);
++      clock.release(b);
++      micros += 500000;
++      expect(
++        clock.value.elapsedActiveMs,
++        preset == PairTimerPreset.off ? 0 : 1750,
++      );
++      final other = PairActiveClock(clock.value, () => micros);
++      other.release(b);
++      expect(other.isPaused, true);
++    });
++  }
++  test('clock rollback preserves accounted time and pauses for recovery', () {
++    var micros = 10000;
++    final clock = PairActiveClock(
++      PairTimerState.initial(PairTimerPreset.seconds60),
++      () => micros,
++    );
++    clock.resumeInteraction();
++    micros += 5000000;
++    clock.fold();
++    micros = 0;
++    expect(clock.value.elapsedActiveMs, 5000);
++    expect(clock.isPaused, true);
++    expect(clock.reasons, contains(PairPauseReason.clockFault));
++  });
++  test(
++    'fresh OFF timer has no elapsed time and no checkpoint tick writes',
++    () async {
++      final h = PairHarness();
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await h.restore();
++      expect(c.timer.remainingActiveMs, 0);
++      expect(c.timer.elapsedActiveMs, 0);
++      expect(c.timer.mode.name, 'off');
++      expect(h.repository.checkpoints, isEmpty);
++    },
++  );
++}
+diff --git a/test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart b/test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart
+index 067e5882..e78bff2c 100644
+--- a/test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart
++++ b/test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart
+@@ -21,32 +21,50 @@ import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_mat
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
+ import 'package:vocab_learning_app/runtime/app_build_info.dart';
+ import 'pair_matching_source_composer_test.dart' as f;
+ 
+ /// Faults wrap real SQL persistence; no fake answer/evidence authority.
+ class PairFaultRepository
+     implements
+         LearningRepository,
+         LearningActivityRecoveryRepository,
+         LearningEvidenceReplayRepository {
+   PairFaultRepository(this.delegate);
+   final DriftLearningRepository delegate;
+   int? checkpointFault;
+-  bool afterWrite = false, answerFault = false;
++  bool afterWrite = false, answerFault = false, closeFault = false;
+   Future<void> Function()? beforeAnswer;
+   final checkpoints = <LearningActivityCheckpoint>[];
+   final commands = <RecordAnswerCommand>[];
++  @override
++  Future<LearningSessionSummary> finishSession({
++    required String ownerId,
++    required String sessionId,
++    required DateTime endedAtUtc,
++  }) async {
++    final fail = closeFault;
++    closeFault = false;
++    if (fail && !afterWrite) throw StateError('synthetic close before write');
++    final result = await delegate.finishSession(
++      ownerId: ownerId,
++      sessionId: sessionId,
++      endedAtUtc: endedAtUtc,
++    );
++    if (fail) throw StateError('synthetic close lost ack');
++    return result;
++  }
++
+   @override
+   Future<void> appendActivityCheckpoint({
+     required String ownerId,
+     required LearningActivityCheckpoint checkpoint,
+   }) async {
+     checkpoints.add(checkpoint);
+     final fail = checkpointFault == checkpoint.revision;
+     if (fail) checkpointFault = null;
+     if (fail && !afterWrite) {
+       throw StateError('synthetic checkpoint before commit');
+     }
+     await delegate.appendActivityCheckpoint(
+       ownerId: ownerId,
+       checkpoint: checkpoint,
+@@ -202,29 +220,29 @@ class PairHarness {
+       ownerId: owner,
+       sessionId: operation.plan.learningSessionId,
+       roundOrdinal: c.state.roundOrdinal,
+       expectedRevision: c.state.operationRevision,
+       tile: PairTile(side, word),
+       responseTimeMs: 25,
+     ),
+   );
+   Future<void> confirm(PairMatchingSessionCoordinator c, String word) =>
+       c.dispatch(
+         PairConfirmGuidedMapping(
+           operationId: '${c.state.operationRevision}:confirm',
+           ownerId: owner,
+           sessionId: operation.plan.learningSessionId,
+-          roundOrdinal: 0,
++          roundOrdinal: c.state.roundOrdinal,
+           expectedRevision: c.state.operationRevision,
+           wordId: word,
+           shownSupportRevision: c.state.supportAtRevision[word]!,
+           responseTimeMs: 25,
+         ),
+       );
+ 
+   /// Adversarial but valid schedule: guess wrong while two playable identities
+   /// remain; otherwise complete available spacing or explicitly confirm tail.
+   Future<void> finishBounded(PairMatchingSessionCoordinator c) async {
+     var steps = 0;
+     while (!c.state.complete) {
+       if (++steps > 18) {
+         throw StateError('synthetic finite tail bound exceeded');
+@@ -300,28 +318,33 @@ void main() {
+                 : MapEntry(k, v),
+           );
+           final engine = version == 1
+               ? Map<String, Object?>.of(public)
+               : Map<String, Object?>.from(source['engine'] as Map);
+           engine['pending'] = compact(a.toJson());
+           engine['attempts'] = c.state.attempts
+               .map((a) => compact(a.toJson()))
+               .toList();
+           engine['operationRevision'] = public['operationRevision'];
+           engine['lastOperationId'] = a.operationId;
+           engine['lastFingerprint'] = a.fingerprint;
+           source['engine'] = engine;
+           source['codecVersion'] = version;
++          // Build an actual historical shape; v3-only fields cannot belong to
++          // a codec1/2 fixture. The strict chronology assertions stay unchanged.
++          source.remove('timer');
++          source.remove('roundSeed');
++          source.remove('terminal');
+           if (version == 1) {
+             source['startOperation'] = h.operation.stableSerialization;
+           }
+           final frozen =
+               await CurrentActivityEvidenceAdapter(learning: h.learning)
+                   .captureMatching(
+                     ownerId: h.owner,
+                     sessionId: h.operation.plan.learningSessionId,
+                     wordId: a.promptWordId,
+                     isCorrect: a.isCorrect,
+                     responseTimeMs: a.responseTimeMs,
+                     attemptNumber: c.state.attempts.length + 1,
+                     contentRevision: h
+                         .repository
+diff --git a/test/features/learning/pair_matching/pair_timeout_race_test.dart b/test/features/learning/pair_matching/pair_timeout_race_test.dart
+new file mode 100644
+index 00000000..7548b9db
+--- /dev/null
++++ b/test/features/learning/pair_matching/pair_timeout_race_test.dart
+@@ -0,0 +1,401 @@
++import 'dart:async';
++import 'dart:convert';
++import 'package:flutter/foundation.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_repair_policy.dart';
++import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
++import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
++import 'pair_matching_evidence_contract_test.dart';
++import 'pair_timeout_recovery_test.dart';
++import 'pair_matching_source_composer_test.dart' as f;
++
++void main() {
++  test(
++    'tight admission with five independent matches retains last correct and three receipts',
++    () async {
++      var micros = 0;
++      final h = PairHarness(
++        pinnedPlan: timedPlan(density: PairDensity.standard6),
++      );
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      for (var i = 0; i < 5; i++) {
++        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++        await h.tap(c, 'synthetic-$i', PairTileSide.target);
++      }
++      expect(c.state.supportedWordIds, isEmpty);
++      for (var i = 0; i < 64; i++) {
++        micros += 1000;
++        final token = c.pause(PairPauseReason.modal);
++        await c.flush();
++        try {
++          c.releasePause(token);
++        } on StateError catch (e) {
++          expect(e.message, contains('capacity'));
++          break;
++        }
++      }
++      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++      await h.tap(c, 'synthetic-5', PairTileSide.prompt);
++      await h.tap(c, 'synthetic-5', PairTileSide.target);
++      await c.finish();
++      await c.markSummaryPresented();
++      expect(c.checkpointRevision, lessThanOrEqualTo(64));
++      expect(c.state.attempts, hasLength(6));
++      debugPrint(
++        'PM4 tight five-independent final revision=${c.checkpointRevision}',
++      );
++    },
++  );
++  test(
++    'maximum admitted Unicode plan keeps pending timer repair and close below byte ceiling',
++    () async {
++      final items = List.generate(4, (i) {
++        final item = f.fixture(
++          i,
++          spelling: '${'e' * 255}$i',
++          meaning: '${'ก' * 255}$i',
++        );
++        return PairLexicalItem(
++          wordId: '${'ก' * 255}$i',
++          contentRevision: item.contentRevision,
++          checksum: item.checksum,
++          spelling: item.spelling,
++          meaning: item.meaning,
++          sourceLocale: 'en',
++          targetLocale: 'th',
++          sourceReasons: PairSourceReason.values.where(
++            (r) => r != PairSourceReason.reported,
++          ),
++        );
++      });
++      final owner = 'o' * 256, launch = 'l' * 256;
++      final plan = PairMatchingPlanV1(
++        ownerId: owner,
++        orderedLexicalItems: items,
++        direction: PairDirection.thToEn,
++        density: PairDensity.compact4,
++        shuffleSeed: 42,
++        timerPreset: PairTimerPreset.seconds120,
++        allowlistVersion: 'a' * 256,
++        learningSessionId: pairSessionId(owner, launch),
++        entryKind: PairSourceSurface.learn,
++        sourceSnapshotId: 's' * 256,
++        createdAtUtc: DateTime.utc(2026, 9, 5),
++      );
++      var id = 0, micros = 0;
++      final h = PairHarness(
++        pinnedPlan: plan,
++        launchId: launch,
++        buildTag: 'b' * 256,
++        evidenceId: () => '${'x' * 186}${(++id).toString().padLeft(3, '0')}',
++      );
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      micros += 120000000;
++      await c.expire();
++      await c.dispatch(decision(c, PairTimerAction.extend));
++      micros += 30000000;
++      await c.expire();
++      await c.dispatch(decision(c, PairTimerAction.restart));
++      micros += 120000000;
++      await c.expire();
++      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++      await h.finishBounded(c);
++      await c.finish();
++      await c.markSummaryPresented();
++      final maxBytes = h.repository.checkpoints
++          .map((v) => utf8.encode(jsonEncode(v.state)).length)
++          .reduce((a, b) => a > b ? a : b);
++      expect(maxBytes, lessThanOrEqualTo(65536));
++      expect(c.checkpointRevision, lessThanOrEqualTo(64));
++      expect(
++        h.repository.checkpoints.any((v) => v.state['frozenEvidence'] != null),
++        true,
++      );
++      expect(c.state.attempts.where((a) => !a.isCorrect), isNotEmpty);
++      final projected = PairMatchingCheckpointCodec.reservedCompletionBytes(
++        PairMatchingCheckpointCodec.decode(h.operation.initialCheckpoint.state),
++      );
++      debugPrint(
++        'PM4 Thai256 compact4 max written=$maxBytes; initial reserved=$projected; terminal revision=${c.checkpointRevision}; attempts=${c.state.attempts.length}',
++      );
++    },
++  );
++  test(
++    'M12 routes same canonical close through host owner and completer',
++    () async {
++      final h = PairHarness();
++      addTearDown(h.db.close);
++      await h.initialize();
++      var owned = 0, completed = 0;
++      late Future<void> hostDurable;
++      final c = await const MatchingModeAdapter().preparePairSession(
++        operation: h.operation,
++        learning: h.learning,
++        evidence: CurrentActivityEvidenceAdapter(learning: h.learning),
++        activeOwnerId: () => h.owner,
++        monotonicMicros: () => 0,
++        ownClose: (close, ensureDurable) {
++          expect(close.belongsToLearningAuthority(h.learning), true);
++          owned++;
++          hostDurable = ensureDurable();
++        },
++        completeSession: (close) async {
++          completed++;
++          return close.requiresRetry ? close.retry() : close.finish();
++        },
++      );
++      for (var i = 0; i < 4; i++) {
++        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++        await h.tap(c, 'synthetic-$i', PairTileSide.target);
++      }
++      await c.finish();
++      await hostDurable;
++      expect(owned, 1);
++      expect(completed, 1);
++      await c.markSummaryPresented();
++    },
++  );
++  test(
++    'clock fault Continue removes fault pause and finishes real session',
++    () async {
++      var micros = 1000;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      micros += 5000000;
++      c.timer;
++      micros = 0;
++      expect(c.timer.reasons, contains(PairPauseReason.clockFault));
++      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++      expect(c.timer.reasons, isNot(contains(PairPauseReason.clockFault)));
++      expect(c.timerPaused, false);
++      await h.finishBounded(c);
++      await c.finish();
++      await c.markSummaryPresented();
++      expect((await h.restore()).summaryPresented, true);
++    },
++  );
++  test(
++    'capacity-paused board accepts stale releases and Continue completion',
++    () async {
++      var micros = 0;
++      final h = PairHarness(
++        pinnedPlan: timedPlan(density: PairDensity.standard6),
++      );
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      final stale = c.pause(PairPauseReason.modal);
++      c.releasePause(stale);
++      for (var i = 0; i < 64; i++) {
++        micros += 1000;
++        final token = c.pause(PairPauseReason.modal);
++        await c.flush();
++        try {
++          c.releasePause(token);
++        } on StateError catch (e) {
++          expect(e.message, contains('capacity'));
++          break;
++        }
++      }
++      expect(c.timerPaused, true);
++      c.releasePause(stale);
++      c.releasePause(stale);
++      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++      await h.finishBounded(c);
++      await c.finish();
++      await c.markSummaryPresented();
++      expect(c.checkpointRevision, lessThanOrEqualTo(64));
++    },
++  );
++  for (final density in PairDensity.values) {
++    test(
++      'worst admitted restart sequence reserves full PM3 round and real close $density',
++      () async {
++        var micros = 0;
++        final h = PairHarness(pinnedPlan: timedPlan(density: density));
++        addTearDown(h.db.close);
++        await h.initialize();
++        final c = await clocked(h, () => micros);
++        c.resumeInteraction();
++        var restarts = 0;
++        while (true) {
++          micros += 60000000;
++          await c.expire();
++          final revision = c.checkpointRevision, round = c.state.roundOrdinal;
++          try {
++            await c.dispatch(decision(c, PairTimerAction.restart));
++            restarts++;
++          } on StateError catch (e) {
++            expect(e.message, contains('capacity'));
++            expect(c.checkpointRevision, revision);
++            expect(c.state.roundOrdinal, round);
++            break;
++          }
++          expect(restarts, lessThan(32));
++        }
++        expect(restarts, greaterThan(0));
++        // Optional extension must be admitted with a subsequent expiry+Continue
++        // reserve or refused before entitlement changes.
++        try {
++          await c.dispatch(decision(c, PairTimerAction.extend));
++          micros += 30000000;
++          await c.expire();
++        } on StateError catch (e) {
++          expect(e.message, contains('capacity'));
++          expect(c.timer.extensionUsed, false);
++        }
++        await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++        await h.finishBounded(c);
++        await c.finish();
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, lessThanOrEqualTo(64));
++        expect(c.state.attempts.where((a) => !a.isCorrect), isNotEmpty);
++        expect(
++          c.state.attempts.where((a) => a.isCorrect),
++          hasLength(density.pairCount),
++        );
++        expect((await h.restore()).summaryPresented, true);
++        debugPrint(
++          'PM4 $density admitted restarts=$restarts; terminal revision=${c.checkpointRevision}; attempts=${c.state.attempts.length}',
++        );
++      },
++    );
++  }
++  test(
++    'admitted answer pauses timer and fences timeout/restart until exact ack',
++    () async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      final entered = Completer<void>(), release = Completer<void>();
++      h.repository.beforeAnswer = () async {
++        entered.complete();
++        await release.future;
++      };
++      micros = 59000000;
++      await h.tap(c, 'synthetic-0', PairTileSide.prompt);
++      final answer = h.tap(c, 'synthetic-0', PairTileSide.target);
++      await entered.future;
++      micros += 999000000;
++      expect(c.timer.remainingActiveMs, 1000);
++      await expectLater(
++        c.dispatch(decision(c, PairTimerAction.restart)),
++        throwsStateError,
++      );
++      release.complete();
++      await answer;
++      expect(c.state.attempts, hasLength(1));
++      micros += 1000000;
++      await c.expire();
++      expect(c.timer.mode, PairTimerMode.timeoutDecision);
++      await expectLater(
++        h.tap(c, 'synthetic-1', PairTileSide.prompt),
++        throwsStateError,
++      );
++      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++      expect(c.state.attempts, hasLength(1));
++    },
++  );
++  for (final density in PairDensity.values) {
++    test('restart retains support and ticket-local spacing $density', () async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan(density: density));
++      addTearDown(h.db.close);
++      await h.initialize();
++      var c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      for (var i = 0; i < density.pairCount ~/ 2; i++) {
++        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++        await h.tap(c, 'synthetic-$i', PairTileSide.target);
++      }
++      final oldIds = h.repository.commands.map((a) => a.id).toList();
++      micros += 60000000;
++      await c.expire();
++      await c.dispatch(decision(c, PairTimerAction.restart));
++      expect(c.state.matchedWordIds, isEmpty);
++      final wrong = 'synthetic-${density.pairCount - 1}';
++      await h.tap(c, wrong, PairTileSide.prompt);
++      await h.tap(c, 'synthetic-0', PairTileSide.target);
++      for (var i = 0; i < density.pairCount ~/ 2; i++) {
++        expect(c.state.repairFor(wrong)!.status, PairRepairStatus.waiting);
++        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++        await h.tap(c, 'synthetic-$i', PairTileSide.target);
++      }
++      expect(c.state.repairFor(wrong)!.status, PairRepairStatus.available);
++      expect(
++        h.repository.commands.take(oldIds.length).map((a) => a.id),
++        oldIds,
++      );
++      c.dispose();
++      c = await clocked(h, () => micros);
++      expect(c.state.repairFor(wrong)!.status, PairRepairStatus.available);
++      expect(c.state.attempts.first.roundOrdinal, 0);
++      expect(c.state.attempts.last.roundOrdinal, 1);
++    });
++  }
++  for (final after in [false, true]) {
++    for (final fault in ['pendingClose', 'close', 'ack', 'presented']) {
++      test('exact real terminal recovery $fault after=$after', () async {
++        final h = PairHarness();
++        addTearDown(h.db.close);
++        await h.initialize();
++        var c = await h.restore();
++        for (var i = 0; i < 4; i++) {
++          await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++          await h.tap(c, 'synthetic-$i', PairTileSide.target);
++        }
++        final base = c.checkpointRevision;
++        h.repository.afterWrite = after;
++        if (fault == 'close') {
++          h.repository.closeFault = true;
++        } else {
++          h.repository.checkpointFault =
++              base +
++              (fault == 'pendingClose'
++                  ? 1
++                  : fault == 'ack'
++                  ? 2
++                  : 3);
++        }
++        if (fault == 'presented') {
++          await c.finish();
++          await expectLater(c.markSummaryPresented(), throwsStateError);
++        } else {
++          await expectLater(c.finish(), throwsStateError);
++        }
++        final attempted = h.repository.checkpoints.last;
++        c.dispose();
++        c = await h.restore();
++        await c.finish();
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, base + 3);
++        expect(c.summaryPresented, true);
++        final summary = (await h.db.select(h.db.learningSessions).get()).single;
++        expect(summary.state, 'completed');
++        expect(await h.db.select(h.db.answerAttempts).get(), hasLength(4));
++        final same = h.repository.checkpoints.where(
++          (v) => v.revision == attempted.revision,
++        );
++        expect(same.map((v) => v.terminalAtUtc).toSet(), hasLength(1));
++      });
++    }
++  }
++}
+diff --git a/test/features/learning/pair_matching/pair_timeout_recovery_test.dart b/test/features/learning/pair_matching/pair_timeout_recovery_test.dart
+new file mode 100644
+index 00000000..8d56468b
+--- /dev/null
++++ b/test/features/learning/pair_matching/pair_timeout_recovery_test.dart
+@@ -0,0 +1,353 @@
++import 'dart:convert';
++import 'dart:io';
++import 'package:drift/native.dart';
++import 'package:vocab_learning_app/data/local/app_database.dart';
++import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
++import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
++import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
++import 'package:vocab_learning_app/runtime/app_build_info.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_session_coordinator.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
++import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
++import 'pair_matching_evidence_contract_test.dart';
++import 'pair_matching_source_composer_test.dart' as f;
++
++PairMatchingPlanV1 timedPlan({
++  PairDensity density = PairDensity.compact4,
++  PairTimerPreset preset = PairTimerPreset.seconds60,
++}) => PairMatchingPlanV1(
++  ownerId: 'synthetic-owner',
++  orderedLexicalItems: List.generate(density.pairCount, f.fixture),
++  direction: PairDirection.enToTh,
++  density: density,
++  shuffleSeed: 42,
++  timerPreset: preset,
++  allowlistVersion: 'synthetic-v1',
++  learningSessionId: pairSessionId('synthetic-owner', 'synthetic-operation'),
++  entryKind: PairSourceSurface.learn,
++  sourceSnapshotId: 'synthetic-snapshot',
++  createdAtUtc: DateTime.utc(2026, 9, 5),
++);
++
++Future<PairMatchingSessionCoordinator> clocked(
++  PairHarness h,
++  int Function() now,
++) => PairMatchingSessionCoordinator.restore(
++  operation: h.operation,
++  learning: h.learning,
++  evidence: CurrentActivityEvidenceAdapter(learning: h.learning),
++  activeOwnerId: () => h.owner,
++  monotonicMicros: now,
++);
++PairTimerDecision decision(
++  PairMatchingSessionCoordinator c,
++  PairTimerAction action,
++) => PairTimerDecision(
++  operationId: '${c.state.operationRevision}:${action.name}',
++  ownerId: c.operation.plan.ownerId,
++  sessionId: c.operation.plan.learningSessionId,
++  roundOrdinal: c.state.roundOrdinal,
++  expectedRevision: c.state.operationRevision,
++  action: action,
++);
++
++void main() {
++  test(
++    'completed board stops active clock before delayed summary request',
++    () async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      micros = 5000000;
++      for (var i = 0; i < 4; i++) {
++        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++        await h.tap(c, 'synthetic-$i', PairTileSide.target);
++      }
++      final elapsed = c.timer.elapsedActiveMs;
++      micros += 30000000;
++      expect(c.timer.elapsedActiveMs, elapsed);
++      final restored = await clocked(h, () => micros);
++      expect(() => restored.resumeInteraction(), throwsStateError);
++      await c.finish();
++      expect(c.timer.elapsedActiveMs, elapsed);
++    },
++  );
++  test(
++    'codec rejects timer identity detached from actual bound decision',
++    () async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      micros = 60000000;
++      await c.expire();
++      final source =
++          jsonDecode(jsonEncode(h.repository.checkpoints.last.state))
++              as Map<String, dynamic>;
++      (source['timer'] as Map)['lastOperationId'] = '0:forged';
++      expect(
++        () => PairMatchingCheckpointCodec.decode(source),
++        throwsFormatException,
++      );
++    },
++  );
++  for (final after in [false, true]) {
++    for (final action in [
++      'pause',
++      'expire',
++      'extend',
++      'restart',
++      'continueUntimed',
++    ]) {
++      test(
++        'disk reopen preserves actual durable $action after=$after',
++        () async {
++          var micros = 0;
++          final directory = await Directory.systemTemp.createTemp(
++            'lexiquest-pm4-synthetic-',
++          );
++          final file = File('${directory.path}/pair.sqlite');
++          final h = PairHarness(
++            pinnedPlan: timedPlan(),
++            executor: NativeDatabase(file),
++          );
++          await h.initialize();
++          final c = await clocked(h, () => micros);
++          c.resumeInteraction();
++          micros = 3000000;
++          final token = c.pause(PairPauseReason.modal);
++          await c.flush();
++          c.releasePause(token);
++          if (action != 'pause' && action != 'expire') {
++            micros += 57000000;
++            await c.expire();
++          }
++          h.repository.checkpointFault = c.checkpointRevision + 1;
++          h.repository.afterWrite = after;
++          if (action == 'pause') {
++            micros += 2000000;
++            c.pause(PairPauseReason.background);
++            await expectLater(c.flush(), throwsStateError);
++          } else if (action == 'expire') {
++            micros += 57000000;
++            await expectLater(c.expire(), throwsStateError);
++          } else {
++            await expectLater(
++              c.dispatch(decision(c, PairTimerAction.values.byName(action))),
++              throwsStateError,
++            );
++          }
++          final actual = await h.real.loadExactActivityRecovery(
++            ownerId: h.owner,
++            sessionId: h.operation.plan.learningSessionId,
++            activityType: 'matching',
++          );
++          final bytes = jsonEncode(actual!.checkpoint!.state);
++          c.dispose();
++          await h.db.close();
++          final db = AppDatabase(NativeDatabase(file));
++          addTearDown(() async {
++            await db.close();
++            await file.delete();
++            await directory.delete();
++          });
++          final learning = LearningUseCases(
++            owners: DriftLocalOwnerRepository(
++              db,
++              generateId: () => throw StateError('no owner mint'),
++              nowUtc: () => DateTime.utc(2026, 9, 5),
++            ),
++            repository: DriftLearningRepository(db),
++            generateId: () => throw StateError('no evidence mint'),
++            nowUtc: () => DateTime.utc(2026, 9, 5, 2),
++            buildInfo: const AppBuildInfo(
++              version: 'synthetic',
++              buildId: 'synthetic',
++            ),
++          );
++          final restored = await PairMatchingSessionCoordinator.restore(
++            operation: h.operation,
++            learning: learning,
++            evidence: CurrentActivityEvidenceAdapter(learning: learning),
++            activeOwnerId: () => h.owner,
++            monotonicMicros: () => micros,
++          );
++          final again = await learning.loadExactActivityRecovery(
++            ownerId: h.owner,
++            sessionId: h.operation.plan.learningSessionId,
++            activityType: 'matching',
++          );
++          expect(jsonEncode(again!.checkpoint!.state), bytes);
++          expect(
++            restored.timer.elapsedActiveMs,
++            action == 'pause'
++                ? (after ? 5000 : 3000)
++                : action == 'expire'
++                ? (after ? 60000 : 3000)
++                : 60000,
++          );
++          expect(restored.timerPaused, true);
++          final elapsed = restored.timer.elapsedActiveMs;
++          micros += 999999999;
++          expect(restored.timer.elapsedActiveMs, elapsed);
++          expect(restored.timer.extensionUsed, action == 'extend' && after);
++          expect(
++            restored.state.roundOrdinal,
++            action == 'restart' && after ? 1 : 0,
++          );
++          expect(await db.select(db.answerAttempts).get(), isEmpty);
++        },
++      );
++    }
++  }
++  for (final tamper in [
++    'elapsed',
++    'remaining',
++    'entitlement',
++    'round',
++    'terminal',
++  ]) {
++    test('repository rejects forged Pair $tamper transition', () async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      micros = 1000000;
++      c.pause(PairPauseReason.background);
++      await c.flush();
++      final last = h.repository.checkpoints.last;
++      final map = jsonDecode(jsonEncode(last.state)) as Map<String, dynamic>;
++      final timer = map['timer'] as Map;
++      switch (tamper) {
++        case 'elapsed':
++          timer['elapsedActiveMs'] = 0;
++        case 'remaining':
++          timer['remainingActiveMs'] = 60000;
++        case 'entitlement':
++          timer['extensionUsed'] = true;
++        case 'round':
++          (map['engine'] as Map)['roundOrdinal'] =
++              1; // seed also forged coherently
++          final state = c.state;
++          map['roundSeed'] = int.parse(
++            pairHash('${state.plan.shuffleSeed}:round:1:v1').substring(0, 7),
++            radix: 16,
++          );
++        case 'terminal':
++          break;
++      }
++      await expectLater(
++        h.real.appendActivityCheckpoint(
++          ownerId: h.owner,
++          checkpoint: LearningActivityCheckpoint(
++            sessionId: last.sessionId,
++            activityType: 'matching',
++            revision: last.revision + 1,
++            occurredAtUtc: last.occurredAtUtc,
++            state: map,
++            terminalAtUtc: tamper == 'terminal' ? last.occurredAtUtc : null,
++          ),
++        ),
++        throwsStateError,
++      );
++    });
++  }
++  for (final after in [false, true]) {
++    test(
++      'durable expiry extension restart Continue lost ack after=$after',
++      () async {
++        var micros = 0;
++        final h = PairHarness(pinnedPlan: timedPlan());
++        addTearDown(h.db.close);
++        await h.initialize();
++        var c = await clocked(h, () => micros);
++        c.resumeInteraction();
++        micros = 7000000;
++        final pause = c.pause(PairPauseReason.background);
++        await c.flush();
++        expect(c.timer.remainingActiveMs, 53000);
++        c.dispose();
++        c = await clocked(h, () => micros);
++        expect(c.timer.elapsedActiveMs, 7000);
++        micros += 100000000;
++        expect(c.timer.elapsedActiveMs, 7000);
++        c.releasePause(pause); // lease belongs to disposed coordinator
++        expect(c.timerPaused, true);
++        c.resumeInteraction();
++        micros += 53000000;
++        await c.expire();
++        expect(c.timer.mode, PairTimerMode.timeoutDecision);
++        expect(await h.db.select(h.db.answerAttempts).get(), isEmpty);
++        expect(
++          (await h.db.select(h.db.learningSessions).get()).single.state,
++          'active',
++        );
++        final extension = decision(c, PairTimerAction.extend);
++        h.repository.checkpointFault = c.checkpointRevision + 1;
++        h.repository.afterWrite = after;
++        await expectLater(c.dispatch(extension), throwsStateError);
++        await c.retryPending();
++        await c.dispatch(extension);
++        expect(c.timer.extensionUsed, true);
++        expect(c.timer.remainingActiveMs, 30000);
++        micros += 30000000;
++        await c.expire();
++        await c.dispatch(decision(c, PairTimerAction.restart));
++        expect(c.state.roundOrdinal, 1);
++        expect(c.timer.extensionUsed, true);
++        expect(
++          c.state.plan.stableSerialization,
++          h.operation.plan.stableSerialization,
++        );
++        c.dispose();
++        c = await clocked(h, () => micros);
++        expect(c.state.roundOrdinal, 1);
++        expect(c.timerPaused, true);
++        c.resumeInteraction();
++        micros += 60000000;
++        await c.expire();
++        await expectLater(
++          c.dispatch(decision(c, PairTimerAction.extend)),
++          throwsStateError,
++        );
++        await c.dispatch(decision(c, PairTimerAction.continueUntimed));
++        for (var i = 0; i < 4; i++) {
++          await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
++          await h.tap(c, 'synthetic-$i', PairTileSide.target);
++        }
++        final revision = c.checkpointRevision;
++        final summary = await c.finish();
++        expect(summary.state, 'completed');
++        expect(c.checkpointRevision, revision + 2);
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, revision + 3);
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, revision + 3);
++        expect(
++          h.repository.checkpoints.every(
++            (v) => utf8.encode(jsonEncode(v.state)).length <= 65536,
++          ),
++          true,
++        );
++        c.dispose();
++        c = await clocked(h, () => micros);
++        expect((await c.finish()).id, summary.id);
++        await c.markSummaryPresented();
++        expect(c.checkpointRevision, revision + 3);
++      },
++    );
++  }
++}

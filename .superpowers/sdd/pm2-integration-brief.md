@@ -1,0 +1,19 @@
+# PM2 integration notes
+
+Read extracted pm2-brief.md as normative task; approved plan/design already authorized. Read AGENTS.md and the final PM1 report/code before implementing. Worktree C:/Users/Phet/.codex/worktrees/02fa/LexiQuest only.
+
+PM1 defines PairMatchingPlanV1 in domain/pair_matching_plan.dart, PairMatchingLaunchIntent/density/direction/purpose enums in domain/pair_matching_launch.dart, and PairMatchingStartOperation/AtomicStartAdapter in application/pair_matching_atomic_start.dart. Its initial v6 checkpoint pins full plan and start envelope. This is a starting shape; evolve it through one shared pure codec rather than duplicate serialization between start and coordinator.
+
+Deliver pure reducer AND real canonical session/evidence coordinator. This is not satisfied by mocked effects alone. Reducer state + typed command -> immutable next state + effects, no Flutter/repository/clock imports. Selecting/deselecting/reselecting either side is neutral until a cross-side pair; prompt-side canonical word is independent of tap order and EN/TH direction. Incorrect evidence attaches to prompt, never distractor. Matched progress is monotonic in the current round; explicit later Restart has separate round lineage and retains session evidence/first-opportunity/support history.
+
+Duplicate IDs/changed payloads, stale round/revision callbacks, owner changes and rebuilds must be fenced. Freeze evidence identity and contexts before persistence; uncertain checkpoint/answer writes must retry exactly, never derive a new ID. Use existing CurrentActivityEvidenceAdapter and LearningUseCases boundaries, with synthetic real-Drift recovery tests. Do not construct arbitrary EvidenceContext or bypass pinned matching validation.
+
+Follow canonical hints: neutral visible-text pronunciation/narration is not semantic support; answer-revealing mapping produces guided subsequent answers. PM3 will add delayed repair; keep typed attempt roles and durable first-opportunity ledger ready without faking completed repairs.
+
+Checkpoint version 6 reserved; database v24/48 tables unchanged. Existing matching v1–v5 reader/writer stays intact. PM4 audit in pm4-checkpoint-audit.md is advisory: bounded 'worst allowed' transitions are the requirement, not unlimited restarts. Reserve sufficient writes for remaining answers, Continue untimed and terminal close; no per-tick persistence. Under current repository 64 revisions, 128 attempts and 64 KiB, share one budget policy rather than arbitrary constants across modules.
+
+Practice Replay stays disabled until PM5. PM5 audit identifies separate typed recreational matching capture/restore and purpose-gated repository checks; do not prematurely broaden normal capture classification. Frozen EvidenceContext/EventEnvelopeV2 remain unchanged.
+
+Shell integration must follow existing matching lifecycle seams (admitted/recovery operations, exact close, hint snapshots) rather than invent a second learning authority. UnifiedLessonController.recordCapturedEvidence validates the occurrence adapter's class, so a later recreational replay seam must remain explicit. Its recordActiveLearningInteraction also reaches focus/study-time authorities independently of answer classification; PM5 must test actual host/shell replay isolation, not only repository answer deltas.
+
+Write set: planned engine/coordinator and tests, shared Pair codec/domain state as necessary, narrow matching adapter/current-activity/repository extensions required by real v6 evidence validation plus their tests. Ask root before overlapping generic configuration/history/Today work. Root owns docs/status. Sole Flutter/Dart tool ownership granted on dispatch; serialize focused test/format/analyze, no full suite/build/other worktrees/commits. Report RED/GREEN exact commands/results, files and limitations in .superpowers/sdd/pm2-report.md and release tool ownership.

@@ -1,0 +1,291 @@
+BASE ca123dddc1349acc4ed67bdd8f5476b02165307c; HEAD working tree PM0
+ .../learning/matching_mode_adapter_test.dart         | 20 ++++++++++++++++++++
+ .../production_feature_navigation_test.dart          |  9 +++++++++
+ test/screens/matching_mode_screen_test.dart          | 18 ++++++++++++++++++
+ 3 files changed, 47 insertions(+)
+diff --git a/test/features/learning/matching_mode_adapter_test.dart b/test/features/learning/matching_mode_adapter_test.dart
+index efee0e81..b03c5637 100644
+--- a/test/features/learning/matching_mode_adapter_test.dart
++++ b/test/features/learning/matching_mode_adapter_test.dart
+@@ -27,20 +27,40 @@ import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artif
+ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+ import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+ import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+ import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+ import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart'
+     as vocabulary_domain;
+ import 'package:vocab_learning_app/runtime/app_build_info.dart';
+ 
+ void main() {
++  test(
++    'PM0 boundary keeps matching on recognition evidence and bounded recovery',
++    () {
++      const adapter = MatchingModeAdapter();
++
++      expect(adapter.mode, LessonMode.matching);
++      expect(MatchingModeAdapter.activityType, 'matching');
++      expect(MatchingModeAdapter.maximumCheckpoints, 64);
++      expect(
++        adapter
++            .classifyResponse(
++              hint: const HintUsageSnapshot.known(0),
++              supportUsed: false,
++            )
++            .evidenceClass,
++        EvidenceClass.recognition,
++      );
++    },
++  );
++
+   const adapter = MatchingModeAdapter();
+ 
+   test('pins a deterministic ambiguity-safe pair set for restart', () {
+     final session = _session(<QuizWord>[
+       _word('one', 'Station', 'train stop'),
+       _word('one-copy', '  STATION ', 'railway platform'),
+       _word('shared-a', 'airport', 'shared meaning'),
+       _word('shared-b', 'market', ' SHARED   MEANING '),
+       _word('hotel', 'hotel', 'place to stay'),
+       _word('museum', 'museum', 'place with exhibits'),
+diff --git a/test/scenarios/production_feature_navigation_test.dart b/test/scenarios/production_feature_navigation_test.dart
+index cee67b43..f2b21a7b 100644
+--- a/test/scenarios/production_feature_navigation_test.dart
++++ b/test/scenarios/production_feature_navigation_test.dart
+@@ -93,20 +93,29 @@ import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
+ import 'package:vocab_learning_app/screens/study_planning_hub_screen.dart';
+ import 'package:vocab_learning_app/screens/pre_post_assessment_screen.dart';
+ import 'package:vocab_learning_app/screens/review_center_screen.dart';
+ import 'package:vocab_learning_app/screens/today_hub_screen.dart';
+ import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ import '../support/inert_research_dependencies.dart';
+ 
+ void main() {
++  test('feature-off Pair launch remains absent from production navigation', () {
++    final registration = buildLessonModeRegistry().find(LessonMode.matching)!;
++
++    expect(registration.productionEntryId, 'home/learn/quiz');
++    expect(registration.routeName, 'learning/matching');
++    expect(registration.isDeliverable, isFalse);
++    expect(buildLessonModeRegistry().resolve(LessonMode.matching), isNull);
++  });
++
+   final productionEntries = <_ProductionEntryCase>[
+     const _ProductionEntryCase(
+       feature: Feature.vocabulary,
+       id: 'home/vocabulary',
+       surface: _EntrySurface.bottom,
+       destinationType: CategoriesPage,
+     ),
+     const _ProductionEntryCase(
+       feature: Feature.quiz,
+       id: 'home/learn/quiz',
+diff --git a/test/screens/matching_mode_screen_test.dart b/test/screens/matching_mode_screen_test.dart
+index 5a1de1c1..11d00532 100644
+--- a/test/screens/matching_mode_screen_test.dart
++++ b/test/screens/matching_mode_screen_test.dart
+@@ -249,20 +249,38 @@ void main() {
+     );
+     expect(find.text('place for flights'), findsOneWidget);
+     expect(find.textContaining('20 min'), findsNothing);
+     expect(find.textContaining('Time remaining:'), findsOneWidget);
+     final sessions = await database.select(database.learningSessions).get();
+     expect(sessions, hasLength(1));
+     expect(sessions.single.id, original.id);
+     expect(sessions.single.activityType, MatchingModeAdapter.activityType);
+   });
+ 
++  testWidgets('PM0 baseline renders the existing f10 board only', (
++    tester,
++  ) async {
++    await tester.pumpWidget(MaterialApp(home: _screen(learning)));
++    await _pumpUntilFound(tester, find.text('Matching'));
++    await _pumpUntilFound(
++      tester,
++      find.byKey(const ValueKey<String>('matching-word-word:airport')),
++    );
++
++    expect(find.text('Matching'), findsOneWidget);
++    expect(find.text('Words'), findsOneWidget);
++    expect(find.text('Meanings'), findsOneWidget);
++    expect(find.bySemanticsLabel('0 of 3 pairs matched'), findsOneWidget);
++    expect(find.textContaining('Time remaining:'), findsOneWidget);
++    expect(find.textContaining('star'), findsNothing);
++  });
++
+   testWidgets('default implemented-off registry cannot initialize the screen', (
+     tester,
+   ) async {
+     final features = RuntimeFeatureRegistry(
+       const BuildFeatureRegistry.allEnabled(),
+     );
+     addTearDown(features.dispose);
+     final research = InertResearchDependencies(database);
+     final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+     final dependencies = AppDependencies(
+diff --git a/test/architecture/pair_matching_f10_boundary_test.dart b/test/architecture/pair_matching_f10_boundary_test.dart
+new file mode 100644
+index 00000000..114d6e64
+--- /dev/null
++++ b/test/architecture/pair_matching_f10_boundary_test.dart
+@@ -0,0 +1,115 @@
++import 'package:drift/native.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/data/local/app_database.dart';
++import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
++import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
++import 'package:vocab_learning_app/navigation/app_routes.dart';
++import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
++import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
++import 'package:vocab_learning_app/runtime/registries/feature.dart';
++
++void main() {
++  late AppDatabase database;
++
++  setUp(() => database = AppDatabase(NativeDatabase.memory()));
++  tearDown(() => database.close());
++
++  test('TC-PMT-001 Pair Matching remains the hidden f10 learning boundary', () {
++    final snapshot = _currentBoundary(database);
++
++    expect(() => _validateBoundary(snapshot), returnsNormally);
++    expect(snapshot.registration.isDeliverable, isFalse);
++  });
++
++  test('negative mutations reject f45, a main route, and a star table', () {
++    final baseline = _currentBoundary(database);
++    final mutations = <_PairBoundarySnapshot>[
++      baseline.copyWith(featureIds: <String>[...baseline.featureIds, 'f45']),
++      baseline.copyWith(
++        appRoutes: <String>[...baseline.appRoutes, 'pairMatching'],
++      ),
++      baseline.copyWith(
++        tableNames: <String>[...baseline.tableNames, 'pair_stars'],
++      ),
++    ];
++
++    for (final mutation in mutations) {
++      expect(() => _validateBoundary(mutation), throwsStateError);
++    }
++  });
++}
++
++_PairBoundarySnapshot _currentBoundary(AppDatabase database) {
++  final f10 = allTcasIdeaIntegrationCatalog.records.singleWhere(
++    (record) => record.id == FeatureContractId.f10,
++  );
++  final registration = buildLessonModeRegistry().find(LessonMode.matching)!;
++  return _PairBoundarySnapshot(
++    featureIds: FeatureContractId.values.map((id) => id.name).toList(),
++    pairContractId: f10.id.name,
++    pairContractName: f10.name,
++    appRoutes: AppRoute.values.map((route) => route.name).toList(),
++    tableNames: database.allTables
++        .map((table) => table.actualTableName)
++        .toList(),
++    registration: registration,
++  );
++}
++
++void _validateBoundary(_PairBoundarySnapshot snapshot) {
++  if (snapshot.featureIds.length != 44 ||
++      snapshot.featureIds.first != 'f01' ||
++      snapshot.featureIds.last != 'f44' ||
++      snapshot.featureIds.contains('f45')) {
++    throw StateError('Pair Matching must not create f45.');
++  }
++  if (snapshot.pairContractId != 'f10' ||
++      snapshot.pairContractName != 'Matching Mode' ||
++      snapshot.registration.mode != LessonMode.matching ||
++      snapshot.registration.feature != Feature.quiz ||
++      snapshot.registration.productionEntryId != 'home/learn/quiz' ||
++      snapshot.registration.routeName != 'learning/matching') {
++    throw StateError('Pair launch must resolve through the existing f10 path.');
++  }
++  if (snapshot.appRoutes.length != 4 ||
++      snapshot.appRoutes.join(',') != 'login,register,emailVerification,home') {
++    throw StateError('Pair Matching must not create a main destination.');
++  }
++  if (snapshot.tableNames.length != 48 ||
++      snapshot.tableNames.any(
++        (name) => name.contains('pair_star') || name.contains('matching_star'),
++      )) {
++    throw StateError('Pair Matching must not create a star table.');
++  }
++}
++
++final class _PairBoundarySnapshot {
++  const _PairBoundarySnapshot({
++    required this.featureIds,
++    required this.pairContractId,
++    required this.pairContractName,
++    required this.appRoutes,
++    required this.tableNames,
++    required this.registration,
++  });
++
++  final List<String> featureIds;
++  final String pairContractId;
++  final String pairContractName;
++  final List<String> appRoutes;
++  final List<String> tableNames;
++  final LessonModeRegistration registration;
++
++  _PairBoundarySnapshot copyWith({
++    List<String>? featureIds,
++    List<String>? appRoutes,
++    List<String>? tableNames,
++  }) => _PairBoundarySnapshot(
++    featureIds: featureIds ?? this.featureIds,
++    pairContractId: pairContractId,
++    pairContractName: pairContractName,
++    appRoutes: appRoutes ?? this.appRoutes,
++    tableNames: tableNames ?? this.tableNames,
++    registration: registration,
++  );
++}
+diff --git a/docs/development/2026-09-05-pair-matching-pm0-characterization.md b/docs/development/2026-09-05-pair-matching-pm0-characterization.md
+new file mode 100644
+index 00000000..fd58e7ad
+--- /dev/null
++++ b/docs/development/2026-09-05-pair-matching-pm0-characterization.md
+@@ -0,0 +1,37 @@
++# Pair Matching PM0 characterization
++
++Date: 2026-09-05  
++Baseline and rollback target: `ca123ddd` (`docs(research): record verified source, full regression and Android artifact`)
++
++## Locked boundary
++
++- Pair Matching is product contract `f10` (`Matching Mode`) inside the existing 8-domain/44-feature catalog. It does not create `f45`.
++- `LessonMode.matching` resolves to the quiz parent entry `home/learn/quiz` and child route `learning/matching` through `MatchingModeAdapter`.
++- Production delivery defaults to `implementedOff`; `resolve(LessonMode.matching)` returns null. There is no Pair main destination.
++- Database schema remains v24 with 48 tables. There is no Pair/Matching star table and stars are absent from the current screen.
++
++## Current behavior
++
++- `MatchingModeAdapter` pins at most six ambiguity-safe word/meaning pairs in deterministic word and meaning orders. Fewer than two safe pairs yields an unavailable board.
++- The screen renders the existing `Matching` app bar, Words/Meanings columns, semantic matched-pair progress and a time-remaining message.
++- Independent matches produce `matchingPair` recognition evidence through `CurrentActivityEvidenceAdapter`; answer-revealing support produces guided-practice evidence. The UI does not write SRS, mastery, reward or research projections directly.
++- `LearningUseCases.startCheckpointedQuiz` and `ExactPinnedLearningActivityRepository.startExactPinnedSessionWithCheckpoint` provide the atomic pinned-session plus initial-checkpoint seam. Current transaction checks owner, lexical revision/checksum and active-session conflict; it does not yet check content-quality reports or a Pair-specific delivery gate.
++
++## Restart, recovery and rollback
++
++- Checkpoint schema is 5; readers accept schemas 1–5. Repository limits are 64 revisions and 64 KiB. The next writer version must be rechecked and introduced reader-first.
++- Checkpoints preserve the lexical snapshot, deterministic board, pending evidence, frozen evidence/event contexts, timeout anchor/deadline, pending close and terminal acknowledgement. Restart reconstructs the original session and content even after vocabulary edits/deletion.
++- Lost evidence/checkpoint/close acknowledgements retry the frozen identity. Timeout does not invent unanswered evidence. Emergency retirement blocks new actions while accepted work closes through the existing lifecycle.
++- The rollback target is `MatchingModeScreen` plus `MatchingModeAdapter` on the f10 child route. New Pair presentation must remain hidden and removable while these legacy semantics stay available.
++
++## PM1–PM8 integration seams
++
++1. Define hidden typed launch/plan contracts that carry source, exact lexical pins, return target and presentation without changing evidence payloads.
++2. Extend atomic start validation for Pair delivery and content-quality eligibility while preserving retry identity.
++3. Evolve checkpoint schema reader-first within the existing revision/size ceilings; do not write on timer ticks.
++4. Put interaction, repair, timeout choices and replay in a shared reducer/controller used by both renderers.
++5. Continue submitting answers only through the existing evidence gateway with recognition/guided classification.
++6. Project stars from committed terminal evidence in a read-only/application projection; do not add a table, currency or reward authority.
++7. Keep Standard/Adventure renderers semantic-equivalent and preserve the accepted plan when Adventure turns off.
++8. Retain default-hidden delivery and verify feature-off navigation, restart recovery, exact 8/44 mapping and rollback before any internal enablement.
++

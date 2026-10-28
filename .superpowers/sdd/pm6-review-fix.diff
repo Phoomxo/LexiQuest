@@ -1,0 +1,1727 @@
+PM6 fix-only delta against previously reviewed staged snapshot in pm6-review.diff; HEAD7919cb860bc37d6d2d2811e4f6633340eca94010. All writers stopped; final regression502, analyzer clean.
+ .../application/learning_history_use_cases.dart    |   6 +-
+ .../presentation/pair_board_view.dart              | 118 ++++++++++-----
+ .../pair_matching_experience_host.dart             |  39 ++++-
+ lib/screens/learning_history_screen.dart           |  32 ++++-
+ .../pair_board_accessibility_test.dart             | 130 +++++++++++++++++
+ .../pair_matching/pair_board_view_test.dart        |  66 ++++++++-
+ .../pair_matching_experience_host_test.dart        | 135 +++++++++++++++++
+ test/screens/learning_history_screen_test.dart     | 159 ++++++++++++++++++++-
+ 8 files changed, 624 insertions(+), 61 deletions(-)
+diff --git a/lib/features/history/application/learning_history_use_cases.dart b/lib/features/history/application/learning_history_use_cases.dart
+index 2d744add..d513287d 100644
+--- a/lib/features/history/application/learning_history_use_cases.dart
++++ b/lib/features/history/application/learning_history_use_cases.dart
+@@ -54,32 +54,34 @@ final class LearningHistoryUseCases {
+     final ownerBefore = await owners.getOrCreateActiveOwner();
+     final results = <PairMatchingHistoryProjection>[];
+     for (final sessionId in sessionIds) {
+       final purpose = await purposeReader.read(
+         ownerId: ownerBefore.id,
+         sessionId: sessionId,
+       );
+       if (purpose.unknownMatching) {
+         throw StateError('Pair history purpose is unavailable');
+       }
+       final snapshot = purpose.snapshot;
+       if (snapshot == null) {
+         continue;
+       }
+-      if (snapshot.engine.plan.learningSessionId != sessionId ||
+-          snapshot.terminal?.acknowledged != true) {
++      if (snapshot.engine.plan.learningSessionId != sessionId) {
+         throw StateError('Pair history result is unavailable');
+       }
++      // A strictly authenticated stopped/incomplete session is not a
++      // successful result, but does not invalidate other sessions on the page.
++      if (snapshot.terminal?.acknowledged != true) continue;
+       results.add(PairMatchingHistoryProjection(snapshot));
+     }
+     final ownerAfter = await owners.getOrCreateActiveOwner();
+     if (ownerAfter.id != ownerBefore.id) {
+       throw StateError('Pair history owner changed');
+     }
+     return List<PairMatchingHistoryProjection>.unmodifiable(results);
+   }
+ 
+   Future<LessonStartCommand> replayAsNewSession(
+     String sourceSessionId, {
+     required String replayOperationId,
+   }) async {
+     final owner = await owners.getOrCreateActiveOwner();
+diff --git a/lib/features/learning/pair_matching/presentation/pair_board_view.dart b/lib/features/learning/pair_matching/presentation/pair_board_view.dart
+index 2851fd6d..8942e810 100644
+--- a/lib/features/learning/pair_matching/presentation/pair_board_view.dart
++++ b/lib/features/learning/pair_matching/presentation/pair_board_view.dart
+@@ -60,66 +60,100 @@ final class PairBoardView extends StatefulWidget
+     model: model,
+     onSelectTile: onSelectTile,
+     onRevealMapping: onRevealMapping,
+     onConfirmGuidedMapping: onConfirmGuidedMapping,
+     onPronounce: onPronounce,
+     shellFeedback: feedback,
+   );
+ 
+   @override
+   State<PairBoardView> createState() => _PairBoardViewState();
+ }
+ 
+ final class _PairBoardViewState extends State<PairBoardView> {
+   final Map<String, FocusNode> _tileFocusNodes = <String, FocusNode>{};
++  final Set<
++    ({String sessionId, int roundOrdinal, PairTimerMode mode, int thresholdMs})
++  >
++  _announcedTimerThresholds = {};
++  bool _timerAnnouncementLive = false;
+ 
+   PairMatchingState get _state => widget.model.state;
+ 
+   String _focusKey(PairTileSide side, String wordId) => '${side.name}:$wordId';
+ 
+   FocusNode _focusNode(PairTileSide side, String wordId) =>
+       _tileFocusNodes.putIfAbsent(_focusKey(side, wordId), _createFocusNode);
+ 
+   FocusNode _createFocusNode() {
+     final node = FocusNode();
+     node.addListener(_handleFocusChanged);
+     return node;
+   }
+ 
+   void _handleFocusChanged() {
+     if (mounted) setState(() {});
+   }
+ 
+   @override
+   void initState() {
+     super.initState();
+     _synchronizeFocusNodes();
+   }
+ 
+   @override
+   void didUpdateWidget(PairBoardView oldWidget) {
+     super.didUpdateWidget(oldWidget);
++    _updateTimerAnnouncement(oldWidget.model);
+     _synchronizeFocusNodes();
+     final oldMatched = oldWidget.model.state.matchedWordIds;
+     final newMatched = widget.model.state.matchedWordIds;
+     if (newMatched.length > oldMatched.length &&
+         newMatched.containsAll(oldMatched)) {
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+         if (mounted) _focusFirstActionableUnmatchedPrompt();
+       });
+     }
+   }
+ 
++  void _updateTimerAnnouncement(PairBoardModel oldModel) {
++    _timerAnnouncementLive = false;
++    final oldTimer = oldModel.timer;
++    final timer = widget.model.timer;
++    final samePhase =
++        oldModel.state.plan.learningSessionId ==
++            widget.model.state.plan.learningSessionId &&
++        oldModel.state.roundOrdinal == widget.model.state.roundOrdinal &&
++        oldTimer.mode == timer.mode;
++    if (!samePhase || !oldTimer.timed || !timer.timed) return;
++
++    for (final thresholdMs in const <int>[30000, 10000]) {
++      if (oldTimer.remainingActiveMs <= thresholdMs ||
++          timer.remainingActiveMs > thresholdMs) {
++        continue;
++      }
++      final announcement = (
++        sessionId: widget.model.state.plan.learningSessionId,
++        roundOrdinal: widget.model.state.roundOrdinal,
++        mode: timer.mode,
++        thresholdMs: thresholdMs,
++      );
++      if (_announcedTimerThresholds.add(announcement)) {
++        _timerAnnouncementLive = true;
++      }
++    }
++  }
++
+   void _synchronizeFocusNodes() {
+     final retained = <String>{
+       for (final item in _state.plan.orderedLexicalItems)
+         for (final side in PairTileSide.values) _focusKey(side, item.wordId),
+     };
+     for (final key in retained) {
+       _tileFocusNodes.putIfAbsent(key, _createFocusNode);
+     }
+     final removed = _tileFocusNodes.keys
+         .where((key) => !retained.contains(key))
+         .toList(growable: false);
+     for (final key in removed) {
+       final node = _tileFocusNodes.remove(key);
+       node?.removeListener(_handleFocusChanged);
+@@ -258,29 +292,33 @@ final class _PairBoardViewState extends State<PairBoardView> {
+             style: Theme.of(context).textTheme.headlineSmall,
+           ),
+         ),
+         Semantics(
+           label: copy.progress(_state.matchedWordIds.length, total),
+           child: ExcludeSemantics(
+             child: Text(
+               copy.progress(_state.matchedWordIds.length, total),
+               softWrap: true,
+               style: Theme.of(context).textTheme.titleMedium,
+             ),
+           ),
+         ),
+         if (widget.model.timer.mode != PairTimerMode.off)
+-          _PairTimerLabel(timer: widget.model.timer, copy: copy),
++          _PairTimerLabel(
++            timer: widget.model.timer,
++            copy: copy,
++            liveRegion: _timerAnnouncementLive,
++          ),
+       ],
+     );
+   }
+ 
+   Widget _buildRegular(BuildContext context, PairMatchingCopy copy) {
+     final gap = MediaQuery.sizeOf(context).width >= 600 ? 16.0 : 12.0;
+     return Row(
+       key: const ValueKey<String>('pair-board-regular'),
+       crossAxisAlignment: CrossAxisAlignment.start,
+       children: <Widget>[
+         Expanded(child: _buildColumn(context, copy, PairTileSide.prompt)),
+         SizedBox(width: gap),
+         Expanded(child: _buildColumn(context, copy, PairTileSide.target)),
+       ],
+@@ -521,83 +559,93 @@ final class _PairBoardViewState extends State<PairBoardView> {
+         ),
+   );
+ 
+   Widget _buildGuidedCard(
+     BuildContext context,
+     PairMatchingCopy copy,
+     String wordId,
+   ) {
+     final colors = Theme.of(context).colorScheme;
+     final prompt = _valueFor(PairTileSide.prompt, wordId);
+     final target = _valueFor(PairTileSide.target, wordId);
+     final revision = _state.supportAtRevision[wordId]!;
+     return Semantics(
+       container: true,
++      explicitChildNodes: true,
+       label: '${copy.guidedTail}. $prompt. $target',
+-      child: ExcludeSemantics(
+-        child: DecoratedBox(
+-          key: ValueKey<String>('pair-guided:$wordId'),
+-          decoration: BoxDecoration(
+-            color: colors.tertiaryContainer,
+-            borderRadius: BorderRadius.circular(16),
+-            border: Border.all(color: colors.tertiary, width: 2),
+-          ),
+-          child: Padding(
+-            padding: const EdgeInsets.all(16),
+-            child: Column(
+-              crossAxisAlignment: CrossAxisAlignment.stretch,
+-              children: <Widget>[
+-                Row(
++      child: DecoratedBox(
++        key: ValueKey<String>('pair-guided:$wordId'),
++        decoration: BoxDecoration(
++          color: colors.tertiaryContainer,
++          borderRadius: BorderRadius.circular(16),
++          border: Border.all(color: colors.tertiary, width: 2),
++        ),
++        child: Padding(
++          padding: const EdgeInsets.all(16),
++          child: Column(
++            crossAxisAlignment: CrossAxisAlignment.stretch,
++            children: <Widget>[
++              ExcludeSemantics(
++                child: Row(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: <Widget>[
+                     Icon(
+                       Icons.lightbulb_outline,
+                       color: colors.onTertiaryContainer,
+                     ),
+                     const SizedBox(width: 8),
+                     Expanded(
+                       child: Text(
+                         copy.guidedTail,
+                         softWrap: true,
+                         style: TextStyle(color: colors.onTertiaryContainer),
+                       ),
+                     ),
+                   ],
+                 ),
+-                const SizedBox(height: 12),
+-                Text(
++              ),
++              const SizedBox(height: 12),
++              ExcludeSemantics(
++                child: Text(
+                   prompt,
+                   softWrap: true,
+                   textAlign: TextAlign.center,
+                   style: TextStyle(color: colors.onTertiaryContainer),
+                 ),
+-                Icon(Icons.arrow_downward, color: colors.onTertiaryContainer),
+-                Text(
++              ),
++              ExcludeSemantics(
++                child: Icon(
++                  Icons.arrow_downward,
++                  color: colors.onTertiaryContainer,
++                ),
++              ),
++              ExcludeSemantics(
++                child: Text(
+                   target,
+                   softWrap: true,
+                   textAlign: TextAlign.center,
+                   style: TextStyle(color: colors.onTertiaryContainer),
+                 ),
+-                const SizedBox(height: 12),
+-                FilledButton(
+-                  key: ValueKey<String>('pair-confirm-guided:$wordId'),
+-                  onPressed: widget.model.busy || _state.pending != null
+-                      ? null
+-                      : () => widget.onConfirmGuidedMapping(wordId, revision),
+-                  child: Text(copy.confirmGuided, softWrap: true),
+-                ),
+-              ],
+-            ),
++              ),
++              const SizedBox(height: 12),
++              FilledButton(
++                key: ValueKey<String>('pair-confirm-guided:$wordId'),
++                onPressed: widget.model.busy || _state.pending != null
++                    ? null
++                    : () => widget.onConfirmGuidedMapping(wordId, revision),
++                child: Text(copy.confirmGuided, softWrap: true),
++              ),
++            ],
+           ),
+         ),
+       ),
+     );
+   }
+ 
+   bool get _hasFeedback =>
+       widget.shellFeedback != null ||
+       widget.model.statusMessage != null ||
+       (_state.attempts.isNotEmpty && !_state.attempts.last.isCorrect);
+ 
+   Widget _buildFeedback(BuildContext context, PairMatchingCopy copy) => Column(
+     crossAxisAlignment: CrossAxisAlignment.stretch,
+     children: <Widget>[
+@@ -720,53 +768,55 @@ final class _PairBoardViewState extends State<PairBoardView> {
+           key: ValueKey<String>('pair-reveal:${selected.wordId}'),
+           onPressed: widget.model.busy || _state.pending != null
+               ? null
+               : () => widget.onRevealMapping(selected.wordId),
+           icon: const Icon(Icons.lightbulb_outline),
+           label: Text(copy.revealMapping, softWrap: true),
+         ),
+       );
+     }
+     return Wrap(spacing: 12, runSpacing: 12, children: controls);
+   }
+ }
+ 
+ final class _PairTimerLabel extends StatelessWidget {
+-  const _PairTimerLabel({required this.timer, required this.copy});
++  const _PairTimerLabel({
++    required this.timer,
++    required this.copy,
++    required this.liveRegion,
++  });
+ 
+   final PairTimerState timer;
+   final PairMatchingCopy copy;
++  final bool liveRegion;
+ 
+   @override
+   Widget build(BuildContext context) {
+     final seconds = (timer.remainingActiveMs + 999) ~/ 1000;
+     final minutes = seconds ~/ 60;
+     final remainder = seconds % 60;
+     final clock =
+         '${minutes.toString().padLeft(2, '0')}:'
+         '${remainder.toString().padLeft(2, '0')}';
+     final label = switch (timer.mode) {
+       PairTimerMode.timeoutDecision => copy.timeoutReached,
+       PairTimerMode.continuedUntimed => copy.continuedUntimed,
+       _ => copy.timerRemaining(clock),
+     };
+-    final threshold =
+-        timer.timed &&
+-        (timer.remainingActiveMs == 30000 || timer.remainingActiveMs == 10000);
+     return Semantics(
+       key: const ValueKey<String>('pair-timer'),
+       container: true,
+-      liveRegion: threshold,
++      liveRegion: liveRegion,
+       label: label,
+       child: ExcludeSemantics(
+         child: DecoratedBox(
+           decoration: BoxDecoration(
+             color: Theme.of(context).colorScheme.surfaceContainerHigh,
+             borderRadius: BorderRadius.circular(999),
+           ),
+           child: Padding(
+             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+             child: Wrap(
+               crossAxisAlignment: WrapCrossAlignment.center,
+               spacing: 6,
+               runSpacing: 4,
+               children: <Widget>[
+diff --git a/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart b/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
+index a0005812..ee20430a 100644
+--- a/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
++++ b/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
+@@ -17,71 +17,74 @@ import 'package:vocab_learning_app/features/review/application/pair_review_defer
+ import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
+ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+ import 'package:vocab_learning_app/features/voice/presentation/route_voice_session_mixin.dart';
+ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+ import 'package:vocab_learning_app/voice/voice_models.dart';
+ import '../application/pair_matching_atomic_start.dart';
+ import '../application/pair_matching_session_coordinator.dart';
+ import '../application/pair_matching_source_composer.dart';
+ import '../application/pair_practice_replay.dart';
+ import '../data/drift_pair_matching_session_purpose_reader.dart';
+ import '../domain/pair_active_clock.dart';
+ import '../domain/pair_matching_engine.dart';
+ import '../domain/pair_matching_history_projection.dart';
+ import '../domain/pair_matching_launch.dart';
++import '../domain/pair_matching_session_purpose.dart';
+ import 'pair_board_view.dart';
+ import 'pair_matching_result_view.dart';
+ 
+ /// Explicit internal composition; no production navigation or default gate is
+ /// changed. Every dependency uses the caller's existing canonical database.
+ final class PairMatchingExperienceRuntime {
+   PairMatchingExperienceRuntime({
+     required this.database,
+     required this.learning,
+     required this.registry,
+     required this.createController,
+     required this.composer,
+     required this.start,
+     this.protocols,
+     this.configurations,
+     this.voice,
+     this.reviewDeferral,
+     this.features,
+     this.monotonicMicros,
++    this.resultReader,
+     bool Function()? canStart,
+   }) : canStart = canStart ?? _disabled {
+     final registration = registry.resolve(LessonMode.matching);
+     if (registration?.adapter is! MatchingModeAdapter ||
+         !(registration!.adapter as MatchingModeAdapter).internalPairMatching) {
+       throw ArgumentError(
+         'Pair requires explicitly selected internal registration',
+       );
+     }
+   }
+   static bool _disabled() => false;
+   final AppDatabase database;
+   final LearningUseCases learning;
+   final LessonModeRegistry registry;
+   final UnifiedLessonControllerFactory createController;
+   final PairMatchingSourceComposer composer;
+   final PairMatchingAtomicStartAdapter start;
+   final SessionConfigurationProtocolProvider? protocols;
+   final ActiveOwnerSessionConfigurationStore? configurations;
+   final VoiceUseCases? voice;
+   final PairReviewDeferral? reviewDeferral;
+   final FeatureRegistry? features;
+   final int Function()? monotonicMicros;
+   final bool Function() canStart;
++  final PairMatchingSessionPurposeReader? resultReader;
+   LessonModeRegistration get registration =>
+       registry.resolve(LessonMode.matching)!;
+   DriftPairMatchingSessionPurposeReader get reader =>
+       DriftPairMatchingSessionPurposeReader(database);
+   Future<String> requireOwner() async {
+     final owners =
+         await (database.select(database.localOwners)
+               ..where((row) => row.isActive.equals(true))
+               ..limit(2))
+             .get();
+     if (owners.length != 1) throw StateError('Pair active owner unavailable');
+     return owners.single.id;
+   }
+ 
+@@ -831,29 +834,39 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
+       );
+       _attached = true;
+       await _checkOwner();
+       if (c.hostStatus.canRetry) await c.retryPending();
+       if (c.state.complete) {
+         await _finish();
+       } else if (mounted) {
+         WidgetsBinding.instance.addPostFrameCallback((_) {
+           if (!mounted ||
+               !identical(_coordinator, c) ||
+               _liveOwner == null ||
+               _result != null) {
+             return;
+           }
+-          c.resumeInteraction();
++          try {
++            c.resumeInteraction();
++          } on StateError {
++            // Resume can synchronously install the existing capacity pause.
++            // Other domain/lifecycle failures must not be swallowed here.
++            if (!c.hostStatus.canResumeInteraction ||
++                !c.timer.reasons.contains(PairPauseReason.capacity)) {
++              rethrow;
++            }
++            setState(() {});
++          }
+           _responseStart = c.timer.interactiveElapsedMs;
+         });
+       }
+       if (!mounted) return;
+       _displayTick = Timer.periodic(const Duration(milliseconds: 250), (_) {
+         if (!mounted || _busy || _result != null || _liveOwner == null) return;
+         final timer = c.timer;
+         if (timer.timed &&
+             timer.remainingActiveMs == 0 &&
+             c.timerAvailability.expire.available) {
+           unawaited(_run(c.expire));
+         } else {
+           setState(() {});
+         }
+@@ -933,32 +946,33 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
+     return PairTimerDecision(
+       operationId: id,
+       ownerId: plan.ownerId,
+       sessionId: plan.learningSessionId,
+       roundOrdinal: state.roundOrdinal,
+       expectedRevision: state.operationRevision,
+       action: timerAction!,
+     );
+   }
+ 
+   Future<void> _finish() async {
+     final c = _coordinator!;
+     await c.finish();
+     await _checkOwner();
+-    final purpose = await widget.runtime.reader.read(
+-      ownerId: _liveOwner!,
+-      sessionId: c.operation.plan.learningSessionId,
+-    );
++    final purpose = await (widget.runtime.resultReader ?? widget.runtime.reader)
++        .read(
++          ownerId: _liveOwner!,
++          sessionId: c.operation.plan.learningSessionId,
++        );
+     await _checkOwner();
+     final snapshot = purpose.snapshot;
+     if (snapshot == null || snapshot.terminal?.acknowledged != true) {
+       throw StateError('Pair result receipt unavailable');
+     }
+     if (!mounted) return;
+     setState(() => _result = PairMatchingHistoryProjection(snapshot));
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+       if (!mounted || _result == null) return;
+       unawaited(_acknowledgeResult());
+     });
+   }
+ 
+   Future<void> _endAtConfigurationLimit() async {
+@@ -1312,32 +1326,43 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
+         _decorationFailed = true;
+         presentation = board;
+       }
+     }
+     final timeout =
+         timer.mode == PairTimerMode.timeoutDecision ||
+         timer.reasons.contains(PairPauseReason.capacity) ||
+         timer.reasons.contains(PairPauseReason.clockFault);
+     return Scaffold(
+       appBar: AppBar(
+         title: Text(copy('จับคู่คำ–ความหมาย', 'Match words and meanings')),
+       ),
+       body: Column(
+         children: [
+-          if (_error && status.canRetry)
++          if (_error &&
++              !status.unavailable &&
++              status.recovery != PairHostRecovery.none)
+             FilledButton(
+               key: const ValueKey('pair-retry'),
+-              onPressed: _busy ? null : () => _run(c.retryPending),
++              onPressed: _busy
++                  ? null
++                  : () => _run(() async {
++                      if (c.hostStatus.recovery ==
++                          PairHostRecovery.retryPending) {
++                        await c.retryPending();
++                      }
++                      // _run finishes a completed board and authenticates its
++                      // result before any post-render presentation receipt.
++                    }),
+               child: Text(copy('ลองบันทึกอีกครั้ง', 'Retry saving')),
+             ),
+           if (timeout)
+             Expanded(
+               child: ListView(
+                 padding: const EdgeInsets.all(24),
+                 children: [
+                   Semantics(
+                     header: true,
+                     child: Text(
+                       copy(
+                         'ยังไม่ทันเป้าหมาย แต่ทำต่อได้',
+                         'Time target reached. You can continue.',
+                       ),
+diff --git a/lib/screens/learning_history_screen.dart b/lib/screens/learning_history_screen.dart
+index d32f1eb2..bf6531fc 100644
+--- a/lib/screens/learning_history_screen.dart
++++ b/lib/screens/learning_history_screen.dart
+@@ -114,28 +114,34 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
+             itemCount: entries.length,
+             separatorBuilder: (_, _) => const SizedBox(height: 12),
+             itemBuilder: (context, index) {
+               final entry = entries[index];
+               final pairResult = page.pairResults[entry.sessionId];
+               final pairEntry =
+                   pairResult != null ||
+                   entry.pairSummary != null ||
+                   entry.pairPurposeUnavailable;
+               if (pairEntry) {
+                 return _PairHistoryCard(
+                   key: ValueKey('pair-history-${entry.sessionId}'),
+                   entry: entry,
+                   result: pairResult,
++                  sourceEntry: entries
++                      .where(
++                        (candidate) =>
++                            candidate.sessionId == pairResult?.sourceSessionId,
++                      )
++                      .firstOrNull,
+                   overview: page.pairOverview,
+                   pairReadFailed: page.pairReadFailed,
+                   opening: _openingSessionId == entry.sessionId,
+                   replayEnabled:
+                       pairResult?.result.stars != null &&
+                       widget.onPairReplay != null &&
+                       _openingSessionId == null,
+                   onReplay: pairResult == null
+                       ? null
+                       : () => _replayPair(pairResult),
+                 );
+               }
+               return _HistoryCard(
+                 key: ValueKey('learning-history-${entry.sessionId}'),
+@@ -242,58 +248,66 @@ final class _HistoryPage {
+        }),
+        pairOverview = PairMatchingHistoryOverview(pairResults);
+ 
+   final List<LearningHistoryEntry> entries;
+   final Map<String, PairMatchingHistoryProjection> pairResults;
+   final PairMatchingHistoryOverview pairOverview;
+   final bool pairReadFailed;
+ }
+ 
+ final class _PairHistoryCard extends StatelessWidget {
+   const _PairHistoryCard({
+     super.key,
+     required this.entry,
+     required this.result,
++    this.sourceEntry,
+     required this.overview,
+     required this.pairReadFailed,
+     required this.opening,
+     required this.replayEnabled,
+     required this.onReplay,
+   });
+ 
+   final LearningHistoryEntry entry;
+   final PairMatchingHistoryProjection? result;
++  final LearningHistoryEntry? sourceEntry;
+   final PairMatchingHistoryOverview overview;
+   final bool pairReadFailed;
+   final bool opening;
+   final bool replayEnabled;
+   final VoidCallback? onReplay;
+ 
+   @override
+   Widget build(BuildContext context) {
+     final english = Localizations.localeOf(context).languageCode == 'en';
+     String copy(String thai, String englishCopy) =>
+         english ? englishCopy : thai;
+     final status = _terminalPresentation(entry.terminalState);
+     final packTitle =
+         entry.packTitle ??
+         copy(
+           'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน',
+           'Saved content is unavailable',
+         );
+     final projection = result;
++    final stopped =
++        !pairReadFailed &&
++        entry.terminalState == LearningHistoryTerminalState.abandoned &&
++        entry.pairSummary != null;
+     final replay = projection?.purpose == PairSessionPurpose.practiceReplay;
+-    final heading = projection == null
++    final heading = stopped
++        ? copy('รอบจับคู่หยุดก่อนจบ', 'Pair Matching stopped before completion')
++        : projection == null
+         ? copy('ผลจับคู่ไม่พร้อมใช้งาน', 'Pair Matching result unavailable')
+         : replay
+         ? copy('ผลการฝึกซ้ำ', 'Practice Replay result')
+         : copy('ผลการจับคู่', 'Pair Matching result');
+     final badges = projection == null
+         ? const <String>[]
+         : _overviewBadges(projection, overview, english: english);
+     final actionLabel = opening
+         ? copy('กำลังเริ่มการฝึกซ้ำ', 'Starting Practice Replay')
+         : replayEnabled
+         ? copy('ฝึกซ้ำชุดเดิม', 'Practice Replay')
+         : copy('การฝึกซ้ำไม่พร้อมใช้งาน', 'Practice Replay unavailable');
+     final unavailable = projection == null || pairReadFailed;
+ 
+@@ -365,45 +379,53 @@ final class _PairHistoryCard extends StatelessWidget {
+                   ),
+                 ),
+                 Text(
+                   projection.result.stars == null
+                       ? copy('ยังไม่มีผลดาว', 'Not scored')
+                       : copy(
+                           'ดาว ${projection.result.stars}/3',
+                           'Stars ${projection.result.stars}/3',
+                         ),
+                 ),
+                 Text(_pairElapsedLabel(projection, english: english)),
+                 if (replay) ...[
+                   Text(
+                     copy(
+-                      'ต้นทางโดยตรง: ${projection.sourceSessionId}',
+-                      'Direct source: ${projection.sourceSessionId}',
++                      sourceEntry == null
++                          ? 'ฝึกซ้ำจากรอบต้นทางที่เลือกไว้'
++                          : 'รอบต้นทาง: ${sourceEntry!.packTitle ?? 'ชุดคำที่บันทึกไว้'} • ${MaterialLocalizations.of(context).formatCompactDate(sourceEntry!.startedAtUtc.toLocal())}',
++                      sourceEntry == null
++                          ? 'Practice Replay of the selected source session'
++                          : 'Source session: ${sourceEntry!.packTitle ?? 'Saved word set'} • ${MaterialLocalizations.of(context).formatCompactDate(sourceEntry!.startedAtUtc.toLocal())}',
+                     ),
+                   ),
+                   Text(
+                     copy(
+                       'รอบฝึกซ้ำไม่เพิ่มความก้าวหน้าหรือรางวัล',
+                       'Practice Replay does not add progress or rewards',
+                     ),
+                   ),
+                 ],
+               ] else ...[
+                 const SizedBox(height: 8),
+                 Text(
+                   copy(
+-                    'ไม่สามารถยืนยันผลจับคู่จากข้อมูลที่บันทึกไว้ได้',
+-                    'The saved Pair Matching result could not be verified',
++                    stopped
++                        ? 'รอบนี้ยังไม่จบ จึงไม่มีผลดาวหรือการฝึกซ้ำ'
++                        : 'ไม่สามารถยืนยันผลจับคู่จากข้อมูลที่บันทึกไว้ได้',
++                    stopped
++                        ? 'This session is incomplete and has no star result or Practice Replay.'
++                        : 'The saved Pair Matching result could not be verified',
+                   ),
+                 ),
+               ],
+               const SizedBox(height: 12),
+               Text(
+                 copy(
+                   'การฝึกซ้ำเป็นโหมดฝึก และไม่เพิ่มความก้าวหน้าหรือรางวัล',
+                   'Practice Replay is practice-only and does not add progress or rewards',
+                 ),
+               ),
+               const SizedBox(height: 8),
+               FilledButton.icon(
+                 key: ValueKey('pair-replay-history-${entry.sessionId}'),
+                 style: FilledButton.styleFrom(
+diff --git a/test/features/learning/pair_matching/pair_board_accessibility_test.dart b/test/features/learning/pair_matching/pair_board_accessibility_test.dart
+index b0c0b02d..be3db702 100644
+--- a/test/features/learning/pair_matching/pair_board_accessibility_test.dart
++++ b/test/features/learning/pair_matching/pair_board_accessibility_test.dart
+@@ -11,28 +11,39 @@ import 'pair_board_view_test.dart';
+ void _setSurface(WidgetTester tester, Size size) {
+   tester.view.physicalSize = size;
+   tester.view.devicePixelRatio = 1;
+   addTearDown(tester.view.resetPhysicalSize);
+   addTearDown(tester.view.resetDevicePixelRatio);
+ }
+ 
+ OutlinedButton _tileButton(WidgetTester tester, PairTile tile) =>
+     tester.widget<OutlinedButton>(
+       find.byKey(
+         ValueKey<String>('pair-tile:${tile.side.name}:${tile.wordId}'),
+       ),
+     );
+ 
++void _performSemanticsTap(WidgetTester tester, Finder finder) {
++  final node = tester.getSemantics(finder);
++  tester.binding.performSemanticsAction(
++    SemanticsActionEvent(
++      type: SemanticsAction.tap,
++      nodeId: node.id,
++      viewId: tester.view.viewId,
++    ),
++  );
++}
++
+ void main() {
+   testWidgets(
+     'narrow, 200 percent text, accessible navigation, and explicit policy select focused flow',
+     (tester) async {
+       final state = PairMatchingState.initial(pairBoardTestPlan());
+       for (final policy
+           in <
+             ({
+               Size size,
+               double scale,
+               bool accessibleNavigation,
+               bool focusedTraversal,
+             })
+           >[
+@@ -331,28 +342,147 @@ void main() {
+         );
+         for (final side in PairTileSide.values) {
+           final tile = find.byKey(
+             ValueKey<String>('pair-tile:${side.name}:${first.wordId}'),
+           );
+           final data = tester.getSemantics(tile).getSemanticsData();
+           expect(data.hasAction(SemanticsAction.tap), isTrue);
+         }
+       } finally {
+         semantics.dispose();
+       }
+     },
+   );
+ 
++  testWidgets(
++    'guided confirmation semantics dispatches exact identity once in regular and focused flows',
++    (tester) async {
++      final plan = pairBoardTestPlan();
++      final state = pairBoardGuidedState(plan);
++      final guidedId = plan.orderedLexicalItems.first.wordId;
++      final shownRevision = state.supportAtRevision[guidedId]!;
++      final confirmations = <(String, int)>[];
++      var selections = 0;
++      var reveals = 0;
++      final semantics = tester.ensureSemantics();
++      try {
++        for (final focused in <bool>[false, true]) {
++          confirmations.clear();
++          await tester.pumpWidget(
++            pairBoardTestApp(
++              model: pairBoardTestModel(
++                state: state,
++                focusedTraversal: focused,
++              ),
++              onSelectTile: (_) => selections++,
++              onRevealMapping: (_) => reveals++,
++              onConfirmGuidedMapping: (id, revision) =>
++                  confirmations.add((id, revision)),
++            ),
++          );
++          final confirm = find.byKey(
++            ValueKey<String>('pair-confirm-guided:$guidedId'),
++          );
++          await tester.ensureVisible(confirm);
++          await tester.pump();
++          expect(
++            tester
++                .getSemantics(confirm)
++                .getSemanticsData()
++                .hasAction(SemanticsAction.tap),
++            isTrue,
++          );
++
++          _performSemanticsTap(tester, confirm);
++          await tester.pump();
++
++          expect(confirmations, <(String, int)>[(guidedId, shownRevision)]);
++          expect(selections, 0);
++          expect(reveals, 0);
++        }
++      } finally {
++        semantics.dispose();
++      }
++    },
++  );
++
++  testWidgets(
++    'busy and pending guided confirmations expose no semantics tap action',
++    (tester) async {
++      final plan = pairBoardTestPlan();
++      final guided = pairBoardGuidedState(plan);
++      final guidedId = plan.orderedLexicalItems.first.wordId;
++      final otherId = plan.orderedLexicalItems
++          .map((item) => item.wordId)
++          .firstWhere(
++            (id) =>
++                id != guidedId &&
++                !guided.matchedWordIds.contains(id) &&
++                !guided.supportedWordIds.contains(id),
++          );
++      var pending = pairBoardSelect(
++        guided,
++        PairTileSide.prompt,
++        otherId,
++        suffix: 'pending-prompt',
++      );
++      pending = pairBoardSelect(
++        pending,
++        PairTileSide.target,
++        otherId,
++        suffix: 'pending-target',
++      );
++      expect(pending.pending, isNotNull);
++      var confirmations = 0;
++      final semantics = tester.ensureSemantics();
++      try {
++        for (final configuration
++            in <({PairMatchingState state, bool busy, bool focused})>[
++              (state: guided, busy: true, focused: false),
++              (state: guided, busy: true, focused: true),
++              (state: pending, busy: false, focused: false),
++              (state: pending, busy: false, focused: true),
++            ]) {
++          await tester.pumpWidget(
++            pairBoardTestApp(
++              model: pairBoardTestModel(
++                state: configuration.state,
++                busy: configuration.busy,
++                focusedTraversal: configuration.focused,
++              ),
++              onConfirmGuidedMapping: (_, _) => confirmations++,
++            ),
++          );
++          final confirm = find.byKey(
++            ValueKey<String>('pair-confirm-guided:$guidedId'),
++          );
++          await tester.ensureVisible(confirm);
++          await tester.pump();
++          expect(
++            tester
++                .getSemantics(confirm)
++                .getSemanticsData()
++                .hasAction(SemanticsAction.tap),
++            isFalse,
++          );
++        }
++        expect(confirmations, 0);
++      } finally {
++        semantics.dispose();
++      }
++    },
++  );
++
+   testWidgets(
+     'long Thai at 200 percent wraps essential labels without ellipsis',
+     (tester) async {
+       _setSurface(tester, const Size(320, 720));
+       final plan = pairBoardTestPlan(longThai: true);
+       final state = pairBoardSelect(
+         PairMatchingState.initial(plan),
+         PairTileSide.prompt,
+         plan.orderedLexicalItems.first.wordId,
+       );
+       await tester.pumpWidget(
+         pairBoardTestApp(
+           model: pairBoardTestModel(state: state),
+           size: const Size(320, 720),
+diff --git a/test/features/learning/pair_matching/pair_board_view_test.dart b/test/features/learning/pair_matching/pair_board_view_test.dart
+index c775ced5..92d593ab 100644
+--- a/test/features/learning/pair_matching/pair_board_view_test.dart
++++ b/test/features/learning/pair_matching/pair_board_view_test.dart
+@@ -465,58 +465,112 @@ void main() {
+           model: pairBoardTestModel(
+             state: selectedState,
+             audioFallback: '/ˈæp.əl/ apple',
+           ),
+         ),
+       );
+       expect(
+         find.byKey(ValueKey<String>('pair-pronounce:prompt:$id')),
+         findsNothing,
+       );
+       expect(find.textContaining('/ˈæp.əl/ apple'), findsOneWidget);
+     },
+   );
+ 
+-  testWidgets('timer is read-only and only threshold values are live regions', (
++  testWidgets('timer announces nonaligned 30 and 10 second crossings once', (
+     tester,
+   ) async {
+     final state = PairMatchingState.initial(pairBoardTestPlan());
++    final boardKey = GlobalKey();
+     for (final (remaining, expectedLive) in <(int, bool)>[
+-      (31000, false),
+-      (30000, true),
+-      (29000, false),
+-      (10000, true),
+-      (9000, false),
++      (30050, false),
++      (29800, true),
++      (29550, false),
++      (10050, false),
++      (9800, true),
++      (9550, false),
+     ]) {
+       await tester.pumpWidget(
+         pairBoardTestApp(
++          boardKey: boardKey,
+           model: pairBoardTestModel(
+             state: state,
+             timer: PairTimerState(
+               mode: PairTimerMode.running,
+               remainingActiveMs: remaining,
+             ),
+           ),
+         ),
+       );
+       final timer = find.byKey(const ValueKey<String>('pair-timer'));
+       expect(timer, findsOneWidget);
+       final semantics = tester.getSemantics(timer).getSemanticsData();
+       expect(semantics.flagsCollection.isLiveRegion, expectedLive);
+       expect(semantics.hasAction(SemanticsAction.tap), isFalse);
+     }
+   });
+ 
++  testWidgets('timer crossing deduplicates per round and timer phase', (
++    tester,
++  ) async {
++    var state = PairMatchingState.initial(pairBoardTestPlan());
++    var mode = PairTimerMode.running;
++    var extensionUsed = false;
++    final boardKey = GlobalKey();
++
++    Future<void> pumpTimer(int remaining, bool expectedLive) async {
++      await tester.pumpWidget(
++        pairBoardTestApp(
++          boardKey: boardKey,
++          model: pairBoardTestModel(
++            state: state,
++            timer: PairTimerState(
++              mode: mode,
++              remainingActiveMs: remaining,
++              extensionUsed: extensionUsed,
++            ),
++          ),
++        ),
++      );
++      final semantics = tester
++          .getSemantics(find.byKey(const ValueKey<String>('pair-timer')))
++          .getSemanticsData();
++      expect(semantics.flagsCollection.isLiveRegion, expectedLive);
++      expect(semantics.hasAction(SemanticsAction.tap), isFalse);
++    }
++
++    await pumpTimer(30050, false);
++    await pumpTimer(29800, true);
++    await pumpTimer(30050, false);
++    await pumpTimer(29800, false);
++
++    mode = PairTimerMode.extendedRunning;
++    extensionUsed = true;
++    await pumpTimer(10050, false);
++    await pumpTimer(9800, true);
++    await pumpTimer(10050, false);
++    await pumpTimer(9800, false);
++
++    state = PairMatchingEngine.previewTimerAction(
++      state,
++      PairTimerAction.restart,
++    );
++    mode = PairTimerMode.running;
++    extensionUsed = false;
++    await pumpTimer(30050, false);
++    await pumpTimer(29800, true);
++  });
++
+   testWidgets(
+     'status is polite live feedback and shell feedback keeps canonical slot',
+     (tester) async {
+       final state = PairMatchingState.initial(pairBoardTestPlan());
+       final selected = <PairTile>[];
+       final original = PairBoardView(
+         model: pairBoardTestModel(
+           state: state,
+           statusMessage: 'คำตอบได้รับการบันทึกแล้ว',
+         ),
+         onSelectTile: selected.add,
+         onRevealMapping: (_) {},
+         onConfirmGuidedMapping: (_, _) {},
+         onPronounce: (_) {},
+diff --git a/test/features/learning/pair_matching/pair_matching_experience_host_test.dart b/test/features/learning/pair_matching/pair_matching_experience_host_test.dart
+index 81c41298..690d813b 100644
+--- a/test/features/learning/pair_matching/pair_matching_experience_host_test.dart
++++ b/test/features/learning/pair_matching/pair_matching_experience_host_test.dart
+@@ -7,28 +7,30 @@ import 'package:vocab_learning_app/features/learning/application/current_activit
+ import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+ import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+ import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+ import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
+ import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_atomic_start.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_matching_experience_host.dart';
+ import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+ import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_session_coordinator.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_session_purpose.dart';
++import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
+ import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+ import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+ import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
+ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/navigation/app_routes.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+ import 'package:vocab_learning_app/voice/voice_models.dart';
+ import 'package:vocab_learning_app/voice/voice_provider.dart';
+ import 'package:vocab_learning_app/features/review/application/pair_review_deferral.dart';
+ import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
+ import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
+ import 'package:vocab_learning_app/features/history/data/drift_learning_history_reader.dart';
+@@ -85,28 +87,29 @@ final class _HeldHostRepository extends PairFaultRepository
+     abandonTimes.add(abandonedAtUtc);
+     final fault = abandonFault;
+     abandonFault = null;
+     if (fault == false) throw StateError('synthetic abandon before commit');
+     final result = await delegate.abandonSession(
+       ownerId: ownerId,
+       sessionId: sessionId,
+       abandonedAtUtc: abandonedAtUtc,
+     );
+     if (fault == true) throw StateError('synthetic abandon lost ack');
+     return result;
+   }
+ 
+   bool? abandonFault;
++  final closeTimes = <DateTime>[];
+   final abandonTimes = <DateTime>[];
+   @override
+   Future<List<QuizWord>> listPinnedQuizWords({
+     required String ownerId,
+     required List<String> wordIds,
+   }) => delegate.listPinnedQuizWords(ownerId: ownerId, wordIds: wordIds);
+   @override
+   Future<List<QuizWord>> listExactPinnedQuizWords({
+     required String ownerId,
+     required List<PinnedQuizContent> content,
+   }) => delegate.listExactPinnedQuizWords(ownerId: ownerId, content: content);
+   Completer<void>? entered, release;
+   String heldStage = 'answer';
+   Future<void> _hold(String stage) async {
+@@ -123,42 +126,61 @@ final class _HeldHostRepository extends PairFaultRepository
+     await _hold('capture');
+     await super.appendActivityCheckpoint(
+       ownerId: ownerId,
+       checkpoint: checkpoint,
+     );
+   }
+ 
+   @override
+   Future<LearningSessionSummary> finishSession({
+     required String ownerId,
+     required String sessionId,
+     required DateTime endedAtUtc,
+   }) async {
+     await _hold('close');
++    closeTimes.add(endedAtUtc);
+     return super.finishSession(
+       ownerId: ownerId,
+       sessionId: sessionId,
+       endedAtUtc: endedAtUtc,
+     );
+   }
+ 
+   @override
+   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+     await _hold('answer');
+     return super.recordAnswer(command);
+   }
+ }
+ 
++final class _FailResultRead implements PairMatchingSessionPurposeReader {
++  _FailResultRead(this.delegate);
++  final PairMatchingSessionPurposeReader delegate;
++  bool failed = false;
++  @override
++  Future<PairMatchingSessionPurpose> read({
++    required String ownerId,
++    required String sessionId,
++  }) async {
++    final result = await delegate.read(ownerId: ownerId, sessionId: sessionId);
++    if (!failed && result.snapshot?.terminal?.acknowledged == true) {
++      failed = true;
++      throw StateError('synthetic authenticated result read unavailable');
++    }
++    return result;
++  }
++}
++
+ final class _Protocols implements SessionConfigurationProtocolProvider {
+   @override
+   Future<SessionConfigurationProtocolLimits> resolveForOwner(
+     String ownerId,
+   ) async => const SessionConfigurationProtocolLimits.standard();
+ }
+ 
+ final class _GenericHistoryLauncher implements LearningHistorySessionLauncher {
+   int calls = 0;
+   @override
+   Object get authorityIdentity => this;
+   @override
+   Future<void> start(LessonStartCommand command) async {
+     calls++;
+@@ -242,70 +264,183 @@ AppDependencies _dependencies(
+     experimentAssignments: research.experimentAssignments,
+     assignedLearningEventContext: research.assignedLearningEventContext,
+     evidencePolicyRolloutModeProvider:
+         research.evidencePolicyRolloutModeProvider,
+   );
+ }
+ 
+ PairMatchingExperienceRuntime _runtime(
+   PairHarness h, {
+   int Function()? clock,
+   _HeldHostRepository? repository,
+   bool Function()? canStart,
+   SessionConfigurationProtocolProvider? protocols,
+   VoiceUseCases? voice,
++  PairMatchingSessionPurposeReader? resultReader,
+ }) {
+   final repo = repository ?? _HeldHostRepository(h.real);
+   final learning = LearningUseCases(
+     owners: h.learning.owners,
+     repository: repo,
+     generateId: h.learning.generateId,
+     nowUtc: h.learning.nowUtc,
+     buildInfo: h.learning.buildInfo,
+   );
+   final allowlist = PairCuratedAllowlist(
+     version: h.operation.plan.allowlistVersion,
+     items: h.operation.plan.orderedLexicalItems,
+   );
+   return PairMatchingExperienceRuntime(
+     database: h.db,
++    resultReader: resultReader,
+     learning: learning,
+     registry: buildLessonModeRegistry(
+       internalPairMatching: true,
+       matchingDeliveryState: LessonModeDeliveryState.enabled,
+     ),
+     createController: (adapter) => UnifiedLessonController(
+       learning: learning,
+       adapter: adapter,
+       sessionPurposeReader: h.real,
+     ),
+     composer: PairMatchingSourceComposer(allowlist: allowlist),
+     protocols: protocols,
+     voice: voice,
+     reviewDeferral: PairReviewDeferral(h.db),
+     start: PairMatchingAtomicStartAdapter(
+       repository: h.real,
+       capability: InternalPairMatchingCapability(
+         allowlist: allowlist,
+         isEnabled: canStart,
+       ),
+     ),
+     canStart: canStart,
+     monotonicMicros: clock,
+   );
+ }
+ 
+ void main() {
++  for (final fault in ['closeBefore', 'closeAfter', 'resultRead']) {
++    testWidgets('same host retries exact canonical completion fault=$fault', (
++      tester,
++    ) async {
++      final h = PairHarness();
++      addTearDown(h.db.close);
++      await h.initialize(measured: true);
++      final repo = _HeldHostRepository(h.real)
++        ..closeFault = fault != 'resultRead'
++        ..afterWrite = fault == 'closeAfter';
++      final runtime = _runtime(
++        h,
++        repository: repo,
++        resultReader: fault == 'resultRead' ? _FailResultRead(h.real) : null,
++      );
++      await tester.pumpWidget(
++        MaterialApp(
++          home: PairMatchingExperienceHost.recover(
++            runtime: runtime,
++            operation: h.operation,
++            onExit: () {},
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++      final controller = tester
++          .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
++          .controller;
++      for (var i = 0; i < 4; i++) {
++        await tester.tap(find.byKey(ValueKey('pair-tile:prompt:synthetic-$i')));
++        await tester.pumpAndSettle();
++        await tester.tap(find.byKey(ValueKey('pair-tile:target:synthetic-$i')));
++        await tester.pumpAndSettle();
++      }
++      expect(find.byKey(const ValueKey('pair-result')), findsNothing);
++      final before = await h.real.read(
++        ownerId: h.owner,
++        sessionId: h.operation.plan.learningSessionId,
++      );
++      expect(before.snapshot!.terminal!.presented, false);
++      expect(find.byKey(const ValueKey('pair-retry')), findsOneWidget);
++      await tester.tap(find.byKey(const ValueKey('pair-retry')));
++      await tester.pumpAndSettle();
++      expect(
++        identical(
++          tester
++              .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
++              .controller,
++          controller,
++        ),
++        true,
++      );
++      expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
++      final after = await h.real.read(
++        ownerId: h.owner,
++        sessionId: h.operation.plan.learningSessionId,
++      );
++      expect(after.snapshot!.terminal!.presented, true);
++      expect(repo.closeTimes.toSet(), hasLength(1));
++      expect(
++        repo.checkpoints.where((p) => p.terminalAtUtc != null),
++        hasLength(3),
++      );
++      expect(await h.db.select(h.db.answerAttempts).get(), hasLength(4));
++      expect(tester.takeException(), isNull);
++      await tester.pumpWidget(const SizedBox.shrink());
++      await tester.pumpAndSettle();
++    });
++  }
++  testWidgets(
++    'restored timed capacity stays actionable without postframe exception',
++    (tester) async {
++      var micros = 0;
++      final h = PairHarness(pinnedPlan: timedPlan());
++      addTearDown(h.db.close);
++      await h.initialize();
++      final c = await clocked(h, () => micros);
++      c.resumeInteraction();
++      while (!c.timer.reasons.contains(PairPauseReason.capacity)) {
++        micros += 1000;
++        final lease = c.pause(PairPauseReason.modal);
++        await c.flush();
++        try {
++          c.releasePause(lease);
++        } on StateError {
++          expect(c.timer.reasons, contains(PairPauseReason.capacity));
++        }
++      }
++      c.dispose();
++      await tester.pumpWidget(
++        MaterialApp(
++          home: PairMatchingExperienceHost.recover(
++            runtime: _runtime(h, clock: () => micros),
++            operation: h.operation,
++            onExit: () {},
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++      expect(tester.takeException(), isNull);
++      final continueAction = find.byKey(
++        const ValueKey('pair-timer-action-continueUntimed'),
++      );
++      expect(continueAction, findsOneWidget);
++      await tester.tap(continueAction);
++      await tester.pumpAndSettle();
++      expect(find.byKey(const ValueKey('pair-board-regular')), findsOneWidget);
++      await tester.pumpWidget(const SizedBox.shrink());
++      await tester.pumpAndSettle();
++    },
++  );
+   for (final action in ['reveal', 'timer']) {
+     testWidgets(
+       'actual parent gate preserves pending $action checkpoint without synthesizing an answer',
+       (tester) async {
+         var micros = 0;
+         final h = PairHarness(
+           pinnedPlan: action == 'timer' ? timedPlan() : null,
+         );
+         addTearDown(h.db.close);
+         await h.initialize(measured: true);
+         if (action == 'timer') {
+           final c = await clocked(h, () => micros);
+           c.resumeInteraction();
+           micros = 60000000;
+diff --git a/test/screens/learning_history_screen_test.dart b/test/screens/learning_history_screen_test.dart
+index 041e89c2..ed187067 100644
+--- a/test/screens/learning_history_screen_test.dart
++++ b/test/screens/learning_history_screen_test.dart
+@@ -1,47 +1,167 @@
+ import 'dart:async';
+ 
+ import 'package:flutter/cupertino.dart'
+     show CupertinoLocalizations, DefaultCupertinoLocalizations;
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
++import 'package:vocab_learning_app/features/history/data/drift_learning_history_reader.dart';
++import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
+ import 'package:vocab_learning_app/features/history/domain/learning_history_models.dart';
+ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+     as identity;
+ import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+ import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+ import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+ import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_atomic_start.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_session_coordinator.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_history_projection.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_session_purpose.dart';
+ import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+ import 'package:vocab_learning_app/screens/learning_history_screen.dart';
+ 
+ import '../features/learning/pair_matching/pair_matching_evidence_contract_test.dart'
+     show PairHarness;
+ import '../features/learning/pair_matching/pair_matching_source_composer_test.dart'
+     as pair_fixture;
+ 
+ void main() {
++  testWidgets(
++    'canonical completed normal and replay survive abandoned Pair in one bounded History page',
++    (tester) async {
++      tester.view.physicalSize = const Size(320, 720);
++      tester.view.devicePixelRatio = 1;
++      addTearDown(tester.view.resetPhysicalSize);
++      addTearDown(tester.view.resetDevicePixelRatio);
++      final normal = _pairOperation(
++        ownerId: 'synthetic-owner',
++        token: 'mixed-normal',
++        createdAtUtc: DateTime.utc(2026, 9, 5),
++      );
++      final h = PairHarness(
++        pinnedPlan: normal.plan,
++        launchId: normal.launchOperationId,
++      );
++      addTearDown(h.db.close);
++      await h.initialize(measured: true);
++      await _finishPairOperation(
++        harness: h,
++        operation: normal,
++        alreadyStarted: true,
++      );
++      final replay = _pairOperation(
++        ownerId: h.owner,
++        token: 'mixed-replay',
++        createdAtUtc: DateTime.utc(2026, 9, 5, 0, 1),
++        purpose: PairSessionPurpose.practiceReplay,
++        sourceSessionId: normal.plan.learningSessionId,
++        shuffleSeed: 101,
++      );
++      await _finishPairOperation(harness: h, operation: replay);
++      final stopped = _pairOperation(
++        ownerId: h.owner,
++        token: 'mixed-stopped',
++        createdAtUtc: DateTime.utc(2026, 9, 5, 0, 2),
++        configured: true,
++      );
++      await PairMatchingAtomicStartAdapter(
++        repository: h.real,
++        capability: InternalPairMatchingCapability(
++          allowlist: PairCuratedAllowlist(
++            version: stopped.plan.allowlistVersion,
++            items: stopped.plan.orderedLexicalItems,
++          ),
++          isEnabled: () => true,
++        ),
++      ).startMeasured(stopped);
++      final consumed = stopped.configuration!.timing.maximumActiveEffort!;
++      for (var i = 0; i < 2; i++) {
++        await h.real.addSessionConfigurationActiveEffort(
++          ownerId: h.owner,
++          sessionId: stopped.plan.learningSessionId,
++          configurationIdentity: stopped.configuration!.contentIdentity,
++          delta: const Duration(minutes: 5),
++        );
++      }
++      await h.real.abandonSession(
++        ownerId: h.owner,
++        sessionId: stopped.plan.learningSessionId,
++        abandonedAtUtc: stopped.plan.createdAtUtc.add(consumed),
++      );
++      final reader = DriftLearningHistoryReader(
++        h.db,
++        learningTime: DriftLearningTimeRepository(
++          h.db,
++          owners: h.learning.owners,
++        ),
++        nowUtc: () => DateTime.utc(2026, 9, 6),
++      );
++      final entries = await reader.list(HistoryFilter(ownerId: h.owner));
++      expect(entries, hasLength(3));
++      final tapped = <String>[];
++      await tester.pumpWidget(
++        _app(
++          textScale: 2,
++          reader: reader,
++          owners: h.learning.owners,
++          pairReader: DriftPairMatchingSessionPurposeReader(h.db),
++          onPairReplay: (projection, operationId) async {
++            tapped.add(projection.sessionId);
++          },
++        ),
++      );
++      await tester.pumpAndSettle();
++      for (final operation in [normal, replay]) {
++        tester
++            .state<ScrollableState>(find.byType(Scrollable).first)
++            .position
++            .jumpTo(0);
++        await tester.pumpAndSettle();
++        final action = find.byKey(
++          ValueKey('pair-replay-history-${operation.plan.learningSessionId}'),
++        );
++        await tester.scrollUntilVisible(action, 250, maxScrolls: 100);
++        await tester.ensureVisible(action);
++        await tester.pumpAndSettle();
++        expect(tester.widget<FilledButton>(action).onPressed, isNotNull);
++        expect(
++          find.textContaining(normal.plan.learningSessionId),
++          findsNothing,
++        );
++        await tester.tap(action);
++        await tester.pumpAndSettle();
++      }
++      expect(tapped.toSet(), {
++        normal.plan.learningSessionId,
++        replay.plan.learningSessionId,
++      });
++      final stoppedAction = find.byKey(
++        ValueKey('pair-replay-history-${stopped.plan.learningSessionId}'),
++      );
++      await tester.scrollUntilVisible(stoppedAction, -250);
++      expect(tester.widget<FilledButton>(stoppedAction).onPressed, isNull);
++      expect(find.text('รอบจับคู่หยุดก่อนจบ'), findsOneWidget);
++      expect(tester.takeException(), isNull);
++    },
++  );
+   testWidgets(
+     'f43 screen renders deterministic terminal cards with accessible non-color status',
+     (tester) async {
+       final entries = <LearningHistoryEntry>[
+         _entry(
+           sessionId: 'session:completed',
+           mode: LessonMode.meaningQuiz,
+           state: LearningHistoryTerminalState.completed,
+           packTitle: 'Travel Essentials',
+           duration: const Duration(minutes: 2),
+           startedAtUtc: DateTime.utc(2026, 8, 31, 9),
+         ),
+         _entry(
+           sessionId: 'session:abandoned',
+@@ -458,59 +578,55 @@ void main() {
+       final latestReplay = find.byKey(
+         ValueKey('pair-history-${overview.latestReplay.projection.sessionId}'),
+       );
+       await tester.scrollUntilVisible(latestReplay, 300);
+       expect(
+         find.descendant(
+           of: latestReplay,
+           matching: find.text('ฝึกซ้ำล่าสุดของต้นทางนี้'),
+         ),
+         findsOneWidget,
+       );
+       expect(
+         find.descendant(
+           of: latestReplay,
+-          matching: find.text(
+-            'ต้นทางโดยตรง: ${overview.bestNormal.projection.sessionId}',
+-          ),
++          matching: find.textContaining('รอบต้นทาง: Travel Essentials'),
+         ),
+         findsOneWidget,
+       );
+       expect(
+         find.descendant(
+           of: latestReplay,
+           matching: find.text('รอบฝึกซ้ำไม่เพิ่มความก้าวหน้าหรือรางวัล'),
+         ),
+         findsOneWidget,
+       );
+ 
+       final bestReplay = find.byKey(
+         ValueKey('pair-history-${overview.bestReplay.projection.sessionId}'),
+       );
+       await tester.scrollUntilVisible(bestReplay, 300);
+       expect(
+         find.descendant(
+           of: bestReplay,
+           matching: find.text('ฝึกซ้ำดีที่สุดของต้นทางนี้'),
+         ),
+         findsOneWidget,
+       );
+       expect(
+         find.descendant(
+           of: bestReplay,
+-          matching: find.text(
+-            'ต้นทางโดยตรง: ${overview.bestNormal.projection.sessionId}',
+-          ),
++          matching: find.textContaining('รอบต้นทาง: Travel Essentials'),
+         ),
+         findsOneWidget,
+       );
+     },
+   );
+ 
+   testWidgets(
+     'Pair replay is explicitly unavailable without composition and English action stays accessible',
+     (tester) async {
+       final fixture = await _canonicalPairFixture(
+         token: 'disabled',
+         interactiveElapsedMs: null,
+       );
+       final entry = _entry(
+@@ -602,40 +718,47 @@ void main() {
+     expect(find.text('ไม่สามารถโหลดประวัติการเรียนได้'), findsOneWidget);
+     expect(
+       find.bySemanticsLabel('โหลดประวัติการเรียนไม่สำเร็จ'),
+       findsOneWidget,
+     );
+     reader.loadFailure = null;
+     await tester.tap(find.text('ลองอีกครั้ง'));
+     await tester.pumpAndSettle();
+     expect(find.text('ยังไม่มีประวัติการเรียน'), findsOneWidget);
+     expect(reader.loadCalls, 2);
+   });
+ }
+ 
+ Widget _app({
+-  required _Reader reader,
++  required LearningHistoryReader reader,
+   LearningHistorySessionLauncher? launcher,
+   LearningHistoryReplayOperationIdGenerator? generateReplayOperationId,
+   LocalOwnerRepository owners = const _Owners(),
+   PairMatchingSessionPurposeReader? pairReader,
+   Future<void> Function(
+     PairMatchingHistoryProjection source,
+     String replayOperationId,
+   )?
+   onPairReplay,
+   Locale locale = const Locale('th'),
++  double textScale = 1,
+ }) => MaterialApp(
++  builder: (context, child) => MediaQuery(
++    data: MediaQuery.of(
++      context,
++    ).copyWith(textScaler: TextScaler.linear(textScale)),
++    child: child!,
++  ),
+   locale: locale,
+   supportedLocales: const <Locale>[Locale('th'), Locale('en')],
+   localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+     _TestMaterialLocalizationsDelegate(),
+     _TestWidgetsLocalizationsDelegate(),
+     _TestCupertinoLocalizationsDelegate(),
+   ],
+   home: LearningHistoryScreen(
+     useCases: LearningHistoryUseCases(
+       owners: owners,
+       reader: reader,
+       sessionLauncher: launcher ?? _ImmediateLauncher(),
+       pairReader: pairReader,
+     ),
+@@ -1072,52 +1195,74 @@ Future<_CanonicalPairOverview> _canonicalPairOverviewFixtures() async {
+       bestReplay: bestReplay,
+     );
+   } finally {
+     await harness.db.close();
+   }
+ }
+ 
+ PairMatchingStartOperation _pairOperation({
+   required String ownerId,
+   required String token,
+   required DateTime createdAtUtc,
+   PairSessionPurpose purpose = PairSessionPurpose.learning,
+   String? sourceSessionId,
+   int shuffleSeed = 17,
++  bool configured = false,
+ }) {
+   final launchOperationId = 'history-test:$token';
+   final plan = PairMatchingPlanV1(
+     ownerId: ownerId,
+     orderedLexicalItems: <PairLexicalItem>[
+       for (var index = 0; index < 4; index += 1) pair_fixture.fixture(index),
+     ],
+     direction: PairDirection.enToTh,
+     density: PairDensity.compact4,
+     shuffleSeed: shuffleSeed,
+     timerPreset: PairTimerPreset.off,
+     allowlistVersion: 'history-test-v1',
+     learningSessionId: pairSessionId(ownerId, launchOperationId),
+     entryKind: PairSourceSurface.history,
+     sourceSnapshotId: 'history-source:$token',
+     createdAtUtc: createdAtUtc,
+     sessionPurpose: purpose,
+     sourceSessionId: sourceSessionId,
+   );
+   return PairMatchingStartOperation(
+     plan: plan,
+     launchOperationId: launchOperationId,
+     appVersion: 'synthetic',
+     buildId: 'synthetic',
++    configuration: configured
++        ? SessionConfiguration.validated(
++            schemaVersion: sessionConfigurationSchemaVersion,
++            policyVersion: sessionConfigurationPolicyVersion,
++            ownerId: ownerId,
++            mode: LessonMode.matching,
++            itemCount: 4,
++            direction: SessionDirection.forward,
++            difficulty: SessionDifficulty.standard,
++            hintBudget: 0,
++            timing: const SessionTiming.untimedAlternative(
++              maximumActiveEffort: Duration(minutes: 10),
++            ),
++            packIdentity: null,
++            protocolId: 'protocol:local-standard',
++            protocolVersion: '1',
++            protocolLimitsIdentity:
++                const SessionConfigurationProtocolLimits.standard()
++                    .contentIdentity,
++          )
++        : null,
+   );
+ }
+ 
+ Future<PairMatchingSessionPurpose> _finishPairOperation({
+   required PairHarness harness,
+   required PairMatchingStartOperation operation,
+   bool alreadyStarted = false,
+   bool measured = false,
+   int interactiveElapsedMs = 0,
+   int assistedCount = 0,
+ }) async {
+   if (!alreadyStarted) {
+     final starter = PairMatchingAtomicStartAdapter(
+       repository: harness.real,

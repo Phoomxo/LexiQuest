@@ -1,0 +1,221 @@
+Reviewed SHA256=f0dcbc37c7de040c749fa4c486439c531dfc3eb144df7d0758e2c3dfedb0cec4; current file=lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
+diff --git a/.superpowers/sdd/pm8-host-race-before-pair_matching_experience_host.dart b/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
+index f3577d40..58d1ae53 100644
+--- a/.superpowers/sdd/pm8-host-race-before-pair_matching_experience_host.dart
++++ b/lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart
+@@ -978,17 +978,20 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
+       if (error is SessionConfigurationResetRequired && !_attached) {
+         _configurationUnavailable = true;
+         try {
+           await _lifecycle?.detachPairPresentation();
+           final unavailable = _unavailableSession ??=
+               PairMatchingUnavailableSession(
+                 operation: widget.operation,
+                 learning: widget.runtime.learning,
+-                requireOwner: widget.runtime.requireOwner,
++                requireOwner: () async {
++                  await _checkOwner();
++                  return widget.runtimeOwnerId;
++                },
+               );
+           final resolved = await unavailable.resolve(abandonIncomplete: false);
+           _showUnavailableResolution(resolved);
+         } catch (_) {
+           // Exact saved-session retry remains available. Corrupt/uncertain
+           // receipts never become permission to abandon or fabricate success.
+         }
+       }
+Reviewed SHA256=86342e55b9e4562ff76a28da5e348c6c2a6f36cf462faff2553bcbb24d0894b6; current file=test/features/learning/pair_matching/pair_matching_owner_upgrade_test.dart
+diff --git a/.superpowers/sdd/pm8-host-race-before-pair_matching_owner_upgrade_test.dart b/test/features/learning/pair_matching/pair_matching_owner_upgrade_test.dart
+index 0d0392c9..3fd25ef8 100644
+--- a/.superpowers/sdd/pm8-host-race-before-pair_matching_owner_upgrade_test.dart
++++ b/test/features/learning/pair_matching/pair_matching_owner_upgrade_test.dart
+@@ -144,17 +144,39 @@ SessionConfiguration ownerConfiguration() => SessionConfiguration.validated(
+ 
+ class _OwnerProtocols implements SessionConfigurationProtocolProvider {
+   @override
+   Future<SessionConfigurationProtocolLimits> resolveForOwner(
+     String ownerId,
+   ) async => const SessionConfigurationProtocolLimits.standard();
+ }
+ 
+-PairMatchingExperienceRuntime ownerRuntime(PairHarness h) {
++class _HeldResetOwnerProtocols implements SessionConfigurationProtocolProvider {
++  final entered = Completer<void>(), release = Completer<void>();
++  final owners = <String>[];
++
++  @override
++  Future<SessionConfigurationProtocolLimits> resolveForOwner(
++    String ownerId,
++  ) async {
++    owners.add(ownerId);
++    if (owners.length == 1) {
++      entered.complete();
++      await release.future;
++    }
++    throw const SessionConfigurationResetRequired(
++      SessionConfigurationResetReason.staleProtocol,
++    );
++  }
++}
++
++PairMatchingExperienceRuntime ownerRuntime(
++  PairHarness h, {
++  SessionConfigurationProtocolProvider? protocols,
++}) {
+   final learning = realLearning(h);
+   final allowlist = PairCuratedAllowlist(
+     version: h.operation.plan.allowlistVersion,
+     items: h.operation.plan.orderedLexicalItems,
+   );
+   return PairMatchingExperienceRuntime(
+     database: h.db,
+     learning: learning,
+@@ -170,17 +192,17 @@ PairMatchingExperienceRuntime ownerRuntime(PairHarness h) {
+     composer: PairMatchingSourceComposer(allowlist: allowlist),
+     start: PairMatchingAtomicStartAdapter(
+       repository: h.real,
+       capability: InternalPairMatchingCapability(
+         allowlist: allowlist,
+         isEnabled: () => false,
+       ),
+     ),
+-    protocols: _OwnerProtocols(),
++    protocols: protocols ?? _OwnerProtocols(),
+     canStart: () => false,
+     monotonicMicros: () => 0,
+   );
+ }
+ 
+ PairPracticeReplay ownerReplay(PairHarness h) => PairPracticeReplay(
+   reader: DriftPairMatchingSessionPurposeReader(h.db),
+   start: PairMatchingAtomicStartAdapter(
+@@ -261,16 +283,128 @@ void main() {
+       );
+       final result = await fresh.resolve(abandonIncomplete: true);
+       expect(result.kind, PairAcceptedDispositionKind.stopped);
+       expect(result.recovery.session.ownerId, h.owner);
+       expect(result.recovery.attempts, isEmpty);
+     },
+   );
+ 
++  for (final pendingCommitted in [true, false]) {
++    testWidgets(
++      'stale configured host cannot first-bind moved disposition pendingCommitted=$pendingCommitted',
++      (tester) async {
++        final h = PairHarness(configuration: ownerConfiguration());
++        addTearDown(h.db.close);
++        await h.initialize();
++        final originalOwner = h.owner;
++        final c = await h.restore();
++        if (pendingCommitted) {
++          await planTap(h, c, 'synthetic-0', PairTileSide.prompt);
++          h.repository.answerFault = true;
++          h.repository.afterWrite = true;
++          await expectLater(
++            planTap(h, c, 'synthetic-0', PairTileSide.target),
++            throwsStateError,
++          );
++        } else {
++          for (final item in h.operation.plan.orderedLexicalItems) {
++            await planTap(h, c, item.wordId, PairTileSide.prompt);
++            await planTap(h, c, item.wordId, PairTileSide.target);
++          }
++        }
++        c.dispose();
++        final protocols = _HeldResetOwnerProtocols();
++        final runtime = ownerRuntime(h, protocols: protocols);
++        Future<void> mount() => tester.pumpWidget(
++          MaterialApp(
++            home: PairMatchingExperienceHost.recover(
++              runtime: runtime,
++              operation: h.operation,
++              onExit: () {},
++            ),
++          ),
++        );
++        Future<String> durableBytes() async => jsonEncode({
++          for (final table in [
++            'learning_sessions',
++            'answer_attempts',
++            'events_v2',
++            'outbox_operations',
++          ])
++            table:
++                (await h.db
++                        .customSelect('SELECT * FROM $table ORDER BY 1')
++                        .get())
++                    .map((row) => row.data)
++                    .toList(),
++        });
++        await mount();
++        for (var i = 0; i < 40 && !protocols.entered.isCompleted; i++) {
++          await tester.pump(const Duration(milliseconds: 10));
++        }
++        expect(protocols.entered.isCompleted, true);
++        expect(protocols.owners, [originalOwner]);
++        await mergePairOwner(h);
++        final before = await durableBytes();
++        final beforeDisposition = await h.real.inspectPairDisposition(
++          ownerId: h.owner,
++          startOperation: h.operation.stableSerialization,
++        );
++        expect(
++          beforeDisposition.kind,
++          pendingCommitted
++              ? PairAcceptedDispositionKind.pendingCommitted
++              : PairAcceptedDispositionKind.complete,
++        );
++        expect(beforeDisposition.recovery.checkpoint!.terminalAtUtc, isNull);
++        protocols.release.complete();
++        await tester.pumpAndSettle();
++        expect(
++          await durableBytes(),
++          before,
++          reason: 'the stale P pane cannot acknowledge or finish R work',
++        );
++        expect(find.byKey(const ValueKey('pair-result')), findsNothing);
++        await tester.pumpWidget(const SizedBox.shrink());
++        await tester.pumpAndSettle();
++        expect(
++          await durableBytes(),
++          before,
++          reason: 'disposing the stale pane also retains exact R work',
++        );
++        await mount();
++        await tester.pumpAndSettle();
++        expect(protocols.owners, [originalOwner, h.owner]);
++        final fresh = await h.real.inspectPairDisposition(
++          ownerId: h.owner,
++          startOperation: h.operation.stableSerialization,
++        );
++        expect(fresh.recovery.session.ownerId, h.owner);
++        expect(fresh.recovery.attempts, hasLength(pendingCommitted ? 1 : 4));
++        expect(fresh.recovery.checkpoint!.state['frozenEvidence'], isNull);
++        expect(
++          fresh.kind,
++          pendingCommitted
++              ? PairAcceptedDispositionKind.incomplete
++              : PairAcceptedDispositionKind.complete,
++        );
++        if (!pendingCommitted) {
++          expect(fresh.recovery.session.state, 'completed');
++          expect(fresh.recovery.checkpoint!.terminalAcknowledged, true);
++          expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
++        }
++        expect(await durableBytes(), isNot(before));
++        await tester.pumpWidget(const SizedBox.shrink());
++        await tester.pumpAndSettle();
++        expect(tester.takeException(), isNull);
++      },
++    );
++  }
++
+   testWidgets(
+     'real merged configured host enforces the accepted cap under runtime owner',
+     (tester) async {
+       final h = PairHarness(configuration: ownerConfiguration());
+       addTearDown(h.db.close);
+       await h.initialize();
+       final acceptedConfiguration =
+           h.operation.configuration!.stableSerialization;

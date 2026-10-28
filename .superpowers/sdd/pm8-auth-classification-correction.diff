@@ -1,0 +1,296 @@
+Reviewed SHA256=c45122c0769b6a02aa922462a57310f374b26c5908786f7f04dfb03c2bd8bd44; current file=lib/features/identity/data/drift_owner_upgrade_repository.dart
+diff --git a/.superpowers/sdd/pm8-reviewed-before-drift_owner_upgrade_repository.dart b/lib/features/identity/data/drift_owner_upgrade_repository.dart
+index 89d3ad78..8c7a94d0 100644
+--- a/.superpowers/sdd/pm8-reviewed-before-drift_owner_upgrade_repository.dart
++++ b/lib/features/identity/data/drift_owner_upgrade_repository.dart
+@@ -558,39 +558,20 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+         .customSelect(
+           query.sql,
+           variables: [
+             for (final arg in query.args) Variable<String>(arg as String),
+           ],
+         )
+         .get();
+     final checkpoints = [for (final row in rows) row.data];
+-    var strictPair = false;
+-    for (final checkpoint in checkpoints) {
+-      try {
+-        final state =
+-            (jsonDecode(checkpoint['payload_json'] as String) as Map)['state'];
+-        if (state is! Map ||
+-            state['schemaVersion'] is! int ||
+-            (state['schemaVersion'] as int) < 1 ||
+-            (state['schemaVersion'] as int) > 6) {
+-          throw const FormatException('Unsupported Matching checkpoint state');
+-        }
+-        strictPair =
+-            strictPair ||
+-            state['schemaVersion'] == 6 ||
+-            state.containsKey('plan') ||
+-            state.containsKey('startOperation');
+-      } catch (_) {
+-        // A present undecodable checkpoint is not evidence of a legacy session.
+-        // Refuse before category-only remaps, which never enter the word fence.
+-        throw StateError('Matching owner-upgrade checkpoint is undecodable');
+-      }
+-    }
+-    if (!strictPair) return null;
++    // Preserve the existing no-checkpoint policy. Every present chain must pass
++    // the shared envelope and legacy/Pair state decoder before classification;
++    // a supported schema marker alone cannot bypass category-only preflight.
++    if (checkpoints.isEmpty) return null;
+     final ownerQuery = PairMatchingSessionPurpose.historicalOwnerQuery(
+       ownerId,
+       checkpoints,
+     );
+     final ownerRows = await _database
+         .customSelect(
+           ownerQuery.sql,
+           variables: [
+@@ -601,18 +582,17 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+     final owners = [for (final row in ownerRows) row.data];
+     final purpose = PairMatchingSessionPurpose.decode(
+       ownerId: ownerId,
+       session: session,
+       checkpoints: checkpoints,
+       historicalOwners: owners,
+     );
+     final snapshot = purpose.snapshot;
+-    if (snapshot == null)
+-      throw StateError('Pair accepted checkpoint is corrupt');
++    if (snapshot == null) return null; // Successfully validated legacy chain.
+     for (final item in snapshot.engine.plan.orderedLexicalItems) {
+       final word = await (_database.select(
+         _database.vocabularyWords,
+       )..where((row) => row.id.equals(item.wordId))).getSingleOrNull();
+       if (word == null ||
+           word.ownerId != ownerId ||
+           word.spelling != item.spelling ||
+           word.meaning != item.meaning ||
+@@ -643,18 +623,19 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+     final eventStore = DriftLearningEventStore(
+       _database,
+       evidencePolicy: evidencePolicy,
+       rolloutModeProvider: rolloutModeProvider,
+     );
+     for (var i = 0; i < attempts.length; i++) {
+       final attempt = attempts[i];
+       final frozenJson = purpose.reservations[expectedIds[i]];
+-      if (frozenJson == null)
++      if (frozenJson == null) {
+         throw StateError('Pair accepted reservation is missing');
++      }
+       final frozen = FrozenPendingCurrentActivityEvidence.fromJson(frozenJson);
+       final source = await eventStore.readValidatedSourceForAttempt(
+         attempt: attempt,
+       );
+       if (attempt.ownerId != ownerId ||
+           attempt.id != frozen.sourceEvidenceId ||
+           attempt.sessionId != frozen.sessionId ||
+           attempt.wordId != frozen.wordId ||
+@@ -684,18 +665,19 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
+         actorId: source.actorIdentity,
+         occurredAtUtc: source.occurredAtUtc,
+         historicalOwners: owners,
+         secondPrecision: true,
+       );
+     }
+     if (attempts.length < expectedIds.length) {
+       final orphan = await eventStore.readBySourceEvidenceId(expectedIds.last);
+-      if (orphan != null)
++      if (orphan != null) {
+         throw StateError('Pair pending source has no canonical attempt');
++      }
+     }
+     return purpose;
+   }
+ 
+   Future<void> _requirePairUpgradeDestinationCapacity({
+     required String ownerId,
+     required String destinationOwnerId,
+     required Set<String> sessionIds,
+Reviewed SHA256=6dfb62651a81d60faf583e0960306fb9125bf9fdea711487a7c422c9291281b8; current file=test/features/learning/pair_matching/pair_matching_owner_upgrade_auth_test.dart
+diff --git a/.superpowers/sdd/pm8-reviewed-before-pair_matching_owner_upgrade_auth_test.dart b/test/features/learning/pair_matching/pair_matching_owner_upgrade_auth_test.dart
+index 258f8d25..733fa5d0 100644
+--- a/.superpowers/sdd/pm8-reviewed-before-pair_matching_owner_upgrade_auth_test.dart
++++ b/test/features/learning/pair_matching/pair_matching_owner_upgrade_auth_test.dart
+@@ -4,16 +4,19 @@ import 'package:drift/drift.dart' show Value, Variable;
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:timezone/data/latest.dart' as tz;
+ import 'package:vocab_learning_app/data/local/app_database.dart';
+ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+ import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+ import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
++import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
++import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
++import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+ import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_session_coordinator.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
+ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_session_purpose.dart';
+@@ -445,16 +448,159 @@ void main() {
+           _upgrade(h).upgrade(activeOwnerId: h.owner, firebaseUid: _uid),
+           throwsStateError,
+         );
+         expect(await _snapshot(h), before);
+       },
+     );
+   }
+ 
++  for (final version in [1, 2, 3, 4, 5]) {
++    for (final validEnvelope in [false, true]) {
++      test(
++        'legacy classification rejects marker-only schema $version validEnvelope=$validEnvelope before category-only upgrade',
++        () async {
++          final h = PairHarness();
++          addTearDown(h.db.close);
++          await h.initialize();
++          await _targetOwner(h, collision: 'category');
++          final event = (await _rows(h, 'events_v2')).single;
++          final payload = validEnvelope
++              ? (jsonDecode(event['payload_json'] as String) as Map)
++              : <String, Object?>{};
++          payload['state'] = {'schemaVersion': version};
++          await h.db.customStatement(
++            'UPDATE events_v2 SET payload_json=? WHERE event_id=?',
++            [jsonEncode(payload), event['event_id']],
++          );
++          final before = await _snapshot(h);
++          await expectLater(
++            _upgrade(h).upgrade(activeOwnerId: h.owner, firebaseUid: _uid),
++            throwsStateError,
++          );
++          expect(await _snapshot(h), before);
++        },
++      );
++    }
++
++    test(
++      'legacy classification preserves actual schema $version through category-only upgrade',
++      () async {
++        final h = PairHarness();
++        addTearDown(h.db.close);
++        await h.initialize();
++        await h.real.abandonSession(
++          ownerId: h.owner,
++          sessionId: h.operation.plan.learningSessionId,
++          abandonedAtUtc: h.learning.nowUtc(),
++        );
++        final learning = LearningUseCases(
++          owners: h.learning.owners,
++          repository: h.real,
++          generateId: h.learning.generateId,
++          nowUtc: h.learning.nowUtc,
++          buildInfo: h.learning.buildInfo,
++        );
++        const adapter = MatchingModeAdapter();
++        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
++        final original = await adapter.prepareSession(
++          learning: learning,
++          evidence: evidence,
++          categoryId: 'synthetic-category',
++          itemCount: 4,
++        );
++        final event = (await h.db.select(h.db.eventsV2).get()).singleWhere(
++          (row) => row.aggregateId == original.session.id,
++        );
++        final payload = jsonDecode(event.payloadJson) as Map;
++        final state = payload['state'] as Map;
++        expect(state['schemaVersion'], 5);
++        state['schemaVersion'] = version;
++        if (version < 5) state.remove('timingKind');
++        if (version < 4) state.remove('summaryPresented');
++        if (version < 3) {
++          state.remove('timeoutAnchorUtc');
++          state.remove('timeoutDurationMs');
++        }
++        if (version < 2) {
++          state.remove('timeoutDeadlineUtc');
++          payload['schemaVersion'] = 1;
++          payload.remove('terminalAtUtc');
++          payload.remove('terminalAcknowledged');
++        }
++        final historicalBytes = jsonEncode(payload);
++        await h.db.customStatement(
++          'UPDATE events_v2 SET payload_json=?, event_version=? WHERE event_id=?',
++          [
++            historicalBytes,
++            version == 1 ? 1 : event.eventVersion,
++            event.eventId,
++          ],
++        );
++        await _targetOwner(h, collision: 'category');
++        await _upgrade(h).upgrade(activeOwnerId: h.owner, firebaseUid: _uid);
++        final moved = (await h.db.select(h.db.eventsV2).get()).singleWhere(
++          (row) => row.eventId == event.eventId,
++        );
++        expect(moved.ownerId, _target);
++        expect(moved.actorIdentity, h.owner);
++        expect(moved.payloadJson, historicalBytes);
++        final restored = await adapter.prepareSession(
++          learning: learning,
++          evidence: evidence,
++          categoryId: 'synthetic-target-category',
++          itemCount: 4,
++        );
++        expect(restored.session.id, original.session.id);
++        expect(
++          restored.session.questions.map((question) => question.word.id),
++          original.session.questions.map((question) => question.word.id),
++        );
++        expect(await h.db.select(h.db.answerAttempts).get(), isEmpty);
++      },
++    );
++  }
++
++  test(
++    'legacy classification preserves existing no-checkpoint upgrade policy',
++    () async {
++      final h = PairHarness();
++      addTearDown(h.db.close);
++      await h.initialize();
++      await h.real.abandonSession(
++        ownerId: h.owner,
++        sessionId: h.operation.plan.learningSessionId,
++        abandonedAtUtc: h.learning.nowUtc(),
++      );
++      const sessionId = 'synthetic-no-checkpoint-matching';
++      await h.real.startSession(
++        LearningSessionDraft(
++          id: sessionId,
++          ownerId: h.owner,
++          activityType: 'matching',
++          startedAtUtc: h.learning.nowUtc(),
++          appVersion: 'synthetic',
++          buildId: 'synthetic',
++        ),
++      );
++      await _targetOwner(h, collision: 'category');
++      await _upgrade(h).upgrade(activeOwnerId: h.owner, firebaseUid: _uid);
++      final moved = (await h.db.select(h.db.learningSessions).get())
++          .singleWhere((row) => row.id == sessionId);
++      expect(moved.ownerId, _target);
++      expect(moved.state, 'active');
++      expect(
++        (await h.db.select(h.db.eventsV2).get()).where(
++          (row) => row.aggregateId == sessionId,
++        ),
++        isEmpty,
++      );
++    },
++  );
++
+   test(
+     'actual later-created destination accepts historical plan but rejects marker before destination existence',
+     () async {
+       final h = PairHarness();
+       addTearDown(h.db.close);
+       await h.initialize();
+       await _targetOwner(h);
+       final planTime = h.operation.plan.createdAtUtc;

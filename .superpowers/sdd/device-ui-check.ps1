@@ -1,0 +1,4 @@
+param([ValidateSet('tests','analyze','shell')][string]$Check='tests')
+$arguments=if($Check -eq 'tests'){@('test','--no-pub','test/screens','test/navigation','test/architecture/thai_navigation_glossary_boundary_test.dart','test/features/learning/session_configuration_sheet_test.dart','test/features/learning/session_configuration_policy_test.dart','--reporter','expanded')}elseif($Check -eq 'shell'){@('test','--no-pub','test/screens/main_navigation_screen_test.dart','test/screens/production_shell_navigation_test.dart','test/runtime/app_build_info_test.dart','--reporter','expanded')}else{@('analyze','--no-pub')}
+& "$PSScriptRoot/device-current-source-gate.ps1" -Label "ui-final-$Check" -Executable 'C:/Users/Phet/AppData/Local/Programs/flutter/bin/flutter.bat' -ArgumentList $arguments
+exit $LASTEXITCODE
