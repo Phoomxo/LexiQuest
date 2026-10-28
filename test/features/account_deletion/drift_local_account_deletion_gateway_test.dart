@@ -17,6 +17,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
@@ -39,11 +40,13 @@ void main() {
       for (final table in [
         'motivation_measurement_runs',
         'motivation_responses',
+        'measurement_opportunities',
+        'events_v2',
       ]) {
         retained[table] =
             (await database
                     .customSelect(
-                      'SELECT * FROM $table WHERE owner_id = ? ORDER BY id',
+                      'SELECT * FROM $table WHERE owner_id = ? ORDER BY ${table == 'events_v2' ? 'event_id' : 'id'}',
                       variables: const [Variable<String>('owner-b')],
                     )
                     .get())
@@ -101,19 +104,20 @@ void main() {
         'research_participation_permits',
         'motivation_measurement_runs',
         'motivation_responses',
+        'measurement_opportunities',
         'events_v2',
         'outbox_operations',
       ]) {
         expect(
           await _count(database, table, 'owner_id = ?', ['owner-b']),
-          1,
+          table == 'events_v2' ? 2 : 1,
           reason: '$table keeps owner B research evidence',
         );
       }
       for (final entry in retained.entries) {
         final after = await database
             .customSelect(
-              'SELECT * FROM ${entry.key} WHERE owner_id = ? ORDER BY id',
+              'SELECT * FROM ${entry.key} WHERE owner_id = ? ORDER BY ${entry.key == 'events_v2' ? 'event_id' : 'id'}',
               variables: const [Variable<String>('owner-b')],
             )
             .get();
@@ -526,8 +530,24 @@ Future<void> _seed(AppDatabase database) async {
     'owner-b',
     assignmentId: assignmentB,
   );
-  await insertOwnerMotivationMeasurement(database, permitA);
-  await insertOwnerMotivationMeasurement(database, permitB);
+  final measurementA = await insertOwnerMotivationMeasurement(
+    database,
+    permitA,
+  );
+  final measurementB = await insertOwnerMotivationMeasurement(
+    database,
+    permitB,
+  );
+  await insertOwnerMeasurementOpportunity(
+    database,
+    permit: permitA,
+    measurement: measurementA,
+  );
+  await insertOwnerMeasurementOpportunity(
+    database,
+    permit: permitB,
+    measurement: measurementB,
+  );
   await database.customStatement('''
     INSERT INTO events_v2 (
       event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,

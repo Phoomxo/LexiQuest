@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
@@ -342,6 +343,7 @@ void main() {
     for (final table in [
       'motivation_measurement_runs',
       'motivation_responses',
+      'measurement_opportunities',
     ]) {
       test('purge proof rejects a residual $table fact', () async {
         await _insertResearchArtifacts(database);
@@ -963,7 +965,12 @@ Future<void> _insertResearchArtifacts(AppDatabase database) async {
     "VALUES ('synthetic-consent', ?, 1, 'accepted', 1)",
     [_owner],
   );
-  await insertOwnerMotivationMeasurement(database, permit);
+  final measurement = await insertOwnerMotivationMeasurement(database, permit);
+  await insertOwnerMeasurementOpportunity(
+    database,
+    permit: permit,
+    measurement: measurement,
+  );
   await database.customStatement(
     'INSERT INTO events_v2 '
     '(event_id, event_type, event_version, occurred_at_utc, recorded_at_utc, '
@@ -989,13 +996,18 @@ Future<void> _expectResearchCounts(AppDatabase database, int count) async {
     'research_participation_permits',
     'motivation_measurement_runs',
     'motivation_responses',
+    'measurement_opportunities',
     'events_v2',
     'outbox_operations',
   ]) {
     final row = await database
         .customSelect('SELECT COUNT(*) AS count FROM $table')
         .getSingle();
-    expect(row.read<int>('count'), count, reason: table);
+    expect(
+      row.read<int>('count'),
+      table == 'events_v2' ? count * 2 : count,
+      reason: table,
+    );
   }
 }
 

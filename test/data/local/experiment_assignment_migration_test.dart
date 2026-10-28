@@ -82,9 +82,9 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      14,
+      15,
     );
-    expect(database.allTables, hasLength(33));
+    expect(database.allTables, hasLength(34));
     expect(
       await database.customSelect('SELECT * FROM experiment_assignments').get(),
       isEmpty,

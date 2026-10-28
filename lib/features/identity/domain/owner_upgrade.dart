@@ -64,4 +64,5 @@ const Set<String> ownerUpgradeInventory = <String>{
   // Phase 2 D8.3 — associative learning data is owner-scoped.
   'association_records',
   'associative_memory_states',
+  'measurement_opportunities',
 };

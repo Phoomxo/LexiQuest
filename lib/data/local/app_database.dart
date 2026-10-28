@@ -59,6 +59,7 @@ final _productionNativeOptions = DriftNativeOptions(
     LearningDayLog,
     AssociationRecords,
     AssociativeMemoryStates,
+    MeasurementOpportunities,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -68,7 +69,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -200,11 +201,15 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 14) {
         await _createMissingTables(migrator);
       }
+      if (from < 15) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
       await _createEventIndexes();
+      await _createMeasurementOpportunityIndexes();
     },
   );
 
@@ -216,6 +221,16 @@ final class AppDatabase extends _$AppDatabase {
       await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_events_v2_owner_occurred '
         'ON events_v2(owner_id, occurred_at_utc)',
+      );
+    }
+  }
+
+  Future<void> _createMeasurementOpportunityIndexes() async {
+    if (await _tableExists('measurement_opportunities')) {
+      await customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_measurement_opportunities_first_index '
+        'ON measurement_opportunities(owner_id, measurement_run_id) '
+        'WHERE is_index_session = 1',
       );
     }
   }
@@ -350,6 +365,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('associative_memory_states')) {
       await migrator.createTable(associativeMemoryStates);
+    }
+    if (!await _tableExists('measurement_opportunities')) {
+      await migrator.createTable(measurementOpportunities);
     }
   }
 

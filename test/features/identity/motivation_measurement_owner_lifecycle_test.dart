@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coor
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
@@ -240,7 +241,18 @@ Future<SeededMotivationMeasurement> _seedMeasurement(
     "VALUES (?, ?, 1, 'accepted', 1)",
     ['synthetic-consent:$owner', owner],
   );
-  return insertOwnerMotivationMeasurement(database, permit, state: state);
+  final measurement = await insertOwnerMotivationMeasurement(
+    database,
+    permit,
+    state: state,
+  );
+  await insertOwnerMeasurementOpportunity(
+    database,
+    permit: permit,
+    measurement: measurement,
+    presented: false,
+  );
+  return measurement;
 }
 
 Future<void> _installMutationProbe(AppDatabase database) =>
@@ -261,6 +273,7 @@ Future<Map<String, List<Map<String, Object?>>>> _researchRows(
     'research_participation_permits',
     'motivation_measurement_runs',
     'motivation_responses',
+    'measurement_opportunities',
   ]) {
     result[table] =
         (await database.customSelect('SELECT * FROM $table ORDER BY id').get())

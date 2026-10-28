@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
@@ -100,10 +101,16 @@ void main() {
     for (final table in [
       'motivation_measurement_runs',
       'motivation_responses',
+      'measurement_opportunities',
+      'events_v2',
     ]) {
       measurementsBefore[table] =
           (await database
-                  .customSelect('SELECT * FROM $table ORDER BY id')
+                  .customSelect(
+                    table == 'events_v2'
+                        ? "SELECT * FROM events_v2 WHERE event_type = 'TodayExperiencePresented' ORDER BY event_id"
+                        : 'SELECT * FROM $table ORDER BY id',
+                  )
                   .get())
               .map((row) => row.data)
               .toList();
@@ -139,7 +146,11 @@ void main() {
     );
     for (final entry in measurementsBefore.entries) {
       final after = await database
-          .customSelect('SELECT * FROM ${entry.key} ORDER BY id')
+          .customSelect(
+            entry.key == 'events_v2'
+                ? "SELECT * FROM events_v2 WHERE event_type = 'TodayExperiencePresented' ORDER BY event_id"
+                : 'SELECT * FROM ${entry.key} ORDER BY id',
+          )
           .get();
       expect(
         after.map((row) => row.data).toList(),
@@ -496,7 +507,15 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     'account-owner',
     assignmentId: targetAssignment,
   );
-  await insertOwnerMotivationMeasurement(database, targetPermit);
+  final targetMeasurement = await insertOwnerMotivationMeasurement(
+    database,
+    targetPermit,
+  );
+  await insertOwnerMeasurementOpportunity(
+    database,
+    permit: targetPermit,
+    measurement: targetMeasurement,
+  );
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",

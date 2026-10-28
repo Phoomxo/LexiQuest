@@ -8,12 +8,14 @@ import 'package:vocab_learning_app/features/account_deletion/data/drift_account_
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
 void main() {
   late AppDatabase database;
   late SeededMotivationMeasurement measurementA;
+  late SeededMeasurementOpportunity opportunityA;
   final now = DateTime.utc(2026, 10, 24, 12);
 
   setUp(() async {
@@ -50,7 +52,20 @@ void main() {
       assignmentId: assignmentB,
     );
     measurementA = await insertOwnerMotivationMeasurement(database, permitA);
-    await insertOwnerMotivationMeasurement(database, permitB);
+    final measurementB = await insertOwnerMotivationMeasurement(
+      database,
+      permitB,
+    );
+    opportunityA = await insertOwnerMeasurementOpportunity(
+      database,
+      permit: permitA,
+      measurement: measurementA,
+    );
+    await insertOwnerMeasurementOpportunity(
+      database,
+      permit: permitB,
+      measurement: measurementB,
+    );
     await database.customStatement('''
       INSERT INTO events_v2 (
         event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
@@ -91,7 +106,7 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 14);
+      expect(json['schemaVersion'], 15);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -121,12 +136,28 @@ void main() {
       expect(run['permit_payload_sha256'], permit['payload_sha256']);
       expect(response['run_id'], run['id']);
       expect(response['ordinal_value'], 100);
+      final opportunity =
+          (data['measurement_opportunities'] as List).single as Map;
+      expect(opportunity, hasLength(15));
+      expect(opportunity, opportunityA.opportunity);
+      expect(opportunity['measurement_run_id'], run['id']);
+      expect(opportunity['learning_session_id'], isNull);
+      final events = data['events_v2'] as List;
+      expect(events, hasLength(2));
+      final presented =
+          events.singleWhere((row) => row['event_id'] == opportunityA.eventId)
+              as Map;
+      expect(presented, hasLength(22));
+      expect(presented, opportunityA.event);
+      expect(jsonDecode(presented['payload_json'] as String), hasLength(4));
       expect(
         (data['research_consents'] as List).single['id'],
         'consent-research-a',
       );
       expect(
-        (data['events_v2'] as List).single['event_id'],
+        events.singleWhere(
+          (row) => row['event_id'] == 'event-research-a',
+        )['event_id'],
         'event-research-a',
       );
       expect(

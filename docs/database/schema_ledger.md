@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v14** with 33 tables, matching `AppDatabase.schemaVersion`. The former
+**v15** with 34 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -184,7 +184,7 @@ claimed.
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
-| v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Reserved 2026-10-29 |
+| v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
 | v16+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13, v14 or v15. Reserve the next available version, starting at v16,
@@ -296,7 +296,7 @@ worker owns the measurement domain/repository and
 distinct `test/support/motivation_measurement_fixture.dart` seed helper and its
 seven assigned lifecycle test files; root integrates and verifies all changes.
 
-**Status:** IMPLEMENTED LOCALLY. Executable schema is v14/33 tables. Populated
+**Status:** IMPLEMENTED LOCALLY in source `90a81306` at v14/33 tables. Populated
 migration/database 38, repository 46, populated lifecycle 77 and combined
 integration 794 pass; analysis reports no issues. Independent storage, lifecycle
 and repository reviews accepted source `90a81306`, which also passes full Flutter
@@ -362,8 +362,12 @@ R3A active-run write boundary and distinctly named opportunity test/harness file
 The identity worker separately owns the learning data observer and canonical
 repository hook with its focused tests. No repository writes overlap.
 
-**Status:** RESERVED. Current executable schema remains v14/33 tables. Add one
-local-only table for a total of 34; indexes do not change the table count.
+**Status:** IMPLEMENTED LOCALLY. Executable schema is v15/34 tables. Populated
+migration/database 39, opportunity repository 43, populated lifecycle 99 and
+combined integration 1152 pass; final analysis reports no issues. Independent
+repository and storage/lifecycle reviews accepted the current source. Full
+regression/build follows. One local-only table is added; indexes do not change
+the table count.
 
 `measurement_opportunities` has 15 fields: `id`, `owner_id`, `local_revision`,
 `measurement_run_id`, `permit_id`, `entry_attempt_id`, `assigned_treatment`,

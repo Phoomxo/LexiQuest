@@ -563,6 +563,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       'research_participation_permits',
       'motivation_measurement_runs',
       'motivation_responses',
+      'measurement_opportunities',
     ]) {
       final signed = await _database
           .customSelect(
@@ -575,6 +576,19 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'Changing a signed research owner requires re-enrollment',
         );
       }
+    }
+    final event = await _database
+        .customSelect(
+          'SELECT 1 FROM events_v2 WHERE owner_id = ? AND event_type IN '
+          "('TodayExperiencePresented', 'TodayExperiencePresentationChanged', "
+          "'TodayExperienceMissionStarted', 'TodayExperienceMissionCompleted') LIMIT 1",
+          variables: [Variable<String>(sourceId)],
+        )
+        .getSingleOrNull();
+    if (event != null) {
+      throw StateError(
+        'Changing a signed research owner requires re-enrollment',
+      );
     }
   }
 
@@ -673,7 +687,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       if (table == 'experiment_assignments' ||
           table == 'research_participation_permits' ||
           table == 'motivation_measurement_runs' ||
-          table == 'motivation_responses') {
+          table == 'motivation_responses' ||
+          table == 'measurement_opportunities') {
         continue;
       }
       await _updateOwner(table, sourceId, targetId);

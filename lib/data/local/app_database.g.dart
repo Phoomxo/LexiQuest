@@ -21478,6 +21478,989 @@ class AssociativeMemoryStatesCompanion
   }
 }
 
+class $MeasurementOpportunitiesTable extends MeasurementOpportunities
+    with TableInfo<$MeasurementOpportunitiesTable, MeasurementOpportunityRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MeasurementOpportunitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _measurementRunIdMeta = const VerificationMeta(
+    'measurementRunId',
+  );
+  @override
+  late final GeneratedColumn<String> measurementRunId = GeneratedColumn<String>(
+    'measurement_run_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES motivation_measurement_runs (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _permitIdMeta = const VerificationMeta(
+    'permitId',
+  );
+  @override
+  late final GeneratedColumn<String> permitId = GeneratedColumn<String>(
+    'permit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES research_participation_permits (id)',
+    ),
+  );
+  static const VerificationMeta _entryAttemptIdMeta = const VerificationMeta(
+    'entryAttemptId',
+  );
+  @override
+  late final GeneratedColumn<String> entryAttemptId = GeneratedColumn<String>(
+    'entry_attempt_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 36,
+      maxTextLength: 36,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignedTreatmentMeta = const VerificationMeta(
+    'assignedTreatment',
+  );
+  @override
+  late final GeneratedColumn<String> assignedTreatment =
+      GeneratedColumn<String>(
+        'assigned_treatment',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _effectivePresentationMeta =
+      const VerificationMeta('effectivePresentation');
+  @override
+  late final GeneratedColumn<String> effectivePresentation =
+      GeneratedColumn<String>(
+        'effective_presentation',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _openedAtUtcMsMeta = const VerificationMeta(
+    'openedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> openedAtUtcMs = GeneratedColumn<int>(
+    'opened_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _presentedEventIdMeta = const VerificationMeta(
+    'presentedEventId',
+  );
+  @override
+  late final GeneratedColumn<String> presentedEventId = GeneratedColumn<String>(
+    'presented_event_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES events_v2 (event_id)',
+    ),
+  );
+  static const VerificationMeta _presentedAtUtcMsMeta = const VerificationMeta(
+    'presentedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> presentedAtUtcMs = GeneratedColumn<int>(
+    'presented_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _learningSessionIdMeta = const VerificationMeta(
+    'learningSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> learningSessionId =
+      GeneratedColumn<String>(
+        'learning_session_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES learning_sessions (id)',
+        ),
+      );
+  static const VerificationMeta _learningSessionStartedAtUtcMsMeta =
+      const VerificationMeta('learningSessionStartedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> learningSessionStartedAtUtcMs =
+      GeneratedColumn<int>(
+        'learning_session_started_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _isIndexSessionMeta = const VerificationMeta(
+    'isIndexSession',
+  );
+  @override
+  late final GeneratedColumn<bool> isIndexSession = GeneratedColumn<bool>(
+    'is_index_session',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_index_session" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _closedAtUtcMsMeta = const VerificationMeta(
+    'closedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> closedAtUtcMs = GeneratedColumn<int>(
+    'closed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    localRevision,
+    measurementRunId,
+    permitId,
+    entryAttemptId,
+    assignedTreatment,
+    effectivePresentation,
+    openedAtUtcMs,
+    presentedEventId,
+    presentedAtUtcMs,
+    learningSessionId,
+    learningSessionStartedAtUtcMs,
+    isIndexSession,
+    closedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'measurement_opportunities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MeasurementOpportunityRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('measurement_run_id')) {
+      context.handle(
+        _measurementRunIdMeta,
+        measurementRunId.isAcceptableOrUnknown(
+          data['measurement_run_id']!,
+          _measurementRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_measurementRunIdMeta);
+    }
+    if (data.containsKey('permit_id')) {
+      context.handle(
+        _permitIdMeta,
+        permitId.isAcceptableOrUnknown(data['permit_id']!, _permitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_permitIdMeta);
+    }
+    if (data.containsKey('entry_attempt_id')) {
+      context.handle(
+        _entryAttemptIdMeta,
+        entryAttemptId.isAcceptableOrUnknown(
+          data['entry_attempt_id']!,
+          _entryAttemptIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_entryAttemptIdMeta);
+    }
+    if (data.containsKey('assigned_treatment')) {
+      context.handle(
+        _assignedTreatmentMeta,
+        assignedTreatment.isAcceptableOrUnknown(
+          data['assigned_treatment']!,
+          _assignedTreatmentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignedTreatmentMeta);
+    }
+    if (data.containsKey('effective_presentation')) {
+      context.handle(
+        _effectivePresentationMeta,
+        effectivePresentation.isAcceptableOrUnknown(
+          data['effective_presentation']!,
+          _effectivePresentationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectivePresentationMeta);
+    }
+    if (data.containsKey('opened_at_utc_ms')) {
+      context.handle(
+        _openedAtUtcMsMeta,
+        openedAtUtcMs.isAcceptableOrUnknown(
+          data['opened_at_utc_ms']!,
+          _openedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_openedAtUtcMsMeta);
+    }
+    if (data.containsKey('presented_event_id')) {
+      context.handle(
+        _presentedEventIdMeta,
+        presentedEventId.isAcceptableOrUnknown(
+          data['presented_event_id']!,
+          _presentedEventIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('presented_at_utc_ms')) {
+      context.handle(
+        _presentedAtUtcMsMeta,
+        presentedAtUtcMs.isAcceptableOrUnknown(
+          data['presented_at_utc_ms']!,
+          _presentedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learning_session_id')) {
+      context.handle(
+        _learningSessionIdMeta,
+        learningSessionId.isAcceptableOrUnknown(
+          data['learning_session_id']!,
+          _learningSessionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('learning_session_started_at_utc_ms')) {
+      context.handle(
+        _learningSessionStartedAtUtcMsMeta,
+        learningSessionStartedAtUtcMs.isAcceptableOrUnknown(
+          data['learning_session_started_at_utc_ms']!,
+          _learningSessionStartedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_index_session')) {
+      context.handle(
+        _isIndexSessionMeta,
+        isIndexSession.isAcceptableOrUnknown(
+          data['is_index_session']!,
+          _isIndexSessionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closed_at_utc_ms')) {
+      context.handle(
+        _closedAtUtcMsMeta,
+        closedAtUtcMs.isAcceptableOrUnknown(
+          data['closed_at_utc_ms']!,
+          _closedAtUtcMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, measurementRunId, permitId, entryAttemptId},
+    {ownerId, learningSessionId},
+  ];
+  @override
+  MeasurementOpportunityRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MeasurementOpportunityRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      measurementRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}measurement_run_id'],
+      )!,
+      permitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}permit_id'],
+      )!,
+      entryAttemptId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_attempt_id'],
+      )!,
+      assignedTreatment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assigned_treatment'],
+      )!,
+      effectivePresentation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effective_presentation'],
+      )!,
+      openedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opened_at_utc_ms'],
+      )!,
+      presentedEventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}presented_event_id'],
+      ),
+      presentedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}presented_at_utc_ms'],
+      ),
+      learningSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_session_id'],
+      ),
+      learningSessionStartedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}learning_session_started_at_utc_ms'],
+      ),
+      isIndexSession: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_index_session'],
+      )!,
+      closedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}closed_at_utc_ms'],
+      ),
+    );
+  }
+
+  @override
+  $MeasurementOpportunitiesTable createAlias(String alias) {
+    return $MeasurementOpportunitiesTable(attachedDatabase, alias);
+  }
+}
+
+class MeasurementOpportunityRow extends DataClass
+    implements Insertable<MeasurementOpportunityRow> {
+  final String id;
+  final String ownerId;
+  final int localRevision;
+  final String measurementRunId;
+  final String permitId;
+  final String entryAttemptId;
+  final String assignedTreatment;
+  final String effectivePresentation;
+  final int openedAtUtcMs;
+  final String? presentedEventId;
+  final int? presentedAtUtcMs;
+  final String? learningSessionId;
+  final int? learningSessionStartedAtUtcMs;
+  final bool isIndexSession;
+  final int? closedAtUtcMs;
+  const MeasurementOpportunityRow({
+    required this.id,
+    required this.ownerId,
+    required this.localRevision,
+    required this.measurementRunId,
+    required this.permitId,
+    required this.entryAttemptId,
+    required this.assignedTreatment,
+    required this.effectivePresentation,
+    required this.openedAtUtcMs,
+    this.presentedEventId,
+    this.presentedAtUtcMs,
+    this.learningSessionId,
+    this.learningSessionStartedAtUtcMs,
+    required this.isIndexSession,
+    this.closedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['measurement_run_id'] = Variable<String>(measurementRunId);
+    map['permit_id'] = Variable<String>(permitId);
+    map['entry_attempt_id'] = Variable<String>(entryAttemptId);
+    map['assigned_treatment'] = Variable<String>(assignedTreatment);
+    map['effective_presentation'] = Variable<String>(effectivePresentation);
+    map['opened_at_utc_ms'] = Variable<int>(openedAtUtcMs);
+    if (!nullToAbsent || presentedEventId != null) {
+      map['presented_event_id'] = Variable<String>(presentedEventId);
+    }
+    if (!nullToAbsent || presentedAtUtcMs != null) {
+      map['presented_at_utc_ms'] = Variable<int>(presentedAtUtcMs);
+    }
+    if (!nullToAbsent || learningSessionId != null) {
+      map['learning_session_id'] = Variable<String>(learningSessionId);
+    }
+    if (!nullToAbsent || learningSessionStartedAtUtcMs != null) {
+      map['learning_session_started_at_utc_ms'] = Variable<int>(
+        learningSessionStartedAtUtcMs,
+      );
+    }
+    map['is_index_session'] = Variable<bool>(isIndexSession);
+    if (!nullToAbsent || closedAtUtcMs != null) {
+      map['closed_at_utc_ms'] = Variable<int>(closedAtUtcMs);
+    }
+    return map;
+  }
+
+  MeasurementOpportunitiesCompanion toCompanion(bool nullToAbsent) {
+    return MeasurementOpportunitiesCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      localRevision: Value(localRevision),
+      measurementRunId: Value(measurementRunId),
+      permitId: Value(permitId),
+      entryAttemptId: Value(entryAttemptId),
+      assignedTreatment: Value(assignedTreatment),
+      effectivePresentation: Value(effectivePresentation),
+      openedAtUtcMs: Value(openedAtUtcMs),
+      presentedEventId: presentedEventId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(presentedEventId),
+      presentedAtUtcMs: presentedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(presentedAtUtcMs),
+      learningSessionId: learningSessionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learningSessionId),
+      learningSessionStartedAtUtcMs:
+          learningSessionStartedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(learningSessionStartedAtUtcMs),
+      isIndexSession: Value(isIndexSession),
+      closedAtUtcMs: closedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAtUtcMs),
+    );
+  }
+
+  factory MeasurementOpportunityRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MeasurementOpportunityRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      measurementRunId: serializer.fromJson<String>(json['measurementRunId']),
+      permitId: serializer.fromJson<String>(json['permitId']),
+      entryAttemptId: serializer.fromJson<String>(json['entryAttemptId']),
+      assignedTreatment: serializer.fromJson<String>(json['assignedTreatment']),
+      effectivePresentation: serializer.fromJson<String>(
+        json['effectivePresentation'],
+      ),
+      openedAtUtcMs: serializer.fromJson<int>(json['openedAtUtcMs']),
+      presentedEventId: serializer.fromJson<String?>(json['presentedEventId']),
+      presentedAtUtcMs: serializer.fromJson<int?>(json['presentedAtUtcMs']),
+      learningSessionId: serializer.fromJson<String?>(
+        json['learningSessionId'],
+      ),
+      learningSessionStartedAtUtcMs: serializer.fromJson<int?>(
+        json['learningSessionStartedAtUtcMs'],
+      ),
+      isIndexSession: serializer.fromJson<bool>(json['isIndexSession']),
+      closedAtUtcMs: serializer.fromJson<int?>(json['closedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'measurementRunId': serializer.toJson<String>(measurementRunId),
+      'permitId': serializer.toJson<String>(permitId),
+      'entryAttemptId': serializer.toJson<String>(entryAttemptId),
+      'assignedTreatment': serializer.toJson<String>(assignedTreatment),
+      'effectivePresentation': serializer.toJson<String>(effectivePresentation),
+      'openedAtUtcMs': serializer.toJson<int>(openedAtUtcMs),
+      'presentedEventId': serializer.toJson<String?>(presentedEventId),
+      'presentedAtUtcMs': serializer.toJson<int?>(presentedAtUtcMs),
+      'learningSessionId': serializer.toJson<String?>(learningSessionId),
+      'learningSessionStartedAtUtcMs': serializer.toJson<int?>(
+        learningSessionStartedAtUtcMs,
+      ),
+      'isIndexSession': serializer.toJson<bool>(isIndexSession),
+      'closedAtUtcMs': serializer.toJson<int?>(closedAtUtcMs),
+    };
+  }
+
+  MeasurementOpportunityRow copyWith({
+    String? id,
+    String? ownerId,
+    int? localRevision,
+    String? measurementRunId,
+    String? permitId,
+    String? entryAttemptId,
+    String? assignedTreatment,
+    String? effectivePresentation,
+    int? openedAtUtcMs,
+    Value<String?> presentedEventId = const Value.absent(),
+    Value<int?> presentedAtUtcMs = const Value.absent(),
+    Value<String?> learningSessionId = const Value.absent(),
+    Value<int?> learningSessionStartedAtUtcMs = const Value.absent(),
+    bool? isIndexSession,
+    Value<int?> closedAtUtcMs = const Value.absent(),
+  }) => MeasurementOpportunityRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    localRevision: localRevision ?? this.localRevision,
+    measurementRunId: measurementRunId ?? this.measurementRunId,
+    permitId: permitId ?? this.permitId,
+    entryAttemptId: entryAttemptId ?? this.entryAttemptId,
+    assignedTreatment: assignedTreatment ?? this.assignedTreatment,
+    effectivePresentation: effectivePresentation ?? this.effectivePresentation,
+    openedAtUtcMs: openedAtUtcMs ?? this.openedAtUtcMs,
+    presentedEventId: presentedEventId.present
+        ? presentedEventId.value
+        : this.presentedEventId,
+    presentedAtUtcMs: presentedAtUtcMs.present
+        ? presentedAtUtcMs.value
+        : this.presentedAtUtcMs,
+    learningSessionId: learningSessionId.present
+        ? learningSessionId.value
+        : this.learningSessionId,
+    learningSessionStartedAtUtcMs: learningSessionStartedAtUtcMs.present
+        ? learningSessionStartedAtUtcMs.value
+        : this.learningSessionStartedAtUtcMs,
+    isIndexSession: isIndexSession ?? this.isIndexSession,
+    closedAtUtcMs: closedAtUtcMs.present
+        ? closedAtUtcMs.value
+        : this.closedAtUtcMs,
+  );
+  MeasurementOpportunityRow copyWithCompanion(
+    MeasurementOpportunitiesCompanion data,
+  ) {
+    return MeasurementOpportunityRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      measurementRunId: data.measurementRunId.present
+          ? data.measurementRunId.value
+          : this.measurementRunId,
+      permitId: data.permitId.present ? data.permitId.value : this.permitId,
+      entryAttemptId: data.entryAttemptId.present
+          ? data.entryAttemptId.value
+          : this.entryAttemptId,
+      assignedTreatment: data.assignedTreatment.present
+          ? data.assignedTreatment.value
+          : this.assignedTreatment,
+      effectivePresentation: data.effectivePresentation.present
+          ? data.effectivePresentation.value
+          : this.effectivePresentation,
+      openedAtUtcMs: data.openedAtUtcMs.present
+          ? data.openedAtUtcMs.value
+          : this.openedAtUtcMs,
+      presentedEventId: data.presentedEventId.present
+          ? data.presentedEventId.value
+          : this.presentedEventId,
+      presentedAtUtcMs: data.presentedAtUtcMs.present
+          ? data.presentedAtUtcMs.value
+          : this.presentedAtUtcMs,
+      learningSessionId: data.learningSessionId.present
+          ? data.learningSessionId.value
+          : this.learningSessionId,
+      learningSessionStartedAtUtcMs: data.learningSessionStartedAtUtcMs.present
+          ? data.learningSessionStartedAtUtcMs.value
+          : this.learningSessionStartedAtUtcMs,
+      isIndexSession: data.isIndexSession.present
+          ? data.isIndexSession.value
+          : this.isIndexSession,
+      closedAtUtcMs: data.closedAtUtcMs.present
+          ? data.closedAtUtcMs.value
+          : this.closedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeasurementOpportunityRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('measurementRunId: $measurementRunId, ')
+          ..write('permitId: $permitId, ')
+          ..write('entryAttemptId: $entryAttemptId, ')
+          ..write('assignedTreatment: $assignedTreatment, ')
+          ..write('effectivePresentation: $effectivePresentation, ')
+          ..write('openedAtUtcMs: $openedAtUtcMs, ')
+          ..write('presentedEventId: $presentedEventId, ')
+          ..write('presentedAtUtcMs: $presentedAtUtcMs, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write(
+            'learningSessionStartedAtUtcMs: $learningSessionStartedAtUtcMs, ',
+          )
+          ..write('isIndexSession: $isIndexSession, ')
+          ..write('closedAtUtcMs: $closedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    localRevision,
+    measurementRunId,
+    permitId,
+    entryAttemptId,
+    assignedTreatment,
+    effectivePresentation,
+    openedAtUtcMs,
+    presentedEventId,
+    presentedAtUtcMs,
+    learningSessionId,
+    learningSessionStartedAtUtcMs,
+    isIndexSession,
+    closedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MeasurementOpportunityRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.localRevision == this.localRevision &&
+          other.measurementRunId == this.measurementRunId &&
+          other.permitId == this.permitId &&
+          other.entryAttemptId == this.entryAttemptId &&
+          other.assignedTreatment == this.assignedTreatment &&
+          other.effectivePresentation == this.effectivePresentation &&
+          other.openedAtUtcMs == this.openedAtUtcMs &&
+          other.presentedEventId == this.presentedEventId &&
+          other.presentedAtUtcMs == this.presentedAtUtcMs &&
+          other.learningSessionId == this.learningSessionId &&
+          other.learningSessionStartedAtUtcMs ==
+              this.learningSessionStartedAtUtcMs &&
+          other.isIndexSession == this.isIndexSession &&
+          other.closedAtUtcMs == this.closedAtUtcMs);
+}
+
+class MeasurementOpportunitiesCompanion
+    extends UpdateCompanion<MeasurementOpportunityRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<int> localRevision;
+  final Value<String> measurementRunId;
+  final Value<String> permitId;
+  final Value<String> entryAttemptId;
+  final Value<String> assignedTreatment;
+  final Value<String> effectivePresentation;
+  final Value<int> openedAtUtcMs;
+  final Value<String?> presentedEventId;
+  final Value<int?> presentedAtUtcMs;
+  final Value<String?> learningSessionId;
+  final Value<int?> learningSessionStartedAtUtcMs;
+  final Value<bool> isIndexSession;
+  final Value<int?> closedAtUtcMs;
+  final Value<int> rowid;
+  const MeasurementOpportunitiesCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.measurementRunId = const Value.absent(),
+    this.permitId = const Value.absent(),
+    this.entryAttemptId = const Value.absent(),
+    this.assignedTreatment = const Value.absent(),
+    this.effectivePresentation = const Value.absent(),
+    this.openedAtUtcMs = const Value.absent(),
+    this.presentedEventId = const Value.absent(),
+    this.presentedAtUtcMs = const Value.absent(),
+    this.learningSessionId = const Value.absent(),
+    this.learningSessionStartedAtUtcMs = const Value.absent(),
+    this.isIndexSession = const Value.absent(),
+    this.closedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MeasurementOpportunitiesCompanion.insert({
+    required String id,
+    required String ownerId,
+    this.localRevision = const Value.absent(),
+    required String measurementRunId,
+    required String permitId,
+    required String entryAttemptId,
+    required String assignedTreatment,
+    required String effectivePresentation,
+    required int openedAtUtcMs,
+    this.presentedEventId = const Value.absent(),
+    this.presentedAtUtcMs = const Value.absent(),
+    this.learningSessionId = const Value.absent(),
+    this.learningSessionStartedAtUtcMs = const Value.absent(),
+    this.isIndexSession = const Value.absent(),
+    this.closedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       measurementRunId = Value(measurementRunId),
+       permitId = Value(permitId),
+       entryAttemptId = Value(entryAttemptId),
+       assignedTreatment = Value(assignedTreatment),
+       effectivePresentation = Value(effectivePresentation),
+       openedAtUtcMs = Value(openedAtUtcMs);
+  static Insertable<MeasurementOpportunityRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<int>? localRevision,
+    Expression<String>? measurementRunId,
+    Expression<String>? permitId,
+    Expression<String>? entryAttemptId,
+    Expression<String>? assignedTreatment,
+    Expression<String>? effectivePresentation,
+    Expression<int>? openedAtUtcMs,
+    Expression<String>? presentedEventId,
+    Expression<int>? presentedAtUtcMs,
+    Expression<String>? learningSessionId,
+    Expression<int>? learningSessionStartedAtUtcMs,
+    Expression<bool>? isIndexSession,
+    Expression<int>? closedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (measurementRunId != null) 'measurement_run_id': measurementRunId,
+      if (permitId != null) 'permit_id': permitId,
+      if (entryAttemptId != null) 'entry_attempt_id': entryAttemptId,
+      if (assignedTreatment != null) 'assigned_treatment': assignedTreatment,
+      if (effectivePresentation != null)
+        'effective_presentation': effectivePresentation,
+      if (openedAtUtcMs != null) 'opened_at_utc_ms': openedAtUtcMs,
+      if (presentedEventId != null) 'presented_event_id': presentedEventId,
+      if (presentedAtUtcMs != null) 'presented_at_utc_ms': presentedAtUtcMs,
+      if (learningSessionId != null) 'learning_session_id': learningSessionId,
+      if (learningSessionStartedAtUtcMs != null)
+        'learning_session_started_at_utc_ms': learningSessionStartedAtUtcMs,
+      if (isIndexSession != null) 'is_index_session': isIndexSession,
+      if (closedAtUtcMs != null) 'closed_at_utc_ms': closedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MeasurementOpportunitiesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<int>? localRevision,
+    Value<String>? measurementRunId,
+    Value<String>? permitId,
+    Value<String>? entryAttemptId,
+    Value<String>? assignedTreatment,
+    Value<String>? effectivePresentation,
+    Value<int>? openedAtUtcMs,
+    Value<String?>? presentedEventId,
+    Value<int?>? presentedAtUtcMs,
+    Value<String?>? learningSessionId,
+    Value<int?>? learningSessionStartedAtUtcMs,
+    Value<bool>? isIndexSession,
+    Value<int?>? closedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return MeasurementOpportunitiesCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      localRevision: localRevision ?? this.localRevision,
+      measurementRunId: measurementRunId ?? this.measurementRunId,
+      permitId: permitId ?? this.permitId,
+      entryAttemptId: entryAttemptId ?? this.entryAttemptId,
+      assignedTreatment: assignedTreatment ?? this.assignedTreatment,
+      effectivePresentation:
+          effectivePresentation ?? this.effectivePresentation,
+      openedAtUtcMs: openedAtUtcMs ?? this.openedAtUtcMs,
+      presentedEventId: presentedEventId ?? this.presentedEventId,
+      presentedAtUtcMs: presentedAtUtcMs ?? this.presentedAtUtcMs,
+      learningSessionId: learningSessionId ?? this.learningSessionId,
+      learningSessionStartedAtUtcMs:
+          learningSessionStartedAtUtcMs ?? this.learningSessionStartedAtUtcMs,
+      isIndexSession: isIndexSession ?? this.isIndexSession,
+      closedAtUtcMs: closedAtUtcMs ?? this.closedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (measurementRunId.present) {
+      map['measurement_run_id'] = Variable<String>(measurementRunId.value);
+    }
+    if (permitId.present) {
+      map['permit_id'] = Variable<String>(permitId.value);
+    }
+    if (entryAttemptId.present) {
+      map['entry_attempt_id'] = Variable<String>(entryAttemptId.value);
+    }
+    if (assignedTreatment.present) {
+      map['assigned_treatment'] = Variable<String>(assignedTreatment.value);
+    }
+    if (effectivePresentation.present) {
+      map['effective_presentation'] = Variable<String>(
+        effectivePresentation.value,
+      );
+    }
+    if (openedAtUtcMs.present) {
+      map['opened_at_utc_ms'] = Variable<int>(openedAtUtcMs.value);
+    }
+    if (presentedEventId.present) {
+      map['presented_event_id'] = Variable<String>(presentedEventId.value);
+    }
+    if (presentedAtUtcMs.present) {
+      map['presented_at_utc_ms'] = Variable<int>(presentedAtUtcMs.value);
+    }
+    if (learningSessionId.present) {
+      map['learning_session_id'] = Variable<String>(learningSessionId.value);
+    }
+    if (learningSessionStartedAtUtcMs.present) {
+      map['learning_session_started_at_utc_ms'] = Variable<int>(
+        learningSessionStartedAtUtcMs.value,
+      );
+    }
+    if (isIndexSession.present) {
+      map['is_index_session'] = Variable<bool>(isIndexSession.value);
+    }
+    if (closedAtUtcMs.present) {
+      map['closed_at_utc_ms'] = Variable<int>(closedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeasurementOpportunitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('measurementRunId: $measurementRunId, ')
+          ..write('permitId: $permitId, ')
+          ..write('entryAttemptId: $entryAttemptId, ')
+          ..write('assignedTreatment: $assignedTreatment, ')
+          ..write('effectivePresentation: $effectivePresentation, ')
+          ..write('openedAtUtcMs: $openedAtUtcMs, ')
+          ..write('presentedEventId: $presentedEventId, ')
+          ..write('presentedAtUtcMs: $presentedAtUtcMs, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write(
+            'learningSessionStartedAtUtcMs: $learningSessionStartedAtUtcMs, ',
+          )
+          ..write('isIndexSession: $isIndexSession, ')
+          ..write('closedAtUtcMs: $closedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -21543,6 +22526,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AssociationRecordsTable(this);
   late final $AssociativeMemoryStatesTable associativeMemoryStates =
       $AssociativeMemoryStatesTable(this);
+  late final $MeasurementOpportunitiesTable measurementOpportunities =
+      $MeasurementOpportunitiesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -21581,6 +22566,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningDayLog,
     associationRecords,
     associativeMemoryStates,
+    measurementOpportunities,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -21612,6 +22598,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('quest_objective_progress', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'motivation_measurement_runs',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('measurement_opportunities', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -22203,6 +23198,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _associativeMemoryStatesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $MeasurementOpportunitiesTable,
+    List<MeasurementOpportunityRow>
+  >
+  _measurementOpportunitiesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.measurementOpportunities,
+        aliasName: 'local_owners__id__measurement_opportunities__owner_id',
+      );
+
+  $$MeasurementOpportunitiesTableProcessedTableManager
+  get measurementOpportunitiesRefs {
+    final manager = $$MeasurementOpportunitiesTableTableManager(
+      $_db,
+      $_db.measurementOpportunities,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _measurementOpportunitiesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -22924,6 +23944,33 @@ class $$LocalOwnersTableFilterComposer
               }) => $$AssociativeMemoryStatesTableFilterComposer(
                 $db: $db,
                 $table: $db.associativeMemoryStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> measurementOpportunitiesRefs(
+    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -23701,6 +24748,33 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> measurementOpportunitiesRefs<T extends Object>(
+    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -23744,6 +24818,7 @@ class $$LocalOwnersTableTableManager
             bool learningDayLogRefs,
             bool associationRecordsRefs,
             bool associativeMemoryStatesRefs,
+            bool measurementOpportunitiesRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -23830,6 +24905,7 @@ class $$LocalOwnersTableTableManager
                 learningDayLogRefs = false,
                 associationRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
+                measurementOpportunitiesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -23863,6 +24939,8 @@ class $$LocalOwnersTableTableManager
                     if (learningDayLogRefs) db.learningDayLog,
                     if (associationRecordsRefs) db.associationRecords,
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
+                    if (measurementOpportunitiesRefs)
+                      db.measurementOpportunities,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -24434,6 +25512,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (measurementOpportunitiesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          MeasurementOpportunityRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._measurementOpportunitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -24482,6 +25581,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool learningDayLogRefs,
         bool associationRecordsRefs,
         bool associativeMemoryStatesRefs,
+        bool measurementOpportunitiesRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -25578,6 +26678,33 @@ final class $$ResearchParticipationPermitsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $MeasurementOpportunitiesTable,
+    List<MeasurementOpportunityRow>
+  >
+  _measurementOpportunitiesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.measurementOpportunities,
+    aliasName:
+        'research_participation_permits__id__measurement_opportunities__permit_id',
+  );
+
+  $$MeasurementOpportunitiesTableProcessedTableManager
+  get measurementOpportunitiesRefs {
+    final manager = $$MeasurementOpportunitiesTableTableManager(
+      $_db,
+      $_db.measurementOpportunities,
+    ).filter((f) => f.permitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _measurementOpportunitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ResearchParticipationPermitsTableFilterComposer
@@ -25744,6 +26871,33 @@ class $$ResearchParticipationPermitsTableFilterComposer
               }) => $$MotivationMeasurementRunsTableFilterComposer(
                 $db: $db,
                 $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> measurementOpportunitiesRefs(
+    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.permitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -26069,6 +27223,33 @@ class $$ResearchParticipationPermitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> measurementOpportunitiesRefs<T extends Object>(
+    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.permitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ResearchParticipationPermitsTableTableManager
@@ -26091,6 +27272,7 @@ class $$ResearchParticipationPermitsTableTableManager
             bool ownerId,
             bool assignmentId,
             bool motivationMeasurementRunsRefs,
+            bool measurementOpportunitiesRefs,
           })
         > {
   $$ResearchParticipationPermitsTableTableManager(
@@ -26222,12 +27404,15 @@ class $$ResearchParticipationPermitsTableTableManager
                 ownerId = false,
                 assignmentId = false,
                 motivationMeasurementRunsRefs = false,
+                measurementOpportunitiesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (motivationMeasurementRunsRefs)
                       db.motivationMeasurementRuns,
+                    if (measurementOpportunitiesRefs)
+                      db.measurementOpportunities,
                   ],
                   addJoins:
                       <
@@ -26302,6 +27487,28 @@ class $$ResearchParticipationPermitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (measurementOpportunitiesRefs)
+                        await $_getPrefetchedData<
+                          ResearchParticipationPermitRow,
+                          $ResearchParticipationPermitsTable,
+                          MeasurementOpportunityRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ResearchParticipationPermitsTableReferences
+                                  ._measurementOpportunitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ResearchParticipationPermitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.permitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -26329,6 +27536,7 @@ typedef $$ResearchParticipationPermitsTableProcessedTableManager =
         bool ownerId,
         bool assignmentId,
         bool motivationMeasurementRunsRefs,
+        bool measurementOpportunitiesRefs,
       })
     >;
 typedef $$MotivationMeasurementRunsTableCreateCompanionBuilder =
@@ -26489,6 +27697,36 @@ final class $$MotivationMeasurementRunsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _motivationResponsesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $MeasurementOpportunitiesTable,
+    List<MeasurementOpportunityRow>
+  >
+  _measurementOpportunitiesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.measurementOpportunities,
+    aliasName:
+        'motivation_measurement_runs__id__measurement_opportunities__measurement_run_id',
+  );
+
+  $$MeasurementOpportunitiesTableProcessedTableManager
+  get measurementOpportunitiesRefs {
+    final manager =
+        $$MeasurementOpportunitiesTableTableManager(
+          $_db,
+          $_db.measurementOpportunities,
+        ).filter(
+          (f) => f.measurementRunId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _measurementOpportunitiesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -26733,6 +27971,33 @@ class $$MotivationMeasurementRunsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> measurementOpportunitiesRefs(
+    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.measurementRunId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -27183,6 +28448,33 @@ class $$MotivationMeasurementRunsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> measurementOpportunitiesRefs<T extends Object>(
+    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.measurementRunId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$MotivationMeasurementRunsTableTableManager
@@ -27206,6 +28498,7 @@ class $$MotivationMeasurementRunsTableTableManager
             bool permitId,
             bool assignmentId,
             bool motivationResponsesRefs,
+            bool measurementOpportunitiesRefs,
           })
         > {
   $$MotivationMeasurementRunsTableTableManager(
@@ -27376,11 +28669,14 @@ class $$MotivationMeasurementRunsTableTableManager
                 permitId = false,
                 assignmentId = false,
                 motivationResponsesRefs = false,
+                measurementOpportunitiesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (motivationResponsesRefs) db.motivationResponses,
+                    if (measurementOpportunitiesRefs)
+                      db.measurementOpportunities,
                   ],
                   addJoins:
                       <
@@ -27470,6 +28766,28 @@ class $$MotivationMeasurementRunsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (measurementOpportunitiesRefs)
+                        await $_getPrefetchedData<
+                          MotivationMeasurementRunRow,
+                          $MotivationMeasurementRunsTable,
+                          MeasurementOpportunityRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$MotivationMeasurementRunsTableReferences
+                                  ._measurementOpportunitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MotivationMeasurementRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.measurementRunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -27495,6 +28813,7 @@ typedef $$MotivationMeasurementRunsTableProcessedTableManager =
         bool permitId,
         bool assignmentId,
         bool motivationResponsesRefs,
+        bool measurementOpportunitiesRefs,
       })
     >;
 typedef $$MotivationResponsesTableCreateCompanionBuilder =
@@ -30717,6 +32036,36 @@ final class $$LearningSessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $MeasurementOpportunitiesTable,
+    List<MeasurementOpportunityRow>
+  >
+  _measurementOpportunitiesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.measurementOpportunities,
+    aliasName:
+        'learning_sessions__id__measurement_opportunities__learning_session_id',
+  );
+
+  $$MeasurementOpportunitiesTableProcessedTableManager
+  get measurementOpportunitiesRefs {
+    final manager =
+        $$MeasurementOpportunitiesTableTableManager(
+          $_db,
+          $_db.measurementOpportunities,
+        ).filter(
+          (f) => f.learningSessionId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _measurementOpportunitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LearningSessionsTableFilterComposer
@@ -30823,6 +32172,33 @@ class $$LearningSessionsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> measurementOpportunitiesRefs(
+    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.learningSessionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -31008,6 +32384,33 @@ class $$LearningSessionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> measurementOpportunitiesRefs<T extends Object>(
+    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.learningSessionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LearningSessionsTableTableManager
@@ -31023,7 +32426,11 @@ class $$LearningSessionsTableTableManager
           $$LearningSessionsTableUpdateCompanionBuilder,
           (LearningSession, $$LearningSessionsTableReferences),
           LearningSession,
-          PrefetchHooks Function({bool ownerId, bool answerAttemptsRefs})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool answerAttemptsRefs,
+            bool measurementOpportunitiesRefs,
+          })
         > {
   $$LearningSessionsTableTableManager(
     _$AppDatabase db,
@@ -31103,11 +32510,17 @@ class $$LearningSessionsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ownerId = false, answerAttemptsRefs = false}) {
+              ({
+                ownerId = false,
+                answerAttemptsRefs = false,
+                measurementOpportunitiesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (answerAttemptsRefs) db.answerAttempts,
+                    if (measurementOpportunitiesRefs)
+                      db.measurementOpportunities,
                   ],
                   addJoins:
                       <
@@ -31166,6 +32579,27 @@ class $$LearningSessionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (measurementOpportunitiesRefs)
+                        await $_getPrefetchedData<
+                          LearningSession,
+                          $LearningSessionsTable,
+                          MeasurementOpportunityRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningSessionsTableReferences
+                              ._measurementOpportunitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.learningSessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -31186,7 +32620,11 @@ typedef $$LearningSessionsTableProcessedTableManager =
       $$LearningSessionsTableUpdateCompanionBuilder,
       (LearningSession, $$LearningSessionsTableReferences),
       LearningSession,
-      PrefetchHooks Function({bool ownerId, bool answerAttemptsRefs})
+      PrefetchHooks Function({
+        bool ownerId,
+        bool answerAttemptsRefs,
+        bool measurementOpportunitiesRefs,
+      })
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
     AnswerAttemptsCompanion Function({
@@ -37110,6 +38548,38 @@ final class $$EventsV2TableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $MeasurementOpportunitiesTable,
+    List<MeasurementOpportunityRow>
+  >
+  _measurementOpportunitiesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.measurementOpportunities,
+    aliasName:
+        'events_v2__event_id__measurement_opportunities__presented_event_id',
+  );
+
+  $$MeasurementOpportunitiesTableProcessedTableManager
+  get measurementOpportunitiesRefs {
+    final manager =
+        $$MeasurementOpportunitiesTableTableManager(
+          $_db,
+          $_db.measurementOpportunities,
+        ).filter(
+          (f) => f.presentedEventId.eventId.sqlEquals(
+            $_itemColumn<String>('event_id')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _measurementOpportunitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$EventsV2TableFilterComposer
@@ -37247,6 +38717,33 @@ class $$EventsV2TableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> measurementOpportunitiesRefs(
+    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.eventId,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.presentedEventId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableFilterComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 }
 
@@ -37518,6 +39015,33 @@ class $$EventsV2TableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> measurementOpportunitiesRefs<T extends Object>(
+    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.eventId,
+          referencedTable: $db.measurementOpportunities,
+          getReferencedColumn: (t) => t.presentedEventId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$EventsV2TableTableManager
@@ -37533,7 +39057,10 @@ class $$EventsV2TableTableManager
           $$EventsV2TableUpdateCompanionBuilder,
           (EventsV2Data, $$EventsV2TableReferences),
           EventsV2Data,
-          PrefetchHooks Function({bool ownerId})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool measurementOpportunitiesRefs,
+          })
         > {
   $$EventsV2TableTableManager(_$AppDatabase db, $EventsV2Table table)
     : super(
@@ -37654,47 +39181,73 @@ class $$EventsV2TableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({ownerId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (ownerId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.ownerId,
-                                referencedTable: $$EventsV2TableReferences
-                                    ._ownerIdTable(db),
-                                referencedColumn: $$EventsV2TableReferences
-                                    ._ownerIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({ownerId = false, measurementOpportunitiesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (measurementOpportunitiesRefs)
+                      db.measurementOpportunities,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable: $$EventsV2TableReferences
+                                        ._ownerIdTable(db),
+                                    referencedColumn: $$EventsV2TableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (measurementOpportunitiesRefs)
+                        await $_getPrefetchedData<
+                          EventsV2Data,
+                          $EventsV2Table,
+                          MeasurementOpportunityRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$EventsV2TableReferences
+                              ._measurementOpportunitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$EventsV2TableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.presentedEventId == item.eventId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -37711,7 +39264,7 @@ typedef $$EventsV2TableProcessedTableManager =
       $$EventsV2TableUpdateCompanionBuilder,
       (EventsV2Data, $$EventsV2TableReferences),
       EventsV2Data,
-      PrefetchHooks Function({bool ownerId})
+      PrefetchHooks Function({bool ownerId, bool measurementOpportunitiesRefs})
     >;
 typedef $$QuestDefinitionsTableCreateCompanionBuilder =
     QuestDefinitionsCompanion Function({
@@ -40541,6 +42094,945 @@ typedef $$AssociativeMemoryStatesTableProcessedTableManager =
       AssociativeMemoryState,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$MeasurementOpportunitiesTableCreateCompanionBuilder =
+    MeasurementOpportunitiesCompanion Function({
+      required String id,
+      required String ownerId,
+      Value<int> localRevision,
+      required String measurementRunId,
+      required String permitId,
+      required String entryAttemptId,
+      required String assignedTreatment,
+      required String effectivePresentation,
+      required int openedAtUtcMs,
+      Value<String?> presentedEventId,
+      Value<int?> presentedAtUtcMs,
+      Value<String?> learningSessionId,
+      Value<int?> learningSessionStartedAtUtcMs,
+      Value<bool> isIndexSession,
+      Value<int?> closedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$MeasurementOpportunitiesTableUpdateCompanionBuilder =
+    MeasurementOpportunitiesCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<int> localRevision,
+      Value<String> measurementRunId,
+      Value<String> permitId,
+      Value<String> entryAttemptId,
+      Value<String> assignedTreatment,
+      Value<String> effectivePresentation,
+      Value<int> openedAtUtcMs,
+      Value<String?> presentedEventId,
+      Value<int?> presentedAtUtcMs,
+      Value<String?> learningSessionId,
+      Value<int?> learningSessionStartedAtUtcMs,
+      Value<bool> isIndexSession,
+      Value<int?> closedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$MeasurementOpportunitiesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MeasurementOpportunitiesTable,
+          MeasurementOpportunityRow
+        > {
+  $$MeasurementOpportunitiesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('measurement_opportunities__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MotivationMeasurementRunsTable _measurementRunIdTable(
+    _$AppDatabase db,
+  ) => db.motivationMeasurementRuns.createAlias(
+    'measurement_opportunities__measurement_run_id__motivation_measurement_runs__id',
+  );
+
+  $$MotivationMeasurementRunsTableProcessedTableManager get measurementRunId {
+    final $_column = $_itemColumn<String>('measurement_run_id')!;
+
+    final manager = $$MotivationMeasurementRunsTableTableManager(
+      $_db,
+      $_db.motivationMeasurementRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_measurementRunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ResearchParticipationPermitsTable _permitIdTable(
+    _$AppDatabase db,
+  ) => db.researchParticipationPermits.createAlias(
+    'measurement_opportunities__permit_id__research_participation_permits__id',
+  );
+
+  $$ResearchParticipationPermitsTableProcessedTableManager get permitId {
+    final $_column = $_itemColumn<String>('permit_id')!;
+
+    final manager = $$ResearchParticipationPermitsTableTableManager(
+      $_db,
+      $_db.researchParticipationPermits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_permitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $EventsV2Table _presentedEventIdTable(_$AppDatabase db) =>
+      db.eventsV2.createAlias(
+        'measurement_opportunities__presented_event_id__events_v2__event_id',
+      );
+
+  $$EventsV2TableProcessedTableManager? get presentedEventId {
+    final $_column = $_itemColumn<String>('presented_event_id');
+    if ($_column == null) return null;
+    final manager = $$EventsV2TableTableManager(
+      $_db,
+      $_db.eventsV2,
+    ).filter((f) => f.eventId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_presentedEventIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningSessionsTable _learningSessionIdTable(_$AppDatabase db) =>
+      db.learningSessions.createAlias(
+        'measurement_opportunities__learning_session_id__learning_sessions__id',
+      );
+
+  $$LearningSessionsTableProcessedTableManager? get learningSessionId {
+    final $_column = $_itemColumn<String>('learning_session_id');
+    if ($_column == null) return null;
+    final manager = $$LearningSessionsTableTableManager(
+      $_db,
+      $_db.learningSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_learningSessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MeasurementOpportunitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $MeasurementOpportunitiesTable> {
+  $$MeasurementOpportunitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entryAttemptId => $composableBuilder(
+    column: $table.entryAttemptId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get effectivePresentation => $composableBuilder(
+    column: $table.effectivePresentation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openedAtUtcMs => $composableBuilder(
+    column: $table.openedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get presentedAtUtcMs => $composableBuilder(
+    column: $table.presentedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get learningSessionStartedAtUtcMs => $composableBuilder(
+    column: $table.learningSessionStartedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isIndexSession => $composableBuilder(
+    column: $table.isIndexSession,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get closedAtUtcMs => $composableBuilder(
+    column: $table.closedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableFilterComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableFilterComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableFilterComposer get permitId {
+    final $$ResearchParticipationPermitsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$EventsV2TableFilterComposer get presentedEventId {
+    final $$EventsV2TableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presentedEventId,
+      referencedTable: $db.eventsV2,
+      getReferencedColumn: (t) => t.eventId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsV2TableFilterComposer(
+            $db: $db,
+            $table: $db.eventsV2,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableFilterComposer get learningSessionId {
+    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MeasurementOpportunitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MeasurementOpportunitiesTable> {
+  $$MeasurementOpportunitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entryAttemptId => $composableBuilder(
+    column: $table.entryAttemptId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get effectivePresentation => $composableBuilder(
+    column: $table.effectivePresentation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openedAtUtcMs => $composableBuilder(
+    column: $table.openedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get presentedAtUtcMs => $composableBuilder(
+    column: $table.presentedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get learningSessionStartedAtUtcMs => $composableBuilder(
+    column: $table.learningSessionStartedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isIndexSession => $composableBuilder(
+    column: $table.isIndexSession,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get closedAtUtcMs => $composableBuilder(
+    column: $table.closedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableOrderingComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableOrderingComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableOrderingComposer get permitId {
+    final $$ResearchParticipationPermitsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableOrderingComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$EventsV2TableOrderingComposer get presentedEventId {
+    final $$EventsV2TableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presentedEventId,
+      referencedTable: $db.eventsV2,
+      getReferencedColumn: (t) => t.eventId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsV2TableOrderingComposer(
+            $db: $db,
+            $table: $db.eventsV2,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableOrderingComposer get learningSessionId {
+    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MeasurementOpportunitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MeasurementOpportunitiesTable> {
+  $$MeasurementOpportunitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entryAttemptId => $composableBuilder(
+    column: $table.entryAttemptId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assignedTreatment => $composableBuilder(
+    column: $table.assignedTreatment,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get effectivePresentation => $composableBuilder(
+    column: $table.effectivePresentation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get openedAtUtcMs => $composableBuilder(
+    column: $table.openedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get presentedAtUtcMs => $composableBuilder(
+    column: $table.presentedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get learningSessionStartedAtUtcMs => $composableBuilder(
+    column: $table.learningSessionStartedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isIndexSession => $composableBuilder(
+    column: $table.isIndexSession,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get closedAtUtcMs => $composableBuilder(
+    column: $table.closedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableAnnotationComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableAnnotationComposer get permitId {
+    final $$ResearchParticipationPermitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$EventsV2TableAnnotationComposer get presentedEventId {
+    final $$EventsV2TableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presentedEventId,
+      referencedTable: $db.eventsV2,
+      getReferencedColumn: (t) => t.eventId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsV2TableAnnotationComposer(
+            $db: $db,
+            $table: $db.eventsV2,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableAnnotationComposer get learningSessionId {
+    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MeasurementOpportunitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MeasurementOpportunitiesTable,
+          MeasurementOpportunityRow,
+          $$MeasurementOpportunitiesTableFilterComposer,
+          $$MeasurementOpportunitiesTableOrderingComposer,
+          $$MeasurementOpportunitiesTableAnnotationComposer,
+          $$MeasurementOpportunitiesTableCreateCompanionBuilder,
+          $$MeasurementOpportunitiesTableUpdateCompanionBuilder,
+          (
+            MeasurementOpportunityRow,
+            $$MeasurementOpportunitiesTableReferences,
+          ),
+          MeasurementOpportunityRow,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool measurementRunId,
+            bool permitId,
+            bool presentedEventId,
+            bool learningSessionId,
+          })
+        > {
+  $$MeasurementOpportunitiesTableTableManager(
+    _$AppDatabase db,
+    $MeasurementOpportunitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MeasurementOpportunitiesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$MeasurementOpportunitiesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MeasurementOpportunitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<String> measurementRunId = const Value.absent(),
+                Value<String> permitId = const Value.absent(),
+                Value<String> entryAttemptId = const Value.absent(),
+                Value<String> assignedTreatment = const Value.absent(),
+                Value<String> effectivePresentation = const Value.absent(),
+                Value<int> openedAtUtcMs = const Value.absent(),
+                Value<String?> presentedEventId = const Value.absent(),
+                Value<int?> presentedAtUtcMs = const Value.absent(),
+                Value<String?> learningSessionId = const Value.absent(),
+                Value<int?> learningSessionStartedAtUtcMs =
+                    const Value.absent(),
+                Value<bool> isIndexSession = const Value.absent(),
+                Value<int?> closedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeasurementOpportunitiesCompanion(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                measurementRunId: measurementRunId,
+                permitId: permitId,
+                entryAttemptId: entryAttemptId,
+                assignedTreatment: assignedTreatment,
+                effectivePresentation: effectivePresentation,
+                openedAtUtcMs: openedAtUtcMs,
+                presentedEventId: presentedEventId,
+                presentedAtUtcMs: presentedAtUtcMs,
+                learningSessionId: learningSessionId,
+                learningSessionStartedAtUtcMs: learningSessionStartedAtUtcMs,
+                isIndexSession: isIndexSession,
+                closedAtUtcMs: closedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                Value<int> localRevision = const Value.absent(),
+                required String measurementRunId,
+                required String permitId,
+                required String entryAttemptId,
+                required String assignedTreatment,
+                required String effectivePresentation,
+                required int openedAtUtcMs,
+                Value<String?> presentedEventId = const Value.absent(),
+                Value<int?> presentedAtUtcMs = const Value.absent(),
+                Value<String?> learningSessionId = const Value.absent(),
+                Value<int?> learningSessionStartedAtUtcMs =
+                    const Value.absent(),
+                Value<bool> isIndexSession = const Value.absent(),
+                Value<int?> closedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeasurementOpportunitiesCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                measurementRunId: measurementRunId,
+                permitId: permitId,
+                entryAttemptId: entryAttemptId,
+                assignedTreatment: assignedTreatment,
+                effectivePresentation: effectivePresentation,
+                openedAtUtcMs: openedAtUtcMs,
+                presentedEventId: presentedEventId,
+                presentedAtUtcMs: presentedAtUtcMs,
+                learningSessionId: learningSessionId,
+                learningSessionStartedAtUtcMs: learningSessionStartedAtUtcMs,
+                isIndexSession: isIndexSession,
+                closedAtUtcMs: closedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MeasurementOpportunitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                ownerId = false,
+                measurementRunId = false,
+                permitId = false,
+                presentedEventId = false,
+                learningSessionId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (measurementRunId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.measurementRunId,
+                                    referencedTable:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._measurementRunIdTable(db),
+                                    referencedColumn:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._measurementRunIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (permitId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.permitId,
+                                    referencedTable:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._permitIdTable(db),
+                                    referencedColumn:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._permitIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (presentedEventId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.presentedEventId,
+                                    referencedTable:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._presentedEventIdTable(db),
+                                    referencedColumn:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._presentedEventIdTable(db)
+                                            .eventId,
+                                  )
+                                  as T;
+                        }
+                        if (learningSessionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.learningSessionId,
+                                    referencedTable:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._learningSessionIdTable(db),
+                                    referencedColumn:
+                                        $$MeasurementOpportunitiesTableReferences
+                                            ._learningSessionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$MeasurementOpportunitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MeasurementOpportunitiesTable,
+      MeasurementOpportunityRow,
+      $$MeasurementOpportunitiesTableFilterComposer,
+      $$MeasurementOpportunitiesTableOrderingComposer,
+      $$MeasurementOpportunitiesTableAnnotationComposer,
+      $$MeasurementOpportunitiesTableCreateCompanionBuilder,
+      $$MeasurementOpportunitiesTableUpdateCompanionBuilder,
+      (MeasurementOpportunityRow, $$MeasurementOpportunitiesTableReferences),
+      MeasurementOpportunityRow,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool measurementRunId,
+        bool permitId,
+        bool presentedEventId,
+        bool learningSessionId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -40626,5 +43118,10 @@ class $AppDatabaseManager {
       $$AssociativeMemoryStatesTableTableManager(
         _db,
         _db.associativeMemoryStates,
+      );
+  $$MeasurementOpportunitiesTableTableManager get measurementOpportunities =>
+      $$MeasurementOpportunitiesTableTableManager(
+        _db,
+        _db.measurementOpportunities,
       );
 }

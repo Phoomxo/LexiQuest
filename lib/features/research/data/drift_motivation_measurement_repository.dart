@@ -32,6 +32,35 @@ final class DriftMotivationMeasurementRepository
   final ConsentUtcNow consentNowUtc;
   MotivationStudyProtocol get _study => participation.assignments.binding.study;
 
+  Future<T> writeForActiveRun<T>({
+    required String ownerId,
+    required String runId,
+    required Future<T> Function(MotivationMeasurementRun run) write,
+    void Function(T result, DateTime finalNowUtc)? validate,
+  }) {
+    _codes([ownerId, runId]);
+    return _owner(ownerId, () async {
+      final run = await _requiredRun(ownerId, runId);
+      if (run.state != MotivationMeasurementRunState.started) {
+        _deny(ResearchCaptureReason.noActiveRun);
+      }
+      final authority = await _participant(ownerId, run.permitId);
+      _context(run, authority, await _now());
+      final result = await write(run);
+      await _finish(
+        run,
+        needTiming: false,
+        validateFinal: (current, now) {
+          if (!_sameRunFacts(run, current)) {
+            _deny(ResearchCaptureReason.identityConflict);
+          }
+          validate?.call(result, now);
+        },
+      );
+      return result;
+    });
+  }
+
   @override
   Future<MotivationMeasurementRun> start(MotivationMeasurementStart command) {
     _codes([command.ownerId, command.permitId]);
@@ -297,6 +326,7 @@ final class DriftMotivationMeasurementRepository
     required bool needTiming,
     void Function(MotivationMeasurementRun, MotivationTimingFacts, DateTime)?
     validate,
+    void Function(MotivationMeasurementRun, DateTime)? validateFinal,
   }) async {
     final authority = await _participant(expected.ownerId, expected.permitId);
     final facts = needTiming ? await _timing(expected) : null;
@@ -329,6 +359,7 @@ final class DriftMotivationMeasurementRepository
         }
         validate?.call(run, facts, now);
       }
+      validateFinal?.call(run, now);
       return run;
     });
   }
@@ -414,6 +445,43 @@ final class DriftMotivationMeasurementRepository
         run.responses.any((response) => response.answeredAtUtc.isAfter(now))) {
       _deny(ResearchCaptureReason.outsideWindow);
     }
+  }
+
+  static bool _sameRunFacts(
+    MotivationMeasurementRun a,
+    MotivationMeasurementRun b,
+  ) {
+    if (a.id != b.id ||
+        a.ownerId != b.ownerId ||
+        a.permitId != b.permitId ||
+        a.permitPayloadSha256 != b.permitPayloadSha256 ||
+        a.assignmentId != b.assignmentId ||
+        a.assignmentRevision != b.assignmentRevision ||
+        a.protocolRevision != b.protocolRevision ||
+        a.instrumentRevision != b.instrumentRevision ||
+        a.consentVersion != b.consentVersion ||
+        a.consentDecidedAtUtc != b.consentDecidedAtUtc ||
+        a.treatment != b.treatment ||
+        a.startedAtUtc != b.startedAtUtc ||
+        a.closedAtUtc != b.closedAtUtc ||
+        a.state != b.state ||
+        a.localRevision != b.localRevision ||
+        a.responses.length != b.responses.length) {
+      return false;
+    }
+    for (var i = 0; i < a.responses.length; i++) {
+      final first = a.responses[i];
+      final second = b.responses[i];
+      if (first.id != second.id ||
+          first.itemId != second.itemId ||
+          first.responseCode != second.responseCode ||
+          first.ordinalValue != second.ordinalValue ||
+          first.answeredAtUtc != second.answeredAtUtc ||
+          first.localRevision != second.localRevision) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<MotivationTimingFacts> _timing(MotivationMeasurementRun run) async {

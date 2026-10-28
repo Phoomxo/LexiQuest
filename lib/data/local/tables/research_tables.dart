@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import 'identity_tables.dart';
+import 'event_tables.dart';
+import 'learning_tables.dart';
 
 class ExperimentAssignments extends Table {
   TextColumn get id => text()();
@@ -146,5 +148,51 @@ class MotivationResponses extends Table {
   List<String> get customConstraints => [
     'CHECK (local_revision > 0 AND answered_at_utc_ms >= 0)',
     'CHECK (ordinal_value BETWEEN 0 AND 100)',
+  ];
+}
+
+@DataClassName('MeasurementOpportunityRow')
+class MeasurementOpportunities extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 128)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  IntColumn get localRevision => integer().withDefault(const Constant(1))();
+  TextColumn get measurementRunId => text().references(
+    MotivationMeasurementRuns,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get permitId =>
+      text().references(ResearchParticipationPermits, #id)();
+  TextColumn get entryAttemptId => text().withLength(min: 36, max: 36)();
+  TextColumn get assignedTreatment => text()();
+  TextColumn get effectivePresentation => text()();
+  IntColumn get openedAtUtcMs => integer()();
+  TextColumn get presentedEventId =>
+      text().references(EventsV2, #eventId).nullable()();
+  IntColumn get presentedAtUtcMs => integer().nullable()();
+  TextColumn get learningSessionId =>
+      text().references(LearningSessions, #id).nullable()();
+  IntColumn get learningSessionStartedAtUtcMs => integer().nullable()();
+  BoolColumn get isIndexSession =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get closedAtUtcMs => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {ownerId, measurementRunId, permitId, entryAttemptId},
+    {ownerId, learningSessionId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (local_revision > 0 AND opened_at_utc_ms >= 0)',
+    "CHECK (assigned_treatment IN ('standard', 'adventure') AND effective_presentation IN ('standard', 'adventure'))",
+    'CHECK ((presented_event_id IS NULL AND presented_at_utc_ms IS NULL) OR (presented_event_id IS NOT NULL AND presented_at_utc_ms IS NOT NULL AND presented_at_utc_ms >= opened_at_utc_ms))',
+    'CHECK ((learning_session_id IS NULL AND learning_session_started_at_utc_ms IS NULL) OR (learning_session_id IS NOT NULL AND learning_session_started_at_utc_ms IS NOT NULL AND presented_event_id IS NOT NULL AND learning_session_started_at_utc_ms >= presented_at_utc_ms))',
+    'CHECK (is_index_session = 0 OR learning_session_id IS NOT NULL)',
+    'CHECK (closed_at_utc_ms IS NULL OR (closed_at_utc_ms >= opened_at_utc_ms AND (presented_at_utc_ms IS NULL OR closed_at_utc_ms >= presented_at_utc_ms) AND (learning_session_started_at_utc_ms IS NULL OR closed_at_utc_ms >= learning_session_started_at_utc_ms)))',
   ];
 }
