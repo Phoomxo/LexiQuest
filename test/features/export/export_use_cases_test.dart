@@ -356,14 +356,134 @@ void main() {
         jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
 
     expect(parsed['sampleSize'], 3);
-    expect(parsed['schemaVersion'], 1);
+    expect(parsed['schemaVersion'], 2);
+    expect(artifact.schemaVersion, 2);
     expect(parsed['timeZone'], 'UTC');
-    expect((parsed['attempts'] as List).single['evidenceId'], 'attempt-1');
+    expect((parsed['attempts'] as List).single['evidenceId'], 'answer-1');
   });
+
+  ExportUseCases privateDataExports({String promptMode = 'meaningChoice'}) =>
+      ExportUseCases(
+        owners: exports.owners,
+        reader: _FixedExportReader(_privateResearchData(promptMode)),
+        store: store,
+        nowUtc: exports.nowUtc,
+        loadThaiFont: exports.loadThaiFont,
+        researchConsent: exports.researchConsent,
+        researchAuthorizer: exports.researchAuthorizer,
+      );
+
+  test('research JSON excludes private content and raw identifiers', () async {
+    final artifact = await privateDataExports().prepare(
+      format: ExportFormat.researchJson,
+      selection: _all,
+      cancellation: ExportCancellation(),
+    );
+    final encoded = utf8.decode(artifact.bytes);
+    final parsed = jsonDecode(encoded) as Map<String, dynamic>;
+
+    expect(parsed['schemaVersion'], 2);
+    expect(artifact.schemaVersion, parsed['schemaVersion']);
+    expect(parsed['identityScope'], 'archive-local');
+    expect(parsed['sampleSize'], 7);
+    for (final marker in _privateResearchMarkers) {
+      expect(encoded, isNot(contains(marker)), reason: marker);
+    }
+    final vocabulary = parsed['vocabulary'] as List<dynamic>;
+    final attempts = parsed['attempts'] as List<dynamic>;
+    expect(vocabulary, hasLength(2));
+    expect(attempts, hasLength(3));
+    expect((vocabulary.first as Map).keys, unorderedEquals(['evidenceId']));
+    expect(
+      (attempts.first as Map).keys,
+      unorderedEquals([
+        'evidenceId',
+        'sessionId',
+        'wordId',
+        'promptMode',
+        'isCorrect',
+        'responseTimeMs',
+        'occurredAtUtc',
+      ]),
+    );
+    expect(attempts.first['isCorrect'], isTrue);
+    expect(attempts.first['responseTimeMs'], 900);
+    expect(attempts[1]['responseTimeMs'], isNull);
+    expect(attempts.first['promptMode'], 'meaningChoice');
+  });
+
+  test(
+    'research archive aliases retain word session and document links',
+    () async {
+      final artifact = await privateDataExports().prepare(
+        format: ExportFormat.researchJson,
+        selection: _all,
+        cancellation: ExportCancellation(),
+      );
+      final parsed =
+          jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+      final words = parsed['vocabulary'] as List<dynamic>;
+      final attempts = parsed['attempts'] as List<dynamic>;
+      final reading = parsed['reading'] as List<dynamic>;
+
+      expect(attempts[0]['wordId'], words[0]['evidenceId']);
+      expect(attempts[1]['wordId'], words[0]['evidenceId']);
+      expect(attempts[2]['wordId'], words[1]['evidenceId']);
+      expect(attempts[0]['sessionId'], attempts[1]['sessionId']);
+      expect(attempts[2]['sessionId'], isNot(attempts[0]['sessionId']));
+      expect(attempts.map((row) => row['evidenceId']).toSet(), hasLength(3));
+      expect(reading[0]['documentId'], reading[1]['documentId']);
+      expect(reading[0]['documentRevision'], 1);
+      expect(reading[1]['documentRevision'], 2);
+    },
+  );
+
+  test(
+    'research JSON does not export an unrecognised free-text prompt mode',
+    () async {
+      final artifact =
+          await privateDataExports(
+            promptMode: 'private-prompt-mode@example.invalid',
+          ).prepare(
+            format: ExportFormat.researchJson,
+            selection: _all,
+            cancellation: ExportCancellation(),
+          );
+      final encoded = utf8.decode(artifact.bytes);
+      final parsed = jsonDecode(encoded) as Map<String, dynamic>;
+      expect(encoded, isNot(contains('private-prompt-mode@example.invalid')));
+      expect((parsed['attempts'] as List).first['promptMode'], isNull);
+      expect((parsed['attempts'] as List).first['responseTimeMs'], 900);
+    },
+  );
+
+  for (final format in [ExportFormat.csv, ExportFormat.anki]) {
+    test(
+      'personal ${format.name} retains the requested word content',
+      () async {
+        final artifact = await privateDataExports().prepare(
+          format: format,
+          selection: _all,
+          cancellation: ExportCancellation(),
+        );
+        final encoded = utf8.decode(artifact.bytes);
+        expect(encoded, contains('learner@example.invalid'));
+        expect(encoded, contains('guardian-private-response-canary'));
+        expect(artifact.schemaVersion, 1);
+      },
+    );
+  }
 
   test('research JSON includes owner A data and excludes owner B', () async {
     await _seedOwnerWord(database, ownerId: 'owner-a', spelling: 'alpha');
     await _seedOwnerWord(database, ownerId: 'owner-b', spelling: 'bravo');
+    await database.customInsert(
+      'INSERT INTO vocabulary_words '
+      '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
+      'normalized_meaning, part_of_speech, created_at_utc_ms, updated_at_utc_ms) '
+      "VALUES ('word-owner-b-extra', 'owner-b', 'category-owner-b', 'charlie', "
+      "'charlie', 'charlie', 'charlie', 'noun', 1, 1)",
+    );
     final owners = _MutableOwners(_owner('owner-a'));
     final ownerScopedExports = ExportUseCases(
       owners: owners,
@@ -396,7 +516,11 @@ void main() {
     final vocabulary = parsed['vocabulary'] as List<dynamic>;
 
     expect(vocabulary, hasLength(1));
-    expect((vocabulary.single as Map<String, dynamic>)['spelling'], 'alpha');
+    expect(
+      (vocabulary.single as Map<String, dynamic>).keys,
+      unorderedEquals(['evidenceId']),
+    );
+    expect(encoded, isNot(contains('alpha')));
     expect(encoded, isNot(contains('bravo')));
     expect(encoded, isNot(contains('word-owner-b')));
   });
@@ -1319,6 +1443,85 @@ const _all = ExportSelection(
   includeVocabulary: true,
   includeAttempts: true,
   includeReading: true,
+);
+
+const _privateResearchMarkers = [
+  'local:owner',
+  'raw-word-person-alpha',
+  'raw-word-person-beta',
+  'raw-answer-person-alpha',
+  'raw-answer-person-beta',
+  'raw-answer-person-gamma',
+  'raw-session-person-alpha',
+  'raw-session-person-beta',
+  'raw-document-person-alpha',
+  'guardian@example.invalid',
+  'learner@example.invalid',
+  'guardian-private-response-canary',
+  'private-pos-canary',
+  'private-cefr-canary',
+  'file:///guardian/private-source.pdf',
+  'private-provider-trace-canary',
+];
+
+ExportDataSet _privateResearchData(String promptMode) => ExportDataSet(
+  vocabulary: [
+    for (final id in ['raw-word-person-alpha', 'raw-word-person-beta'])
+      ExportVocabularyRow(
+        id: id,
+        category: 'guardian@example.invalid',
+        spelling: 'learner@example.invalid',
+        meaning: 'guardian-private-response-canary',
+        partOfSpeech: 'private-pos-canary',
+        cefrLevel: 'private-cefr-canary',
+        source: 'file:///guardian/private-source.pdf',
+      ),
+  ],
+  attempts: [
+    ExportAttemptRow(
+      id: 'raw-answer-person-alpha',
+      sessionId: 'raw-session-person-alpha',
+      wordId: 'raw-word-person-alpha',
+      spelling: 'learner@example.invalid',
+      promptMode: promptMode,
+      isCorrect: true,
+      responseTimeMs: 900,
+      occurredAtUtc: DateTime.utc(2026, 10, 28),
+      providerProvenance: 'private-provider-trace-canary',
+    ),
+    ExportAttemptRow(
+      id: 'raw-answer-person-beta',
+      sessionId: 'raw-session-person-alpha',
+      wordId: 'raw-word-person-alpha',
+      spelling: 'learner@example.invalid',
+      promptMode: 'meaningChoice',
+      isCorrect: false,
+      responseTimeMs: null,
+      occurredAtUtc: DateTime.utc(2026, 10, 28),
+      providerProvenance: null,
+    ),
+    ExportAttemptRow(
+      id: 'raw-answer-person-gamma',
+      sessionId: 'raw-session-person-beta',
+      wordId: 'raw-word-person-beta',
+      spelling: 'learner@example.invalid',
+      promptMode: 'srsRecall',
+      isCorrect: true,
+      responseTimeMs: 700,
+      occurredAtUtc: DateTime.utc(2026, 10, 28),
+      providerProvenance: null,
+    ),
+  ],
+  reading: [
+    for (final revision in [1, 2])
+      ExportReadingRow(
+        documentId: 'raw-document-person-alpha',
+        documentRevision: revision,
+        lastPosition: 5,
+        isCompleted: revision == 2,
+        updatedAtUtc: DateTime.utc(2026, 10, 28),
+      ),
+  ],
 );
 
 final class _MemoryStore implements ExportArtifactStore {

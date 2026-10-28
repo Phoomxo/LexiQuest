@@ -15,6 +15,8 @@ import '../domain/export_contracts.dart';
 typedef ExportUtcNow = DateTime Function();
 typedef ExportFontLoader = Future<ByteData> Function();
 
+const _researchSchemaVersion = 2;
+
 final class ExportUseCases {
   const ExportUseCases({
     required this.owners,
@@ -102,7 +104,11 @@ final class ExportUseCases {
       },
       bytes: bytes,
       recordCount: data.recordCount,
-      schemaVersion: data.rewards == null ? 1 : 2,
+      schemaVersion: format == ExportFormat.researchJson
+          ? _researchSchemaVersion
+          : data.rewards == null
+          ? 1
+          : 2,
       algorithmVersion: 1,
       generatedAtUtc: generatedAt,
       timeZone: 'UTC',
@@ -323,9 +329,39 @@ final class ExportUseCases {
   }
 
   Uint8List _researchJson(ExportDataSet data, DateTime generatedAt) {
+    Map<String, String> aliases(Iterable<String> ids, String prefix) {
+      final sorted = ids.toSet().toList()..sort();
+      return {
+        for (var index = 0; index < sorted.length; index++)
+          sorted[index]: '$prefix-${index + 1}',
+      };
+    }
+
+    final words = aliases([
+      ...data.vocabulary.map((row) => row.id),
+      ...data.attempts.map((row) => row.wordId),
+    ], 'vocabulary');
+    final answers = aliases(data.attempts.map((row) => row.id), 'answer');
+    final sessions = aliases(
+      data.attempts.map((row) => row.sessionId),
+      'session',
+    );
+    final documents = aliases(
+      data.reading.map((row) => row.documentId),
+      'reading-document',
+    );
+    const promptModes = {
+      'meaningChoice',
+      'srsRecall',
+      'ghostSpelling',
+      'associativeRecall',
+      'shadowing',
+      'pronunciationTranscript',
+    };
     final payload = <String, Object?>{
-      'schemaVersion': 1,
+      'schemaVersion': _researchSchemaVersion,
       'algorithmVersion': 1,
+      'identityScope': 'archive-local',
       'generatedAtUtc': generatedAt.toIso8601String(),
       'timeZone': 'UTC',
       'sampleSize': data.recordCount,
@@ -333,37 +369,31 @@ final class ExportUseCases {
         'secrets',
         'direct personal identifiers',
         'raw audio',
+        'raw content',
+        'source identifiers',
+        'provider provenance',
       ],
       'vocabulary': [
-        for (final row in data.vocabulary)
-          {
-            'evidenceId': row.id,
-            'category': row.category,
-            'spelling': row.spelling,
-            'meaning': row.meaning,
-            'partOfSpeech': row.partOfSpeech,
-            'cefrLevel': row.cefrLevel,
-            'source': row.source,
-          },
+        for (final row in data.vocabulary) {'evidenceId': words[row.id]!},
       ],
       'attempts': [
         for (final row in data.attempts)
           {
-            'evidenceId': row.id,
-            'sessionId': row.sessionId,
-            'wordId': row.wordId,
-            'spelling': row.spelling,
-            'promptMode': row.promptMode,
+            'evidenceId': answers[row.id]!,
+            'sessionId': sessions[row.sessionId]!,
+            'wordId': words[row.wordId]!,
+            'promptMode': promptModes.contains(row.promptMode)
+                ? row.promptMode
+                : null,
             'isCorrect': row.isCorrect,
             'responseTimeMs': row.responseTimeMs,
             'occurredAtUtc': row.occurredAtUtc.toIso8601String(),
-            'providerProvenance': row.providerProvenance,
           },
       ],
       'reading': [
         for (final row in data.reading)
           {
-            'documentId': row.documentId,
+            'documentId': documents[row.documentId]!,
             'documentRevision': row.documentRevision,
             'lastPosition': row.lastPosition,
             'isCompleted': row.isCompleted,
