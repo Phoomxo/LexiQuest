@@ -1,0 +1,16 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.1-core-green/targeted-learning-dfeab4760986ac0b454ce5273c18a226fc139db13fc1ecef2f4ef24c01335be7.json",
+  "status": "Passed",
+  "fingerprint": "c95be1047aaca978f4ba7e9d557f03a3ccb24624dd3fad7b1d5166fffc169dce",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.1-core-green/af1d2f7bd750-c95be1047aac/Explicit-Flutter-tests.stdout.log",
+      "sha256": "0245b78e954e4f3ce2f2be6a4e7ae02654009e6fc73537a8300156c715324dfb"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.1-core-green/af1d2f7bd750-c95be1047aac/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "policy": "No aggregate all-tests-current claim; retain immutable receipts with exact run inputs. Reuse unchanged target intent/dependencies and supersede affected targets explicitly. Counts overlap and must not be summed as unique tests.",
+  "affectedDeltaBridges": {
+    "lib/features/review/presentation/transfer_probe_screen.dart": "D05: 26 probe tests and final runtime composition target supersede affected earlier behavior; six dependent targets pass.",
+    "test/features/review/transfer_probe_use_cases_test.dart": "D01/D05: all 26 current probe tests passed.",
+    "test/features/goals/study_plan_repository_test.dart": "D06: migration cases moved; remaining repository tests plus both new migration targets passed in 30-test run.",
+    "test/features/learning/guided_repair_storage_test.dart": "D06: identical test body moved to test/database/migration_v30_to_v31_test.dart; new target passed.",
+    "test/architecture/final_8_44_test_plan_review_contract_test.dart": "D06: canonical LF historical artifact hash and generator contracts passed in 30-test run.",
+    "tool/final_test_plan/generate_final_test_plan.dart": "D06: schema34/58 inventory and migration dispatch contracts passed in 30-test run; final EOL-only cleanup has normalized equivalence proof."
+  },
+  "finalEolProof": "eol-equivalence.json",
+  "newTargets": [
+    "test/database/migration_v29_to_v30_test.dart",
+    "test/database/migration_v30_to_v31_test.dart"
+  ],
+  "originalCoveragePreserved": true
+}

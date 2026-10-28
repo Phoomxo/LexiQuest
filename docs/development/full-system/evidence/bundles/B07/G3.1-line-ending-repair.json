@@ -1,0 +1,59 @@
+{
+  "cause": "Dart format on Windows emits CRLF; existing tracked drift_progress_queries has literal line ending policy causing diff whitespace warnings. Normalize edited Dart files to LF without token changes.",
+  "files": [
+    {
+      "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+      "before": "c121639c95c22c1a3f04c2d0bb965941cf2a5bf43af596bb13e31a3ea787cd88",
+      "after": "ba4c576fbf5e3e06e035c4d79fd9f2a2d2f3aab2ce75c94c978f4c80c0da4f88",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "lib/features/progress/application/progress_use_cases.dart",
+      "before": "173875cdbedd8fedd23a0f1a2028e60adab232d93b7dbcb56ac5388d2a30f2c1",
+      "after": "911fed32a4cb8dcf871c72dae9350793ab64221babb0eb8894049bf2703fefd8",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "lib/features/progress/data/drift_progress_queries.dart",
+      "before": "d8b592eaa138699267f6d073f019c65ef29ce4c58c86eb03be17107cc6d43e4b",
+      "after": "0e8dc279227ce0695f78bf3da11c7a2186125505cae39349ffcb0a2720e95312",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "lib/features/progress/domain/progress_models.dart",
+      "before": "918c8232052b31523f90b9f7ce1fc92ceebfbb80d1a74c6e40bbf4abc6cab6cc",
+      "after": "a3fb2c77454f50dbbec3dd23cd9a1598b2722b86ecc5da89c9fbd974d591c63a",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "lib/screens/learning_pack_catalog_screen.dart",
+      "before": "e298376ec7c0b6188d168b37793cd62c27b6b9a97a888bb4a3162d8a4e6bf7c8",
+      "after": "261eb403c5c62cf22687cdc32fd22ddc9dfd28d77f2bf3d8d112c85fcf506d83",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "lib/screens/learning_pack_detail_screen.dart",
+      "before": "112aedd228752af55c7f90b749ea9042d205c44e6cf4976990059078786b757c",
+      "after": "74ae55cb9b9b4e227e9a217160fc1c6112aa56feab37f6528183c68de06df17a",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "test/features/learning_packs/learning_pack_detail_test.dart",
+      "before": "367aaec3c6712f44d7631fd5e80efad673f54348ddd321710e320601a127735e",
+      "after": "ea89bec43b2571db78abe7ae9df7b27c1ef3dc2fa384e39dd1f1beb4ced93e8d",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "test/screens/learning_pack_catalog_screen_test.dart",
+      "before": "0c7c12ed3d6bd2a621901c590ec9115f63d75b7398e74138fab521b38b394f79",
+      "after": "df7fc706dd42e77b176c48631e0e122e60267c2548af5900a19a230325eb6c9a",
+      "normalizedBytesEquivalent": true
+    },
+    {
+      "path": "test/screens/learning_pack_detail_screen_test.dart",
+      "before": "6877f33d17fbec6c119471e46f0232c17c05f10521b634adfcff19ff6430eb4e",
+      "after": "e06ff04a6e03f83b417b362a1cc72f12506c927b20d04f5e23f54f0ef11cf35f",
+      "normalizedBytesEquivalent": true
+    }
+  ]
+}

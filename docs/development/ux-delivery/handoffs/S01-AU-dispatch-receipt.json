@@ -1,0 +1,19 @@
+{
+  "dispatchId": "ux-s01-au-20260925-5581",
+  "createdAtUtc": "2026-09-24T19:09:31.863058+00:00",
+  "sourceThreadId": "01a0d4b9-6fca-7643-8c7a-445df8474f0b",
+  "clientThreadId": "client-new-thread:cbb865de-f980-44d7-a6d9-374dd60e3036",
+  "hostId": "local",
+  "status": "RUNNING_SOURCE_VERIFICATION",
+  "writerReleased": true,
+  "immutableStateRevision": 89,
+  "sourceManifest": "docs/development/ux-delivery/handoffs/S01-AU-source-manifest.json",
+  "manifestSha256": "7de331b9d1e10c914070230414f8ad0dbf3ffbb32e1fdb5758f5f01a06891de6",
+  "archiveSha256": "12fbd952979fa8930c48c3ad4f5dac27f7836ba85d472f47a379acbca525990c",
+  "duplicateDispatchAllowed": false,
+  "routing": "Astra/medium explicit deterministic fallback; Standard/default requested; runtime tier unexposed; no Jev/live provider/budget mutation",
+  "successorThreadId": "01a0d4d2-8d05-7483-bc94-102feed8a18d",
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/57de/LexiQuest",
+  "verifiedAtUtc": "2026-09-24T19:10:49.530300+00:00",
+  "resolution": "App sidebar listing omitted recent tasks; exact session metadata+authorized prompt identified task, wait_threads confirmed active source verification. No duplicate creation."
+}

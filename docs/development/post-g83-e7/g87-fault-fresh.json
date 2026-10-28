@@ -1,0 +1,70 @@
+[
+  {
+    "target": "test/features/learning/drift_learning_repository_test.dart",
+    "status": "passed-current-source",
+    "receipt": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\37745ec607a651a5-targeted-learning-973580c565312904629089d2bae8c8efa68b83a50999a4c4640b7cd70faedc26.json",
+      "sha256": "37745ec607a651a586d973486a343a9a9371e0816fc7d803829a0d39ffeedaf3"
+    },
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\9f105e9d02bf0d46-Explicit-Flutter-tests.stdout.log",
+        "sha256": "9f105e9d02bf0d46e9177c2b3aa799d138e706c619c1e4c8c75f7d0b0282303a"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ],
+    "sourceCommit": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508"
+  },
+  {
+    "target": "test/features/offline_content/offline_content_manager_test.dart",
+    "status": "passed-current-source",
+    "receipt": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\181b1f3af68a52c2-targeted-learning-151a6d341d5926e1cdb41d7e4b123c1f37b874537e170832e43312f4e7ffc5d8.json",
+      "sha256": "181b1f3af68a52c283c8a43011db552db9229d6adf5bf469b2108a83b2421227"
+    },
+    "logs": [
+      {
+        "kind": "Stdout",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\43baf1ea4aa177bd-Explicit-Flutter-tests.stdout.log",
+        "sha256": "43baf1ea4aa177bd74e76da770abd5949c5488491b051bde5617bb3476b755c9"
+      },
+      {
+        "kind": "Stderr",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+      }
+    ],
+    "sourceCommit": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508"
+  },
+  {
+    "targets": [
+      "test/features/time_tracking/focus_timer_controller_test.dart",
+      "test/features/time_tracking/focus_timer_widget_test.dart"
+    ],
+    "status": "passed-current-source",
+    "reason": "Prior combined receipt did not expose target-level completion lines; explicit current target verification resolves uncertainty",
+    "receipt": {
+      "path": "build\\verification\\f25a7313b1cc499c2c290eb3abeefc5a8ae4c508\\targeted-learning-c09ee5193a3f44624c4851f55715fe94f3eaf0d90fc84490831609017ef9f1bc.json",
+      "sha256": "29cd8130149827f595d0eca28bba44768b25de69e036a13f1aae9ad20a2ecec4",
+      "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\29cd8130149827f5-targeted-learning-c09ee5193a3f44624c4851f55715fe94f3eaf0d90fc84490831609017ef9f1bc.json"
+    },
+    "logs": [
+      {
+        "path": "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\build\\verification\\f25a7313b1cc499c2c290eb3abeefc5a8ae4c508\\fb87e0f7ca6e-e99f36c50df2-029201e7\\Explicit-Flutter-tests.stdout.log",
+        "sha256": "dd2170121ed386687b0d1ea0c86e02ca9579c0bf7897c3ba19c441781b285ef4",
+        "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\dd2170121ed38668-Explicit-Flutter-tests.stdout.log"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\build\\verification\\f25a7313b1cc499c2c290eb3abeefc5a8ae4c508\\fb87e0f7ca6e-e99f36c50df2-029201e7\\Explicit-Flutter-tests.stderr.log",
+        "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f",
+        "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\a3639af5e23464fc-Explicit-Flutter-tests.stderr.log"
+      }
+    ],
+    "sourceCommit": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508"
+  }
+]

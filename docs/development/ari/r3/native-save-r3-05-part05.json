@@ -1,0 +1,136 @@
+{
+  "taskId": "01a0cfa2-bb7b-7410-8b01-7f5a3dee5a2d",
+  "sourceFingerprint": "2f3583e87a6e6765f94bbc66ea9e635911e1140f79fa350fd5f9e461d9dbd136",
+  "sourceManifest": "source-manifest-r3-05-part05.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part05.apk",
+  "apkSha256": "0ec3cf3cdfbc980d7e582edd91ae5f059c1f637d4e94e11a2b602bf8f0f43018",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "log": "build/ari-r3-05/part05-android-build.log",
+    "sha256": "f3c0d00d1e64596a7673a91905177e042c914acf075010f406bc27f9a49e6e10",
+    "warning": "Existing Kotlin Gradle migration warning"
+  },
+  "observed": [
+    "Fresh main/WAL/SHM backup before install; aapt package verified before isolated install",
+    "Create R305Part05 category and r305save/book/noun word; unpaired AI expand/collapse preserves exact draft",
+    "Edit meaning to bookrevised; save; force-stop/relaunch and revisit exact category shows r305save/bookrevised/noun",
+    "58 tables compared by actual PK: category+1 word+1 outbox+3 (category upsert +2 word upserts), word revision2; old rows intact",
+    "Fresh main/WAL/SHM restored byte-exact; app force-stopped"
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part05-native/backup.json",
+  "restore": "build/ari-r3-05/part05-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "outbox_operations": {
+        "beforeRows": 359,
+        "afterRows": 362,
+        "added": 3,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "operation_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      },
+      "vocabulary_categories": {
+        "beforeRows": 8,
+        "afterRows": 9,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "vocabulary_words": {
+        "beforeRows": 19,
+        "afterRows": 20,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "fixture": {
+      "categoriesAdded": 1,
+      "wordsAdded": 1,
+      "wordTombstones": 0,
+      "outboxRowsAdded": 3,
+      "wordUpsertOutboxRows": 2,
+      "sameOwner": true
+    },
+    "installedApkSha256": "0ec3cf3cdfbc980d7e582edd91ae5f059c1f637d4e94e11a2b602bf8f0f43018",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "notProven": [
+    "Only create/edit post-success verification boundary; exceptions inside mutation or its notifier are not certified.",
+    "No durable request-ID protocol across process death; domain rows/outbox persist on SQLite reopen.",
+    "Category/import still require fault tests; static patterns alone do not constitute a reproduced defect.",
+    "No native injected readback fault, connected provider, foreign-owner native account, or whole W03 certification."
+  ]
+}

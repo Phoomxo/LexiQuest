@@ -1,0 +1,411 @@
+import 'dart:async';
+import 'dart:convert';
+import '../features/review/domain/review_queue_item.dart';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
+import 'package:flutter/material.dart';
+
+import '../features/export/application/export_use_cases.dart';
+import '../features/export/domain/export_contracts.dart';
+import '../features/identity/domain/owner_lifecycle_manifest.dart';
+import '../runtime/app_dependencies.dart';
+
+class ExportCenterScreen extends StatefulWidget {
+  const ExportCenterScreen({super.key, this.exports, this.ownerIdentities});
+
+  final ExportUseCases? exports;
+  final ReviewOwnerIdentityReader? ownerIdentities;
+
+  @override
+  State<ExportCenterScreen> createState() => _ExportCenterScreenState();
+}
+
+class _ExportCenterScreenState extends State<ExportCenterScreen> {
+  ExportUseCases? _exports;
+  ExportFormat _format = ExportFormat.csv;
+  bool _vocabulary = true;
+  bool _attempts = true;
+  bool _reading = true;
+  bool _busy = false;
+  ExportCancellation? _cancellation;
+  String? _status;
+  String _assistanceStatus = 'idle';
+  String? _failureCode;
+  String? _assistanceOwnerId;
+  ReviewOwnerIdentityReader? _owners;
+  AppDependencies? _dependencies;
+  bool _bound = false;
+  int _generation = 0;
+  int _operation = 0;
+
+  bool _current(int generation) => mounted && generation == _generation;
+
+  bool _canAct(int generation, int operation) =>
+      _current(generation) &&
+      operation == _operation &&
+      ModalRoute.of(context)?.isCurrent != false;
+
+  void _invalidate() {
+    _generation++;
+    _cancellation?.cancel();
+    _cancellation = null;
+    _busy = false;
+    _status = null;
+    _assistanceStatus = 'idle';
+    _failureCode = null;
+  }
+
+  void _bind() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final exports = widget.exports ?? dependencies?.exports;
+    final owners =
+        widget.ownerIdentities ?? dependencies?.activeOwnerIdentities;
+    if (_bound &&
+        identical(dependencies, _dependencies) &&
+        identical(exports, _exports) &&
+        identical(owners, _owners))
+      return;
+    _invalidate();
+    _bound = true;
+    _dependencies = dependencies;
+    _exports = exports;
+    _owners = owners;
+    _assistanceOwnerId = null;
+    if (owners != null) unawaited(_readAssistanceOwner(owners, _generation));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bind();
+  }
+
+  @override
+  void didUpdateWidget(ExportCenterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bind();
+  }
+
+  Future<void> _readAssistanceOwner(
+    ReviewOwnerIdentityReader owners,
+    int generation,
+  ) async {
+    try {
+      final ownerId = await owners.requireSingleActiveOwnerId();
+      if (_current(generation)) setState(() => _assistanceOwnerId = ownerId);
+    } catch (_) {
+      // Optional AI context must not prevent native exports or create an owner.
+    }
+  }
+
+  Future<void> _export(int generation, int operation) async {
+    final exports = _exports;
+    if (!_canAct(generation, operation) || exports == null || _busy) return;
+    final cancellation = ExportCancellation();
+    _operation++;
+    setState(() {
+      _busy = true;
+      _assistanceStatus = 'running';
+      _failureCode = null;
+      _cancellation = cancellation;
+      _status = 'กำลังสร้างไฟล์จากข้อมูลในเครื่อง';
+    });
+    try {
+      final result = await exports.export(
+        format: _format,
+        selection: ExportSelection(
+          includeVocabulary: _format == ExportFormat.anki || _vocabulary,
+          includeAttempts: _format != ExportFormat.anki && _attempts,
+          includeReading: _format != ExportFormat.anki && _reading,
+        ),
+        cancellation: cancellation,
+      );
+      if (!_current(generation)) return;
+      setState(() {
+        _assistanceStatus = 'saved';
+        _status = 'บันทึกแล้ว ${result.bytesWritten} ไบต์\n${result.path}';
+      });
+    } on ExportException catch (error) {
+      if (!_current(generation)) return;
+      setState(() {
+        _status = _failureText(error.code);
+        _assistanceStatus = 'failed';
+        _failureCode = error.code.name;
+      });
+    } catch (_) {
+      if (!_current(generation)) return;
+      setState(() {
+        _status = _failureText(ExportFailureCode.writeFailed);
+        _assistanceStatus = 'failed';
+        _failureCode = ExportFailureCode.writeFailed.name;
+      });
+    } finally {
+      if (_current(generation)) {
+        setState(() {
+          _busy = false;
+          _cancellation = null;
+        });
+      }
+    }
+  }
+
+  void _cancel(int generation, int operation) {
+    if (!_canAct(generation, operation) ||
+        !_busy ||
+        _cancellation?.isCancelled != false)
+      return;
+    _cancellation?.cancel();
+    setState(() {
+      _status = 'กำลังยกเลิก';
+      _assistanceStatus = 'cancelling';
+    });
+  }
+
+  void _changeSelection(int generation, int operation, VoidCallback change) {
+    if (!_canAct(generation, operation) || _busy) return;
+    setState(() {
+      change();
+      _status = null;
+      _assistanceStatus = 'idle';
+      _failureCode = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    _invalidate();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final generation = _generation;
+    final operation = _operation;
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && _current(generation)) setState(_invalidate);
+      },
+      child: MenuActionBinding(
+        id: 'export/guidance',
+        label: 'Export format and operation status',
+        ownerId: _assistanceOwnerId,
+        onInvoke: null,
+        readValue: _assistanceOwnerId == null
+            ? null
+            : jsonEncode({
+                'format': _format.name,
+                'status': _assistanceStatus,
+                if (_failureCode != null) 'failureCode': _failureCode,
+                'researchConsentRequired': _format == ExportFormat.researchJson,
+                'scope': _format == ExportFormat.anki
+                    ? 'vocabulary-only'
+                    : _format == ExportFormat.ownerArchiveJson
+                    ? 'owner-manifest-not-restore'
+                    : 'selected-data',
+                if (_format != ExportFormat.anki &&
+                    _format != ExportFormat.ownerArchiveJson)
+                  'selection': {
+                    'vocabulary': _vocabulary,
+                    'attempts': _attempts,
+                    'reading': _reading,
+                  },
+                'purpose': _formatPurpose(_format),
+                if (_format == ExportFormat.anki)
+                  'columns': ['word', 'meaning', 'category', 'recordId'],
+                'fileAccess':
+                    'native-controls-only-no-path-or-file-content-shared',
+              }),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('ส่งออกข้อมูล')),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'เลือกรูปแบบไฟล์',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              RadioGroup<ExportFormat>(
+                groupValue: _format,
+                onChanged: (value) {
+                  if (value != null) {
+                    _changeSelection(generation, operation, () {
+                      _format = value;
+                      _status = null;
+                      _assistanceStatus = 'idle';
+                      _failureCode = null;
+                    });
+                  }
+                },
+                child: Column(
+                  children: [
+                    for (final format in ExportFormat.values)
+                      RadioListTile<ExportFormat>(
+                        key: ValueKey(format),
+                        value: format,
+                        enabled: !_busy,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_formatLabel(format)),
+                        subtitle: Text(_formatPurpose(format)),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (_format != ExportFormat.ownerArchiveJson &&
+                  _format != ExportFormat.anki) ...[
+                Text(
+                  'เลือกข้อมูล',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                CheckboxListTile(
+                  value: _vocabulary,
+                  onChanged: _busy
+                      ? null
+                      : (value) => _changeSelection(
+                          generation,
+                          operation,
+                          () => _vocabulary = value ?? false,
+                        ),
+                  title: const Text('คลังคำศัพท์'),
+                  subtitle: const Text(
+                    'คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา',
+                  ),
+                ),
+                CheckboxListTile(
+                  value: _attempts,
+                  onChanged: _busy
+                      ? null
+                      : (value) => _changeSelection(
+                          generation,
+                          operation,
+                          () => _attempts = value ?? false,
+                        ),
+                  title: const Text('ประวัติคำตอบ'),
+                  subtitle: const Text('ผลตอบ เวลาตอบ และโหมดคำตอบ'),
+                ),
+                CheckboxListTile(
+                  value: _reading,
+                  onChanged: _busy
+                      ? null
+                      : (value) => _changeSelection(
+                          generation,
+                          operation,
+                          () => _reading = value ?? false,
+                        ),
+                  title: const Text('ประวัติการอ่าน'),
+                  subtitle: const Text(
+                    'ตำแหน่งที่อ่าน รุ่นเอกสาร และสถานะอ่านจบ',
+                  ),
+                ),
+              ],
+              if (_format == ExportFormat.ownerArchiveJson) ...[
+                const Text(
+                  'สำเนาตามรายการข้อมูลของบัญชีปัจจุบันในเครื่อง ไม่ขึ้นกับตัวเลือกหมวดข้อมูล และไม่ต้องยินยอมเข้าร่วมวิจัย ไฟล์นี้ไม่ใช่ไฟล์สำหรับกู้คืนแอป',
+                ),
+                const Text(
+                  'ไม่รวมรหัสลับและโทเคนยืนยันตัวตน ข้อมูลระบุตัวผู้เข้าร่วมโดยตรง ข้อมูลดิบที่ไม่อยู่ในรายการอนุญาตและรายละเอียดจากผู้ให้บริการ ที่อยู่แหล่งข้อมูลและตำแหน่งไฟล์ในเครื่อง',
+                ),
+                ExpansionTile(
+                  title: const Text('ดูรายการข้อมูลและขอบเขตในสำเนา'),
+                  children: [
+                    const Text(
+                      'บางรายการเก็บเฉพาะผลรวม หรือปิดบังข้อมูลระบุตัวตน รายการด้านล่างอ้างอิงข้อกำหนดการส่งออกจริง ไม่ใช่จำนวนระเบียนที่มีข้อมูล',
+                    ),
+                    for (final entry in ownerLifecycleManifest)
+                      ListTile(
+                        title: Text(entry.alias),
+                        subtitle: Text(
+                          '${_dispositionLabel(entry.exportDisposition)}\nช่องข้อมูลที่อนุญาต: ${entry.allowedExportFields.join(', ')}',
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              if (_format != ExportFormat.ownerArchiveJson &&
+                  _format != ExportFormat.anki)
+                const Text(
+                  'ส่งออกข้อมูลที่เลือกจากเครื่อง พร้อมข้อมูลประกอบตามรูปแบบไฟล์ เช่น จำนวนรายการและเวลามาตรฐาน UTC โดยไม่รวมรหัสเชื่อมต่อหรือโทเคนเข้าสู่ระบบ',
+                ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: _busy
+                    ? OutlinedButton.icon(
+                        onPressed: () => _cancel(generation, operation),
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: const Text('ยกเลิก'),
+                      )
+                    : FilledButton.icon(
+                        onPressed: _exports == null
+                            ? null
+                            : () => _export(generation, operation),
+                        icon: const Icon(Icons.save_alt_outlined),
+                        label: const Text('สร้างและบันทึกไฟล์'),
+                      ),
+              ),
+              if (_status != null) ...[
+                const SizedBox(height: 16),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _status!,
+                    key: const ValueKey<String>('export-status'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatLabel(ExportFormat format) => switch (format) {
+    ExportFormat.csv => 'ตารางข้อมูล (CSV)',
+    ExportFormat.pdf => 'เอกสารสำหรับอ่าน (PDF)',
+    ExportFormat.anki => 'บัตรคำสำหรับ Anki',
+    ExportFormat.researchJson => 'ชุดข้อมูลวิจัย (JSON)',
+    ExportFormat.ownerArchiveJson => 'สำเนาข้อมูลของฉัน',
+  };
+
+  String _formatPurpose(ExportFormat format) => switch (format) {
+    ExportFormat.csv => 'เปิดและจัดการข้อมูลที่เลือกในแอปตารางคำนวณ',
+    ExportFormat.pdf => 'อ่านหรือพิมพ์รายงานข้อมูลที่เลือก',
+    ExportFormat.anki =>
+      'นำเข้าเป็นบัตรคำใน Anki มีคำศัพท์ ความหมาย หมวดหมู่ และรหัสรายการ ไม่รวมประวัติคำตอบหรือการอ่าน',
+    ExportFormat.researchJson =>
+      'สำหรับวิเคราะห์งานวิจัย ต้องมีความยินยอมวิจัยตามรุ่นที่กำหนด แยกจากการส่งออกส่วนตัว',
+    ExportFormat.ownerArchiveJson =>
+      'เก็บข้อมูลตามรายการที่ระบบอนุญาต พร้อมปิดบังข้อมูลบางส่วน เป็นไฟล์ JSON',
+  };
+
+  String _dispositionLabel(OwnerLifecycleExportDisposition disposition) =>
+      switch (disposition) {
+        OwnerLifecycleExportDisposition.redactedIdentity =>
+          'ปิดบังข้อมูลระบุตัวตน',
+        OwnerLifecycleExportDisposition.allowlistedPersonal =>
+          'เฉพาะข้อมูลส่วนตัวที่อนุญาต',
+        OwnerLifecycleExportDisposition.aggregateOnly => 'เฉพาะข้อมูลสรุป',
+        OwnerLifecycleExportDisposition.redactedOwnerMetadata =>
+          'ข้อมูลประกอบบัญชีที่ปิดบังแล้ว',
+        OwnerLifecycleExportDisposition.preservedGlobal =>
+          'ข้อมูลส่วนกลางตามข้อกำหนด',
+      };
+
+  String _failureText(ExportFailureCode code) => switch (code) {
+    ExportFailureCode.noSelection => 'กรุณาเลือกข้อมูลอย่างน้อยหนึ่งประเภท',
+    ExportFailureCode.noData => 'ยังไม่มีข้อมูลสำหรับรูปแบบที่เลือก',
+    ExportFailureCode.consentRequired =>
+      'กรุณาให้ความยินยอมสำหรับการส่งออกข้อมูลวิจัยก่อน การยินยอมนี้ไม่ใช่การสมัครเข้าร่วมการทดลอง',
+    ExportFailureCode.cancelled => 'ยกเลิกการส่งออกแล้ว',
+    ExportFailureCode.permissionDenied => 'ไม่มีสิทธิ์เขียนไฟล์ไปยังตำแหน่งนี้',
+    ExportFailureCode.insufficientSpace => 'พื้นที่จัดเก็บไม่เพียงพอ',
+    ExportFailureCode.writeFailed =>
+      'ยังยืนยันการบันทึกไฟล์ไม่ได้ กรุณาตรวจตำแหน่งที่เลือกก่อนลองอีกครั้ง',
+    ExportFailureCode.cleanupFailed =>
+      'ล้างไฟล์ส่งออกไม่สำเร็จ อาจมีไฟล์ค้างอยู่ กรุณาตรวจตำแหน่งที่เลือก',
+    ExportFailureCode.unavailable =>
+      'ระบบบันทึกไฟล์ไม่พร้อมใช้งาน ลองอีกครั้งได้',
+  };
+}

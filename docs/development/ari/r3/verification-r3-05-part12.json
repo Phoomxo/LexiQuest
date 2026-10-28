@@ -1,0 +1,266 @@
+{
+  "taskId": "01a0d01e-4d22-7f61-9f4d-403ae77b8450",
+  "sourceFingerprint": "15780712872b6c73d5f68b35bec9af8605c2ce3c40ca097b2d1f5f59d29af00a",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-1734dd583c877c4940428708a34c9c7b0edf2448e1fe59248319ba1069bfac09.json",
+      "sha256": "449401fa3619c6e39dd7c274e04f7fde8bab619186bb87784220a57f255ba157",
+      "status": "Passed",
+      "passingCases": 3,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/quiz_screen_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "standalone meaning quiz assistance"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "cf4abd1996ba2210b04eb35505e65a974519369e8a184665b0c5b091780059a8"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "cf4abd1996ba2210b04eb35505e65a974519369e8a184665b0c5b091780059a8",
+          "fingerprint": "0ee7d2bf8596b3ce06208f554e08386b0594098a655dbfc7c01ee2767432ae91",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:16:58.9388937+00:00",
+          "FinishedAt": "2026-09-23T21:17:08.5197568+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\cf4abd1996ba-0ee7d2bf8596-8024edc0\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\cf4abd1996ba-0ee7d2bf8596-8024edc0\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "0ee7d2bf8596b3ce06208f554e08386b0594098a655dbfc7c01ee2767432ae91",
+          "StdoutHash": "EB1DFC3F867B3D81D5D9B63BE0C014023844AD02DED82EB5E1C0A7CC6E577C55",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [
+        "test/screens/srs_flashcards_screen_test.dart"
+      ],
+      "applicability": "Selected quiz file and all production/config inputs unchanged; only unrelated unimported flashcard test file subsequently gained additive cases. Original gate used part11 flashcard SHA. No rerun justified."
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-cef22e73b2948a405c4149bf0cc420d2bc002111cfaa46ae734780fa6edb8018.json",
+      "sha256": "488e73190e0165ce26fd6b3b73c7348c1ab9695d8761f6b16eabac7269a4b70b",
+      "status": "Passed",
+      "passingCases": 2,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/srs_flashcards_screen_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "flashcard file reopen"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "866bb68660a014f69429c83961dccba0afeab2604ccb9703d8c29de814ad1b08"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "866bb68660a014f69429c83961dccba0afeab2604ccb9703d8c29de814ad1b08",
+          "fingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:21:19.1576843+00:00",
+          "FinishedAt": "2026-09-23T21:21:30.0919466+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-c0f492747ef1-311f72ba\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-c0f492747ef1-311f72ba\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "StdoutHash": "7B004CFBAE6C68E8A48E793EE5B2A64CC11CECCEE888C233E3FBD4211C25E719",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded closure"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-e3d3ed1a0d0c656692c11a75c735d3d4df34f5817f49346da9b10251a00a379b.json",
+      "sha256": "06d4bc1a053831069d3f014328ee163720353764418af942fe9e515c591f7e12",
+      "status": "Passed",
+      "passingCases": 4,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/speak_to_text_screen_voice_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "optional speaking context"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "040a1c29ca03d4a75b703f50132fbc85361d45fb87d74ab1c63968dfcf03f273"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "040a1c29ca03d4a75b703f50132fbc85361d45fb87d74ab1c63968dfcf03f273",
+          "fingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:22:00.6375578+00:00",
+          "FinishedAt": "2026-09-23T21:22:09.9476338+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\040a1c29ca03-c0f492747ef1-5b11fb8b\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\040a1c29ca03-c0f492747ef1-5b11fb8b\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "StdoutHash": "39871B96A0818093F6AD1353B9A51EE37B96E63FFFAF7E9C68E415CE5732249B",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded closure"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-de25a5762932e95dd1bb29e9e7485d0257a9a1f15b4235998d8477e863c4e80b.json",
+      "sha256": "7bb792661edb59edff90da472494200b3c41e8c217a8ed00a5fc40919911368b",
+      "status": "Passed",
+      "passingCases": 28,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/shadowing_challenge_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "8536361998af33f30f05338b2749f3929093702ea1cdc6caadd256a33def4da8"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "8536361998af33f30f05338b2749f3929093702ea1cdc6caadd256a33def4da8",
+          "fingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T21:22:35.4005216+00:00",
+          "FinishedAt": "2026-09-23T21:22:48.4476330+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\8536361998af-c0f492747ef1-496c68ae\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\8536361998af-c0f492747ef1-496c68ae\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "c0f492747ef19f8c16c7926e67a76c6bdea53bbfe3aadcbad5b6df988b21dd96",
+          "StdoutHash": "1A396098218DC889F215C032967003D68C41A217157E7F199C0F52E00B414CB7",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "closurePins": 1536,
+      "currentClosureMismatches": [],
+      "applicability": "Exact current recorded closure"
+    }
+  ],
+  "uniquePassingCases": 37,
+  "newPassingCases": 5,
+  "revalidatedCases": 32,
+  "testSourceChanged": [
+    "test/screens/quiz_screen_test.dart",
+    "test/screens/srs_flashcards_screen_test.dart"
+  ],
+  "analysis": {
+    "log": "build\\ari-r3-05\\part12-analysis.log",
+    "sha256": "71804e2820d4b44758f8caf6076db21bb2452b989d926e5d705fa7ed2644b2c8",
+    "result": "No issues found"
+  },
+  "diff": {
+    "path": "build\\ari-r3-05\\part12-test.diff",
+    "sha256": "475d8bbeb877cc3759ffa20bb08c33d212ab56139b8ce877eb1a8fd852e1d758",
+    "review": "Normalized splitlines vs prior ZIP/gitHEAD: only added two test blocks and dart:io import; no removed lines or altered original assertions."
+  },
+  "failedAttempts": [
+    {
+      "receipt": "build/ari-r3-05/part12-flashcard-compile-failed.json",
+      "sha256": "52fb12204b5626f0d586c40c23fa8b5d4d9c125a559d6f1e45502e51d95e89b7",
+      "reason": "Fixture nullable String owner assignment; compile error, not product RED.",
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "866bb68660a014f69429c83961dccba0afeab2604ccb9703d8c29de814ad1b08",
+          "fingerprint": "5128e462830a79a1ccfb719cce7ce0e443241b1ffbd86ec8ae4866e6b82b69a8",
+          "Status": "Failed",
+          "ExitCode": 1,
+          "StartedAt": "2026-09-23T21:18:58.3606681+00:00",
+          "FinishedAt": "2026-09-23T21:19:05.4311690+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-5128e462830a-6041820c\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-5128e462830a-6041820c\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "5128e462830a79a1ccfb719cce7ce0e443241b1ffbd86ec8ae4866e6b82b69a8",
+          "StdoutHash": "BCE1F7D2988113814CF75AEF8FB8D1FFCCEBC2BF7D9C2B264F243257E86CDE67",
+          "StderrHash": "F4A602739F8B2D4FB9B29C2873C84432063D96A7063275CF8425E2BD9E4799BC"
+        }
+      ]
+    },
+    {
+      "receipt": "build/ari-r3-05/part12-flashcard-io-failed.json",
+      "sha256": "563a539585cd0ec9ff07941b034121da417b5dc1306b432c9a557d27c086af24",
+      "reason": "Fixture awaited temporary-directory creation under widget fake async; terminated owned flutter_tester3704 after verifying parent11904 selector, moved creation into tester.runAsync. No product RED.",
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "866bb68660a014f69429c83961dccba0afeab2604ccb9703d8c29de814ad1b08",
+          "fingerprint": "ccde3da0bd604e3d8bbe01bc3a0cb66887e4e8dc179b7c0458bb6646f8ca71b4",
+          "Status": "Failed",
+          "ExitCode": 79,
+          "StartedAt": "2026-09-23T21:19:54.8836237+00:00",
+          "FinishedAt": "2026-09-23T21:20:47.5998805+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-ccde3da0bd60-9e845c38\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\866bb68660a0-ccde3da0bd60-9e845c38\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "ccde3da0bd604e3d8bbe01bc3a0cb66887e4e8dc179b7c0458bb6646f8ca71b4",
+          "StdoutHash": "E1247F1413C505944D4F306A7CA59B79DBF81E3FFCF62C6DD6429F2F4F78DD28",
+          "StderrHash": "E7F5629395CB09CF9303334192515B9A97CCAB60648599E4908546A80081DEC1"
+        }
+      ]
+    }
+  ],
+  "recoveries": [
+    {
+      "method": "String replacement assumed pre-format indentation",
+      "diagnosis": "dart format changed indentation;substring not found, no edit",
+      "corrected": "Inspect exact region and patch using actual anchors;keep source before rerun."
+    },
+    {
+      "method": "Flashcard fixture compile",
+      "diagnosis": "Seed session ownerId nullable",
+      "corrected": "Assert nonnull canonical owner from real setup;preserve failed receipt."
+    },
+    {
+      "method": "File-backed fixture tempdir creation",
+      "diagnosis": "Real filesystem awaited inside fake async before runAsync block",
+      "corrected": "Use tester.runAsync for createTemp;bounded pump/fileIO;terminate only identified owned tester. Second failed receipt preserved."
+    },
+    {
+      "method": "Guessed cloud policy application path",
+      "diagnosis": "Path nonexistent",
+      "corrected": "rg --files discovered domain/cloud_sync_policy.dart and data/drift_cloud_policy_cache.dart;read actual paths."
+    },
+    {
+      "method": "Historical receipt audit assumed selection/schema fields",
+      "diagnosis": "086/089/082 compact receipts omit selection;101/106/096 omit schema/head/time fields",
+      "corrected": "Inspect schema;resolve originals by actual commandKey/fingerprint/timestamps and log-derived head when absent;all14 originals/loghashes now verified."
+    }
+  ],
+  "limits": [
+    "5new cases plus32 revalidated cases=37 unique PASS. Two test files changed; no product defect/RED/fix. No part11 passed selections rerun.",
+    "Meaning quiz:actual standalone QuizScreen/MeaningQuizModeAdapter with real in-memory SQLite,2choice directions en/th then th/en,correct then wrong recognition,exact owner and no SRS. AI states are registry simulations, not provider authentication. No file reopen or route reentry claim.",
+    "Flashcard:actual screen/shell/controller/LearningUseCases/DriftRepository and file-backedSQLite. Existing seed recall creates SRS;SQL ABORT trigger prevents first answer insertion. Detached-AI manual retry writes one accepted independent recall, closes actual review session;remembered repetitions2/lapses0 or notremembered repetitions0/lapses1. All fixture tables equal after reopen. No exact command replay assertion, abrupt process death, full learner-data matrix or native audio claim.",
+    "Speaking4:repository and speech gateway doubles; pending saved=false,disconnect,one successful record/retry,late duplicate ignored,owner hidden,raw speech clear preserves receipt;bounded text. Not physical speech recognition or durable DB acceptance.",
+    "Shadowing28:existing full screen suite including owner provenance/reconnect,delayed ack,empty final,privacy,lifecycle and retry. Repository/recognizer doubles; no physical positive recognition,acoustic pronunciation,provider or durable DB certification.",
+    "No native action/build thispart;part09 APK/original byte-exact backup retained. Fresh transport and fresh backup required before every next native cycle. No liveJev/provider/cost/research."
+  ]
+}

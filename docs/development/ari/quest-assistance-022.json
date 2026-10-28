@@ -1,0 +1,25 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W10 quest status",
+  "baseCommit": "5f9c2d48068d5f8ff64a48aabaab4fa588cce656",
+  "implementation": [
+    "Read-only mounted owner-bound quest state and progress",
+    "Definition availability explicit; absent version never invents title or reward",
+    "Conditional XP distinguished from earned balance",
+    "First4 progress items and60codepoint title with explicit truncation flags",
+    "No new reward/claim/scoring action"
+  ],
+  "verification": {
+    "red": "New context assertion failed before implementation",
+    "green": "Whole quest status screen suite passed",
+    "analysis": "No issues found",
+    "newEvidence": "Real Drift daily quest refresh fixture, context state/definition/progress/reward semantics and owner switch hidden",
+    "existingRegression": "Daily transition, owner replacement, listener lifetime and unavailable definitions retained"
+  },
+  "open": [
+    "Native three connection modes",
+    "Shop and earned reward context",
+    "Specific truncated/missing definition context cases",
+    "Full W10/all14 acceptance"
+  ]
+}

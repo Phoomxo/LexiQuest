@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "packageId": "P0.2",
+  "testedHead": "a66285dae472045b9bffd215f55c505a535de7ff",
+  "testedSourceFingerprint": "5c1f005f74493ca3e5c2191630f95dbc1ff9f7ca0cb8da7af1fb3c39a4050d3b",
+  "inputManifest": "flutter-inputs.json",
+  "dependencyConfigFingerprint": "956e678ad351ef619b648b46f319432a0bcb21d3f0f7731883c96c5aabda6efc",
+  "repairManifest": "repair-manifest.json",
+  "verifiedAtUtc": "2026-09-13T03:42:04.1410036Z",
+  "gates": [
+    {
+      "command": "verify-scope.ps1 -Level Targeted -Area AI -TestTargets <11 targets in accepted repair report>",
+      "exitCode": 0,
+      "durationMs": 34754.9184,
+      "count": 155,
+      "targetCount": 11,
+      "fingerprint": "5c1f005f74493ca3e5c2191630f95dbc1ff9f7ca0cb8da7af1fb3c39a4050d3b",
+      "logs": "flutter-run.json; flutter-green.log; flutter-stderr.log"
+    },
+    {
+      "command": "powershell -NoProfile -File tool/cli/tests/r15-scope.tests.ps1",
+      "exitCode": 0,
+      "durationMs": 8627
+    },
+    {
+      "command": "python -B -m unittest discover -s tools -p test_camera_accuracy.py",
+      "exitCode": 0,
+      "durationMs": 1636
+    },
+    {
+      "command": "flutter analyze --no-pub lib/screens/ai_tutor_screen.dart test/screens/ai_tutor_screen_test.dart",
+      "exitCode": 0,
+      "durationMs": 6815
+    }
+  ],
+  "postGateInputAudit": {
+    "count": 1293,
+    "changed": 0
+  },
+  "reusedEvidence": "Historical RED/GREEN reviewed; no old runtime PASS promoted. 4 EOL differences and absent old Python/CLI environment pins required bounded current runs.",
+  "review": "Full six-file source/test diff and callers reviewed inline under no-subagent policy; no acceptance-blocking issue",
+  "externalGates": [
+    "Full release NOT RUN",
+    "Backend/Android/GPU NOT RUN",
+    "Live/device/human acceptance NOT RUN"
+  ],
+  "defects": [
+    "G02-OPS-01 closed: bounded projections after truncation",
+    "G02-OPS-02 closed: read_thread identity after invalid list limit",
+    "G02-OPS-03 closed: exact path after wildcard failure",
+    "G02-OPS-04 closed: PowerShell JSON timestamps are DateTime objects; typed subtraction replaces culture-sensitive string parsing; repaired evidence has four gates",
+    "G02-OPS-05 closed: raw analyzer log padding retained; log payloads excluded from whitespace check"
+  ]
+}

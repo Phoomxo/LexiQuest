@@ -1,0 +1,2 @@
+RUN: Firestore rules tests
+FAIL: Firestore rules tests (Failed); see C:\Users\Phet\.codex\worktrees\ecfd\LexiQuest\build\verification\6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa\45e1056f00f6-21d8c1a6d20a\Firestore-rules-tests.stdout.log and C:\Users\Phet\.codex\worktrees\ecfd\LexiQuest\build\verification\6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa\45e1056f00f6-21d8c1a6d20a\Firestore-rules-tests.stderr.log

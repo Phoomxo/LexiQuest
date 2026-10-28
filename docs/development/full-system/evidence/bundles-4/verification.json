@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-09-13-bundles-4",
+  "verifiedAtUtc": "2026-09-13T04:44:23.483377+00:00",
+  "baseSha": "9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe",
+  "kind": "orchestration-consistency",
+  "result": "passed",
+  "runtimeGatesRun": false,
+  "checks": {
+    "allPackageIdsExactlyOnce": 64,
+    "acceptedHistory": 5,
+    "remaining": 59,
+    "bundles": 20,
+    "technicalBriefBodiesUnchanged": 64,
+    "coverageRowsPreserved": 74,
+    "dependenciesAndPhaseOrder": "preserved",
+    "reviewBeforeSystemTestPlan": true,
+    "activeRelativeLinks": 611,
+    "futureDuplicateDispatches": 0,
+    "applicationChanges": 0,
+    "model": "gpt-6-astra",
+    "thinking": "medium"
+  },
+  "manifestPath": "docs\\development\\full-system\\evidence\\bundles-4\\source-manifest.json",
+  "manifestSha256": "3b2f44c3d82aa9fa6498ecdde01da728d7900e7311c8989596b332bf1f95c131",
+  "command": "python docs/development/full-system/evidence/bundles-4/verify_workflow.py",
+  "reusedEvidence": "G0.2/G0.4/G0.5 recorded gates; unchanged application/source/content inputs verified by semantic data and Git diff, not rerun",
+  "issues": [
+    {
+      "id": "B4-OPS-01",
+      "operation": "atomic control claim",
+      "actual": "File.Replace with null backup raised The path is empty; revision17 remained intact",
+      "rootCause": "PowerShell string binding passed empty path for null backup",
+      "fix": "Verify intact revision17 and exactly one prepared revision18 temp, then atomically replace with explicit nonempty backup path under lock",
+      "retest": "revision18 orchestration writer read back; revision17 backup retained",
+      "status": "closed",
+      "applicationImpact": "none"
+    },
+    {
+      "id": "B4-OPS-02",
+      "operation": "authoring migration helper through JavaScript",
+      "actual": "Unescaped Markdown backtick caused JavaScript SyntaxError before any tool ran",
+      "rootCause": "Nested literal delimiter collision",
+      "fix": "Use a neutral placeholder in authoring text and convert at file write",
+      "retest": "Migration helper exited0; requirement and data preservation independently validated here",
+      "status": "closed",
+      "applicationImpact": "none"
+    },
+    {
+      "id": "B4-DOC-01",
+      "operation": "git diff --check inside workflow validation",
+      "actual": "Exit2 for trailing whitespace on changed Master revision header; earlier requirement/coverage checks passed",
+      "rootCause": "Markdown hard-break spaces inherited on a modified line",
+      "fix": "Remove trailing spaces from that line; retain EOL notices in structured diagnostics and capture tool output",
+      "retest": "This successful complete orchestration validation, including diff check",
+      "status": "closed",
+      "applicationImpact": "none"
+    }
+  ]
+}

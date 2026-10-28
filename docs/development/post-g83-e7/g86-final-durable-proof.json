@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "baseline": "g86-reading-after-completion-db",
+  "final": "g86-final-preview-db",
+  "priorAttemptsUnchanged": 47,
+  "newAttempts": 1,
+  "newAttemptMode": "associativeRecall",
+  "newReadingSessionId": "reading:0ebaffff-eaf3-41d3-8d7a-c0caf26e4fe1",
+  "newSessionResult": "completed1/1",
+  "newRewardRows": 1,
+  "speechOrScratchpadAttempts": 0,
+  "researchTablesUnchanged": [
+    "research_consents",
+    "experiment_assignments",
+    "research_participation_permits",
+    "research_session_proofs"
+  ],
+  "allSessionsTerminal": true,
+  "cueFadingRecovery": {
+    "sessionId": "reading:3b9d8257-f51e-49a9-ad3f-cd1cc86e3bcf",
+    "stageBefore": 2,
+    "stageAfter": 6,
+    "originalPassageIdentityAndPinsUnchanged": true
+  },
+  "snapshots": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d21-stage2-db\\rows.json",
+      "sha256": "f2c25696e2f4226ba07bd7a836e20c8deccd01f7eee5ab467c9ea67f0ddd4df5"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-reading-after-completion-db\\rows.json",
+      "sha256": "94e13baf585b1d703a949d01765a4f1e79eef99af6b1add9a2e1af3bdca04214"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-final-preview-db\\rows.json",
+      "sha256": "932d2da0d266dde7c6d4971cc454211e2b65defe03756f7434450076a5840894"
+    }
+  ]
+}

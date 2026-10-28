@@ -1,0 +1,767 @@
+[
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-config-scrolled.png",
+    "sha256": "3c51c71262253c4c947d0f6ea2690be2c750299b05bc555863e9b187ce64a89e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3c51c71262253c4c-g87-320-config-scrolled.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-config-scrolled.xml",
+    "sha256": "0adc6512e4cf9c74020eb26e44ca0480144a00e296120d29b25addc578889e20",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\0adc6512e4cf9c74-g87-320-config-scrolled.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-config.png",
+    "sha256": "3c19d4800dfbb2f50836915051549c41cdee45c3461cc0fd5e83229925dfa11d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3c19d4800dfbb2f5-g87-320-config.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-config.xml",
+    "sha256": "f7be3e9b308d87bf604da4bd82c502d7c2a983baf0183fcdd44aef1561c307d5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f7be3e9b308d87bf-g87-320-config.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-dpad-activation.png",
+    "sha256": "6588eb153dfc54b7a684dbe4723bbd26ec03dbe6d41d01ea07afa2995c23cc7e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6588eb153dfc54b7-g87-320-dpad-activation.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-dpad-activation.xml",
+    "sha256": "6b3b250707abc6d6553d3bb6bb99ab97b9f69ac083fe8989e6c9c00a12a091f6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6b3b250707abc6d6-g87-320-dpad-activation.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-exit-0.png",
+    "sha256": "0287b59e9953c30043daa2e7c8503d43c917a802b032888a8b61f3a194c0badb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\0287b59e9953c300-g87-320-exit-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-exit-0.xml",
+    "sha256": "1d3bf7a579cb0cf8d22541715c0331277aa2c1a90ba5e3bce3e0880ad4b8c085",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1d3bf7a579cb0cf8-g87-320-exit-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-feedback-scroll.png",
+    "sha256": "8c870dd729cc4868372894f358b3d2d353c5bd78300e959b7dd2fa5af6cb4a8c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8c870dd729cc4868-g87-320-feedback-scroll.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-feedback-scroll.xml",
+    "sha256": "5d7eafcc8f17c8329eee8b8d939835e4baa9df677212efc6822c6c405db7d827",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5d7eafcc8f17c832-g87-320-feedback-scroll.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-focus.png",
+    "sha256": "60792e748662e827a1aba0041f93333f74123301c0a9f980ea8d47abc6cdfe6c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\60792e748662e827-g87-320-focus.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-focus.xml",
+    "sha256": "ad8c6f45cf632876e2dd1a6d573d9af0ef33d8ef6bdada6c9862ec2deb7053a7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ad8c6f45cf632876-g87-320-focus.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-keyboard-activation.png",
+    "sha256": "7ba2793aad9faf979626c37692698c26ea2366ddad271cd596e23bef8b5b895e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\7ba2793aad9faf97-g87-320-keyboard-activation.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-keyboard-activation.xml",
+    "sha256": "152fd6c33a60d75b76c412abbf20ea4c68c90bf11f6f272ad003a7b1b1a5edea",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\152fd6c33a60d75b-g87-320-keyboard-activation.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-quiz-open-0.png",
+    "sha256": "3201546932873ed0f593385982e6cb2ec70da1e3b429a9b73d0367d3cbc04d82",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3201546932873ed0-g87-320-quiz-open-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-quiz-open-0.xml",
+    "sha256": "c05b97b30104543c196fab7f9ca8bed836b11e03cca33261ae8af046568a7d1e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\c05b97b30104543c-g87-320-quiz-open-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-quiz.png",
+    "sha256": "70c369f46dbff8dc14719ca3d8ebaa681588cad3ef47dfaa5f147b365fe2f0b6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\70c369f46dbff8dc-g87-320-quiz.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-quiz.xml",
+    "sha256": "2fab0c8572bb99aa277b672d3736c00444304e34e5600999abcd03b8fe8cd004",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\2fab0c8572bb99aa-g87-320-quiz.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-repair-back-0.png",
+    "sha256": "6588eb153dfc54b7a684dbe4723bbd26ec03dbe6d41d01ea07afa2995c23cc7e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6588eb153dfc54b7-g87-320-repair-back-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-repair-back-0.xml",
+    "sha256": "6b3b250707abc6d6553d3bb6bb99ab97b9f69ac083fe8989e6c9c00a12a091f6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6b3b250707abc6d6-g87-320-repair-back-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-0.png",
+    "sha256": "dd68bf168e4eff0bd791ecb7f976b9b15ef66d4addb3e65b8e77dacffcbad148",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\dd68bf168e4eff0b-g87-320-result-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-0.xml",
+    "sha256": "5d7eafcc8f17c8329eee8b8d939835e4baa9df677212efc6822c6c405db7d827",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5d7eafcc8f17c832-g87-320-result-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-scroll.png",
+    "sha256": "ec00e1f50b9171cb2aaf216cefeba613e7d23510e66d4c536e0de0fb4fec8f17",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ec00e1f50b9171cb-g87-320-result-scroll.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-scroll.xml",
+    "sha256": "1d3bf7a579cb0cf8d22541715c0331277aa2c1a90ba5e3bce3e0880ad4b8c085",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1d3bf7a579cb0cf8-g87-320-result-scroll.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-view.png",
+    "sha256": "8fc20273b6245a205fac895f85404592dc0fd607c3c8664664275b4bc59c7934",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8fc20273b6245a20-g87-320-result-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-result-view.xml",
+    "sha256": "293b2f5f6e82af59f18b1a46aa0564aa72ae7fb2d0e4b14fc429822f76481b40",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\293b2f5f6e82af59-g87-320-result-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-return-feedback.png",
+    "sha256": "d037bf219e8ac30296cd8bc6cdc78698f191f0c77d5455dc523cfdd86ae6c90a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\d037bf219e8ac302-g87-320-return-feedback.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-return-feedback.xml",
+    "sha256": "50acbd1a533f12529292c4bebad08cdc87e76cb68c797208d5d63888736b5ec0",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\50acbd1a533f1252-g87-320-return-feedback.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-return-home.png",
+    "sha256": "229c3b37d7bcb19fc06d9157f7e79cc52161a2d3b700ad1a4b01c47148d97255",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\229c3b37d7bcb19f-g87-320-return-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-return-home.xml",
+    "sha256": "e3c4c40a36acf5c1aea280343622a74145913d19c3cf8ef75864b10e02c5fe5d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e3c4c40a36acf5c1-g87-320-return-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-start-0.png",
+    "sha256": "64bc52524c984dba5ac5b3d2f60a0e1df361eab71e1c1c9b3985f1e60d4148b8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\64bc52524c984dba-g87-320-start-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-start-0.xml",
+    "sha256": "0adc6512e4cf9c74020eb26e44ca0480144a00e296120d29b25addc578889e20",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\0adc6512e4cf9c74-g87-320-start-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-text200-dark-home.png",
+    "sha256": "97101fd354879280a7ae16d618e6377c6c54e692e2bf267690bb9f9f451e99b6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\97101fd354879280-g87-320-text200-dark-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-320-text200-dark-home.xml",
+    "sha256": "08139bea7f96dc4c311cedfe05cb8238bd51adeba997d3ba86d6a69d5430ffc4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\08139bea7f96dc4c-g87-320-text200-dark-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-choice-0.png",
+    "sha256": "1b3704d7ee12aee8bad63feb3841865b916d7a1b06774d5234946ec10db61717",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1b3704d7ee12aee8-g87-390-choice-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-choice-0.xml",
+    "sha256": "b257d763cd473aeedec4442683fc24ff2c89ee82c129fd9970e9aacb5d518082",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\b257d763cd473aee-g87-390-choice-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-count-field.png",
+    "sha256": "57057712cda5490a16b19d1ad8ccf1881aded674707192e92ec5877c343988d6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\57057712cda5490a-g87-390-count-field.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-count-field.xml",
+    "sha256": "b551cb432ef445210a1cfe48daf5816932a23838e70589f06602d27a01cb46e6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\b551cb432ef44521-g87-390-count-field.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-english-light-home.png",
+    "sha256": "cb83f88581a23036a42874bd8959532fbd582238913f26dd11f8b945f22abbc8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\cb83f88581a23036-g87-390-english-light-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-english-light-home.xml",
+    "sha256": "e00b179bb1bd6c2146c30dba85a74aee673bb47cf4ae12d63d7628fb89d47623",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e00b179bb1bd6c21-g87-390-english-light-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-exit-0.png",
+    "sha256": "bd35561e82da5ea156a43a745ae76c1d851412b4b78843692ea03540ce1d02f1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\bd35561e82da5ea1-g87-390-exit-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-exit-0.xml",
+    "sha256": "561668979d63b8c657985de2c40fc9baca7967271bdd1ab66232d10ccaac1a79",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\561668979d63b8c6-g87-390-exit-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-feedback.png",
+    "sha256": "48095a51d02afe27125e00e74007f8cea6df31b67053fb9e9063cf048d94638c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\48095a51d02afe27-g87-390-feedback.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-feedback.xml",
+    "sha256": "0cbf555a08812745c37ab35784971abda0e8692e595ba533c49053c0d394a9de",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\0cbf555a08812745-g87-390-feedback.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-keyboard-open.png",
+    "sha256": "a19b07c10865bba2c89c805750f521ac144a1a178a6d703491f5658f9d353af4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a19b07c10865bba2-g87-390-keyboard-open.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-keyboard-open.xml",
+    "sha256": "eae7df2cd2e029447a287757cb09e61e4429c90b5805f940a118a86887fd4de4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\eae7df2cd2e02944-g87-390-keyboard-open.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-keyboard-result.png",
+    "sha256": "f95119d475570dbd5d1686fd97375555bdd31742b432339fcae39d87c778d1d7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f95119d475570dbd-g87-390-keyboard-result.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-keyboard-result.xml",
+    "sha256": "dcb59ac69f37ad0ff9a1b7204be53c7a31af36cfdf462fbab8742705ea4015f1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\dcb59ac69f37ad0f-g87-390-keyboard-result.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-next-0.png",
+    "sha256": "4c92509b522b705f7c06afc1a9f10014825a87099bc0a81358c84b88227571f8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\4c92509b522b705f-g87-390-next-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-next-0.xml",
+    "sha256": "61b9ed737a2691ad8a8c2097b18594e8cae6ceafdc354aa45496f2e31f845628",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\61b9ed737a2691ad-g87-390-next-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-options-0.png",
+    "sha256": "8767c6b7d2a8bb222ba104915da76cf29510680c3d68b3b9bd18b69ab26b4c19",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8767c6b7d2a8bb22-g87-390-options-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-options-0.xml",
+    "sha256": "ebf878007002b1da1985591804a406c2c6901aefb2d5d504779134b30abd6b6a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ebf878007002b1da-g87-390-options-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-options-view.png",
+    "sha256": "b1e2217a5c799960d45e7082e7316e614b88b448d4b9a9ed84e0a28789ef769b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\b1e2217a5c799960-g87-390-options-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-options-view.xml",
+    "sha256": "b551cb432ef445210a1cfe48daf5816932a23838e70589f06602d27a01cb46e6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\b551cb432ef44521-g87-390-options-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-result-0.png",
+    "sha256": "206a0c4ddae56937cc5b769e3ff43010526059c515c438fe307a9d75be157793",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\206a0c4ddae56937-g87-390-result-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-result-0.xml",
+    "sha256": "f257ef9fb61a74df0e8c81cea58666c502232478646453f83cec8fed560bbcad",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f257ef9fb61a74df-g87-390-result-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-result-view.png",
+    "sha256": "f0351c4ae8c041437a0a0c9f0f2b32866e783c5a8f31cdfb0483c1c4b35a9986",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f0351c4ae8c04143-g87-390-result-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-result-view.xml",
+    "sha256": "561668979d63b8c657985de2c40fc9baca7967271bdd1ab66232d10ccaac1a79",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\561668979d63b8c6-g87-390-result-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-return-home.png",
+    "sha256": "7e8f520be8d7e78ef4bfaa2e854e552376bf8459bcb68fe22eec70e63df252e0",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\7e8f520be8d7e78e-g87-390-return-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-return-home.xml",
+    "sha256": "f57f88597aba56d4d12cd767ed7879a19f515ba369c07b81db1a15de3df4c8c0",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f57f88597aba56d4-g87-390-return-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-start-0.png",
+    "sha256": "310733fdcb6723034c9b0c4e248e38b40145bb35d203bc81bfff67443f0ae5bd",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\310733fdcb672303-g87-390-start-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-start-0.xml",
+    "sha256": "9816e0133c429f092ba83ce50b24ed0a2f89187d0fc2601429dbb4d057d893e2",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\9816e0133c429f09-g87-390-start-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-typed-0.png",
+    "sha256": "8219de48f588499e00b01cd77afb44d86a3749ff1c4479a2664f1524222b7b30",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8219de48f588499e-g87-390-typed-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-typed-0.xml",
+    "sha256": "e00b179bb1bd6c2146c30dba85a74aee673bb47cf4ae12d63d7628fb89d47623",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e00b179bb1bd6c21-g87-390-typed-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-typed-input.png",
+    "sha256": "6239a81cc10c56ecf7620525c1256cf92ed94a856740f2d8128fb74d5043e5c0",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6239a81cc10c56ec-g87-390-typed-input.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-390-typed-input.xml",
+    "sha256": "a11041c5ac0ac79e5fc21f6227bd8a4c99f4e7fb5987cc78e19c8715d58a1d40",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a11041c5ac0ac79e-g87-390-typed-input.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-progress-0.png",
+    "sha256": "345aee653618ea36e1480861eeb4ade08a44164a9f8c22a5a9a8d26f042dac69",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\345aee653618ea36-g87-840-progress-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-progress-0.xml",
+    "sha256": "ba29b3123ba5d55600a6a3a3d8282a69493165e5e367801a9991c6c9ba8fb10c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ba29b3123ba5d556-g87-840-progress-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-progress-view.png",
+    "sha256": "6c36bc15caedc3bd0861cad5daf317f1f2ff75a6cabb3d80a786579d2625452b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6c36bc15caedc3bd-g87-840-progress-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-progress-view.xml",
+    "sha256": "3610001379b06d5147efd8d79bf58f5679cb1c027d9ea07a245a97c71f9a43a8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3610001379b06d51-g87-840-progress-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-text200-english-home.png",
+    "sha256": "345aee653618ea36e1480861eeb4ade08a44164a9f8c22a5a9a8d26f042dac69",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\345aee653618ea36-g87-840-text200-english-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-840-text200-english-home.xml",
+    "sha256": "ba29b3123ba5d55600a6a3a3d8282a69493165e5e367801a9991c6c9ba8fb10c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ba29b3123ba5d556-g87-840-text200-english-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-focus-db\\lexiquest.sqlite",
+    "sha256": "fef01baa36024a3fdcb7d21d449e0a0a88e6a98b29b66efb704343f92c0044e1",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\fef01baa36024a3f-lexiquest.sqlite"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-focus-db\\rows.json",
+    "sha256": "0dee98d7c4588969277e68be20eba375b52345c7c15382359db876c2e2b8c3e4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\0dee98d7c4588969-rows.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-resource-db\\lexiquest.sqlite",
+    "sha256": "22176c29dd736a7f7007ab04d41f712bce2b9b304fe6d6ee034a3b98dd5f8b54",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\22176c29dd736a7f-lexiquest.sqlite"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-resource-db\\rows.json",
+    "sha256": "5a993159f50d863b3dff8ebcbe77523eb45d2e40e4e454f068d9986e19a0b6cf",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5a993159f50d863b-rows.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-timezone-db\\lexiquest.sqlite",
+    "sha256": "6d1f9651e3c9c2e391a223192ea1422785b66af301c50e7e7755601b851dc704",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6d1f9651e3c9c2e3-lexiquest.sqlite"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-timezone-db\\rows.json",
+    "sha256": "18552a3cb2f21341a2fcaf8fd41f6b8301fb38c3eba7b399e61d19d9265be30e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\18552a3cb2f21341-rows.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-app-storage-detail.txt",
+    "sha256": "ec791dc1ffac595af1fff0b720a184f88af6cdeb28dd976b9af4e0dccda82f5b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ec791dc1ffac595a-g87-app-storage-detail.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-app-storage-sizes.json",
+    "sha256": "93cfc7d7e09ec03b8883cbe528d8dad15b0a1fe8f2485c9a9008f684babe218b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\93cfc7d7e09ec03b-g87-app-storage-sizes.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-before-timezone-db\\lexiquest.sqlite",
+    "sha256": "f82f7d0d09b3d1397df384084a1951efa824069fe142478214bdcdf80056362d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f82f7d0d09b3d139-lexiquest.sqlite"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-before-timezone-db\\rows.json",
+    "sha256": "304f7af0d9532a1578fa44d7472b8e0069f7abb54089cc2f38e91e9b96ec4422",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\304f7af0d9532a15-rows.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-disk-content.log",
+    "sha256": "3412abea55f388cd588500b7a1c4e5df8fbcc5498e3908129d2f9db5c305e132",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3412abea55f388cd-g87-disk-content.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-background-return.png",
+    "sha256": "9cc2ff63c08e3c36857b34abdc4eef36e274ae7c60897680e6bf31c7a41ef281",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\9cc2ff63c08e3c36-g87-focus-background-return.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-background-return.xml",
+    "sha256": "5c14028e1417201ec5a18465e577260a99e90b1b9dd9385e8f8ee83b81855543",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5c14028e1417201e-g87-focus-background-return.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-config.png",
+    "sha256": "1d0556ebdb92919669b90b4ddd87fe82b93a7719468eba9c3efa8b5ff52ff1e7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1d0556ebdb929196-g87-focus-config.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-config.xml",
+    "sha256": "4b066483685abdc5a82312683f53444a1c115f5f36e4c644be98a12ba6e263f5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\4b066483685abdc5-g87-focus-config.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-confirm-exit-0.png",
+    "sha256": "cea656b54d1a31ef29b4e9cea09b1fe4fc11b261541b2c2e272d3bdf4c7ef87e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\cea656b54d1a31ef-g87-focus-confirm-exit-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-confirm-exit-0.xml",
+    "sha256": "9b3f6155ad2d30024210a526723081cfeca66483828e94a6c063e64fd4fd75dc",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\9b3f6155ad2d3002-g87-focus-confirm-exit-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-enter-0.png",
+    "sha256": "54ad3cc5246616fbf5ea28bd3b876cc84d72ab7a8e9426a79dc79ca515c31cec",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\54ad3cc5246616fb-g87-focus-enter-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-enter-0.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8cb2b6e467bee8d5-g87-focus-enter-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-exit-0.png",
+    "sha256": "d9003a554f0c617e5336d45af972c8e36233915ac03eadc8f5005fc706290efb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\d9003a554f0c617e-g87-focus-exit-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-exit-0.xml",
+    "sha256": "f58be426b796f63ded37ded2235d5d6a68812bda1ef0d9d8aeb08098a8ba3ca7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f58be426b796f63d-g87-focus-exit-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-exit-view.png",
+    "sha256": "cea656b54d1a31ef29b4e9cea09b1fe4fc11b261541b2c2e272d3bdf4c7ef87e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\cea656b54d1a31ef-g87-focus-exit-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-exit-view.xml",
+    "sha256": "9b3f6155ad2d30024210a526723081cfeca66483828e94a6c063e64fd4fd75dc",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\9b3f6155ad2d3002-g87-focus-exit-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-finish-0.png",
+    "sha256": "9df3509d4074402286d532aaf2c932dd9f577f04dad418c75cac0827c77fa838",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\9df3509d40744022-g87-focus-finish-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-finish-0.xml",
+    "sha256": "a3cfffba69116ac9408132ecc3aea491c83eb1fe34a69e2670720a60e835913a",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a3cfffba69116ac9-g87-focus-finish-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-finished.png",
+    "sha256": "d9003a554f0c617e5336d45af972c8e36233915ac03eadc8f5005fc706290efb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\d9003a554f0c617e-g87-focus-finished.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-finished.xml",
+    "sha256": "f58be426b796f63ded37ded2235d5d6a68812bda1ef0d9d8aeb08098a8ba3ca7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\f58be426b796f63d-g87-focus-finished.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-home.png",
+    "sha256": "8de0d7f28a2d445f60ece7d1d4b5c66a0c2fb1323889aad842ed976106ff7bc3",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8de0d7f28a2d445f-g87-focus-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-home.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8cb2b6e467bee8d5-g87-focus-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-lesson.png",
+    "sha256": "2f86bb6c393cddc12632ef75c81f4df15c3d6558e2490da050761aa7f67651c3",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\2f86bb6c393cddc1-g87-focus-lesson.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-lesson.xml",
+    "sha256": "313add595b22a4a5ed0ee9eff8d345f4e86031f470b4eb788d65560141c2f62e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\313add595b22a4a5-g87-focus-lesson.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-local.log",
+    "sha256": "a491a739e9da9da2c743d659bf94bfd448c42a3a535e1cd4988dac5207371746",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a491a739e9da9da2-g87-focus-local.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-pause-0.png",
+    "sha256": "ecc448dca0b1b7ffe7e583e490a309d6632817926d956302980c50a6fb153205",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ecc448dca0b1b7ff-g87-focus-pause-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-pause-0.xml",
+    "sha256": "4adfcb23eee8e581525b8944f1ee85bbeba2c8e333e4284310fd7703bfdb2d7f",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\4adfcb23eee8e581-g87-focus-pause-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-paused-stable.png",
+    "sha256": "1769820cba905d0ef1abb6c0382aaea17d80015bee9155cf3315bb99aa9d378c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1769820cba905d0e-g87-focus-paused-stable.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-paused-stable.xml",
+    "sha256": "8e33f178874fb9b792c117fc18b621adf60578847dd5a4eae679b7580e1c9108",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8e33f178874fb9b7-g87-focus-paused-stable.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-paused.png",
+    "sha256": "dcf273bd50b8365a77fbd5a126afba4fd894345920b6693748ae09f690981bfa",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\dcf273bd50b8365a-g87-focus-paused.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-paused.xml",
+    "sha256": "8e33f178874fb9b792c117fc18b621adf60578847dd5a4eae679b7580e1c9108",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8e33f178874fb9b7-g87-focus-paused.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-preview-build.log",
+    "sha256": "e0f5ea42645c8818fcb4bdd8159178333fc4e3fd712154407a9786aff02adf87",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e0f5ea42645c8818-g87-focus-preview-build.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-preview-offline-build.log",
+    "sha256": "37a4a73cdfb50e94d80938f619d8fd5047d156965edbab678fc83b8439713ca3",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\37a4a73cdfb50e94-g87-focus-preview-offline-build.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-preview-pin.json",
+    "sha256": "6ad2dacd2b32f4c38b7637172f40ba385cf3337d9302cb845fb70c56dbab79b3",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\6ad2dacd2b32f4c3-g87-focus-preview-pin.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-resume-0.png",
+    "sha256": "1769820cba905d0ef1abb6c0382aaea17d80015bee9155cf3315bb99aa9d378c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1769820cba905d0e-g87-focus-resume-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-resume-0.xml",
+    "sha256": "8e33f178874fb9b792c117fc18b621adf60578847dd5a4eae679b7580e1c9108",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8e33f178874fb9b7-g87-focus-resume-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-resume-second-0.png",
+    "sha256": "09819796149aa56abed4788622b89e0808fa64f1f0d311b84a940f157afa3cc6",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\09819796149aa56a-g87-focus-resume-second-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-resume-second-0.xml",
+    "sha256": "5c14028e1417201ec5a18465e577260a99e90b1b9dd9385e8f8ee83b81855543",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5c14028e1417201e-g87-focus-resume-second-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-returned-home.png",
+    "sha256": "ab7fa56262da71ffa6dd9079976598cb84c72d0dbc15a649280acab7b23576ea",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ab7fa56262da71ff-g87-focus-returned-home.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-returned-home.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\8cb2b6e467bee8d5-g87-focus-returned-home.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-running.png",
+    "sha256": "804e6d1f4748133ac0947c8c7b3482f31902e7501bff9fd1495f8ad153754c99",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\804e6d1f4748133a-g87-focus-running.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-running.xml",
+    "sha256": "e81e3fb30e8be2fb8247d66074df6881cae66652acb332913009539e135e13ba",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e81e3fb30e8be2fb-g87-focus-running.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-runtime.log",
+    "sha256": "2cbb6bf42de13e120a8209044bd72192ed13d38a2845b4e3722012dabcd51a9d",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\2cbb6bf42de13e12-g87-focus-runtime.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-startlesson-0.png",
+    "sha256": "1d0556ebdb92919669b90b4ddd87fe82b93a7719468eba9c3efa8b5ff52ff1e7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1d0556ebdb929196-g87-focus-startlesson-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-startlesson-0.xml",
+    "sha256": "4b066483685abdc5a82312683f53444a1c115f5f36e4c644be98a12ba6e263f5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\4b066483685abdc5-g87-focus-startlesson-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-timer-start-0.png",
+    "sha256": "2f86bb6c393cddc12632ef75c81f4df15c3d6558e2490da050761aa7f67651c3",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\2f86bb6c393cddc1-g87-focus-timer-start-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-focus-timer-start-0.xml",
+    "sha256": "313add595b22a4a5ed0ee9eff8d345f4e86031f470b4eb788d65560141c2f62e",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\313add595b22a4a5-g87-focus-timer-start-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-layout-320-logcat.txt",
+    "sha256": "a396f8cb5993502dfc72f39e1aef8ba9f2b29f1ffd9ae4c0df80ebf96172f530",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a396f8cb5993502d-g87-layout-320-logcat.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-memory-after-close.txt",
+    "sha256": "c7a933f3c9cd21c8ac6956efd8f7fc5df6e619ab75b8d1034426b35f5294d035",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\c7a933f3c9cd21c8-g87-memory-after-close.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-memory-baseline.txt",
+    "sha256": "023b3acccae6279dcc4e6484e819c6151868629a5fb53e605d27084b18779229",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\023b3acccae6279d-g87-memory-baseline.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-memory-loaded.txt",
+    "sha256": "07c3fe601e86a6848ce75c3f9cdbb20873f51c68bd4f2182a5e815e7a4a4edf7",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\07c3fe601e86a684-g87-memory-loaded.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-memory-peak.txt",
+    "sha256": "1c341b69db8c11716cac7ef1452eb9175b39cea20ab00810adbe27e85eeaccc4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\1c341b69db8c1171-g87-memory-peak.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-original-device-settings.json",
+    "sha256": "7c7ac9479325394df954bbe2fc51f5f7040aaf743b0a84d943418913b16a0f66",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\7c7ac9479325394d-g87-original-device-settings.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-repository-fault.log",
+    "sha256": "a69cfb4eaeb443b72839f70c288314c841b47ba1616b524dcfedb96179bb76cb",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\a69cfb4eaeb443b7-g87-repository-fault.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-analyze-final.log",
+    "sha256": "267d2c860bce4cfdfbab605088d8cbc9317db5c7e10295549a41dc94ad964287",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\267d2c860bce4cfd-g87-resource-analyze-final.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-analyze.log",
+    "sha256": "190955d768640975366b6e210cfca58268766cd4cbe0319f56fec0552eab2064",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\190955d768640975-g87-resource-analyze.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-build.log",
+    "sha256": "3be0744038c1117fa3097d33f75224aa62ab31f4306840435cc090cd9e4a9b2b",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3be0744038c1117f-g87-resource-build.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-host-corrected.log",
+    "sha256": "dcc99036e2bb40b6d4cffd1326e533aa6e18a2b42f2ad812a21b12b3e11f1f87",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\dcc99036e2bb40b6-g87-resource-host-corrected.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-host.log",
+    "sha256": "078889e786355851bccf326b504ac2601b0f4067a420ae1bc2e2e0c824973695",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\078889e786355851-g87-resource-host.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-launch.log",
+    "sha256": "5a24d1c3e1658d668b19303b4d0f6e54dec631b421f71a525e51c143c6e10ca0",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\5a24d1c3e1658d66-g87-resource-launch.log"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-logcat.txt",
+    "sha256": "41834deb8e35507a0608e672d07faa31703c4ac12c51d5f618844727d9aaed3c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\41834deb8e35507a-g87-resource-native-logcat.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-result.json",
+    "sha256": "06e0a58072067e50ec78c16bb570312a249b30869471eec7bfa4c9a0794dee09",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\06e0a58072067e50-g87-resource-native-result.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-screen.png",
+    "sha256": "62ca4c16339e33fc9a7caa240170b00777dbfd083632f73a2e436b454a296c05",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\62ca4c16339e33fc-g87-resource-native-screen.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-restored-device-settings.json",
+    "sha256": "7c7ac9479325394df954bbe2fc51f5f7040aaf743b0a84d943418913b16a0f66",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\7c7ac9479325394d-g87-restored-device-settings.json"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-kiritimati-device.txt",
+    "sha256": "4cda4cb5bc0cbb46c97e3fcc04f5d4b675c0717213605b6ae71d40aaa0b78657",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\4cda4cb5bc0cbb46-g87-timezone-kiritimati-device.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-kiritimati-progress-0.png",
+    "sha256": "e8cdebd4893ce36af890920bd1df02fcd894641ee750be27f50accaa28e0bef4",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\e8cdebd4893ce36a-g87-timezone-kiritimati-progress-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-kiritimati-progress-0.xml",
+    "sha256": "ba29b3123ba5d55600a6a3a3d8282a69493165e5e367801a9991c6c9ba8fb10c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ba29b3123ba5d556-g87-timezone-kiritimati-progress-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-kiritimati-view.png",
+    "sha256": "d487ee743f4dd759ecad34e4615eb46828eec5f2a99491ffecf920aab422fb68",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\d487ee743f4dd759-g87-timezone-kiritimati-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-kiritimati-view.xml",
+    "sha256": "3610001379b06d5147efd8d79bf58f5679cb1c027d9ea07a245a97c71f9a43a8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3610001379b06d51-g87-timezone-kiritimati-view.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-pago-device.txt",
+    "sha256": "055ddaf94feaf2c18f1e40c7891206345afdab77720914e0c9a602ef7cb51652",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\055ddaf94feaf2c1-g87-timezone-pago-device.txt"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-pago-progress-0.png",
+    "sha256": "dda0ebac3261587d52b8277fca490841660f02267b79de8a805eb0feb085aaa5",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\dda0ebac3261587d-g87-timezone-pago-progress-0.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-pago-progress-0.xml",
+    "sha256": "ba29b3123ba5d55600a6a3a3d8282a69493165e5e367801a9991c6c9ba8fb10c",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\ba29b3123ba5d556-g87-timezone-pago-progress-0.xml"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-pago-view.png",
+    "sha256": "d2f4f108e898d9cc42180e520c005edb1fd633664f9c1d6431d40ae47feb0059",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\d2f4f108e898d9cc-g87-timezone-pago-view.png"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-timezone-pago-view.xml",
+    "sha256": "3610001379b06d5147efd8d79bf58f5679cb1c027d9ea07a245a97c71f9a43a8",
+    "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\native-evidence\\3610001379b06d51-g87-timezone-pago-view.xml"
+  }
+]

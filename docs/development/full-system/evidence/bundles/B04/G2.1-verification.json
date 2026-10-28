@@ -1,0 +1,35 @@
+{
+  "packageId": "G2.1",
+  "bundleId": "B04",
+  "status": "accepted-local-automated",
+  "baseSha": "4ba53881ac8871387aa965c0539632ac011f6b67",
+  "verification": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/targeted-learning-fb11f258dc063e15cd9b9de713842330ef6e4b6a028e69867f36a737c1c2b61b.json",
+  "testsPassed": 203,
+  "fingerprint": "5e9f55342795ec1d9ce517fff893a818e5091cee9d2ccb0f2e9e7148afe121b6",
+  "inputClosureCompared": true,
+  "changedInputsAfterPass": [],
+  "acceptance": {
+    "COV-f05": "Shell layout and committed feedback; existing controller lifecycle/idempotent acknowledgement tests passed",
+    "COV-f38": "Real14-mode accessibility semantic matrix, system inset and focus tests passed",
+    "COV-f39": "Existing shared M3 tokens retained; minimum48, unrounded4.5 contrast and platform reduced-motion tests passed",
+    "A-UI": "Changed T03 matrix12 cases widths320/390/840 x scale1/2 x light/dark, realThai fonts, keyboard activation, feedback/CTA visible; screenshots captured",
+    "UI-01–12/T01–07": "T03 delta only; unchanged template authorities retained per spec. No scanner/tutor/dashboard runtime rewrite or new activation. Owner packages retain broader journey/device gates.",
+    "G2": "Contributes shell foundation; whole phase gate remains G2.8/B06"
+  },
+  "designDecision": "Bounded loose-flex auxiliary scroll preserves natural short content and at least half remaining height for mode. Unavailable explanation uses natural text height; bounded standalone feedback scrolls. No animated callbacks or evidence writes.",
+  "review": {
+    "method": "single-writer diff/callers/acceptance review per no-subagent rule",
+    "findings": "No unresolved required code findings",
+    "compatibility": "No schema, event, reward, controller authority, persisted preferences, routes or activation changes"
+  },
+  "visualReview": [
+    "320 scale2 dark",
+    "390 scale2 light",
+    "840 scale2 light"
+  ],
+  "externalGates": [
+    "Physical device/TalkBack manual acceptance NOT RUN; later G7/G8",
+    "Effective service tier unverified"
+  ],
+  "guardrailHistory": "Repeated failure stopped/reported at revision45; master authorized same-task resume; geometry confirmed nested96px clipping; all historical raw logs retained."
+}

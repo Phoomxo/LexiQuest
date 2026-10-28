@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B01",
+  "status": "passed",
+  "kind": "final-package-review",
+  "baseSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+  "reusedGates": {
+    "G0.6": "ab3c97d0a6d51decc453cd7061c8e51d6cadfab56aa6e7a249e64f418f1b4aa2",
+    "G0.7": "fb7d7756fb50d29ff4840357cdddf440424cf181ec787527f30fdc89a959dcad",
+    "G0.8": "50363acce548e05684d8c1ea463a55b9cf5d667997a7c469e1cd0f6f834195e5"
+  },
+  "reportSha256": "0e8759ec1ffd1b8ad82a8035e2ff8d8f0d7dfdee5e5feebd6b65f534f37dba88",
+  "reportLinks": 8,
+  "defectsSha256": "4daf7b255dfae39f3a2d13066607fab35f6658efab5d02ec9b65821bbac6d681",
+  "openOwnedDefects": [
+    "B01-FORM-01",
+    "B01-FORM-02"
+  ],
+  "applicationChanges": 0,
+  "deletedFiles": 0,
+  "reviewedChanges": [
+    "docs/development/full-system-active-index.md",
+    "docs/development/full-system/bundles/B01.md",
+    "docs/development/full-system/evidence/bundles/B01/G0.6-cleanup-dry-run.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.6-document-registry.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.6-verification.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.7-formula-registry.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.7-verification.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.8-edition-contract.json",
+    "docs/development/full-system/evidence/bundles/B01/G0.8-verification.json",
+    "docs/development/full-system/evidence/bundles/B01/build_cleanup.py",
+    "docs/development/full-system/evidence/bundles/B01/build_edition.py",
+    "docs/development/full-system/evidence/bundles/B01/build_formulas.py",
+    "docs/development/full-system/evidence/bundles/B01/defects.json",
+    "docs/development/full-system/evidence/bundles/B01/verify_bundle.py",
+    "docs/development/full-system/evidence/bundles/B01/verify_cleanup.py",
+    "docs/development/full-system/evidence/bundles/B01/verify_edition.py",
+    "docs/development/full-system/evidence/bundles/B01/verify_formulas.py"
+  ],
+  "reviewMode": "Single-writer self-review; no subagent permitted by project guardrails",
+  "requirementReview": {
+    "G0.6": "373 documents classified,76 retained failure PNGs have reference/hash/restore dispositions; one active Master",
+    "G0.7": "12 source/version/denominator registries and60 explicit fixtures; known differences separated from proposals and assigned",
+    "G0.8": "4 edition decisions,74 activation records, target/content/profile source binding, D01–D12 and verifier gaps adopted",
+    "G0": "Development-readiness accepted; no runtime coverage/remote/deployment/research/cost authority expansion"
+  },
+  "riskReview": "Only documents/structured inspection helpers changed. G0.7 explicitly permits recording implementation differences for owning packages; open FORM defects cannot be treated as their downstream runtime acceptance.",
+  "runtimeVerified": false
+}

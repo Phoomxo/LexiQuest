@@ -1,0 +1,37 @@
+{
+  "packageId": "G7.4",
+  "bundleId": "B16",
+  "status": "accepted-local",
+  "requirements": [
+    "COV-f20",
+    "COV-f21",
+    "COV-f27",
+    "COV-f34",
+    "COV-f35",
+    "COV-f44",
+    "G7"
+  ],
+  "checks": [
+    {
+      "receipt": "G7.4-final-verifier.json",
+      "tests": 228,
+      "files": 12
+    },
+    {
+      "receipt": "G7.4-native-verifier.json",
+      "scope": "native Kotlin compile only;27 Android source inputs exact"
+    },
+    {
+      "receipt": "G7.4-cli-final-verifier.json",
+      "scripts": 2
+    }
+  ],
+  "review": "Sole-writer owner/consumer/native/data integrity review. Unique export staging; cancellation restores original or removes new destination, confirmed Android URI discard, explicit cleanup failure. Failed rollback preserves original backup. Manifest50 tables and cache/reminder/outbox ownership tested; five whitespace-only placeholders removed with rollback pin. No schema change.",
+  "openRequiredLocalDefects": [],
+  "external": [
+    "physical Android document provider, device/native behavior",
+    "legacy source backup is retained, not erased",
+    "full Android build/install/release NOT RUN"
+  ],
+  "rollback": "Revert code with schema27 compatible binary. Removed placeholders recoverable from B15 SHA; no user data or historical source deletion."
+}

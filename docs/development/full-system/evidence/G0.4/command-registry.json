@@ -1,0 +1,565 @@
+{
+  "schemaVersion": 1,
+  "status": "Planned",
+  "runtimeVerified": false,
+  "sourceSha": "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+  "entries": [
+    {
+      "level": "Targeted",
+      "area": "Learning",
+      "commands": [
+        {
+          "Name": "Learning tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\learning",
+            "test\\progress",
+            "test\\services\\associative_memory_test.dart",
+            "test\\screens\\associative_reading_session_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "92f549cae32434570539f3d96dee9cfb66d9c8e5ed279b60072ef83c49df00f7"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "AI",
+      "commands": [
+        {
+          "Name": "Flutter AI tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\ai",
+            "test\\services\\ai_voice_reading_adapters_test.dart",
+            "test\\screens\\ai_tutor_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "2d0f6ca148cdec1aafb0dc000c486f55bebc6e394f57adfb3c36f60c3aa1f9ee"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "Voice",
+      "commands": [
+        {
+          "Name": "Flutter voice tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\voice",
+            "test\\services\\ai_voice_reading_adapters_test.dart",
+            "test\\screens\\speak_to_text_screen_voice_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Voice",
+          "commandKey": "b5c64b650ec4c67a2432b15a348c00d9a2170291015377f92d89faba8ae961b8"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "Economy",
+      "commands": [
+        {
+          "Name": "Progress and economy tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\progress",
+            "test\\screens\\score_screen_test.dart",
+            "test\\screens\\achievements_screen_test.dart",
+            "test\\screens\\setting_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "8eb1513472ed8333ab897bda3bd8762677a24505098c8a8d9be8b81aa41b9fb6"
+        },
+        {
+          "Name": "Trusted writer tests",
+          "FilePath": "npm",
+          "Arguments": [
+            "--prefix",
+            "functions",
+            "test"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "2644661238686eaa256e1c3c32d7a25ebba0ba6039c0e5ecb6796174dcbffb7a"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(functions/|firebase\\.json$|firestore\\.rules$|package(-lock)?\\.json$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "Runtime",
+      "commands": [
+        {
+          "Name": "Runtime and configuration tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\runtime",
+            "test\\config",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "511af61975110b425519b39b050e01521a96ccbb80fb6baafe54ec7527d86ed6"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(android/|\\.github/workflows/)"
+    },
+    {
+      "level": "Targeted",
+      "area": "BackendAI",
+      "commands": [
+        {
+          "Name": "AI API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "llm",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api\\tests",
+            "-q"
+          ],
+          "SourceArea": "BackendAI",
+          "commandKey": "9899e111ff5c2e3674323aac9fda47590d6708670daeaa3c1f3a6740e32ea440"
+        }
+      ],
+      "inputPattern": "^(backend/ai_api/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "BackendVoice",
+      "commands": [
+        {
+          "Name": "Voice API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "gpu",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api\\tests",
+            "-q",
+            "--ignore",
+            "backend\\voice_api\\tests\\integration"
+          ],
+          "SourceArea": "BackendVoice",
+          "commandKey": "cdbe46ba3d9827c6efdc3106e8b5a297c2377f6394fb8ecdd401f0e6d737e9c1"
+        }
+      ],
+      "inputPattern": "^(backend/voice_api/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "BackendLM",
+      "commands": [
+        {
+          "Name": "Local LM tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\lexiquest_lm",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "train",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\lexiquest_lm\\tests",
+            "-q"
+          ],
+          "SourceArea": "BackendLM",
+          "commandKey": "140cba0a2238263e64c4f8695435695d4f7783292c6fd4632190b6ecbc0e7e48"
+        }
+      ],
+      "inputPattern": "^(backend/lexiquest_lm/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Targeted",
+      "area": "Integration",
+      "commands": [
+        {
+          "Name": "Android integration static analysis",
+          "FilePath": "flutter",
+          "Arguments": [
+            "analyze",
+            "integration_test\\production_learning_flow_test.dart"
+          ],
+          "SourceArea": "Integration",
+          "commandKey": "cfc1e985a8966422171ee362c0be5ea35fb08a2c35dfd779e2079074cd1d0caf"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(integration_test/|android/|\\.github/workflows/)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Learning",
+      "commands": [
+        {
+          "Name": "Learning tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\learning",
+            "test\\progress",
+            "test\\services\\associative_memory_test.dart",
+            "test\\screens\\associative_reading_session_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "92f549cae32434570539f3d96dee9cfb66d9c8e5ed279b60072ef83c49df00f7"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "AI",
+      "commands": [
+        {
+          "Name": "Flutter AI tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\ai",
+            "test\\services\\ai_voice_reading_adapters_test.dart",
+            "test\\screens\\ai_tutor_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "2d0f6ca148cdec1aafb0dc000c486f55bebc6e394f57adfb3c36f60c3aa1f9ee"
+        },
+        {
+          "Name": "AI API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "llm",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api\\tests",
+            "-q"
+          ],
+          "SourceArea": "BackendAI",
+          "commandKey": "9899e111ff5c2e3674323aac9fda47590d6708670daeaa3c1f3a6740e32ea440"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Voice",
+      "commands": [
+        {
+          "Name": "Flutter voice tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\voice",
+            "test\\services\\ai_voice_reading_adapters_test.dart",
+            "test\\screens\\speak_to_text_screen_voice_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Voice",
+          "commandKey": "b5c64b650ec4c67a2432b15a348c00d9a2170291015377f92d89faba8ae961b8"
+        },
+        {
+          "Name": "Voice API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "gpu",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api\\tests",
+            "-q",
+            "--ignore",
+            "backend\\voice_api\\tests\\integration"
+          ],
+          "SourceArea": "BackendVoice",
+          "commandKey": "cdbe46ba3d9827c6efdc3106e8b5a297c2377f6394fb8ecdd401f0e6d737e9c1"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Economy",
+      "commands": [
+        {
+          "Name": "Progress and economy tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\progress",
+            "test\\screens\\score_screen_test.dart",
+            "test\\screens\\achievements_screen_test.dart",
+            "test\\screens\\setting_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "8eb1513472ed8333ab897bda3bd8762677a24505098c8a8d9be8b81aa41b9fb6"
+        },
+        {
+          "Name": "Trusted writer tests",
+          "FilePath": "npm",
+          "Arguments": [
+            "--prefix",
+            "functions",
+            "test"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "2644661238686eaa256e1c3c32d7a25ebba0ba6039c0e5ecb6796174dcbffb7a"
+        },
+        {
+          "Name": "Firestore rules tests",
+          "FilePath": "npm",
+          "Arguments": [
+            "run",
+            "test:rules"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "45e1056f00f663aaab9e9c610e4db862383accccdc7063a3de00f5dee3becd83"
+        },
+        {
+          "Name": "Trusted writer emulator tests",
+          "FilePath": "npm",
+          "Arguments": [
+            "run",
+            "test:functions-emulator"
+          ],
+          "SourceArea": "Economy",
+          "commandKey": "fa0dfa83194c47e51dcf7c4d08ad2e031fecbb57fcc84a68f7459765af5f8987"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(functions/|firebase\\.json$|firestore\\.rules$|package(-lock)?\\.json$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Runtime",
+      "commands": [
+        {
+          "Name": "Runtime and configuration tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test\\runtime",
+            "test\\config",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "511af61975110b425519b39b050e01521a96ccbb80fb6baafe54ec7527d86ed6"
+        },
+        {
+          "Name": "CLI contract tests",
+          "FilePath": "powershell",
+          "Arguments": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\tests\\r15-scope.tests.ps1"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "5f9e054de4ad23435c9c1e074eea70ef9bf5c9df5213e91c326deff7347453ec"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(android/|\\.github/workflows/)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "BackendAI",
+      "commands": [
+        {
+          "Name": "AI API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "llm",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\ai_api\\tests",
+            "-q"
+          ],
+          "SourceArea": "BackendAI",
+          "commandKey": "9899e111ff5c2e3674323aac9fda47590d6708670daeaa3c1f3a6740e32ea440"
+        }
+      ],
+      "inputPattern": "^(backend/ai_api/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "BackendVoice",
+      "commands": [
+        {
+          "Name": "Voice API tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "gpu",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\voice_api\\tests",
+            "-q",
+            "--ignore",
+            "backend\\voice_api\\tests\\integration"
+          ],
+          "SourceArea": "BackendVoice",
+          "commandKey": "cdbe46ba3d9827c6efdc3106e8b5a297c2377f6394fb8ecdd401f0e6d737e9c1"
+        }
+      ],
+      "inputPattern": "^(backend/voice_api/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "BackendLM",
+      "commands": [
+        {
+          "Name": "Local LM tests",
+          "FilePath": "uv",
+          "Arguments": [
+            "run",
+            "--project",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\lexiquest_lm",
+            "--frozen",
+            "--group",
+            "dev",
+            "--no-group",
+            "train",
+            "pytest",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\backend\\lexiquest_lm\\tests",
+            "-q"
+          ],
+          "SourceArea": "BackendLM",
+          "commandKey": "140cba0a2238263e64c4f8695435695d4f7783292c6fd4632190b6ecbc0e7e48"
+        }
+      ],
+      "inputPattern": "^(backend/lexiquest_lm/|tool/cli/|\\.gitattributes$|uv\\.toml$|\\.python-version$)"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Integration",
+      "commands": [
+        {
+          "Name": "Android device end-to-end tests",
+          "FilePath": "powershell",
+          "Arguments": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-android-e2e.ps1"
+          ],
+          "SourceArea": "Integration",
+          "commandKey": "828adc9cd50fde47c5e495f67203aef9e6cc19ca88e5d10824d05adfcac9d542"
+        }
+      ],
+      "inputPattern": "^(lib/|test/|assets/|tool/cli/|\\.gitattributes$|pubspec\\.(yaml|lock)$|analysis_options\\.yaml$|dart_test\\.yaml$|\\.metadata$)|^(integration_test/|android/|\\.github/workflows/)"
+    },
+    {
+      "level": "Release",
+      "area": "All",
+      "commands": [
+        {
+          "Name": "Canonical release verification",
+          "FilePath": "powershell",
+          "Arguments": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify.ps1"
+          ],
+          "SourceArea": "All",
+          "commandKey": "08dddc82aff31a1f274b0cbbf17c7eb0f4a0d89438dba03c5d3a84c349890ac0"
+        }
+      ],
+      "requires": "Full FrozenSha equals clean HEAD; no execution in G0.4"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Runtime",
+      "cliOnly": true,
+      "commands": [
+        {
+          "Name": "r15-scope.tests.ps1",
+          "FilePath": "powershell",
+          "Arguments": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\tests\\r15-scope.tests.ps1"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "5f9e054de4ad23435c9c1e074eea70ef9bf5c9df5213e91c326deff7347453ec"
+        },
+        {
+          "Name": "verify-scope.tests.ps1",
+          "FilePath": "powershell",
+          "Arguments": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\tests\\verify-scope.tests.ps1"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "45aea900dccbd4b44f7e64b62ca47beaefba306dbfede66d10154f60e347c81a"
+        }
+      ]
+    }
+  ]
+}

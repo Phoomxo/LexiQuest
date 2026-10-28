@@ -1,0 +1,47 @@
+{
+  "areaFingerprints": {
+    "Learning": "e070f78c867af8ce5a90bccb77aaa9e19cede00589027664cd308ada187e0c6b"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "b68e0c5894cb5930311af05d2883e4f03892d1af",
+  "baseSha": "b68e0c5894cb5930311af05d2883e4f03892d1af",
+  "level": "Targeted",
+  "area": "Learning",
+  "fingerprint": "e070f78c867af8ce5a90bccb77aaa9e19cede00589027664cd308ada187e0c6b",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "selection": [
+    {
+      "Name": "Explicit Flutter tests",
+      "FilePath": "flutter",
+      "Arguments": [
+        "test",
+        "test/screens/weakness_clinic_screen_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "SourceArea": "Learning",
+      "commandKey": "3f0e5498c14bd9abe4da4d3f35a1174327787c76ed4aa0ef1bfb4320b7d2effd"
+    }
+  ],
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T13:03:00.1028061+00:00",
+  "finishedAt": "2026-09-23T13:03:16.3026575+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "3f0e5498c14bd9abe4da4d3f35a1174327787c76ed4aa0ef1bfb4320b7d2effd",
+      "fingerprint": "e070f78c867af8ce5a90bccb77aaa9e19cede00589027664cd308ada187e0c6b",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T13:03:01.7231939+00:00",
+      "FinishedAt": "2026-09-23T13:03:11.3772916+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\b68e0c5894cb5930311af05d2883e4f03892d1af\\3f0e5498c14b-e070f78c867a-4792f436\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\b68e0c5894cb5930311af05d2883e4f03892d1af\\3f0e5498c14b-e070f78c867a-4792f436\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "e070f78c867af8ce5a90bccb77aaa9e19cede00589027664cd308ada187e0c6b",
+      "StdoutHash": "976DD9B1B6E4FF69AF29AE133C4E45F63593D4DE3E86EB4912BE2105EC71A728",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "e070f78c867af8ce5a90bccb77aaa9e19cede00589027664cd308ada187e0c6b"
+}

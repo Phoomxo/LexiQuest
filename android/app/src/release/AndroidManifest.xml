@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data
+            android:name="com.lexiquest.release.SOURCE_COMMIT"
+            android:value="${lexiquestSourceCommit}" />
+        <meta-data
+            android:name="com.lexiquest.release.BUILD_ID"
+            android:value="${lexiquestBuildId}" />
+        <meta-data
+            android:name="com.lexiquest.release.MODEL_SHA256"
+            android:value="${lexiquestModelSha256}" />
+    </application>
+</manifest>

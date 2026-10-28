@@ -1,0 +1,60 @@
+{
+  "packageId": "G2.2",
+  "bundleId": "B04",
+  "status": "accepted-local-automated",
+  "baseSha": "dac93ff3512ca2580b34b78c1bfd1e7962b3eed2",
+  "uniqueTestsPassed": 256,
+  "initialRun": "docs/development/full-system/evidence/bundles/B04/G2.2-runs/targeted-learning-81643f88aaf72f33dd41c4ed97741805b67501e540781e9e0e419473a2757795.json",
+  "initialOutcome": "253 passed /3 failed fixture cases",
+  "finalAffectedRun": "docs/development/full-system/evidence/bundles/B04/G2.2-runs/targeted-learning-70bb2c82b4dc92f9298ab84a614c569ca225b6b587efc112fe729f1bcac91071.json",
+  "finalAffectedTestsPassed": 50,
+  "finalFingerprint": "7d44a375e8130737badcb64d99cc3b1c0194fef1c04dcc7ed93b0d34aecdfaff",
+  "failedCasesClosed": [
+    "00:05 +42 -1: C:/Users/Phet/.codex/worktrees/3e69/LexiQuest/test/features/learning/pair_matching/r15_pair_feedback_test.dart: B04 Pair standard6 support width=320.0 [E]",
+    "00:06 +49 -2: C:/Users/Phet/.codex/worktrees/3e69/LexiQuest/test/features/learning/pair_matching/r15_pair_feedback_test.dart: B04 Pair standard6 support width=390.0 [E]",
+    "00:06 +61 -3: C:/Users/Phet/.codex/worktrees/3e69/LexiQuest/test/features/learning/pair_matching/r15_pair_feedback_test.dart: B04 Pair standard6 support width=840.0 [E]"
+  ],
+  "reusedPassingTargets": [
+    "test/features/learning/pair_matching/pair_star_policy_test.dart",
+    "test/features/learning/matching_mode_adapter_test.dart",
+    "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+    "test/features/learning/pair_matching/pair_timeout_recovery_test.dart",
+    "test/features/learning/pair_matching/pair_timeout_race_test.dart",
+    "test/features/learning/pair_matching/pair_support_classification_test.dart",
+    "test/features/learning/pair_matching/pair_repair_policy_test.dart",
+    "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+    "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+    "test/features/learning/pair_matching/pair_matching_result_view_test.dart"
+  ],
+  "affectedTargets": [
+    "test/features/learning/pair_matching/r15_pair_feedback_test.dart",
+    "test/features/learning/pair_matching/pair_board_view_test.dart",
+    "test/features/learning/pair_matching/pair_board_accessibility_test.dart"
+  ],
+  "inputDeltaSinceInitial": [
+    "test/features/learning/pair_matching/pair_board_view_test.dart"
+  ],
+  "finalInputDelta": [],
+  "reuseBasis": "Only3 initial failed tests, all in r15 visual test. Only changed input afterward is test fixture; reran it and both selected consumers. Other10 targets passed initially and do not import changed helper. Production inputs identical. Composite per-test acceptance does not relabel the original failed command as passed.",
+  "acceptance": {
+    "COV-f10/MG-05": "4/6 pairs,30 actual-font visual cases320/390/840, selected/correct/wrong/support/final",
+    "COV-f17/A-PAIR01-09": "Host durable-before-animation,449/600ms timing, duplicate/dispose/owner fence, terminal hydrate, reduced motion and overlapping final episodes passed",
+    "FORM-02": "B01 PairStarPolicy v1 blob unchanged; terminal guards,4/6 denominator, first/repair/support boundaries passed",
+    "Replay": "Hydrate/presentation/repeated operation adds no evidence or reward; explicit measured new practice uses its distinct new-session contract",
+    "G2": "Package complete; phase gate remains G2.8/B06"
+  },
+  "review": {
+    "method": "single-writer source/consumer/test/visual review",
+    "productionDelta": "None inG2.2; density-aware fixture and expanded coverage",
+    "requiredOpenFindings": []
+  },
+  "visualCount": 30,
+  "visualReviewed": [
+    "standard6 support320s2dark",
+    "standard6 selected840s1light"
+  ],
+  "externalGates": [
+    "Physical device/manual screen-reader acceptance later",
+    "Effective service tier unverified"
+  ]
+}

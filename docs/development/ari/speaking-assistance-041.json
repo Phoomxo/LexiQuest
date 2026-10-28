@@ -1,0 +1,45 @@
+{
+  "status": "HOST_PASS_NATIVE_NO_MATCH_SUCCESSFUL_RECOGNITION_PENDING",
+  "sourceBase": "25450753349c101ec08f5b14b17c9df6f26254b5",
+  "changes": [
+    "Owner-bound read-only optional speaking context; no answer action",
+    "Final transcript similarity explicitly distinguished from acoustic pronunciation",
+    "Saved status set only after record acknowledgment and retained after raw speech privacy clearing"
+  ],
+  "host": {
+    "tests": 50,
+    "result": "Passed",
+    "receipt": "evidence/speaking-assistance-041/host-receipt.json",
+    "limitations": "Repository and speech gateway doubles in new screen tests; not real recognition or durable database acceptance",
+    "regression": "Added retention assertion failed twice before fixing receipt loss on raw speech clear; final 50 pass",
+    "analysis": "Two changed Dart files: no issues (current-turn prior tool result)"
+  },
+  "native": {
+    "package": "com.lexiquest.app.ariTest",
+    "intermediateApk": {
+      "path": "build/ari-assistance-041-before-receipt-fix.apk",
+      "sha256": "b14182774aea21477057113fd672f55a3460a9f192e2fa87dc172d74e834c87c"
+    },
+    "recognitionTrials": [
+      "PC synthetic English bag after one-time microphone permission: noMatch",
+      "App reference TTS during listening: noMatch"
+    ],
+    "excludedTrial": "Initial PC playback preceded permission grant; not a valid recognition trial",
+    "noAcousticAssessmentClaim": true,
+    "dashboard": "28/42,34m00s,0due; no new recognized answer",
+    "finalApk": {
+      "path": "build/ari-assistance-041.apk",
+      "sha256": "40f9c54a3c3b1e8662d9ee1f284d7472c5621ba1099bd8be49fa6f196c583dec",
+      "install": "Success",
+      "smoke": "Native home accessible after install; original app untouched"
+    },
+    "usbStayAwake": 2,
+    "provider": "No bridge or live provider started in041"
+  },
+  "remaining": [
+    "Successful physical recognition and connected/disconnected speaking evidence",
+    "Other mode-specific acceptance including CEFR",
+    "Inspect shadowing premature evidenceSaved=true before record acknowledgment; not yet fixed",
+    "Complete MCP acceptance before queued whole-project SDLC/Agile review"
+  ]
+}

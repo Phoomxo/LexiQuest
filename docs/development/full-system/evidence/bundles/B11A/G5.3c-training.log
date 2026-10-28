@@ -1,0 +1,61 @@
+{"stage": "features", "completed": 16, "total": 477}
+{"stage": "features", "completed": 32, "total": 477}
+{"stage": "features", "completed": 48, "total": 477}
+{"stage": "features", "completed": 64, "total": 477}
+{"stage": "features", "completed": 80, "total": 477}
+{"stage": "features", "completed": 96, "total": 477}
+{"stage": "features", "completed": 112, "total": 477}
+{"stage": "features", "completed": 128, "total": 477}
+{"stage": "features", "completed": 144, "total": 477}
+{"stage": "features", "completed": 160, "total": 477}
+{"stage": "features", "completed": 176, "total": 477}
+{"stage": "features", "completed": 192, "total": 477}
+{"stage": "features", "completed": 208, "total": 477}
+{"stage": "features", "completed": 224, "total": 477}
+{"stage": "features", "completed": 240, "total": 477}
+{"stage": "features", "completed": 256, "total": 477}
+{"stage": "features", "completed": 272, "total": 477}
+{"stage": "features", "completed": 288, "total": 477}
+{"stage": "features", "completed": 304, "total": 477}
+{"stage": "features", "completed": 320, "total": 477}
+{"stage": "features", "completed": 336, "total": 477}
+{"stage": "features", "completed": 352, "total": 477}
+{"stage": "features", "completed": 368, "total": 477}
+{"stage": "features", "completed": 384, "total": 477}
+{"stage": "features", "completed": 400, "total": 477}
+{"stage": "features", "completed": 416, "total": 477}
+{"stage": "features", "completed": 432, "total": 477}
+{"stage": "features", "completed": 448, "total": 477}
+{"stage": "features", "completed": 464, "total": 477}
+{"stage": "features", "completed": 477, "total": 477}
+{"epoch": 1, "train": {"accuracy": 0.20000000298023224, "loss": 2.5493216514587402}, "validation": {"accuracy": 0.5166666507720947, "loss": 1.7248246669769287}}
+{"epoch": 2, "train": {"accuracy": 0.800000011920929, "loss": 0.8613042831420898}, "validation": {"accuracy": 0.7416666746139526, "loss": 1.072003722190857}}
+{"epoch": 3, "train": {"accuracy": 1.0, "loss": 0.512710690498352}, "validation": {"accuracy": 0.7666666507720947, "loss": 0.8584901690483093}}
+{"epoch": 4, "train": {"accuracy": 1.0, "loss": 0.24946555495262146}, "validation": {"accuracy": 0.8333333134651184, "loss": 0.7352569103240967}}
+{"epoch": 5, "train": {"accuracy": 1.0, "loss": 0.1540892869234085}, "validation": {"accuracy": 0.8416666388511658, "loss": 0.6642388105392456}}
+{"epoch": 6, "train": {"accuracy": 1.0, "loss": 0.09974644333124161}, "validation": {"accuracy": 0.8583333492279053, "loss": 0.6153278350830078}}
+{"epoch": 7, "train": {"accuracy": 1.0, "loss": 0.1354772001504898}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.5819239020347595}}
+{"epoch": 8, "train": {"accuracy": 1.0, "loss": 0.1073029488325119}, "validation": {"accuracy": 0.8916666507720947, "loss": 0.5712884664535522}}
+{"epoch": 9, "train": {"accuracy": 1.0, "loss": 0.2273281067609787}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.5422106385231018}}
+{"epoch": 10, "train": {"accuracy": 1.0, "loss": 0.1533929407596588}, "validation": {"accuracy": 0.8916666507720947, "loss": 0.53041011095047}}
+{"epoch": 11, "train": {"accuracy": 1.0, "loss": 0.029768100008368492}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.529445469379425}}
+{"epoch": 12, "train": {"accuracy": 1.0, "loss": 0.05436214059591293}, "validation": {"accuracy": 0.925000011920929, "loss": 0.5125816464424133}}
+{"epoch": 13, "train": {"accuracy": 1.0, "loss": 0.01786542683839798}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.5098812580108643}}
+{"epoch": 14, "train": {"accuracy": 1.0, "loss": 0.02575276792049408}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.5029312372207642}}
+{"epoch": 15, "train": {"accuracy": 1.0, "loss": 0.04432796686887741}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.49670344591140747}}
+{"epoch": 16, "train": {"accuracy": 1.0, "loss": 0.03917190432548523}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.49112769961357117}}
+{"epoch": 17, "train": {"accuracy": 1.0, "loss": 0.04717768356204033}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.48386460542678833}}
+{"epoch": 18, "train": {"accuracy": 1.0, "loss": 0.05375238135457039}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.4907771646976471}}
+{"epoch": 19, "train": {"accuracy": 1.0, "loss": 0.0214325450360775}, "validation": {"accuracy": 0.925000011920929, "loss": 0.48229849338531494}}
+{"epoch": 20, "train": {"accuracy": 1.0, "loss": 0.03647897019982338}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.4777926206588745}}
+{"epoch": 21, "train": {"accuracy": 1.0, "loss": 0.03660960868000984}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.47905266284942627}}
+{"epoch": 22, "train": {"accuracy": 1.0, "loss": 0.023826410993933678}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.4738847017288208}}
+{"epoch": 23, "train": {"accuracy": 1.0, "loss": 0.013023468665778637}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.470077782869339}}
+{"epoch": 24, "train": {"accuracy": 1.0, "loss": 0.02120325341820717}, "validation": {"accuracy": 0.8999999761581421, "loss": 0.473283588886261}}
+{"epoch": 25, "train": {"accuracy": 1.0, "loss": 0.013755589723587036}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.4694105088710785}}
+{"epoch": 26, "train": {"accuracy": 1.0, "loss": 0.01234099455177784}, "validation": {"accuracy": 0.8999999761581421, "loss": 0.4662829041481018}}
+{"epoch": 27, "train": {"accuracy": 1.0, "loss": 0.020942319184541702}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.4654712378978729}}
+{"epoch": 28, "train": {"accuracy": 1.0, "loss": 0.012050657533109188}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.46621158719062805}}
+{"epoch": 29, "train": {"accuracy": 1.0, "loss": 0.01276148110628128}, "validation": {"accuracy": 0.9166666865348816, "loss": 0.4647440016269684}}
+{"epoch": 30, "train": {"accuracy": 1.0, "loss": 0.005203021690249443}, "validation": {"accuracy": 0.9083333611488342, "loss": 0.4593334197998047}}
+{"status": "training-completed", "modelVersion": "lexiquest-web-mobilenet16-2026-09-14.1", "datasetVersion": "2026-09-14.1", "manifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f", "configSha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6", "selectedEpoch": 30, "epochs": 30, "selection": "minimum development validation loss; fixed epochs, no threshold tuning", "method": "frozen pretrained MobileNet backbone; newly trained 16-way softmax head", "trainableParameters": 16400, "backboneParameters": 3228864, "initialToSelectedHeadWeightL2": 4.2822136878967285, "metrics": {"train": {"samples": 357, "correct": 357, "accuracy": 1.0, "loss": 0.012173544615507126, "perClass": {"book": {"n": 23, "correct": 23}, "bottle": {"n": 24, "correct": 24}, "chair": {"n": 27, "correct": 27}, "cup": {"n": 27, "correct": 27}, "apple": {"n": 20, "correct": 20}, "bread": {"n": 20, "correct": 20}, "tomato": {"n": 27, "correct": 27}, "bowl": {"n": 21, "correct": 21}, "spoon": {"n": 26, "correct": 26}, "fork": {"n": 15, "correct": 15}, "knife": {"n": 23, "correct": 23}, "door": {"n": 25, "correct": 25}, "ladder": {"n": 26, "correct": 26}, "light bulb": {"n": 16, "correct": 16}, "tool": {"n": 14, "correct": 14}, "tap": {"n": 23, "correct": 23}}}, "validation": {"samples": 120, "correct": 109, "accuracy": 0.9083333333333333, "loss": 0.4593333601951599, "perClass": {"book": {"n": 5, "correct": 5}, "bottle": {"n": 10, "correct": 9}, "chair": {"n": 8, "correct": 8}, "cup": {"n": 10, "correct": 10}, "apple": {"n": 7, "correct": 7}, "bread": {"n": 9, "correct": 9}, "tomato": {"n": 7, "correct": 6}, "bowl": {"n": 10, "correct": 9}, "spoon": {"n": 5, "correct": 4}, "fork": {"n": 6, "correct": 5}, "knife": {"n": 16, "correct": 13}, "door": {"n": 8, "correct": 8}, "ladder": {"n": 5, "correct": 5}, "light bulb": {"n": 3, "correct": 1}, "tool": {"n": 7, "correct": 6}, "tap": {"n": 4, "correct": 4}}}}, "seconds": 26.48400000000038, "candidateSha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9", "checkpointSha256": "3b11556c2a498c809b3c70cb97d94d7493eb11e1fdcfd4ae959bf487fc6b944c", "rawEpochLogSha256": "682d2af20fcfdc2be8e4a98a775aff1d22de7c51d776848b0e752184d42e92a4", "physicalCamera": "NOT RUN", "unknownEvaluation": "NOT RUN", "rolloutEnabled": false}

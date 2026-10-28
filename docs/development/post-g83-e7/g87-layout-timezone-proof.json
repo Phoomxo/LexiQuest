@@ -1,0 +1,117 @@
+{
+  "status": "PASS-local-native-boundaries",
+  "sourceApplication": "1ec4071d",
+  "cases": [
+    {
+      "viewportDp": "320x480",
+      "fontScale": 2,
+      "locale": "th-TH",
+      "theme": "dark",
+      "reducedMotion": true,
+      "result": "Scrolled configuration, quiz choices, feedback and result reachable; keyboard answer/repair navigation and exit preserve state; RUNNING_CRITICAL memory trim did not crash"
+    },
+    {
+      "viewportDp": "390x640",
+      "fontScale": 1,
+      "locale": "en-US",
+      "theme": "light",
+      "reducedMotion": true,
+      "result": "Mixed lesson2/2; actual Android keyboard book input and Tab/Enter submission; exit to launcher"
+    },
+    {
+      "viewportDp": "840x640",
+      "fontScale": 2,
+      "locale": "en-US",
+      "theme": "light",
+      "reducedMotion": true,
+      "result": "Home and progress readable; native current-state values retained"
+    }
+  ],
+  "timezone": {
+    "deviceValues": [
+      "2026-09-21T01:14:16+1400",
+      "2026-09-20T00:14:52-1100"
+    ],
+    "configuredLearningZone": "Asia/Bangkok",
+    "visibleWeek": "14\u201320 September2026",
+    "visibleCount": "47/50",
+    "learningRowsUnchanged": true,
+    "otherChangedTables": [
+      "content_download_states"
+    ]
+  },
+  "newNativeAttempts": [
+    {
+      "id": "attempt:e7c8a5c8-1888-4534-a0c0-cc7c4001d2f9",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:39913a5e-fd2d-4de5-b419-afd594130d5b",
+      "word_id": "word:starter-bag",
+      "prompt_mode": "meaningChoice",
+      "is_correct": 0,
+      "response_time_ms": 27100,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789902402319,
+      "provider_provenance": "f18:v1:3be042ec7b40309fb60e8850a50af0d31c79119c6fd7322dc0033ed1b587b8b6",
+      "evidence_class": "recognition",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recognition\",\"skillId\":\"meaning-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"lexical-meaning:word:starter-bag@1:dafece64d529442648e2df972106b8aadf15a5d38aca6a4111ef6b00145061dc\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    },
+    {
+      "id": "attempt:bf223b24-9ffd-425a-9acf-6db7196378a7",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:4bb0d7c4-15b7-42f0-8336-99e7995d4de0",
+      "word_id": "word:starter-bag",
+      "prompt_mode": "meaningChoice",
+      "is_correct": 1,
+      "response_time_ms": 2456,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789902690464,
+      "provider_provenance": null,
+      "evidence_class": "recognition",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recognition\",\"skillId\":\"meaning-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    },
+    {
+      "id": "attempt:59af3459-1dcd-4cd3-9ea8-96fa16af8821",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:4bb0d7c4-15b7-42f0-8336-99e7995d4de0",
+      "word_id": "word:starter-book",
+      "prompt_mode": "typedRecall",
+      "is_correct": 1,
+      "response_time_ms": 7223,
+      "attempt_number": 2,
+      "occurred_at_utc_ms": 1789902732055,
+      "provider_provenance": "typed-recall:vocabulary-text-v1:meaning:exact",
+      "evidence_class": "independentRecall",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"independentRecall\",\"skillId\":\"typed-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"lexical-typed-recall:word:starter-book@1:4b198de9cd37e3f5c06c0b94a6f2be6b60aff532da084cd69dd861ae32fe2f84\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    }
+  ],
+  "durability": "All57prior attempts,42rewards,25sessions preserved;60attempts/44rewards/27terminal sessions after layout/keyboard journeys",
+  "settingsRestoredExactly": true,
+  "humanTalkBack": "PENDING; visual/keyboard evidence is not a human accessibility verdict",
+  "limitations": [
+    "English app locale exercises native locale/keyboard; product copy remains Thai",
+    "Injected key activation settles asynchronously; intermediate capture preceded durable feedback",
+    "Selected valid layout combinations, not a full Cartesian product"
+  ],
+  "pins": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-original-device-settings.json",
+      "sha256": "7c7ac9479325394df954bbe2fc51f5f7040aaf743b0a84d943418913b16a0f66"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-restored-device-settings.json",
+      "sha256": "7c7ac9479325394df954bbe2fc51f5f7040aaf743b0a84d943418913b16a0f66"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-before-timezone-db\\rows.json",
+      "sha256": "304f7af0d9532a1578fa44d7472b8e0069f7abb54089cc2f38e91e9b96ec4422"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-timezone-db\\rows.json",
+      "sha256": "18552a3cb2f21341a2fcaf8fd41f6b8301fb38c3eba7b399e61d19d9265be30e"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-layout-320-logcat.txt",
+      "sha256": "a396f8cb5993502dfc72f39e1aef8ba9f2b29f1ffd9ae4c0df80ebf96172f530"
+    }
+  ]
+}

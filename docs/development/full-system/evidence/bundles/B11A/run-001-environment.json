@@ -1,0 +1,20 @@
+{
+  "python": "3.12.14",
+  "tensorflow": "2.20.0",
+  "keras": "3.15.1",
+  "numpy": "2.5.3",
+  "pillow": "12.3.0",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "devices": [
+    "PhysicalDevice(name='/physical_device:CPU:0', device_type='CPU')"
+  ],
+  "seed": 20260914,
+  "deterministicOps": true,
+  "oneDnn": false,
+  "intraThreads": 4,
+  "interThreads": 2,
+  "sources": {
+    "C:\\Users\\Phet\\.codex\\worktrees\\cd5e\\LexiQuest\\tools\\train_camera_web.py": "ef62eb28b48282e74c133851ddbcb26486952d3775661a54bab29fb7d539742e",
+    "C:\\Users\\Phet\\.codex\\worktrees\\cd5e\\LexiQuest\\tools\\camera_web_dataset.py": "648caa09fb9924f6e3be6a2d0aaebffc7f1c51928ea9e75b5baded16e5d84846"
+  }
+}
