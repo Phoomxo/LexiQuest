@@ -182,9 +182,10 @@ claimed.
 |---------|-------|---------|--------|
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
-| v13+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Reserved 2026-10-29 |
+| v14+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11 or v12. Reserve the next available version, starting at v13,
+> **Rule:** Do not reuse v10, v11, v12 or the reserved v13. Reserve the next available version, starting at v14,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -197,8 +198,8 @@ claimed.
 
 **Status:** IMPLEMENTED LOCALLY. Current executable schema is v12/30 tables.
 Populated migration, owner lifecycle and signed admission checks pass within a
-655-test integration suite; analysis reports no issues. Full regression and APK
-attestation follow on the frozen source. This entry does not authorize research
+655-test integration suite. Source `8504a202` passes full Flutter 2385, analysis
+0, CLI 23 and the normal Android debug build. This entry does not authorize research
 enrollment, collection, upload or deployment.
 
 Add `experiment_assignments` with seven columns: `id`, `owner_id`,
@@ -233,6 +234,50 @@ engineering checks. Cross-authority revocation is not claimed atomic with
 SQLite commit. Downgrade requires a pre-upgrade backup or an explicitly tested
 downgrade; no automatic rollback is claimed.
 
+### v13 — Cached signed participation and fresh participant context
+
+**Reserved:** 2026-10-29
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root integration owns schema/generated source/inventory; separate
+workers own the participation repository and signed-owner merge checks.
+
+**Status:** RESERVED. Current executable schema remains v12/30 tables until
+implementation and verification. Enrollment, upload and deployment stay disabled.
+
+Add one `research_participation_permits` table using the approved signed model's
+20 normalized fields: `id`, `owner_id`, `local_revision`, `cloud_revision`,
+`is_deleted`, `participant_class`, `age_band_code`, `assignment_id`,
+`assigned_treatment`, `consent_receipt_id`, `guardian_permission_receipt_ref`,
+`learner_assent_receipt_ref`, `protocol_id`, `protocol_version`,
+`issued_at_utc_ms`, `expires_at_utc_ms`, `revoked_at_utc_ms`, `issuer_key_id`,
+`payload_sha256`, `signature`. Require owner and assignment foreign keys; delete
+permits before assignments. The resulting schema will have 31 tables; this is
+not a change to the 8-domain/44-capability catalog.
+
+Persisted signed documents are cached facts, not proof of current issuer state.
+Active import and participant reads reuse v12 admission with the same database,
+trusted clock, consent and owner fence. A repository must not supply its own
+stored row as `ResearchParticipationDocumentSource` authority. Rejected import
+creates no permit, assignment, event or outbox row. A failed permit insert must
+roll back any assignment first admitted in the same transaction.
+
+Copy issuer-signed revisions verbatim. Same-revision payload changes, stale
+updates, changed immutable pins and resurrection of signed revocation/deletion
+are rejected. Authentic signed narrowing updates may amend an existing permit
+after expiry or withdrawal; they must never enroll a new participant. Local
+consent withdrawal denies use without inventing an issuer-signed revocation.
+
+Owner-changing merges with source-owned signed permits must roll back rather
+than rewrite their owner/assignment pins. Existing target-owned permits and
+same-owner binding remain intact. Export, deletion and purge proof must cover
+the populated table with owner isolation. Acceptance also covers populated-v12
+migration, restart/replay, actual signature rejection, minor receipts, current
+authority unavailability and expiry/owner/deletion races. Physical UAT and
+production authority adapters remain separate. Downgrade requires a pre-upgrade
+backup or an explicitly tested downgrade.
+
 ---
 
 ## Conflict Register
@@ -251,6 +296,7 @@ downgrade; no automatic rollback is claimed.
 | 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
 | 2026-10-28 | Reserved current-lineage v11 for two answer evidence metadata columns with populated-v10 and owner/sync lifecycle coverage. No research tables or rollout permission added. | Root integration |
 | 2026-10-29 | Reserved current-lineage v12 for one immutable assignment table with strict admission and populated migration/owner lifecycle checks. Runtime remains v11 until implementation; no research rollout permission added. | Root integration |
+| 2026-10-29 | Reserved current-lineage v13 for one cached signed participation table; use must reauthorize against independent current authority and preserve signed owner pins. Runtime remains v12 until implementation. | Root integration |
 
 ---
 

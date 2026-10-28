@@ -4,13 +4,14 @@ Updated 2026-10-29. This index identifies the audit fixes and continuing system 
 
 | Item | Location | Disposition |
 | --- | --- | --- |
-| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, learning history, LM content serving, research export hardening and locally verified v11 evidence metadata. |
+| Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes, history, LM content serving, research export, motion controls, owner coordination and locally verified v12 assignments. |
 | Completed audit baseline | Branch `codex/cycle12-release`, commit `1aa189a3` | Historical audit/cleanup checkpoint retained before the continuing integration branch. |
 | Remaining-system plan | [Complete the remaining LexiQuest systems](../superpowers/plans/2026-10-28-unfinished-system-integration.md) | Current execution board and acceptance checks. |
 | Capability coverage | [44-capability runtime matrix](../field/2026-10-28-feature-readiness-matrix.md) | Source-backed connected/partial/missing states; not production or UAT certification. |
 | Verified v11 integration | [Evidence metadata checkpoint](../field/2026-10-28-remaining-systems-wave2.md) | Source `efff26a6`, Flutter 2191, analysis 0, rules 45, CLI 23 and Android debug pass. |
 | Verified motion/owner integration | [Wave 3 checkpoint](../field/2026-10-29-remaining-systems-wave3.md) | Application source `26952596`: Flutter 2308, analysis 0 and normal Android debug build passed. |
-| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `26952596`, debug `1.0.0+1`; not installed or published. Its hash and source trees are recorded in the wave 3 checkpoint. |
+| Verified local assignments | [Wave 4 checkpoint](../field/2026-10-29-remaining-systems-wave4.md) | Application source `8504a202`: schema v12/30 tables, Flutter 2385, analysis 0, CLI 23 and normal Android debug build passed. |
+| Debug test artifact | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest\build\app\outputs\flutter-apk\app-debug.apk` | Normal app, build ID `8504a202`, debug `1.0.0+1`; not installed or published. Its hash and source trees are recorded in the wave 4 checkpoint. |
 | Reduced Motion | Commit `0eedc90b` | Theme/motion persistence, OS accessibility settings, route/card/chat/sheet consumers; focused 153 tests and analysis pass. Android light 100% settings fixture is readable; dark/200% native checks remain unverified after emulator failure. |
 | Remediation plan | [Audit remediation and storage cleanup](../superpowers/plans/2026-10-28-audit-remediation-and-storage-cleanup.md) | Acceptance checks and work board. |
 | Completed audit result | [2026-10-28 remediation checkpoint](../field/2026-10-28-audit-remediation-checkpoint.md) | Fix commit `5cad746d`, verified tests/build, cleanup receipts and remaining release work. |
