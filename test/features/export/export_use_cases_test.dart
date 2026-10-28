@@ -1437,6 +1437,133 @@ void main() {
       );
     },
   );
+
+  test(
+    'research export cancels when the consent owner changes during load',
+    () async {
+      final owners = _MutableOwners(_owner('owner-a'));
+      final consentRepository = _DelayedConsentRepository();
+      final reader = _FixedExportReader(_oneWordData);
+      final target = _MemoryStore();
+      final pinned = ExportUseCases(
+        owners: owners,
+        reader: reader,
+        store: target,
+        nowUtc: exports.nowUtc,
+        loadThaiFont: exports.loadThaiFont,
+        researchConsent: ResearchConsentUseCases(
+          owners: owners,
+          repository: consentRepository,
+          nowUtc: exports.nowUtc,
+          version: 4,
+        ),
+        researchAuthorizer: const _AllowResearchOperationAuthorizer(),
+      );
+      final pending = pinned.export(
+        format: ExportFormat.researchJson,
+        selection: const ExportSelection(
+          includeVocabulary: true,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      await consentRepository.started.future;
+      owners.current = _owner('owner-b');
+      consentRepository.result.complete(
+        const ResearchConsentStatus(
+          ownerId: 'owner-a',
+          version: 4,
+          accepted: true,
+        ),
+      );
+      await expectLater(
+        pending,
+        throwsA(
+          isA<ExportException>()
+              .having(
+                (error) => error.code,
+                'code',
+                ExportFailureCode.cancelled,
+              )
+              .having(
+                (error) => error.cause,
+                'cause',
+                isA<StateError>().having(
+                  (error) => error.message,
+                  'message',
+                  'active owner changed while loading research consent',
+                ),
+              ),
+        ),
+      );
+      expect(reader.ownerIds, isEmpty);
+      expect(target.saved, isNull);
+    },
+  );
+
+  test(
+    'research export treats a wrong consent version as unavailable, not cancellation',
+    () async {
+      final owners = _MutableOwners(_owner('owner-a'));
+      final consentRepository = _DelayedConsentRepository();
+      final reader = _FixedExportReader(_oneWordData);
+      final target = _MemoryStore();
+      final pinned = ExportUseCases(
+        owners: owners,
+        reader: reader,
+        store: target,
+        nowUtc: exports.nowUtc,
+        loadThaiFont: exports.loadThaiFont,
+        researchConsent: ResearchConsentUseCases(
+          owners: owners,
+          repository: consentRepository,
+          nowUtc: exports.nowUtc,
+          version: 4,
+        ),
+        researchAuthorizer: const _AllowResearchOperationAuthorizer(),
+      );
+      final pending = pinned.export(
+        format: ExportFormat.researchJson,
+        selection: const ExportSelection(
+          includeVocabulary: true,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      await consentRepository.started.future;
+      consentRepository.result.complete(
+        const ResearchConsentStatus(
+          ownerId: 'owner-a',
+          version: 1,
+          accepted: true,
+        ),
+      );
+      await expectLater(
+        pending,
+        throwsA(
+          isA<ExportException>()
+              .having(
+                (error) => error.code,
+                'code',
+                ExportFailureCode.unavailable,
+              )
+              .having(
+                (error) => error.cause,
+                'cause',
+                isA<StateError>().having(
+                  (error) => error.message,
+                  'message',
+                  'research consent version does not match requested version',
+                ),
+              ),
+        ),
+      );
+      expect(reader.ownerIds, isEmpty);
+      expect(target.saved, isNull);
+    },
+  );
 }
 
 const _all = ExportSelection(

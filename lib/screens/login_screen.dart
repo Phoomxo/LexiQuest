@@ -170,7 +170,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _ensureResearchConsentDecision() async {
     if (!_researchAvailability.isEnabled) return;
     final consent = _researchConsent;
-    if (consent == null) return;
+    if (consent == null ||
+        consent.version != ResearchConsentUseCases.currentVersion) {
+      return;
+    }
     try {
       final current = await consent.load();
       if (current.accepted || current.withdrawnAtUtc != null || !mounted) {
@@ -178,7 +181,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       final accepted = await showResearchConsentDialog(context);
       if (accepted != true) return;
-      final recorded = await consent.accept(expectedOwnerId: current.ownerId);
+      final recorded = await consent.accept(
+        expectedOwnerId: current.ownerId,
+        expectedVersion: ResearchConsentUseCases.currentVersion,
+      );
       if (!recorded && mounted) {
         _show('สถานะผู้ใช้เปลี่ยน จึงไม่ได้บันทึกความยินยอมการวิจัย');
       }

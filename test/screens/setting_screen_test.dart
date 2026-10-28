@@ -908,6 +908,233 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
     },
   );
+
+  testWidgets('settings displays and withdraws the loaded study version four', (
+    tester,
+  ) async {
+    final repository = _ConsentRepository(
+      ResearchConsentStatus(
+        ownerId: 'synthetic-owner',
+        version: 4,
+        accepted: true,
+        decidedAtUtc: DateTime.utc(2026, 10, 20),
+      ),
+    );
+    await _pumpSettings(tester, consent: _consent(repository, version: 4));
+    expect(find.text('ยินยอมฉบับ 4 และถอนความยินยอมได้'), findsOneWidget);
+    expect(find.text('ยินยอมฉบับ 1 และถอนความยินยอมได้'), findsNothing);
+    await tester.tap(find.byKey(_withdrawKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+    await tester.pumpAndSettle();
+    expect(repository.decideCalls, 1);
+    expect(repository.lastVersion, 4);
+    expect(repository.lastAccepted, isFalse);
+    expect(repository.status.version, 4);
+    expect(repository.status.accepted, isFalse);
+    expect(find.byKey(_withdrawKey), findsNothing);
+    expect(find.textContaining('ไม่ได้เข้าร่วม'), findsOneWidget);
+  });
+
+  testWidgets(
+    'mismatched loaded study version stays unavailable without writes',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 1,
+          accepted: true,
+        ),
+      );
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      expect(find.textContaining('ตรวจสอบสถานะไม่ได้'), findsOneWidget);
+      expect(find.byKey(_withdrawKey), findsNothing);
+      expect(repository.decideCalls, 0);
+      expect(repository.status.accepted, isTrue);
+    },
+  );
+
+  testWidgets(
+    'stale version during confirmation cannot target another consent',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      );
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      repository.status = const ResearchConsentStatus(
+        ownerId: 'synthetic-owner',
+        version: 1,
+        accepted: true,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(repository.decideCalls, 0);
+      expect(repository.status.version, 1);
+      expect(repository.status.accepted, isTrue);
+      expect(find.byKey(_withdrawKey), findsNothing);
+      expect(find.textContaining('ตรวจสอบสถานะไม่ได้'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'read failure before version four withdrawal cannot write or leak error',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      );
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      repository.loadError = StateError('PRIVATE_PRE_WITHDRAW_VERSION_4');
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(repository.decideCalls, 0);
+      expect(repository.status.version, 4);
+      expect(repository.status.accepted, isTrue);
+      expect(find.textContaining('ตรวจสอบสถานะไม่ได้'), findsOneWidget);
+      expect(
+        find.textContaining('PRIVATE_PRE_WITHDRAW_VERSION_4'),
+        findsNothing,
+      );
+      expect(find.byKey(_withdrawKey), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'write failure retains the loaded version four and its retry action',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      )..decideError = StateError('PRIVATE_WITHDRAW_VERSION_4');
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(repository.decideCalls, 1);
+      expect(repository.lastVersion, 4);
+      expect(repository.status.accepted, isTrue);
+      expect(find.text('ยินยอมฉบับ 4 และถอนความยินยอมได้'), findsOneWidget);
+      expect(find.byKey(_withdrawKey), findsOneWidget);
+      expect(find.textContaining('ถอนความยินยอมไม่สำเร็จ'), findsOneWidget);
+      expect(find.textContaining('PRIVATE_WITHDRAW_VERSION_4'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'post-withdraw read failure cannot reverse canonical version four denial',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      )..failLoadAfterDecision = StateError('PRIVATE_POST_WITHDRAW_VERSION_4');
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(repository.decideCalls, 1);
+      expect(repository.lastVersion, 4);
+      expect(repository.status.version, 4);
+      expect(repository.status.accepted, isFalse);
+      expect(repository.status.withdrawnAtUtc, DateTime.utc(2026, 10, 21));
+      expect(find.textContaining('ตรวจสอบสถานะไม่ได้'), findsOneWidget);
+      expect(
+        find.textContaining('PRIVATE_POST_WITHDRAW_VERSION_4'),
+        findsNothing,
+      );
+      expect(find.byKey(_withdrawKey), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'cancelled withdrawal keeps a failed reload unavailable without writes',
+    (tester) async {
+      final repository = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      );
+      await _pumpSettings(tester, consent: _consent(repository, version: 4));
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      repository.loadError = StateError('PRIVATE_CANCELLED_WITHDRAW_RELOAD');
+      await tester.tap(find.widgetWithText(TextButton, 'ยกเลิก'));
+      await tester.pumpAndSettle();
+      expect(repository.decideCalls, 0);
+      expect(repository.status.version, 4);
+      expect(repository.status.accepted, isTrue);
+      expect(find.textContaining('ตรวจสอบสถานะไม่ได้'), findsOneWidget);
+      expect(
+        find.textContaining('PRIVATE_CANCELLED_WITHDRAW_RELOAD'),
+        findsNothing,
+      );
+      expect(find.byKey(_withdrawKey), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'replacing the bound consent during confirmation cannot retarget withdrawal',
+    (tester) async {
+      final original = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+        ),
+      );
+      final replacement = _ConsentRepository(
+        const ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 1,
+          accepted: true,
+        ),
+      );
+      const screenKey = ValueKey('same-settings-consent-binding');
+      await _pumpSettings(
+        tester,
+        consent: _consent(original, version: 4),
+        screenKey: screenKey,
+      );
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      expect(find.text('ยืนยันการถอนความยินยอม'), findsOneWidget);
+      await _pumpSettings(
+        tester,
+        consent: _consent(replacement),
+        screenKey: screenKey,
+      );
+      expect(find.text('ยืนยันการถอนความยินยอม'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(original.decideCalls, 0);
+      expect(replacement.decideCalls, 0);
+      expect(original.status.accepted, isTrue);
+      expect(replacement.status.accepted, isTrue);
+      expect(find.text('ยินยอมฉบับ 1 และถอนความยินยอมได้'), findsOneWidget);
+      expect(find.textContaining('สถานะความยินยอมเปลี่ยน'), findsOneWidget);
+    },
+  );
 }
 
 Future<void> _pumpSettings(
@@ -1068,21 +1295,27 @@ AccountUseCases _account(AccountSession? session) => AccountUseCases(
   upgradeGuestOwner: UpgradeGuestOwner(const _Upgrades()),
 );
 
-ResearchConsentUseCases _consent(_ConsentRepository repository) =>
-    ResearchConsentUseCases(
-      owners: const _Owners(),
-      repository: repository,
-      nowUtc: () => DateTime.utc(2026, 10, 21),
-    );
+ResearchConsentUseCases _consent(
+  _ConsentRepository repository, {
+  int version = 1,
+}) => ResearchConsentUseCases(
+  owners: const _Owners(),
+  repository: repository,
+  nowUtc: () => DateTime.utc(2026, 10, 21),
+  version: version,
+);
 
 final class _ConsentRepository implements ResearchConsentRepository {
   _ConsentRepository(this.status);
 
   ResearchConsentStatus status;
   Object? loadError;
+  Object? decideError;
+  Object? failLoadAfterDecision;
   Completer<bool>? decision;
   int decideCalls = 0;
   bool? lastAccepted;
+  int? lastVersion;
 
   @override
   Future<ResearchConsentStatus> load({
@@ -1102,6 +1335,8 @@ final class _ConsentRepository implements ResearchConsentRepository {
   }) async {
     decideCalls++;
     lastAccepted = accepted;
+    lastVersion = version;
+    if (decideError case final error?) throw error;
     final result = await (decision?.future ?? Future<bool>.value(true));
     if (!result) return false;
     status = ResearchConsentStatus(
@@ -1111,6 +1346,7 @@ final class _ConsentRepository implements ResearchConsentRepository {
       decidedAtUtc: decidedAtUtc,
       withdrawnAtUtc: accepted ? null : decidedAtUtc,
     );
+    loadError = failLoadAfterDecision;
     return result;
   }
 }

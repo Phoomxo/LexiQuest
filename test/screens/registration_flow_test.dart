@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/features/research/domain/research_runtime_availability.dart';
 import 'package:vocab_learning_app/screens/register_screen.dart';
+import 'package:vocab_learning_app/screens/login_screen.dart';
 
 void main() {
   testWidgets('registration explains unavailable account service up front', (
@@ -165,6 +166,7 @@ void main() {
     await _pumpFrames(tester);
 
     expect(harness.consentRepository.decisions, [('owner-a', false)]);
+    expect(harness.consentRepository.decisionVersions, [1]);
     expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
   });
 
@@ -262,8 +264,107 @@ void main() {
     await _pumpFrames(tester);
 
     expect(harness.consentRepository.decisions, [('owner-b', true)]);
+    expect(harness.consentRepository.decisionVersions, [1]);
     expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
   });
+
+  for (final initiallyAccepted in [false, true]) {
+    testWidgets(
+      'version four registration skips the legacy notice, accepted=$initiallyAccepted',
+      (tester) async {
+        final harness = _RegistrationHarness(
+          researchVersion: 4,
+          initialResearchAccepted: initiallyAccepted,
+        );
+        await _pumpRegistration(tester, harness);
+        await _fillRegistration(tester);
+        await tester.tap(find.text('สมัครและส่งอีเมลยืนยัน'));
+        await _pumpFrames(tester);
+        expect(find.text('EMAIL_VERIFICATION_REACHED'), findsOneWidget);
+        expect(harness.gateway.registerCalls, 1);
+        expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
+        expect(find.textContaining('ฉบับความยินยอม'), findsNothing);
+        expect(harness.consentRepository.loadCalls, 0);
+        expect(harness.consentRepository.decisions, isEmpty);
+        expect(harness.consentRepository.decisionVersions, isEmpty);
+        expect(harness.consentRepository.accepted, initiallyAccepted);
+      },
+    );
+
+    testWidgets(
+      'version four login skips the legacy notice, accepted=$initiallyAccepted',
+      (tester) async {
+        final harness = _RegistrationHarness(
+          researchVersion: 4,
+          initialResearchAccepted: initiallyAccepted,
+        );
+        await _pumpLogin(tester, harness);
+        await tester.enterText(
+          find.byType(TextField).first,
+          'student@example.com',
+        );
+        await tester.enterText(find.byType(TextField).last, 'password123');
+        await tester.ensureVisible(
+          find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'),
+        );
+        await tester.tap(find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'));
+        await _pumpFrames(tester);
+        expect(find.text('LOGIN_HOME_REACHED'), findsOneWidget);
+        expect(harness.gateway.signInCalls, 1);
+        expect(find.text('เลือกเข้าร่วมการวิจัย'), findsNothing);
+        expect(find.textContaining('ฉบับความยินยอม'), findsNothing);
+        expect(harness.consentRepository.loadCalls, 0);
+        expect(harness.consentRepository.decisions, isEmpty);
+        expect(harness.consentRepository.decisionVersions, isEmpty);
+        expect(harness.consentRepository.accepted, initiallyAccepted);
+      },
+    );
+  }
+
+  testWidgets(
+    'version four registration notice does not promise a legacy research offer',
+    (tester) async {
+      final harness = _RegistrationHarness(researchVersion: 4);
+      await _pumpRegistration(tester, harness);
+      await tester.tap(find.text('อ่านประกาศความเป็นส่วนตัว'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('ประกาศความเป็นส่วนตัวและเงื่อนไขทดลองใช้'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('การเข้าร่วมงานวิจัยเป็นทางเลือก'),
+        findsNothing,
+      );
+      expect(find.textContaining('ส่งออกหรือลบบัญชีและข้อมูล'), findsOneWidget);
+      expect(harness.consentRepository.decisions, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'legacy version one login still offers and records its exact notice',
+    (tester) async {
+      final harness = _RegistrationHarness();
+      await _pumpLogin(tester, harness);
+      await tester.enterText(
+        find.byType(TextField).first,
+        'student@example.com',
+      );
+      await tester.enterText(find.byType(TextField).last, 'password123');
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'));
+      await _pumpFrames(tester);
+      expect(find.text('เลือกเข้าร่วมการวิจัย'), findsOneWidget);
+      expect(find.textContaining('ฉบับความยินยอม: 1'), findsOneWidget);
+      await tester.tap(find.text('ยินยอมเข้าร่วม'));
+      await _pumpFrames(tester);
+      expect(find.text('LOGIN_HOME_REACHED'), findsOneWidget);
+      expect(harness.consentRepository.decisions, [('owner-a', true)]);
+      expect(harness.consentRepository.decisionVersions, [1]);
+    },
+  );
 }
 
 Future<void> _pumpRegistration(
@@ -287,6 +388,23 @@ Future<void> _pumpRegistration(
   );
 }
 
+Future<void> _pumpLogin(WidgetTester tester, _RegistrationHarness harness) =>
+    tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          account: harness.account,
+          researchConsent: harness.consent,
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+        ),
+        routes: {
+          AppRoute.home.path: (_) =>
+              const Scaffold(body: Text('LOGIN_HOME_REACHED')),
+          AppRoute.emailVerification.path: (_) =>
+              const Scaffold(body: Text('EMAIL_VERIFICATION_REACHED')),
+        },
+      ),
+    );
+
 Future<void> _fillRegistration(WidgetTester tester) async {
   await tester.tap(find.byType(Checkbox));
   await tester.enterText(find.byType(TextField).first, 'student@example.com');
@@ -306,6 +424,7 @@ final class _RegistrationHarness {
     bool initialResearchAccepted = false,
     bool initialResearchWithdrawn = false,
     Object? consentLoadError,
+    int researchVersion = 1,
   }) : owners = _RegistrationOwners(),
        consentRepository = _RecordingConsentRepository(
          accepted: initialResearchAccepted,
@@ -325,6 +444,7 @@ final class _RegistrationHarness {
       owners: owners,
       repository: consentRepository,
       nowUtc: () => DateTime.utc(2026, 10, 21),
+      version: researchVersion,
     );
   }
 
@@ -343,6 +463,8 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
   });
 
   final List<(String, bool)> decisions = [];
+  final decisionVersions = <int>[];
+  int loadCalls = 0;
   bool accepted;
   final bool withdrawn;
   final Object? loadError;
@@ -352,6 +474,7 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
     required String ownerId,
     required int version,
   }) async {
+    loadCalls++;
     if (loadError case final error?) throw error;
     return ResearchConsentStatus(
       ownerId: ownerId,
@@ -370,6 +493,7 @@ final class _RecordingConsentRepository implements ResearchConsentRepository {
     required DateTime decidedAtUtc,
   }) async {
     decisions.add((ownerId, accepted));
+    decisionVersions.add(version);
     this.accepted = accepted;
     return true;
   }
@@ -428,6 +552,7 @@ final class _RegistrationUpgrades implements OwnerUpgradeRepository {
 final class _RegistrationGateway implements AccountGateway {
   Completer<void>? pending;
   int registerCalls = 0;
+  int signInCalls = 0;
 
   @override
   AccountSession? currentSession;
@@ -480,7 +605,16 @@ final class _RegistrationGateway implements AccountGateway {
   Future<AccountSession> signIn({
     required String email,
     required String password,
-  }) => throw UnimplementedError();
+  }) async {
+    signInCalls++;
+    currentSession = AccountSession(
+      uid: 'registered-user',
+      email: email,
+      isAnonymous: false,
+      emailVerified: true,
+    );
+    return currentSession!;
+  }
 
   @override
   Future<AccountSession> updateDisplayName(String displayName) =>

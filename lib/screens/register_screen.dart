@@ -91,7 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final researchConsent = _researchAvailability.isEnabled
           ? _researchConsent
           : null;
-      if (researchConsent != null) {
+      if (researchConsent != null &&
+          researchConsent.version == ResearchConsentUseCases.currentVersion) {
         try {
           final consentContext = await researchConsent.load();
           if (!mounted) return;
@@ -101,10 +102,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             if (accepted == true) {
               recorded = await researchConsent.accept(
                 expectedOwnerId: consentContext.ownerId,
+                expectedVersion: ResearchConsentUseCases.currentVersion,
               );
             } else if (accepted == false && consentContext.accepted) {
               recorded = await researchConsent.withdraw(
                 expectedOwnerId: consentContext.ownerId,
+                expectedVersion: ResearchConsentUseCases.currentVersion,
               );
             }
             if (!recorded && mounted) {
@@ -134,7 +137,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _showPrivacyNotice() {
-    final researchNotice = _researchAvailability.isEnabled
+    final researchNotice =
+        _researchAvailability.isEnabled &&
+            _researchConsent?.version == ResearchConsentUseCases.currentVersion
         ? '\n\nการเข้าร่วมงานวิจัยเป็นทางเลือกและจะถามแยกหลังสร้างบัญชี '
               'การไม่เข้าร่วมไม่กระทบการเรียนตามปกติ'
         : '';

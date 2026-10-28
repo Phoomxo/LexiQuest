@@ -83,10 +83,7 @@ class _SettingScreenState extends State<SettingScreen> {
         widget.accountDeletion ?? dependencies?.accountDeletion;
     final researchConsent =
         widget.researchConsent ?? dependencies?.researchConsent;
-    if (!identical(_researchConsent, researchConsent)) {
-      _researchConsent = researchConsent;
-      _researchStatus = researchConsent?.load();
-    }
+    _replaceResearchConsent(researchConsent);
     _syncTrigger ??= dependencies?.syncTrigger;
     _replaceSyncStatusSource(dependencies?.syncStatus);
     _fieldFeatures =
@@ -94,6 +91,32 @@ class _SettingScreenState extends State<SettingScreen> {
         dependencies?.fieldFeatures ??
         const BuildFieldFeatureRegistry.fieldDefaults();
     _replaceDeviceModels(widget.deviceModels ?? dependencies?.deviceModels);
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.researchConsent, widget.researchConsent)) {
+      _replaceResearchConsent(
+        widget.researchConsent ??
+            AppDependenciesScope.maybeOf(context)?.researchConsent,
+      );
+    }
+  }
+
+  void _replaceResearchConsent(ResearchConsentUseCases? consent) {
+    if (identical(_researchConsent, consent)) return;
+    _researchConsent = consent;
+    _researchStatus = consent == null ? null : _loadResearchStatus(consent);
+  }
+
+  Future<ResearchConsentStatus> _loadResearchStatus(
+    ResearchConsentUseCases consent,
+  ) {
+    final pending = consent.load();
+    // FutureBuilder subscribes next frame; keep the same result observed now.
+    pending.ignore();
+    return pending;
   }
 
   void _replaceSyncStatusSource(SyncStatusSource? source) {
@@ -355,9 +378,16 @@ class _SettingScreenState extends State<SettingScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _withdrawResearchConsent(String expectedOwnerId) async {
+  Future<void> _withdrawResearchConsent(ResearchConsentStatus expected) async {
     final consent = _researchConsent;
     if (consent == null || _busy || _syncBusy) return;
+    if (consent.version != expected.version) {
+      setState(() {
+        _researchStatus = _loadResearchStatus(consent);
+      });
+      _show('สถานะความยินยอมเปลี่ยนแล้ว กรุณาตรวจสอบอีกครั้ง');
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -381,29 +411,45 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
     );
     if (!mounted) return;
+    if (!identical(_researchConsent, consent)) {
+      _show('สถานะความยินยอมเปลี่ยนแล้ว กรุณาตรวจสอบอีกครั้ง');
+      return;
+    }
     if (confirmed != true) {
       setState(() {
-        _researchStatus = consent.load();
+        _researchStatus = _loadResearchStatus(consent);
       });
       return;
     }
     setState(() => _busy = true);
     try {
-      final withdrawn = await consent.withdraw(
-        expectedOwnerId: expectedOwnerId,
-      );
-      if (mounted) {
+      final current = await consent.load();
+      if (!mounted || !identical(_researchConsent, consent)) return;
+      if (current.ownerId != expected.ownerId ||
+          current.version != expected.version ||
+          !current.accepted) {
         setState(() {
-          _researchStatus = consent.load();
+          _researchStatus = Future.value(current);
+        });
+        _show('สถานะความยินยอมเปลี่ยนแล้ว กรุณาตรวจสอบอีกครั้ง');
+        return;
+      }
+      final withdrawn = await consent.withdraw(
+        expectedOwnerId: expected.ownerId,
+        expectedVersion: expected.version,
+      );
+      if (mounted && identical(_researchConsent, consent)) {
+        setState(() {
+          _researchStatus = _loadResearchStatus(consent);
         });
         if (!withdrawn) {
           _show('สถานะความยินยอมเปลี่ยนแล้ว กรุณาตรวจสอบอีกครั้ง');
         }
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && identical(_researchConsent, consent)) {
         setState(() {
-          _researchStatus = consent.load();
+          _researchStatus = _loadResearchStatus(consent);
         });
         _show('ถอนความยินยอมไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
       }
@@ -740,13 +786,13 @@ class _SettingScreenState extends State<SettingScreen> {
                   return Card(
                     child: Column(
                       children: [
-                        const ListTile(
+                        ListTile(
                           minTileHeight: 64,
-                          leading: Icon(Icons.fact_check_outlined),
-                          title: Text('ความยินยอมงานวิจัย'),
+                          leading: const Icon(Icons.fact_check_outlined),
+                          title: const Text('ความยินยอมงานวิจัย'),
                           subtitle: Text(
                             'ยินยอมฉบับ '
-                            '${ResearchConsentUseCases.currentVersion} '
+                            '${status.version} '
                             'และถอนความยินยอมได้',
                           ),
                         ),
@@ -760,9 +806,7 @@ class _SettingScreenState extends State<SettingScreen> {
                               ),
                               onPressed: _busy || _syncBusy
                                   ? null
-                                  : () => _withdrawResearchConsent(
-                                      status.ownerId,
-                                    ),
+                                  : () => _withdrawResearchConsent(status),
                               icon: const Icon(Icons.cancel_outlined),
                               label: const Text('ถอนความยินยอม'),
                             ),
