@@ -1,0 +1,23 @@
+{
+  "bundleId": "B08",
+  "packageId": "G3.4",
+  "baseSha": "7a238ebef41af7d00002d6f5e870b85fa6ed2d8f",
+  "design": [
+    "Reload canonical queue after returning from review; preserve launch retirement/compensation and display read errors with retry",
+    "Fence asynchronous queue reads by checking the active owner again before returning",
+    "Retain version-pinned launches, first-answer/repair history separation and read-only recommendation reasons/manual choices"
+  ],
+  "alternatives": [
+    "Chosen: explicit reload through existing authority, no storage/schema change",
+    "Rejected: deleting completed items from UI optimistically, because merged saved/mistake/due provenance may remain",
+    "Rejected: new review state writer, because existing canonical readers own eligibility"
+  ],
+  "verification": [
+    "New reload and owner-switch behavioral regressions",
+    "Review/history/recommendation bounded suites",
+    "Result-to-review canonical adapter and result presentation coverage"
+  ],
+  "external": [
+    "Device/manual screen reader/live services NOT RUN"
+  ]
+}

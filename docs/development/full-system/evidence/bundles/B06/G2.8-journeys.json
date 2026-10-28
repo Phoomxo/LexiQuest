@@ -1,0 +1,36 @@
+{
+  "journeyCount": 2,
+  "lessonModeCount": 14,
+  "featureCount": 44,
+  "records": [
+    {
+      "id": "Adventure",
+      "productionEntry": "home/learn/today-experience",
+      "contract": "lib/runtime/production_feature_contract.dart",
+      "route": "lib/screens/main_navigation_screen.dart -> TodayExperienceHost -> AdventureMixedReviewScreen -> AdventureResultLifecycleScreen",
+      "availability": "Feature registry, owner and entry/content permit; unavailable content does not fabricate a session; no activation change",
+      "interaction": "Canonical mixed modes; composing text held until committed; repair exposures separate from answers",
+      "lifecycle": "Explicit confirmed back, durable pending retry, frozen recovery; next action/receipt retained on projection failure",
+      "result": "Canonical evidence and reward receipts; history replay owns new practice boundary and preserves source identity",
+      "accessibility": "320 dark/high contrast text200 reduced motion; semantics and48px targets; confirmed route exit",
+      "evidence": [
+        "G2.8-baseline",
+        "G2.8-runs"
+      ]
+    },
+    {
+      "id": "Ghost",
+      "productionEntry": "drawer/learning/ghost-duel",
+      "contract": "lib/runtime/production_feature_contract.dart",
+      "route": "lib/screens/main_navigation_screen.dart -> GhostShadowDuelScreen",
+      "availability": "Registered dependency and nonempty canonical weakness session; observed timing/date required before starting",
+      "interaction": "Typed recall vs historical opponent; composing/disposed input cannot submit; existing v1 engine unchanged",
+      "lifecycle": "Owner pinned; pending evidence/back/terminal retry retain identity; unavailable load retirement safe",
+      "result": "Actual response time and canonical answer commit drive result; no fallback historical statistics",
+      "accessibility": "Real scroll/touch submission and terminal result at320/text200,390,840 dark reduced motion",
+      "evidence": [
+        "G2.8-runs"
+      ]
+    }
+  ]
+}

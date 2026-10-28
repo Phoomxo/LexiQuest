@@ -1,0 +1,25 @@
+[
+  {
+    "id": "E7-G88-M01",
+    "method": "Automated evidence inventory",
+    "finding": "Initially included all golden diagnostic PNGs in every target closure and retained retired guided_repair_storage path from inherited receipt",
+    "correction": "Limit golden oracle closure to relevant test directory; ignore output-only failures; map retired target to accepted E6 migration_v30_to_v31 identity. Preserve original inventory and failed selection log.",
+    "status": "corrected-no-acceptance-bypass"
+  },
+  {
+    "id": "E7-G88-M02",
+    "method": "Regression batch02 during D25 commit",
+    "finding": "Wrapper InputDrift while474 tests returned0; HEAD advanced and eight golden diagnostic outputs changed",
+    "correction": "Compare every source/config/asset input; only output-only failures PNGs differ. Keep wrapper InputDrift and retain command result separately.",
+    "evidence": "g88-input-drift-reconciliation.json",
+    "status": "source-reconciled-wrapper-not-reclassified"
+  },
+  {
+    "id": "E7-G87-M03",
+    "method": "Git commit",
+    "finding": "Zero-byte stale worktree index.lock with no git process",
+    "correction": "Record exact lock metadata, verify known worktree path and no running Git, remove single stale lock then commit successfully",
+    "evidence": "external post-g83-e7/g87-stale-git-lock.json",
+    "status": "recovered"
+  }
+]

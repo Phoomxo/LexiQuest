@@ -1,0 +1,31 @@
+{
+  "checkpoint": "072",
+  "status": "NATIVE_CLOZE_GUIDANCE_RETEST_PASS",
+  "sourceCommit": "c7e91dc3",
+  "installedApk": "build/ari-assistance-071.apk",
+  "sourcePins": "evidence/cloze-live-071/source-pins.json",
+  "native": {
+    "skip": "Fresh live provider says cloze1/3 English,skip ungraded,tap ดำเนินต่อ;collapse AI/scroll if hidden",
+    "typed": "Same conversation fresh tools:cloze2/3 typed English,tap ตรวจคำตอบ;empty blocked;collapse/scroll if hidden",
+    "selected": "Same conversation fresh tools:cloze3/3 selected input,choose then ตรวจคำตอบ;collapse/scroll if hidden",
+    "afterDisconnect": "Selected item manually completed after explicit disconnect",
+    "persistence": "100percent2correct0wrong;exact2rows typed independentRecall at2,selected recognition at3;no skip or AI answer row"
+  },
+  "defectClosure": {
+    "id": "CLOZE-MANUAL-GUIDANCE-071",
+    "status": "VERIFIED_FIXED_FOR_REPRODUCED_SKIP_TYPED_AND_SELECTED_NATIVE_CASES",
+    "limits": "One live reply per state on this build;not a guarantee for every provider response"
+  },
+  "evidence": [
+    "evidence/cloze-guidance-072/observations.json",
+    "evidence/cloze-guidance-072/durable-summary.json"
+  ],
+  "reusedHostEvidence": "23cloze tests/analysis071;source hashes rechecked unchanged;no redundant rerun",
+  "remaining": [
+    "Definition live skip-state guidance",
+    "Associative native context",
+    "Other workflow/mode audit gaps incl exports/rewards/speech/camera/sync",
+    "Whole14workflow/14mode acceptance audit"
+  ],
+  "wholeGoalComplete": false
+}

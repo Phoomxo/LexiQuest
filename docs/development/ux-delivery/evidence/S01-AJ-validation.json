@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T14:55:00.866113+00:00",
+  "item": "S01-AJ-learner-preferences-recovery",
+  "taskId": "01a0d3d5-0385-7181-ac32-8dc2a3de9775",
+  "status": "HOST_PASS",
+  "hostTests": 175,
+  "newTests": 23,
+  "confirmedRedResolved": 17,
+  "remainingRed": [],
+  "gates": [
+    {
+      "path": "build/ux-delivery/S01-AJ/final-feature.json",
+      "sha256": "1d9305b9c6e63241c45261f82fbb33bc6113f6f3ad2cfc3218d4b924ea828e50",
+      "tests": 58,
+      "logs": [
+        {
+          "path": "build/ux-delivery/S01-AJ/final-feature.stdout.log",
+          "sha256": "3ab76a9f953d9f91da15d0cabd332483742c10ce9e8276002a95cedd79bfa7cd"
+        },
+        {
+          "path": "build/ux-delivery/S01-AJ/final-feature.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    },
+    {
+      "path": "build/ux-delivery/S01-AJ/final-regression.json",
+      "sha256": "7f6fa2c378ae907821d690de51fbc87b954807dc8d62b43515148051cab30800",
+      "tests": 117,
+      "logs": [
+        {
+          "path": "build/ux-delivery/S01-AJ/final-regression.stdout.log",
+          "sha256": "77271af9d86ce1ce4fb031762d932ca28e207d2d28a5a80255219d46970d3ce8"
+        },
+        {
+          "path": "build/ux-delivery/S01-AJ/final-regression.stderr.log",
+          "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+        }
+      ]
+    }
+  ],
+  "sourcePinsVerified": 1539,
+  "sourceFingerprint": "242362aaadc58b67242eff86ae67b736ff7a41675e426862a838ce978538de9d",
+  "checkpoint": "build/ux-delivery/S01-AJ/host-checkpoint-source.zip",
+  "checkpointSha256": "a37127178aebdc95b35605c0e03a03a6859f3a083671c56b3ab28a583b15506b",
+  "changes": [
+    {
+      "path": "lib/screens/learning_preference_quiz_screen.dart",
+      "beforeSha256": "ca34f94e45672d06c3d9b23224c911c1fb6bdf1f6a1077d4760b200be941aec1",
+      "afterSha256": "4b36bd5f80923c920caa06e1db1c9f63f6c51d283c780cde1a906844c14ebf38"
+    },
+    {
+      "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+      "beforeSha256": "c04c5a4149f8fd424761270ad50033c357c2493a0f0f8e6d03faef16cd204661",
+      "afterSha256": "d818b97414032864133c1eb9fa66c24e09d867dc0edd59f58f2fe9f068d89006"
+    },
+    {
+      "path": "test/screens/learning_preference_quiz_screen_test.dart",
+      "beforeSha256": "6d806e9feca8ecfe3c4955950211132e9eea5f64cd9fb7b5630a7e00295ca68d",
+      "afterSha256": "5eea5a8b923efca58b0d6c5c96bc9411e257a5e18ed2eac4711a16d88ebf3d51"
+    },
+    {
+      "path": "test/features/preferences/learner_preferences_use_cases_test.dart",
+      "beforeSha256": "891c72a97e7b04ac02da51bf3e0b55fe724c99fb7e4a4d45b4018027be81fdd8",
+      "afterSha256": "e2b4bd2073d63d486bab6f5a3c862da510b9036a5b6a6ad91ba36bed9528752b"
+    },
+    {
+      "path": "test/screens/profile_owner_lifecycle_test.dart",
+      "beforeSha256": "8cf0a5e569702ff0eb6a3d0c7e7eb7d50d8c21e131e0e143955157cff756c38a",
+      "afterSha256": "560b7c63313eaa7f8cef8c78ef043552b5419a0b737a068294cc46989a1caa05"
+    }
+  ],
+  "prototypeReuse": {
+    "tests": 115,
+    "compatibilityChecks": 3,
+    "pinsVerified": {
+      "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+      "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+      "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+      "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+      "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+      "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+      "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+      "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+    },
+    "rerun": false
+  },
+  "selfReview": "Sole writer source/authority/lifetime review, no subagents. Through-commit rollback, scoped learning merge, expected owner admission and post-read/post-save revalidation retained. Host evidence only.",
+  "diagnostics": [
+    "13 initial widget RED + 1 isolated Drift through-commit RED; all assertions retained.",
+    "Post-save owner revalidation RED; transient owner-observation draft loss RED; open-dropdown owner transition RED. Total 17 targeted confirmed RED cases resolved; introduced dropdown regression and fixture diagnostics separately recorded.",
+    "Flutter dropdown onTap runs after navigator.push: visibility check there incorrectly rejected picker ownership. Read local SDK implementation, kept generation/mounted/service admission, retained actual choose/dismiss regression.",
+    "360px lazy-list scroll fixture corrected to scrollUntilVisible on ListView descendant; semantics handle explicitly disposed. Real-Drift fixture enables studyPlanning rather than bypassing feature guard and drains existing owner gate timer.",
+    "Open-dropdown owner transition failed after first fix; stopped method, instrumented owner/route events and tree, confirmed route current but no dependency notification after picker disposal. Added one generation-bound post-frame resume check. Temporary logs removed.",
+    "Diagnostic script substring mismatch corrected by exact rg discovery; one unchanged failing diagnostic gate accidentally repeated, no passed gate repeated.",
+    "Windows rg wildcard path error corrected using discovered literal app_bootstrap.dart. Git default whitespace check interpreted CRLF as trailing whitespace; cr-at-eol-aware targeted check passed, no line-ending churn."
+  ],
+  "originalArchives": [
+    "build/ux-delivery/S01-AJ/pre-edit.zip",
+    "build/ux-delivery/S01-AJ/additional-pre-edit.zip",
+    "build/ux-delivery/S01-AJ/bootstrap-pre-edit.zip"
+  ],
+  "pending": [
+    "native/device/restart",
+    "real keyboard/screen-reader/visual",
+    "user/learning/trial",
+    "release"
+  ],
+  "sprintAccepted": false,
+  "nonChanges": [
+    "No automatic save or AI write",
+    "No schema, scoring, study assignment/protocol, research activation/synchronization/statistical reporting",
+    "No live provider, notification scheduling, purchases or deployment"
+  ]
+}

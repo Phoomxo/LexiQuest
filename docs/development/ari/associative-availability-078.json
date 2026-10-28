@@ -1,0 +1,32 @@
+{
+  "checkpoint": "078",
+  "status": "ASSOCIATIVE_UNAVAILABLE_GUIDANCE_HOST_PASS_NATIVE_PROVIDER_PENDING",
+  "defects": [
+    "Feature-off Stage3 advertised ready despite disabled submission",
+    "Restored effort-capped session advertised ready despite disabled next"
+  ],
+  "implementation": "Read-only phase and manualNextStep now reflect feature-unavailable and operations-unavailable without altering baseline gates or durable timers. Saving/retry/completed take priority.",
+  "host": {
+    "red": [
+      "Emergency-off context expected feature-unavailable actual ready",
+      "Real SQLite reopen at600second durable effort expected operations-unavailable actual ready"
+    ],
+    "green": "58 tests across session and launcher files PASS; three-file analysis clean",
+    "coverage": "Existing absent/connected/disconnected flows preserved; emergency-off stale submit writes nothing; expired recovery restores count and original answer IDs/event/SRS/reward counts with next disabled",
+    "evidenceLevel": "Real database reopen for expired session; recording repository for feature-off stale submission"
+  },
+  "native": {
+    "installedApk": "build/ari-assistance-078.apk",
+    "install": "Success",
+    "apkSha256": "75849772c1e19a572c819e03fe3024da26be2b5045510ec5ac912d9cd01c011c",
+    "providerRetest": "NOT_RUN",
+    "previous077": "Stage4 restored100,exact1correct attempt;durable600second cap verified",
+    "stayAwakeUsb": 2
+  },
+  "remaining": [
+    "Live provider capped-session guidance",
+    "Fresh associative stage1-6 assistance and explicit disconnect",
+    "Full original14workflow14mode gaps"
+  ],
+  "wholeGoalComplete": false
+}

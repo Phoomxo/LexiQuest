@@ -1,0 +1,75 @@
+{
+  "status": "PASS",
+  "source": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444 default",
+  "precondition": "Two deliberate wrong answers entered through normal mixed lesson; task-created synthetic guest only",
+  "checks": [
+    "No-weakness state verified before deliberate wrong answers",
+    "Native two-word duel completed with two correct durable attempts",
+    "All preceding sessions, attempts and rewards unchanged"
+  ],
+  "ghostSession": {
+    "id": "session:49b55a34-7cfd-4781-bdc0-4c762f88e128",
+    "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+    "activity_type": "ghostDuel",
+    "state": "completed",
+    "started_at_utc_ms": 1789900681850,
+    "ended_at_utc_ms": 1789900741152,
+    "correct_count": 2,
+    "wrong_count": 0,
+    "score": 100,
+    "app_version": "1.0.0+14",
+    "build_id": "development",
+    "session_configuration_identity": null,
+    "session_configuration_json": null,
+    "configuration_active_effort_us": 0
+  },
+  "ghostAttempts": [
+    {
+      "id": "attempt:d05e433b-5380-465a-bdf4-ae18c029c3f0",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:49b55a34-7cfd-4781-bdc0-4c762f88e128",
+      "word_id": "word:starter-bag",
+      "prompt_mode": "ghostSpelling",
+      "is_correct": 1,
+      "response_time_ms": 51421,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789900733311,
+      "provider_provenance": "local:ghost-duel:v1",
+      "evidence_class": "recreational",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recreational\",\"skillId\":\"ghost-duel\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    },
+    {
+      "id": "attempt:1c871081-8309-419a-b583-cf40d129e1ad",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:49b55a34-7cfd-4781-bdc0-4c762f88e128",
+      "word_id": "word:starter-book",
+      "prompt_mode": "ghostSpelling",
+      "is_correct": 1,
+      "response_time_ms": 7310,
+      "attempt_number": 2,
+      "occurred_at_utc_ms": 1789900740873,
+      "provider_provenance": "local:ghost-duel:v1",
+      "evidence_class": "recreational",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recreational\",\"skillId\":\"ghost-duel\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    }
+  ],
+  "excludedFinding": "One earlier one-option meaning question reproduced D24; its historical attempt is retained as defect evidence, not accepted recognition coverage",
+  "pins": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d23-final-db\\rows.json",
+      "sha256": "fce6c7365b70ea5f266f6c73a4c9a8291e38610f8adc1b4b4810047881c068a8"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-ghost-final-db\\rows.json",
+      "sha256": "12ad6a2f2e10e639be1ffa20439730dc4332c9338e0b20a52bdf3936d93be60d"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-ghost-board.xml",
+      "sha256": "6aec25dc6ed57abe1942106f6e63f76bba91f2f9402dd0ae67f636d6de477c3c"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-ghost-result.xml",
+      "sha256": "81891816f9c8c8b8f6a8f5645ca57a984877c7719b786d393d24d846481f5f02"
+    }
+  ]
+}

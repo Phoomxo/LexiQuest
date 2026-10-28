@@ -1,0 +1,42 @@
+{
+  "defects": [
+    {
+      "id": "B07-INTENT-01",
+      "expected": "One pending save; visible error/retry",
+      "actual": "Two rapid taps called writer twice; rejected futures uncaught",
+      "cause": "Two surfaces called async action directly",
+      "fix": "Shared generation-fenced single-flight control with local result/error",
+      "red": "G3.3-red",
+      "retest": "G3.3-final",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-INTENT-02",
+      "expected": "Unsave reachable through usecase",
+      "actual": "Repository had tombstone removal but no action in these surfaces",
+      "fix": "Add removal usecase/button; verify repeated removes, delete outbox and unchanged points/weakness",
+      "retest": "G3.3-final",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-REPORT-01",
+      "expected": "Local persistence distinct from remote delivery",
+      "actual": "Pending label implied sending; success closed without local receipt",
+      "fix": "Local persistence progress and explicit local-only receipt; retained error/retry",
+      "red": "G3.3-red",
+      "retest": "G3.3-final",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-FIXTURE-03",
+      "expected": "Compile new integration assertions",
+      "actual": "Drift Column conflict and missing boolean extension",
+      "cause": "New test import/query syntax",
+      "fix": "Hide Drift Column; use two conjunctive query predicates; assertions retained",
+      "evidence": "G3.3-fixture-failure",
+      "retest": "G3.3-final",
+      "status": "fixed"
+    }
+  ],
+  "requiredOpenDefects": []
+}

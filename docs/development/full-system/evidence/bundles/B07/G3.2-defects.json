@@ -1,0 +1,43 @@
+{
+  "defects": [
+    {
+      "id": "B07-LEXICAL-01",
+      "expected": "Only matching reviewed artifact fields exposed",
+      "actual": "Unreviewed/rejected/revision mismatch accepted by card",
+      "cause": "Display trusted direct richMetadata input without pin checks",
+      "fix": "Gate fields/audio on approved published core and matching artifact revision/checksum shape",
+      "red": "G3.2-red",
+      "status": "fixed",
+      "retest": "G3.2-final"
+    },
+    {
+      "id": "B07-LEXICAL-02",
+      "expected": "Definition/source/CEFR meaning explicit",
+      "actual": "Definition hidden and provenance absent",
+      "fix": "Render existing English definition and source; lexical CEFR approximation notice; trace audio asset and language",
+      "red": "G3.2-red",
+      "status": "fixed",
+      "retest": "G3.2-final"
+    },
+    {
+      "id": "B07-LEXICAL-03",
+      "expected": "New identity starts collapsed without writing actions",
+      "actual": "Expansion carried across replaced revision",
+      "fix": "Reset expansion on changed word/revision/metadata",
+      "red": "G3.2-expansion-red",
+      "status": "fixed",
+      "retest": "G3.2-final"
+    },
+    {
+      "id": "B07-FIXTURE-02",
+      "expected": "Both pinned cards accessible through scrolling",
+      "actual": "Old test assumed both lazy ListView children built before scrolling",
+      "cause": "New provenance text increases card height",
+      "fix": "Scroll to second word and assert both actual card IDs; keep availability/progress assertions",
+      "evidence": "G3.2-regression-failure",
+      "status": "fixed",
+      "retest": "G3.2-final"
+    }
+  ],
+  "fixtureStrengthening": "Positive card fixtures now include reviewed artifact revision/checksum preconditions; callback/semantics assertions retained."
+}

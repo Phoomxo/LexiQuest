@@ -1,0 +1,154 @@
+{
+  "taskId": "01a0d01e-4d22-7f61-9f4d-403ae77b8450",
+  "historicalReceiptAudit": "historical-audit-r3-05-part12.json",
+  "groups": [
+    {
+      "group": "W07",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/review_center_screen.dart": "6ab4ec3dddc06cefc666d53b1ccfed57130d898cb0508962286742a2bd551c22",
+        "lib/screens/weakness_clinic_screen.dart": "cac9f5439bb4bec10d8fd5613ad2d780c6473e485111c93830a213d8bebfeeff",
+        "test/screens/review_center_screen_test.dart": "109cbaae152b7f409fa923ba5d2e840950ae5274784a7c7003a16878b7a8f974",
+        "test/screens/weakness_clinic_screen_test.dart": "1faef49f24fdc50b3548613240a016eef065f47826e567753f85fc3d0e7a8179"
+      },
+      "evidencePins": {
+        "review-context-108.json": "087df3ee56bb27aa844f9de0333613b1f583b355bfe591792f00acc347ddab97",
+        "weakness-live-112.json": "d648ad8fdf841651ad6810927e513bfa3817e33ff0654ef9561ebe190d7bd08a",
+        "srs-guidance-106.json": "3aa9a59505c58c83e219d055136ae4f66c35c84a36b44c77fc36dcc223e514f8"
+      },
+      "observed": "Review108 submits through controller directly after UI launch;no actual answer-button claim. Weakness tests distinguish zero sample/no incorrect words from mastery and due counts;foreign owner hidden. NewA38 proves file-backed self-rating retry only.",
+      "next": "Inspect actual review answer UI and missing durability/lifecycle combinations;transferprobe remains Off, no research activation.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W08",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/study_plan_screen.dart": "b3bf808fbeb2f4333e839c3f07bd3ede0aad885f1a90c22b7c562caaf51e13bd",
+        "lib/screens/learning_goals_screen.dart": "cbfdca82591573d65da39832c376a4acb65acee06428bfee96da028842da4e97",
+        "lib/screens/personal_sets_screen.dart": "fa7110a8d5fcad9a9410121d8fc00615fc7df2713750231b652de90b8dde1b58",
+        "lib/screens/learning_pack_detail_screen.dart": "c05d561a51ca7f1e0540cfbee13e6c8b56df8bf044b24a8923282130988b022d",
+        "test/screens/learning_goals_assistance_test.dart": "5335065bda660c198259a6a531fe2b8f744ac66215381b2a819ee7fe5be53b06",
+        "test/screens/personal_sets_screen_test.dart": "6347be750412a31b17e02db4e920b7555b1d488e5a0bb8073522eb132ee13efa"
+      },
+      "evidencePins": {
+        "preferences-context-086.json": "3bdfe08a6392b86c7f97201695823a0651253400926f0224f52edfddb94222b7",
+        "goals-context-089.json": "36912355eedf056ffdc77a75283e42fdfcaef7078df2dc775eff2167c5622f9b",
+        "personalsets-confirmation-101.json": "e68880362649f63da1af9554a565e2ee0e69affd2d283065e820d3b8ba8d96c5",
+        "pack-detail-context-116.json": "25d8afb058cde77e44a73ca17c862826db1acb8aaa383b6d044f06249a483dcb"
+      },
+      "observed": "Historical086/089 use repository fixtures;101uses SQLite postcommitreadback retry. Catalog native detail prerequisites116 were addressed boundedly byR3-02;consult current R3-02 receipt before duplicating. Part10questionnaire route-reentry2 is not DBreopen.",
+      "next": "Compare latest originals/current closures for goal-editor/planning/personal-set conditions;revalidate changed selections only. Preserve nonempty catalog R3-02 baseline.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W09",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/learning_history_screen.dart": "738810631d85ce3ff79c0f248601d2acf8515aa02279fe27aff9d3ce546fbcbe",
+        "test/screens/learning_history_screen_test.dart": "7ca664c613a5ea9d5485f4e169f0caf846c1bf61dfb68a9accf193bbdc0a3771"
+      },
+      "evidencePins": {
+        "settings-review-progress-native-033.json": "ba0a547954194ff919e58e45acba29e3dde029f82db34041bf82c8ee8670cf88",
+        "camera-result-036.json": "69ac80fb05c59753824990502bbf7aebb81794057a3f9dabe5431a3399ac12aa",
+        "pair-native-049.json": "8b54ae49b9843da98f91d76cf989723d322e25c9632aba3967fe50cb757493b6"
+      },
+      "observed": "History evidence-class explanations and owner guards present;Pair actualhost/history/replay10already part11. Native history036 was representative abandoned shadowing0/0,not full progress matrix.",
+      "next": "Audit all evidence-class/history projections and source-specific receipts;no repeat part11Pair actual10.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W10",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/quest_status_screen.dart": "5ed97648d997e328902b0da4550b7fd687dd4db7e03cb527263037715f1a3d5d",
+        "lib/screens/avatar_equipment_screen.dart": "eb445ed74a529a15f712e0a5fe6f3ce6ba50aa1ba53cf71a31dd6bce75f901c1",
+        "test/screens/quest_status_screen_test.dart": "8fbec578ed6d234f63dc89654a72f1e7a23d965d85852c9df35b1c15c1b9c06e",
+        "test/screens/avatar_equipment_screen_test.dart": "cfdd27665dfaed6539dc2fb724b8eeae8d61cc05ac74b15c55eecaaef0850cb8"
+      },
+      "evidencePins": {
+        "quest-assistance-022.json": "f2f7a6b40dd2826d96b0094aa65aff1c24d7d46b561ea081fe05299abdf257a8",
+        "rewards-context-096.json": "b4b6a215235f8ff504ba39ed5918b6a46f745246c17ae49cf22c02e04805e25e",
+        "rewards-native-097.json": "74ca55164cb13a3aa7233d33fc9e80f09ea132587ecd23272a6e8e4f32e3391f"
+      },
+      "observed": "Quest tests use realSQLite dailyrefresh plus source-replacement fixtures. Rewards096 tests completecatalog/offscreenmetadata/previewidentity/owner and manual equip;native097historical only.",
+      "next": "Audit latest ownership/reconciliation selections and gaps without purchases/original-account changes;check parts01-03 before rerun.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W11",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/speak_to_text_screen.dart": "72c3ef96ce596b4ffabbd9fb6ed4dbbccc612312e115ddc5e948b2fe848fd3dd",
+        "lib/screens/shadowing_challenge_screen.dart": "eb28b4b0350eaa7cbacd975ce2371ef59b55b30c44cf4814f93e31c2fa40880e",
+        "test/screens/speak_to_text_screen_voice_test.dart": "0cda5b0cfd1aee57a9d70f3f7f0b6536ecfc80177c0a2271e99cb748c347eadd",
+        "test/screens/shadowing_challenge_screen_test.dart": "32a81cd52a4b59d3752bb8b76e6e0b94445ba2ca9d57cc60302806bb71a39ff1"
+      },
+      "evidencePins": {
+        "speaking-assistance-041.json": "18d08ae8137f36575c0412e19a2ef8531a4b4637a9a36edc53fdf91b81ba5ace",
+        "shadowing-save-042.json": "75c9064b917288fd3265452d3217be9477dc60682b509a4d39a33e7279ae4f9f"
+      },
+      "observed": "Part12 speaking4/shadowing28current-host revalidation with gateway/repository doubles. Native041both trials noMatch;no positive recognition.",
+      "next": "Physical microphonepermission/available recognizer/knownspokenreference and fresh isolatedbackup required;successful transcript/quality not inferred from hostsimilarity. File-backed speechdurability remains independent hostgap.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W12",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/object_scanner_screen.dart": "0a4f878df7c5575351d63e354d54698b4ce3bf1cec01321f7f21323d069de02e",
+        "test/screens/object_scanner_screen_test.dart": "597538bab3c28755ff5c3467800ac512fe5fc21b038ae0796babebfb8b92ba56"
+      },
+      "evidencePins": {
+        "camera-result-036.json": "69ac80fb05c59753824990502bbf7aebb81794057a3f9dabe5431a3399ac12aa"
+      },
+      "observed": "FakeScanner tests distinguish cameraReady/notConfident/mapped/unmapped and background clearing;036physical lowconfidence/unmapped result lacks groundtruth and save.",
+      "next": "Audit positive mappedsave host/storage and connection transitions,then authorized physical knownobject+mappedvocabulary+storage delta withfreshbackup. No training/research activation.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W13",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/export_center_screen.dart": "d51f2dc93e21ec3885757bf35dc550e39467e6bd3875d9e3ba8d905309ff1cb8",
+        "test/screens/export_center_flow_test.dart": "3e43c4935be471a06a668647c39c69fff5bc174bdf1b1b3ee84246f35398b604",
+        "test/screens/export_center_screen_test.dart": "05126b1c7d92b02330575beb24aad00032003f1aca396fb19c819adbef99b267"
+      },
+      "evidencePins": {
+        "export-context-082.json": "b71efb92527766071d4db86fe9ca4c371dcb449be743a4d8edbc985b277f54f0",
+        "export-live-083.json": "fe6273ef862b2f60c39fda99fe4d9b224293d5fd079fd35582ecd8ccc7285c96",
+        "export-reconnect-084.json": "a04b0938694050d6775820c93394941c677bee8462c491080fe9843bbd301ee9"
+      },
+      "observed": "082 host realSQLite/filebytes but injected documentpicker outcomes;lateattach and disconnect/manualretry preserved ownerbound context. Native083/084representative historical.",
+      "next": "Compare latest source receipts and actual artifact checksum/content/cancel/failure transitions;do not equate picker-double with Androiddocumentprovider.",
+      "currentWholeCriterionStatus": "OPEN"
+    },
+    {
+      "group": "W14",
+      "reviewLevel": "BOUNDED_SOURCE_ASSERTION_AND_DEPENDENCY_MAP_NOT_ACCEPTANCE",
+      "sourcePins": {
+        "lib/screens/offline_content_manager_screen.dart": "5e80b6ebe2b7b5c42688c7135011ee47bfd2459443b416221ede49aa35a903f3",
+        "test/screens/offline_content_manager_screen_test.dart": "98703bfef8bf1cfd470adf8290ab12c63e2ea25d347cfa36b80db5b37c563791",
+        "lib/features/sync/domain/cloud_sync_policy.dart": "bbc1f36eef095ed683e0b178a1b66f35b9cc47a2afbb06fb492344773d10d9bb",
+        "lib/features/sync/data/drift_cloud_policy_cache.dart": "8066f71e5a655a335b23c9926115c8929302e1a9cb647be96f8ff581f91c2b8a",
+        "test/scenarios/file_backed_sync_recovery_test.dart": "bdd8b07ceadd4b206af0594c3852e1ce07fa4be2b862b093542f1b0d4527ee31"
+      },
+      "evidencePins": {
+        "offline-native-027.json": "f4f447a7524fbf2b5ad9fa9e934a4fbdc12db1efccb94653396f3c129385e01d",
+        "native-context-028.json": "21e773fde0329c9fd0e5175a413912d3461a56c06a78ddb2b44e75b49f762b82",
+        "settings-review-progress-native-033.json": "ba0a547954194ff919e58e45acba29e3dde029f82db34041bf82c8ee8670cf88"
+      },
+      "observed": "Offline tests useFakeManager for status;8192installed vs4096manifest explicitlynoncomparable. Cloud policy returnsdisabled forbuildOff and expiredremoteFailure;cache/source/expiry is not actual hosted sync proof.",
+      "next": "Revalidate relevant offlinecontext/lifecycle/storage only after closure audit. Hosted sync needs configuredauthorized environment/account/gateway and policyenabled;do not enable researchsync or infer remote success from localdownload.",
+      "currentWholeCriterionStatus": "OPEN"
+    }
+  ],
+  "pairNativeApplicability": {
+    "evidence": "pair-native-049.json",
+    "sha256": "8b54ae49b9843da98f91d76cf989723d322e25c9632aba3967fe50cb757493b6",
+    "provenHistorical": "manual4/4baseline,oneconnectedresultinterpretation,disconnectedpractice4/4",
+    "gaps": "activeboardAI/wronganswerrepair/support andactualDBreward/evidencereconciliation;label is insufficient",
+    "newNativeActions": false
+  },
+  "scopeLimit": "Initial bounded source/evidence inventory and gaps;not exhaustive route/dependency closure or current-host certification for W07-W14. OnlyA37-A40are newcurrent assertions. Keep211 remainingIDs."
+}

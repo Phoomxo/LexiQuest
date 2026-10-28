@@ -1,0 +1,8 @@
+{
+  "path": "tool/feature_contract/generate_feature_map.dart",
+  "sha256": "58ef45baa3ffb5e6d488df121e8256d90de42dc714176e2fecc95ed16fe93852",
+  "recordedG74Head": "d47e205056b8ab78e6b3872162d7d27e8ad675d3",
+  "unchangedFromCommittedBaseline": true,
+  "legacyReceiptOmission": true,
+  "action": "broaden future fingerprints and run affected architecture gate"
+}

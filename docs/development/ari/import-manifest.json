@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-20",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility",
+  "purpose": "Byte-exact historical evidence import. Embedded absolute paths are provenance, not current storage instructions.",
+  "files": [
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\completion-receipt.json",
+      "path": "docs/development/ari/evidence/completion-receipt.json",
+      "bytes": 714,
+      "sha256": "61868eaef4dee4ef8df119f9b2be0526831678baba2b40017f714dcaa02f8b8b"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\history\\ai-access-no-surprise-plan.md",
+      "path": "docs/development/ari/evidence/history/ai-access-no-surprise-plan.md",
+      "bytes": 19835,
+      "sha256": "8011c2f737ad352597756ad3bea12d7e9dbc38b799d3e4e8164915fade0a561d"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\history\\lexiquest-mcp-system-design.md",
+      "path": "docs/development/ari/evidence/history/lexiquest-mcp-system-design.md",
+      "bytes": 28579,
+      "sha256": "901fd19760b54e3b828279c8b2be98a9898f94d569ff633f6d8f6a3814ccb517"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\supersession-receipt.json",
+      "path": "docs/development/ari/evidence/supersession-receipt.json",
+      "bytes": 1284,
+      "sha256": "5c82ac4af007dccafcd48c1d33e9669a573229f0b9209aa17368c7783c8b880a"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\execution-authorization.json",
+      "path": "docs/development/ari/evidence/tasks/execution-authorization.json",
+      "bytes": 701,
+      "sha256": "9b36bbffa4628a43067bb8ebb4c9b1506209f2cca28b037c851c6f86f26cd40d"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\state.json",
+      "path": "docs/development/ari/evidence/tasks/state.json",
+      "bytes": 2105,
+      "sha256": "b1ee0a58c209b1af4553d537c0225b21e45451db004424d9e1f04526928f77bc"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V0-handoff.json",
+      "path": "docs/development/ari/evidence/tasks/V0-handoff.json",
+      "bytes": 10772,
+      "sha256": "a323657e0a28e78dc6ce4c9501ca929671dd0c95b6f879476ec2f887afcd998f"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V0.md",
+      "path": "docs/development/ari/evidence/tasks/V0.md",
+      "bytes": 5265,
+      "sha256": "4dbec7a34d715cc40a7031483007ebcd00ce98b388b177939cf8d8a2d5a55f98"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V1-handoff.json",
+      "path": "docs/development/ari/evidence/tasks/V1-handoff.json",
+      "bytes": 13360,
+      "sha256": "9a7981d7cf537cb778a9b293b5ee4dc67dcf2ee51ce5561c66a8fdba97b964d5"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V1.md",
+      "path": "docs/development/ari/evidence/tasks/V1.md",
+      "bytes": 8076,
+      "sha256": "c49b3fabe30421528eff7cb7f0622b8ca33ad082acb128f93b66dd1ec6609fba"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V3-handoff.json",
+      "path": "docs/development/ari/evidence/tasks/V3-handoff.json",
+      "bytes": 39926,
+      "sha256": "6a1292dbcd4d46f8a556600df17503bb2977e2dd812a39a00baeec013742bdb7"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\tasks\\V3.md",
+      "path": "docs/development/ari/evidence/tasks/V3.md",
+      "bytes": 11476,
+      "sha256": "9fc91df8c451ecd18153bf4c93f39b058e91fae2f90622fad03f1ce307ad5883"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\dart-analysis.log",
+      "path": "docs/development/ari/evidence/verification/dart-analysis.log",
+      "bytes": 167,
+      "sha256": "458e4508222dc5f0b8f509f19c7497c8f9d7b45a67a9a6ade15eecb81e9e942e"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\targeted-ai.json",
+      "path": "docs/development/ari/evidence/verification/targeted-ai.json",
+      "bytes": 283183,
+      "sha256": "2045fc7657f6e2b4ab632a31f04a1bbc84fc76f30251c1db3936908af77c8944"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\targeted-ai.stderr.log",
+      "path": "docs/development/ari/evidence/verification/targeted-ai.stderr.log",
+      "bytes": 392,
+      "sha256": "a3639af5e23464fc391dae127fd5493f02c8178068a35866d9c7fdd35dcd623f"
+    },
+    {
+      "source": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\targeted-ai.stdout.log",
+      "path": "docs/development/ari/evidence/verification/targeted-ai.stdout.log",
+      "bytes": 52214,
+      "sha256": "9c8567a11f67ca431784b0a7d006505950a665de95008bb5feb2b0bd2b944ad4"
+    }
+  ]
+}

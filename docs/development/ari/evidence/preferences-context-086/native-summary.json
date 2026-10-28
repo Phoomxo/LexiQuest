@@ -1,0 +1,10 @@
+{
+  "apk": "build/ari-assistance-086.apk",
+  "apkSha256": "5adcc385e55952026aa737fa2c530058027953bd942a6edf2fb62db4626d08f9",
+  "baseline": "Native manual save of35minutes,saved message,leave/reopen retained35;goal balancedGrowth/activity mixedPractice",
+  "reopenedMinutes": 35,
+  "usbStayAwake": "2",
+  "connectedNative": "NOT_RUN",
+  "disconnectedNative": "NOT_RUN",
+  "originalPackage": "untouched"
+}

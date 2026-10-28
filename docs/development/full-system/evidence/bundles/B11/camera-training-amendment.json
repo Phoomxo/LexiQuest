@@ -1,0 +1,19 @@
+{
+  "revision": "2026-09-14-camera-training-5",
+  "originalPackageIdsPreserved": 64,
+  "addedPackageIds": [
+    "P5.3a",
+    "P5.3b",
+    "P5.3c"
+  ],
+  "packageCount": 67,
+  "bundleCount": 21,
+  "packageAndBundleChain": "passed",
+  "briefPaths": "all exist",
+  "coverageLedger": "counts/IDs/dependencies preserved and extended",
+  "sequence": "B11 -> B11A -> B12 -> B13...B20",
+  "authority": "master-relayed explicit user amendment 2026-09-14",
+  "trainingStatus": "NOT RUN in B11; required actual deliverable of B11A",
+  "physicalCameraStatus": "pending actual device testing; internet metrics never substituted",
+  "runtimeTestsReused": "115tests/11files; source inputs unchanged by doc amendment"
+}

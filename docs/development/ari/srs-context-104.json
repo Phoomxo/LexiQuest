@@ -1,0 +1,18 @@
+{
+  "checkpoint": "104",
+  "workflow": "W07",
+  "status": "HOST_RETRY_CONNECTION_CHANGE_PASS",
+  "coverage": [
+    "Both remembered and not-remembered failure expose evidenceRetryRequired, not confirmed recall",
+    "Disconnect hides context; manual retry commits once",
+    "Same evidence identity, timestamp and class retained across retry",
+    "Session finishes once; reconnect exposes no stale finished card or AI mutation actions"
+  ],
+  "fixtureCorrection": "Initial reconnect assertion expected a card after one-card session completed. Existing shell retires card; corrected to require empty context and one successful session finish.",
+  "native": "No new native provider run;103 baseline retained",
+  "remaining": [
+    "Actual provider native connected/disconnected SRS",
+    "Full acceptance audit"
+  ],
+  "wholeGoalComplete": false
+}

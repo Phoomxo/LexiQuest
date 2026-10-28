@@ -1,0 +1,70 @@
+✖ UX08 sample progress distinguishes effort from evidence and never calls samples actual results (7.5271ms)
+✖ UX08 empty history stays empty after sample activity and zero is not a failing learner score (3.6449ms)
+✖ UX08 displayed sample history and exported sample history agree without inventing records (3.8567ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 98.1025
+
+✖ failing tests:
+
+test at docs\design\check-s01-navigation.cjs:8:1
+✖ UX08 sample progress distinguishes effort from evidence and never calls samples actual results (7.5271ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ยังไม่มีหลักฐานยืนยันว่าจำได้/. Input:
+  
+  '<section class="screen" data-view="progress"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">เห็นสิ่งที่ทำได้แล้ว</div><h1 class="title" tabindex="-1">ความก้าวหน้าของฉัน</h1><p class="sub">ดูผลจากการฝึกจริงของคุณ</p><div class="card"><div class="card-row"><span>คำที่เริ่มจำได้</span><span class="stat">12</span></div><p>ตัวเลขตัวอย่างจากหน้าต้นแบบ</p></div><div class="card"><div class="card-row"><span>เวลาที่ฝึกสัปดาห์นี้</span><span class="stat">42 นาที</span></div><p>แสดงเฉพาะกิจกรรมที่เกิดขึ้นจริงในแอป</p></div><button class="action-card" data-route="history"><span class="action-icon ">◷</span><span class="action-copy"><strong>ดูประวัติการเรียน</strong><small>เปิดรายการบทเรียนที่ทำไว้</small></span><span class="chev">›</span></button><button class="action-card" data-route="weakness"><span class="action-icon pink">♡</span><span class="action-copy"><strong>คำที่ควรฝึกเพิ่ม</strong><small>ลองกลับไปทำคำที่ยังสับสน</small></span><span class="chev">›</span></button><div class="info">หากยังไม่เคยฝึก ให้แสดง “ยังไม่มีข้อมูลการเรียน” พร้อมปุ่มเริ่ม ไม่ใช้กราฟศูนย์ที่ชวนสับสน</div><p class="sample-note">ข้อมูลบนหน้านี้เป็นตัวอย่างสำหรับดูดีไซน์ ไม่ใช่ผลการเรียนหรือข้อมูลบัญชีจริง</p></section>'
+  
+      at TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\1d7b\LexiQuest\docs\design\check-s01-navigation.cjs:10:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.start (node:internal/test_runner/test:1177:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<section class="screen" data-view="progress"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">เห็นสิ่งที่ทำได้แล้ว</div><h1 class="title" tabindex="-1">ความก้าวหน้าของฉัน</h1><p class="sub">ดูผลจากการฝึกจริงของคุณ</p><div class="card"><div class="card-row"><span>คำที่เริ่มจำได้</span><span class="stat">12</span></div><p>ตัวเลขตัวอย่างจากหน้าต้นแบบ</p></div><div class="card"><div class="card-row"><span>เวลาที่ฝึกสัปดาห์นี้</span><span class="stat">42 นาที</span></div><p>แสดงเฉพาะกิจกรรมที่เกิดขึ้นจริงในแอป</p></div><button class="action-card" data-route="history"><span class="action-icon ">◷</span><span class="action-copy"><strong>ดูประวัติการเรียน</strong><small>เปิดรายการบทเรียนที่ทำไว้</small></span><span class="chev">›</span></button><button class="action-card" data-route="weakness"><span class="action-icon pink">♡</span><span class="action-copy"><strong>คำที่ควรฝึกเพิ่ม</strong><small>ลองกลับไปทำคำที่ยังสับสน</small></span><span class="chev">›</span></button><div class="info">หากยังไม่เคยฝึก ให้แสดง “ยังไม่มีข้อมูลการเรียน” พร้อมปุ่มเริ่ม ไม่ใช้กราฟศูนย์ที่ชวนสับสน</div><p class="sample-note">ข้อมูลบนหน้านี้เป็นตัวอย่างสำหรับดูดีไซน์ ไม่ใช่ผลการเรียนหรือข้อมูลบัญชีจริง</p></section>',
+    expected: /ยังไม่มีหลักฐานยืนยันว่าจำได้/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at docs\design\check-s01-navigation.cjs:14:1
+✖ UX08 empty history stays empty after sample activity and zero is not a failing learner score (3.6449ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ยังไม่มีหลักฐาน.*ไม่ได้หมายความว่าทำไม่ได้/. Input:
+  
+  '<section class="screen" data-view="progress"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">เห็นสิ่งที่ทำได้แล้ว</div><h1 class="title" tabindex="-1">ความก้าวหน้าของฉัน</h1><p class="sub">ผลการเรียนจะเริ่มขึ้นเมื่อคุณฝึกจริง</p><div class="info">ยังไม่มีข้อมูลการเรียนสำหรับผู้ใช้ใหม่ การเปิดหน้าเรียนอย่างเดียวไม่สร้างผลสำเร็จ</div><button class="action-card" data-route="mode:meaning-quiz"><span class="action-icon ">◈</span><span class="action-copy"><strong>เริ่มฝึกสั้น ๆ</strong><small>ลองทำข้อแรก แล้วกลับมาดูผล</small></span><span class="chev">›</span></button></section>'
+  
+      at TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\1d7b\LexiQuest\docs\design\check-s01-navigation.cjs:17:43)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<section class="screen" data-view="progress"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">เห็นสิ่งที่ทำได้แล้ว</div><h1 class="title" tabindex="-1">ความก้าวหน้าของฉัน</h1><p class="sub">ผลการเรียนจะเริ่มขึ้นเมื่อคุณฝึกจริง</p><div class="info">ยังไม่มีข้อมูลการเรียนสำหรับผู้ใช้ใหม่ การเปิดหน้าเรียนอย่างเดียวไม่สร้างผลสำเร็จ</div><button class="action-card" data-route="mode:meaning-quiz"><span class="action-icon ">◈</span><span class="action-copy"><strong>เริ่มฝึกสั้น ๆ</strong><small>ลองทำข้อแรก แล้วกลับมาดูผล</small></span><span class="chev">›</span></button></section>',
+    expected: /ยังไม่มีหลักฐาน.*ไม่ได้หมายความว่าทำไม่ได้/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at docs\design\check-s01-navigation.cjs:22:1
+✖ UX08 displayed sample history and exported sample history agree without inventing records (3.8567ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 4
+  
+      at TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\1d7b\LexiQuest\docs\design\check-s01-navigation.cjs:27:48)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

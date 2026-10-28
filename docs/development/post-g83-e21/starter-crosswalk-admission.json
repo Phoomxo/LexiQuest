@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "scope": "12 existing packaged starter concrete-object noun senses only",
+  "corpusManifest": {
+    "schemaVersion": 1,
+    "edition": "lexiquest-starter-senses-r1",
+    "words": [
+      {
+        "wordId": "word:starter-book",
+        "wordRevision": 1,
+        "wordChecksumSha256": "43e42b7aedf5c870b35b42fcf52d0d9e7fee618126ef6cecc638b1b38435bafa",
+        "lexicalArtifactHash": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee"
+      },
+      {
+        "wordId": "word:starter-pencil",
+        "wordRevision": 1,
+        "wordChecksumSha256": "1d9e6cf1e7f479f2a072e6825748ad3abe7b074d5a6d2657a4de7acde90b0575",
+        "lexicalArtifactHash": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca"
+      },
+      {
+        "wordId": "word:starter-chair",
+        "wordRevision": 1,
+        "wordChecksumSha256": "241ae282b4ab81a40b5068c9b5187c6d3400618802ca0b027edd2dbc8b1967e3",
+        "lexicalArtifactHash": "33d514b228ae7033e1d1242a77054178aecf1e67587b1514bb05901f47591fdd"
+      },
+      {
+        "wordId": "word:starter-door",
+        "wordRevision": 1,
+        "wordChecksumSha256": "44dbe1f619ca34a8f3af232cccab4722e96a9e529a59bcbe46c4ac4fa166aaa7",
+        "lexicalArtifactHash": "c5118f9b9d159b18c0694d63d7667481c2189832a5b39307a1f83b5ef00aac04"
+      },
+      {
+        "wordId": "word:starter-window",
+        "wordRevision": 1,
+        "wordChecksumSha256": "d00dc896218af791bd94933397fdc1c9d794e37e6c876b64b9c52404da11c64d",
+        "lexicalArtifactHash": "1fa2337cdb2f423fb85068d9ec2cf468dc82448c44a2b36ea22a104e2d2fbc4c"
+      },
+      {
+        "wordId": "word:starter-bottle",
+        "wordRevision": 1,
+        "wordChecksumSha256": "11bbf1d0a439a452b9568a27e38183aa2d3afcbb43fd47767a06eeca977181ec",
+        "lexicalArtifactHash": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562"
+      },
+      {
+        "wordId": "word:starter-cup",
+        "wordRevision": 1,
+        "wordChecksumSha256": "46352691b6c686caf4434a5eb73b80269fb4461cbeee91b0deb8cf113ef0f214",
+        "lexicalArtifactHash": "4af13e68ae9dc7364560bb9cd15e40c5e0fb1a43d16b8f46ea8f8376adf1cc38"
+      },
+      {
+        "wordId": "word:starter-spoon",
+        "wordRevision": 1,
+        "wordChecksumSha256": "5bd0c080c6639df5f0f415d7cd707fa086c8c1ba68c190bc81b50f9c24445402",
+        "lexicalArtifactHash": "8cadc285886d20ad391423309e455b82bbb6f008253480c0274894a5491c8795"
+      },
+      {
+        "wordId": "word:starter-plate",
+        "wordRevision": 1,
+        "wordChecksumSha256": "9becd7c28b6a43eea2cf4d7224abba5f75eaeacc086a2eac98d15186c00ef20f",
+        "lexicalArtifactHash": "4deed1ddfb40df024d5d014b8323ea08f824f5b7a0653113c7c01316ac6c05ce"
+      },
+      {
+        "wordId": "word:starter-bag",
+        "wordRevision": 1,
+        "wordChecksumSha256": "603fe1c29f7181a35708ff176c3994de9a6697a55f6886699bac4701c4c80395",
+        "lexicalArtifactHash": "9b27908a43e5f047ab8cf00ee9684d902255aa67e11f4c703032ba321856cf7b"
+      },
+      {
+        "wordId": "word:starter-clock",
+        "wordRevision": 1,
+        "wordChecksumSha256": "89422a2ff6fdbf103d713762b25e8e7bd91ace54fd800fb2daeddad387f505f9",
+        "lexicalArtifactHash": "a662360d388bb4466a97b3f915d4fb77cd9b6cec0624b2e87b9a62176be7d3b9"
+      },
+      {
+        "wordId": "word:starter-key",
+        "wordRevision": 1,
+        "wordChecksumSha256": "7139c0deadfbc940cf883a2212addc98e05b2300f744f084ba1336aa6f1e5f68",
+        "lexicalArtifactHash": "834b6e191333dc96238269dd4884dd09546eab26aee93f0ca1df19ff776e6cdf"
+      }
+    ]
+  },
+  "corpusManifestHash": "7aa10e008c208e304ce99cf400ec0f985669bb68eddd3210f15928965f04ba41",
+  "canonicalEncoding": "UTF-8 compact JSON in recorded field/row order, no trailing newline",
+  "crosswalkArtifact": "assets/content/sense_crosswalk/starter-r1.json",
+  "crosswalkSha256": "a3a639e9487aa69e7e294f7cd9fc70b222c6ee325bae23844afbfa3e3aa1b115",
+  "review": {
+    "kind": "local agent mapping review against existing internally reviewed starter words and all twelve lexical definitions/examples",
+    "reviewedAt": "2026-09-20",
+    "humanReview": false,
+    "independentReview": false,
+    "sourceAuthority": "PackagedStarterCatalog existing approved/published original content, internally reviewed 2026-09-08",
+    "senseKey": "starter-object-v1",
+    "decision": "explicit one concrete-object noun sense per exact starter word; other senses excluded"
+  },
+  "editorialDisposition": {
+    "records": 5500,
+    "approvedForScoring": false,
+    "allNineOriginalArtifactHashesMatched": true,
+    "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa"
+  },
+  "claimsExcluded": [
+    "human-reviewed corpus",
+    "certified CEFR levels",
+    "Oxford sense identities",
+    "sense-level SRS mastery",
+    "editorial scored admission"
+  ]
+}

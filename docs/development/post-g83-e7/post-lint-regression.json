@@ -1,0 +1,66 @@
+{
+  "sourceCommit": "133e382db5e4c59d29975b39a47e5dfa3820d2d2",
+  "reason": "Affected regression after analyzer-driven source and test edits; prior unchanged subsystem passes remain historical. No duplicate within this selection.",
+  "commands": [
+    {
+      "id": "BATCH-R01",
+      "targets": [
+        "test/architecture/final_8_44_test_plan_contract_test.dart",
+        "test/architecture/fitness_test.dart",
+        "test/data/local/legacy_learning_import_test.dart",
+        "test/database/migration_v25_to_v26_test.dart",
+        "test/features/adventure/adventure_pair_renderer_parity_test.dart",
+        "test/features/device_model/model_download_manager_test.dart",
+        "test/features/export/research_lifecycle_export_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/features/learning/first_answer_accuracy_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
+        "test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart",
+        "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+        "test/features/learning/session_configuration_mode_matrix_test.dart",
+        "test/features/quest/drift_quest_repository_test.dart",
+        "test/features/quest/quest_catalog_provider_test.dart",
+        "test/features/quest/quest_definition_codec_test.dart",
+        "test/features/quest/quest_learning_integration_test.dart",
+        "test/features/quest/quest_models_test.dart",
+        "test/features/quest/quest_period_test.dart",
+        "test/features/quest/quest_use_cases_test.dart",
+        "test/features/recommendation/recommendation_policy_test.dart",
+        "test/features/recommendation/recommendation_use_cases_test.dart"
+      ],
+      "command": "verify-scope Targeted/Learning explicit affected targets"
+    },
+    {
+      "id": "BATCH-R02",
+      "targets": [
+        "test/features/reminders/platform_reminder_scheduler_test.dart",
+        "test/features/reminders/study_reminder_use_cases_test.dart",
+        "test/features/research/research_runtime_sync_integration_test.dart",
+        "test/features/research/research_session_proof_repository_test.dart",
+        "test/features/research/research_session_proof_source_integrity_test.dart",
+        "test/features/research/research_session_proof_test.dart",
+        "test/features/research/research_sync_authorizer_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/features/sync/research_session_proof_transport_test.dart",
+        "test/features/sync/sync_engine_test.dart",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/scenarios/guest_upgrade_restart_test.dart",
+        "test/scenarios/production_feature_navigation_test.dart",
+        "test/scenarios/production_learning_restart_test.dart",
+        "test/screens/associative_reading_launcher_screen_test.dart",
+        "test/screens/cefr_vocabulary_catalog_screen_test.dart",
+        "test/screens/choose_mode_screen_test.dart",
+        "test/screens/local_reading_library_screen_test.dart",
+        "test/screens/matching_mode_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart"
+      ],
+      "command": "verify-scope Targeted/Learning explicit affected targets"
+    }
+  ]
+}

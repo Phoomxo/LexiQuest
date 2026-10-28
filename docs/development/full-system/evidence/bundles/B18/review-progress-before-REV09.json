@@ -1,0 +1,20 @@
+{
+  "zone": "REV-09",
+  "zoneAccepted": false,
+  "completedZones": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04",
+    "REV-05",
+    "REV-06",
+    "REV-07",
+    "REV-08"
+  ],
+  "completedProductionZoneFiles": 610,
+  "focusedRev12OracleDispositions": 126,
+  "totalStaticDispositions": 736,
+  "sourceReadAwaitingCrossCheck": 693,
+  "historyPath": "review-progress-before-REV08.json",
+  "notes": "52open findings17static/35candidate;1429observations retained. G8.2 not accepted. No runtime. Supplemental backend/LM/shared oracles retain historical REV12 final ownership."
+}

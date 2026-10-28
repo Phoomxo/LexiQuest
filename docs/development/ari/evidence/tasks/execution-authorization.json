@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-20",
+  "userInstruction": "ดำเนินการพัฒนาได้",
+  "scope": "Continue Ari V0-V3 sequentially, one task per main phase, three subitems each.",
+  "prototypeCondition": "V2 only after V0-V1 confirm all accepted requirements.",
+  "requirementsChanged": false,
+  "allowPaidFallback": false,
+  "allowGemini": false,
+  "allowParallelImplementation": false,
+  "e7AcceptanceChanged": false,
+  "recovery": "Diagnose and change failed method, fix and verify, continue without repeated approval; preserve truthful results.",
+  "model": "gpt-6-astra",
+  "reasoning": "medium",
+  "speed": "Standard/default only; no Fast"
+}

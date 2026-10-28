@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F02",
+  "continuationId": "B18-G83-F02-C01",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T14:18:11.011610+00:00",
+  "threadId": "01a0b9e0-ab0c-76e2-9665-f0206a17089e",
+  "inputCheckpointSha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "findings": [
+    {
+      "findingId": "B18-REV02-01",
+      "status": "closed-regression-verified",
+      "redRun": "budget-fold-red",
+      "greenRun": "final3",
+      "outcome": "Legacy WAL payload exceeds budget before any Dart SELECT-star transfer; read-only snapshot, main bytes and WAL length preserved. Conservative SQL row/JSON byte preflight. No native SQLite memory or actual OOM claim."
+    },
+    {
+      "findingId": "B18-REV02-02",
+      "status": "closed-regression-verified",
+      "redRun": "session-red-corrected",
+      "greenRun": "final3",
+      "outcome": "Backward finish/abandon rejected before canonical writes; equal-time terminal remains valid, history/reward/outbox preserved."
+    },
+    {
+      "findingId": "B18-REV02-03",
+      "status": "closed-regression-verified",
+      "redRun": "session-red-corrected",
+      "greenRun": "final3",
+      "outcome": "Real Drift generic admission rechecks unique active owner and exact session replay identity in the insertion transaction; delayed owner replacement rejects with no session."
+    },
+    {
+      "findingId": "B18-REV06-01",
+      "status": "closed-regression-verified",
+      "redRun": "reward-red",
+      "greenRun": "final3",
+      "outcome": "Purchase/equip active owner and widget generation guarded in canonical transaction including final awaited account read; stale owner/replaced dependency rolls back, fresh command and exact replay remain valid."
+    },
+    {
+      "findingId": "B18-REV06-02",
+      "status": "closed-regression-verified",
+      "redRun": "prefs-erasure-red",
+      "greenRun": "final3",
+      "outcome": "Exact durable erasure lease fenced before/after native awaits and before authoritative operation. Superseded lease cannot start later cancels or erase; committed result retained on failed cleanup; fresh lease survives. Already dispatched platform cancel cannot be revoked."
+    },
+    {
+      "findingId": "B18-REV06-03",
+      "status": "closed-regression-verified",
+      "redRun": "budget-fold-red",
+      "greenRun": "final3",
+      "outcome": "Both DST folds and day/overnight quiet intervals preserve lower bound, requested instant and an exact outside-quiet native endpoint. Original spring-forward cases preserved."
+    },
+    {
+      "findingId": "B18-REV06-04",
+      "status": "closed-regression-verified",
+      "redRun": "prefs-erasure-red",
+      "greenRun": "final3",
+      "outcome": "Field-scoped learning/home merge uses latest row inside transaction; both stale-read directions preserve independent edits/display and monotonic timestamps. One pending plus superseded prior intent. Same-field last transaction commit wins."
+    },
+    {
+      "findingId": "B18-REV06-09",
+      "status": "closed-regression-verified",
+      "redRun": "collision-red",
+      "greenRun": "final3",
+      "outcome": "Actual valid UUID hash collision 1806778660 rejected before second durable admission; historical collision repair/cancel fails truthfully without touching foreign native identity and preserves pending intent. Disabling historical duplicate is still admissible."
+    }
+  ],
+  "closedInThisCheckpoint": 8,
+  "remainingF02": [
+    "B18-REV10-01",
+    "B18-REV10-02"
+  ],
+  "totalClosed": 17,
+  "remainingOpenFindings": 52,
+  "dartTestsPassed": 537,
+  "testTargetCount": 26,
+  "analysis": {
+    "exitCode": 1,
+    "unchangedDiagnosticSites": 24,
+    "warnings": 1,
+    "infos": 23,
+    "newDiagnosticSites": 0,
+    "proof": "analyzer-baseline-map.json",
+    "note": "All diagnostic statements mapped to exact input checkpoint lines. 23 contexts unchanged; remaining legacy table guard has identical three-line if statement with new preflight immediately after it. Not clean analyzer PASS."
+  },
+  "changedSource": [
+    {
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "sha256": "f10021f17010ddaf631ea3f6c36c4471a46cd3332e4a014d24a17fc03b6f019b"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "97c5b9277855e8fce00f3b20c2abb0b18054d39f26376e727bc4f4f2f886fb4f"
+    },
+    {
+      "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "sha256": "33daaaf7ca644c3e6495575cb4f1d94cbcbc8074221ac8bd2b67b34053740036"
+    },
+    {
+      "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+      "sha256": "5f046e6efbd36cb871af702b4500b7859d0dcf697206a700defb0ced8a65434e"
+    },
+    {
+      "path": "lib/features/preferences/domain/learner_preferences_repository.dart",
+      "sha256": "11529aa8d7901f06fd26645f4d386c8c0a3ac37d316950dbf6e17abfc66c2dd5"
+    },
+    {
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "sha256": "8eee16ab535a2d82195b140a04909fe733b66febf63eb58a488bd70a7ea69104"
+    },
+    {
+      "path": "lib/features/reminders/data/drift_study_reminder_repository.dart",
+      "sha256": "b33348d3b2d21a1df6e7994816bb86b1d48f80171da22e46a2e7e03c684566f4"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder.dart",
+      "sha256": "950a6021b346441952aae0222862345d55e3dc9820b9eab61df82cc3370b3ca7"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder_repository.dart",
+      "sha256": "c70e2c1d2f8d0be639c4239d21b8c73443a48981b9baf38173d2196b392b2ccc"
+    },
+    {
+      "path": "lib/features/rewards/application/reward_use_cases.dart",
+      "sha256": "4e3263ec1e53912aa039c4a723ec3112abdfda311bca53d0be171736307ac6ac"
+    },
+    {
+      "path": "lib/features/rewards/data/drift_reward_repository.dart",
+      "sha256": "1edb2039eaa8b56eaf457d5a734bf1dd2f7cbfcaf26ec531fb4081dd31a1926b"
+    },
+    {
+      "path": "lib/screens/avatar_equipment_screen.dart",
+      "sha256": "306326f51337d6ca5e768a1358a5cf3ea59ba6c69b292f0dfd2331b596a60652"
+    },
+    {
+      "path": "test/data/local/f02_legacy_budget_test.dart",
+      "sha256": "809bb03c7dc527823600c6c9ff5a6e903290de2b297809210f0b8cf0a6ad1e51"
+    },
+    {
+      "path": "test/features/account/account_use_cases_test.dart",
+      "sha256": "5f0fae871bb5dd0c528a69acbb7ebed6ff6a7e6e1375f755977231f6679d51dc"
+    },
+    {
+      "path": "test/features/adventure/application/adventure_presentation_preferences_test.dart",
+      "sha256": "5094925f292ada7ceb2f2bc1a71b031c51982a3f9cf6ade563a3732e20b369a3"
+    },
+    {
+      "path": "test/features/learning/drift_learning_repository_test.dart",
+      "sha256": "36c9852d0f8dd197b44290e8924d9bb2436798c50b0de3984dee3d5ec529fdc3"
+    },
+    {
+      "path": "test/features/learning/f02_session_admission_test.dart",
+      "sha256": "835906d5c08f742232a87625430f0301ccd30f5b39a136e1b62c102056b06749"
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "sha256": "67c5ecabca2f38e730e577e57011b9ea2fb7041d345d1d00ee3fa7ec15f49ff8"
+    },
+    {
+      "path": "test/features/preferences/f02_preference_merge_test.dart",
+      "sha256": "84bf58595525043918f083c9ccf504a180c2e49074ba0a8cb77c59df5b54030c"
+    },
+    {
+      "path": "test/features/reminders/f02_quiet_hours_test.dart",
+      "sha256": "add7aec99b0da9b4911397e79d9e60976d3b6c7a9522e8b8c7bb86b9716978a6"
+    },
+    {
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "sha256": "0976ee71e8eef82b10531ea852cbf2940e37595d5ae74ca6e65db0c3eb0e7946"
+    },
+    {
+      "path": "test/features/rewards/reward_use_cases_test.dart",
+      "sha256": "c464d38ca875030107c09b40fabe9839fe402d2ec87951d954bebae0323646c1"
+    },
+    {
+      "path": "test/runtime/app_build_info_test.dart",
+      "sha256": "b03524e75474be66eb58950b53fec9b7132d9520fc2c3e29c71e3bd9a23f3afd"
+    },
+    {
+      "path": "test/screens/avatar_equipment_screen_test.dart",
+      "sha256": "2975d3656944b3d692afead5ebcfe440a254d7e6560ebea2808836f82b901432"
+    },
+    {
+      "path": "test/screens/learning_goals_screen_test.dart",
+      "sha256": "5e8181abe0e8a2971fdcbceb266459c6003e46f94959302c7319cf90a8fc97be"
+    },
+    {
+      "path": "test/screens/learning_preference_quiz_screen_test.dart",
+      "sha256": "2c87e8f512752eecbb501bdba383a2810ef1aa2abdda46fdf146d1fc0fd2aefb"
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "sha256": "77a394dc4373f68e969b39e95fc4eec7e14209adebdce8f938c83fe04a9effea"
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "sha256": "21e9f7de70facb6e0c162c359311d655ade4516ea41aa7b49e2b77b9f173f93b"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F02",
+  "evidenceManifestSha256": "dc8aec6e322b94ab6fa2658159e85ece54b976aa6ccbedb5ad01caa09a51db14",
+  "verificationRuns": [
+    {
+      "label": "analyze",
+      "command": "& flutter analyze --no-pub 'lib/data/local/legacy_learning_import.dart' 'lib/features/learning/data/drift_learning_repository.dart' 'lib/features/preferences/application/learner_preferences_use_cases.dart' 'lib/features/preferences/data/drift_learner_preferences_repository.dart' 'lib/features/preferences/domain/learner_preferences_repository.dart' 'lib/features/reminders/application/study_reminder_use_cases.dart' 'lib/features/reminders/data/drift_study_reminder_repository.dart' 'lib/features/reminders/domain/study_reminder.dart' 'lib/features/reminders/domain/study_reminder_repository.dart' 'lib/features/rewards/application/reward_use_cases.dart' 'lib/features/rewards/data/drift_reward_repository.dart' 'lib/screens/avatar_equipment_screen.dart' 'test/features/account/account_use_cases_test.dart' 'test/features/adventure/application/adventure_presentation_preferences_test.dart' 'test/features/learning/drift_learning_repository_test.dart' 'test/features/preferences/display_preferences_controller_test.dart' 'test/features/reminders/study_reminder_use_cases_test.dart' 'test/features/rewards/reward_use_cases_test.dart' 'test/runtime/app_build_info_test.dart' 'test/screens/avatar_equipment_screen_test.dart' 'test/screens/learning_goals_screen_test.dart' 'test/screens/learning_preference_quiz_screen_test.dart' 'test/screens/main_navigation_screen_test.dart' 'test/screens/study_planning_hub_screen_test.dart' 'test/data/local/f02_legacy_budget_test.dart' 'test/features/learning/f02_session_admission_test.dart' 'test/features/preferences/f02_preference_merge_test.dart' 'test/features/reminders/f02_quiet_hours_test.dart'",
+      "started": "2026-09-19T14:06:35.917626+00:00",
+      "finished": "2026-09-19T14:06:50.585547+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "analyze-final",
+      "command": "& flutter analyze --no-pub 'lib/data/local/legacy_learning_import.dart' 'lib/features/learning/data/drift_learning_repository.dart' 'lib/features/preferences/application/learner_preferences_use_cases.dart' 'lib/features/preferences/data/drift_learner_preferences_repository.dart' 'lib/features/preferences/domain/learner_preferences_repository.dart' 'lib/features/reminders/application/study_reminder_use_cases.dart' 'lib/features/reminders/data/drift_study_reminder_repository.dart' 'lib/features/reminders/domain/study_reminder.dart' 'lib/features/reminders/domain/study_reminder_repository.dart' 'lib/features/rewards/application/reward_use_cases.dart' 'lib/features/rewards/data/drift_reward_repository.dart' 'lib/screens/avatar_equipment_screen.dart' 'test/features/account/account_use_cases_test.dart' 'test/features/adventure/application/adventure_presentation_preferences_test.dart' 'test/features/learning/drift_learning_repository_test.dart' 'test/features/preferences/display_preferences_controller_test.dart' 'test/features/reminders/study_reminder_use_cases_test.dart' 'test/features/rewards/reward_use_cases_test.dart' 'test/runtime/app_build_info_test.dart' 'test/screens/avatar_equipment_screen_test.dart' 'test/screens/learning_goals_screen_test.dart' 'test/screens/learning_preference_quiz_screen_test.dart' 'test/screens/main_navigation_screen_test.dart' 'test/screens/study_planning_hub_screen_test.dart' 'test/data/local/f02_legacy_budget_test.dart' 'test/features/learning/f02_session_admission_test.dart' 'test/features/preferences/f02_preference_merge_test.dart' 'test/features/reminders/f02_quiet_hours_test.dart'",
+      "started": "2026-09-19T14:15:21.081518+00:00",
+      "finished": "2026-09-19T14:15:34.561074+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "c4fb7f64a481892129800ccf7a14a6c2449d8fcd7cde947d351c015cc2156c74",
+      "noResume": true
+    },
+    {
+      "label": "budget-fold-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/data/local/f02_legacy_budget_test.dart','test/features/reminders/f02_quiet_hours_test.dart')",
+      "started": "2026-09-19T13:44:25.992371+00:00",
+      "finished": "2026-09-19T13:44:43.109260+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "collision-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/reminders/study_reminder_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart','test/features/reminders/platform_reminder_scheduler_test.dart','test/screens/learning_goals_screen_test.dart')",
+      "started": "2026-09-19T13:54:24.746566+00:00",
+      "finished": "2026-09-19T13:55:01.463431+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "collision-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/reminders/study_reminder_use_cases_test.dart') -TestName 'F02'",
+      "started": "2026-09-19T13:52:35.863630+00:00",
+      "finished": "2026-09-19T13:52:52.335879+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "final",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/account/account_use_cases_test.dart','test/features/adventure/application/adventure_presentation_preferences_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/preferences/display_preferences_controller_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/rewards/reward_use_cases_test.dart','test/runtime/app_build_info_test.dart','test/screens/avatar_equipment_screen_test.dart','test/screens/learning_goals_screen_test.dart','test/screens/learning_preference_quiz_screen_test.dart','test/screens/main_navigation_screen_test.dart','test/screens/study_planning_hub_screen_test.dart','test/data/local/f02_legacy_budget_test.dart','test/features/learning/f02_session_admission_test.dart','test/features/preferences/f02_preference_merge_test.dart','test/features/reminders/f02_quiet_hours_test.dart','test/data/local/legacy_learning_import_test.dart','test/features/learning/learning_recovery_foundation_test.dart','test/features/learning/learning_use_cases_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart','test/features/reminders/platform_reminder_scheduler_test.dart','test/features/account/local_data_deletion_test.dart','test/runtime/app_bootstrap_test.dart','test/screens/quiz_screen_test.dart','test/screens/learning_history_screen_test.dart')",
+      "started": "2026-09-19T14:05:02.376683+00:00",
+      "finished": "2026-09-19T14:06:23.600021+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "final2",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/account/account_use_cases_test.dart','test/features/adventure/application/adventure_presentation_preferences_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/preferences/display_preferences_controller_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/rewards/reward_use_cases_test.dart','test/runtime/app_build_info_test.dart','test/screens/avatar_equipment_screen_test.dart','test/screens/learning_goals_screen_test.dart','test/screens/learning_preference_quiz_screen_test.dart','test/screens/main_navigation_screen_test.dart','test/screens/study_planning_hub_screen_test.dart','test/data/local/f02_legacy_budget_test.dart','test/features/learning/f02_session_admission_test.dart','test/features/preferences/f02_preference_merge_test.dart','test/features/reminders/f02_quiet_hours_test.dart','test/data/local/legacy_learning_import_test.dart','test/features/learning/learning_recovery_foundation_test.dart','test/features/learning/learning_use_cases_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart','test/features/reminders/platform_reminder_scheduler_test.dart','test/features/account/local_data_deletion_test.dart','test/runtime/app_bootstrap_test.dart','test/screens/quiz_screen_test.dart','test/screens/learning_history_screen_test.dart')",
+      "started": "2026-09-19T14:09:01.621358+00:00",
+      "finished": "2026-09-19T14:10:17.754759+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "final3",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/account/account_use_cases_test.dart','test/features/adventure/application/adventure_presentation_preferences_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/preferences/display_preferences_controller_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/rewards/reward_use_cases_test.dart','test/runtime/app_build_info_test.dart','test/screens/avatar_equipment_screen_test.dart','test/screens/learning_goals_screen_test.dart','test/screens/learning_preference_quiz_screen_test.dart','test/screens/main_navigation_screen_test.dart','test/screens/study_planning_hub_screen_test.dart','test/data/local/f02_legacy_budget_test.dart','test/features/learning/f02_session_admission_test.dart','test/features/preferences/f02_preference_merge_test.dart','test/features/reminders/f02_quiet_hours_test.dart','test/data/local/legacy_learning_import_test.dart','test/features/learning/learning_recovery_foundation_test.dart','test/features/learning/learning_use_cases_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart','test/features/reminders/platform_reminder_scheduler_test.dart','test/features/account/local_data_deletion_test.dart','test/runtime/app_bootstrap_test.dart','test/screens/quiz_screen_test.dart','test/screens/learning_history_screen_test.dart')",
+      "started": "2026-09-19T14:14:07.345274+00:00",
+      "finished": "2026-09-19T14:15:19.901525+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "c4fb7f64a481892129800ccf7a14a6c2449d8fcd7cde947d351c015cc2156c74",
+      "noResume": true
+    },
+    {
+      "label": "prefs-erasure-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/preferences/f02_preference_merge_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/preferences/display_preferences_controller_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart')",
+      "started": "2026-09-19T13:49:47.896107+00:00",
+      "finished": "2026-09-19T13:50:09.440411+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "prefs-erasure-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/preferences/f02_preference_merge_test.dart','test/features/reminders/study_reminder_use_cases_test.dart') -TestName 'F02'",
+      "started": "2026-09-19T13:48:08.865661+00:00",
+      "finished": "2026-09-19T13:48:22.374982+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "reward-collision-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/rewards/reward_use_cases_test.dart','test/screens/avatar_equipment_screen_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/reminders/drift_study_reminder_repository_test.dart','test/features/reminders/platform_reminder_scheduler_test.dart','test/screens/learning_goals_screen_test.dart')",
+      "started": "2026-09-19T13:59:08.061776+00:00",
+      "finished": "2026-09-19T13:59:46.314495+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "reward-collision-green-fixtures",
+      "status": "tests-passed-archival-recovered",
+      "exitCode": 0,
+      "started": "2026-09-19T14:00:50.1471301+00:00",
+      "finished": "2026-09-19T14:01:18.7643206+00:00",
+      "inputDrift": [],
+      "recovery": "Original copytree hit Windows path length before run.json. Recovered exact verifier+stdout/stderr using short names, without rerunning tests; wrapper.log already records PASS.",
+      "noResume": true
+    },
+    {
+      "label": "reward-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/rewards/reward_use_cases_test.dart') -TestName 'F02'",
+      "started": "2026-09-19T13:55:45.582920+00:00",
+      "finished": "2026-09-19T13:55:59.934642+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "reward-widget-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/screens/avatar_equipment_screen_test.dart') -TestName 'F02'",
+      "started": "2026-09-19T13:56:49.498259+00:00",
+      "finished": "2026-09-19T13:57:13.229925+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "reward-widget-red-bounded",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/screens/avatar_equipment_screen_test.dart') -TestName 'F02'",
+      "started": "2026-09-19T13:57:49.181353+00:00",
+      "finished": "2026-09-19T13:58:06.441702+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "session-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/learning/f02_session_admission_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/learning/learning_recovery_foundation_test.dart')",
+      "started": "2026-09-19T13:41:21.356421+00:00",
+      "finished": "2026-09-19T13:41:38.348216+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "session-green-fixed",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/learning/f02_session_admission_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/learning/learning_recovery_foundation_test.dart')",
+      "started": "2026-09-19T13:42:13.477382+00:00",
+      "finished": "2026-09-19T13:42:29.876078+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "session-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/learning/f02_session_admission_test.dart')",
+      "started": "2026-09-19T13:39:16.209021+00:00",
+      "finished": "2026-09-19T13:39:41.527545+00:00",
+      "exitCode": 1,
+      "inputDrift": [
+        ".dart_tool/package_graph.json",
+        ".dart_tool/package_config.json"
+      ],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "session-red-corrected",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/learning/f02_session_admission_test.dart')",
+      "started": "2026-09-19T13:40:17.787675+00:00",
+      "finished": "2026-09-19T13:40:39.484486+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "storage-fold-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/data/local/f02_legacy_budget_test.dart','test/data/local/legacy_learning_import_test.dart','test/features/reminders/f02_quiet_hours_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/learning/f02_session_admission_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/learning/learning_recovery_foundation_test.dart')",
+      "started": "2026-09-19T13:45:43.295127+00:00",
+      "finished": "2026-09-19T13:46:15.322006+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    },
+    {
+      "label": "storage-fold-green-typed",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/data/local/f02_legacy_budget_test.dart','test/data/local/legacy_learning_import_test.dart','test/features/reminders/f02_quiet_hours_test.dart','test/features/reminders/study_reminder_use_cases_test.dart','test/features/learning/f02_session_admission_test.dart','test/features/learning/drift_learning_repository_test.dart','test/features/learning/learning_recovery_foundation_test.dart')",
+      "started": "2026-09-19T13:46:39.813525+00:00",
+      "finished": "2026-09-19T13:47:00.450262+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "e1540ab93065df43d743348bf452332925a58a7243e603152f6fd13ab25a7347",
+      "noResume": true
+    }
+  ],
+  "review": "Single-writer self review of changed source and affected callers; no subagent. Scope/final source pins/diff check verified. Existing generic session fixture now switches active owners legitimately; reward test sequence resets per test; widget assertion compares original legacy reward baseline.",
+  "recovery": [
+    "Initial test final-class wrapper compile failure corrected before behavioral RED.",
+    "Initial TZDateTime inference compile failure corrected explicitly to DateTime.",
+    "Reward widget busy spinner required bounded pumps; baseline includes legitimate historical legacy earning.",
+    "Long-path archival failure recovered exact successful verifier/stdout/stderr and zero-drift receipt; no duplicate test run for that recovery.",
+    "Final eight new analyzer sites fixed; two additional erasure/DST integration cases added. final2 passed537; final3 repeated only after one changed-line EOL hash correction and passed537.",
+    "PowerShell console encoding read failure recovered by ASCII-escaped JSON, no production impact.",
+    "Initial documentation staged diff check rejected Windows text-writer CRLF; explicit LF-byte serialization and dependent hash refresh corrected before commit."
+  ],
+  "limitations": [
+    "Native export two findings untouched and pending; F02 NOT accepted.",
+    "Dart legacy transfer budget does not prove SQLite internal allocation bounds or actual OOM.",
+    "No revocation of an already dispatched native cancel; guard prevents subsequent effects.",
+    "No installed-app, device, live provider, full release, Android build, backend suite, GPU, research, cloud, training/B11A run."
+  ],
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTier": "Standard/default only, never Fast/priority",
+    "effectiveTier": "unverified; no Fast observed, create_thread has no serviceTier field",
+    "singleWriter": true,
+    "subagents": false,
+    "branch": "lexiquest/ only",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json",
+    "speedPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\speed-policy.json",
+    "branchPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\branch-naming-policy.json"
+  },
+  "F02Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false
+}

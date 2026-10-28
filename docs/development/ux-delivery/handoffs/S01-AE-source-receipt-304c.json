@@ -1,0 +1,19 @@
+{
+  "dispatchId": "ux-s01-ae-20260924-af27",
+  "atUtc": "2026-09-24T12:56:41.930783+00:00",
+  "holderThreadId": "01a0d37b-cc13-7041-842d-bbef688daf1d",
+  "root": "C:\\Users\\Phet\\.codex\\worktrees\\304c\\LexiQuest",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\af27\\LexiQuest",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "ff6372137ba6f0f5d1005402a3fa3f58d67a94e68c7c77cac8011e9076f67f01",
+  "archiveSha256": "a5d21ff5352752fe5d3ddfc9682cc8b7665fc9e9874f348fb324f526629a81cc",
+  "canonicalFingerprint": "c5cc8ddbbf870e1a0a02c9822920a6102a1331eede37310654af914aaa88a1da",
+  "entries": 724,
+  "allSizesHashesDeletionsVerified": true,
+  "rawPathsContainmentCasefoldCrcExactMembershipVerified": true,
+  "predecessorUntouched": true,
+  "writer": "sole",
+  "writerReleased": false,
+  "nextItem": "S01-AE-review-queue-recovery",
+  "routing": "Astra/medium deterministic fallback; Standard/default requested; effective tier unexposed"
+}

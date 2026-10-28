@@ -1,0 +1,9 @@
+{
+  "id": "B05-COMPLETION-01",
+  "rootCause": "Standalone evidence-backed success never set sessionCompleted; retained callbacks bypassed UI disabled checks",
+  "red": "word matrix3 and sentence duplicate test reach assertion and write2 commands instead of1",
+  "fix": "Guard completed state at command boundary and mark evidence-backed standalone success terminal; retries remain allowed before durable ack",
+  "compatibility": "No formula/schema/history rewrite; new practice requires new session/remount instead of resetting same durable success",
+  "status": "closed",
+  "verification": "G2.5-verification.json"
+}

@@ -1,0 +1,54 @@
+{
+  "packageId": "G2.5",
+  "bundleId": "B05",
+  "status": "accepted-local-automated",
+  "baseSha": "476d031722fb14718ad6d69d79165cbe2972ec06",
+  "uniqueTestsPassed": 32,
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.5-runs/targeted-learning-e79a947859d1a80f5a401e12e2382d55d2a596aa173e841f7d716fd3052f7d7a.json",
+      "fingerprint": "75145c1665165a45559560dde6f30022e12daeed07687da0f9997a62d25e29b2",
+      "inputClosureCompared": true,
+      "changedInputsAfterPass": []
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.5-runs/targeted-learning-1db0263b48fb58c25064b25ff33e8b691810719172b83326f7ffbae1d63bbada.json",
+      "fingerprint": "75145c1665165a45559560dde6f30022e12daeed07687da0f9997a62d25e29b2",
+      "inputClosureCompared": true,
+      "changedInputsAfterPass": []
+    }
+  ],
+  "acceptance": {
+    "MG-01-A": "Explicit empty/whitespace word and sentence show unavailable; no game/audio/evidence. Existing canonical content/context retained.",
+    "MG-01-B": "letter e/t occurrence indexes; tap and drag placement; keyboard undo returns same t while other t stays placed; keyboard reselect tested320/390/840",
+    "MG-01-C": "Existing correct/wrong feedback and durable retry tests passed. Late completed callback cannot submit again; explicit standalone durable success terminal.",
+    "MG-01-D": "Retained callbacks after dispose and route retirement do not write; pending retries preserve command/time/evidence identity. Existing owner-bound native adapter evidence from G2.3 reused.",
+    "MG-01-E": "320 text200 dark and390/840 normal; reduced motion, wrapping/no exceptions, keyboard enter/space and touch/drag all passed. Existing sentence long-content200 test passed.",
+    "MG-01-F/FORM-11": "No per-tile command. Word/sentence recreational evidence; pinned v1 evaluators unchanged; word case, sentence spacing, punctuation and duplicated can tokens verified.",
+    "MG-08": "Duplicate can tokens with undo and punctuation, durable success and retained callback fence",
+    "G2": "Overall phase gate stays B06/G2.8"
+  },
+  "design": "Empty content fails closed at UI/operation boundary. Completed callbacks rejected; evidence-backed standalone success locks same session. No formula/schema/content/reward/history rewrite.",
+  "review": {
+    "method": "single-writer source/callers/data integrity and acceptance review",
+    "callers": [
+      "ChooseModeScreen stable controller-backed production route test",
+      "GameLauncherScreen bounded inventory/availability/navigation tests"
+    ],
+    "requiredOpenFindings": []
+  },
+  "defectsClosed": [
+    "B05-CONTENT-01",
+    "B05-COMPLETION-01",
+    "B05 keyboard Focus fixture"
+  ],
+  "recovery": "Stopped failed Windows wildcard-path method; user authorized same-task recovery. Corrected inventory queries and actual Focus descendant; raw failures retained.",
+  "externalGates": [
+    "Physical device/manual keyboard/IME/screen-reader NOT RUN",
+    "Effective runtime service tier unverified"
+  ],
+  "requiredBranchPrefix": "lexiquest/",
+  "requiredServiceTier": "default",
+  "model": "gpt-6-astra",
+  "thinking": "medium"
+}

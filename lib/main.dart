@@ -1,0 +1,174 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'config/m3_theme.dart';
+import 'features/accessibility/presentation/accessibility_scope.dart';
+import 'features/preferences/application/display_preferences_controller.dart';
+import 'runtime/app_bootstrap.dart';
+import 'data/local/app_database_open_policy.dart';
+import 'runtime/local_storage_readiness_app.dart';
+import 'runtime/app_dependencies.dart';
+import 'features/sync/application/sync_trigger.dart';
+import 'features/sync/platform/background_sync_scheduler.dart';
+import 'features/sync/platform/workmanager_sync_scheduler.dart';
+import 'navigation/app_route_factory.dart';
+import 'navigation/app_routes.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  late final AppDependencies dependencies;
+  try {
+    dependencies = await AppBootstrap.production().initialize();
+  } on AppDatabaseOpenException catch (failure) {
+    runApp(LocalStorageReadinessApp(failure: failure));
+    return;
+  }
+  runApp(MyApp(dependencies: dependencies));
+  final owners = dependencies.localOwners;
+  if (owners != null) {
+    final scheduler = WorkmanagerSyncScheduler(
+      client: const PluginWorkmanagerClient(),
+      isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+      cloudSyncEnabled: const bool.fromEnvironment(
+        'LEXIQUEST_CLOUD_SYNC_ENABLED',
+        defaultValue: true,
+      ),
+    );
+    unawaited(
+      scheduleBackgroundSyncSafely(scheduler: scheduler, owners: owners),
+    );
+  }
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({
+    super.key,
+    required this.dependencies,
+    this.ownsDependencies = true,
+    this.shellBuilder,
+    this.navigatorKey,
+    this.additionalNavigatorObservers = const [],
+  });
+
+  final AppDependencies dependencies;
+
+  /// Embedded hosts may retain and dispose their shared runtime themselves.
+  final bool ownsDependencies;
+  final Widget Function(BuildContext, Widget)? shellBuilder;
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final List<NavigatorObserver> additionalNavigatorObservers;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final trigger = widget.dependencies.syncTrigger;
+      if (trigger != null) {
+        trigger.requestDetached(SyncTriggerReason.startup);
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final dependencies = widget.dependencies;
+      _refreshDailyQuests(dependencies).ignore();
+      final trigger = widget.dependencies.syncTrigger;
+      if (trigger != null) {
+        trigger.requestDetached(SyncTriggerReason.appResume);
+      }
+    }
+  }
+
+  Future<void> _refreshDailyQuests(AppDependencies dependencies) async {
+    if (!mounted || !identical(widget.dependencies, dependencies)) return;
+    final owners = dependencies.localOwners;
+    if (owners == null) return;
+    final expectedOwnerId = (await owners.getOrCreateActiveOwner()).id;
+    if (!mounted || !identical(widget.dependencies, dependencies)) return;
+    await dependencies.quest.refreshDaily(expectedOwnerId: expectedOwnerId);
+  }
+
+  @override
+  void didUpdateWidget(covariant MyApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ownsDependencies &&
+        !identical(oldWidget.dependencies, widget.dependencies)) {
+      oldWidget.dependencies.dispose().ignore();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (widget.ownsDependencies) widget.dependencies.dispose().ignore();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayPreferences = widget.dependencies.displayPreferences;
+    Widget buildApp() => MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'LexiQuest - AI Vocab Learning',
+      navigatorKey: widget.navigatorKey,
+      locale: const Locale('th'),
+      supportedLocales: const [Locale('th')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      theme: M3Theme.lightTheme,
+      darkTheme: M3Theme.darkTheme,
+      themeMode:
+          displayPreferences?.themeMode ??
+          DisplayPreferencesController.fallbackThemeMode,
+      builder: (context, child) {
+        final platform = MediaQuery.of(context);
+        return MediaQuery(
+          data: M3Theme.applyReducedMotionPreference(
+            platform,
+            reduceMotion: displayPreferences?.reducedMotionEnabled ?? false,
+          ),
+          child: AccessibilityScope(
+            child:
+                widget.shellBuilder?.call(
+                  context,
+                  child ?? const SizedBox.shrink(),
+                ) ??
+                child ??
+                const SizedBox.shrink(),
+          ),
+        );
+      },
+      navigatorObservers: <NavigatorObserver>[
+        appRouteObserver,
+        ...widget.additionalNavigatorObservers,
+      ],
+      initialRoute: widget.dependencies.initialRoute.path,
+      onGenerateInitialRoutes: (platformRoute) {
+        final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)
+            ? platformRoute
+            : widget.dependencies.initialRoute.path;
+        return <Route<dynamic>>[
+          AppRouteFactory.onGenerateRoute(RouteSettings(name: routeName)),
+        ];
+      },
+      onGenerateRoute: AppRouteFactory.onGenerateRoute,
+    );
+    final app = displayPreferences == null
+        ? buildApp()
+        : AnimatedBuilder(
+            animation: displayPreferences,
+            builder: (context, _) => buildApp(),
+          );
+    return AppDependenciesScope(dependencies: widget.dependencies, child: app);
+  }
+}

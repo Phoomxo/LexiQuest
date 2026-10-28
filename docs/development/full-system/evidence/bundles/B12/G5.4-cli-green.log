@@ -1,0 +1,10 @@
+test_development_split_provenance_and_config (test_camera_development_evaluation.DevelopmentFreezeTests.test_development_split_provenance_and_config) ... ok
+test_freeze_recomputes_and_has_no_fresh_authority (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_recomputes_and_has_no_fresh_authority) ... ok
+test_freeze_tampering_rejected (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_tampering_rejected) ... ok
+test_pinned_cli_actual_bytes_contract_and_exclusive_output (test_camera_development_evaluation.DevelopmentFreezeTests.test_pinned_cli_actual_bytes_contract_and_exclusive_output) ... ok
+test_prediction_closure_and_scores_fail_closed (test_camera_development_evaluation.DevelopmentFreezeTests.test_prediction_closure_and_scores_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.247s
+
+OK
