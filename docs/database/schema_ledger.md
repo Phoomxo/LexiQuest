@@ -421,7 +421,7 @@ domain, repository/use-case and caller/test files.
 42, domain/repository/use-case 86, storage/lifecycle 47, UI integration 65,
 other modes/bootstrap 191 and corrected owner fixtures 23 pass. Full Flutter
 2728, analysis zero issues and CLI 23 pass. Independent storage/domain/core/UI
-reviews accepted. A normal Android debug build is the remaining artifact check.
+reviews accepted. Source `4a4cbdd8` also passes the normal Android debug build.
 
 Add only four columns to existing `learning_sessions`: nullable TEXT
 `accepted_plan_id`, nullable TEXT `accepted_plan_json`, INTEGER NOT NULL DEFAULT
