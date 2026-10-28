@@ -1,0 +1,16 @@
+# LexiQuest Android release signing template.
+#
+# Copy this file to android/key.properties (gitignored) and replace the
+# placeholders below with your release keystore values. Never commit the real
+# key.properties, the keystore, or the passwords. The build fails closed when a
+# release artifact is requested without this file.
+#
+# Generate a release keystore with:
+#   keytool -genkey -v -keystore release.keystore -alias upload \
+#     -keyalg RSA -keysize 2048 -validity 10000
+#
+# storeFile may be absolute or relative to android/.
+storeFile=release.keystore
+storePassword=__REPLACE_WITH_RELEASE_STORE_PASSWORD__
+keyAlias=upload
+keyPassword=__REPLACE_WITH_RELEASE_KEY_PASSWORD__
