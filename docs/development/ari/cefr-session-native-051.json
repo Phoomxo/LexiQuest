@@ -1,0 +1,19 @@
+{
+  "status": "NATIVE_CONNECTED_COMPLETION_DISCONNECTED_SELECTION_DURABILITY_PASS_FULL_SCOPE_OPEN",
+  "source": "APK048 unchanged",
+  "fixture": "Existing AriCEFR045 category and catalog a/A1; one item CEFR session",
+  "beforeCompletion": "Target-free prompt; live AI correctly read bag, A book for May, not complete, no saved evidence; not CEFR proficiency",
+  "completion": "Manual read completed while connected; fresh AI read correctly says complete and saved exposure, not comprehension or CEFR assessment",
+  "disconnect": "Explicit disconnect then selected blue; completion retained",
+  "durability": "Force-stopped isolated app; read-only SQLite/WAL copy; latest native-cefr-reading:v1:exposure has one readingExposure/exposure row linked to completed session; restarted to home local data ready",
+  "legacyAggregate": "is_correct0/wrong_count1 is retained legacy exposure storage, not a graded incorrect learner answer; interpretation fixed045",
+  "cleanup": "Bridge99698 terminal1; owned reverse and private config removed; original app/accounts preserved",
+  "probeRecovery": "UIAutomator fallback sometimes returns non-XML with exit0; helper validates XML before cleanup now; fresh home probe passed",
+  "remaining": [
+    "Native dictation/audio connection variants",
+    "Assess remaining14workflow/mode acceptance gaps",
+    "Native Pair wrong/repair/support and active-board AI",
+    "Whole-project review after MCP acceptance"
+  ],
+  "limits": "Single live successful connected session and disconnect after completion; write-in-flight fault covered only host043; not every CEFR level/TTS quality"
+}

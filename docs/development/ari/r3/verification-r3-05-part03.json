@@ -1,0 +1,47 @@
+{
+  "taskId": "01a0cf7f-be37-7c31-a1b9-294858718135",
+  "sourceFingerprint": "7083053a2feb7904a146d896c83a025e0de4191fbe1797e5f92a9c342bd5c764",
+  "sourceManifest": "source-manifest-r3-05-part03.json",
+  "productSourceChanged": false,
+  "gate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-642d51764651a04f3ec755916e10f959fdbf94a5ea3f3c5001ac43918a34e9e9.json",
+    "sha256": "917a75081f49a409a152ce796aa837ea3f874a93555ff5bb9fcd80d92fb5ae94",
+    "status": "Passed",
+    "tests": 11,
+    "distinctFiles": 1,
+    "targets": [
+      "test/screens/offline_vocabulary_journey_test.dart"
+    ],
+    "logs": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "f4128349f93de48ce2977800c89f5e077272f3e929cf61b7dc2d25e6eda7c650",
+        "fingerprint": "0c72c4c24650e69fa28ec856803d3070b24acc6daf2c3be02a0fe7e9138223ac",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-23T18:29:27.3306625+00:00",
+        "FinishedAt": "2026-09-23T18:29:41.9494512+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\f4128349f93d-0c72c4c24650-8fade5b3\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\f4128349f93d-0c72c4c24650-8fade5b3\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "0c72c4c24650e69fa28ec856803d3070b24acc6daf2c3be02a0fe7e9138223ac",
+        "StdoutHash": "B1EC7658022EC977EC0E8FD226C8791680E2BFCFBB00958FE7E19FA5F032AA6B",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "initialFocusedGate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-ac041c9c015c84e7ad782dd5368b77a5906bcd1213b4fe47a6cd14f2a5bbd779.json",
+    "tests": 2,
+    "status": "Passed",
+    "note": "Two new cases before formatting; final11 includes them, not additive coverage"
+  },
+  "python": "python-protocol-audit-r3-05-part03.json",
+  "newAssertions": [
+    "Deletion dialog opened manually before optional owner attachment exposes exact target controls only after same-owner attachment",
+    "Disconnect and foreign-owner suppress dialog actions/context; reconnect restores same-owner confirmation",
+    "Wrong target rejected; cancellation preserves original word",
+    "SQLite ABORT on delete returns failed; all word/outbox rows unchanged; dialog remains; explicit retry after fault removal deletes exact word"
+  ],
+  "newTestNature": "Acceptance coverage of existing behavior; passed without production fix. No fabricated regression RED or product defect claimed.",
+  "noOwnedJobs": true
+}

@@ -1,0 +1,10 @@
+{
+  "id": "B05-IME-01",
+  "expected": "No submit during active composition; completion refreshes button",
+  "actual": "Button callback enabled during composition",
+  "red": "G2.3-red",
+  "cause": "Submit validated text only; onChanged misses composition-only update",
+  "fix": "Controller listener and shared readiness guard at button, keyboard callback and record boundary",
+  "status": "closed",
+  "retest": "G2.3-runs/targeted-learning-66920240f782aaaabf39645c5ff1ae24798ad9519e0d17f2343d39117e2da66a.json"
+}

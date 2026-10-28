@@ -1,0 +1,8 @@
+{
+  "base": "34aeb5c6",
+  "files": {
+    "lib/screens/cefr_article_reader_screen.dart": "3207a1b9eec712d876e9b57a8cbf172674e63b6e14db1c482965e815fa97dca1",
+    "test/screens/cefr_article_reader_screen_test.dart": "7a3d84b6f41a5f27b5d08dee605d33f798a8ea54a48fa046c635da4a3bf8f1c1",
+    "test/features/learning/unified_lesson_controller_test.dart": "80f7c3f087c1a2d5eea515d10edf66a965dce200eddbae8d5b306e3f1e609cd5"
+  }
+}

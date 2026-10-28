@@ -1,0 +1,1001 @@
+{
+  "zone": "REV-11",
+  "sliceId": "B18-G82-REV-11",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "428fd59440e72a79023826a5ee5f579eb06df742",
+  "reviewCompletedAtUtc": "2026-09-19T12:41:17.046487+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV11-X01",
+      "key": "collector",
+      "title": "Signed field evidence and absence proof",
+      "evidence": [
+        "tool/cli/collect-android-field-evidence.ps1",
+        "tool/cli/lib/field-release-evidence.ps1",
+        "tool/cli/new-field-evidence-receipt.ps1",
+        "tool/cli/sign-android-field-evidence-result.ps1",
+        "tool/cli/tests/verify-field-release.tests.ps1"
+      ],
+      "disposition": "REV11-01 confirms false absence inference. Typed signatures bind source/APK/time/identity/payload; signing authenticates an operator assertion, not hardware truth. Downstream still demands three tiers, all journeys, benchmarks/endurance/cloud/beta/rollback/owner evidence. Null query result cannot establish absence; regex oracle is not a behavioral proof. Assembly keeps other journeys pending. Receipt/source writes are sequential; no private keys, device operations or signed outputs generated."
+    },
+    {
+      "id": "REV11-X02",
+      "key": "packaging",
+      "title": "Artifact identity, native bytes and release profile",
+      "evidence": [
+        "tool/cli/package-field-release.ps1",
+        "tool/cli/verify-field-package.ps1",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "tool/cli/lib/elf-canonical-hash.ps1",
+        "tool/cli/lib/release-profile.ps1",
+        "tool/cli/tests/package-field-release.tests.ps1",
+        "tool/cli/tests/release-profile.tests.ps1",
+        "tool/cli/tests/verify-apk-model-runtime.tests.ps1"
+      ],
+      "disposition": "Packager verifies clean source around fresh build, staged output identity and child verifier before publication. Real package verifier uses apksigner/apkanalyzer plus native runtime hashes; Gradle shape checks alone do not prove authenticity. ELF clone zeroes only one exact GNU build-id descriptor; all other bytes remain hash-bound, vendor bytes raw, exact ABI/name sets reject duplicates/extras. Existing625-line synthetic ELF oracle exercises parser functions, not6259 tests or actual APK/device. Packager fixture fakes Flutter/signing/analyzer/runtime tools. Preview flags canonical and explicit; ProfilePath override is fixture-facing while compiler path remains canonical. InstalledFlagsVerified remains false. Missing Gradle distributionSha256Sum is a toolchain provenance gap; native output hashes do not attest the downloaded toolchain. No observed tampering or automatic source defect inferred; G8.3/B19 must state support/provenance policy before reproducibility claim."
+    },
+    {
+      "id": "REV11-X03",
+      "key": "verification",
+      "title": "Bounded runner input closure, reuse and recovery",
+      "evidence": [
+        "tool/cli/verify-scope.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "disposition": "REV11-02 records missing CLI input closure;03 post-run drift and08 wrapper pipe wait remain candidates. Exact command keys, environment digest, log hashes and exit status improve reuse but cannot cover omitted inputs. Strict selectors and missing-path preflight stand; backend --frozen dev selection excludes expensive groups but does not freeze the installed environment. Existing disposable fixture tests source/environment/missinglog/forgedexit, not mutation during command or stderr saturation. Legacy wide verifiers are not authorization to bypass bounded selectors, frozen release policy or unchanged-gate reuse. No verifier/test command executed."
+    },
+    {
+      "id": "REV11-X04",
+      "key": "ci-deps",
+      "title": "CI configuration and dependency provenance",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        ".github/dependabot.yml",
+        "package.json",
+        "package-lock.json",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "tool/cli/tests/ci-workflow.tests.ps1",
+        "tool/cli/tests/dependabot-config.tests.ps1",
+        "backend/voice_api/osv-scanner.toml",
+        "tool/cli/tests/osv-config.tests.ps1"
+      ],
+      "disposition": "REV11-06 grouping schema and07 CI early exit remain candidates. Root npm lock263 resolved entries and Dart224 dependency records retain prior structural review, not downloaded integrity or platform resolution proof. CI pins Firebase CLI separately at15.24.0; local cloud helpers resolve global private CLI modules, so not covered by package-lock. Root OSV expiry is2026-10-26; optional voice eight exceptions expire2026-09-11 (not Sep14). Local oracle hardcodes that date and does not establish current waiver validity; CPU/product exclusion remains distinct from optional GPU support. No vulnerability claim, scan invocation, network/schema fetch or dependency update. Old hardcoded version+1 CI/dev scripts share REV10-05 context; release identity is explicitly injected."
+    },
+    {
+      "id": "REV11-X05",
+      "key": "cloud",
+      "title": "Operator cloud helpers and hosted association",
+      "evidence": [
+        "tool/cli/configure-firebase-budget.cjs",
+        "tool/cli/configure-firebase-app-check.cjs",
+        "tool/cli/configure-firebase-release-sha.cjs",
+        "tool/cli/set-firebase-app-check-enforcement.cjs",
+        "tool/cli/set-firebase-cloud-policy.cjs",
+        "tool/cli/verify-hosted-asset-links.ps1"
+      ],
+      "disposition": "REV11-04 hosted relation omission is static and05 budget selection is a candidate. Fixed production project/default CLI account and privileged top-level execution require operator context; nothing imported or invoked. Budget only alerts. AppCheck TTL normalization and literal enforcement metadata are limited response claims. Cloud-policy missing boolean normalizes false, matching conservative disabled interpretation but not a full response-schema proof; current two-field document contract does not prove future-field preservation. No activation/enforcement/deploy/spending authority inferred."
+    },
+    {
+      "id": "REV11-X06",
+      "key": "historical",
+      "title": "Historical generators and evidence audit utilities",
+      "evidence": [
+        "docs/development/full-system/evidence/G0.3/inspect_git.py",
+        "docs/development/full-system/evidence/G0.4/verify_evidence.ps1",
+        "docs/development/full-system/evidence/G0.5/build_traceability.py",
+        "docs/development/full-system/evidence/bundles/B17/audit_final.py"
+      ],
+      "disposition": "Retain recorded per-file boundaries: historical source/branch/count assertions, source/import subsets, allowed EOL deltas and manual disposition closures do not become current runtime gates. Copy/audit helpers can overwrite outputs or omit missing logs; do not rerun against current checkout. Accepted B11A training/runtime and B17 preview evidence retain exact historical scope. Normal Python asserts are not proof under -O. Raw checkpoint audit performed separately with no regeneration; all prior zone receipts remain unchanged."
+    },
+    {
+      "id": "REV11-X07",
+      "key": "generators",
+      "title": "Versioned catalog and final-plan authority",
+      "evidence": [
+        "tool/final_test_plan/generate_final_test_plan.dart",
+        "tool/feature_contract/generate_feature_map.dart"
+      ],
+      "disposition": "Feature map sorts stable data and blocks same-revision identity drift; output pair is not transactional. Final plan enumerates selected sourceRefs, lacks package-lock/transitive/environment closure and current AI/Adventure/LM coverage; HEAD equality on --write does not prove clean bytes. Historical schema26/49 and artifactSHA666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534 remain untouched. B19 must create a new current-system version; existing REV12 static oracle findings retain ownership, no duplicate or historical overwrite. Generator checks are not gate execution."
+    },
+    {
+      "id": "REV11-X08",
+      "key": "data-tools",
+      "title": "Content and camera tools with bounded evidence claims",
+      "evidence": [
+        "tools/build_cefr_catalog.py",
+        "tools/build_expanded_cefr_catalog.py",
+        "tools/validate_cefr_editorial.py",
+        "tools/camera_web_dataset.py",
+        "tools/camera_development_evaluation.py",
+        "tools/train_camera_web.py",
+        "tools/export_camera_web.py",
+        "tools/shadow_rewards_analyzer.dart"
+      ],
+      "disposition": "Reuse existing per-file source observations and accepted domain receipts: deterministic source/POS/ID joins and editorial structure do not certify translation quality. Synthetic tests cover partition/provenance/negative cases, not actual rights, learning quality or physical camera. Legacy pilot guard rejects current protocol before training; web-only trained/exported evidence stays development-only with original hashes. Path-local fresh-test opened markers are not global anti-copy authority. Shadow analyzer lacks authoritative transaction comparison and must not be used for cutover or statistical acceptance. No training/download/research/statistical work executed; accepted camera/B11A not rerun."
+    },
+    {
+      "id": "REV11-X09",
+      "key": "operations",
+      "title": "Local helpers, scaffolds and maintainer boundaries",
+      "evidence": [
+        "tool/cli/doctor.ps1",
+        "tool/cli/lib/runtime-probes.ps1",
+        "tool/cli/run-android.ps1",
+        "tool/cli/run-android-smoke.ps1",
+        "tool/cli/run-adventure-performance-profile.ps1",
+        ".gitattributes",
+        ".gitignore",
+        "firebase.json"
+      ],
+      "disposition": "Doctor/probes are informational and not a training permit; first GPU row/process-name matching does not prove workload safety. Android smoke permits emulators and cannot certify physical hardware. Adventure profiler retains source/viewport/budget/finiteness checks and certification-not-certified; no-progress watchdog remains required externally. Signing initialization is operator provisioning with partial-failure/ACL limitations, not invoked or treated as release authenticity proof. Public feedback free text needs review before publication. Git attributes/ignores and Firebase local configuration do not activate services. No new demonstrated runtime issue beyond findings."
+    },
+    {
+      "id": "REV11-X10",
+      "key": "owned-oracles",
+      "title": "Four exact REV11 oracle dispositions",
+      "evidence": [
+        "tool/cli/tests/ci-workflow.tests.ps1",
+        "tool/cli/tests/package-field-release.tests.ps1",
+        "tool/cli/tests/release-profile.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "disposition": "CI regex validates source presence but not YAML schema/step exit; package fixture exercises real control flow with fake tools and dirty/source-drift/no-fresh-APK/verifier-failure cases. Preview profile tests standard SHA and rejects invalid flags/types/extra endpoint, not compiled flags. Scope fixture exercises entrypoint/cache selection but misses root inputs, post-run mutation and wrapper overflow. Four exact files only added to focused REV12 disposition count. Supplemental verify-field-release, verify-apk-model-runtime, dependabot-config, android-manifest and osv-config oracle observations are explicitly attributed here for final REV12 reconciliation, not silently counted as completed."
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "0b2b49d08d540027f9abb7aaf137f88ea19cda714a4518523311de9959791684",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/field-feedback.yml",
+      "sha256": "2505439f200cb2d14628912fe75822ea4217880d308ce60ed683c384aefe4faa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "sha256": "4af055452b4e59196949b17887146a905dbda71a2e27a7e4d438823cc394ed1e",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-06"
+      ],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "b612af8ad3137f8105819e91910fd57f633d332ce59f436947a0e88ebeba97b4",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-07"
+      ],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".github/workflows/gitleaks.yml",
+      "sha256": "0f1b7b78dfd3c15e6abd61198195833938d6f0739ebc669f79666e1f702d9d32",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".github/workflows/osv-scanner-pr.yml",
+      "sha256": "5e8214d823e01f55b02f92f6c455e3e1589272aab15dec11f17dbca49d273763",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".github/workflows/osv-scanner-scheduled.yml",
+      "sha256": "b7991f0d97b2283556a760a4e4bb8035c9e693166de93b45b01226d2da5ea78a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "a7cd6067358e791363e154634ad63952988fdedb531166a447f2e09ab6eca229",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": ".gitleaks.toml",
+      "sha256": "c8d28243c0207d902479a4a1eb9438f927ce44b7340abbbf5c401e22ab6d651e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".gitleaksignore",
+      "sha256": "5b95a72eeab51c1e4b3d1cf94cbc93cf5870efb289740fc9f2f1bd4151b85cbf",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": ".metadata",
+      "sha256": "4e9a6c8485af5128c7985dd1b834c48a041fd2d74eff57d8ace0ba7011c051ee",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "e0ea485cfdbc3e12b93efb8679a5ea73ebfe20ea4ca0c473dc594fc2fb274ed5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.3/inspect_git.py",
+      "sha256": "2b54af77da8e70c43c8d9a3b1879921ff3539aec9510fb4f9890288cf8490e9f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.3/verify_inspection.py",
+      "sha256": "d717aff74176bb54147b27c4a788910d3ec925a7162180e03d34be7080c1b2ad",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.4/verify_evidence.ps1",
+      "sha256": "90c7af28af8e75d5053d67e7af74c3e5ab52f5aba4777e3819b505d9d914d6bc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.4/verify_registry.ps1",
+      "sha256": "6db220bb09e6b4f50cf17e208e2c74a8b8661863aa70388beafef2f068b58c52",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.5/build_traceability.py",
+      "sha256": "adb24f7197bd6d7a9b0aa9be08006609594cd7e4f117fc95b396084dfa982ead",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/G0.5/verify_traceability.py",
+      "sha256": "ab37bc763084a3ea8e27f3913f1ddbe5b8807f4fe61d49b1e688926be574b645",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/verify_workflow.py",
+      "sha256": "03bce67048e4e080e35a126af061ca1fb2934e6ea2a4fd13d42b0ce80a817610",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/build_cleanup.py",
+      "sha256": "5cb817e93c68778143c4ffe090bb4bc292092b3c4f3dbd494a35ca8d07d9ba58",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/build_edition.py",
+      "sha256": "faab1f564f3b1d9950f8774eaa8817731a5dc31e9f65c2ddee83ffa8c762b3cb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/build_formulas.py",
+      "sha256": "6272d43354f703bc768d7c18c4030a5fda5f05ca5b28f51043a7c42ff4eca29d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/verify_bundle.py",
+      "sha256": "0f9df8b6e71e4ea5168eaf844d2fa005eaf26755e77a4dfeabd50264f4f65f80",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/verify_cleanup.py",
+      "sha256": "ef2e123c9052fee9f95e0a7744c383b184ab70dc5d26e42c06d04baf14a3e8c0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/verify_edition.py",
+      "sha256": "5d816808d5e1930b6899614a47f6b18a92f82a61e1080e71d188dae6234ac94a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B01/verify_formulas.py",
+      "sha256": "cc056735ba53260839d05740761b14be15b23d60c380e6147b6ac7c0dd946612",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/candidate_runtime_test.dart",
+      "sha256": "c68e3742844e04fa21c5aa49106ab0e31b24b1db2cc2150f6e1733e45a73ded1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/audit_inputs.py",
+      "sha256": "a0de14bfe1eb24ef95b4f1f5803b7c942e959ca9a407dc67a83938383b384b84",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/measure_host.py",
+      "sha256": "22122b6cf7a569f5a1ebb9f04370171f672fc89fdbd63b39de1647c2ec4fed14",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/audit_evidence.py",
+      "sha256": "afdc36114070420265bc6864794d5fd70d2373329d147368d68a5aa913b2fe5c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B14/audit_evidence.py",
+      "sha256": "e3f813cdf85f53ffa8fa7ed20be38c55ba5025a3cf4d34721762249dfcd03337",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B14/final_audit.py",
+      "sha256": "8f4282ef37c84acc39ece615f81d1a0b908caa237eab04be6f6f9e271c67f2bd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/audit_evidence.py",
+      "sha256": "428669457c8d5233b441ba96f056dc5dedfd528cf54e0870a195e7d0bb8a9443",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/diagnose-powershell.ps1",
+      "sha256": "ae9b0a77f80f529b5777cc523aa23c9132d64f344fb29f63b7cd5b3dc9d70aa3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B16/audit_bundle.py",
+      "sha256": "bfa83e03f8efba78342b729d83b0179b095917ac29d88a10f9886d5673981790",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B16/capture_verifier.py",
+      "sha256": "0610e4d399f5e3c13cd52cc9a8ca0506a66d71953815945c68617a2fed26d9c8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/audit_final.py",
+      "sha256": "1755d05eb87f9d2b37507c584ff79967ab548a41567cbf61052e6deb7e0504ff",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/audit_reuse.py",
+      "sha256": "8f2f1b59e14e3ba76e1420155929eb14193824ee27927fa110a7639bbadbbb4f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/capture_verifier.py",
+      "sha256": "b272efdc8eff90386b1d8ee9a2de2ce24ac972e9488bcc5f9411ae750da21f7e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/inspect_preview_bundle.py",
+      "sha256": "1bdd05c8eb842e155d4703915f3fc4668f1f078293f35ce485389c52baf7969b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/restore_checkout_bytes.py",
+      "sha256": "a18949976ed41fb167d717ab520d5b399d99cf8cb7ebb8d07f0abe2a6aa51f08",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X06"
+    },
+    {
+      "path": "firebase.json",
+      "sha256": "fd99033f2bbde7b57a723d90a9c3a5467fd9ed2472fbea22db9fba64ba57146a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "osv-scanner.toml",
+      "sha256": "7fecdd6a50e8eee8efbcc7cb484e94b5b6fb2e2bb07c047afa5b53d30e03ebc8",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02"
+      ],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "8cddd01c1f1307cbd0dae07a692f1a6f8eb91e71175d4f8accad7089672f89ca",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": "package.json",
+      "sha256": "b8e07135904d2efea6296ad243a0c08148af057e9936e8f65e09b280c8bc8734",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02"
+      ],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "47745c547efa5cb964b424607cb6356f6e5a2c791b0e78c182a30c0fe2718ca3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "afd947c0c0f4ac8864dbf67a33ecbb4699b6a40f3d39edac4ba6be60459db584",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X04"
+    },
+    {
+      "path": "tool/cli/collect-android-field-evidence.ps1",
+      "sha256": "d8504542011a4a724243794d8bb40b9fe40e1d2bb3915923919d4a6b42955740",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-01"
+      ],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/configure-firebase-app-check.cjs",
+      "sha256": "f5b510067f3be46921e233be9507d003cdd66a224d4048354945ebac1c8581e8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/configure-firebase-budget.cjs",
+      "sha256": "5a456d8f50ce1d7c842d5c3255a107a4593d009ff694e4d8ef4f137ac056fdf4",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-05"
+      ],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/configure-firebase-release-sha.cjs",
+      "sha256": "7cf0a961e12e0d274ab9867baa6e57715ac87dc17536293f49ac869fde77b6c8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/doctor.ps1",
+      "sha256": "82b1e34d934d25577cd313937c45b38464d426fb3982d16ad788f67785b6955b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/initialize-field-evidence-signing.ps1",
+      "sha256": "dddb7de9046c63f53ff0cdf1dff2793d46e1c902e6ccd5dd4e46b2dcbfc7b79b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/initialize-release-signing.ps1",
+      "sha256": "85d9be5ed1676959ef61f4f67840f27c08b07df952eabe5f7d56c238d5ece463",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/lib/elf-canonical-hash.ps1",
+      "sha256": "cd348b800dc781a9abec16af99e11ddba8bed41a92b403fc45f9da595d81ba83",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/lib/field-release-evidence.ps1",
+      "sha256": "60a5c1e47201fb4cd521140cc5281dc44f056d9ab1e0569bdce2ee6dfc36e440",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-01"
+      ],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/lib/release-profile.ps1",
+      "sha256": "2fa00ed23e301cddc25abb3d64c60cef0de01b99243b9b26b27f936cced3bf36",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/lib/runtime-probes.ps1",
+      "sha256": "9d5d327a3988030d7e1ed77642e1dbfbecf7b9a0fecc652239a59eeccdd30f6b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/new-field-evidence-receipt.ps1",
+      "sha256": "8b6dd55665575b92d9943ba1224dab1b593c4debcd0fc216c68fe367ecaefa7f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/new-field-release-evidence.ps1",
+      "sha256": "798a43e196995c8291000147804dcbcabcfdb276f731e03adaede97eeddbad2b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/package-field-release.ps1",
+      "sha256": "91a92573b20f02a0767116f04f2252d54d8b6702aad4e1760aec02eda13628bc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/prepare-field-model.ps1",
+      "sha256": "ed2eeca14e3d2e630310258b5f9f663b0215dff1bd9713d67c04a78ead4ea53d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/profiles/local-learning-preview.json",
+      "sha256": "fc18f908f817463ec789117204076d2df27814807377179027d6a6157415dfa4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/run-adventure-performance-profile.ps1",
+      "sha256": "765172ef5a679588184b75c978530c1b532d46ec3ade72cfe4e0a609f9caad08",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "7e8a723fdea2a9a194d3ad76e79f03a18db79cb6747c29df083d105eb0ed6f75",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/run-android.ps1",
+      "sha256": "6dcd55108635a71d50e2e5ef48c0386e839f86dd1ddfc1adf30b40715f0386e2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X09"
+    },
+    {
+      "path": "tool/cli/set-firebase-app-check-enforcement.cjs",
+      "sha256": "86a2dcaec446490c93c4e5a1a33a03202916afb390e1b07c5a4c5cd6a6de1694",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/set-firebase-cloud-policy.cjs",
+      "sha256": "9fc49ff6c9ad2881d54c02d8fe71c0964770e4c4e8fb97dc15060cd9ec6cd0a0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/sign-android-field-evidence-result.ps1",
+      "sha256": "5d0f8e83d6bfe941878ffb44234279cbfa37d1b0c4085d69a51cc410c6060cf2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/trusted-field-evidence-public-key.xml",
+      "sha256": "843af0fc620440024677b972a8d098d0230e1990f7f1a832efbc9bc93cad27f3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X01"
+    },
+    {
+      "path": "tool/cli/verify-apk-model-runtime.ps1",
+      "sha256": "75689741a1f5aded6455e42b10558405b9f736c0a95a9b9f08f2449d3f0f97ce",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/verify-camera-speech.ps1",
+      "sha256": "b48b3d44c6186831144340aa6ad2121d5b90f76c4845a5fc090f477ffdc1a9ca",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-device-model.ps1",
+      "sha256": "293868f81aa1b27eebd46e365f264a81145d035c6007e9c41946ef29dba4cfef",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-field-package.ps1",
+      "sha256": "e3d7312e2db10f913d6099df616f83db43076f3b53bc205cd83ca4768b2b6259",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/verify-field-release.ps1",
+      "sha256": "54be51c06d2b20843b7e66ff78ff3aaaf1f70b89e06afb7a1f2bfe89c3ef20d1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X02"
+    },
+    {
+      "path": "tool/cli/verify-gemini-byok.ps1",
+      "sha256": "aa5173c7aae147c0166c9b3d29e670eaf01c1df7a8e36a0f55f3ae6c9cfc9297",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-hosted-asset-links.ps1",
+      "sha256": "6a56b02d9118bf6dc0cafd62979361ee6923f18bd7d255da2177acc363a2c6ef",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-04"
+      ],
+      "crossCheck": "REV11-X05"
+    },
+    {
+      "path": "tool/cli/verify-learning-core.ps1",
+      "sha256": "1d247598289a796e2984b5c0ff36c74c2ef4046b1f59ea9aa1e3d44671233e4d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-local-first.ps1",
+      "sha256": "96d40c9482aae74b2018135d474ab8f3f3afceb8d2d24db040816d3cd3065864",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-osv-locks.ps1",
+      "sha256": "ed5099983be3f6a626ffd2ac11c6647cf31d23492774653a13de513449df74cc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-product-completion.ps1",
+      "sha256": "40433997f062da2a57f4f80054ede7e174ef54d26cc48939e9f0360752ba5043",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "51e108cc1907c3911be4bcf22899492b07a2cdb9ff77fd2db6e5e9f168a9e051",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-03",
+        "B18-REV11-08"
+      ],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify-sync.ps1",
+      "sha256": "b98dd40b8fadd0ea0c1a79d70b3b882322afec7bf39bff02234c9c5c61a97fe9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/cli/verify.ps1",
+      "sha256": "79f2c17530fbb0b450ecb2949c1f4dc000617f73eec6aaa8bef3660d68febdf0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X03"
+    },
+    {
+      "path": "tool/feature_contract/generate_feature_map.dart",
+      "sha256": "22a75a8d81c3085e2f1bb54fefe275456486a8ecb6b82f5203f394949a96c03e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X07"
+    },
+    {
+      "path": "tool/final_test_plan/generate_final_test_plan.dart",
+      "sha256": "461204b20ac45f312e87b6e00109b2228dd467b71994e1fcdec4eb28ee05e4d9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X07"
+    },
+    {
+      "path": "tools/build_cefr_catalog.py",
+      "sha256": "165e3a1557b57944ab21a47a714becc4cf5d74bb634a9cf68a700a72bbf228c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/build_expanded_cefr_catalog.py",
+      "sha256": "ea58af3b60dc3dbd8b13d251f2344db18a1ea8c4c03dbb688550583df6956277",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/camera_accuracy.py",
+      "sha256": "92782c92fe92427b148ba358f842eccc3069a69dfc3e0d1fd1f91238fb4ecee2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/camera_development_evaluation.py",
+      "sha256": "8dc6bb9cda7f5c123ec1e4346d32c884a5349cfe522386d1c8047d2003fd5e10",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/camera_web_dataset.py",
+      "sha256": "648caa09fb9924f6e3be6a2d0aaebffc7f1c51928ea9e75b5baded16e5d84846",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/export_camera_pilot.py",
+      "sha256": "57d30b2476e5705ac34107d48a59547c3f2345d3298e1c294316a02b3bc42abe",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/export_camera_web.py",
+      "sha256": "fb0ddc6ef0c74dc315f225b5fa1c1ddcf94012367b298a1ae8935e7e82a92f03",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/generate_float_classifier_fixture.py",
+      "sha256": "aad4c5ac0dd0f61c0b9ca3216f3edb3cc25b1bfcb72c2f6ab33f46ae74397981",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/prepare_openimages_pilot.py",
+      "sha256": "c4c55607e79367e04ea2d3474f0a54c2b3c55206d4af52a72a3ea45400251222",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/shadow_rewards_analyzer.dart",
+      "sha256": "f2a800c60ce7f5c1fc5a3409a0325be27cfd7e883587dc9a85d255d0a83efd5d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_build_cefr_catalog.py",
+      "sha256": "cd1b9251931c42b3f5b2613967aa4c37a7881e2fc7614e25c626e0cbbab8e722",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_build_expanded_cefr_catalog.py",
+      "sha256": "cf82ef47c420e563c3022169f2711b4a3d468169220b73a73860fe10f52dffd9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_camera_accuracy.py",
+      "sha256": "bbe31d988887fda2608e9c33992c22c0fdb61ac42d14e546342d86761d4d2fc6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_camera_development_evaluation.py",
+      "sha256": "007d8a587313a0fd45f14c6e4873641340a87546aa04ed487a7cfa1eda6470b5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_camera_web_dataset.py",
+      "sha256": "3659a3ff7f319d9cdfd7be9d4b6957da809fe7e944cbb7deb75cd24ea648dd76",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_camera_web_training.py",
+      "sha256": "719eaa194f9aa065b20cbcaa58025fe78769514a58335d410a1ae8ea1ab26e84",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/test_validate_cefr_editorial.py",
+      "sha256": "4778b79606ed790e8ab33d7570a5d384c90d510137ed7b2541fa7b4d4d5f38d7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/train_camera_pilot.py",
+      "sha256": "bb3da0c5d4aec308beb5760082a41d1e41dd56cdbcc557713e5ac554d4e0fe2a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/train_camera_web.py",
+      "sha256": "ef62eb28b48282e74c133851ddbcb26486952d3775661a54bab29fb7d539742e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    },
+    {
+      "path": "tools/validate_cefr_editorial.py",
+      "sha256": "8b7e79da5a387cf016975454706aea9635ff88db102d251856c8b202322278f3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X08"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "tool/cli/tests/ci-workflow.tests.ps1",
+      "sha256": "8cafe60587e0fe3b2b0fd505df34d2ca6390d709f0e601271a811e02207decb7",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-07"
+      ],
+      "crossCheck": "REV11-X10",
+      "zone": "REV-12",
+      "disposition": "Full file read with focused remainder200-end to recover outputtruncation. Regex/source presence enforces actions/toolversions/triggers/CPUgroups and no secretpatterns; global frozen count not percommand and permissioncontainsread not exclusivity. Does not runworkflow, check eachPowerShell exit propagation or parseYAML/schema. No execution. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-11",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "tool/cli/tests/package-field-release.tests.ps1",
+      "sha256": "1f7a280f1d6dade6e615034204e260c404d1f9ed399567d5a9116f624d27be1c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X10",
+      "zone": "REV-12",
+      "disposition": "Full540 lines read in bounded follow-up after combined output truncation; no missing-range claim. Disposable committed Git fixture invokes copied real packager/package verifier with PATH fake Flutter/apksigner/analyzer/runtime verifier and four-byte fake keystore. Checks metadata/dirty/path/existing-output preflight, preserved sentinel, fresh APK requirement, exact Gradle/profile argv and actual output-byte hash, runtime failure23 cleanup/no publication, source drift/no publication and installedFlagsVerifiedfalse. No actual signing/build/native validation; no source drift specifically during independent final verifier. Env restored finally, temporary fixtures removed. No B18 execution. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-11",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "tool/cli/tests/release-profile.tests.ps1",
+      "sha256": "5d6f4312abbbd76697bb3100933e2f4270b9ef274912dbac4a2529fdfae9d8ba",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV11-X10",
+      "zone": "REV-12",
+      "disposition": "Full20. Actualcanonicalprofileoneexactargument/name/bools/hashsyntax, legacyexplicitdefault. RealtempabcSHAknownvector and3invalidcloud/type/extraendpoint fails; assumesbuilddirexists, cleansliteralfile. No compiler actualflags/tamperbetweenreadandbuild oracle. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-11",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "tool/cli/tests/verify-scope.tests.ps1",
+      "sha256": "f37a386d2cf483837e5f835085d8254e1443e6df773ac0beb2c2b2a01e94b9b0",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-03",
+        "B18-REV11-08"
+      ],
+      "crossCheck": "REV11-X10",
+      "zone": "REV-12",
+      "disposition": "Full134. ASTextractactualfunctions; standardabcSHA, previewbundle/exactCLI/rules/native/previewselector conflict checks andbackenddevfrozenclosure. RealdisposableGit copiedrunner+dummyscripts:PlanOnly0/noPASSreceipt,initial2,resume2,sourcechange4,missinglog5,forgedexit6,envchange8. ActualentrypointwithoutFlutter/backend/release. No timeout/invalidchildstart/postruninputmutation/logtampercontents/nativeflagsdecoder; fixture retained. Full source read; no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-11",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV11-01",
+    "B18-REV11-02",
+    "B18-REV11-03",
+    "B18-REV11-04",
+    "B18-REV11-05",
+    "B18-REV11-06",
+    "B18-REV11-07",
+    "B18-REV11-08"
+  ],
+  "supplementalCallers": [
+    "android/gradle/wrapper/gradle-wrapper.properties",
+    "hosting/public/.well-known/assetlinks.json",
+    "backend/voice_api/osv-scanner.toml"
+  ],
+  "supplementalAttribution": {
+    "tool/cli/tests/verify-field-release.tests.ps1": [
+      "B18-REV11-01",
+      "B18-REV11-05"
+    ],
+    "tool/cli/tests/verify-apk-model-runtime.tests.ps1": [],
+    "tool/cli/tests/dependabot-config.tests.ps1": [
+      "B18-REV11-06"
+    ],
+    "tool/cli/tests/android-manifest-security.tests.ps1": [
+      "B18-REV11-04"
+    ],
+    "tool/cli/tests/osv-config.tests.ps1": []
+  },
+  "limitations": [
+    "Static dispositions only; findings are not closed and G8.2 is not accepted.",
+    "No production source/runtime/provider/network/research/deployment changes or execution.",
+    "Prior942 dispositions/61findings/REV01-10 receipts preserved. Supplemental oracle coverage remains finalREV12 responsibility."
+  ]
+}

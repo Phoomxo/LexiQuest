@@ -1,0 +1,2437 @@
+{
+  "schemaVersion": 1,
+  "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+  "mode": "dry-run-retain",
+  "scanFiles": 1651,
+  "candidateCount": 76,
+  "plannedDeletes": [],
+  "plannedMoves": [],
+  "protected": [
+    "learning data",
+    "history",
+    "receipts",
+    "consent",
+    "migrations",
+    "goldens",
+    "provenance"
+  ],
+  "restoreProtocol": "Inspect target changes first. Recover pinned blob into a separate review directory, check expected SHA256, then restore only approved target. Never reset/clean or overwrite user files.",
+  "records": [
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_isolatedDiff.png",
+      "sha256": "4e57ae9e0c27d281a782d48369a3d334a4589a3c2014c0b936fd5541e40a8648",
+      "gitBlob": "23614b070b32b4f545946b7c1a492b615b123ac1",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "23614b070b32b4f545946b7c1a492b615b123ac1",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_isolatedDiff.png",
+        "expectedSha256": "4e57ae9e0c27d281a782d48369a3d334a4589a3c2014c0b936fd5541e40a8648"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_maskedDiff.png",
+      "sha256": "567acd1bb6d9833839ed1c5787ca4bcb1123221342952c0a6512b5ea36ac2002",
+      "gitBlob": "7e6c65a293fe41f83a89ef6dff3504423b057470",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "7e6c65a293fe41f83a89ef6dff3504423b057470",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_maskedDiff.png",
+        "expectedSha256": "567acd1bb6d9833839ed1c5787ca4bcb1123221342952c0a6512b5ea36ac2002"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_masterImage.png",
+      "sha256": "3e0c2603c11008804c0d0013189f18e02e9db918c0567ab8b16d7dcc2db22c13",
+      "gitBlob": "925bc5777c11965648be592437fc331a5d2a4e39",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "925bc5777c11965648be592437fc331a5d2a4e39",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_masterImage.png",
+        "expectedSha256": "3e0c2603c11008804c0d0013189f18e02e9db918c0567ab8b16d7dcc2db22c13"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_testImage.png",
+      "sha256": "78b401cc39e46796ef4ec9032c7b84b7b15555f8df5fdb48ee5366b2c1d78aee",
+      "gitBlob": "6d55a884190ea891574a0735514636f01a629166",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "6d55a884190ea891574a0735514636f01a629166",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_active_typed_light_testImage.png",
+        "expectedSha256": "78b401cc39e46796ef4ec9032c7b84b7b15555f8df5fdb48ee5366b2c1d78aee"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_isolatedDiff.png",
+      "sha256": "1cbf93e7f363ed4ca77636dfc07341139027b3a9933d23ee91a5d74e292839f1",
+      "gitBlob": "2e20b2220918177e6e5f1de49806815fe047eadb",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "2e20b2220918177e6e5f1de49806815fe047eadb",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_isolatedDiff.png",
+        "expectedSha256": "1cbf93e7f363ed4ca77636dfc07341139027b3a9933d23ee91a5d74e292839f1"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_maskedDiff.png",
+      "sha256": "dada006a4a2c9519c3a78de554fd03adee548a9d7e43fc4468f995a379ffbf73",
+      "gitBlob": "1e9b106f4a22f0e0fd21fe6ef96032b6882ee5bb",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "1e9b106f4a22f0e0fd21fe6ef96032b6882ee5bb",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_maskedDiff.png",
+        "expectedSha256": "dada006a4a2c9519c3a78de554fd03adee548a9d7e43fc4468f995a379ffbf73"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_masterImage.png",
+      "sha256": "dcb6fb8b378fb3a1c627425d28f802155fd78cf5d1967b3c9b1248a8afa699d2",
+      "gitBlob": "ffdec245749a6c2166e4f4d1dd405732252960bf",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "ffdec245749a6c2166e4f4d1dd405732252960bf",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_masterImage.png",
+        "expectedSha256": "dcb6fb8b378fb3a1c627425d28f802155fd78cf5d1967b3c9b1248a8afa699d2"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_testImage.png",
+      "sha256": "7dd883416444d95c6f8f475d18a93d6e7e8b0b1f7313abb8312a5c07674361e1",
+      "gitBlob": "3eb6edef530849b92a3d83266094b7e05b7c87d2",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "3eb6edef530849b92a3d83266094b7e05b7c87d2",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_flashcard_revealed_narrow_text_200_reduced_motion_testImage.png",
+        "expectedSha256": "7dd883416444d95c6f8f475d18a93d6e7e8b0b1f7313abb8312a5c07674361e1"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_isolatedDiff.png",
+      "sha256": "010713cea43784e013106348cb594608a89703ebf80b2fd423660c707decc773",
+      "gitBlob": "5a510edb20d48345f14b7cae899e3c7e2fc96fc8",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_en_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5a510edb20d48345f14b7cae899e3c7e2fc96fc8",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_isolatedDiff.png",
+        "expectedSha256": "010713cea43784e013106348cb594608a89703ebf80b2fd423660c707decc773"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_maskedDiff.png",
+      "sha256": "6055f0e29fd5b5c4f436c8e01e4448685976619c74556ca4541c5eb6d1036d37",
+      "gitBlob": "ffef40c5975265ea54342f2e85f9986771a5f70b",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_en_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "ffef40c5975265ea54342f2e85f9986771a5f70b",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_maskedDiff.png",
+        "expectedSha256": "6055f0e29fd5b5c4f436c8e01e4448685976619c74556ca4541c5eb6d1036d37"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_masterImage.png",
+      "sha256": "5c6bcc18f83159813d7e88f294d07d59630d58b937c7ab93e38d2c5a91e4d888",
+      "gitBlob": "16c2fc46151343bd6f626a0633100864e8b6579b",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_en_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "16c2fc46151343bd6f626a0633100864e8b6579b",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_masterImage.png",
+        "expectedSha256": "5c6bcc18f83159813d7e88f294d07d59630d58b937c7ab93e38d2c5a91e4d888"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_testImage.png",
+      "sha256": "695fe36205df5192f6fbf2b213fef9b3307af084ff1c6a96b9feb640e67f01bb",
+      "gitBlob": "be61a005cd6ec10802ee9bad18e1baaaf654271e",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_en_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "be61a005cd6ec10802ee9bad18e1baaaf654271e",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_en_narrow_text200_testImage.png",
+        "expectedSha256": "695fe36205df5192f6fbf2b213fef9b3307af084ff1c6a96b9feb640e67f01bb"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_isolatedDiff.png",
+      "sha256": "1f48cc09768ad9e83bfb0d0c033e425244fac3e6732f40edf394627ef2ad2945",
+      "gitBlob": "9ef8ddddadeb59744132d859ae36e74a81d4de70",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "9ef8ddddadeb59744132d859ae36e74a81d4de70",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_isolatedDiff.png",
+        "expectedSha256": "1f48cc09768ad9e83bfb0d0c033e425244fac3e6732f40edf394627ef2ad2945"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_maskedDiff.png",
+      "sha256": "af2ce3bcbb42dcb7908fe8aa069d1a0acf2d6cb71ca5b445c360a9f44f9550e8",
+      "gitBlob": "299a883fbc6ec72b43365899db0612569cf2f6ce",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "299a883fbc6ec72b43365899db0612569cf2f6ce",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_maskedDiff.png",
+        "expectedSha256": "af2ce3bcbb42dcb7908fe8aa069d1a0acf2d6cb71ca5b445c360a9f44f9550e8"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_masterImage.png",
+      "sha256": "dc28540174c0ec68ade446105bcc4387bf0a0236a2f77b13b0b983b14a2bb6f3",
+      "gitBlob": "640ca846022248410b345be6294d3b4995d8b0ca",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "640ca846022248410b345be6294d3b4995d8b0ca",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_masterImage.png",
+        "expectedSha256": "dc28540174c0ec68ade446105bcc4387bf0a0236a2f77b13b0b983b14a2bb6f3"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_testImage.png",
+      "sha256": "42fb1d24cf389958732d9f58be29b5b2789cced9adaeb8fd1c93e1d54da5ff03",
+      "gitBlob": "7fde5bb9da647f98b18001d8fa07dfd814e976d8",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_narrow_text200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "7fde5bb9da647f98b18001d8fa07dfd814e976d8",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_narrow_text200_testImage.png",
+        "expectedSha256": "42fb1d24cf389958732d9f58be29b5b2789cced9adaeb8fd1c93e1d54da5ff03"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_isolatedDiff.png",
+      "sha256": "b168d6af543843c49abe7f377ac3b1d4384df73bae38a5ac1e9e5718ddb43f94",
+      "gitBlob": "5eb49d9f316366e6c99ac0c6423c3d9e80b65b32",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_pair_renderer_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_regular.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5eb49d9f316366e6c99ac0c6423c3d9e80b65b32",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_isolatedDiff.png",
+        "expectedSha256": "b168d6af543843c49abe7f377ac3b1d4384df73bae38a5ac1e9e5718ddb43f94"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_maskedDiff.png",
+      "sha256": "9a976bbc19b80b0b973d8e30503dade53887d0c6709a2f3ed16fe42bc8020600",
+      "gitBlob": "b8b40a1a57917d080ee825c918963a7f5efd3d91",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_pair_renderer_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_regular.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "b8b40a1a57917d080ee825c918963a7f5efd3d91",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_maskedDiff.png",
+        "expectedSha256": "9a976bbc19b80b0b973d8e30503dade53887d0c6709a2f3ed16fe42bc8020600"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_masterImage.png",
+      "sha256": "99a9c902292a73eefdd688390ae635775f2c64848d02c65696f101f981e2bd05",
+      "gitBlob": "ec862f0ae7b9a1d851a489966e95c302a6026963",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_pair_renderer_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_regular.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "ec862f0ae7b9a1d851a489966e95c302a6026963",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_masterImage.png",
+        "expectedSha256": "99a9c902292a73eefdd688390ae635775f2c64848d02c65696f101f981e2bd05"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_testImage.png",
+      "sha256": "ec80c705dd98b4a056abbd805884bfa5a435b5ab1fcd7bea4265d18a1904e8c8",
+      "gitBlob": "5f02c39115f4e569350a06d3222a9be2d460aa47",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_pair_renderer_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_pair_th_regular.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5f02c39115f4e569350a06d3222a9be2d460aa47",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_pair_th_regular_testImage.png",
+        "expectedSha256": "ec80c705dd98b4a056abbd805884bfa5a435b5ab1fcd7bea4265d18a1904e8c8"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_isolatedDiff.png",
+      "sha256": "71b1eada99289e16f836591aff92785a784ebfeb64f94502d2beb510ffb9b6e8",
+      "gitBlob": "487abedb4a089376b46b69ecaae53948a3f60b33",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_support_dark_high_contrast.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "487abedb4a089376b46b69ecaae53948a3f60b33",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_isolatedDiff.png",
+        "expectedSha256": "71b1eada99289e16f836591aff92785a784ebfeb64f94502d2beb510ffb9b6e8"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_maskedDiff.png",
+      "sha256": "92cb67aea5b32ed1caaddefe83341fe1689b7afade19ca86cfc8b7c10dd6db2b",
+      "gitBlob": "57f9f1f15767fac1899df9aac36fb055d6c8286d",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_support_dark_high_contrast.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "57f9f1f15767fac1899df9aac36fb055d6c8286d",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_maskedDiff.png",
+        "expectedSha256": "92cb67aea5b32ed1caaddefe83341fe1689b7afade19ca86cfc8b7c10dd6db2b"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_masterImage.png",
+      "sha256": "7b485314a2a1188976db1e46232852bd3ebbfb630704848533ca7a6cc3097720",
+      "gitBlob": "a94e8c34476ab06fac28d3db851bbb5fe1ea349a",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_support_dark_high_contrast.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "a94e8c34476ab06fac28d3db851bbb5fe1ea349a",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_masterImage.png",
+        "expectedSha256": "7b485314a2a1188976db1e46232852bd3ebbfb630704848533ca7a6cc3097720"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_testImage.png",
+      "sha256": "34ff7be1998570eae77b3cf28a367f0e98b0d5227c1368c217dffcee8ce30e59",
+      "gitBlob": "5012b08727e5e12134795a4d0ce9f8980fbaef28",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/adventure_support_dark_high_contrast.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5012b08727e5e12134795a4d0ce9f8980fbaef28",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/adventure_support_dark_high_contrast_testImage.png",
+        "expectedSha256": "34ff7be1998570eae77b3cf28a367f0e98b0d5227c1368c217dffcee8ce30e59"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_isolatedDiff.png",
+      "sha256": "7908a7fc1169c68d73ed6a81d293272cc5b1fec2868e31e82c765a4186cea59d",
+      "gitBlob": "2b6d48cea78faf959478d5947540e2ec8a1efa98",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/standard_recovered_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "2b6d48cea78faf959478d5947540e2ec8a1efa98",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_isolatedDiff.png",
+        "expectedSha256": "7908a7fc1169c68d73ed6a81d293272cc5b1fec2868e31e82c765a4186cea59d"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_maskedDiff.png",
+      "sha256": "53fc76ceebdda08b7edeb40e9bd137d2f207c06205435ff7623f2467ccdfd480",
+      "gitBlob": "df7c4fe5c7c99beb7df90e6372f6a410c13bd1a2",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/standard_recovered_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "df7c4fe5c7c99beb7df90e6372f6a410c13bd1a2",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_maskedDiff.png",
+        "expectedSha256": "53fc76ceebdda08b7edeb40e9bd137d2f207c06205435ff7623f2467ccdfd480"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_masterImage.png",
+      "sha256": "d1d338d5bbdf57160f73e5beb26a62012a0f1c40968c5c931f5220406e37cab5",
+      "gitBlob": "849288a0aac0af41aed7ff9af622ec1286715329",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/standard_recovered_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "849288a0aac0af41aed7ff9af622ec1286715329",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_masterImage.png",
+        "expectedSha256": "d1d338d5bbdf57160f73e5beb26a62012a0f1c40968c5c931f5220406e37cab5"
+      }
+    },
+    {
+      "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_testImage.png",
+      "sha256": "04716dd4ab6ae2dcf4a87bfbb13a58b234f0aabacee6f6cadcb55f742b7e974a",
+      "gitBlob": "e65839fcae7cf2febb1b8755cd6ed9eb0f677870",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/adventure/presentation/goldens/adventure_mixed_review_screen/standard_recovered_active_typed_light.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e65839fcae7cf2febb1b8755cd6ed9eb0f677870",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/adventure/presentation/failures/standard_recovered_active_typed_light_testImage.png",
+        "expectedSha256": "04716dd4ab6ae2dcf4a87bfbb13a58b234f0aabacee6f6cadcb55f742b7e974a"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/english_reverse_selected_isolatedDiff.png",
+      "sha256": "b122ce3ecd08f9cf60f1bd40d38ca2fde262900e74299ba90d7dae5214dc36fa",
+      "gitBlob": "bd44202f1f75c241fc8b15da45c66a04d11367ee",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/english_reverse_selected.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "bd44202f1f75c241fc8b15da45c66a04d11367ee",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/english_reverse_selected_isolatedDiff.png",
+        "expectedSha256": "b122ce3ecd08f9cf60f1bd40d38ca2fde262900e74299ba90d7dae5214dc36fa"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/english_reverse_selected_maskedDiff.png",
+      "sha256": "5f96fc39ec011613b25e1f29812bbbc8c11a9db785a997c230c2063babafcc69",
+      "gitBlob": "b15fb35f0814ac3fd5de325e844718d64fc685ec",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/english_reverse_selected.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "b15fb35f0814ac3fd5de325e844718d64fc685ec",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/english_reverse_selected_maskedDiff.png",
+        "expectedSha256": "5f96fc39ec011613b25e1f29812bbbc8c11a9db785a997c230c2063babafcc69"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/english_reverse_selected_masterImage.png",
+      "sha256": "650304e8c329f1d93f9c5d30f1c484a66790ef47891fecfc239b7d2614fc2a8e",
+      "gitBlob": "e937b183de4cb8b71dea59fa50b7e3c798b832b6",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/english_reverse_selected.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e937b183de4cb8b71dea59fa50b7e3c798b832b6",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/english_reverse_selected_masterImage.png",
+        "expectedSha256": "650304e8c329f1d93f9c5d30f1c484a66790ef47891fecfc239b7d2614fc2a8e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/english_reverse_selected_testImage.png",
+      "sha256": "1a937838af203152161504a419a5f96236579ebaf7429817c819a483f45abd8c",
+      "gitBlob": "c1cc63bd2721ce5ae02dfdbf986261d432bc036d",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/english_reverse_selected.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "c1cc63bd2721ce5ae02dfdbf986261d432bc036d",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/english_reverse_selected_testImage.png",
+        "expectedSha256": "1a937838af203152161504a419a5f96236579ebaf7429817c819a483f45abd8c"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_replay_result_english_isolatedDiff.png",
+      "sha256": "e46e0cf94ba609d7d4fbb4e7fc9089f2dbf046345040aa4acf7b8fa7d24cd834",
+      "gitBlob": "77883ae2c65e816be0608085980b65b91ee26987",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_replay_result_english.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "77883ae2c65e816be0608085980b65b91ee26987",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_replay_result_english_isolatedDiff.png",
+        "expectedSha256": "e46e0cf94ba609d7d4fbb4e7fc9089f2dbf046345040aa4acf7b8fa7d24cd834"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_replay_result_english_maskedDiff.png",
+      "sha256": "701ab7c17c922d7ce1b4029f28c4faaa5974cfd8c73b2470aeffcdd9c0110a8e",
+      "gitBlob": "00ed7549841d5a6fee4a67646fccfc5f5c36046c",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_replay_result_english.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "00ed7549841d5a6fee4a67646fccfc5f5c36046c",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_replay_result_english_maskedDiff.png",
+        "expectedSha256": "701ab7c17c922d7ce1b4029f28c4faaa5974cfd8c73b2470aeffcdd9c0110a8e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_replay_result_english_masterImage.png",
+      "sha256": "59f3fc2780288bd3433ac06bec823f9f49e96d2d08ab8caba72f8b8f6967dbc5",
+      "gitBlob": "e027465c9df020fced93710a7f58ac7074a97ad6",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_replay_result_english.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e027465c9df020fced93710a7f58ac7074a97ad6",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_replay_result_english_masterImage.png",
+        "expectedSha256": "59f3fc2780288bd3433ac06bec823f9f49e96d2d08ab8caba72f8b8f6967dbc5"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_replay_result_english_testImage.png",
+      "sha256": "d221eb0c3351ec21b5da5a07352627b7c096a9b6e57087a631efec88e3b46d75",
+      "gitBlob": "fbc238451e967ec09b2be09390f2267de6112e91",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_replay_result_english.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "fbc238451e967ec09b2be09390f2267de6112e91",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_replay_result_english_testImage.png",
+        "expectedSha256": "d221eb0c3351ec21b5da5a07352627b7c096a9b6e57087a631efec88e3b46d75"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_isolatedDiff.png",
+      "sha256": "1382fecc728c0e1d737cf68bd36f370a755942be4b38d1cdd55116fcea281255",
+      "gitBlob": "5bd97a99dd8148fc59a07160c69c50e56253a179",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_result_thai_measured.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5bd97a99dd8148fc59a07160c69c50e56253a179",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_isolatedDiff.png",
+        "expectedSha256": "1382fecc728c0e1d737cf68bd36f370a755942be4b38d1cdd55116fcea281255"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_maskedDiff.png",
+      "sha256": "82630102daab636d4ecc8b2bad319699f0ccf2eac41a7f36ec52dcf1ea63ea02",
+      "gitBlob": "1431f03602d42e9129cf500552a62f3c56e7f678",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_result_thai_measured.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "1431f03602d42e9129cf500552a62f3c56e7f678",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_maskedDiff.png",
+        "expectedSha256": "82630102daab636d4ecc8b2bad319699f0ccf2eac41a7f36ec52dcf1ea63ea02"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_masterImage.png",
+      "sha256": "333c80bbde19d0ec6febf2b2e519f03c2440ba28059894d999f75737d41d2939",
+      "gitBlob": "438ef5ccc035b0f1dbdbefdc4c40a496c0e8de93",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_result_thai_measured.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "438ef5ccc035b0f1dbdbefdc4c40a496c0e8de93",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_masterImage.png",
+        "expectedSha256": "333c80bbde19d0ec6febf2b2e519f03c2440ba28059894d999f75737d41d2939"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_testImage.png",
+      "sha256": "8b8e7f62b96b89f8f5fe32954fc68b5ae72db1a4d6c0afc61c083a90fd4d34be",
+      "gitBlob": "4c716466f9926ba232643f4ec1dba8402104724e",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_result_thai_measured.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "4c716466f9926ba232643f4ec1dba8402104724e",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_result_thai_measured_testImage.png",
+        "expectedSha256": "8b8e7f62b96b89f8f5fe32954fc68b5ae72db1a4d6c0afc61c083a90fd4d34be"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_isolatedDiff.png",
+      "sha256": "cb4e4edd5998e098cd3e0d8a22771fde225d1c20d7d3db7adf5d7964fc1db40a",
+      "gitBlob": "83fbd7d9b49bde3a4988bb241455182799897d89",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "83fbd7d9b49bde3a4988bb241455182799897d89",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_isolatedDiff.png",
+        "expectedSha256": "cb4e4edd5998e098cd3e0d8a22771fde225d1c20d7d3db7adf5d7964fc1db40a"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_maskedDiff.png",
+      "sha256": "4d785013451861e369757286787ebd7c0c325ec03291a8af3e190a61e8927e93",
+      "gitBlob": "d6761ca816e1b5bd21fe31c6ba5aa390812f5c1e",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "d6761ca816e1b5bd21fe31c6ba5aa390812f5c1e",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_maskedDiff.png",
+        "expectedSha256": "4d785013451861e369757286787ebd7c0c325ec03291a8af3e190a61e8927e93"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_masterImage.png",
+      "sha256": "a176c83a5534b6b5df5af13f6520b40a3140fd4f6c31c96169ff0491e027175c",
+      "gitBlob": "79bb09d695d469b4ea98d3d0d6f040f86367494e",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "79bb09d695d469b4ea98d3d0d6f040f86367494e",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_masterImage.png",
+        "expectedSha256": "a176c83a5534b6b5df5af13f6520b40a3140fd4f6c31c96169ff0491e027175c"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_testImage.png",
+      "sha256": "42185ca2fc057f0ae9c35310f16ad0c46f86556337211fed7654335f9175cce5",
+      "gitBlob": "d5df061c96ec53bd0aeb2ac6f16304b9aceb2637",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_setup_thai_guardian.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "d5df061c96ec53bd0aeb2ac6f16304b9aceb2637",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_setup_thai_guardian_testImage.png",
+        "expectedSha256": "42185ca2fc057f0ae9c35310f16ad0c46f86556337211fed7654335f9175cce5"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_timeout_thai_isolatedDiff.png",
+      "sha256": "fb908ed703ce414912bf8b81d9af9a112a0fe6a781f40557fe19dbf7bb11f537",
+      "gitBlob": "8d725559e9ac662ee6f58a247a54f71297941707",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "8d725559e9ac662ee6f58a247a54f71297941707",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_timeout_thai_isolatedDiff.png",
+        "expectedSha256": "fb908ed703ce414912bf8b81d9af9a112a0fe6a781f40557fe19dbf7bb11f537"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_timeout_thai_maskedDiff.png",
+      "sha256": "c110c3a6e4e62ed0b475518df4ddb53e031433280339558bc99efbaf013cdf49",
+      "gitBlob": "ba5a0707f4ed4d3d4b38be375c7fade2ef709329",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "ba5a0707f4ed4d3d4b38be375c7fade2ef709329",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_timeout_thai_maskedDiff.png",
+        "expectedSha256": "c110c3a6e4e62ed0b475518df4ddb53e031433280339558bc99efbaf013cdf49"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_timeout_thai_masterImage.png",
+      "sha256": "fd549bbab8e8c904e404cd0fdc2596ef0fa809594cf1e847707ac17cd3b7e7aa",
+      "gitBlob": "028e568f49a18742cc21a992d8a7a674af8ddee8",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "028e568f49a18742cc21a992d8a7a674af8ddee8",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_timeout_thai_masterImage.png",
+        "expectedSha256": "fd549bbab8e8c904e404cd0fdc2596ef0fa809594cf1e847707ac17cd3b7e7aa"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/host_timeout_thai_testImage.png",
+      "sha256": "bfa47e05dca2288effce848c557444d24b2be6efe620e58f6c389b37dc490d01",
+      "gitBlob": "a2673712df2ece65b09d67cd54f1032840ee1a97",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/host_timeout_thai.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "a2673712df2ece65b09d67cd54f1032840ee1a97",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/host_timeout_thai_testImage.png",
+        "expectedSha256": "bfa47e05dca2288effce848c557444d24b2be6efe620e58f6c389b37dc490d01"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_isolatedDiff.png",
+      "sha256": "3aad67dd86a1005182443c83cf6bab2da9904554b6b3812b15386b390647923e",
+      "gitBlob": "0117c29ec0d8afa58b4caea3ab7584df808294b2",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_dark_high_contrast_wrong_repair.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "0117c29ec0d8afa58b4caea3ab7584df808294b2",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_isolatedDiff.png",
+        "expectedSha256": "3aad67dd86a1005182443c83cf6bab2da9904554b6b3812b15386b390647923e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_maskedDiff.png",
+      "sha256": "2e9e8cfd012945c275ecd6b01d9cfd9e93b850f128ebd0f74c4e5447f2c6f5c1",
+      "gitBlob": "8ded179e245d44045499a1d9293837839e793e12",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_dark_high_contrast_wrong_repair.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "8ded179e245d44045499a1d9293837839e793e12",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_maskedDiff.png",
+        "expectedSha256": "2e9e8cfd012945c275ecd6b01d9cfd9e93b850f128ebd0f74c4e5447f2c6f5c1"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_masterImage.png",
+      "sha256": "73672fd77e0f7c1495c8f3f754b16763474ac7835cae720b195cfc7956d16ba5",
+      "gitBlob": "f2b0903313072d35a7a6bfaa1d109524ee602449",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_dark_high_contrast_wrong_repair.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "f2b0903313072d35a7a6bfaa1d109524ee602449",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_masterImage.png",
+        "expectedSha256": "73672fd77e0f7c1495c8f3f754b16763474ac7835cae720b195cfc7956d16ba5"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_testImage.png",
+      "sha256": "c59c26dc8402abc21cbade4b6dd73191f5048e4de86410c7eb9544904478fb81",
+      "gitBlob": "21a27e470ecda9508a0df317c3dd5cbc92983163",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_dark_high_contrast_wrong_repair.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "21a27e470ecda9508a0df317c3dd5cbc92983163",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_dark_high_contrast_wrong_repair_testImage.png",
+        "expectedSha256": "c59c26dc8402abc21cbade4b6dd73191f5048e4de86410c7eb9544904478fb81"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_isolatedDiff.png",
+      "sha256": "dc2f7e677975d28a9bf4c053e6fa2c5ceae2bfad5011d9aaa473ccc2e130dfd9",
+      "gitBlob": "b67a50aec296895d0bbe7aa37f3adeffa229f3fa",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_guided_reduced_motion_no_audio.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "b67a50aec296895d0bbe7aa37f3adeffa229f3fa",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_isolatedDiff.png",
+        "expectedSha256": "dc2f7e677975d28a9bf4c053e6fa2c5ceae2bfad5011d9aaa473ccc2e130dfd9"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_maskedDiff.png",
+      "sha256": "a8e73456e9c2415393d1fc052317bf15dd9f5356a7c7148bfb3e9c90e354ce8f",
+      "gitBlob": "bf5e155d951f046123079aca32a5d131c473e63f",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_guided_reduced_motion_no_audio.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "bf5e155d951f046123079aca32a5d131c473e63f",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_maskedDiff.png",
+        "expectedSha256": "a8e73456e9c2415393d1fc052317bf15dd9f5356a7c7148bfb3e9c90e354ce8f"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_masterImage.png",
+      "sha256": "8b26da4e7d38cc017ffd32cbf3323c86d87f4d86ac29567a9d59513a74d72f1f",
+      "gitBlob": "5f19078104ccb82912ad007b957dabf547e1542e",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_guided_reduced_motion_no_audio.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "5f19078104ccb82912ad007b957dabf547e1542e",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_masterImage.png",
+        "expectedSha256": "8b26da4e7d38cc017ffd32cbf3323c86d87f4d86ac29567a9d59513a74d72f1f"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_testImage.png",
+      "sha256": "98d5110b00bc5ea32cee8e6ae6300044cb406a50b97735d53eeb7a1aafe17988",
+      "gitBlob": "9602dd3db67357237a7dac4bc54941c55dc19e58",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_guided_reduced_motion_no_audio.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "9602dd3db67357237a7dac4bc54941c55dc19e58",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_guided_reduced_motion_no_audio_testImage.png",
+        "expectedSha256": "98d5110b00bc5ea32cee8e6ae6300044cb406a50b97735d53eeb7a1aafe17988"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_isolatedDiff.png",
+      "sha256": "7661d404d4292b9e3c0d128b3a13af9de9f9e6e41d1e2a7af182ca6dc91b25e8",
+      "gitBlob": "9e434233a08ed2a326580339b1d249de1ceb383c",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "9e434233a08ed2a326580339b1d249de1ceb383c",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_isolatedDiff.png",
+        "expectedSha256": "7661d404d4292b9e3c0d128b3a13af9de9f9e6e41d1e2a7af182ca6dc91b25e8"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_maskedDiff.png",
+      "sha256": "e71681ff510a0be77721422c39b496936d7d2e959d884f93d39073e96f2c47fa",
+      "gitBlob": "d75756dbdd1cac7b20c922173601b5e81cc892e1",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "d75756dbdd1cac7b20c922173601b5e81cc892e1",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_maskedDiff.png",
+        "expectedSha256": "e71681ff510a0be77721422c39b496936d7d2e959d884f93d39073e96f2c47fa"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_masterImage.png",
+      "sha256": "d21bde3d8bdc26c5a535186644d2415aa4d9564fa3ce1e3f87d1dde859889955",
+      "gitBlob": "bbbab88caf09092f7291e5a89dc53628bb7b59ba",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "bbbab88caf09092f7291e5a89dc53628bb7b59ba",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_masterImage.png",
+        "expectedSha256": "d21bde3d8bdc26c5a535186644d2415aa4d9564fa3ce1e3f87d1dde859889955"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_isolatedDiff.png",
+      "sha256": "5c1c5b6ce3fd7de8e76d4c2fa8f309c937291ca46de6bd53338b039532a16e3c",
+      "gitBlob": "99514ccf2715218463131de03c4eac90fedf9ac1",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200_scrolled.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "99514ccf2715218463131de03c4eac90fedf9ac1",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_isolatedDiff.png",
+        "expectedSha256": "5c1c5b6ce3fd7de8e76d4c2fa8f309c937291ca46de6bd53338b039532a16e3c"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_maskedDiff.png",
+      "sha256": "1b63058676fa7bc31abed8e766ba9fba83c2b56fb4d4ecf7e5620628957e3d93",
+      "gitBlob": "cf4cdd784935f4d460cae5e00613972f0cdbd335",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200_scrolled.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "cf4cdd784935f4d460cae5e00613972f0cdbd335",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_maskedDiff.png",
+        "expectedSha256": "1b63058676fa7bc31abed8e766ba9fba83c2b56fb4d4ecf7e5620628957e3d93"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_masterImage.png",
+      "sha256": "e786af9701b8a758f68512fd124b686ae4459a57c471147b05a4bd9c0bcc9d7e",
+      "gitBlob": "09ce32c581eb91c05896708c465015a40af1acfe",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200_scrolled.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "09ce32c581eb91c05896708c465015a40af1acfe",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_masterImage.png",
+        "expectedSha256": "e786af9701b8a758f68512fd124b686ae4459a57c471147b05a4bd9c0bcc9d7e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_testImage.png",
+      "sha256": "1f1dd2ec4c4593e79ee21b7d280eed0faf5b5170dbc3eda41ba94685dcf1d792",
+      "gitBlob": "8135f5912dfad16599fe3fede56d29e8d2cf0800",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200_scrolled.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "8135f5912dfad16599fe3fede56d29e8d2cf0800",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_scrolled_testImage.png",
+        "expectedSha256": "1f1dd2ec4c4593e79ee21b7d280eed0faf5b5170dbc3eda41ba94685dcf1d792"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_testImage.png",
+      "sha256": "2b0bbb123cfc307c1bed91545cdcdf55fa2a3e257ef438ee12da4893492bde94",
+      "gitBlob": "fc8d80be7178fda872931bf39236c907eae5e800",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_long_narrow_text_200.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "fc8d80be7178fda872931bf39236c907eae5e800",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_long_narrow_text_200_testImage.png",
+        "expectedSha256": "2b0bbb123cfc307c1bed91545cdcdf55fa2a3e257ef438ee12da4893492bde94"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_isolatedDiff.png",
+      "sha256": "ac092c8e96a7ebb4596cee504b4f30f1f6e9833fd0f30139392710df453ff864",
+      "gitBlob": "6577315be2f82b72a6f05244a343c53704819c84",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_compact4.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "6577315be2f82b72a6f05244a343c53704819c84",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_isolatedDiff.png",
+        "expectedSha256": "ac092c8e96a7ebb4596cee504b4f30f1f6e9833fd0f30139392710df453ff864"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_maskedDiff.png",
+      "sha256": "439c108099b72dda7b82a1d8b262e9e9de5cda81f6adaa74873774847aa2e015",
+      "gitBlob": "e6abb83966bd5538d347e4c58669a4e46a7ef1fc",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_compact4.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e6abb83966bd5538d347e4c58669a4e46a7ef1fc",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_maskedDiff.png",
+        "expectedSha256": "439c108099b72dda7b82a1d8b262e9e9de5cda81f6adaa74873774847aa2e015"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_masterImage.png",
+      "sha256": "8b4264517131d25eee7f99c4e29645effd114f67fa30625edf609a638f7c3cf2",
+      "gitBlob": "d447f4d40491792819c2fde461342e4bdedc8dde",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_compact4.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "d447f4d40491792819c2fde461342e4bdedc8dde",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_masterImage.png",
+        "expectedSha256": "8b4264517131d25eee7f99c4e29645effd114f67fa30625edf609a638f7c3cf2"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_testImage.png",
+      "sha256": "0ae9ed94ee9980ae5d6520eddc9c772967c23b0be27f317a9f41142597a40bf5",
+      "gitBlob": "a904486574231c73b8d778f423399f8fc6c57190",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_compact4.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "a904486574231c73b8d778f423399f8fc6c57190",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_compact4_testImage.png",
+        "expectedSha256": "0ae9ed94ee9980ae5d6520eddc9c772967c23b0be27f317a9f41142597a40bf5"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_isolatedDiff.png",
+      "sha256": "2b66a5d9dc4f96fddf70742c6f233888ae64458a998d93b17d7dde760a522a26",
+      "gitBlob": "70529080bad5940c1ba18e0ede1d66aba72df28d",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_standard6.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "70529080bad5940c1ba18e0ede1d66aba72df28d",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_isolatedDiff.png",
+        "expectedSha256": "2b66a5d9dc4f96fddf70742c6f233888ae64458a998d93b17d7dde760a522a26"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_maskedDiff.png",
+      "sha256": "8528ddeb6fcdeb450e7dcd99e3ecb16b8db3256a3bd2a1ba6e451772d2ce4b3e",
+      "gitBlob": "e307ab2bb9b193eb3b45b2768cc96fb389d11b74",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_standard6.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e307ab2bb9b193eb3b45b2768cc96fb389d11b74",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_maskedDiff.png",
+        "expectedSha256": "8528ddeb6fcdeb450e7dcd99e3ecb16b8db3256a3bd2a1ba6e451772d2ce4b3e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_masterImage.png",
+      "sha256": "195d5e2b9965a9880fc3378d95ef6d3bee2dc46c9bf5ced8c5e19d2b98ee436f",
+      "gitBlob": "e2a072c395fe69b9e052ade59ededf7bcb2b232a",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_standard6.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "e2a072c395fe69b9e052ade59ededf7bcb2b232a",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_masterImage.png",
+        "expectedSha256": "195d5e2b9965a9880fc3378d95ef6d3bee2dc46c9bf5ced8c5e19d2b98ee436f"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_testImage.png",
+      "sha256": "9824b330820407a5f211aeeed30a4be2debbf29b32d4501d3a4b09b0e08c0a9e",
+      "gitBlob": "ddeaf3ec1c9bf4b88d75b126d0e8f9e6e63fe8c3",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_regular_standard6.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "ddeaf3ec1c9bf4b88d75b126d0e8f9e6e63fe8c3",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_regular_standard6_testImage.png",
+        "expectedSha256": "9824b330820407a5f211aeeed30a4be2debbf29b32d4501d3a4b09b0e08c0a9e"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_isolatedDiff.png",
+      "sha256": "e61d99c8162cb78813b7eb32e22607b90aa279110b8b9e80722d092f00b6e4c7",
+      "gitBlob": "24c72c1a347cc9fbb71380406356905dbf59dbcd",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_wide_bounded.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "24c72c1a347cc9fbb71380406356905dbf59dbcd",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_isolatedDiff.png",
+        "expectedSha256": "e61d99c8162cb78813b7eb32e22607b90aa279110b8b9e80722d092f00b6e4c7"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_maskedDiff.png",
+      "sha256": "2b3862333f11fa8060e25aa39859c6d91775583339871e3cd895f5aa85f5cfbd",
+      "gitBlob": "a5f1138b4300271e80f4464950fbb0c0dae023ab",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_wide_bounded.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "a5f1138b4300271e80f4464950fbb0c0dae023ab",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_maskedDiff.png",
+        "expectedSha256": "2b3862333f11fa8060e25aa39859c6d91775583339871e3cd895f5aa85f5cfbd"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_masterImage.png",
+      "sha256": "4a41750cd333c9ea763165b8e37302dcd459cb858fc4152baffade9d73b25fd2",
+      "gitBlob": "c568fcdf49f8b6368ed425188bea6d253d8ae8e5",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_wide_bounded.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "c568fcdf49f8b6368ed425188bea6d253d8ae8e5",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_masterImage.png",
+        "expectedSha256": "4a41750cd333c9ea763165b8e37302dcd459cb858fc4152baffade9d73b25fd2"
+      }
+    },
+    {
+      "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_testImage.png",
+      "sha256": "6ad00f1f55d6d685ed4602c24471168782ce2d686d99f59d1eba268cad197bee",
+      "gitBlob": "d4fabb758e83c353c0ef23a5e9034594746a9d63",
+      "inboundLiteralReferences": [
+        "docs/development/full-system/evidence/G0.2/flutter-inputs.json",
+        "docs/development/full-system/evidence/G0.4/cli-result.json"
+      ],
+      "testStemConsumers": [
+        "test/features/learning/pair_matching/pair_board_golden_test.dart"
+      ],
+      "goldenCounterparts": [
+        "test/features/learning/pair_matching/goldens/pair_board/thai_wide_bounded.png"
+      ],
+      "referenceScan": "All tracked text files in declared extensions under 2MB; full path and basename, plus test stem. Dynamic references cannot be excluded.",
+      "category": "cleanup-candidate",
+      "defectStatus": "unresolved-provenance-no-closure-proof",
+      "disposition": "retain-in-place",
+      "deletionEligible": false,
+      "reason": "Failure evidence may explain unresolved historical golden mismatch; absent literal refs do not prove unused. Preserve until owner review ties artifact to closed defect.",
+      "archive": {
+        "kind": "existing-git-object",
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "gitBlob": "d4fabb758e83c353c0ef23a5e9034594746a9d63",
+        "moved": false
+      },
+      "restore": {
+        "commit": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+        "path": "test/features/learning/pair_matching/failures/thai_wide_bounded_testImage.png",
+        "expectedSha256": "6ad00f1f55d6d685ed4602c24471168782ce2d686d99f59d1eba268cad197bee"
+      }
+    }
+  ]
+}

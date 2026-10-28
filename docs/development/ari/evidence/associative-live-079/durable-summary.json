@@ -1,0 +1,13 @@
+{
+  "activity": "associativeReading",
+  "state": "completed",
+  "correct": 1,
+  "wrong": 0,
+  "attempts": [
+    [
+      "associativeRecall",
+      "independentRecall",
+      1
+    ]
+  ]
+}

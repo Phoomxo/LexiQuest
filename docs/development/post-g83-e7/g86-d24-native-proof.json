@@ -1,0 +1,67 @@
+{
+  "status": "PASS",
+  "source": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+  "checks": [
+    "One selected question in each mode; four observed meaning options",
+    "Two correct recognition attempts committed; all keyed SRS rows unchanged",
+    "All55previous attempts,40rewards,23sessions preserved",
+    "All25sessions terminal after final force-stop database reopen"
+  ],
+  "newAttempts": [
+    {
+      "id": "attempt:d8bb282f-c0e9-42c8-9ed2-9ed8360d39ca",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:c4fcc22b-43a6-4da5-a570-5c1a008c927c",
+      "word_id": "word:starter-bag",
+      "prompt_mode": "meaningChoice",
+      "is_correct": 1,
+      "response_time_ms": 16664,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789901314538,
+      "provider_provenance": "reviewed-lexical-meaning:1:dafece64d529442648e2df972106b8aadf15a5d38aca6a4111ef6b00145061dc",
+      "evidence_class": "recognition",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recognition\",\"skillId\":\"meaning-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"lexical-meaning:word:starter-bag@1:dafece64d529442648e2df972106b8aadf15a5d38aca6a4111ef6b00145061dc\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    },
+    {
+      "id": "attempt:2042de20-9e66-4eae-b1c8-495097d8f983",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:0806373f-4032-4984-a202-59bbfe453a68",
+      "word_id": "word:starter-bag",
+      "prompt_mode": "meaningChoice",
+      "is_correct": 1,
+      "response_time_ms": 5255,
+      "attempt_number": 1,
+      "occurred_at_utc_ms": 1789901364918,
+      "provider_provenance": null,
+      "evidence_class": "recognition",
+      "evidence_context_json": "{\"schemaVersion\":1,\"evidenceClass\":\"recognition\",\"skillId\":\"meaning-recall\",\"hintLevel\":0,\"policyVersion\":\"legacy-v1\",\"contentRevision\":\"built-in-v1\",\"featureContractRevision\":\"legacy-unversioned\",\"featureContractHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"classificationSource\":\"legacyInferred\",\"rolloutMode\":\"legacy\",\"protocolId\":null,\"protocolVersion\":null,\"experimentId\":null,\"experimentVersion\":null,\"assignmentId\":null,\"cohort\":null,\"researchConsentVersion\":null,\"instrumentId\":null,\"instrumentVersion\":null,\"formId\":null,\"formVersion\":null,\"assessmentItemId\":null,\"assessmentResponseCode\":null,\"scoringRuleVersion\":null,\"engagementAllowed\":true}"
+    }
+  ],
+  "oracleCorrection": "Initial raw SRS list equality failed because SELECT without ORDER BY changed row order. Exact dictionaries keyed by immutable id match; no field difference or weakened state assertion.",
+  "pins": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-ghost-final-db\\rows.json",
+      "sha256": "12ad6a2f2e10e639be1ffa20439730dc4332c9338e0b20a52bdf3936d93be60d"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-final-db\\rows.json",
+      "sha256": "5a993159f50d863b3dff8ebcbe77523eb45d2e40e4e454f068d9986e19a0b6cf"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-one-question.xml",
+      "sha256": "6a4334a5971b2e260f1539a6326dc25d52f78aca2cbb9acbfb4bfcfc68734beb"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-typed-one.xml",
+      "sha256": "0eb6d3a8d6e67b3ec2d11d71fc0f713fa62ceb6ccdb93f8176344db495a0f6cf"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-result-view.xml",
+      "sha256": "1e906d734ace09cde623b21f039fd69ec4a96ed5978736623bdf19acc5b25ce8"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-typed-result-view.xml",
+      "sha256": "6bd492dd62717a50ed2b3d5e8edf978d1f43ac1e91a540b10b909a50dba0f48f"
+    }
+  ]
+}

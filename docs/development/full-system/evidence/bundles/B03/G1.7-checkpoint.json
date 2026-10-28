@@ -1,0 +1,201 @@
+{
+  "packageId": "G1.7",
+  "status": "checkpoint-not-accepted",
+  "requirements": [
+    "COV-f40",
+    "COV-f41",
+    "G1"
+  ],
+  "runs": [
+    {
+      "path": "G1.7-runs/targeted-learning-e6c342083bd4fe1713f89eec3d0e9ad2f2b7ccb9f93e1330ef39680a83770869.json",
+      "status": "Passed",
+      "fingerprint": "6d384b3c393cbc1dabde72c3080032eddad6ee6530413541f0c5938735ce3764",
+      "targets": [
+        "test",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "18"
+      ]
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-a74015d4f0bc4b07b26a68bad430d14996afe445a70351538f367dc1316f2ff9-prior-3bb473af9145.json",
+      "status": "Failed",
+      "fingerprint": "3bb473af9145711954dc7c3e0653f396b434ed1b1b12a1e6ca709dc32ff0d696",
+      "targets": [
+        "test",
+        "test/runtime/app_bootstrap_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B03 non-completing"
+      ],
+      "counts": []
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-9b880f4f2303532c79f1eade846d0de7c4a7fc15b187470b1ac32762f327f90b-prior-62883c85b94e.json",
+      "status": "Failed",
+      "fingerprint": "62883c85b94eeb90336e3893efdf95199b8c67caa4f5d75ce577e9c3427eff3d",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": []
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-a74015d4f0bc4b07b26a68bad430d14996afe445a70351538f367dc1316f2ff9.json",
+      "status": "Passed",
+      "fingerprint": "3044e47057d713e5d873148dfcb45463dcffd3599283693944d3340fbe64ba2e",
+      "targets": [
+        "test",
+        "test/runtime/app_bootstrap_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B03 non-completing"
+      ],
+      "counts": [
+        "1"
+      ]
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-9b880f4f2303532c79f1eade846d0de7c4a7fc15b187470b1ac32762f327f90b-prior-cf605c3e2914.json",
+      "status": "Failed",
+      "fingerprint": "cf605c3e2914f90415ac54b5830b2d92776cd6fae0d3281a00ec696883cb129f",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": []
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-1f88c7047fad66a2de2b74fd2b9980c26ed0fc03fb87963c6ec651b80154db01.json",
+      "status": "Failed",
+      "fingerprint": "797b6788536ba7facd3d57f0601c2b4bb201b04be25523c6d5ed68d388bcb204",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B03 production raw25"
+      ],
+      "counts": []
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-227a285d15866e74633f862b06d33a02f21e84aea61ab64ac921802164a532b3.json",
+      "status": "Failed",
+      "fingerprint": "c0a7f9def3ba9f04d8f52a4adf6e9e29ee73c00f8c06be4a89efdadad8d15f89",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B03 directory-provider"
+      ],
+      "counts": []
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-6ce872a9a97f0a3aeaae328263d5373df9524b2156387f9502dc61ba15af3a60.json",
+      "status": "Passed",
+      "fingerprint": "487668bdb870bce565ff09216afa3b29ce8a0ce0f146ef5beb9503071831a5ea",
+      "targets": [
+        "test",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/runtime/local_storage_readiness_app_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "118"
+      ]
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-9b880f4f2303532c79f1eade846d0de7c4a7fc15b187470b1ac32762f327f90b.json",
+      "status": "Passed",
+      "fingerprint": "b389ad3aeb76dae0b9af564c5a0af388b067ad6d175556a9e1c14bb09a4a99e4",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "5"
+      ]
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-6d16dc0a81f5bfd6f1e8a1e8dbdf2f0bf24268e2b5f484a3d967db8ce2d9caec.json",
+      "status": "Passed",
+      "fingerprint": "b25405d13297e0c345536f4239a15618f244a909a620d0186d7f3a209a0006bb",
+      "targets": [
+        "test",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/widget_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "19"
+      ]
+    },
+    {
+      "path": "G1.7-runs/targeted-runtime-e276da6c5907d81b7521aab0c0a4a75251305afdf6ed71bbb1072157ba491a3a.json",
+      "status": "Passed",
+      "fingerprint": "bc1e3e318914f1d4ea338ac250a5983a270b2791d84151eba709be581ba63c8b",
+      "targets": [
+        "test",
+        "test/data/local/app_database_safe_open_test.dart",
+        "test/data/local/app_database_test.dart",
+        "test/database/migration_v25_to_v26_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "123"
+      ]
+    }
+  ],
+  "implemented": [
+    "Optional Firebase/Supabase initialization bounded to2s each; late completion does not create account gateway after timeout",
+    "Production AppDatabase uses read-only integrity/version/legacy preflight before eager drift connection; preserves documents/lexiquest.sqlite and schema26",
+    "Lazy preflight failure closes without secondary unhandled failure; rejected DB files retained byte-for-byte",
+    "Production connections enable FK/WAL/busy_timeout5000; raw25 path retains complete owner snapshot on migration",
+    "Typed storage readiness page replaces blank startup for incompatible/corrupt/legacy import failures",
+    "sqlite3 direct dependency pins existing resolved3.5.0; no version upgrade"
+  ],
+  "checks": {
+    "bootstrapAndReadiness": 118,
+    "storageMigrationRecovery": 123,
+    "shellOfflineEntry": 19,
+    "safeOpenInitialGreen": 5,
+    "nonCompletingInitializerGreen": 1
+  },
+  "phaseStatus": "G1 gate pending final acceptance review",
+  "sourceReconciliation": {
+    "D01": "B03 timeout regression plus full bootstrap passes; production factory constructs without Firebase initialization",
+    "D02": "Adapted main7b8ac6cc029c0df43f9d4e7d161da3502e6f557b safe-open invariant to current AppDatabase26, no legacy schema1 writer/import"
+  },
+  "remaining": [
+    "Final G1.7 delta review and G1 composite gate/receipt",
+    "Validate/inventory exact existing edition configuration artifacts using rg --files; no guessed paths",
+    "Build/device preview configuration NOT RUN: LEXIQUEST_LEARNING_PREVIEW=true; LEXIQUEST_CLOUD_SYNC_ENABLED=false; source cloud default remains true",
+    "No accepted B03 handoff or B04 dispatch"
+  ],
+  "stopReason": "Repeated read-only filesystem errors from guessed paths; user AGENTS stop-and-report guard invoked. No database/test failure remains observed in latest completed runs."
+}

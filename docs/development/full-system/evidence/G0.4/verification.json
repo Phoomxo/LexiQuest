@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "packageId": "P0.4",
+  "sourceHead": "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+  "command": "powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-scope.ps1 -Level Subsystem -Area Runtime -CliOnly -Resume",
+  "exitCode": 0,
+  "sourceFingerprint": "7fbe872a60b813fb82d19b6125556cd0c468e44cf4e385cf86ecb3b3937079f2",
+  "environmentFingerprint": "7cdc76a8ea72bf6b8be66bd298c22db889bbddc0f0d177f98c4a2486060383da",
+  "closureCount": 1325,
+  "commands": [
+    {
+      "Name": "r15-scope.tests.ps1",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "Resumed": true,
+      "StartedAt": "2026-09-13T11:07:06.5261297+07:00",
+      "FinishedAt": "2026-09-13T11:08:03.9445145+07:00",
+      "durationSeconds": 57.4183848
+    },
+    {
+      "Name": "verify-scope.tests.ps1",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "Resumed": true,
+      "StartedAt": "2026-09-13T11:08:06.7053404+07:00",
+      "FinishedAt": "2026-09-13T11:08:23.8266121+07:00",
+      "durationSeconds": 17.1212717
+    }
+  ],
+  "pins": [
+    {
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "C0BC6A01EFC7F52DAEB2EEF3908AEA45F99424D4992109CFC896A588078376B4",
+      "gitBlob": "0a3e4183d17c0b460092de9a2892e15a02768090"
+    },
+    {
+      "path": "tool/cli/tests/verify-scope.tests.ps1",
+      "sha256": "29D9F5E37BBEB35FD7BA00BAAA9348CD08A2363767DDC1519751F12FDE50BC00",
+      "gitBlob": "927f6dcb98cf990803d72831b58a18d35b86ecf5"
+    },
+    {
+      "path": "tool/cli/tests/r15-scope.tests.ps1",
+      "sha256": "3A8A18535BC54F874F4932256C8FEA71C0E1662A595AA5435EB6CD68CD63029D",
+      "gitBlob": "02c655b4c33e841bd85fb820681368d09562a92d"
+    },
+    {
+      "path": "tool/final_test_plan/generate_final_test_plan.dart",
+      "sha256": "6AEFEA7D675D09FEF77F021648544F8214216120D1B38079C80E0E3959B2BE47",
+      "gitBlob": "61884923185301771f8e5afb5c13f6d853ad4935"
+    }
+  ],
+  "logs": [
+    {
+      "path": "docs\\development\\full-system\\evidence\\G0.4\\r15-scope.tests.ps1.stdout.log",
+      "sha256": "F5E19ADB3CEB47ED27C93409DCF23D1A885A1DB7CBB07852B7440233404DF466",
+      "original": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\5f9e054de4ad-7fbe872a60b8\\r15-scope.tests.ps1.stdout.log"
+    },
+    {
+      "path": "docs\\development\\full-system\\evidence\\G0.4\\r15-scope.tests.ps1.stderr.log",
+      "sha256": "184275C2A3FEDEF36DF9AF95750ADBCDC136BE2EED62B320E9FD55B4C62C50D2",
+      "original": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\5f9e054de4ad-7fbe872a60b8\\r15-scope.tests.ps1.stderr.log"
+    },
+    {
+      "path": "docs\\development\\full-system\\evidence\\G0.4\\verify-scope.tests.ps1.stdout.log",
+      "sha256": "7F5FB5C6FBD01BCE702C787FD9C91F0DBA2A6ECD7BC1387B3EA94053E2CE3487",
+      "original": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\45aea900dccb-7fbe872a60b8\\verify-scope.tests.ps1.stdout.log"
+    },
+    {
+      "path": "docs\\development\\full-system\\evidence\\G0.4\\verify-scope.tests.ps1.stderr.log",
+      "sha256": "184275C2A3FEDEF36DF9AF95750ADBCDC136BE2EED62B320E9FD55B4C62C50D2",
+      "original": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\45aea900dccb-7fbe872a60b8\\verify-scope.tests.ps1.stderr.log"
+    }
+  ],
+  "registry": "registry-verification.json",
+  "priorIntermediateResume": "prior-resume.json",
+  "reused": "Final resume skipped both matching gates; earlier passed CLI gates rerun only after path-guard/test input change. G0.2 application evidence retained as prior accepted; no current v2 app PASS claimed.",
+  "notRun": [
+    "Flutter",
+    "backend",
+    "Android",
+    "GPU",
+    "full release",
+    "physical/live/human"
+  ]
+}

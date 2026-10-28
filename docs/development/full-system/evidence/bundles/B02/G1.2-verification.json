@@ -1,0 +1,115 @@
+{
+  "packageId": "G1.2",
+  "status": "accepted-local-automated",
+  "formulaVersion": "first-answer-accuracy-v1",
+  "requirements": [
+    "COV-f17",
+    "COV-f24",
+    "COV-f43",
+    "FORM-01",
+    "FORM-04",
+    "G1"
+  ],
+  "runs": [
+    {
+      "status": "Passed",
+      "fingerprint": "e321d24e02876e41fb507fd176609579b3a6b757bbd0a05b225e8776efb88715",
+      "targets": [
+        "test",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "path": "G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-04a542c2f7b0252b141cd46194b6b8eb24efd8413eb95eecc03ae99582c75cba.json"
+    },
+    {
+      "status": "Passed",
+      "fingerprint": "1239627f6bac1c5a2befcce1f664a5a3093f531c9bfc96f76046818f190418ad",
+      "targets": [
+        "test",
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "path": "G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-31c97e256c658ebd283072222aafc613f21973f0a8ce91cee240f2758b292b86.json"
+    },
+    {
+      "status": "Failed",
+      "fingerprint": "76af8e14754170113fbbbcf6ce0c807de98b7f6c7ce8608ebdb2940948ad46e4",
+      "targets": [
+        "test",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/progress/progress_projector_test.dart",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/features/learning/first_answer_accuracy_test.dart",
+        "test/features/learning/pair_matching/pair_practice_replay_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "path": "G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-6d12b9b42b16236bfa146f4263a7d1e5fb68ff33a3b7988b60d80bf57d5d7b40.json"
+    },
+    {
+      "status": "Passed",
+      "fingerprint": "1239627f6bac1c5a2befcce1f664a5a3093f531c9bfc96f76046818f190418ad",
+      "targets": [
+        "test",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/features/learning/first_answer_accuracy_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "path": "G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-8b7ef6f6bc98cf34bdd330b3746cdba5bc72a6519e2efe79646abe749a9768dc.json"
+    },
+    {
+      "status": "Failed",
+      "fingerprint": "99d3542cb6866d0705df667fed0db05683e809bbba5d742b8147ab36b5193865",
+      "targets": [
+        "test",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B02 first five of six"
+      ],
+      "path": "G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-a147110da85f8837114a7b68e828c23eef6250b0ab0f5c454d15130af3350cb1.json"
+    }
+  ],
+  "acceptance": {
+    "firstRepair": "Cross-reader first5/6 plus repair/exposure retains first5/6 and all8 stored rows; weakness error1/6",
+    "idempotency": "Required current activity/reconciler/reward gate70 passed; prior Pair practice replay passed; no write-authority changes",
+    "identity": "First eligible item keyed by owner/session/word/mode/content revision/skill. Global ordinal does not remove distinct items",
+    "support": "Exposure/guided/hinted/recreational/assessment excluded; noEvidence retains null via existing empty cases"
+  },
+  "affectedCaseReuse": {
+    "log": "G1.2-runs/95bf048bfa6a-76af8e147541-Explicit-Flutter-tests.stdout.log",
+    "passedCases": 48,
+    "failedCase": "Profile fixture six repeats of one item corrected to six distinct items, same assertions",
+    "retest": "17 profile/selector tests PASS; no production change after48-case run"
+  },
+  "review": {
+    "method": "Self-review per single-writer/no-subagent authorization",
+    "checked": [
+      "owner-scoped input and canonical metadata validation",
+      "stable captured ordering before week filter",
+      "SQL uses same selected IDs via JSON bind",
+      "no updates to attempts/session/ledger/SRS",
+      "legacy session ordinal semantics preserved"
+    ],
+    "sourcePins": {
+      "lib\\features\\learning\\domain\\first_answer_accuracy.dart": "3a571085a0c4ed992e64c1997f30fa895914a78dc9894acf88095ce9d3374cda",
+      "lib\\features\\progress\\data\\drift_progress_queries.dart": "4b7c482ed25524df2fd1e2f9809ecf91d13a04e6e47d4310853b88fd903db138",
+      "lib\\features\\progress\\data\\drift_learning_calendar_reader.dart": "63ea4508df7c77b4844bb89177bdb791e7c3f84d21549b8d8e4e446b2b09bb6a"
+    }
+  },
+  "open": [
+    "G1.3 historical first projection alignment; G3.5 broader cross-reader regression",
+    "B01-FORM-02 unchanged G6.4/G6.5",
+    "G1 phase incomplete until B03"
+  ]
+}

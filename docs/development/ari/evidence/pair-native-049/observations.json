@@ -1,0 +1,2361 @@
+[
+  {
+    "at": "2026-09-23T04:56:23.122825+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เรียน",
+        "bounds": "[44,270][158,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มฝึกสั้น ๆ\nเลือกความหมายที่ถูกต้อง",
+        "bounds": "[44,440][1036,858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มแบบทดสอบ",
+        "bounds": "[88,682][513,814]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "วันนี้และแผนเรียน",
+        "bounds": "[44,924][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมวันนี้",
+        "bounds": "[44,1034][1036,1276]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดวางแผนการเรียน",
+        "bounds": "[44,1309][1036,1595]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำคำศัพท์",
+        "bounds": "[44,1683][1036,1749]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดแบบทดสอบจากคลังคำศัพท์",
+        "bounds": "[44,1782][524,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมนึกคำแล้วพิมพ์",
+        "bounds": "[557,1782][1036,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T04:57:05.230019+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "1810",
+      "850",
+      "700",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เรียน",
+        "bounds": "[44,270][158,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดวางแผนการเรียน",
+        "bounds": "[44,385][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำคำศัพท์",
+        "bounds": "[44,605][1036,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดแบบทดสอบจากคลังคำศัพท์",
+        "bounds": "[44,704][524,1097]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมนึกคำแล้วพิมพ์",
+        "bounds": "[557,704][1036,1097]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมจับคู่คำศัพท์",
+        "bounds": "[44,1130][524,1524]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเลือกคำจากคำอธิบาย",
+        "bounds": "[557,1130][1036,1524]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดทบทวนคำศัพท์",
+        "bounds": "[44,1557][524,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเรียงตัวอักษร",
+        "bounds": "[557,1557][1036,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T04:57:15.700512+00:00",
+    "action": [
+      "tap",
+      "275",
+      "1330"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่คำ–ความหมาย",
+        "bounds": "[198,116][629,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "12 คำจากชุดที่เลือก",
+        "bounds": "[66,297][1014,363]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำใหม่",
+        "bounds": "[66,363][1014,429]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "4 คู่ในรอบนี้",
+        "bounds": "[66,429][1014,495]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "4 คู่",
+        "bounds": "[66,539][272,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "6 คู่",
+        "bounds": "[305,539][456,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "English\nไทย",
+        "bounds": "[66,715][481,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "ไทย\nEnglish",
+        "bounds": "[514,715][875,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่จับเวลา",
+        "bounds": "[66,891][367,1023]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "60 s",
+        "bounds": "[400,891][567,1023]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "90 s",
+        "bounds": "[600,891][767,1023]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "120 s",
+        "bounds": "[800,891][990,1023]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เซสชันนี้ฝึกได้สูงสุด 600 วินาที การปิดตัวจับเวลาจับคู่ไม่เพิ่มเวลาสูงสุดนี้",
+        "bounds": "[66,1089][1014,1221]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มจับคู่",
+        "bounds": "[66,1221][1014,1353]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไว้ภายหลัง",
+        "bounds": "[66,1353][1014,1485]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:00:20.210313+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2190"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รุ่นทดสอบผ่าน USB และเครื่องพัฒนาเฉพาะรอบนี้",
+        "bounds": "[55,1416][1025,1482]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Device-code เป็น beta ต้องเปิดใน ChatGPT security settings ก่อนใช้งาน",
+        "bounds": "[55,1515][1025,1647]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สนทนาและฝึกคำศัพท์กับอารี ผลการฝึกรอบนี้ไม่เพิ่มคะแนน",
+        "bounds": "[55,1647][1025,1779]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อในเครื่องแล้ว (ไม่ใช่ถอนสิทธิ์จาก OpenAI)",
+        "bounds": "[55,1823][1025,1955]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เชื่อมบัญชี ChatGPT",
+        "bounds": "[55,1955][1025,2087]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,2087][1025,2219]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,2219][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:00:28.875617+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2020"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รุ่นทดสอบผ่าน USB และเครื่องพัฒนาเฉพาะรอบนี้",
+        "bounds": "[55,1416][1025,1482]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Device-code เป็น beta ต้องเปิดใน ChatGPT security settings ก่อนใช้งาน",
+        "bounds": "[55,1515][1025,1647]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สนทนาและฝึกคำศัพท์กับอารี ผลการฝึกรอบนี้ไม่เพิ่มคะแนน",
+        "bounds": "[55,1647][1025,1779]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กรอกรหัสนี้บนหน้า OpenAI ด้วยตนเอง แล้วกลับมาตรวจสถานะ",
+        "bounds": "[55,1823][1025,1955]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้า OpenAI",
+        "bounds": "[55,2087][1025,2219]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กรอกเสร็จแล้ว ตรวจสถานะ",
+        "bounds": "[55,2219][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:00:36.395177+00:00",
+    "action": [
+      "tap",
+      "500",
+      "2145"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": []
+  },
+  {
+    "at": "2026-09-23T05:02:20.021146+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2080",
+      "850",
+      "1500",
+      "400"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รุ่นทดสอบผ่าน USB และเครื่องพัฒนาเฉพาะรอบนี้",
+        "bounds": "[55,1416][1025,1482]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Device-code เป็น beta ต้องเปิดใน ChatGPT security settings ก่อนใช้งาน",
+        "bounds": "[55,1515][1025,1647]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สนทนาและฝึกคำศัพท์กับอารี ผลการฝึกรอบนี้ไม่เพิ่มคะแนน",
+        "bounds": "[55,1647][1025,1779]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กรอกรหัสนี้บนหน้า OpenAI ด้วยตนเอง แล้วกลับมาตรวจสถานะ",
+        "bounds": "[55,1823][1025,1955]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้า OpenAI",
+        "bounds": "[55,2087][1025,2219]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กรอกเสร็จแล้ว ตรวจสถานะ",
+        "bounds": "[55,2219][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:02:27.152243+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2080",
+      "850",
+      "1500",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้า OpenAI",
+        "bounds": "[55,1363][1025,1495]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กรอกเสร็จแล้ว ตรวจสถานะ",
+        "bounds": "[55,1495][1025,1627]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,1627][1025,1759]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1847][1025,2001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,2001][1025,2133]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2133][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:02:36.059172+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1560"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,1361][1025,1489]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,1489][1025,1621]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1709][1025,1863]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1863][1025,1995]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1995][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:02:39.020933+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2080",
+      "850",
+      "1470",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1398][1025,1552]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1552][1025,1684]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1684][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,2047][981,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2105][231,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2105][557,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:02:46.273865+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1850"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1398][1025,1552]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1552][1025,1684]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1684][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,2047][981,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2105][231,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2105][557,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:02:55.251965+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1398][1025,1552]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1552][1025,1684]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1684][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,2047][981,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2105][231,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2105][557,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:03:04.749049+00:00",
+    "action": [
+      "tap",
+      "400",
+      "1940"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1361][1025,1506]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:03:25.151647+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1361][1025,1486]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1486][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 3,793 อักขระ",
+        "bounds": "[813,2047][981,2105]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2105][231,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2105][557,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:03:34.383788+00:00",
+    "action": [
+      "tap",
+      "140",
+      "2155"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1361][1025,1486]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nอารีกำลังตอบ\nคุณ",
+        "bounds": "[55,1486][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Read the current matching result using tools. In Thai report first answers, matched pairs, independent and assisted pairs, stars and elapsed time. Does replay add progress or rewards? Do not change anything.",
+        "bounds": "[88,1756][992,2152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[55,2201][226,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[248,2201][552,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:03:45.843662+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1470",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Read the current matching result using tools. In Thai report first answers, matched pairs, independent and assisted pairs, stars and elapsed time. Does replay add progress or rewards? Do not change anything.",
+        "bounds": "[88,1361][992,1413]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลรอบที่แสดง:\n\n- ตอบครั้งแรกถูก **4/4**\n- จับคู่ได้ **4 คู่**\n- ทำเอง **4 คู่**\n- ใช้คำใบ้ **0 คู่**\n- ได้ **3 ดาว**\n- ใช้เวลา **2 นาที 16 วินาที**\n\nเล่นซ้ำ **ไม่เพิ่มความก้าวหน้าหรือรางวัล** ครับ  \nอยากให้ช่วยอธิบายวิธีจำคู่คำแบบนี้ไหม?",
+        "bounds": "[88,1556][944,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:03:57.699024+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "2070",
+      "850",
+      "1450",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nพร้อมสนทนา\nคุณ\nอารี",
+        "bounds": "[55,1361][1025,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลรอบที่แสดง:\n\n- ตอบครั้งแรกถูก **4/4**\n- จับคู่ได้ **4 คู่**\n- ทำเอง **4 คู่**\n- ใช้คำใบ้ **0 คู่**\n- ได้ **3 ดาว**\n- ใช้เวลา **2 นาที 16 วินาที**\n\nเล่นซ้ำ **ไม่เพิ่มความก้าวหน้าหรือรางวัล** ครับ  \nอยากให้ช่วยอธิบายวิธีจำคู่คำแบบนี้ไหม?",
+        "bounds": "[88,1361][944,1734]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[55,1816][1025,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 4,000 อักขระ",
+        "bounds": "[857,1981][981,2039]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ส่ง",
+        "bounds": "[55,2039][231,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตัดการเชื่อมต่อ",
+        "bounds": "[253,2039][557,2171]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เครื่องมือ list_menu_actions: available",
+        "bounds": "[55,2171][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:04:06.189841+00:00",
+    "action": [
+      "tap",
+      "400",
+      "2100"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1152]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ย่อส่วนช่วยเหลือ AI",
+        "bounds": "[0,1152][1080,1284]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เชื่อมบัญชี ChatGPT",
+        "bounds": "[55,1361][1025,1434]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดห้องสนทนา",
+        "bounds": "[55,1434][1025,1566]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ออกจากระบบทดสอบ",
+        "bounds": "[55,1566][1025,1698]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกคำศัพท์ให้ช่วย",
+        "bounds": "[55,1786][1025,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่",
+        "bounds": "[55,1940][1025,2072]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อารี\nยังไม่ได้เชื่อมต่อ",
+        "bounds": "[55,2072][1025,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:04:08.982994+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1210"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการจับคู่",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,594][1036,660]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,660][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1067][1036,1243]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทำได้เอง 4 คู่",
+        "bounds": "[44,1309][1036,1375]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใช้ตัวช่วย 0 คู่",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่ได้จับเวลา",
+        "bounds": "[44,1496][1036,1562]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใช้เวลาเรียนจริง 136 วินาที",
+        "bounds": "[44,1584][1036,1650]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาวเป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง",
+        "bounds": "[44,1672][1036,1738]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไปทบทวนคำที่ถึงเวลาได้ต่อไป",
+        "bounds": "[44,1771][1036,1837]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับไปเรียนต่อ",
+        "bounds": "[44,1903][1036,2035]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกซ้ำได้โดยไม่เพิ่มความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,2068][1036,2134]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกซ้ำชุดเดิม",
+        "bounds": "[44,2156][1036,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:04:12.016216+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "1900",
+      "850",
+      "1100",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,422][1036,488]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,488][1036,895]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,895][1036,1071]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทำได้เอง 4 คู่",
+        "bounds": "[44,1137][1036,1203]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใช้ตัวช่วย 0 คู่",
+        "bounds": "[44,1225][1036,1291]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่ได้จับเวลา",
+        "bounds": "[44,1324][1036,1390]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใช้เวลาเรียนจริง 136 วินาที",
+        "bounds": "[44,1412][1036,1478]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาวเป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง",
+        "bounds": "[44,1500][1036,1566]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไปทบทวนคำที่ถึงเวลาได้ต่อไป",
+        "bounds": "[44,1599][1036,1665]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับไปเรียนต่อ",
+        "bounds": "[44,1731][1036,1863]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกซ้ำได้โดยไม่เพิ่มความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,1896][1036,1962]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกซ้ำชุดเดิม",
+        "bounds": "[44,1984][1036,2116]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T05:05:34.990978+00:00",
+    "action": [],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: จบการฝึกรอบนี้แล้ว",
+        "bounds": "[336,88][744,253]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,264][143,396]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับคู่ครบแล้ว",
+        "bounds": "[198,292][488,369]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการฝึกซ้ำ",
+        "bounds": "[44,451][1036,528]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "การฝึกซ้ำไม่เพิ่มความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,550][1036,616]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำตอบครั้งแรก 4/4",
+        "bounds": "[44,682][1036,748]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวนคู่ที่จับได้\n4\nจับคู่แล้ว 4 คู่",
+        "bounds": "[44,748][1036,1155]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาว 3 จาก 3",
+        "bounds": "[44,1155][1036,1331]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทำได้เอง 4 คู่",
+        "bounds": "[44,1397][1036,1463]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ใช้ตัวช่วย 0 คู่",
+        "bounds": "[44,1485][1036,1551]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่ได้จับเวลา",
+        "bounds": "[44,1584][1036,1650]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เวลาฝึกซ้ำ 65 วินาที",
+        "bounds": "[44,1672][1036,1738]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดาวเป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง",
+        "bounds": "[44,1760][1036,1826]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไปทบทวนคำที่ถึงเวลาได้ต่อไป",
+        "bounds": "[44,1859][1036,1925]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับไปเรียนต่อ",
+        "bounds": "[44,1991][1036,2123]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฝึกซ้ำได้โดยไม่เพิ่มความก้าวหน้าหรือรางวัล",
+        "bounds": "[44,2156][1036,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]

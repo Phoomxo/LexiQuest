@@ -1,0 +1,9 @@
+{
+  "bundleId": "B04",
+  "status": "all-packages-verified-writer-held",
+  "currentPackageId": "G2.2",
+  "G21Sha": "dac93ff3512ca2580b34b78c1bfd1e7962b3eed2",
+  "G22Receipt": "G2.2-verification.json",
+  "nextBundle": "B05",
+  "nextBundleCreated": false
+}

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E2.1",
+  "checkpoint": "C03",
+  "E21Accepted": false,
+  "baseSha": "497b71241fc2076f65917c045901bfb3f8e862be",
+  "scope": "PersonalSetRevision immutable value and strict JSON codec only; not repository persistence or user-visible functionality",
+  "source": "lib/features/learning_packs/domain/personal_sets.dart",
+  "test": "test/features/learning_packs/personal_set_revision_test.dart",
+  "invariants": [
+    "exact SenseCrosswalkPin and ordered SenseRefs retained",
+    "expected prior revision and operationId included in canonical payload hash",
+    "deep immutable inputs and detached JSON output",
+    "duplicate/cross-corpus/bounded malformed records rejected",
+    "strict schema version and payload integrity check",
+    "archive represented as a new revision; repository must verify prior members unchanged"
+  ],
+  "ownerDesign": "Owner excluded from payload hash deliberately; enclosing owner-scoped repository key and restore envelope MUST validate owner. This class does not confer authority or score admission.",
+  "verification": {
+    "status": "passed",
+    "newTests": 11,
+    "totalTests": 32,
+    "targets": [
+      "test/features/learning_packs/personal_set_revision_test.dart",
+      "test/features/learning_packs/sense_crosswalk_test.dart",
+      "test/features/learning_packs/packaged_sense_crosswalk_test.dart"
+    ],
+    "fingerprint": "a0db992fbb1d4c12973dfbeb9ec6bf2c2a154f347930f3740872145a856ad10b",
+    "postFingerprint": "a0db992fbb1d4c12973dfbeb9ec6bf2c2a154f347930f3740872145a856ad10b",
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c03-final-verifier.json",
+    "analysis": "dart analyze new domain/test: No issues found",
+    "diffCheck": "git -c core.whitespace=cr-at-eol diff --check passed"
+  },
+  "failureRecovery": [
+    {
+      "failure": "Initial eight RED tests fail UnimplementedError; verifier also reports InputDrift",
+      "cause": "Flutter generated seven EOL-only changes on initial pub setup",
+      "resolution": "All seven normalized equal and filtered blob equal to HEAD; restored exact blobs and refreshed index; proof c03-eol-proof.json"
+    },
+    {
+      "failure": "First implementation parse error: imports after declarations",
+      "cause": "Patch insertion with empty context appended imports",
+      "resolution": "Moved imports before declarations; following domain run passed eight tests"
+    },
+    {
+      "failure": "Local review regression: schemaVersion 1.0 accepted as 1",
+      "cause": "Dart numeric equality without integer type guard",
+      "resolution": "Added explicit integer guard; 11 domain plus 21 dependency tests passed"
+    }
+  ],
+  "review": {
+    "kind": "local self-review",
+    "independent": false,
+    "subagents": false
+  },
+  "remaining": [
+    "Recheck schema 28; allocate next version and add owner-scoped immutable revisions/members with CAS and durable operation replay/collision",
+    "Repository must resolve all refs through exact pin before save and enforce archive contents against prior revision",
+    "Integrate ownerLifecycleManifest/export/delete/transactional guest remap and owner generation fences",
+    "Implement coherent restore codec/idempotency and complete migration matrix; exporter alone is not restore",
+    "Accessible real catalog/planning UI and canonical pinned session admission",
+    "Restart/owner switch/research-off/navigation/accessibility regressions and full local review"
+  ],
+  "notRun": [
+    "database migrations",
+    "owner lifecycle",
+    "UI",
+    "canonical activity launch",
+    "full suite",
+    "build",
+    "device",
+    "live provider",
+    "release"
+  ],
+  "limitations": [
+    "Codec hashes are integrity checks, not authentication; valid constructed records still require repository content/owner authorization",
+    "No scored admission, no changes to historical word SRS",
+    "Schema remains 28 and no personal-set table or writer exists yet"
+  ],
+  "serviceTier": "Standard/default requested; effective tier unverified",
+  "databaseSchemaVersion": 28
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "prompt_mode": "readingExposure",
+    "evidence_class": "exposure",
+    "is_correct": 0,
+    "provider_provenance": "native-cefr-reading:v1:exposure",
+    "state": "completed",
+    "correct_count": 0,
+    "wrong_count": 1,
+    "score": 0,
+    "occurred_at_utc_ms": 1790140435734,
+    "session_attempts": 1
+  }
+]

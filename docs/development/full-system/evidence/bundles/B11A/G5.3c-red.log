@@ -1,0 +1,41 @@
+test_dataset_pin_checked_before_use (test_camera_web_training.CameraWebTrainingTests.test_dataset_pin_checked_before_use) ... FAIL
+test_refuses_fresh_test_and_empty_partitions (test_camera_web_training.CameraWebTrainingTests.test_refuses_fresh_test_and_empty_partitions) ... FAIL
+test_run_directory_never_overwrites_checkpoint (test_camera_web_training.CameraWebTrainingTests.test_run_directory_never_overwrites_checkpoint) ... FAIL
+
+======================================================================
+FAIL: test_dataset_pin_checked_before_use (test_camera_web_training.CameraWebTrainingTests.test_dataset_pin_checked_before_use)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 34, in test_dataset_pin_checked_before_use
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 10, in api
+    self.assertIsNotNone(importlib.util.find_spec('train_camera_web'), 'web training adapter required')
+AssertionError: unexpectedly None : web training adapter required
+
+======================================================================
+FAIL: test_refuses_fresh_test_and_empty_partitions (test_camera_web_training.CameraWebTrainingTests.test_refuses_fresh_test_and_empty_partitions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 14, in test_refuses_fresh_test_and_empty_partitions
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 10, in api
+    self.assertIsNotNone(importlib.util.find_spec('train_camera_web'), 'web training adapter required')
+AssertionError: unexpectedly None : web training adapter required
+
+======================================================================
+FAIL: test_run_directory_never_overwrites_checkpoint (test_camera_web_training.CameraWebTrainingTests.test_run_directory_never_overwrites_checkpoint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 23, in test_run_directory_never_overwrites_checkpoint
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_training.py", line 10, in api
+    self.assertIsNotNone(importlib.util.find_spec('train_camera_web'), 'web training adapter required')
+AssertionError: unexpectedly None : web training adapter required
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+FAILED (failures=3)

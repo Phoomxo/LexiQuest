@@ -1,0 +1,17 @@
+{
+  "dispatchId": "ux-s01-aw-20260925-4635",
+  "taskId": "01a0d50a-273c-71b1-a13e-e4fd5649b4b4",
+  "verifiedAtUtc": "2026-09-24T20:11:22.476591+00:00",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\4635\\LexiQuest",
+  "destinationRoot": "C:\\Users\\Phet\\.codex\\worktrees\\0610\\LexiQuest",
+  "branch": "feature/ux-s01-aw-0610",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "ad9bc8cc03ff7270184651a773a9f13e6e190a16e6fe103dc7d7319fffcfc03d",
+  "archiveSha256": "e9747ff6c5c83ffafde28fb2f12dbcb6cb21616841bd8f8de63d94402d51211d",
+  "overlayFingerprintSha256": "3f55e11ee4c0ef6df405a19eda6e5e0326d2f3e25c1bd484eb1d11b70405c976",
+  "verifiedEntries": 2247,
+  "verifiedManifestPaths": 2247,
+  "allBytesAndDeletionsVerified": true,
+  "zipCrcAndMembershipVerified": true,
+  "rawPathsContainmentCasefoldAndWindowsReservedNamesVerified": true
+}

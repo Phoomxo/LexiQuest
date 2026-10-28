@@ -1,0 +1,2116 @@
+[
+  {
+    "at": "2026-09-23T11:18:24.023101+00:00",
+    "action": [
+      "tap",
+      "500",
+      "470"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สร้างชุดคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยังไม่มีชุดคำส่วนตัว",
+        "bounds": "[44,407][1036,473]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองและกู้คืนชุดคำ",
+        "bounds": "[44,473][1036,605]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:18:30.925475+00:00",
+    "action": [
+      "tap",
+      "500",
+      "340"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1425]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "chair — เก้าอี้",
+        "bounds": "[44,1425][1036,1579]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "door — ประตู",
+        "bounds": "[44,1579][1036,1733]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "window — หน้าต่าง",
+        "bounds": "[44,1733][1036,1887]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "bottle — ขวด",
+        "bounds": "[44,1887][1036,2041]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "cup — ถ้วย",
+        "bounds": "[44,2041][1036,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:18:57.156366+00:00",
+    "action": [
+      "tap",
+      "400",
+      "350"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1374]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:01.050895+00:00",
+    "action": [
+      "text",
+      "New%spencil%stest%",
+      "s093"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 104 อักขระ",
+        "bounds": "[868,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1374]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:08.366063+00:00",
+    "action": [
+      "keyevent",
+      "123"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 104 อักขระ",
+        "bounds": "[868,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1374]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:11.385141+00:00",
+    "action": [
+      "text",
+      "093"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 101 อักขระ",
+        "bounds": "[868,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1374]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:13.864483+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 101 อักขระ",
+        "bounds": "[868,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1425]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "chair — เก้าอี้",
+        "bounds": "[44,1425][1036,1579]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "door — ประตู",
+        "bounds": "[44,1579][1036,1733]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "window — หน้าต่าง",
+        "bounds": "[44,1733][1036,1887]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "bottle — ขวด",
+        "bounds": "[44,1887][1036,2041]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "cup — ถ้วย",
+        "bounds": "[44,2041][1036,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:20.451296+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1335"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,275][1036,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 101 อักขระ",
+        "bounds": "[868,440][992,498]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกความหมายจากคำเริ่มต้น 12 รายการ คำศัพท์เพิ่มเติมยังใช้เก็บคะแนนไม่ได้",
+        "bounds": "[44,498][1036,630]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,630][1036,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เหลือ 120 อักขระ",
+        "bounds": "[890,795][992,853]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูตัวอย่าง",
+        "bounds": "[44,853][1036,985]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกเลิก",
+        "bounds": "[44,985][1036,1117]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "book — หนังสือ",
+        "bounds": "[44,1117][1036,1271]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,1271][1036,1425]",
+        "enabled": "true",
+        "checked": "true",
+        "selected": "false"
+      },
+      {
+        "text": "chair — เก้าอี้",
+        "bounds": "[44,1425][1036,1579]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "door — ประตู",
+        "bounds": "[44,1579][1036,1733]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "window — หน้าต่าง",
+        "bounds": "[44,1733][1036,1887]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "bottle — ขวด",
+        "bounds": "[44,1887][1036,2041]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "cup — ถ้วย",
+        "bounds": "[44,2041][1036,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:23.226675+00:00",
+    "action": [
+      "tap",
+      "500",
+      "915"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "New pencil test%093",
+        "bounds": "[44,275][1036,363]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รุ่น 1 • ความหมายที่เลือก: 1",
+        "bounds": "[44,363][1036,429]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "pencil — ดินสอ",
+        "bounds": "[44,429][1036,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "บันทึกชุดคำ",
+        "bounds": "[44,583][1036,715]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับไปแก้ไข",
+        "bounds": "[44,715][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:32.388564+00:00",
+    "action": [
+      "tap",
+      "500",
+      "650"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[198,116][481,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สร้างชุดคำ",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองและกู้คืนชุดคำ",
+        "bounds": "[44,407][1036,539]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "New pencil test%093\nรุ่น 1 • 1 ความหมาย",
+        "bounds": "[44,539][1036,737]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:35.119259+00:00",
+    "action": [
+      "tap",
+      "75",
+      "155"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "วางแผนการเรียน",
+        "bounds": "[198,116][584,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[44,407][1036,539]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกชุดเนื้อหาที่ตรวจสอบแล้วเพื่อวางแผนการฝึกครั้งถัดไป",
+        "bounds": "[44,539][1036,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดเนื้อหาการเรียนที่ตรวจสอบแล้ว",
+        "bounds": "[44,715][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดเป้าหมายการเรียน",
+        "bounds": "[44,880][1036,1012]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดการตั้งค่าการเรียน",
+        "bounds": "[44,1045][1036,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:41.525359+00:00",
+    "action": [
+      "tap",
+      "500",
+      "340"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1562]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1562][1036,1848]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คืนค่าประวัติแผน",
+        "bounds": "[44,1848][1036,1980]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:49.696190+00:00",
+    "action": [
+      "tap",
+      "400",
+      "920"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1454]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:52.294058+00:00",
+    "action": [
+      "keyevent",
+      "123"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1454]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:55.089558+00:00",
+    "action": [
+      "keyevent",
+      "67"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1454]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:19:57.775131+00:00",
+    "action": [
+      "text",
+      "10"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1454]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:20:00.371650+00:00",
+    "action": [
+      "keyevent",
+      "4"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1562]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1562][1036,1848]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คืนค่าประวัติแผน",
+        "bounds": "[44,1848][1036,1980]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:20:08.773799+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1100"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r3",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 5 · งานใหม่ 0 · ยกยอด 2",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "10",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "false",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อเสนอ r4",
+        "bounds": "[44,1034][1036,1111]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เวลา: 5 เป็น 10 นาที",
+        "bounds": "[44,1111][1036,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน: 5 เป็น 7",
+        "bounds": "[44,1177][1036,1243]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "งานใหม่: 0 เป็น 1",
+        "bounds": "[44,1243][1036,1309]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยกยอด: 2 เป็น 0",
+        "bounds": "[44,1309][1036,1375]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพิ่มในวันนี้: window, book, pencil",
+        "bounds": "[44,1375][684,1441]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,1441][591,1507]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 7 · งานใหม่ 1 · ยกยอด 0",
+        "bounds": "[44,1507][617,1573]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ยอมรับแผน",
+        "bounds": "[44,1573][1036,1705]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ไม่รับข้อเสนอ",
+        "bounds": "[44,1705][1036,1837]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1837][1036,1969]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1969][1036,2101]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:20:17.125429+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1635"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r4",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 7 · งานใหม่ 1 · ยกยอด 0",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1562]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1562][1036,1848]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คืนค่าประวัติแผน",
+        "bounds": "[44,1848][1036,1980]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:20:19.853608+00:00",
+    "action": [
+      "tap",
+      "75",
+      "155"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "วางแผนการเรียน",
+        "bounds": "[198,116][584,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ชุดคำส่วนตัว",
+        "bounds": "[44,407][1036,539]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เลือกชุดเนื้อหาที่ตรวจสอบแล้วเพื่อวางแผนการฝึกครั้งถัดไป",
+        "bounds": "[44,539][1036,671]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดเนื้อหาการเรียนที่ตรวจสอบแล้ว",
+        "bounds": "[44,715][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดเป้าหมายการเรียน",
+        "bounds": "[44,880][1036,1012]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดการตั้งค่าการเรียน",
+        "bounds": "[44,1045][1036,1177]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T11:20:22.701339+00:00",
+    "action": [
+      "tap",
+      "500",
+      "340"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนการเรียนของฉัน",
+        "bounds": "[198,116][666,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จัดเวลาทบทวนก่อนงานใหม่ ประมาณ 1 นาทีต่อคำ เป็นค่าประมาณเพื่อวางแผน ไม่ใช่คะแนนหรือเวลาที่รับประกัน",
+        "bounds": "[44,275][1036,407]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "แผนที่ยอมรับ r4",
+        "bounds": "[44,440][1036,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "2026-09-23 · Asia/Bangkok",
+        "bounds": "[44,517][591,583]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ทบทวน 7 · งานใหม่ 1 · ยกยอด 0",
+        "bounds": "[44,583][617,649]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เป้าหมายและกำหนดเวลา\nไม่มีเป้าหมายที่ผูกไว้",
+        "bounds": "[44,693][1036,847]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,847][1036,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูข้อเสนอและเปรียบเทียบ",
+        "bounds": "[44,1034][1036,1166]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดชุดคำส่วนตัว",
+        "bounds": "[44,1166][1036,1298]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับหน้าหลักเพื่อเริ่มงานวันนี้",
+        "bounds": "[44,1298][1036,1430]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "สำรองประวัติแผน",
+        "bounds": "[44,1430][1036,1562]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "[input omitted]",
+        "bounds": "[44,1562][1036,1848]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คืนค่าประวัติแผน",
+        "bounds": "[44,1848][1036,1980]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]

@@ -1,0 +1,24 @@
+LexiQuest CEFR vocabulary starter — 3,000 source-joined headwords, revision 1
+
+Level source: The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono,
+Tokyo University of Foreign Studies. Distributed by Open Language Profiles:
+https://github.com/openlanguageprofiles/olp-en-cefrj
+Original project: https://www.cefr-j.org/
+The distributor permits research and commercial use without charge with proper
+citation. Copyright remains with Tono Laboratory, TUFS. No endorsement or
+certification of LexiQuest is implied. Source terms and data retrieved 2026-09-12.
+
+Thai translation source: LEXiTRON 2.0, NECTEC, etlex.csv.
+https://opend.nstda.or.th/en/dataset/lexitron-2-0
+This product is created by the adaptation of LEXiTRON developed by NECTEC (http://www.nectec.or.th/).
+ผลิตภัณฑ์นี้สร้างสรรค์ขึ้นโดยดัดแปลงมาจากพจนานุกรมเล็กซิตรอนซึ่งพัฒนาโดยศูนย์เทคโนโลยีอิเล็กทรอนิกส์และคอมพิวเตอร์แห่งชาติ (http://www.nectec.or.th)
+The complete English and Thai license agreements accompany this catalog.
+
+Selection: exact spelling/POS join; one source headword per displayed entry.
+All eligible A1/A2 entries are retained, with the remaining slots split between
+B1/B2 and sampled across the alphabet. This is not a frequency-ranked list.
+Source row identifiers and SHA-256 pins are stored in catalog.json.
+
+ระดับเป็นข้อมูลอ้างอิงระดับคำและชนิดคำ ไม่ใช่การรับรองทุกความหมายหรือระดับของผู้เรียน
+คำแปลเป็นข้อมูลจากแหล่งอ้างอิง ยังไม่ได้ตรวจทุกความหมายเป็นรายคำ
+ชุดนี้ยังไม่มีประโยคตัวอย่างที่ตรวจคุณภาพครบทุกคำ โปรดเลือกความหมายที่ต้องการก่อนเพิ่มเข้าคลังส่วนตัว

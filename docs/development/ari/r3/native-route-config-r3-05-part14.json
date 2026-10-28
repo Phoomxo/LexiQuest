@@ -1,0 +1,23 @@
+{
+  "taskId": "01a0d040-3e4f-74b1-b0ca-2adb6050caba",
+  "sourcePins": {
+    "lib/main_ari_test.dart": "76122def1896a1c911a29fc3f7c93519cbc8d6fc6ca645110d491b7ea98414e2",
+    "lib/runtime/app_bootstrap.dart": "04740ec0b9a66bdd5c3e164b5adf380546db519946be6a4ab31f705b64f4ee17",
+    "lib/runtime/ari_preview_feature_registry.dart": "186fc2368e6ea47d886045d19946dcc5e85df8bebc1de82f24bfbf320171aab9",
+    "lib/runtime/learning_preview_feature_registry.dart": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7",
+    "lib/runtime/registries/feature_registry.dart": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348",
+    "lib/features/learning/application/lesson_mode_registry.dart": "a741f433f9885a283d4a84c0a922c997c6ac2b00ee4d5a730504e62800244e6b",
+    "lib/screens/choose_mode_screen.dart": "65ff7438c5159811e622bc2037d253fb319084ff3d9adf71ee9ded9c423e8df8",
+    "lib/screens/main_navigation_screen.dart": "9c9a36c140fb633ec1b31f284e6e70d3170ae05025efa8ea88431bc7ae3150fd",
+    "tool/cli/profiles/local-learning-preview.json": "494113f67657e20e300d50c96faa1aad7401fbbb8ddaeb27a53e75c27f460f9c"
+  },
+  "installedBuildReceipt": "native-connection-baseline-r3-05-part09.json",
+  "installedBuildCommand": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+  "findings": [
+    "Part09 command builds main_ari_test.dart with ARI_LOCAL_TEST=true but without LEXIQUEST_LEARNING_PREVIEW. Installed hash verifiedunchanged.",
+    "AppBootstrap default learningPreviewEnabled=bool.fromEnvironment(LEXIQUEST_LEARNING_PREVIEW);main_ari_test passes AriPreviewFeatureRegistry(fieldDefaults). Ari wrapper enables onlystudyPlanning/offlineContent;fieldDefaults dailyContinuity hidden. LearningPreview wrapper enables hidden dailyContinuity when flagtrue.",
+    "AppBootstrap1469-1472:internalPairMatching=learningPreviewEnabled and matchingDeliveryState enabled iff preview,elseimplementedOff. Registry.resolve returns onlydeliverable. ChooseModeScreen matchingtile requires resolvedmatching andquizvisible;lines631-654 routes internalPair toPairMatchingLearnScreen.",
+    "Canonical tool/cli/profiles/local-learning-preview.json enables learningpreview and disablescloudsync. Before building new isolatedAriAPK verifyproductionCloudSyncEnabledByDefault consumesflag and entry/runtimepins;useexistingprofile,do not enable research or duplicateUI."
+  ],
+  "next": "Build isolated Ari APK using existing canonical preview definefile after relevant config/entry checks,retainpart09APK;freshbackupBEFOREinstall/cycle,then nativeToday/history/review-center andPairwrongrepair/support/replayDBreconciliation. Not yetbuilt/installed/accepted."
+}

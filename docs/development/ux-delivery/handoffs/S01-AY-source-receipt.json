@@ -1,0 +1,18 @@
+{
+  "taskId": "01a0d561-33e5-7ff3-ace9-663f145a31c2",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\f934\\LexiQuest",
+  "targetRoot": "C:\\Users\\Phet\\.codex\\worktrees\\6c39\\LexiQuest",
+  "manifestSha256": "b338406e4030e628ac09f5e18d2d1584038a24fbc8af1fe397e8e62b2507c1a0",
+  "archiveSha256": "3432cccd5f243fad840068223602740070a80b7bddef9b0051bd1e8a8b2f4984",
+  "overlayFingerprintSha256": "bb920dcc53e35bae393d68ed605cd57e7b67323bdfcea4285d2f0cdcfa3e1fad",
+  "files": 2509,
+  "zipEntries": 2509,
+  "allBytesVerified": true,
+  "deletionsVerified": true,
+  "predecessorUntouched": true,
+  "atUtc": "2026-09-24T21:46:57.601265+00:00",
+  "dispatchId": "ux-s01-ay-20260925-f934",
+  "branch": "feature/ux-s01-ay-6c39",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "status": "VERIFIED"
+}

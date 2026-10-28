@@ -1,0 +1,2 @@
+RUN: release-profile.tests.ps1
+FAIL: release-profile.tests.ps1 (Failed); see C:\Users\Phet\.codex\worktrees\9f44\LexiQuest\build\verification\29ffbe5e332501883e2ab61419490ccfe9f07e18\0e7a6e148d83-29a48e12b38a\release-profile.tests.ps1.stdout.log and C:\Users\Phet\.codex\worktrees\9f44\LexiQuest\build\verification\29ffbe5e332501883e2ab61419490ccfe9f07e18\0e7a6e148d83-29a48e12b38a\release-profile.tests.ps1.stderr.log

@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "checkedDate": "2026-09-12",
+  "baselineCommit": "8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac",
+  "sourceRoot": "C:/Users/Phet/.codex/visualizations/2026/09/12/01a095a8-40ba-7031-817d-406822b5d3aa",
+  "entries": [
+    {
+      "id": "E-D01",
+      "file": "03-duolingo-start.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\03-duolingo-start.png",
+      "sha256": "48e2337334fbadb8ba2eaff7bdc36521c561a1fa90b7928c78b4ab5fc9f509b7",
+      "observation": "หน้าเริ่มต้นภาษาไทย",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D02",
+      "file": "19-duolingo-goals.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\19-duolingo-goals.png",
+      "sha256": "1f4c3d11e69f3cc3fa09a69459d9401bfa1d05cdf1bda1acc6f8dd32848d11ed",
+      "observation": "เลือกเวลาเรียนรายวัน 3/10/15/30 นาที",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D03",
+      "file": "26-duolingo-exercise.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\26-duolingo-exercise.png",
+      "sha256": "04717b181aa82474e2cc2bf930ece04ad2ad87aebdc51a4f39f0a0161ba21f3e",
+      "observation": "เลือกภาพตามคำศัพท์",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D04",
+      "file": "27-duolingo-correct.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\27-duolingo-correct.png",
+      "sha256": "dcac82147a919abf163844dd513fd826d13d131a5e0d7fdeea714cb4d95621aa",
+      "observation": "การ์ดและแผงล่างสีเขียว มีข้อความและเครื่องหมาย",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D05",
+      "file": "29-duolingo-wrong.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\29-duolingo-wrong.png",
+      "sha256": "8c4d0bcd2d7d8222716c22ec08b73e1a5154b33e334d207e36511ec0193c90c3",
+      "observation": "จงใจเลือก coffee แทน tea; แสดงคำตอบและรอให้กดรับทราบ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D06",
+      "file": "43-duolingo-dialogue-feedback.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\43-duolingo-dialogue-feedback.png",
+      "sha256": "44736ccf4372ed422b003b12ab033f65dca99589ae3f3271885e6c8e9fd1b030",
+      "observation": "เลือกคำตอบในบทสนทนาและเห็นคำแปล",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D07",
+      "file": "39-duolingo-listening-skip.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\39-duolingo-listening-skip.png",
+      "sha256": "b4d5b42ed59803b6add7f55cb83ebfdec8ea47f11dd9a5e30bd4795264e9c511",
+      "observation": "เลือกไม่สะดวกฟัง; แอประบุพักข้อฟัง 15 นาที",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D08",
+      "file": "52-duolingo-error-retry.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\52-duolingo-error-retry.png",
+      "sha256": "750df685b79f385a1368dc761f15146f54cf36208baf83a53920d7e924fe3058",
+      "observation": "นำข้อที่ตอบผิดกลับมาท้ายบทพร้อมป้าย",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D09",
+      "file": "55-duolingo-results-stable.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\55-duolingo-results-stable.png",
+      "sha256": "8defab1b0250c35db459793f87ef1f5a602a11a78493a2a25d6cd7d6f85ec66b",
+      "observation": "20 XP, 7:46, 94%; เวลาได้รับอิทธิพลจากการเก็บหลักฐาน",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D10",
+      "file": "59-duolingo-reward.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\59-duolingo-reward.png",
+      "sha256": "1f46ea59fa9c85c098c47911953916bdba13f3cdc9634c80b5aa7524bbfab167",
+      "observation": "แสดงการเรียนต่อเนื่อง 1 วัน",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D11",
+      "file": "131-duolingo-resume.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\131-duolingo-resume.png",
+      "sha256": "d602855dc682292088980cd2fff146ec8406c1296d8659a67ab5a21e2f64edcb",
+      "observation": "สถานะบทเรียนแรกยังอยู่หลังสลับแอป",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D12",
+      "file": "132-duolingo-guidebook.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\132-duolingo-guidebook.png",
+      "sha256": "90b163f292ff7192b0e41005d565a2913c0fadc1d39db9ee084f4c6d27135a16",
+      "observation": "วลีภาษาอังกฤษ คำแปล และปุ่มเสียง",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D13",
+      "file": "136-duolingo-practice-exit.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\136-duolingo-practice-exit.png",
+      "sha256": "263e012fea144f9df35f3f0aeb6dd423984024d77de4bbeb2745c71051c11eda",
+      "observation": "ทดลองฝึกผ่านเมนูหัวใจหนึ่งข้อ แล้วออก; แสดงข้อความเสีย XP ของบท",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-D14",
+      "file": "139-duolingo-super-gate.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\139-duolingo-super-gate.png",
+      "sha256": "54f61ce8f7e9bc3e7224873c59969772ac141fff7686dc3625dcae9b3ef8aae3",
+      "observation": "เห็นหน้าเสนอทดลอง; ไม่เริ่ม trial ไม่ซื้อ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A01",
+      "file": "73-alltcas-categories.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\73-alltcas-categories.png",
+      "sha256": "d0898abda45b9e71109388d832a9a403fdff6a7dcb15067cdda83c893ef4f0be",
+      "observation": "ตัวกรอง TGAT1, A-Level, A1–C2 และหมวดคำศัพท์",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A02",
+      "file": "74-alltcas-deck.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\74-alltcas-deck.png",
+      "sha256": "6ee412698cbe032d551855c36da9c651f47f494678e89500546dc0db05a49ed2",
+      "observation": "25 คำ; 1/25 เป็นข้อมูลก่อนการทดลองรอบนี้",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A03",
+      "file": "75-alltcas-modes.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\75-alltcas-modes.png",
+      "sha256": "f9e3717ea56b1e4a47769c69d80a8e6132347dcd0769cc8eb55edc18e7ef7a71",
+      "observation": "Flashcard, สุ่มผสม, Quiz, Quiz Definition",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A04",
+      "file": "76-alltcas-modes-more.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\76-alltcas-modes-more.png",
+      "sha256": "12f40d507a0e126c5daedbee0e69d2502b939b882fb9329b4a4f9aaeb2077e4f",
+      "observation": "Cloze, จับคู่, Yencha, ฝึกเขียน; ไม่ได้เล่นทุกโหมด",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A05",
+      "file": "77-alltcas-matching.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\77-alltcas-matching.png",
+      "sha256": "ffa9e2b348763b17d33158978a29b7863b31bc63c732ce466b8dbe3abd6d6900",
+      "observation": "ไทย–อังกฤษ 5 คู่ต่อกระดาน",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A06",
+      "file": "78-alltcas-selected.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\78-alltcas-selected.png",
+      "sha256": "c60493e4dbd013cee75cf95403865cfffd1f978604f30593bb0c069c876487bb",
+      "observation": "ขอบและพื้นสีส้ม",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A07",
+      "file": "81-alltcas-after-correct.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\81-alltcas-after-correct.png",
+      "sha256": "7745b7dd513ce24848f67d901cc52068edee6c0eb52c886a4ac6fe571f67e606",
+      "observation": "การ์ดหาย เหลือช่องว่างตำแหน่งเดิม; ดูวิดีโอร่วม",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A08",
+      "file": "88-alltcas-matching-result.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\88-alltcas-matching-result.png",
+      "sha256": "ed584e58dcc20347c422ee368ee289bbbeadc2b27059466a2bb6796b73a4ac0d",
+      "observation": "ครบ25คู่ ผิด1ครั้ง 96% เวลา3:08",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A09",
+      "file": "93-alltcas-flashcard.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\93-alltcas-flashcard.png",
+      "sha256": "bf3289219fd1bb3696bcb897fbad045c4057783c20cfa94a9cf8f498aec4abcd",
+      "observation": "POS, CEFR, IPA, ประโยคตัวอย่างและปุ่มเสียง",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A10",
+      "file": "94-alltcas-flashcard-back.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\94-alltcas-flashcard-back.png",
+      "sha256": "7ca9ae1f4267cb19c64f0f8bbc15cdd3e6e297fb7e633ab5a3444e5647c768a3",
+      "observation": "ภาพ คำแปล และความหมาย; ทดลองกดจำไม่ได้หนึ่งใบ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A11",
+      "file": "96-alltcas-flashcard-exit.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\96-alltcas-flashcard-exit.png",
+      "sha256": "e3b5b6309267c67f1dbd43496d4a6794c04278edee3152100b08d49f941e39c0",
+      "observation": "แจ้งว่าจะบันทึกก่อนออก; ไม่ได้ตรวจ sync ข้ามอุปกรณ์",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A12",
+      "file": "91-alltcas-cloze-feedback.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\91-alltcas-cloze-feedback.png",
+      "sha256": "5697dc2ccf0ad47a5ab445b9accc94978d736d4980a003ec44f3af1cac781809",
+      "observation": "จงใจสลับคำสองช่อง; มีเฉลยในบริบทและปุ่มถัดไป",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A13",
+      "file": "92-alltcas-exit.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\92-alltcas-exit.png",
+      "sha256": "a844654f0ed85981bfe4c4fa98ed3f8fdb7023da1f53627f294d74d854f0c9e4",
+      "observation": "แจ้งความคืบหน้าในรอบจะหาย; ออกตามแผนการสุ่มตรวจ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A14",
+      "file": "99-alltcas-quiz-correction.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\99-alltcas-quiz-correction.png",
+      "sha256": "9b5e63891cebc585646adfe870b96defa61d05c8d70d5dec4dc4d3f96b9f855f",
+      "observation": "แตะคำตอบแล้วตรวจทันที; ต้องเลื่อนจอจึงเห็นเฉลยตัวเลือกที่5",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A15",
+      "file": "100-alltcas-quiz-next.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\100-alltcas-quiz-next.png",
+      "sha256": "0339c473c122af375643c0c559bc15721cad4643b11323297e95a05f5a34c72f",
+      "observation": "ตำแหน่งเลื่อนยังอยู่ ทำให้คำถามถัดไปอยู่นอกจอในการทดลองนี้",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A16",
+      "file": "113-alltcas-tgat1-options.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\113-alltcas-tgat1-options.png",
+      "sha256": "1ae5fede031d23617bb31587531d556d2d1cd8d50c56e0fe27e8906ae31eea62",
+      "observation": "เลือกถาม–ตอบและบทสนทนาสั้น ~5ข้อ ได้จริง6ข้อ เพราะโจทย์เป็นกลุ่ม",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A17",
+      "file": "114-alltcas-english-question.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\114-alltcas-english-question.png",
+      "sha256": "0ee5d44821c27b8f3888435e582686176acb1b14c9f83468bd865ec3b4085c02",
+      "observation": "โจทย์และตัวเลือกแยกสองฝั่ง พร้อมพื้นที่ขีดเขียน",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A18",
+      "file": "115-alltcas-english-feedback.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\115-alltcas-english-feedback.png",
+      "sha256": "776e4fc3eb970499ea3a99613dd82106923a1bc83d027408c28000912197c466",
+      "observation": "อธิบายประเภทความผิดของตัวลวง; จงใจตอบผิดหนึ่งข้อ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A19",
+      "file": "116-alltcas-word-help.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\116-alltcas-word-help.png",
+      "sha256": "27aef6794bf60007bd9d27bfa1561c8abbe962ab70cdd26da5305b111e37ddba",
+      "observation": "กดวลีที่ขีดเส้นใต้เพื่อดูความหมาย",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A20",
+      "file": "117-alltcas-sentence-help.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\117-alltcas-sentence-help.png",
+      "sha256": "f88c68f4d87c18037aa90856fe6ba18164b965f54bd7dc57750ab5445cb1930e",
+      "observation": "เปิดคำแปลเสริมขณะอ่านเฉลย",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A21",
+      "file": "123-alltcas-english-dialogue-feedback.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\123-alltcas-english-dialogue-feedback.png",
+      "sha256": "3c6d27a19deb079f12c6657f5b812da2ade0264e1b41a66c52de0cc6fdb10434",
+      "observation": "ตอบสามช่องในกลุ่ม แล้วได้เฉลย3/3พร้อมเหตุผล",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A22",
+      "file": "124-alltcas-english-result.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\124-alltcas-english-result.png",
+      "sha256": "03897a9643f312dd7ab1b0b97efba3c922632f6790b1bde8444ba194cad641b6",
+      "observation": "5/6 หรือ83%; จงใจผิดหนึ่งข้อ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A23",
+      "file": "126-alltcas-mistake-review.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\126-alltcas-mistake-review.png",
+      "sha256": "d888b699ed8f52b9a8c74ef1d64fdbf367326f078f6ed853dd6b47d26f19a9e8",
+      "observation": "เปิดข้อ1ที่ผิดได้จากตัวนำทางหมายเลข",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A24",
+      "file": "129-alltcas-retry-result.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\129-alltcas-retry-result.png",
+      "sha256": "5d0830155ed6cc0b8099b9fa0abfeded3aca32eaa7ec2f7408f7eff7cef37d7d",
+      "observation": "แก้ข้อผิด1ข้อสำเร็จ100%; แจ้งไม่นับเข้าสถิติหลัก",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-A25",
+      "file": "130-alltcas-english-stats.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\130-alltcas-english-stats.png",
+      "sha256": "642186a795b5869a57aff4642e69932b7c4da5d60ede4ceb847fa2b51cfc333b",
+      "observation": "หลักยัง5/6(83%) แยกแก้ตัว1/1; กราฟมีเงื่อนไขจำนวนข้อ",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI152",
+      "file": "152-ai-live-answer.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\152-ai-live-answer.png",
+      "sha256": "4899e41fc6fd5a3a1acef53dc72b219a4abeb3e37a4ef25e3e449b29fcd66a93",
+      "observation": "partial response; no timing claim",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI153",
+      "file": "153-ai-live-complete.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\153-ai-live-complete.png",
+      "sha256": "7e7f787f421e971f6dd817c7b62c3a701ca88fa2a0dab8c8f43fca2cd71cd5d8",
+      "observation": "completed response with missing visible words",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI154",
+      "file": "154-ai-followup.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\154-ai-followup.png",
+      "sha256": "8ffb4647fe3590e9bb1b3fb51ca9f3c8f3f5c030219f87968a4cf8d39d8ef893",
+      "observation": "follow-up question not visible",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI155",
+      "file": "155-ai-plain-question.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\155-ai-plain-question.png",
+      "sha256": "d3ed9c5c1bdda31c68c8722d724f441d25321cb71fd01b9ed70ccf94c81e6bff",
+      "observation": "plain-text request makes question visible",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI156",
+      "file": "156-ai-wrong-answer.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\156-ai-wrong-answer.png",
+      "sha256": "4b87fec867e2e910c08b7c01f5236d4b01013b111f498c70ed0aa8a92855593a",
+      "observation": "intentional lend answer; correction with missing text",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI157",
+      "file": "157-ai-history.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\157-ai-history.png",
+      "sha256": "5e2d5354ac7bc14b6936860984a5f383e6a5bc44fc590b55f71fecb5e6c591f5",
+      "observation": "history explanation; retention not tested",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI160",
+      "file": "160-ai-history-saved.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\160-ai-history-saved.png",
+      "sha256": "14c8654fb3582d9b59bc8a257ca2f21756318cd1512ad0340317310c870dafda",
+      "observation": "archived chat visible after new chat",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-AI161",
+      "file": "161-ai-history-open.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\161-ai-history-open.png",
+      "sha256": "67b48e5d824afe9ecb74bfe7c0251b14639424f4a8c3690ef9d338dde1bf82c2",
+      "observation": "archived conversation read-only",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-SYS164",
+      "file": "164-system-timer.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\164-system-timer.png",
+      "sha256": "50a5b26903bfa8669a3f926d1de33b18189e447eea76f5116053bab26265eecc",
+      "observation": "timer screen; manual timer not started",
+      "evidenceType": "hands-on"
+    },
+    {
+      "id": "E-SYS165",
+      "file": "165-system-stats.png",
+      "originalPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\12\\01a095a8-40ba-7031-817d-406822b5d3aa\\165-system-stats.png",
+      "sha256": "2b6d5c784d092a235aef182139c103922da68f29248d846e8fc635b64c1fee2c",
+      "observation": "study-time statistics gate; interior graph not tested",
+      "evidenceType": "hands-on"
+    }
+  ]
+}

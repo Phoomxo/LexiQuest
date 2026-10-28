@@ -1,0 +1,93 @@
+[
+  {
+    "cause": "Search assumed nonexistent lib/features/today path",
+    "fix": "Used rg --files and resolved lib/features/today_hub",
+    "id": "B02-OPS-01",
+    "status": "closed",
+    "impact": "Read-only discovery, no application changes",
+    "retest": "Actual today_hub paths found; Today/launcher gate PASS"
+  },
+  {
+    "evidence": "G1.1-runs/b28d06ca3bc1-4a0f69069a17-Explicit-Flutter-tests.stderr.log",
+    "status": "closed",
+    "id": "B02-TEST-01",
+    "impact": "Test compilation only; no production defect claim",
+    "fix": "Supply promptMode, responseTimeMs and attemptNumber",
+    "cause": "New bootstrap fixture omitted required recordAnswer parameters",
+    "retest": "G1.1 selected Firebase-down durable journey PASS"
+  },
+  {
+    "id": "B02-OPS-02",
+    "status": "closed",
+    "cause": "Whole-file CRLF normalization changed preexisting mixed-EOL lines; diff check flagged CR whitespace before shell continued to checkpoint commit",
+    "fix": "Reconstructed untouched baseline bytes from accepted Git blob and inserted only new test assertions; no test semantics change",
+    "retest": "Baseline EOL restored; bounded Git diff check PASS"
+  },
+  {
+    "id": "B02-TEST-02",
+    "status": "closed",
+    "cause": "New exposure fixture selected enforced research policy without protocol metadata",
+    "fix": "Use ordinary local legacy rollout, consistent with local fixture",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B01-FORM-01",
+    "status": "closed-local-B02; broader-G3.5-regression-obligation",
+    "expected": "first sampleSize 6, correct 5; repair/exposure separate",
+    "actual": "calendar sampleSize 8 after six first, one repair, one exposure",
+    "cause": "Readers excluded only assessment/recreational, admitted repair/exposure/support",
+    "fixPlan": "Shared versioned first-answer eligibility predicate on captured attemptNumber and evidence class/hint; no durable row rewrite or reward recomputation",
+    "compatibility": "Use stored attempt number rather than guessing missing historical occurrence identities; repeated ack is deduplicated by existing durable evidence id authority",
+    "retest": "G1.3 canonical seven attempts in one session: History first5/6 repair1/1; Progress/Calendar5/6; stored aggregate6/7 and score86 byte-equivalent. G1.2 includes exposure, global ordinals, identity boundaries, durable replay.",
+    "finalFix": "First eligible identity(owner,session,word,promptMode,contentRevision,skillId) selected in captured occurrence order; ordinal is not retry number. SQL weakness consumes same selected IDs."
+  },
+  {
+    "id": "B02-FORM-02",
+    "status": "closed",
+    "cause": "Weakness SQL had independent broad practice filter",
+    "expected": "Weakness denominator6 and error1/6",
+    "actual": "Regression failed with denominator8 after root Progress/Calendar fix",
+    "fix": "Align SQL to first-answer-v1 eligibility; cross-reader assertion prevents drift",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B02-FORM-03",
+    "status": "closed",
+    "expected": "Distinct first items/modes remain counted; repair same item excluded",
+    "actual": "Five progress tests failed after attemptNumber==1 filter",
+    "cause": "Production attemptNumber is session ordinal (pair coordinator and quiz adapters use index+1), not per-item retry count",
+    "fixPlan": "Select first eligible captured identity(owner,session,word,mode,contentRevision,skill) in occurrence order; share selection with weakness SQL through selected IDs; preserve historical rows",
+    "testDisposition": "Distinct mode/word tests retained; seven dates for two repeated words within one session must report two first items while streak remains dedicated authority",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B02-EDIT-01",
+    "status": "closed",
+    "cause": "Mixed-EOL exact-byte replacement missed obsolete Calendar predicate call after selector API change",
+    "fix": "Removed obsolete block using bounded asserted match; inspect all helper call sites before rerun",
+    "impact": "Compilation failure; no runtime pass claimed",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B02-EDIT-02",
+    "status": "closed",
+    "cause": "Text insertion matched time-segment ordering before attempt ordering",
+    "fix": "Context-specific patch moves attemptNumber sort to answer query; inspected full query/diff before retest",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B02-FIXTURE-03",
+    "status": "closed",
+    "cause": "Historical five-of-six profile fixture stored six repeats of one word in one session",
+    "fix": "Seed six distinct item identities while retaining all five-of-six, 79-second, no-write assertions",
+    "retest": "Final affected case passes; see G1.2-verification and retained failure logs"
+  },
+  {
+    "id": "B02-HISTORY-01",
+    "status": "closed",
+    "cause": "Generic history exposed stored aggregate only, no first/repair display axes",
+    "red": "New cross-reader test failed compiling missing firstAnswers/repairAnswers API",
+    "fix": "Add display-only getters using canonical shared first selector; preserve legacy aggregate/score and all source rows",
+    "retest": "G1.3 required targeted gate56 PASS"
+  }
+]

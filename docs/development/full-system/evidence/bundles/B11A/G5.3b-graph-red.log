@@ -1,0 +1,21 @@
+test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset) ... ok
+test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input) ... ok
+test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo) ... ERROR
+test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split) ... ok
+test_validation_rejects_tampering_and_cross_split_owner (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_cross_split_owner) ... ok
+
+======================================================================
+ERROR: test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 23, in test_license_must_belong_to_requested_photo
+    self.assertEqual(api.owner_license(graph, url), obj['license'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\camera_web_dataset.py", line 59, in owner_license
+    raise ValueError('No matching photo-specific CC BY 2.0 evidence')
+ValueError: No matching photo-specific CC BY 2.0 evidence
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.165s
+
+FAILED (errors=1)

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "continuationId": "B18-G83-F03-C02",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T15:38:13.546446+00:00",
+  "threadId": "01a0ba3e-3001-7231-a151-e32a068751d8",
+  "inputCheckpointSha": "07c324affac0d4280686c354eeb1af92062424ce",
+  "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "findings": [
+    {
+      "findingId": "B18-REV03-02",
+      "status": "closed-regression-verified",
+      "redRun": "c02-pair-red",
+      "greenRun": "c02-final",
+      "outcome": "Migrated owner Pair recovery expires feedback under runtime custodian, exposes result, preserves historical plan/start event actor and payload; owner/dispose stale callback tests pass."
+    },
+    {
+      "findingId": "B18-REV03-06",
+      "status": "closed-regression-verified",
+      "redRun": "c02-skip-copy-red",
+      "greenRun": "c02-final",
+      "outcome": "Thai/English visible and semantics skip copy no longer promises saved review. Real Drift original skip leaves answers/SRS/saved/review empty; repair/retry cases preserved."
+    },
+    {
+      "findingId": "B18-REV03-07",
+      "status": "closed-regression-verified",
+      "redRun": "c02-quiz-red",
+      "greenRun": "c02-final",
+      "outcome": "Real Drift committed answer and existing event rows survive abandon; exit dialog truthfully explains retention and unfinished session termination."
+    },
+    {
+      "findingId": "B18-REV04-01",
+      "status": "closed-regression-verified",
+      "redRun": "c02-meaning-red",
+      "greenRun": "c02-final",
+      "outcome": "Canonical create/import at256,257,500 ASCII and500 Thai/UTF16 supplementary boundaries remain available to saved review and learning with exact meanings/identity/checksum.501 ASCII/502 UTF16 rejected by authoring. Only meaning bounds expanded downstream; identity validation unchanged."
+    }
+  ],
+  "closedInThisCheckpoint": 4,
+  "closedF03": 10,
+  "remainingF03": [
+    "B18-REV03-05",
+    "B18-REV03-08",
+    "B18-REV03-09",
+    "B18-REV03-11",
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04",
+    "B18-REV06-06"
+  ],
+  "totalClosed": 29,
+  "remainingOpenFindings": 40,
+  "dartTestsPassed": 184,
+  "testTargetCount": 10,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 10,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/adventure/domain/adventure_reaction.dart",
+      "sha256": "42bd319174f27b656969b801eeeafc639ddddf6ffebcab4c95bdd4c02f2d5404"
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "sha256": "d5b658173b109893e7b2a3ed90901b9e6d74fafeb2f1f2babcf846d584009a53"
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "sha256": "a62b76626b3b8e94ded638dce6f6a5a1deb260299c3a9714fba09143ce00858b"
+    },
+    {
+      "path": "lib/features/review/domain/review_queue_item.dart",
+      "sha256": "873b48a5f05fce00f189a4fe13994655a0c6c6465ddb4271d4f3a03a07372844"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "13069687f5ea24b08678136971abeac66937e62c9d39522fa9a0c02ddf3043c6"
+    },
+    {
+      "path": "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+      "sha256": "5ebdd11b627bdc6c006af00069bfec1de3936d00687d8a16a14e529faf68926a"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_companion_panel_test.dart",
+      "sha256": "e61c06be09f00753f39c9ca21fbbf2483ac58630e173ff789c4fdd3e755144e4"
+    },
+    {
+      "path": "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+      "sha256": "db1cc086fa07ae59073e32339091f440e4846bb76909d73abf2cafc9f163df8b"
+    },
+    {
+      "path": "test/features/vocabulary/vocabulary_meaning_boundary_test.dart",
+      "sha256": "33fcf4782b748d21d2e635389614035cccbb020572a5b199ccb8c40567be12e1"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "d0f222898946aeed5211b5ba92d2e7e79626091334930ebfd805317c8e57eb61"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03\\C02",
+  "evidenceManifestSha256": "d26ea0bb7618391e7ce582c7d4b35d34e8de57bf25a4c59f372d935d3b21dc0a",
+  "review": "review.json; local review only",
+  "limitations": [
+    "F03 only10/19 outcomes closed;9 remain. No F04 acceptance.",
+    "Native/device/provider/installed accessibility/full release not run.",
+    "Final test source inputs unchanged during each run. New test LF-only correction afterwards proven separately.",
+    "Whole-app analyzer historical issues not rechecked."
+  ],
+  "F03Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}
