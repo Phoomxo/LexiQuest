@@ -79,6 +79,65 @@ void main() {
     );
 
     test(
+      'participant receipt carries the final operation without changing snapshot facts',
+      () async {
+        expect(await fixture.importCurrent(), isTrue);
+        final before = await fixture.participant();
+        expect(before, isNotNull);
+        final beforePermit = await fixture.stored();
+        final preflightPermit = fixture.operations.current;
+        final finalPermit = participationOperation(revision: 2);
+        final finalTime = participationStart.add(
+          const Duration(microseconds: 73),
+        );
+        fixture.operations.calls = 0;
+        fixture.states.calls = 0;
+        fixture.states.onRead = (call) async {
+          if (call == 1) {
+            fixture.operations.current = finalPermit;
+            fixture.clock.now = participationStart.add(
+              const Duration(microseconds: 13),
+            );
+          } else if (call == 2) {
+            fixture.states.revision = 2;
+            fixture.clock.now = finalTime;
+          }
+        };
+
+        final result = await fixture.repository.requireParticipantWithReceipt(
+          ownerId: 'owner-a',
+          permitId: fixture.current.id,
+        );
+
+        expect(result, isNotNull);
+        expect(result!.operation.permit, same(finalPermit));
+        expect(result.operation.permit, isNot(same(preflightPermit)));
+        expect(result.operation.verifiedAtUtc, finalTime);
+        expect(fixture.operations.calls, 2);
+        expect(fixture.states.calls, 2);
+        final snapshot = result.snapshot;
+        expect(
+          snapshot.permit.canonicalPayload(),
+          before!.permit.canonicalPayload(),
+        );
+        expect(snapshot.permit.payloadSha256, before.permit.payloadSha256);
+        expect(snapshot.permit.signature, before.permit.signature);
+        expect(snapshot.assignment, before.assignment);
+        expect(snapshot.consent.ownerId, before.consent.ownerId);
+        expect(snapshot.consent.version, before.consent.version);
+        expect(snapshot.consent.accepted, before.consent.accepted);
+        expect(snapshot.consent.decidedAtUtc, before.consent.decidedAtUtc);
+        expect(snapshot.consent.withdrawnAtUtc, before.consent.withdrawnAtUtc);
+        expect(await fixture.stored(), beforePermit);
+        await expectParticipationArtifacts(
+          fixture.database,
+          assignments: 1,
+          permits: 1,
+        );
+      },
+    );
+
+    test(
       'exact replay preserves signed revisions and the original assignment',
       () async {
         expect(await fixture.importCurrent(), isTrue);
@@ -756,51 +815,60 @@ void main() {
     },
   );
 
-  test(
-    'Ed collect expiry after post-authorization cache read denies participant context',
-    () async {
-      final observer = AfterAuthorizedParticipationRead();
-      final fixture = await ParticipationFixture.open(
-        database: AppDatabase(NativeDatabase.memory().interceptWith(observer)),
-      );
-      addTearDown(fixture.database.close);
-      final edExpiry = participationStart.add(const Duration(seconds: 1));
-      fixture.operations.current = participationOperation(
-        expiresAtUtc: edExpiry,
-      );
-      expect(await fixture.importCurrent(), isTrue);
-      final beforePermit = await fixture.stored();
-      final beforeAssignment =
+  for (final withReceipt in [false, true]) {
+    test(
+      'Ed collect expiry after post-authorization cache read denies ${withReceipt ? 'receipt' : 'facts'} context',
+      () async {
+        final observer = AfterAuthorizedParticipationRead();
+        final fixture = await ParticipationFixture.open(
+          database: AppDatabase(
+            NativeDatabase.memory().interceptWith(observer),
+          ),
+        );
+        addTearDown(fixture.database.close);
+        final edExpiry = participationStart.add(const Duration(seconds: 1));
+        fixture.operations.current = participationOperation(
+          expiresAtUtc: edExpiry,
+        );
+        expect(await fixture.importCurrent(), isTrue);
+        final beforePermit = await fixture.stored();
+        final beforeAssignment =
+            (await fixture.database
+                    .customSelect('SELECT * FROM experiment_assignments')
+                    .getSingle())
+                .data;
+        observer.afterRead = () => fixture.clock.now = edExpiry;
+        fixture.states.onRead = (_) async {
+          observer.armed = true;
+        };
+
+        final context = withReceipt
+            ? await fixture.repository.requireParticipantWithReceipt(
+                ownerId: 'owner-a',
+                permitId: fixture.current.id,
+              )
+            : await fixture.participant();
+
+        expect(observer.didFire, isTrue);
+        expect(fixture.clock.now, edExpiry);
+        expect(fixture.current.expiresAtUtc.isAfter(fixture.clock.now), isTrue);
+        expect(await fixture.stored(), beforePermit);
+        expect(
           (await fixture.database
                   .customSelect('SELECT * FROM experiment_assignments')
                   .getSingle())
-              .data;
-      observer.afterRead = () => fixture.clock.now = edExpiry;
-      fixture.states.onRead = (_) async {
-        observer.armed = true;
-      };
-
-      final context = await fixture.participant();
-
-      expect(observer.didFire, isTrue);
-      expect(fixture.clock.now, edExpiry);
-      expect(fixture.current.expiresAtUtc.isAfter(fixture.clock.now), isTrue);
-      expect(await fixture.stored(), beforePermit);
-      expect(
-        (await fixture.database
-                .customSelect('SELECT * FROM experiment_assignments')
-                .getSingle())
-            .data,
-        beforeAssignment,
-      );
-      await expectParticipationArtifacts(
-        fixture.database,
-        assignments: 1,
-        permits: 1,
-      );
-      expect(context, isNull);
-    },
-  );
+              .data,
+          beforeAssignment,
+        );
+        await expectParticipationArtifacts(
+          fixture.database,
+          assignments: 1,
+          permits: 1,
+        );
+        expect(context, isNull);
+      },
+    );
+  }
 
   test(
     'a post-write owner change cannot leave an imported permit or assignment',

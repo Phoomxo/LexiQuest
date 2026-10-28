@@ -12,6 +12,13 @@ import '../domain/research_participation_permit.dart';
 import '../domain/research_permit_document.dart';
 import 'drift_experiment_assignment_repository.dart';
 
+final class AuthorizedResearchParticipant {
+  const AuthorizedResearchParticipant._(this.snapshot, this.operation);
+
+  final ResearchParticipantSnapshot snapshot;
+  final AuthorizedResearchOperation operation;
+}
+
 /// Stores issuer-signed documents. Cached rows never establish current issuer
 /// state; eligibility is checked through the independent R1 authorities.
 final class DriftResearchParticipationRepository
@@ -88,6 +95,14 @@ final class DriftResearchParticipationRepository
   Future<ResearchParticipantSnapshot?> requireParticipant({
     required String ownerId,
     required String permitId,
+  }) async => (await requireParticipantWithReceipt(
+    ownerId: ownerId,
+    permitId: permitId,
+  ))?.snapshot;
+
+  Future<AuthorizedResearchParticipant?> requireParticipantWithReceipt({
+    required String ownerId,
+    required String permitId,
   }) async {
     try {
       requireResearchCode(ownerId);
@@ -106,7 +121,8 @@ final class DriftResearchParticipationRepository
           if (admission == null || admission.assignment != existingAssignment) {
             _deny();
           }
-          return _snapshot(permit, admission);
+          final snapshot = await _snapshot(permit, admission);
+          return AuthorizedResearchParticipant._(snapshot, admission.operation);
         },
       );
     } on Object {
