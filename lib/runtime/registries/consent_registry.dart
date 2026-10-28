@@ -30,10 +30,31 @@ enum ConsentState {
   unknown,
 }
 
+final class ConsentSnapshot {
+  const ConsentSnapshot({
+    required this.purpose,
+    required this.ownerId,
+    required this.consentVersion,
+    required this.state,
+    required this.decisionUtc,
+    required this.withdrawalUtc,
+  });
+
+  final ConsentPurpose purpose;
+  final String ownerId;
+  final int consentVersion;
+  final ConsentState state;
+  final DateTime? decisionUtc;
+  final DateTime? withdrawalUtc;
+}
+
 /// Read-only contract for querying learner consent.
 abstract interface class ConsentRegistry {
-  /// Returns the [ConsentState] for [purpose] and [ownerId].
-  ConsentState check(ConsentPurpose purpose, String ownerId);
+  Future<ConsentSnapshot> snapshot({
+    required ConsentPurpose purpose,
+    required String ownerId,
+    required int consentVersion,
+  });
 }
 
 /// No-op [ConsentRegistry] that reports [ConsentState.unknown] for every query.
@@ -44,6 +65,16 @@ final class NoOpConsentRegistry implements ConsentRegistry {
   const NoOpConsentRegistry();
 
   @override
-  ConsentState check(ConsentPurpose purpose, String ownerId) =>
-      ConsentState.unknown;
+  Future<ConsentSnapshot> snapshot({
+    required ConsentPurpose purpose,
+    required String ownerId,
+    required int consentVersion,
+  }) async => ConsentSnapshot(
+    purpose: purpose,
+    ownerId: ownerId,
+    consentVersion: consentVersion,
+    state: ConsentState.unknown,
+    decisionUtc: null,
+    withdrawalUtc: null,
+  );
 }

@@ -82,6 +82,7 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'registries/drift_consent_registry.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -714,6 +715,7 @@ final class AppBootstrap {
       account: account,
       accountDeletion: accountDeletionComposition?.useCases,
       researchConsent: researchAvailability.isEnabled ? researchConsent : null,
+      consents: DriftConsentRegistry(researchConsent.repository),
       researchAvailability: researchAvailability,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,

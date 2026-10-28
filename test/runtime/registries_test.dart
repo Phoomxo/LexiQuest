@@ -27,16 +27,20 @@ void main() {
       );
     });
 
-    test('disabling a feature does not affect consent state', () {
+    test('disabling a feature does not affect consent state', () async {
       final features = MutableFeatureRegistry();
       features.disable(Feature.export);
       expect(features.isVisible(Feature.export), isFalse);
 
       const consents = NoOpConsentRegistry();
-      final state = consents.check(ConsentPurpose.personalDataExport, 'user1');
+      final snapshot = await consents.snapshot(
+        purpose: ConsentPurpose.personalDataExport,
+        ownerId: 'user1',
+        consentVersion: 1,
+      );
 
       // Consent state is unknown regardless of feature state.
-      expect(state, ConsentState.unknown);
+      expect(snapshot.state, ConsentState.unknown);
     });
 
     test('entitlement registry denies all by default', () {
@@ -84,7 +88,7 @@ void main() {
       }
     });
 
-    test('four registries are independent — no shared state', () {
+    test('four registries are independent — no shared state', () async {
       final features = MutableFeatureRegistry();
       features.enable(Feature.aiTutor);
 
@@ -96,7 +100,11 @@ void main() {
       expect(features.isVisible(Feature.aiTutor), isTrue);
       expect(experiments.getAssignment('ai_exp', 'u1').isUnassigned, isTrue);
       expect(
-        consents.check(ConsentPurpose.aiProviderDataSharing, 'u1'),
+        (await consents.snapshot(
+          purpose: ConsentPurpose.aiProviderDataSharing,
+          ownerId: 'u1',
+          consentVersion: 1,
+        )).state,
         ConsentState.unknown,
       );
       expect(

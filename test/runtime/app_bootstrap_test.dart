@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/account_deletion/application/account_deletion_use_cases.dart';
@@ -669,6 +670,13 @@ void main() {
         addTearDown(dependencies.dispose);
         final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
         await dependencies.researchConsent!.accept();
+        final consent = await dependencies.consents.snapshot(
+          purpose: ConsentPurpose.researchDataUpload,
+          ownerId: owner.id,
+          consentVersion: 1,
+        );
+        expect(consent.state, ConsentState.granted);
+        expect(consent.ownerId, owner.id);
 
         Object? failure;
         try {
