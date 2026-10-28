@@ -6,45 +6,9 @@
 /// migrated.
 library;
 
-/// Feature capabilities exposed to learners in the field.
-///
-/// Mirrors [FieldFeature] during the transition period; values are kept in
-/// sync until [FieldFeatureRegistry] is retired.
-enum Feature {
-  vocabulary,
-  quiz,
-  srs,
-  reading,
-  mastery,
-  weakness,
-  ghostDuel,
-  achievements,
-  shop,
-  objectScanner,
-  speechPractice,
-  aiTutor,
-  export,
+import 'feature.dart';
 
-  /// V2 shadow mode — runs the V2 reward pipeline in dry-run mode alongside
-  /// production.  Disabled by default; enable in debug builds only.
-  shadowRewardV2,
-
-  /// V2 Quest persistence — persists [QuestInstance] to Drift (schema v8).
-  /// Default: hidden.  Enable internally to test before public rollout.
-  questV2,
-}
-
-/// Availability state of a [Feature].
-enum FeatureState {
-  /// Fully available to the learner.
-  enabled,
-
-  /// Available with restrictions (e.g. quota, degraded quality).
-  limited,
-
-  /// Not available and not shown in the UI.
-  hidden,
-}
+export 'feature.dart';
 
 /// Read-only contract for querying [Feature] availability.
 abstract interface class FeatureRegistry {
@@ -52,7 +16,7 @@ abstract interface class FeatureRegistry {
   FeatureState stateOf(Feature feature);
 
   /// Convenience: returns `true` when the feature should be shown in the UI
-  /// (i.e. its state is not [FeatureState.hidden]).
+  /// (i.e. its state is [FeatureState.enabled] or [FeatureState.limited]).
   bool isVisible(Feature feature);
 }
 
@@ -83,10 +47,13 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.speechPractice: FeatureState.limited,
         Feature.aiTutor: FeatureState.limited,
         Feature.export: FeatureState.enabled,
-        // V2 features hidden by default in production builds.
-        // shadowRewardV2 and questV2 are opt-in for internal testing.
-        // Phase 1: questV2 promoted to limited (internal beta).
+        Feature.shadowRewardV2: FeatureState.hidden,
         Feature.questV2: FeatureState.limited,
+        Feature.studyPlanning: FeatureState.hidden,
+        Feature.researchAssessment: FeatureState.hidden,
+        Feature.dailyContinuity: FeatureState.hidden,
+        Feature.offlineContent: FeatureState.hidden,
+        Feature.adventureMotivation: FeatureState.hidden,
       };
 
   const BuildFeatureRegistry.allEnabled()
@@ -106,16 +73,26 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.export: FeatureState.enabled,
         Feature.shadowRewardV2: FeatureState.enabled,
         Feature.questV2: FeatureState.enabled,
+        Feature.studyPlanning: FeatureState.enabled,
+        Feature.researchAssessment: FeatureState.enabled,
+        Feature.dailyContinuity: FeatureState.enabled,
+        Feature.offlineContent: FeatureState.enabled,
+        Feature.adventureMotivation: FeatureState.enabled,
       };
 
   final Map<Feature, FeatureState> _states;
+
+  Iterable<Feature> get configuredFeatures => _states.keys;
 
   @override
   FeatureState stateOf(Feature feature) =>
       _states[feature] ?? FeatureState.hidden;
 
   @override
-  bool isVisible(Feature feature) => stateOf(feature) != FeatureState.hidden;
+  bool isVisible(Feature feature) {
+    final state = stateOf(feature);
+    return state == FeatureState.enabled || state == FeatureState.limited;
+  }
 }
 
 /// Mutable [FeatureRegistry] for tests only.
@@ -142,5 +119,8 @@ final class MutableFeatureRegistry implements FeatureRegistry {
       _overrides[feature] ?? FeatureState.hidden;
 
   @override
-  bool isVisible(Feature feature) => stateOf(feature) != FeatureState.hidden;
+  bool isVisible(Feature feature) {
+    final state = stateOf(feature);
+    return state == FeatureState.enabled || state == FeatureState.limited;
+  }
 }
