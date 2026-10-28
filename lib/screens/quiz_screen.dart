@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
@@ -45,7 +47,9 @@ class _QuizScreenState extends State<QuizScreen> {
   int? _responseTimeMs;
   bool _practicingMistakes = false;
   bool _hintVisible = false;
+  bool _hintEverUsed = false;
   bool _revealed = false;
+  EvidenceContext? _pendingEvidence;
 
   @override
   void didChangeDependencies() {
@@ -161,7 +165,10 @@ class _QuizScreenState extends State<QuizScreen> {
                 TextButton(
                   onPressed: _saving || _attemptId != null
                       ? null
-                      : () => setState(() => _hintVisible = !_hintVisible),
+                      : () => setState(() {
+                          _hintVisible = !_hintVisible;
+                          _hintEverUsed = true;
+                        }),
                   style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
                   child: Text(_hintVisible ? 'ซ่อนคำใบ้' : 'ดูคำใบ้'),
                 ),
@@ -292,6 +299,15 @@ class _QuizScreenState extends State<QuizScreen> {
         .difference(_questionStartedAt ?? DateTime.now())
         .inMilliseconds;
     _attemptId ??= 'attempt:${const Uuid().v4()}';
+    _pendingEvidence ??= captureCurrentActivityEvidence(
+      promptMode: 'meaningChoice',
+      contentRevision: question.word.contentRevision,
+      hintLevel: _revealed
+          ? 2
+          : _hintEverUsed
+          ? 1
+          : 0,
+    );
     setState(() {
       _saving = true;
     });
@@ -305,6 +321,7 @@ class _QuizScreenState extends State<QuizScreen> {
         attemptNumber: _index + 1,
         attemptId: _attemptId,
         occurredAtUtc: _submittedAtUtc,
+        evidenceContext: _pendingEvidence,
       );
       if (!mounted) return;
       setState(() {
@@ -340,6 +357,8 @@ class _QuizScreenState extends State<QuizScreen> {
         _selected = null;
         _revealed = false;
         _hintVisible = false;
+        _hintEverUsed = false;
+        _pendingEvidence = null;
         _attemptId = null;
         _submittedAtUtc = null;
         _responseTimeMs = null;

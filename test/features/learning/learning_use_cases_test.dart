@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -118,6 +121,38 @@ void main() {
       expect(
         await database.select(database.answerAttempts).get(),
         hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'answer capture keeps the revision shown before a vocabulary edit',
+    () async {
+      final quiz = await useCases.startQuiz(limit: 1);
+      final word = quiz.questions.single.word;
+      final context = captureCurrentActivityEvidence(
+        promptMode: 'meaningChoice',
+        contentRevision: word.contentRevision,
+      );
+      await database.customStatement(
+        "UPDATE vocabulary_words SET local_revision = 2 WHERE id = '${word.id}'",
+      );
+      await useCases.recordAnswer(
+        sessionId: quiz.id,
+        wordId: word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        evidenceContext: context,
+      );
+
+      final answer = await database.select(database.answerAttempts).getSingle();
+      expect(word.contentRevision, 'local-vocabulary-v1:1');
+      expect(jsonDecode(answer.evidenceContextJson), context.toJson());
+      expect(
+        (await useCases.prepareReading()).first.contentRevision,
+        'local-vocabulary-v1:2',
       );
     },
   );

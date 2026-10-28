@@ -308,6 +308,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         learning: learning,
         associativeLearning: dependencies?.associativeLearning,
         targetWordIds: {for (final word in words) word.spelling: word.id},
+        targetWordContentRevisions: {
+          for (final word in words)
+            if (word.contentRevision != null)
+              word.spelling: word.contentRevision!,
+        },
         ownerId: owner.id,
       ),
     );

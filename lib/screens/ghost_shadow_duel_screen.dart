@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
@@ -178,6 +179,10 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
       attemptNumber: _index + 1,
       occurredAtUtc: DateTime.now().toUtc(),
       providerProvenance: 'local:ghost-duel:v1',
+      evidenceContext: captureCurrentActivityEvidence(
+        promptMode: 'ghostSpelling',
+        contentRevision: question.word.contentRevision,
+      ),
     );
     final responseMs = command.responseTimeMs!;
     final correct = command.isCorrect;
@@ -194,6 +199,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
         providerProvenance: command.providerProvenance,
         attemptId: command.id,
         occurredAtUtc: command.occurredAtUtc,
+        evidenceContext: command.evidenceContext,
       );
       if (!await _ownerCurrent()) return;
       final turn = GhostShadowDuelService.evaluateTurn(

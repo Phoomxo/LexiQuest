@@ -1,9 +1,79 @@
+import 'dart:convert';
+
+import 'evidence_context.dart';
+
 abstract final class LearningEvidenceContract {
   static const int maxIdentifierLength = 256;
   static const int maxPromptModeLength = 60;
   static const int maxProviderProvenanceLength = 120;
   static const int maxResponseTimeMs = 2147483647;
   static const int maxAttemptNumber = 1000000;
+
+  // Frozen archived v13 sentinel is reused by the current-lineage v11 migration.
+  static const String frozenV13LegacyEvidenceContextJson =
+      '{"schemaVersion":1,"evidenceClass":"independentRecall",'
+      '"skillId":"legacy-unspecified","hintLevel":0,'
+      '"policyVersion":"legacy-v1","contentRevision":"legacy-unknown",'
+      '"featureContractRevision":"legacy-unversioned",'
+      '"featureContractHash":"0000000000000000000000000000000000000000000000000000000000000000",'
+      '"classificationSource":"legacyInferred","rolloutMode":"legacy",'
+      '"protocolId":null,"protocolVersion":null,'
+      '"experimentId":null,"experimentVersion":null,'
+      '"assignmentId":null,"cohort":null,"researchConsentVersion":null,'
+      '"instrumentId":null,"instrumentVersion":null,'
+      '"formId":null,"formVersion":null,'
+      '"assessmentItemId":null,"assessmentResponseCode":null,'
+      '"scoringRuleVersion":null,"engagementAllowed":true}';
+
+  static final EvidenceContext _legacyEvidence = EvidenceContext.fromJson(
+    jsonDecode(frozenV13LegacyEvidenceContextJson) as Map<String, dynamic>,
+  );
+
+  static EvidenceContext frozenV13LegacyEvidenceContext() => _legacyEvidence;
+
+  static bool isOrdinaryEvidence(EvidenceContext context) {
+    context.validate();
+    return context.rolloutMode == EvidencePolicyRolloutMode.legacy &&
+        (context.classificationSource ==
+                EvidenceClassificationSource.declared ||
+            jsonEncode(context.toJson()) ==
+                frozenV13LegacyEvidenceContextJson) &&
+        context.evidenceClass != EvidenceClass.assessment &&
+        <Object?>[
+          context.protocolId,
+          context.protocolVersion,
+          context.experimentId,
+          context.experimentVersion,
+          context.assignmentId,
+          context.cohort,
+          context.researchConsentVersion,
+          context.instrumentId,
+          context.instrumentVersion,
+          context.formId,
+          context.formVersion,
+          context.assessmentItemId,
+          context.assessmentResponseCode,
+          context.scoringRuleVersion,
+        ].every((value) => value == null);
+  }
+
+  static bool validEvidenceMetadata({
+    required String evidenceClass,
+    required String evidenceContextJson,
+  }) {
+    if (evidenceContextJson.length > 16384) return false;
+    try {
+      final decoded = jsonDecode(evidenceContextJson);
+      if (decoded is! Map<String, dynamic>) return false;
+      final context = EvidenceContext.fromJson(decoded);
+      return context.evidenceClass.name == evidenceClass &&
+          isOrdinaryEvidence(context);
+    } on FormatException {
+      return false;
+    } on ArgumentError {
+      return false;
+    }
+  }
 
   static bool validText(String value, {required int maxLength}) {
     final length = value.runes.length;
@@ -23,6 +93,8 @@ abstract final class LearningEvidenceContract {
     required int attemptNumber,
     required int occurredAtUtcMs,
     required String? providerProvenance,
+    String evidenceClass = 'independentRecall',
+    String evidenceContextJson = frozenV13LegacyEvidenceContextJson,
   }) {
     return validIdentifier(id) &&
         validIdentifier(ownerId) &&
@@ -35,7 +107,11 @@ abstract final class LearningEvidenceContract {
         attemptNumber <= maxAttemptNumber &&
         occurredAtUtcMs >= 0 &&
         (providerProvenance == null ||
-            (providerProvenance.runes.length <= maxProviderProvenanceLength));
+            (providerProvenance.runes.length <= maxProviderProvenanceLength)) &&
+        validEvidenceMetadata(
+          evidenceClass: evidenceClass,
+          evidenceContextJson: evidenceContextJson,
+        );
   }
 
   static bool validReading({

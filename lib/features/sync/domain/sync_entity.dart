@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import 'sync_failure.dart';
 
 const int currentSyncPayloadVersion = 1;
@@ -20,6 +22,94 @@ enum SyncCollection {
   /// Pull semantics: insertOrIgnore (once unlocked, never revoked).
   /// Phase 0 Week 12-13.
   achievementUnlocks,
+}
+
+bool supportsSyncPayloadVersion(SyncCollection collection, int version) =>
+    version == currentSyncPayloadVersion ||
+    (collection == SyncCollection.attempts && version == 2);
+
+abstract final class AnswerAttemptSyncPayloadContract {
+  static const _v1Keys = <String>{
+    'sessionId',
+    'wordId',
+    'promptMode',
+    'isCorrect',
+    'responseTimeMs',
+    'attemptNumber',
+    'occurredAtUtcMs',
+    'providerProvenance',
+  };
+  static const _v2Keys = <String>{
+    ..._v1Keys,
+    'evidenceClass',
+    'evidenceContext',
+  };
+
+  static EvidenceContext requireEvidenceContext({
+    required int payloadVersion,
+    required Map<String, Object?> payload,
+  }) {
+    try {
+      final keys = switch (payloadVersion) {
+        1 => _v1Keys,
+        2 => _v2Keys,
+        _ => throw const UnsupportedSyncSchemaFailure(),
+      };
+      if (payload.length != keys.length || !payload.keys.every(keys.contains)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final responseTimeMs = payload['responseTimeMs'];
+      final provenance = payload['providerProvenance'];
+      final sessionId = payload['sessionId'];
+      final wordId = payload['wordId'];
+      final promptMode = payload['promptMode'];
+      final attemptNumber = payload['attemptNumber'];
+      final occurredAtUtcMs = payload['occurredAtUtcMs'];
+      if (sessionId is! String ||
+          !LearningEvidenceContract.validIdentifier(sessionId) ||
+          wordId is! String ||
+          !LearningEvidenceContract.validIdentifier(wordId) ||
+          promptMode is! String ||
+          !LearningEvidenceContract.validText(
+            promptMode,
+            maxLength: LearningEvidenceContract.maxPromptModeLength,
+          ) ||
+          payload['isCorrect'] is! bool ||
+          (responseTimeMs != null &&
+              (responseTimeMs is! int ||
+                  responseTimeMs < 0 ||
+                  responseTimeMs >
+                      LearningEvidenceContract.maxResponseTimeMs)) ||
+          attemptNumber is! int ||
+          attemptNumber <= 0 ||
+          attemptNumber > LearningEvidenceContract.maxAttemptNumber ||
+          occurredAtUtcMs is! int ||
+          occurredAtUtcMs < 0 ||
+          (provenance != null &&
+              (provenance is! String ||
+                  provenance.runes.length >
+                      LearningEvidenceContract.maxProviderProvenanceLength))) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final context = payloadVersion == 1
+          ? LearningEvidenceContract.frozenV13LegacyEvidenceContext()
+          : EvidenceContext.fromJson(
+              (payload['evidenceContext'] as Map).cast<String, Object?>(),
+            );
+      if ((payloadVersion == 2 &&
+              (context.classificationSource !=
+                      EvidenceClassificationSource.declared ||
+                  payload['evidenceClass'] != context.evidenceClass.name)) ||
+          !LearningEvidenceContract.isOrdinaryEvidence(context)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return context;
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -109,7 +199,7 @@ final class PushMutation {
        firebaseUid = _requiredId(firebaseUid, 'firebaseUid'),
        entityId = _requiredId(entityId, 'entityId'),
        payload = Map<String, Object?>.unmodifiable(payload) {
-    _requirePayloadVersion(payloadVersion);
+    _requirePayloadVersion(payloadVersion, collection);
     _requireRevision(baseRevision, 'baseRevision', allowZero: true);
     _requireRevision(localRevision, 'localRevision');
     if (localRevision <= baseRevision) {
@@ -147,7 +237,7 @@ final class SyncEntity {
     required Map<String, Object?> payload,
   }) : entityId = _requiredId(entityId, 'entityId'),
        payload = Map<String, Object?>.unmodifiable(payload) {
-    _requirePayloadVersion(payloadVersion);
+    _requirePayloadVersion(payloadVersion, collection);
     _requireRevision(revision, 'revision');
     _requireUtc(clientUpdatedAtUtc, 'clientUpdatedAtUtc');
     _requireUtc(serverUpdatedAtUtc, 'serverUpdatedAtUtc');
@@ -164,8 +254,8 @@ final class SyncEntity {
   final Map<String, Object?> payload;
 }
 
-void _requirePayloadVersion(int value) {
-  if (value != currentSyncPayloadVersion) {
+void _requirePayloadVersion(int value, SyncCollection collection) {
+  if (!supportsSyncPayloadVersion(collection, value)) {
     throw const UnsupportedSyncSchemaFailure();
   }
 }

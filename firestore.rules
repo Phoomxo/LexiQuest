@@ -46,13 +46,13 @@ service cloud.firestore {
         );
     }
 
-    function fieldEntityEnvelopeOk(entityId) {
+    function fieldEntityEnvelopeOk(entityId, schemaVersions) {
       return request.resource.data is map
         && request.resource.data.keys().hasOnly([
              'schemaVersion', 'entityId', 'payload', 'revision', 'isDeleted',
              'clientUpdatedAtUtcMs', 'serverUpdatedAt', 'lastOperationId'
            ])
-        && request.resource.data.schemaVersion == 1
+        && request.resource.data.schemaVersion in schemaVersions
         && request.resource.data.entityId == entityId
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -136,13 +136,75 @@ service cloud.firestore {
       );
     }
 
+    function fieldEvidenceIdentifierOk(value) {
+      return value is string && value.size() > 0 && value.size() <= 256
+        && value.matches('^\\S([\\s\\S]*\\S)?$');
+    }
+
+    function fieldEvidenceContractOk(context) {
+      return (context.featureContractRevision == '1.0.0'
+              && context.featureContractHash == 'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0')
+        || (context.featureContractRevision == '1.1.0'
+              && context.featureContractHash == '40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27')
+        || (context.featureContractRevision == '1.2.0'
+              && context.featureContractHash == 'c6a772993afa6cc2d78f3eb11687d615192ef6ff52581fa882826180f90afee7')
+        || (context.featureContractRevision == '1.3.0'
+              && context.featureContractHash == '41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4');
+    }
+
+    function fieldOrdinaryEvidenceOk(context) {
+      return context is map
+        && context.keys().hasOnly([
+          'schemaVersion', 'evidenceClass', 'skillId', 'hintLevel',
+          'policyVersion', 'contentRevision', 'featureContractRevision',
+          'featureContractHash', 'classificationSource', 'rolloutMode',
+          'protocolId', 'protocolVersion', 'experimentId', 'experimentVersion',
+          'assignmentId', 'cohort', 'researchConsentVersion', 'instrumentId',
+          'instrumentVersion', 'formId', 'formVersion', 'assessmentItemId',
+          'assessmentResponseCode', 'scoringRuleVersion', 'engagementAllowed'
+        ])
+        && context.keys().size() == 25
+        && context.schemaVersion is int && context.schemaVersion == 1
+        && context.evidenceClass in [
+          'independentRecall', 'recognition', 'guidedPractice',
+          'pronunciation', 'exposure', 'recreational'
+        ]
+        && fieldEvidenceIdentifierOk(context.skillId)
+        && fieldEvidenceIdentifierOk(context.contentRevision)
+        && context.hintLevel is int && context.hintLevel >= 0
+        && context.policyVersion == 'learning-evidence-v1'
+        && context.classificationSource == 'declared'
+        && context.rolloutMode == 'legacy'
+        && context.engagementAllowed is bool
+        && fieldEvidenceContractOk(context)
+        && context.protocolId == null && context.protocolVersion == null
+        && context.experimentId == null && context.experimentVersion == null
+        && context.assignmentId == null && context.cohort == null
+        && context.researchConsentVersion == null
+        && context.instrumentId == null && context.instrumentVersion == null
+        && context.formId == null && context.formVersion == null
+        && context.assessmentItemId == null && context.assessmentResponseCode == null
+        && context.scoringRuleVersion == null;
+    }
+
     function fieldAttemptPayloadOk() {
       let payload = request.resource.data.payload;
-      return payload.keys().hasOnly([
+      let v1Keys = [
           'sessionId', 'wordId', 'promptMode', 'isCorrect',
           'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
           'providerProvenance'
-        ])
+        ];
+      let v2Keys = [
+          'sessionId', 'wordId', 'promptMode', 'isCorrect',
+          'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
+          'providerProvenance', 'evidenceClass', 'evidenceContext'
+        ];
+      return (request.resource.data.schemaVersion == 1
+          ? (payload.keys().hasOnly(v1Keys) && payload.keys().size() == 8)
+          : (request.resource.data.schemaVersion == 2
+             && payload.keys().hasOnly(v2Keys) && payload.keys().size() == 10
+             && fieldOrdinaryEvidenceOk(payload.evidenceContext)
+             && payload.evidenceClass == payload.evidenceContext.evidenceClass))
         && payload.sessionId is string
         && payload.sessionId.size() > 0
         && payload.sessionId.size() <= 256
@@ -316,7 +378,7 @@ service cloud.firestore {
         uid,
         request.resource.data.lastOperationId
       );
-      return operation.schemaVersion == 1
+      return operation.schemaVersion == request.resource.data.schemaVersion
         && operation.operationId == request.resource.data.lastOperationId
         && operation.entityType == entityType
         && operation.entityId == entityId
@@ -337,7 +399,9 @@ service cloud.firestore {
              'operationKind', 'baseRevision', 'resultingRevision',
              'acknowledgedAt'
            ])
-        && request.resource.data.schemaVersion == 1
+        && (request.resource.data.schemaVersion == 1
+            || (request.resource.data.schemaVersion == 2
+                && request.resource.data.entityType == 'attempt'))
         && request.resource.data.operationId == operationId
         && request.resource.data.operationId is string
         && request.resource.data.operationId.size() > 0
@@ -398,6 +462,7 @@ service cloud.firestore {
         && request.resource.data.baseRevision == 0
         && request.resource.data.resultingRevision == 1
         && entity.entityId == entityId
+        && entity.schemaVersion == request.resource.data.schemaVersion
         && entity.lastOperationId == request.resource.data.operationId
         && entity.revision == 1;
     }
@@ -575,7 +640,7 @@ service cloud.firestore {
       match /categories/{categoryId} {
         allow read: if ownsFieldUser(uid);
         allow create, update: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(categoryId)
+          && fieldEntityEnvelopeOk(categoryId, [1])
           && fieldCategoryPayloadOk()
           && fieldOperationLinksEntity(uid, 'category', categoryId);
         allow delete: if false;
@@ -584,7 +649,7 @@ service cloud.firestore {
       match /words/{wordId} {
         allow read: if ownsFieldUser(uid);
         allow create, update: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(wordId)
+          && fieldEntityEnvelopeOk(wordId, [1])
           && fieldWordPayloadOk()
           && fieldWordCategoryExists(uid)
           && fieldOperationLinksEntity(uid, 'word', wordId);
@@ -594,7 +659,7 @@ service cloud.firestore {
       match /attempts/{attemptId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(attemptId)
+          && fieldEntityEnvelopeOk(attemptId, [1, 2])
           && fieldAttemptPayloadOk()
           && fieldOperationLinksEntity(uid, 'attempt', attemptId);
         allow update, delete: if false;
@@ -603,7 +668,7 @@ service cloud.firestore {
       match /reading_events/{eventId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(eventId)
+          && fieldEntityEnvelopeOk(eventId, [1])
           && fieldReadingEventPayloadOk()
           && fieldOperationLinksEntity(uid, 'readingEvent', eventId);
         allow update, delete: if false;
@@ -612,7 +677,7 @@ service cloud.firestore {
       match /reward_transactions/{transactionId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(transactionId)
+          && fieldEntityEnvelopeOk(transactionId, [1])
           && fieldRewardTransactionPayloadOk()
           && fieldOperationLinksEntity(
                uid,
@@ -646,7 +711,7 @@ service cloud.firestore {
       match /srs_states/{wordId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(wordId)
+          && fieldEntityEnvelopeOk(wordId, [1])
           && fieldSrsStatePayloadOk()
           && fieldOperationLinksEntity(uid, 'srsState', wordId);
         allow update, delete: if false;
@@ -655,7 +720,7 @@ service cloud.firestore {
       match /achievement_unlocks/{unlockId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownerWriteAllowed(uid)
-          && fieldEntityEnvelopeOk(unlockId)
+          && fieldEntityEnvelopeOk(unlockId, [1])
           && fieldAchievementUnlockPayloadOk()
           && fieldOperationLinksEntity(uid, 'achievementUnlock', unlockId);
         allow update, delete: if false;

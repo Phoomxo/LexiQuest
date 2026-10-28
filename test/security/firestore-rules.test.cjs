@@ -165,6 +165,8 @@ function writeFieldLearningEvent(db, {
   entityType = 'attempt',
   entityId = 'attempt-1',
   operationId = 'attempt-operation-1',
+  schemaVersion = 1,
+  operationSchemaVersion = schemaVersion,
   payload,
 } = {}) {
   const resolvedPayload = payload ?? {
@@ -179,7 +181,7 @@ function writeFieldLearningEvent(db, {
   };
   const batch = writeBatch(db);
   batch.set(doc(db, 'field_users', uid, collection, entityId), {
-    schemaVersion: 1,
+    schemaVersion,
     entityId,
     payload: resolvedPayload,
     revision: 1,
@@ -189,7 +191,7 @@ function writeFieldLearningEvent(db, {
     lastOperationId: operationId,
   });
   batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
-    schemaVersion: 1,
+    schemaVersion: operationSchemaVersion,
     operationId,
     entityType,
     entityId,
@@ -199,6 +201,52 @@ function writeFieldLearningEvent(db, {
     acknowledgedAt: serverTimestamp(),
   });
   return batch.commit();
+}
+
+function ordinaryAttemptEvidence(overrides = {}) {
+  return {
+    schemaVersion: 1,
+    evidenceClass: 'recognition',
+    skillId: 'word-meaning',
+    hintLevel: 0,
+    policyVersion: 'learning-evidence-v1',
+    contentRevision: 'synthetic-content-v1',
+    featureContractRevision: '1.3.0',
+    featureContractHash: '41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4',
+    classificationSource: 'declared',
+    rolloutMode: 'legacy',
+    protocolId: null,
+    protocolVersion: null,
+    experimentId: null,
+    experimentVersion: null,
+    assignmentId: null,
+    cohort: null,
+    researchConsentVersion: null,
+    instrumentId: null,
+    instrumentVersion: null,
+    formId: null,
+    formVersion: null,
+    assessmentItemId: null,
+    assessmentResponseCode: null,
+    scoringRuleVersion: null,
+    engagementAllowed: true,
+    ...overrides,
+  };
+}
+
+function evidenceAttemptPayload(context = ordinaryAttemptEvidence()) {
+  return {
+    sessionId: 'session-1',
+    wordId: 'word-1',
+    promptMode: 'meaningChoice',
+    isCorrect: true,
+    responseTimeMs: 320,
+    attemptNumber: 1,
+    occurredAtUtcMs: 2000,
+    providerProvenance: null,
+    evidenceClass: context.evidenceClass,
+    evidenceContext: context,
+  };
 }
 
 function writeFieldRewardTransaction(db, {
@@ -778,6 +826,18 @@ describe('field sync ownership and atomic revision contract', () => {
     await assertFails(updateDoc(ref, { 'payload.isCorrect': false }));
     await assertFails(deleteDoc(ref));
     await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-1')));
+    for (const [featureContractRevision, featureContractHash] of [
+      ['1.0.0', 'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0'],
+      ['1.1.0', '40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27'],
+      ['1.2.0', 'c6a772993afa6cc2d78f3eb11687d615192ef6ff52581fa882826180f90afee7'],
+    ]) {
+      await assertSucceeds(writeFieldLearningEvent(db, {
+        schemaVersion: 2,
+        entityId: `retained-${featureContractRevision}`,
+        operationId: `retained-operation-${featureContractRevision}`,
+        payload: evidenceAttemptPayload(ordinaryAttemptEvidence({ featureContractRevision, featureContractHash })),
+      }));
+    }
   });
 
   it('accepts catalog-bound reward purchases and equipment as immutable events', async () => {
@@ -1098,6 +1158,114 @@ describe('field sync ownership and atomic revision contract', () => {
         },
       }),
     );
+  });
+});
+
+describe('ordinary answer evidence v2 contract', () => {
+  it('accepts declared ordinary metadata with matching immutable operation schema', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningEvent(db, {
+      schemaVersion: 2,
+      payload: evidenceAttemptPayload(),
+    }));
+    const ref = doc(db, 'field_users', alice, 'attempts', 'attempt-1');
+    await assertSucceeds(getDoc(ref));
+    await assertFails(updateDoc(ref, { 'payload.evidenceContext.skillId': 'different-skill' }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-1')));
+  });
+
+  it('requires strict map metadata and matching class, policy and feature identity', async () => {
+    const context = ordinaryAttemptEvidence();
+    const valid = evidenceAttemptPayload(context);
+    const missing = { ...valid };
+    delete missing.evidenceClass;
+    const malformed = [
+      missing,
+      { ...valid, evidenceClass: 'independentRecall' },
+      { ...valid, evidenceContext: JSON.stringify(context) },
+      { ...valid, evidenceContext: { ...context, privateText: 'PRIVATE_SYNTHETIC_CANARY' } },
+      evidenceAttemptPayload({ ...context, schemaVersion: 2 }),
+      evidenceAttemptPayload({ ...context, policyVersion: 'unknown-policy' }),
+      evidenceAttemptPayload({ ...context, featureContractHash: '0'.repeat(64) }),
+      evidenceAttemptPayload({ ...context, hintLevel: -1 }),
+      evidenceAttemptPayload({ ...context, evidenceClass: 'unknown-class' }),
+      evidenceAttemptPayload({ ...context, classificationSource: 'legacyInferred' }),
+    ];
+    for (const [index, payload] of malformed.entries()) {
+      await assertFails(writeFieldLearningEvent(authDb(), {
+        schemaVersion: 2,
+        entityId: `malformed-${index}`,
+        operationId: `malformed-operation-${index}`,
+        payload,
+      }));
+    }
+  });
+
+  it('rejects every research pin even on a declared legacy rollout', async () => {
+    const pins = {
+      protocolId: 'synthetic-protocol', protocolVersion: '1',
+      experimentId: 'synthetic-experiment', experimentVersion: 1,
+      assignmentId: 'synthetic-assignment', cohort: 'synthetic-cohort',
+      researchConsentVersion: 1, instrumentId: 'synthetic-instrument',
+      instrumentVersion: '1', formId: 'synthetic-form', formVersion: '1',
+      assessmentItemId: 'synthetic-item', assessmentResponseCode: 'correct',
+      scoringRuleVersion: '1',
+    };
+    for (const [field, value] of Object.entries(pins)) {
+      await assertFails(writeFieldLearningEvent(authDb(), {
+        schemaVersion: 2,
+        entityId: `research-${field}`,
+        operationId: `research-operation-${field}`,
+        payload: evidenceAttemptPayload(ordinaryAttemptEvidence({ [field]: value })),
+      }));
+    }
+    for (const rolloutMode of ['shadow', 'enforced']) {
+      await assertFails(writeFieldLearningEvent(authDb(), {
+        schemaVersion: 2,
+        entityId: `research-${rolloutMode}`,
+        operationId: `research-operation-${rolloutMode}`,
+        payload: evidenceAttemptPayload(ordinaryAttemptEvidence({ ...pins, rolloutMode })),
+      }));
+    }
+  });
+
+  it('requires matching versions on the operation and its attempt', async () => {
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      schemaVersion: 2, operationSchemaVersion: 1,
+      payload: evidenceAttemptPayload(),
+    }));
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      schemaVersion: 1, operationSchemaVersion: 2,
+      entityId: 'legacy-attempt', operationId: 'legacy-attempt-operation',
+    }));
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      schemaVersion: 3,
+      entityId: 'future-attempt', operationId: 'future-attempt-operation',
+      payload: evidenceAttemptPayload(),
+    }));
+  });
+
+  it('does not widen reading events to v2', async () => {
+    const payload = {
+      documentId: 'document-1', documentRevision: 1,
+      eventType: 'checkpoint', position: 1, occurredAtUtcMs: 2000,
+    };
+    await assertSucceeds(writeFieldLearningEvent(authDb(), {
+      collection: 'reading_events', entityType: 'readingEvent',
+      entityId: 'reading-v1', operationId: 'reading-v1-operation', payload,
+    }));
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      collection: 'reading_events', entityType: 'readingEvent', schemaVersion: 2,
+      entityId: 'reading-v2', operationId: 'reading-v2-operation', payload,
+    }));
+  });
+
+  it('keeps the account-deletion fence closed for v2 evidence', async () => {
+    await seedDeletionFence();
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      schemaVersion: 2, payload: evidenceAttemptPayload(),
+    }));
   });
 });
 

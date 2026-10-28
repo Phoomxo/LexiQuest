@@ -456,6 +456,9 @@ void main() {
         expect(second.promptMode, first.promptMode);
         expect(second.attemptNumber, first.attemptNumber);
         expect(second.providerProvenance, first.providerProvenance);
+        expect(second.evidenceContext.toJson(), first.evidenceContext.toJson());
+        expect(first.evidenceContext.evidenceClass.name, 'independentRecall');
+        expect(first.evidenceContext.contentRevision, 'local-vocabulary-v1:1');
         expect(
           wrongRating.onPressed,
           isNull,

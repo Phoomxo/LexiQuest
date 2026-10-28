@@ -253,7 +253,7 @@ void main() {
     });
 
     test(
-      'confirms v7 and v8 migrations deployed, no v9+ migration exists yet',
+      'retains deployed migrations and the reserved v11 metadata migration',
       () {
         final dbContent = _read('lib/data/local/app_database.dart');
         expect(
@@ -276,16 +276,17 @@ void main() {
           isTrue,
           reason: 'Schema v10 migration must exist after Phase 2 D8.3',
         );
-        expect(dbContent.contains('from < 11'), isFalse);
+        expect(dbContent.contains('from < 11'), isTrue);
+        expect(dbContent.contains('from < 12'), isFalse);
       },
     );
 
-    test('current schemaVersion in code is 10', () {
+    test('current schemaVersion in code is 11', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 10'),
+        dbContent.contains('schemaVersion => 11'),
         isTrue,
-        reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3',
+        reason: 'schema v11 reserves immutable answer evidence metadata',
       );
     });
   });

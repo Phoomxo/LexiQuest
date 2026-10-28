@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
@@ -41,6 +42,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   LearningUseCases? _learning;
   String? _referenceSentence;
   String? _wordId;
+  String? _wordContentRevision;
   String? _sessionId;
   Future<void>? _learningLoad;
   bool _evidenceSaved = false;
@@ -93,6 +95,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       setState(() {
         _sessionId = session.id;
         _wordId = session.questions.single.word.id;
+        _wordContentRevision = session.questions.single.word.contentRevision;
         _referenceSentence = session.questions.single.word.spelling;
       });
     } catch (_) {
@@ -225,6 +228,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         occurredAtUtc: event!.recognizedAtUtc,
         providerProvenance:
             '${event.engine}:${event.locale}:transcript-similarity-v1',
+        evidenceContext: captureCurrentActivityEvidence(
+          promptMode: 'shadowing',
+          contentRevision: _wordContentRevision,
+        ),
       );
       if (owner.id != answer.ownerId) {
         throw StateError('shadowing owner changed');
@@ -240,6 +247,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           attemptId: answer.id,
           occurredAtUtc: answer.occurredAtUtc,
           providerProvenance: answer.providerProvenance,
+          evidenceContext: answer.evidenceContext,
         );
         _answerAcknowledged = true;
       }

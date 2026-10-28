@@ -72,7 +72,7 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 10);
+      expect(json['schemaVersion'], 11);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);

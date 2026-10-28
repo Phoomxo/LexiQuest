@@ -221,6 +221,14 @@ void main() {
       expect(repository.answers.single.isCorrect, isTrue);
       expect(repository.answers.single.promptMode, 'shadowing');
       expect(
+        repository.answers.single.evidenceContext.evidenceClass.name,
+        'pronunciation',
+      );
+      expect(
+        repository.answers.single.evidenceContext.contentRevision,
+        'local-vocabulary-v1:4',
+      );
+      expect(
         repository.answers.single.providerProvenance,
         'synthetic-stt:en-US:transcript-similarity-v1',
       );
@@ -339,6 +347,7 @@ final class _RecordingLearningRepository implements LearningRepository {
       spelling: 'cat',
       meaning: 'แมว',
       partOfSpeech: 'noun',
+      contentRevision: 'local-vocabulary-v1:4',
     ),
   ];
   @override

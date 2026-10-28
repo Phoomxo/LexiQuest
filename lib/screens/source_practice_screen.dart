@@ -375,6 +375,10 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
             learning: resultContext.learning,
             associativeLearning: widget.associativeLearning,
             targetWordIds: {for (final word in words) word.spelling: word.id},
+            targetWordContentRevisions: {
+              for (final word in words)
+                word.spelling: 'local-vocabulary-v1:${word.localRevision}',
+            },
             ownerId: resultContext.ownerId,
           ),
         ),
@@ -759,6 +763,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
             wordId: target.id,
             sessionId: session.id,
             sourceOwnerId: ownerId,
+            contentRevision: 'local-vocabulary-v1:${target.localRevision}',
             learning: learning,
             voice: widget.voice,
           ),

@@ -1,3 +1,6 @@
+import 'evidence_context.dart';
+import 'learning_evidence_contract.dart';
+
 final class QuizWord {
   const QuizWord({
     required this.id,
@@ -5,6 +8,7 @@ final class QuizWord {
     required this.spelling,
     required this.meaning,
     required this.partOfSpeech,
+    this.contentRevision,
   });
 
   final String id;
@@ -12,6 +16,7 @@ final class QuizWord {
   final String spelling;
   final String meaning;
   final String partOfSpeech;
+  final String? contentRevision;
 }
 
 final class QuizQuestion {
@@ -78,6 +83,7 @@ final class RecordAnswerCommand {
     required this.attemptNumber,
     required this.occurredAtUtc,
     this.providerProvenance,
+    this._evidenceContext,
   });
 
   final String id;
@@ -90,6 +96,11 @@ final class RecordAnswerCommand {
   final int attemptNumber;
   final DateTime occurredAtUtc;
   final String? providerProvenance;
+  final EvidenceContext? _evidenceContext;
+
+  EvidenceContext get evidenceContext =>
+      _evidenceContext ??
+      LearningEvidenceContract.frozenV13LegacyEvidenceContext();
 }
 
 final class SrsSnapshot {

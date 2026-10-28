@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
@@ -25,6 +26,7 @@ class SpeakToTextScreen extends StatefulWidget {
     this.attemptNumber = 1,
     this.learning,
     this.sourceOwnerId,
+    this.contentRevision,
   });
 
   final String correctWord;
@@ -35,6 +37,7 @@ class SpeakToTextScreen extends StatefulWidget {
   final int attemptNumber;
   final LearningUseCases? learning;
   final String? sourceOwnerId;
+  final String? contentRevision;
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
@@ -239,6 +242,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         occurredAtUtc: receivedAt,
         providerProvenance:
             '${assessment.engine}|${assessment.locale}|${assessment.method}',
+        evidenceContext: captureCurrentActivityEvidence(
+          promptMode: 'pronunciationTranscript',
+          contentRevision: widget.contentRevision,
+        ),
       );
       await _saveSourceAnswer();
     } else {
@@ -313,6 +320,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         attemptId: answer.id,
         occurredAtUtc: answer.occurredAtUtc,
         providerProvenance: answer.providerProvenance,
+        evidenceContext: answer.evidenceContext,
       );
       if (!await _sourceOwnerCurrent() || !_current(epoch)) return;
       setState(() => _sourceSaved = true);
@@ -401,6 +409,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         attemptNumber: widget.attemptNumber,
         providerProvenance:
             '${assessment.engine}|${assessment.locale}|${assessment.method}',
+        evidenceContext: captureCurrentActivityEvidence(
+          promptMode: 'pronunciationTranscript',
+          contentRevision: widget.contentRevision,
+        ),
       );
     } catch (_) {
       if (mounted) {

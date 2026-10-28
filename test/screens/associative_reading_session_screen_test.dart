@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -183,6 +185,45 @@ void main() {
         await adapter.getAssociationsForWord('owner-reading', 'banana'),
         hasLength(1),
       );
+    });
+
+    testWidgets('recall stores the revision shown in the reading activity', (
+      tester,
+    ) async {
+      final setup = await _ownerScopedLearning();
+      addTearDown(setup.database.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AssociativeReadingSessionScreen(
+            cefrLevel: 'Source',
+            targetWords: const ['station'],
+            passageText: 'The station is ready for every learner today.',
+            documentId: 'local-source:evidence-capture',
+            learning: setup.learning,
+            targetWordIds: const {'station': 'word-1'},
+            targetWordContentRevisions: const {
+              'station': 'local-vocabulary-v1:1',
+            },
+            ownerId: setup.ownerId,
+          ),
+        ),
+      );
+      await _pumpUntilText(tester, 'ขั้นที่ 1: อ่านพร้อมตัวช่วย');
+      for (var stage = 0; stage < 2; stage++) {
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await tester.pumpAndSettle();
+      }
+      await tester.enterText(find.byType(TextField).first, 'station');
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await _pumpUntilText(tester, 'ขั้นที่ 4: สร้างตัวช่วยจำ');
+      final answer = await setup.database
+          .select(setup.database.answerAttempts)
+          .getSingle();
+      final context =
+          jsonDecode(answer.evidenceContextJson) as Map<String, dynamic>;
+      expect(answer.evidenceClass, 'independentRecall');
+      expect(context['contentRevision'], 'local-vocabulary-v1:1');
+      expect(context['assignmentId'], isNull);
     });
 
     testWidgets('edited document keeps associations for each stable word', (

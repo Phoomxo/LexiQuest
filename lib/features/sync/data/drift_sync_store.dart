@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/reward_models.dart';
@@ -318,6 +319,16 @@ final class DriftSyncStore implements SyncStatusSource {
               ),
             );
             continue;
+          }
+          if (selected.payloadVersion != mutation.payloadVersion) {
+            await (database.update(
+                  database.outboxOperations,
+                )..where((row) => row.operationId.equals(selected.operationId)))
+                .write(
+                  db.OutboxOperationsCompanion(
+                    payloadVersion: Value(mutation.payloadVersion),
+                  ),
+                );
           }
           claimed.add(
             ClaimedSyncOperation(
@@ -732,6 +743,12 @@ final class DriftSyncStore implements SyncStatusSource {
           },
         );
       case 'attempt':
+        if (!supportsSyncPayloadVersion(
+          SyncCollection.attempts,
+          operation.payloadVersion,
+        )) {
+          throw const UnsupportedSyncSchemaFailure();
+        }
         final attempt =
             await (database.select(database.answerAttempts)..where(
                   (row) =>
@@ -742,26 +759,26 @@ final class DriftSyncStore implements SyncStatusSource {
         if (attempt == null) {
           throw StateError('outbox attempt was not found');
         }
+        final evidence = _storedAttemptEvidenceContext(attempt);
+        final payloadVersion =
+            evidence.classificationSource ==
+                EvidenceClassificationSource.legacyInferred
+            ? 1
+            : 2;
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
           collection: SyncCollection.attempts,
           entityId: attempt.id,
           operationKind: SyncOperationKind.upsert,
-          payloadVersion: operation.payloadVersion,
+          payloadVersion: payloadVersion,
           baseRevision: 0,
           localRevision: 1,
           clientUpdatedAtUtc: _utc(attempt.occurredAtUtcMs),
-          payload: <String, Object?>{
-            'sessionId': attempt.sessionId,
-            'wordId': attempt.wordId,
-            'promptMode': attempt.promptMode,
-            'isCorrect': attempt.isCorrect,
-            'responseTimeMs': attempt.responseTimeMs,
-            'attemptNumber': attempt.attemptNumber,
-            'occurredAtUtcMs': attempt.occurredAtUtcMs,
-            'providerProvenance': attempt.providerProvenance,
-          },
+          payload: _attemptPayload(
+            attempt,
+            includeEvidence: payloadVersion == 2,
+          ),
         );
       case 'readingEvent':
         final event =
@@ -1208,6 +1225,11 @@ final class DriftSyncStore implements SyncStatusSource {
 
   Future<void> _applyAttempt(String ownerId, SyncEntity entity) async {
     _requireImmutableEntity(entity, SyncCollection.attempts);
+    final evidenceContext =
+        AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+          payloadVersion: entity.payloadVersion,
+          payload: entity.payload,
+        );
     final existing =
         await (database.select(database.answerAttempts)..where(
               (row) =>
@@ -1251,6 +1273,8 @@ final class DriftSyncStore implements SyncStatusSource {
       attemptNumber: attemptNumber,
       occurredAtUtcMs: occurredAtUtcMs,
       providerProvenance: providerProvenance,
+      evidenceClass: evidenceContext.evidenceClass.name,
+      evidenceContextJson: jsonEncode(evidenceContext.toJson()),
     )) {
       throw const InvalidSyncPayloadFailure();
     }
@@ -1297,6 +1321,8 @@ final class DriftSyncStore implements SyncStatusSource {
             attemptNumber: attemptNumber,
             occurredAtUtcMs: occurredAtUtcMs,
             providerProvenance: Value(providerProvenance),
+            evidenceClass: Value(evidenceContext.evidenceClass.name),
+            evidenceContextJson: Value(jsonEncode(evidenceContext.toJson())),
           ),
         );
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
@@ -1820,8 +1846,14 @@ final class DriftSyncStore implements SyncStatusSource {
     SyncEntity entity,
   ) async {
     if (entity.collection != SyncCollection.attempts) return entity.payload;
+    final evidence = AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+      payloadVersion: entity.payloadVersion,
+      payload: entity.payload,
+    );
     return {
       ...entity.payload,
+      'evidenceClass': evidence.evidenceClass.name,
+      'evidenceContext': evidence.toJson(),
       'wordId': await _resolveNaturalKeyAlias(
         ownerId,
         'word',
@@ -1959,17 +1991,50 @@ final class DriftSyncStore implements SyncStatusSource {
   }
 }
 
-Map<String, Object?> _attemptPayload(db.AnswerAttempt attempt) =>
-    <String, Object?>{
-      'sessionId': attempt.sessionId,
-      'wordId': attempt.wordId,
-      'promptMode': attempt.promptMode,
-      'isCorrect': attempt.isCorrect,
-      'responseTimeMs': attempt.responseTimeMs,
-      'attemptNumber': attempt.attemptNumber,
-      'occurredAtUtcMs': attempt.occurredAtUtcMs,
-      'providerProvenance': attempt.providerProvenance,
-    };
+Map<String, Object?> _attemptPayload(
+  db.AnswerAttempt attempt, {
+  bool includeEvidence = true,
+}) => <String, Object?>{
+  'sessionId': attempt.sessionId,
+  'wordId': attempt.wordId,
+  'promptMode': attempt.promptMode,
+  'isCorrect': attempt.isCorrect,
+  'responseTimeMs': attempt.responseTimeMs,
+  'attemptNumber': attempt.attemptNumber,
+  'occurredAtUtcMs': attempt.occurredAtUtcMs,
+  'providerProvenance': attempt.providerProvenance,
+  if (includeEvidence) ...{
+    'evidenceClass': attempt.evidenceClass,
+    'evidenceContext': _storedAttemptEvidenceContext(attempt).toJson(),
+  },
+};
+
+EvidenceContext _storedAttemptEvidenceContext(db.AnswerAttempt attempt) {
+  try {
+    if (!LearningEvidenceContract.validEvidenceMetadata(
+      evidenceClass: attempt.evidenceClass,
+      evidenceContextJson: attempt.evidenceContextJson,
+    )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final context = EvidenceContext.fromJson(
+      (jsonDecode(attempt.evidenceContextJson) as Map).cast<String, Object?>(),
+    );
+    if (context.classificationSource ==
+            EvidenceClassificationSource.legacyInferred &&
+        !_jsonEquivalent(
+          context.toJson(),
+          LearningEvidenceContract.frozenV13LegacyEvidenceContext().toJson(),
+        )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return context;
+  } on SyncFailure {
+    rethrow;
+  } catch (_) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
 
 Map<String, Object?> _readingEventPayload(db.ReadingEvent event) =>
     <String, Object?>{

@@ -43,6 +43,7 @@ final class FirestoreSyncGateway implements SyncGateway {
                 FirestoreSyncCodec.decodeAcknowledgement(
                   operationSnapshot.data()!,
                   expectedOperationId: mutation.operationId,
+                  expectedPayloadVersion: mutation.payloadVersion,
                 ),
               );
             }
@@ -93,6 +94,7 @@ final class FirestoreSyncGateway implements SyncGateway {
       return FirestoreSyncCodec.decodeAcknowledgement(
         acknowledgement.data()!,
         expectedOperationId: mutation.operationId,
+        expectedPayloadVersion: mutation.payloadVersion,
       );
     } on SyncFailure {
       rethrow;
@@ -229,7 +231,7 @@ final class FirestoreSyncCodec {
     required Map<String, Object?> data,
   }) {
     final schemaVersion = _requiredInt(data, 'schemaVersion');
-    if (schemaVersion != currentSyncPayloadVersion) {
+    if (!supportsSyncPayloadVersion(collection, schemaVersion)) {
       throw const UnsupportedSyncSchemaFailure();
     }
     final entityId = _requiredString(data, 'entityId');
@@ -266,8 +268,11 @@ final class FirestoreSyncCodec {
   static PushAcknowledged decodeAcknowledgement(
     Map<String, Object?> data, {
     required String expectedOperationId,
+    int expectedPayloadVersion = currentSyncPayloadVersion,
   }) {
-    if (_requiredInt(data, 'schemaVersion') != currentSyncPayloadVersion ||
+    if ((expectedPayloadVersion != 1 && expectedPayloadVersion != 2) ||
+        _requiredInt(data, 'schemaVersion') != expectedPayloadVersion ||
+        (expectedPayloadVersion == 2 && data['entityType'] != 'attempt') ||
         _requiredString(data, 'operationId') != expectedOperationId) {
       throw const InvalidSyncPayloadFailure();
     }

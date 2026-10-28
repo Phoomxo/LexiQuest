@@ -134,17 +134,56 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 ## Phase 0+ (v11+)
 
-Current implemented schema is **v10**, matching `AppDatabase.schemaVersion` and
-the deployed Associative Learning Persistence entry above. The former future-v10
-placeholder was superseded by that recorded migration and must not be reused.
-The next reservable version is **v11**; this reconciliation reserves no version
-and adds no schema or migration code.
+The recorded deployed lineage ends at **v10**. The current branch implements
+**v11** with 29 tables, matching `AppDatabase.schemaVersion`. The former
+future-v10 placeholder was superseded by the recorded Associative Learning
+migration and must not be reused.
+The 2026-10-21 reconciliation left v11 unreserved. The following reservation
+starts the current branch's migration lineage after deployed v10.
+
+### v11 — Immutable answer evidence metadata
+
+**Reserved:** 2026-10-28
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root integration; capture and sync workers have disjoint write sets
+
+**Status:** IMPLEMENTED LOCALLY; populated-v10 migration and full Flutter suite
+pass. Production deployment is not authorized by this entry.
+
+**Columns added:**
+
+```text
+answer_attempts.evidence_class         — frozen EvidenceClass wire name
+answer_attempts.evidence_context_json  — frozen EvidenceContext schema-v1 JSON
+```
+
+No table is added. The database remains at 29 tables. Existing rows receive the
+exact legacy-inferred sentinel from the approved archived evidence contract
+(historically called the v13 sentinel). This reservation uses v11 in the current
+lineage and does not import the archived v11–v24 migration sequence.
+
+The migration adds columns without deleting or rewriting answer facts. Capture
+stores the content revision shown to the learner. Replay compares metadata as
+part of immutable evidence. Ordinary attempts use an explicit versioned sync
+contract; v1 legacy payloads retain the sentinel. Collection/upload authority is
+not enabled, and research-bearing metadata fails closed.
+
+Acceptance covers populated-v10 upgrade, unchanged legacy facts and learning
+projections, metadata replay conflicts, owner isolation, sync payload/rules,
+full-account export, merge and deletion. Eligibility enforcement for scores,
+SRS and rewards is a separate implementation unit. Local rules are not deployed
+by this reservation. Downgrading an upgraded database requires restoring its
+pre-upgrade backup or an explicit tested downgrade; no automatic rollback is
+claimed.
 
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|
-| v11+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
+| v12+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10. Reserve the next available version, starting at v11,
+> **Rule:** Do not reuse v10 or v11. Reserve the next available version, starting at v12,
 > through a separate approved entry before writing migration code.
 
 ---
@@ -163,6 +202,7 @@ and adds no schema or migration code.
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-10-21 | Reconciled duplicate future v10 against current schemaVersion 10; next reservations begin at v11. Documentation only; no version reserved or migration changed. | LQ-00 / delegated integration |
+| 2026-10-28 | Reserved current-lineage v11 for two answer evidence metadata columns with populated-v10 and owner/sync lifecycle coverage. No research tables or rollout permission added. | Root integration |
 
 ---
 

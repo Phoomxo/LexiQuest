@@ -3,6 +3,7 @@ import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
+import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 
@@ -213,6 +214,7 @@ final class LearningUseCases {
     String? providerProvenance,
     String? attemptId,
     DateTime? occurredAtUtc,
+    EvidenceContext? evidenceContext,
   }) async {
     if ((attemptId == null) != (occurredAtUtc == null)) {
       throw ArgumentError(
@@ -236,6 +238,7 @@ final class LearningUseCases {
         attemptNumber: attemptNumber,
         occurredAtUtc: recordedAt,
         providerProvenance: providerProvenance,
+        evidenceContext: evidenceContext,
       ),
     );
     onLocalMutation?.call();

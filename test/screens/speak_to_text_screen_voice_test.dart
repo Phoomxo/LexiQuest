@@ -299,6 +299,7 @@ void main() {
         ownerId: ownerId,
         sessionId: session.id,
         wordId: 'word-cat',
+        contentRevision: session.questions.single.word.contentRevision,
       );
       await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
       await _pumpUntilTest(tester, () => gateway.startCalls == 1);
@@ -369,6 +370,18 @@ void main() {
       );
       expect(await tester.runAsync(snapshot), committed);
       expect(repository.answers, hasLength(2));
+      expect(
+        repository.answers.first.evidenceContext.evidenceClass.name,
+        'pronunciation',
+      );
+      expect(
+        repository.answers.first.evidenceContext.contentRevision,
+        'local-vocabulary-v1:1',
+      );
+      expect(
+        repository.answers.last.evidenceContext.toJson(),
+        repository.answers.first.evidenceContext.toJson(),
+      );
       expect(repository.answers.last.id, repository.answers.first.id);
       expect(
         repository.answers.last.occurredAtUtc,
@@ -1277,6 +1290,7 @@ Future<void> _openSource(
   String ownerId = 'synthetic-owner',
   String sessionId = 'synthetic-session',
   String wordId = 'synthetic-word',
+  String? contentRevision,
   double textScale = 1,
   Brightness brightness = Brightness.light,
   List<LearningSessionSummary?>? results,
@@ -1316,6 +1330,7 @@ Future<void> _openSource(
                             sourceOwnerId: ownerId,
                             sessionId: sessionId,
                             wordId: wordId,
+                            contentRevision: contentRevision,
                             learning: authority,
                             voice: VoiceUseCases(voice ?? FakeVoiceProvider()),
                             speechPractice: SpeechPracticeUseCases(

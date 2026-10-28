@@ -479,7 +479,9 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "INSERT INTO answer_attempts "
+    "(id, owner_id, session_id, word_id, prompt_mode, is_correct, "
+    "response_time_ms, attempt_number, occurred_at_utc_ms, provider_provenance) VALUES "
     "('attempt-1', 'guest-owner', 'session-1', 'word-1', 'meaning', 1, 100, 1, 15, NULL)",
   );
   await database.customInsert(
@@ -634,7 +636,9 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
     "('session-guest', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, 1, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "INSERT INTO answer_attempts "
+    "(id, owner_id, session_id, word_id, prompt_mode, is_correct, "
+    "response_time_ms, attempt_number, occurred_at_utc_ms, provider_provenance) VALUES "
     "('attempt-guest', 'guest-owner', 'session-guest', 'word-guest', "
     "'meaning', 1, 10, 1, 2, NULL)",
   );
@@ -653,7 +657,9 @@ Future<void> _seedProjectionCollisionGraph(AppDatabase database) async {
     "('session-target', 'account-owner', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    "INSERT INTO answer_attempts "
+    "(id, owner_id, session_id, word_id, prompt_mode, is_correct, "
+    "response_time_ms, attempt_number, occurred_at_utc_ms, provider_provenance) VALUES "
     "('attempt-target', 'account-owner', 'session-target', 'word-target', "
     "'meaning', 1, 10, 1, 1, NULL)",
   );

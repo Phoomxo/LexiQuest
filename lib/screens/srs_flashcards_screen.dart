@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -183,6 +184,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           attemptNumber: _currentIndex + 1,
           attemptId: _attemptId,
           occurredAtUtc: _submittedAtUtc,
+          evidenceContext: captureCurrentActivityEvidence(
+            promptMode: 'srsRecall',
+            contentRevision: _currentQuestion.word.contentRevision,
+          ),
         );
       }
       if (!mounted) return;

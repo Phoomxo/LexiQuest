@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -558,6 +559,28 @@ void main() {
     );
   });
 
+  testWidgets('hiding a seen hint retains the captured answer receipt', (
+    tester,
+  ) async {
+    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
+    await _pumpUntilFound(tester, find.text('station'));
+    await tester.tap(find.text('ดูคำใบ้'));
+    await tester.pump();
+    await tester.tap(find.text('ซ่อนคำใบ้'));
+    await tester.pump();
+    expect(find.text('noun'), findsNothing);
+    await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('ถูกต้อง'));
+
+    final answer = await database.select(database.answerAttempts).getSingle();
+    final context =
+        jsonDecode(answer.evidenceContextJson) as Map<String, dynamic>;
+    expect(answer.evidenceClass, 'guidedPractice');
+    expect(context['hintLevel'], 1);
+    expect(context['contentRevision'], 'local-vocabulary-v1:1');
+    expect(context['researchConsentVersion'], isNull);
+  });
+
   testWidgets('quiz hint reveal and failed save remain reachable at 2x', (
     tester,
   ) async {
@@ -947,4 +970,5 @@ Object _evidence(RecordAnswerCommand command) => (
   command.attemptNumber,
   command.occurredAtUtc,
   command.providerProvenance,
+  jsonEncode(command.evidenceContext.toJson()),
 );

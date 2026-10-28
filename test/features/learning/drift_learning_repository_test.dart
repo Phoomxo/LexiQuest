@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 void main() {
@@ -60,6 +64,7 @@ void main() {
 
     expect(words.map((word) => word.id), ['word-1', 'word-2']);
     expect(words.first.meaning, 'สถานี');
+    expect(words.first.contentRevision, 'local-vocabulary-v1:1');
   });
 
   test('target filters exclude deleted words and other owners', () async {
@@ -298,6 +303,138 @@ void main() {
       throwsStateError,
     );
   });
+
+  test('typed ordinary evidence persists unchanged through replay', () async {
+    await repository.startSession(
+      LearningSessionDraft(
+        id: 'session-context',
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+        appVersion: '1.0.0',
+        buildId: 'test',
+      ),
+    );
+    final context = captureCurrentActivityEvidence(
+      promptMode: 'meaningChoice',
+      contentRevision: 'local-vocabulary-v1:1',
+    );
+    RecordAnswerCommand command(EvidenceContext evidence) =>
+        RecordAnswerCommand(
+          id: 'attempt-context',
+          ownerId: 'owner-1',
+          sessionId: 'session-context',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 400,
+          attemptNumber: 1,
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+          evidenceContext: evidence,
+        );
+
+    final first = await repository.recordAnswer(command(context));
+    final replay = await repository.recordAnswer(command(context));
+    expect(first.inserted, isTrue);
+    expect(replay.inserted, isFalse);
+    await database.customStatement(
+      'UPDATE answer_attempts SET evidence_context_json = ? WHERE id = ?',
+      [
+        jsonEncode(Map.fromEntries(context.toJson().entries.toList().reversed)),
+        'attempt-context',
+      ],
+    );
+    expect(
+      (await repository.recordAnswer(command(context))).inserted,
+      isFalse,
+      reason: 'JSON object key order does not change an immutable fact.',
+    );
+    final stored = await database.select(database.answerAttempts).getSingle();
+    expect(stored.evidenceClass, 'recognition');
+    expect(jsonDecode(stored.evidenceContextJson), context.toJson());
+    final outbox = await database.select(database.outboxOperations).get();
+    expect(
+      outbox
+          .singleWhere((operation) => operation.entityType == 'attempt')
+          .payloadVersion,
+      2,
+    );
+    expect(
+      outbox
+          .singleWhere((operation) => operation.entityType == 'srsState')
+          .payloadVersion,
+      1,
+    );
+    expect(
+      replay.srs.intervalDays,
+      1,
+      reason:
+          'This migration records metadata without activating projection policy.',
+    );
+
+    for (final changed in [
+      captureCurrentActivityEvidence(
+        promptMode: 'meaningChoice',
+        contentRevision: 'local-vocabulary-v1:2',
+      ),
+      captureCurrentActivityEvidence(
+        promptMode: 'meaningChoice',
+        contentRevision: 'local-vocabulary-v1:1',
+        hintLevel: 1,
+      ),
+    ]) {
+      await expectLater(
+        repository.recordAnswer(command(changed)),
+        throwsStateError,
+      );
+    }
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(
+      await database.select(database.pointsLedgerEntries).get(),
+      hasLength(1),
+    );
+    expect(
+      await database.select(database.rewardTransactions).get(),
+      hasLength(1),
+    );
+    expect(
+      (await database.select(database.answerAttempts).getSingle()).toJson(),
+      stored.toJson(),
+    );
+  });
+
+  test(
+    'ordinary record boundary rejects research pins without collecting rows',
+    () async {
+      final context = EvidenceContext.forNewEvidence(
+        evidenceClass: EvidenceClass.recognition,
+        skillId: 'meaning-recall',
+        hintLevel: 0,
+        contentRevision: 'local-vocabulary-v1:1',
+        rolloutMode: EvidencePolicyRolloutMode.legacy,
+        protocolId: 'synthetic-protocol',
+      );
+      final command = RecordAnswerCommand(
+        id: 'attempt-forbidden-research',
+        ownerId: 'owner-1',
+        sessionId: 'absent-session',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+        evidenceContext: context,
+      );
+      expect(() => repository.recordAnswer(command), throwsArgumentError);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
 
   test(
     'invalid cloud-contract evidence is rejected before local commit',

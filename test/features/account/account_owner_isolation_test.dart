@@ -201,7 +201,10 @@ Future<void> _seedA(AppDatabase database) async {
     "INSERT INTO learning_sessions VALUES ('session-a', 'owner-a', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customStatement(
-    "INSERT INTO answer_attempts VALUES ('attempt-a', 'owner-a', 'session-a', 'word-a', 'meaning', 1, 10, 1, 2, NULL)",
+    "INSERT INTO answer_attempts "
+    "(id, owner_id, session_id, word_id, prompt_mode, is_correct, "
+    "response_time_ms, attempt_number, occurred_at_utc_ms, provider_provenance) "
+    "VALUES ('attempt-a', 'owner-a', 'session-a', 'word-a', 'meaning', 1, 10, 1, 2, NULL)",
   );
   await database.customStatement(
     "INSERT INTO outbox_operations (operation_id, owner_id, entity_type, entity_id, operation_kind, state, base_revision, created_at_utc_ms, acknowledged_at_utc_ms) VALUES ('word-a:1', 'owner-a', 'word', 'word-a', 'upsert', 'acknowledged', 3, 1, 40)",

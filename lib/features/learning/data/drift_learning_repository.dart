@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
+import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
@@ -53,6 +56,7 @@ final class DriftLearningRepository implements LearningRepository {
             spelling: row.spelling,
             meaning: row.meaning,
             partOfSpeech: row.partOfSpeech,
+            contentRevision: 'local-vocabulary-v1:${row.localRevision}',
           ),
         )
         .toList(growable: false);
@@ -138,6 +142,10 @@ final class DriftLearningRepository implements LearningRepository {
               attemptNumber: command.attemptNumber,
               occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
               providerProvenance: Value(command.providerProvenance),
+              evidenceClass: Value(command.evidenceContext.evidenceClass.name),
+              evidenceContextJson: Value(
+                jsonEncode(command.evidenceContext.toJson()),
+              ),
             ),
           );
       final next = await projections.rebuildWord(
@@ -155,6 +163,11 @@ final class DriftLearningRepository implements LearningRepository {
         entityType: 'attempt',
         entityId: command.id,
         occurredAtUtc: command.occurredAtUtc,
+        payloadVersion:
+            jsonEncode(command.evidenceContext.toJson()) ==
+                LearningEvidenceContract.frozenV13LegacyEvidenceContextJson
+            ? 1
+            : 2,
       );
       // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
       // Entity ID is wordId (unique per owner-word pair).
@@ -258,6 +271,7 @@ final class DriftLearningRepository implements LearningRepository {
             spelling: word.spelling,
             meaning: word.meaning,
             partOfSpeech: word.partOfSpeech,
+            contentRevision: 'local-vocabulary-v1:${word.localRevision}',
           ),
         )
         .toList(growable: false);
@@ -373,6 +387,7 @@ final class DriftLearningRepository implements LearningRepository {
     required String entityType,
     required String entityId,
     required DateTime occurredAtUtc,
+    int payloadVersion = 1,
   }) async {
     await database
         .into(database.outboxOperations)
@@ -383,6 +398,7 @@ final class DriftLearningRepository implements LearningRepository {
             entityType: entityType,
             entityId: entityId,
             operationKind: 'upsert',
+            payloadVersion: Value(payloadVersion),
             baseRevision: const Value(0),
             createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
           ),
@@ -407,7 +423,14 @@ final class DriftLearningRepository implements LearningRepository {
         row.responseTimeMs == command.responseTimeMs &&
         row.attemptNumber == command.attemptNumber &&
         row.occurredAtUtcMs == command.occurredAtUtc.millisecondsSinceEpoch &&
-        row.providerProvenance == command.providerProvenance;
+        row.providerProvenance == command.providerProvenance &&
+        row.evidenceClass == command.evidenceContext.evidenceClass.name &&
+        jsonEncode(
+              EvidenceContext.fromJson(
+                jsonDecode(row.evidenceContextJson) as Map<String, dynamic>,
+              ).toJson(),
+            ) ==
+            jsonEncode(command.evidenceContext.toJson());
   }
 
   bool _sameReadingEvent(db.ReadingEvent row, ReadingProgressCommand command) {
@@ -441,6 +464,8 @@ final class DriftLearningRepository implements LearningRepository {
       attemptNumber: command.attemptNumber,
       occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
       providerProvenance: command.providerProvenance,
+      evidenceClass: command.evidenceContext.evidenceClass.name,
+      evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
     )) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +71,11 @@ void main() {
           await tester.tap(find.text('ตอบ'));
           await _until(tester, find.text('ลองบันทึกคำตอบอีกครั้ง'));
           final first = fixture.repository.commands.single;
+          expect(first.evidenceContext.evidenceClass.name, 'recreational');
+          expect(
+            first.evidenceContext.contentRevision,
+            'local-vocabulary-v1:1',
+          );
           expect(
             find.textContaining('พลังผู้เรียน 100 · พลังสถิติเดิม 100'),
             findsOneWidget,
@@ -633,6 +639,7 @@ Object _evidence(RecordAnswerCommand c) => (
   c.attemptNumber,
   c.occurredAtUtc,
   c.providerProvenance,
+  jsonEncode(c.evidenceContext.toJson()),
 );
 
 final class _Owners implements LocalOwnerRepository {

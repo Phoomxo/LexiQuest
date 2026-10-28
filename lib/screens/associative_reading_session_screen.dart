@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 
@@ -29,6 +31,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.learning,
     this.associativeLearning,
     this.targetWordIds,
+    this.targetWordContentRevisions,
     this.sessionId,
     this.ownerId,
   });
@@ -49,6 +52,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Map from word display name → Drift vocabulary word ID.
   /// Required for Stage 3 SRS recording; Stage 3 is skipped when null.
   final Map<String, String>? targetWordIds;
+  final Map<String, String>? targetWordContentRevisions;
 
   /// Learning session ID for recording answers in Stage 3.
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
@@ -88,6 +92,7 @@ class _AssociativeReadingSessionScreenState
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
   late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
+  late List<EvidenceContext?> _recallEvidence;
   late List<bool?> _frozenRecallResults;
   late List<DateTime?> _recallAttemptTimes;
 
@@ -115,6 +120,7 @@ class _AssociativeReadingSessionScreenState
     );
     _recallResults = List.filled(widget.targetWords.length, null);
     _frozenRecallResults = List.filled(widget.targetWords.length, null);
+    _recallEvidence = List.filled(widget.targetWords.length, null);
     _recallAttemptTimes = List.filled(widget.targetWords.length, null);
     _cueControllers = List.generate(
       widget.targetWords.length,
@@ -308,6 +314,11 @@ class _AssociativeReadingSessionScreenState
           attemptNumber: i + 1,
           attemptId: 'attempt:$sessionId:associative:$i',
           occurredAtUtc: occurredAtUtc,
+          evidenceContext: _recallEvidence[i] ??=
+              captureCurrentActivityEvidence(
+                promptMode: 'associativeRecall',
+                contentRevision: widget.targetWordContentRevisions?[word],
+              ),
         );
       } catch (_) {
         if (mounted) {
