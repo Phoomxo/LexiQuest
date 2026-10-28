@@ -1,0 +1,86 @@
+# Review package: a6a7158..423c01b
+
+## Commits
+423c01b build: set the v0.1 version contract
+
+## Files changed
+ lib/runtime/app_build_info.dart       | 2 +-
+ pubspec.yaml                          | 2 +-
+ test/runtime/app_build_info_test.dart | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+## Diff
+diff --git a/lib/runtime/app_build_info.dart b/lib/runtime/app_build_info.dart
+index f87693f..dc6b379 100644
+--- a/lib/runtime/app_build_info.dart
++++ b/lib/runtime/app_build_info.dart
+@@ -4,20 +4,20 @@
+ /// credentials, provider keys, or anything that must stay out of the bundle.
+ final class AppBuildInfo {
+   const AppBuildInfo({required this.version, required this.buildId});
+ 
+   final String version;
+   final String buildId;
+ 
+   const AppBuildInfo.fromEnvironment()
+     : version = const String.fromEnvironment(
+         'LEXIQUEST_VERSION',
+-        defaultValue: '1.0.0+1',
++        defaultValue: '0.1.0+1',
+       ),
+       buildId = const String.fromEnvironment(
+         'LEXIQUEST_BUILD_ID',
+         defaultValue: 'development',
+       );
+ 
+   @override
+   String toString() => 'AppBuildInfo';
+ }
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 16a81c6..9ae64e8 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,15 +1,15 @@
+ name: vocab_learning_app
+ description: "A new Flutter project."
+ publish_to: 'none'
+ 
+-version: 1.0.0+1
++version: 0.1.0+1
+ 
+ environment:
+   sdk: '>=3.12.0 <4.0.0'
+ 
+ 
+ dependencies:
+   flutter:
+     sdk: flutter
+   firebase_core: ^4.12.1
+   firebase_auth: ^6.5.6
+diff --git a/test/runtime/app_build_info_test.dart b/test/runtime/app_build_info_test.dart
+index eff4e07..37087f8 100644
+--- a/test/runtime/app_build_info_test.dart
++++ b/test/runtime/app_build_info_test.dart
+@@ -47,21 +47,21 @@ void main() {
+     test('stores the provided version and build id', () {
+       const info = AppBuildInfo(version: '9.9.9+9', buildId: 'feedface');
+       expect(info.version, '9.9.9+9');
+       expect(info.buildId, 'feedface');
+     });
+ 
+     test(
+       'fromEnvironment defaults to pubspec version and a development id',
+       () {
+         const info = AppBuildInfo.fromEnvironment();
+-        expect(info.version, '1.0.0+1');
++        expect(info.version, '0.1.0+1');
+         expect(info.buildId, 'development');
+       },
+     );
+   });
+ 
+   group('MainNavigationScreen build identity', () {
+     setUp(() {
+       GoogleFonts.config.allowRuntimeFetching = false;
+     });
+ 

@@ -1,0 +1,375 @@
+# Review package: 9ec0ef8..9577b9e
+
+## Commits
+9577b9e feat: add the account gateway contract
+
+## Files changed
+ lib/account/account_gateway.dart                   |  32 ++++
+ lib/account/account_models.dart                    |  58 +++++++
+ lib/account/firebase_account_gateway.dart          | 167 +++++++++++++++++++++
+ test/account/account_models_test.dart              |  50 ++++++
+ .../firebase_account_gateway_contract_test.dart    |  24 +++
+ 5 files changed, 331 insertions(+)
+
+## Diff
+diff --git a/lib/account/account_gateway.dart b/lib/account/account_gateway.dart
+new file mode 100644
+index 0000000..cfc279d
+--- /dev/null
++++ b/lib/account/account_gateway.dart
+@@ -0,0 +1,32 @@
++import 'account_models.dart';
++
++abstract interface class AccountGateway {
++  AccountSession? get currentSession;
++  Stream<AccountSession?> authStateChanges();
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  });
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  });
++  Future<void> signOut();
++  Future<AccountSession?> reloadSession();
++  Future<void> sendVerificationEmail();
++  Future<void> applyVerificationCode(String code);
++  Future<void> requestPasswordReset(String email);
++  Future<String> verifyPasswordResetCode(String code);
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  });
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  });
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  });
++}
+diff --git a/lib/account/account_models.dart b/lib/account/account_models.dart
+new file mode 100644
+index 0000000..e200a39
+--- /dev/null
++++ b/lib/account/account_models.dart
+@@ -0,0 +1,58 @@
++enum AccountActionMode { resetPassword, verifyEmail }
++
++final class AccountActionLink {
++  const AccountActionLink({required this.mode, required this.code});
++
++  static const host = 'vocab-learning-app-219ef.web.app';
++  static const path = '/auth/action';
++
++  final AccountActionMode mode;
++  final String code;
++
++  static AccountActionLink? tryParse(Uri uri) {
++    if (uri.scheme != 'https' ||
++        uri.host != host ||
++        uri.path != path ||
++        uri.userInfo.isNotEmpty ||
++        uri.hasFragment) {
++      return null;
++    }
++    final code = uri.queryParameters['oobCode']?.trim() ?? '';
++    final rawMode = uri.queryParameters['mode'];
++    if (code.isEmpty) return null;
++    final mode = switch (rawMode) {
++      'resetPassword' => AccountActionMode.resetPassword,
++      'verifyEmail' => AccountActionMode.verifyEmail,
++      _ => null,
++    };
++    return mode == null ? null : AccountActionLink(mode: mode, code: code);
++  }
++
++  @override
++  bool operator ==(Object other) =>
++      other is AccountActionLink && other.mode == mode && other.code == code;
++
++  @override
++  int get hashCode => Object.hash(mode, code);
++}
++
++final class AccountSession {
++  const AccountSession({
++    required this.uid,
++    required this.email,
++    required this.isAnonymous,
++    required this.isEmailVerified,
++  });
++
++  final String uid;
++  final String? email;
++  final bool isAnonymous;
++  final bool isEmailVerified;
++}
++
++final class GuestUpgradeResult {
++  const GuestUpgradeResult({required this.previousUid, required this.session});
++
++  final String previousUid;
++  final AccountSession session;
++}
+diff --git a/lib/account/firebase_account_gateway.dart b/lib/account/firebase_account_gateway.dart
+new file mode 100644
+index 0000000..6bb37c4
+--- /dev/null
++++ b/lib/account/firebase_account_gateway.dart
+@@ -0,0 +1,167 @@
++import 'package:firebase_auth/firebase_auth.dart';
++
++import 'account_gateway.dart';
++import 'account_models.dart';
++
++final class AccountOperationException implements Exception {
++  const AccountOperationException(this.code);
++
++  final String code;
++
++  @override
++  String toString() => 'AccountOperationException($code)';
++}
++
++final class FirebaseAccountGateway implements AccountGateway {
++  FirebaseAccountGateway({FirebaseAuth? firebaseAuth})
++    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
++
++  final FirebaseAuth _firebaseAuth;
++
++  @override
++  AccountSession? get currentSession => _toSession(_firebaseAuth.currentUser);
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      _firebaseAuth.authStateChanges().map(_toSession);
++
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => _run(() async {
++    final credential = await _firebaseAuth.signInWithEmailAndPassword(
++      email: email,
++      password: password,
++    );
++    return _requireSession(credential.user);
++  });
++
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => _run(() async {
++    final credential = await _firebaseAuth.createUserWithEmailAndPassword(
++      email: email,
++      password: password,
++    );
++    return _requireSession(credential.user);
++  });
++
++  @override
++  Future<void> signOut() => _run(_firebaseAuth.signOut);
++
++  @override
++  Future<AccountSession?> reloadSession() => _run(() async {
++    final user = _requireCurrentUser();
++    await user.reload();
++    return _toSession(_firebaseAuth.currentUser);
++  });
++
++  @override
++  Future<void> sendVerificationEmail() =>
++      _run(() => _requireCurrentUser().sendEmailVerification());
++
++  @override
++  Future<void> applyVerificationCode(String code) =>
++      _run(() => _firebaseAuth.applyActionCode(code));
++
++  @override
++  Future<void> requestPasswordReset(String email) =>
++      _run(() => _firebaseAuth.sendPasswordResetEmail(email: email));
++
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      _run(() => _firebaseAuth.verifyPasswordResetCode(code));
++
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => _run(
++    () => _firebaseAuth.confirmPasswordReset(
++      code: code,
++      newPassword: newPassword,
++    ),
++  );
++
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => _run(() async {
++    final user = _requireCurrentUser();
++    final email = user.email;
++    if (email == null || email.isEmpty) {
++      throw const AccountOperationException('email-unavailable');
++    }
++    final credential = EmailAuthProvider.credential(
++      email: email,
++      password: currentPassword,
++    );
++    await user.reauthenticateWithCredential(credential);
++    await user.updatePassword(newPassword);
++  });
++
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => _run(() async {
++    final user = _requireCurrentUser();
++    if (!user.isAnonymous) {
++      throw const AccountOperationException('not-anonymous');
++    }
++    final previousUid = user.uid;
++    final credential = EmailAuthProvider.credential(
++      email: email,
++      password: password,
++    );
++    final upgraded = await user.linkWithCredential(credential);
++    return GuestUpgradeResult(
++      previousUid: previousUid,
++      session: _requireSession(upgraded.user),
++    );
++  });
++
++  User _requireCurrentUser() {
++    final user = _firebaseAuth.currentUser;
++    if (user == null) {
++      throw const AccountOperationException('no-current-user');
++    }
++    return user;
++  }
++
++  AccountSession _requireSession(User? user) {
++    final session = _toSession(user);
++    if (session == null) {
++      throw const AccountOperationException('missing-user');
++    }
++    return session;
++  }
++
++  AccountSession? _toSession(User? user) {
++    if (user == null) return null;
++    return AccountSession(
++      uid: user.uid,
++      email: user.email,
++      isAnonymous: user.isAnonymous,
++      isEmailVerified: user.emailVerified,
++    );
++  }
++
++  Future<T> _run<T>(Future<T> Function() operation) async {
++    try {
++      return await operation();
++    } on AccountOperationException {
++      rethrow;
++    } on FirebaseAuthException catch (error) {
++      throw AccountOperationException(error.code);
++    } on FirebaseException catch (error) {
++      throw AccountOperationException(error.code);
++    } on Object {
++      throw const AccountOperationException('unknown');
++    }
++  }
++}
+diff --git a/test/account/account_models_test.dart b/test/account/account_models_test.dart
+new file mode 100644
+index 0000000..9f2f55f
+--- /dev/null
++++ b/test/account/account_models_test.dart
+@@ -0,0 +1,50 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++
++void main() {
++  test('parses only the configured reset-password action link', () {
++    final action = AccountActionLink.tryParse(
++      Uri.parse(
++        'https://vocab-learning-app-219ef.web.app/auth/action'
++        '?mode=resetPassword&oobCode=one-time-code',
++      ),
++    );
++
++    expect(
++      action,
++      const AccountActionLink(
++        mode: AccountActionMode.resetPassword,
++        code: 'one-time-code',
++      ),
++    );
++  });
++
++  test('rejects foreign hosts, paths, modes, and missing codes', () {
++    expect(
++      AccountActionLink.tryParse(
++        Uri.parse(
++          'https://evil.example/auth/action?mode=resetPassword&oobCode=x',
++        ),
++      ),
++      isNull,
++    );
++    expect(
++      AccountActionLink.tryParse(
++        Uri.parse(
++          'https://vocab-learning-app-219ef.web.app/other'
++          '?mode=resetPassword&oobCode=x',
++        ),
++      ),
++      isNull,
++    );
++    expect(
++      AccountActionLink.tryParse(
++        Uri.parse(
++          'https://vocab-learning-app-219ef.web.app/auth/action'
++          '?mode=resetPassword',
++        ),
++      ),
++      isNull,
++    );
++  });
++}
+diff --git a/test/account/firebase_account_gateway_contract_test.dart b/test/account/firebase_account_gateway_contract_test.dart
+new file mode 100644
+index 0000000..c67693c
+--- /dev/null
++++ b/test/account/firebase_account_gateway_contract_test.dart
+@@ -0,0 +1,24 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/firebase_account_gateway.dart';
++
++AccountGateway _asAccountGateway(FirebaseAccountGateway gateway) => gateway;
++
++void main() {
++  test(
++    'exposes a typed account operation failure without provider details',
++    () {
++      const failure = AccountOperationException('wrong-password');
++
++      expect(failure.code, 'wrong-password');
++      expect(failure.toString(), 'AccountOperationException(wrong-password)');
++    },
++  );
++
++  test(
++    'Firebase adapter is available through the account gateway contract',
++    () {
++      expect(_asAccountGateway, isA<Function>());
++    },
++  );
++}

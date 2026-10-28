@@ -1,0 +1,1481 @@
+# Review package: ac336bb..e7325a8
+
+## Commits
+e7325a8 feat: unify registration and verification
+
+## Files changed
+ lib/account/account_profile_provisioner.dart       |  88 ++++++
+ lib/navigation/app_router.dart                     |  14 +-
+ lib/screens/otp_screen.dart                        | 223 ++++++--------
+ lib/screens/register_form_screen.dart              | 126 --------
+ lib/screens/register_screen.dart                   | 325 +++++++++++----------
+ lib/screens/session_gate_screen.dart               |   5 +-
+ lib/services/category_service.dart                 |  15 +-
+ test/account/account_profile_provisioner_test.dart |  53 ++++
+ test/screens/full_system_audit_test.dart           |   2 +-
+ test/screens/otp_screen_test.dart                  | 146 +++++++--
+ test/screens/registration_flow_test.dart           | 202 ++++++++-----
+ 11 files changed, 669 insertions(+), 530 deletions(-)
+
+## Diff
+diff --git a/lib/account/account_profile_provisioner.dart b/lib/account/account_profile_provisioner.dart
+new file mode 100644
+index 0000000..eea76cc
+--- /dev/null
++++ b/lib/account/account_profile_provisioner.dart
+@@ -0,0 +1,88 @@
++import 'package:cloud_firestore/cloud_firestore.dart';
++
++import '../account/account_validation.dart';
++import '../services/category_service.dart';
++
++final class AccountProfile {
++  const AccountProfile({
++    required this.firstName,
++    required this.lastName,
++    required this.email,
++    required this.age,
++  });
++
++  final String firstName;
++  final String lastName;
++  final String email;
++  final int age;
++
++  String get normalizedEmail => AccountValidation.normalizeEmail(email);
++}
++
++abstract interface class AccountProfileProvisioning {
++  Future<void> ensureProfile(String uid, AccountProfile profile);
++}
++
++abstract interface class AccountProfileWriter {
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  });
++}
++
++abstract interface class DefaultCategoryProvisioner {
++  Future<void> ensureDefaults(String uid);
++}
++
++final class AccountProfileProvisioner implements AccountProfileProvisioning {
++  AccountProfileProvisioner({
++    AccountProfileWriter? profileWriter,
++    DefaultCategoryProvisioner? defaultCategoryProvisioner,
++  }) : _profileWriter = profileWriter ?? FirestoreAccountProfileWriter(),
++       _defaultCategoryProvisioner =
++           defaultCategoryProvisioner ??
++           CategoryServiceDefaultCategoryProvisioner();
++
++  final AccountProfileWriter _profileWriter;
++  final DefaultCategoryProvisioner _defaultCategoryProvisioner;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) async {
++    await _profileWriter.writeProfile(uid: uid, profile: profile, merge: true);
++    await _defaultCategoryProvisioner.ensureDefaults(uid);
++  }
++}
++
++final class FirestoreAccountProfileWriter implements AccountProfileWriter {
++  FirestoreAccountProfileWriter({FirebaseFirestore? firestore})
++    : _firestore = firestore ?? FirebaseFirestore.instance;
++
++  final FirebaseFirestore _firestore;
++
++  @override
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  }) => _firestore.collection('users').doc(uid).set({
++    'first_name': profile.firstName.trim(),
++    'last_name': profile.lastName.trim(),
++    'email': profile.normalizedEmail,
++    'age': profile.age,
++    'createdAt': FieldValue.serverTimestamp(),
++    'profileSchemaVersion': 1,
++  }, SetOptions(merge: merge));
++}
++
++final class CategoryServiceDefaultCategoryProvisioner
++    implements DefaultCategoryProvisioner {
++  CategoryServiceDefaultCategoryProvisioner({CategoryService? categoryService})
++    : _categoryService = categoryService ?? CategoryService();
++
++  final CategoryService _categoryService;
++
++  @override
++  Future<void> ensureDefaults(String uid) =>
++      _categoryService.addDefaultCategoriesForNewUser(uid);
++}
+diff --git a/lib/navigation/app_router.dart b/lib/navigation/app_router.dart
+index 9ea1d46..bde33db 100644
+--- a/lib/navigation/app_router.dart
++++ b/lib/navigation/app_router.dart
+@@ -1,12 +1,13 @@
+ import 'package:flutter/material.dart';
+ 
++import '../account/account_profile_provisioner.dart';
+ import '../runtime/app_dependencies.dart';
+ import '../screens/login_screen.dart';
+ import '../screens/main_navigation_screen.dart';
+ import '../screens/otp_screen.dart';
+ import '../screens/register_screen.dart';
+ import '../screens/session_gate_screen.dart';
+ import 'app_route.dart';
+ 
+ final class AppRouter {
+   AppRouter(this.dependencies);
+@@ -29,34 +30,43 @@ final class AppRouter {
+     if (path == AppRoute.login.path) {
+       return _route(
+         settings,
+         LoginScreen(
+           accountGateway: dependencies.accountGateway,
+           guestSessionService: dependencies.guestSessionService,
+         ),
+       );
+     }
+     if (path == AppRoute.register.path) {
+-      return _route(settings, const RegisterScreen());
++      return _route(
++        settings,
++        RegisterScreen(
++          accountGateway: dependencies.accountGateway,
++          profileProvisioner: AccountProfileProvisioner(),
++        ),
++      );
+     }
+     if (path == AppRoute.verifyEmail.path) {
+       return _verifyEmailRoute(settings);
+     }
+     if (path == AppRoute.home.path) {
+       return _route(settings, const MainNavigationScreen());
+     }
+     return null;
+   }
+ 
+   Route<dynamic>? _verifyEmailRoute(RouteSettings settings) {
+     final args = settings.arguments;
+     if (args is! VerifyEmailRouteArgs) return null;
+-    return _route(settings, OTPScreen(email: args.email));
++    return _route(
++      settings,
++      OTPScreen(email: args.email, accountGateway: dependencies.accountGateway),
++    );
+   }
+ 
+   MaterialPageRoute<dynamic> _route(RouteSettings settings, Widget child) {
+     return MaterialPageRoute<dynamic>(
+       settings: settings,
+       builder: (_) => child,
+     );
+   }
+ }
+diff --git a/lib/screens/otp_screen.dart b/lib/screens/otp_screen.dart
+index 5a70e35..0ad0df2 100644
+--- a/lib/screens/otp_screen.dart
++++ b/lib/screens/otp_screen.dart
+@@ -1,168 +1,127 @@
+ import 'package:flutter/material.dart';
+-import '../services/auth_service.dart';
+-import 'register_form_screen.dart';
++
++import '../account/account_cooldown.dart';
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../navigation/app_route.dart';
+ 
+ class OTPScreen extends StatefulWidget {
++  const OTPScreen({
++    super.key,
++    required this.email,
++    this.accountGateway,
++    this.resendCooldown,
++  });
++
+   final String email;
+-  const OTPScreen({super.key, required this.email});
++  final AccountGateway? accountGateway;
++  final AccountCooldown? resendCooldown;
+ 
+   @override
+   State<OTPScreen> createState() => _OTPScreenState();
+ }
+ 
+ class _OTPScreenState extends State<OTPScreen> {
+-  final AuthService _authService = AuthService();
++  late final AccountCooldown _cooldown =
++      widget.resendCooldown ?? AccountCooldown();
+   bool _isLoading = false;
+ 
+-  /// ✅ ตรวจสอบว่าอีเมลได้รับการยืนยันแล้วหรือไม่
+-  Future<void> _checkEmailVerified() async {
++  Future<void> _refreshVerification() async {
++    final gateway = widget.accountGateway;
++    if (gateway == null || _isLoading) return;
+     setState(() => _isLoading = true);
+-
+     try {
+-      bool isVerified = await _authService.isEmailVerified();
+-
+-      if (isVerified) {
+-        if (!mounted) return;
+-        ScaffoldMessenger.of(context).showSnackBar(
+-          const SnackBar(content: Text('✅ อีเมลได้รับการยืนยันแล้ว!')),
+-        );
+-
+-        // 👉 ไปที่หน้ากรอกข้อมูลสมัครสมาชิก
+-        Navigator.pushReplacement(
++      final session = await gateway.reloadSession();
++      if (!mounted) return;
++      if (session?.isEmailVerified ?? false) {
++        Navigator.of(
+           context,
+-          MaterialPageRoute(
+-            builder: (context) => RegisterFormScreen(email: widget.email),
+-          ),
+-        );
++        ).pushNamedAndRemoveUntil(AppRoute.home.path, (_) => false);
+       } else {
+-        if (!mounted) return;
+-        ScaffoldMessenger.of(
+-          context,
+-        ).showSnackBar(const SnackBar(content: Text('⚠ กรุณายืนยันอีเมลก่อน')));
++        _showMessage(
++          'อีเมลยังไม่ได้รับการยืนยัน กรุณาตรวจสอบกล่องจดหมายแล้วลองใหม่',
++        );
+       }
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Text(
+-            '❌ ตรวจสอบอีเมลล้มเหลว: ${AuthService.getErrorMessage(e)}',
+-          ),
+-        ),
+-      );
++    } on AccountOperationException catch (error) {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+-      setState(() => _isLoading = false);
++      if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
+-  /// ✅ ให้ Firebase ส่งอีเมลยืนยันใหม่ผ่านผู้ใช้ปัจจุบัน
+-  Future<void> _resendVerificationEmail() async {
+-    try {
+-      await _authService.resendVerificationEmail();
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(content: Text('📩 ส่งอีเมลยืนยันใหม่แล้ว!')),
+-      );
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Text(
+-            '❌ ไม่สามารถส่งอีเมลยืนยันใหม่: ${AuthService.getErrorMessage(e)}',
+-          ),
+-        ),
++  Future<void> _resendVerification() async {
++    final gateway = widget.accountGateway;
++    if (gateway == null || _isLoading) return;
++    if (!_cooldown.canSubmit) {
++      _showMessage(
++        'กรุณารอ ${_cooldown.remaining.inSeconds} วินาทีก่อนส่งอีเมลอีกครั้ง',
+       );
++      return;
++    }
++    setState(() => _isLoading = true);
++    try {
++      await gateway.sendVerificationEmail();
++      _cooldown.start();
++      if (mounted) {
++        _showMessage('ส่งอีเมลยืนยันอีกครั้งแล้ว กรุณาตรวจสอบกล่องจดหมาย');
++      }
++    } on AccountOperationException catch (error) {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
++    } finally {
++      if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
++  void _showMessage(String message) {
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      body: Container(
+-        width: double.infinity,
+-        decoration: const BoxDecoration(
+-          gradient: LinearGradient(
+-            colors: [Colors.deepPurple, Colors.indigo],
+-            begin: Alignment.topLeft,
+-            end: Alignment.bottomRight,
+-          ),
+-        ),
+-        child: Center(
+-          child: Padding(
+-            padding: const EdgeInsets.all(20.0),
+-            child: Card(
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(16),
++      appBar: AppBar(title: const Text('ยืนยันอีเมล')),
++      body: Center(
++        child: Padding(
++          padding: const EdgeInsets.all(24),
++          child: Column(
++            mainAxisSize: MainAxisSize.min,
++            crossAxisAlignment: CrossAxisAlignment.stretch,
++            children: [
++              const Icon(Icons.mark_email_unread_outlined, size: 72),
++              const SizedBox(height: 16),
++              const Text(
++                'ตรวจสอบอีเมลเพื่อยืนยันบัญชี',
++                textAlign: TextAlign.center,
++                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+               ),
+-              elevation: 5,
+-              color: Colors.white.withValues(alpha: 0.9),
+-              child: Padding(
+-                padding: const EdgeInsets.all(25.0),
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  children: [
+-                    const Icon(Icons.email, size: 80, color: Colors.deepPurple),
+-                    const SizedBox(height: 15),
+-                    Text(
+-                      'ยืนยันอีเมลของคุณ',
+-                      style: TextStyle(
+-                        fontSize: 22,
+-                        fontWeight: FontWeight.bold,
+-                        color: Colors.deepPurple.shade700,
+-                      ),
+-                      textAlign: TextAlign.center,
+-                    ),
+-                    const SizedBox(height: 15),
+-                    Text(
+-                      '📩 เราได้ส่งอีเมลยืนยันไปที่:\n${widget.email}',
+-                      textAlign: TextAlign.center,
+-                      style: const TextStyle(fontSize: 16),
+-                    ),
+-                    const SizedBox(height: 15),
+-                    const Text(
+-                      '✉ กรุณาตรวจสอบอีเมลของคุณและกดยืนยัน',
+-                      textAlign: TextAlign.center,
+-                    ),
+-                    const SizedBox(height: 20),
+-
+-                    _isLoading
+-                        ? const CircularProgressIndicator()
+-                        : ElevatedButton.icon(
+-                            onPressed: _checkEmailVerified,
+-                            icon: const Icon(
+-                              Icons.check_circle,
+-                              color: Colors.white,
+-                            ),
+-                            label: const Text(
+-                              '✅ ฉันได้ยืนยันแล้ว',
+-                              style: TextStyle(
+-                                fontSize: 16,
+-                                color: Colors.white,
+-                              ),
+-                            ),
+-                            style: ElevatedButton.styleFrom(
+-                              backgroundColor: Colors.green,
+-                              padding: const EdgeInsets.symmetric(
+-                                vertical: 14,
+-                                horizontal: 50,
+-                              ),
+-                              shape: RoundedRectangleBorder(
+-                                borderRadius: BorderRadius.circular(12),
+-                              ),
+-                            ),
+-                          ),
+-                    const SizedBox(height: 10),
+-                    TextButton.icon(
+-                      onPressed: _resendVerificationEmail,
+-                      icon: const Icon(Icons.refresh, color: Colors.deepPurple),
+-                      label: const Text('🔄 ส่งอีเมลยืนยันใหม่'),
+-                    ),
+-                  ],
+-                ),
++              const SizedBox(height: 12),
++              Text(
++                'เราได้ส่งลิงก์ยืนยันไปที่ ${widget.email}',
++                textAlign: TextAlign.center,
++              ),
++              const SizedBox(height: 24),
++              FilledButton.icon(
++                key: const ValueKey<String>('verify-refresh'),
++                onPressed: _isLoading ? null : _refreshVerification,
++                icon: const Icon(Icons.refresh),
++                label: const Text('ฉันยืนยันอีเมลแล้ว'),
++              ),
++              TextButton.icon(
++                key: const ValueKey<String>('verify-resend'),
++                onPressed: _isLoading ? null : _resendVerification,
++                icon: const Icon(Icons.email_outlined),
++                label: const Text('ส่งอีเมลยืนยันอีกครั้ง'),
+               ),
+-            ),
++            ],
+           ),
+         ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/screens/register_form_screen.dart b/lib/screens/register_form_screen.dart
+deleted file mode 100644
+index ecd2a8d..0000000
+--- a/lib/screens/register_form_screen.dart
++++ /dev/null
+@@ -1,126 +0,0 @@
+-import 'package:flutter/material.dart';
+-import '../services/auth_service.dart';
+-
+-class RegisterFormScreen extends StatefulWidget {
+-  final String email;
+-
+-  const RegisterFormScreen({super.key, required this.email});
+-
+-  @override
+-  State<RegisterFormScreen> createState() => _RegisterFormScreenState();
+-}
+-
+-class _RegisterFormScreenState extends State<RegisterFormScreen> {
+-  final TextEditingController _passwordController = TextEditingController();
+-  final TextEditingController _firstNameController = TextEditingController();
+-  final TextEditingController _lastNameController = TextEditingController();
+-  final TextEditingController _ageController = TextEditingController();
+-
+-  final AuthService _authService = AuthService();
+-  bool _isLoading = false;
+-
+-  Future<void> _register() async {
+-    setState(() => _isLoading = true);
+-
+-    try {
+-      await _authService.registerUser(
+-        email: widget.email,
+-        password: _passwordController.text.trim(),
+-        firstName: _firstNameController.text.trim(),
+-        lastName: _lastNameController.text.trim(),
+-        age: int.tryParse(_ageController.text.trim()) ?? 0,
+-      );
+-
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(
+-        context,
+-      ).showSnackBar(SnackBar(content: Text('สมัครสมาชิกสำเร็จ!')));
+-
+-      // ไปหน้า Home หรือ Login
+-      Navigator.pushReplacementNamed(context, '/home');
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(
+-        context,
+-      ).showSnackBar(SnackBar(content: Text('สมัครไม่สำเร็จ: $e')));
+-    } finally {
+-      setState(() => _isLoading = false);
+-    }
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Scaffold(
+-      appBar: AppBar(title: Text('ตั้งค่าข้อมูลบัญชี')),
+-      body: Padding(
+-        padding: const EdgeInsets.all(16.0),
+-        child: Column(
+-          children: [
+-            Text(
+-              'อีเมลของคุณ: ${widget.email}',
+-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _firstNameController,
+-              decoration: const InputDecoration(
+-                labelText: 'First Name',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.person),
+-              ),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _lastNameController,
+-              decoration: const InputDecoration(
+-                labelText: 'Last Name',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.person_outline),
+-              ),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _ageController,
+-              decoration: const InputDecoration(
+-                labelText: 'Age',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.cake),
+-              ),
+-              keyboardType: TextInputType.number,
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _passwordController,
+-              decoration: const InputDecoration(
+-                labelText: 'ตั้งรหัสผ่าน',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.lock),
+-              ),
+-              obscureText: true,
+-            ),
+-            const SizedBox(height: 20),
+-            _isLoading
+-                ? const CircularProgressIndicator()
+-                : ElevatedButton(
+-                    onPressed: _register,
+-                    style: ElevatedButton.styleFrom(
+-                      padding: const EdgeInsets.symmetric(
+-                        vertical: 14,
+-                        horizontal: 50,
+-                      ),
+-                      backgroundColor: Colors.blueAccent,
+-                      shape: RoundedRectangleBorder(
+-                        borderRadius: BorderRadius.circular(12),
+-                      ),
+-                    ),
+-                    child: const Text(
+-                      'สมัครสมาชิก',
+-                      style: TextStyle(fontSize: 18, color: Colors.white),
+-                    ),
+-                  ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
+-}
+diff --git a/lib/screens/register_screen.dart b/lib/screens/register_screen.dart
+index d132180..07248fc 100644
+--- a/lib/screens/register_screen.dart
++++ b/lib/screens/register_screen.dart
+@@ -1,193 +1,194 @@
+ import 'package:flutter/material.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-import '../services/auth_service.dart';
+-import 'otp_screen.dart';
++
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../account/account_profile_provisioner.dart';
++import '../account/account_validation.dart';
+ import '../navigation/app_route.dart';
+ 
+ class RegisterScreen extends StatefulWidget {
+-  const RegisterScreen({super.key});
++  const RegisterScreen({
++    super.key,
++    this.accountGateway,
++    this.profileProvisioner,
++  });
++
++  final AccountGateway? accountGateway;
++  final AccountProfileProvisioning? profileProvisioner;
+ 
+   @override
+   State<RegisterScreen> createState() => _RegisterScreenState();
+ }
+ 
+ class _RegisterScreenState extends State<RegisterScreen> {
+-  final TextEditingController _emailController = TextEditingController();
+-  final TextEditingController _passwordController = TextEditingController();
+-  final AuthService _authService = AuthService();
+-  bool _isLoading = false;
+-
+-  bool _isValidEmail(String email) {
+-    final RegExp regex = RegExp(
+-      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+-    );
+-    return regex.hasMatch(email);
+-  }
++  final _formKey = GlobalKey<FormState>();
++  final _emailController = TextEditingController();
++  final _passwordController = TextEditingController();
++  final _confirmationController = TextEditingController();
++  final _firstNameController = TextEditingController();
++  final _lastNameController = TextEditingController();
++  final _ageController = TextEditingController();
++  bool _isSubmitting = false;
+ 
+-  Future<void> _sendVerificationEmail() async {
+-    setState(() => _isLoading = true);
++  Future<void> _register() async {
++    final gateway = widget.accountGateway;
++    final provisioner = widget.profileProvisioner;
++    if (_isSubmitting || !(_formKey.currentState?.validate() ?? false)) return;
++    if (gateway == null || provisioner == null) {
++      _showError('ระบบสมัครสมาชิกยังไม่พร้อม กรุณาลองใหม่อีกครั้ง');
++      return;
++    }
+ 
++    setState(() => _isSubmitting = true);
++    final email = AccountValidation.normalizeEmail(_emailController.text);
++    final profile = AccountProfile(
++      firstName: _firstNameController.text,
++      lastName: _lastNameController.text,
++      email: email,
++      age: int.parse(_ageController.text.trim()),
++    );
+     try {
+-      String email = _emailController.text.trim();
+-      String password = _passwordController.text.trim();
+-
+-      if (!_isValidEmail(email)) {
+-        throw Exception('รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง');
+-      }
+-      if (password.length < 4) {
+-        throw Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร');
+-      }
+-
+-      await _authService.sendEmailVerification(email, password);
+-
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(
+-          content: Text('✅ สร้างบัญชีเรียบร้อย! กำลังนำท่านไปขั้นตอนถัดไป...'),
+-          backgroundColor: Colors.green,
+-        ),
+-      );
+-
+-      // ไปที่หน้ารอการยืนยัน OTP / ขั้นตอนถัดไป
+-      Navigator.push(
+-        context,
+-        MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
++      final session = await gateway.createAccount(
++        email: email,
++        password: _passwordController.text,
+       );
+-    } catch (e) {
++      await provisioner.ensureProfile(session.uid, profile);
++      await gateway.sendVerificationEmail();
+       if (!mounted) return;
+-      final String errorMessage = AuthService.getErrorMessage(e);
+-      final bool isEmailInUse =
+-          e is FirebaseAuthException && e.code == 'email-already-in-use';
+-
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Row(
+-            children: [
+-              const Icon(Icons.error_outline, color: Colors.white),
+-              const SizedBox(width: 8),
+-              Expanded(
+-                child: Text(
+-                  errorMessage,
+-                  style: const TextStyle(color: Colors.white),
+-                ),
+-              ),
+-            ],
+-          ),
+-          backgroundColor: Colors.redAccent,
+-          behavior: SnackBarBehavior.floating,
+-          shape: RoundedRectangleBorder(
+-            borderRadius: BorderRadius.circular(10),
+-          ),
+-          action: isEmailInUse
+-              ? SnackBarAction(
+-                  label: 'เข้าสู่ระบบ',
+-                  textColor: Colors.amber,
+-                  onPressed: () =>
+-                      Navigator.of(context).pushNamed(AppRoute.login.path),
+-                )
+-              : null,
+-        ),
++      Navigator.of(context).pushReplacementNamed(
++        AppRoute.verifyEmail.path,
++        arguments: VerifyEmailRouteArgs(email: email),
+       );
++    } on AccountOperationException catch (error) {
++      if (mounted) _showError(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showError(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+-      if (mounted) setState(() => _isLoading = false);
++      if (mounted) setState(() => _isSubmitting = false);
+     }
+   }
+ 
++  void _showError(String message) {
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
++  @override
++  void dispose() {
++    _emailController.dispose();
++    _passwordController.dispose();
++    _confirmationController.dispose();
++    _firstNameController.dispose();
++    _lastNameController.dispose();
++    _ageController.dispose();
++    super.dispose();
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      body: Container(
+-        decoration: const BoxDecoration(
+-          gradient: LinearGradient(
+-            colors: [Colors.purple, Colors.blueAccent],
+-            begin: Alignment.topLeft,
+-            end: Alignment.bottomRight,
+-          ),
+-        ),
+-        child: Center(
+-          child: Padding(
+-            padding: const EdgeInsets.all(20.0),
+-            child: Card(
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(20),
+-              ),
+-              elevation: 5,
+-              child: Padding(
+-                padding: const EdgeInsets.all(25.0),
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  children: [
+-                    const Text(
+-                      '📝 สมัครสมาชิก (Register)',
+-                      style: TextStyle(
+-                        fontSize: 26,
+-                        fontWeight: FontWeight.bold,
+-                      ),
+-                    ),
+-                    const SizedBox(height: 4),
+-                    const Text(
+-                      'กรอกอีเมลเพื่อสร้างบัญชีเรียนรู้คำศัพท์ภาษาอังกฤษ',
+-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+-                    ),
+-                    const SizedBox(height: 20),
+-                    TextField(
+-                      controller: _emailController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'อีเมล (Email)',
+-                        hintText: 'กรอกอีเมลของคุณ',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.email),
+-                      ),
+-                    ),
+-                    const SizedBox(height: 15),
+-                    TextField(
+-                      controller: _passwordController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'ตั้งรหัสผ่าน (Password)',
+-                        hintText: 'ตั้งรหัสผ่าน 6 ตัวอักษรขึ้นไป',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.lock),
+-                      ),
+-                      obscureText: true,
+-                    ),
+-                    const SizedBox(height: 20),
+-                    _isLoading
+-                        ? const CircularProgressIndicator()
+-                        : ElevatedButton(
+-                            onPressed: _sendVerificationEmail,
+-                            style: ElevatedButton.styleFrom(
+-                              padding: const EdgeInsets.symmetric(
+-                                vertical: 14,
+-                                horizontal: 50,
+-                              ),
+-                              backgroundColor: Colors.blueAccent,
+-                              shape: RoundedRectangleBorder(
+-                                borderRadius: BorderRadius.circular(12),
+-                              ),
+-                            ),
+-                            child: const Text(
+-                              'ส่งอีเมลยืนยัน (Send Email)',
+-                              style: TextStyle(
+-                                fontSize: 18,
+-                                color: Colors.white,
+-                                fontWeight: FontWeight.bold,
+-                              ),
+-                            ),
+-                          ),
+-                    TextButton(
+-                      onPressed: () =>
+-                          Navigator.of(context).pushNamed(AppRoute.login.path),
+-                      child: const Text(
+-                        'มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)',
+-                      ),
+-                    ),
+-                  ],
++      appBar: AppBar(title: const Text('สมัครสมาชิก')),
++      body: SafeArea(
++        child: SingleChildScrollView(
++          padding: const EdgeInsets.all(24),
++          child: Form(
++            key: _formKey,
++            child: Column(
++              crossAxisAlignment: CrossAxisAlignment.stretch,
++              children: [
++                const Text(
++                  'สร้างบัญชีเพื่อเริ่มเรียนกับ LexiQuest',
++                  style: TextStyle(fontSize: 18),
++                ),
++                const SizedBox(height: 20),
++                TextFormField(
++                  key: const ValueKey<String>('register-email'),
++                  controller: _emailController,
++                  keyboardType: TextInputType.emailAddress,
++                  validator: (value) =>
++                      AccountValidation.emailError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'อีเมล',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-password'),
++                  controller: _passwordController,
++                  obscureText: true,
++                  validator: (value) =>
++                      AccountValidation.passwordError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'รหัสผ่าน',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-confirmation'),
++                  controller: _confirmationController,
++                  obscureText: true,
++                  validator: (value) => AccountValidation.confirmationError(
++                    _passwordController.text,
++                    value ?? '',
++                  ),
++                  decoration: const InputDecoration(
++                    labelText: 'ยืนยันรหัสผ่าน',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-first-name'),
++                  controller: _firstNameController,
++                  validator: (value) =>
++                      AccountValidation.firstNameError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'ชื่อ',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-last-name'),
++                  controller: _lastNameController,
++                  validator: (value) =>
++                      AccountValidation.lastNameError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'นามสกุล',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-age'),
++                  controller: _ageController,
++                  keyboardType: TextInputType.number,
++                  validator: (value) => AccountValidation.ageError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'อายุ',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 20),
++                FilledButton(
++                  key: const ValueKey<String>('register-submit'),
++                  onPressed: _isSubmitting ? null : _register,
++                  child: _isSubmitting
++                      ? const SizedBox(
++                          width: 20,
++                          height: 20,
++                          child: CircularProgressIndicator(strokeWidth: 2),
++                        )
++                      : const Text('สมัครสมาชิกและส่งอีเมลยืนยัน'),
+                 ),
+-              ),
++              ],
+             ),
+           ),
+         ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/screens/session_gate_screen.dart b/lib/screens/session_gate_screen.dart
+index 0cb25bf..ce93f90 100644
+--- a/lib/screens/session_gate_screen.dart
++++ b/lib/screens/session_gate_screen.dart
+@@ -33,15 +33,18 @@ final class SessionGateScreen extends StatelessWidget {
+         final session = snapshot.data;
+         if (session == null) {
+           return LoginScreen(
+             accountGateway: accountGateway,
+             guestSessionService: guestSessionService,
+           );
+         }
+         if (session.isAnonymous || session.isEmailVerified) {
+           return const MainNavigationScreen();
+         }
+-        return OTPScreen(email: session.email ?? '');
++        return OTPScreen(
++          email: session.email ?? '',
++          accountGateway: accountGateway,
++        );
+       },
+     );
+   }
+ }
+diff --git a/lib/services/category_service.dart b/lib/services/category_service.dart
+index ad0b4ef..3e629fc 100644
+--- a/lib/services/category_service.dart
++++ b/lib/services/category_service.dart
+@@ -242,34 +242,37 @@ class CategoryService {
+           },
+           {
+             "word": "Adventure",
+             "meaning": "การผจญภัย",
+             "part_of_speech": "Noun",
+           },
+         ],
+       },
+     ];
+ 
+-    for (var category in defaultCategories) {
+-      final categoryRef = _firestore.collection('categories').doc();
++    for (final (categoryIndex, category) in defaultCategories.indexed) {
++      final categoryRef = _firestore
++          .collection('categories')
++          .doc('${uid}_default_$categoryIndex');
+       await categoryRef.set({
+         'category_name': category['category_name'] ?? '',
+         'created_at': Timestamp.now(),
+         'uid': uid,
+-      });
++      }, SetOptions(merge: true));
+ 
+-      for (var wordData in category['words']) {
+-        final wordRef = categoryRef.collection('words').doc();
++      final words = category['words']! as List<dynamic>;
++      for (final (wordIndex, wordData) in words.indexed) {
++        final wordRef = categoryRef.collection('words').doc('$wordIndex');
+         await wordRef.set({
+           'word': wordData["word"] ?? '',
+           'meaning': wordData["meaning"] ?? '',
+           'part_of_speech': wordData["part_of_speech"] ?? '',
+           'user_id': uid,
+           'is_global': false,
+           'created_at': Timestamp.now(),
+-        });
++        }, SetOptions(merge: true));
+       }
+     }
+ 
+     debugPrint("✅ Default categories and words added.");
+   }
+ }
+diff --git a/test/account/account_profile_provisioner_test.dart b/test/account/account_profile_provisioner_test.dart
+new file mode 100644
+index 0000000..f426230
+--- /dev/null
++++ b/test/account/account_profile_provisioner_test.dart
+@@ -0,0 +1,53 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
++
++final class _RecordingProfileWriter implements AccountProfileWriter {
++  final writes = <({String uid, AccountProfile profile, bool merge})>[];
++
++  @override
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  }) async {
++    writes.add((uid: uid, profile: profile, merge: merge));
++  }
++}
++
++final class _IdempotentDefaultCategories implements DefaultCategoryProvisioner {
++  final provisionedUids = <String>{};
++
++  @override
++  Future<void> ensureDefaults(String uid) async => provisionedUids.add(uid);
++}
++
++void main() {
++  test(
++    'retries merge the same profile and provision default categories only once',
++    () async {
++      final writer = _RecordingProfileWriter();
++      final categories = _IdempotentDefaultCategories();
++      final provisioner = AccountProfileProvisioner(
++        profileWriter: writer,
++        defaultCategoryProvisioner: categories,
++      );
++      const profile = AccountProfile(
++        firstName: 'Ada',
++        lastName: 'Lovelace',
++        email: ' Ada@Example.COM ',
++        age: 20,
++      );
++
++      await provisioner.ensureProfile('student-1', profile);
++      await provisioner.ensureProfile('student-1', profile);
++
++      expect(writer.writes, hasLength(2));
++      expect(writer.writes.map((write) => write.merge), everyElement(isTrue));
++      expect(
++        writer.writes.map((write) => write.profile.normalizedEmail),
++        everyElement('ada@example.com'),
++      );
++      expect(categories.provisionedUids, {'student-1'});
++    },
++  );
++}
+diff --git a/test/screens/full_system_audit_test.dart b/test/screens/full_system_audit_test.dart
+index c3f32f2..59028b0 100644
+--- a/test/screens/full_system_audit_test.dart
++++ b/test/screens/full_system_audit_test.dart
+@@ -120,21 +120,21 @@ void main() {
+       },
+     );
+ 
+     testWidgets(
+       'Section 1 Audit: RegisterScreen & OTPScreen render verification UI',
+       (WidgetTester tester) async {
+         await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+         await tester.pumpAndSettle();
+ 
+         expect(find.textContaining('สมัครสมาชิก'), findsWidgets);
+-        expect(find.byType(TextField), findsNWidgets(2)); // Email & Password
++        expect(find.byType(TextField), findsNWidgets(6));
+       },
+     );
+ 
+     test('Section 1 Audit: AuthService translates Firebase errors to Thai', () {
+       final exc = FirebaseAuthException(code: 'email-already-in-use');
+       final msg = AuthService.getErrorMessage(exc);
+       expect(msg, contains('อีเมลนี้ถูกใช้งานในระบบแล้ว'));
+     });
+ 
+     // -------------------------------------------------------------
+diff --git a/test/screens/otp_screen_test.dart b/test/screens/otp_screen_test.dart
+index bfdc38f..a1d08c7 100644
+--- a/test/screens/otp_screen_test.dart
++++ b/test/screens/otp_screen_test.dart
+@@ -1,35 +1,127 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_cooldown.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/otp_screen.dart';
+ 
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway(this._reloadResult);
++
++  AccountSession? _reloadResult;
++  int resendCalls = 0;
++
++  @override
++  AccountSession? get currentSession => _reloadResult;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(_reloadResult);
++
++  @override
++  Future<AccountSession?> reloadSession() async => _reloadResult;
++
++  @override
++  Future<void> sendVerificationEmail() async => resendCalls++;
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
++Widget _harness(_FakeAccountGateway gateway, AccountCooldown cooldown) =>
++    MaterialApp(
++      onGenerateRoute: (settings) => MaterialPageRoute<void>(
++        settings: settings,
++        builder: (_) => settings.name == AppRoute.home.path
++            ? const Scaffold(body: Text('HOME_REACHED'))
++            : OTPScreen(
++                email: 'student@example.com',
++                accountGateway: gateway,
++                resendCooldown: cooldown,
++              ),
++      ),
++    );
++
+ void main() {
+-  group('OTPScreen Widget Tests', () {
+-    testWidgets('renders OTP screen elements cleanly', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(
+-        const MaterialApp(home: OTPScreen(email: 'test@example.com')),
+-      );
+-
+-      expect(find.text('ยืนยันอีเมลของคุณ'), findsOneWidget);
+-      expect(find.textContaining('test@example.com'), findsOneWidget);
+-      expect(find.text('✅ ฉันได้ยืนยันแล้ว'), findsOneWidget);
+-      expect(find.text('🔄 ส่งอีเมลยืนยันใหม่'), findsOneWidget);
+-    });
+-
+-    testWidgets(
+-      'tapping check verification when unverified shows snackbar warning',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          const MaterialApp(home: OTPScreen(email: 'test@example.com')),
+-        );
+-
+-        final checkButton = find.text('✅ ฉันได้ยืนยันแล้ว');
+-        await tester.tap(checkButton);
+-        await tester.pumpAndSettle();
+-
+-        expect(find.text('⚠ กรุณายืนยันอีเมลก่อน'), findsOneWidget);
+-      },
++  testWidgets('refresh enters home only after a verified reload', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway(
++      const AccountSession(
++        uid: 'student-1',
++        email: 'student@example.com',
++        isAnonymous: false,
++        isEmailVerified: false,
++      ),
++    );
++    await tester.pumpWidget(_harness(gateway, AccountCooldown()));
++
++    await tester.tap(find.byKey(const ValueKey<String>('verify-refresh')));
++    await tester.pumpAndSettle();
++    expect(find.text('HOME_REACHED'), findsNothing);
++
++    gateway._reloadResult = const AccountSession(
++      uid: 'student-1',
++      email: 'student@example.com',
++      isAnonymous: false,
++      isEmailVerified: true,
+     );
++    await tester.tap(find.byKey(const ValueKey<String>('verify-refresh')));
++    await tester.pumpAndSettle();
++    expect(find.text('HOME_REACHED'), findsOneWidget);
++  });
++
++  testWidgets('resend uses a sixty-second cooldown', (tester) async {
++    var now = DateTime(2026, 7, 30, 12);
++    final gateway = _FakeAccountGateway(null);
++    final cooldown = AccountCooldown(now: () => now);
++    await tester.pumpWidget(_harness(gateway, cooldown));
++
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    expect(gateway.resendCalls, 1);
++
++    now = now.add(const Duration(seconds: 60));
++    await tester.pump();
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    expect(gateway.resendCalls, 2);
+   });
+ }
+diff --git a/test/screens/registration_flow_test.dart b/test/screens/registration_flow_test.dart
+index b29f3b5..b4f76f8 100644
+--- a/test/screens/registration_flow_test.dart
++++ b/test/screens/registration_flow_test.dart
+@@ -1,95 +1,151 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/register_screen.dart';
+-import 'package:vocab_learning_app/screens/otp_screen.dart';
+-import 'package:vocab_learning_app/screens/register_form_screen.dart';
+ 
+-void main() {
+-  group('Registration Flow End-to-End System Audit', () {
+-    testWidgets('RegisterScreen renders Thai labels and input fields cleanly', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+-      await tester.pumpAndSettle();
++const _emailKey = ValueKey<String>('register-email');
++const _passwordKey = ValueKey<String>('register-password');
++const _confirmationKey = ValueKey<String>('register-confirmation');
++const _firstNameKey = ValueKey<String>('register-first-name');
++const _lastNameKey = ValueKey<String>('register-last-name');
++const _ageKey = ValueKey<String>('register-age');
++const _submitKey = ValueKey<String>('register-submit');
+ 
+-      expect(find.textContaining('สมัครสมาชิก'), findsWidgets);
+-      expect(find.byType(TextField), findsNWidgets(2));
+-      expect(find.text('ส่งอีเมลยืนยัน (Send Email)'), findsOneWidget);
+-    });
++final class _FakeAccountGateway implements AccountGateway {
++  final events = <String>[];
+ 
+-    testWidgets('Submitting valid email and password navigates to OTPScreen', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+-      await tester.pumpAndSettle();
++  @override
++  AccountSession? get currentSession => null;
+ 
+-      // Enter valid email and password into TextFields
+-      await tester.enterText(
+-        find.byType(TextField).at(0),
+-        'student@example.com',
+-      );
+-      await tester.enterText(find.byType(TextField).at(1), 'password123');
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
+ 
+-      // Tap submit button
+-      await tester.tap(find.text('ส่งอีเมลยืนยัน (Send Email)'));
+-      await tester.pumpAndSettle();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) async {
++    events.add('createAccount:$email:$password');
++    return AccountSession(
++      uid: 'student-1',
++      email: email,
++      isAnonymous: false,
++      isEmailVerified: false,
++    );
++  }
+ 
+-      // Verify navigation to OTPScreen
+-      expect(find.byType(OTPScreen), findsOneWidget);
+-      expect(find.textContaining('student@example.com'), findsOneWidget);
+-    });
++  @override
++  Future<void> sendVerificationEmail() async =>
++      events.add('sendVerificationEmail');
+ 
+-    testWidgets(
+-      'OTPScreen blocks proceed when email is unverified (fail-closed security)',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          const MaterialApp(home: OTPScreen(email: 'student@example.com')),
+-        );
+-        await tester.pumpAndSettle();
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
+ 
+-        expect(find.text('ยืนยันอีเมลของคุณ'), findsOneWidget);
+-        expect(find.textContaining('student@example.com'), findsOneWidget);
++final class _FakeProfileProvisioner implements AccountProfileProvisioning {
++  _FakeProfileProvisioner(this.events);
+ 
+-        // Tap confirmation button when unverified
+-        await tester.tap(
+-          find.widgetWithText(ElevatedButton, '✅ ฉันได้ยืนยันแล้ว'),
+-        );
+-        await tester.pumpAndSettle();
++  final List<String> events;
+ 
+-        // Verify fail-closed security blocks navigation and displays warning
+-        expect(find.text('⚠ กรุณายืนยันอีเมลก่อน'), findsOneWidget);
+-        expect(find.byType(RegisterFormScreen), findsNothing);
+-      },
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) async {
++    events.add(
++      'ensureProfile:$uid:${profile.normalizedEmail}:${profile.firstName}:${profile.lastName}:${profile.age}',
+     );
++  }
++}
+ 
+-    testWidgets(
+-      'RegisterFormScreen renders fields and completes registration',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          MaterialApp(
+-            routes: {
+-              '/home': (context) =>
+-                  const Scaffold(body: Text('HOME_SCREEN_REACHED')),
+-            },
+-            home: const RegisterFormScreen(email: 'student@example.com'),
+-          ),
++Widget _harness(_FakeAccountGateway gateway) {
++  final events = gateway.events;
++  return MaterialApp(
++    onGenerateRoute: (settings) => MaterialPageRoute<void>(
++      settings: settings,
++      builder: (_) {
++        if (settings.name == AppRoute.verifyEmail.path) {
++          final args = settings.arguments! as VerifyEmailRouteArgs;
++          return Scaffold(body: Text('VERIFY:${args.email}'));
++        }
++        return RegisterScreen(
++          accountGateway: gateway,
++          profileProvisioner: _FakeProfileProvisioner(events),
+         );
+-        await tester.pumpAndSettle();
++      },
++    ),
++  );
++}
+ 
+-        expect(find.textContaining('student@example.com'), findsOneWidget);
++void main() {
++  testWidgets(
++    'creates, provisions, sends verification, then uses typed verification navigation',
++    (tester) async {
++      final gateway = _FakeAccountGateway();
++      await tester.pumpWidget(_harness(gateway));
+ 
+-        // Fill in student profile information
+-        await tester.enterText(find.byType(TextField).at(0), 'น้องอนันต์');
+-        await tester.enterText(find.byType(TextField).at(1), 'ใจดี');
+-        await tester.enterText(find.byType(TextField).at(2), '10');
++      await tester.enterText(find.byKey(_emailKey), ' Student@Example.COM ');
++      await tester.enterText(find.byKey(_passwordKey), 'password123');
++      await tester.enterText(find.byKey(_confirmationKey), 'password123');
++      await tester.enterText(find.byKey(_firstNameKey), 'Ada');
++      await tester.enterText(find.byKey(_lastNameKey), 'Lovelace');
++      await tester.enterText(find.byKey(_ageKey), '20');
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pumpAndSettle();
+ 
+-        // Tap submit registration button
+-        await tester.tap(find.text('สมัครสมาชิก'));
+-        await tester.pumpAndSettle();
++      expect(gateway.events, [
++        'createAccount:student@example.com:password123',
++        'ensureProfile:student-1:student@example.com:Ada:Lovelace:20',
++        'sendVerificationEmail',
++      ]);
++      expect(find.text('VERIFY:student@example.com'), findsOneWidget);
++    },
++  );
+ 
+-        // Verify successful navigation to Home Screen
+-        expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+-      },
+-    );
++  testWidgets('invalid profile fields do not create an account', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_harness(gateway));
++
++    await tester.enterText(find.byKey(_emailKey), 'student@example.com');
++    await tester.enterText(find.byKey(_passwordKey), 'password123');
++    await tester.enterText(find.byKey(_confirmationKey), 'different');
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++
++    expect(gateway.events, isEmpty);
+   });
+ }

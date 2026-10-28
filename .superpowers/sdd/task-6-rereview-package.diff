@@ -1,0 +1,1693 @@
+# Review package: 958e410..e9e4d72
+
+## Commits
+e9e4d72 fix: make account action links single-use
+d68ba20 feat: add password recovery action links
+
+## Files changed
+ android/app/src/main/AndroidManifest.xml           |   9 +
+ lib/main.dart                                      |  17 ++
+ lib/navigation/account_link_coordinator.dart       |  59 ++++++
+ lib/navigation/app_route.dart                      |   6 +
+ lib/navigation/app_router.dart                     |  77 ++++++++
+ lib/screens/forgot_password_screen.dart            | 144 ++++++++++++++
+ lib/screens/reset_password_screen.dart             | 191 +++++++++++++++++++
+ linux/flutter/generated_plugin_registrant.cc       |   4 +
+ linux/flutter/generated_plugins.cmake              |   1 +
+ macos/Flutter/GeneratedPluginRegistrant.swift      |   2 +
+ pubspec.lock                                       |  40 ++++
+ pubspec.yaml                                       |   1 +
+ test/account/account_models_test.dart              |   9 +
+ test/config/android_network_security_test.dart     |  24 +++
+ test/navigation/account_link_coordinator_test.dart | 151 +++++++++++++++
+ test/navigation/app_router_test.dart               |  87 ++++++++-
+ test/screens/forgot_password_screen_test.dart      | 138 ++++++++++++++
+ test/screens/reset_password_screen_test.dart       | 211 +++++++++++++++++++++
+ windows/flutter/generated_plugin_registrant.cc     |   3 +
+ windows/flutter/generated_plugins.cmake            |   1 +
+ 20 files changed, 1171 insertions(+), 4 deletions(-)
+
+## Diff
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index 178df91..892f25a 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -27,20 +27,29 @@
+                  while the Flutter UI initializes. After that, this theme continues
+                  to determine the Window background behind the Flutter UI. -->
+             <meta-data
+               android:name="io.flutter.embedding.android.NormalTheme"
+               android:resource="@style/NormalTheme"
+               />
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN"/>
+                 <category android:name="android.intent.category.LAUNCHER"/>
+             </intent-filter>
++            <intent-filter android:autoVerify="true">
++                <action android:name="android.intent.action.VIEW" />
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++                <data
++                    android:scheme="https"
++                    android:host="vocab-learning-app-219ef.web.app"
++                    android:pathPrefix="/auth/action" />
++            </intent-filter>
+         </activity>
+         <!-- Don't delete the meta-data below.
+              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+         <meta-data
+             android:name="flutterEmbedding"
+             android:value="2" />
+         <!-- Bundle ML Kit Image Labeling model inside APK (install & go, no download) -->
+         <meta-data
+             android:name="com.google.mlkit.vision.DEPENDENCIES"
+             android:value="label" />
+diff --git a/lib/main.dart b/lib/main.dart
+index 8c6f80f..77cab35 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,21 +1,38 @@
++import 'dart:async';
++
++import 'package:app_links/app_links.dart';
+ import 'package:flutter/material.dart';
+ import 'config/m3_theme.dart';
++import 'navigation/account_link_coordinator.dart';
+ import 'navigation/app_route.dart';
+ import 'navigation/app_router.dart';
+ import 'runtime/app_bootstrap.dart';
+ import 'runtime/app_dependencies.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   final dependencies = await AppBootstrap.production().initialize();
++  final appLinks = AppLinks();
++  final linkCoordinator = AccountLinkCoordinator(
++    appLinks: appLinks,
++    navigate: (route, arguments) {
++      AppRouter.navigatorKey.currentState?.pushNamed(
++        route.path,
++        arguments: arguments,
++      );
++    },
++  );
+   runApp(MyApp(dependencies: dependencies));
++  WidgetsBinding.instance.addPostFrameCallback((_) {
++    unawaited(linkCoordinator.start());
++  });
+ }
+ 
+ class MyApp extends StatelessWidget {
+   const MyApp({super.key, required this.dependencies});
+ 
+   final AppDependencies dependencies;
+ 
+   @override
+   Widget build(BuildContext context) {
+     return AppDependenciesScope(
+diff --git a/lib/navigation/account_link_coordinator.dart b/lib/navigation/account_link_coordinator.dart
+new file mode 100644
+index 0000000..d334849
+--- /dev/null
++++ b/lib/navigation/account_link_coordinator.dart
+@@ -0,0 +1,59 @@
++import 'dart:async';
++
++import 'package:app_links/app_links.dart';
++
++import '../account/account_models.dart';
++import 'app_route.dart';
++
++typedef AccountRouteNavigator =
++    void Function(AppRoute route, Object? arguments);
++
++final class AccountLinkCoordinator {
++  AccountLinkCoordinator({
++    required AppLinks appLinks,
++    required AccountRouteNavigator navigate,
++  }) : this._(appLinks.getInitialLink, appLinks.uriLinkStream, navigate);
++
++  AccountLinkCoordinator.forTesting({
++    required Future<Uri?> initialLink,
++    required Stream<Uri> uriLinks,
++    required AccountRouteNavigator navigate,
++  }) : this._(() => initialLink, uriLinks, navigate);
++
++  AccountLinkCoordinator._(this._initialLink, this._uriLinks, this._navigate);
++
++  final Future<Uri?> Function() _initialLink;
++  final Stream<Uri> _uriLinks;
++  final AccountRouteNavigator _navigate;
++  final Set<AccountActionLink> _handledActions = <AccountActionLink>{};
++  StreamSubscription<Uri>? _subscription;
++
++  Future<void> start() async {
++    final initialLink = await _initialLink();
++    _handle(initialLink);
++    _subscription ??= _uriLinks.listen(_handle);
++  }
++
++  void _handle(Uri? uri) {
++    if (uri == null) return;
++    final action = AccountActionLink.tryParse(uri);
++    if (action == null || !_handledActions.add(action)) return;
++    switch (action.mode) {
++      case AccountActionMode.resetPassword:
++        _navigate(
++          AppRoute.resetPassword,
++          ResetPasswordRouteArgs(code: action.code),
++        );
++      case AccountActionMode.verifyEmail:
++        _navigate(
++          AppRoute.verifyEmail,
++          VerifyEmailActionRouteArgs(code: action.code),
++        );
++    }
++  }
++
++  void dispose() {
++    _subscription?.cancel();
++    _subscription = null;
++  }
++}
+diff --git a/lib/navigation/app_route.dart b/lib/navigation/app_route.dart
+index e95d287..21c21e1 100644
+--- a/lib/navigation/app_route.dart
++++ b/lib/navigation/app_route.dart
+@@ -24,10 +24,16 @@ final class RegisterRouteArgs {
+ 
+   final String uid;
+   final String email;
+ }
+ 
+ final class ResetPasswordRouteArgs {
+   const ResetPasswordRouteArgs({required this.code});
+ 
+   final String code;
+ }
++
++final class VerifyEmailActionRouteArgs {
++  const VerifyEmailActionRouteArgs({required this.code});
++
++  final String code;
++}
+diff --git a/lib/navigation/app_router.dart b/lib/navigation/app_router.dart
+index f5ac609..32c8066 100644
+--- a/lib/navigation/app_router.dart
++++ b/lib/navigation/app_router.dart
+@@ -1,18 +1,21 @@
+ import 'package:flutter/material.dart';
+ 
++import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
+ import '../runtime/app_dependencies.dart';
++import '../screens/forgot_password_screen.dart';
+ import '../screens/login_screen.dart';
+ import '../screens/main_navigation_screen.dart';
+ import '../screens/otp_screen.dart';
+ import '../screens/register_screen.dart';
++import '../screens/reset_password_screen.dart';
+ import '../screens/session_gate_screen.dart';
+ import 'app_route.dart';
+ 
+ final class AppRouter {
+   AppRouter(this.dependencies);
+ 
+   static final navigatorKey = GlobalKey<NavigatorState>();
+ 
+   final AppDependencies dependencies;
+ 
+@@ -36,39 +39,69 @@ final class AppRouter {
+           guestSessionService: dependencies.guestSessionService,
+         ),
+       );
+     }
+     if (path == AppRoute.register.path) {
+       return _registerRoute(settings);
+     }
+     if (path == AppRoute.verifyEmail.path) {
+       return _verifyEmailRoute(settings);
+     }
++    if (path == AppRoute.forgotPassword.path) {
++      return _route(
++        settings,
++        ForgotPasswordScreen(accountGateway: dependencies.accountGateway),
++      );
++    }
++    if (path == AppRoute.resetPassword.path) {
++      return _resetPasswordRoute(settings);
++    }
+     if (path == AppRoute.home.path) {
+       return _route(settings, const MainNavigationScreen());
+     }
+     return null;
+   }
+ 
+   Route<dynamic>? _verifyEmailRoute(RouteSettings settings) {
+     final args = settings.arguments;
++    if (args is VerifyEmailActionRouteArgs) {
++      return _route(
++        settings,
++        _VerifyEmailActionScreen(
++          code: args.code,
++          accountGateway: dependencies.accountGateway,
++        ),
++      );
++    }
+     if (args is! VerifyEmailRouteArgs) return null;
+     return _route(
+       settings,
+       OTPScreen(
+         email: args.email,
+         accountGateway: dependencies.accountGateway,
+         profileProvisioner: dependencies.accountProfileProvisioning,
+       ),
+     );
+   }
+ 
++  Route<dynamic>? _resetPasswordRoute(RouteSettings settings) {
++    final args = settings.arguments;
++    if (args is! ResetPasswordRouteArgs) return null;
++    return _route(
++      settings,
++      ResetPasswordScreen(
++        accountGateway: dependencies.accountGateway,
++        code: args.code,
++      ),
++    );
++  }
++
+   Route<dynamic>? _registerRoute(RouteSettings settings) {
+     final args = settings.arguments;
+     if (args != null && args is! RegisterRouteArgs) return null;
+     final recovery = args as RegisterRouteArgs?;
+     return _route(
+       settings,
+       RegisterScreen(
+         accountGateway: dependencies.accountGateway,
+         profileProvisioner: dependencies.accountProfileProvisioning,
+         recoveredSession: recovery == null
+@@ -83,10 +116,54 @@ final class AppRouter {
+     );
+   }
+ 
+   MaterialPageRoute<dynamic> _route(RouteSettings settings, Widget child) {
+     return MaterialPageRoute<dynamic>(
+       settings: settings,
+       builder: (_) => child,
+     );
+   }
+ }
++
++final class _VerifyEmailActionScreen extends StatefulWidget {
++  const _VerifyEmailActionScreen({
++    required this.code,
++    required this.accountGateway,
++  });
++
++  final String code;
++  final AccountGateway accountGateway;
++
++  @override
++  State<_VerifyEmailActionScreen> createState() =>
++      _VerifyEmailActionScreenState();
++}
++
++final class _VerifyEmailActionScreenState
++    extends State<_VerifyEmailActionScreen> {
++  String? _error;
++
++  @override
++  void initState() {
++    super.initState();
++    _applyCode();
++  }
++
++  Future<void> _applyCode() async {
++    try {
++      await widget.accountGateway.applyVerificationCode(widget.code);
++      if (mounted) {
++        Navigator.of(
++          context,
++        ).pushNamedAndRemoveUntil(AppRoute.login.path, (_) => false);
++      }
++    } on Object {
++      if (mounted) setState(() => _error = 'ไม่สามารถยืนยันอีเมลได้');
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) => Scaffold(
++    appBar: AppBar(title: const Text('ยืนยันอีเมล')),
++    body: Center(child: Text(_error ?? 'กำลังยืนยันอีเมล...')),
++  );
++}
+diff --git a/lib/screens/forgot_password_screen.dart b/lib/screens/forgot_password_screen.dart
+new file mode 100644
+index 0000000..c403f8e
+--- /dev/null
++++ b/lib/screens/forgot_password_screen.dart
+@@ -0,0 +1,144 @@
++import 'package:flutter/material.dart';
++
++import '../account/account_cooldown.dart';
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++
++class ForgotPasswordScreen extends StatefulWidget {
++  const ForgotPasswordScreen({
++    super.key,
++    required this.accountGateway,
++    this.cooldown,
++  });
++
++  final AccountGateway accountGateway;
++  final AccountCooldown? cooldown;
++
++  @override
++  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
++}
++
++class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
++  final _formKey = GlobalKey<FormState>();
++  final _emailController = TextEditingController();
++  late final AccountCooldown _cooldown = widget.cooldown ?? AccountCooldown();
++  bool _isSubmitting = false;
++  String? _retryEmail;
++
++  String? _validateEmail(String? value) {
++    final email = value?.trim() ?? '';
++    return RegExp(
++          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
++        ).hasMatch(email)
++        ? null
++        : 'กรุณากรอกอีเมลให้ถูกต้อง';
++  }
++
++  Future<void> _submit([String? email]) async {
++    if (_isSubmitting) return;
++    if (email == null && !(_formKey.currentState?.validate() ?? false)) return;
++    if (!_cooldown.canSubmit) {
++      _showMessage(
++        'กรุณารอ ${_cooldown.remaining.inSeconds} วินาทีก่อนส่งอีเมลอีกครั้ง',
++      );
++      return;
++    }
++
++    final normalizedEmail = (email ?? _emailController.text)
++        .trim()
++        .toLowerCase();
++    setState(() => _isSubmitting = true);
++    try {
++      await widget.accountGateway.requestPasswordReset(normalizedEmail);
++      _showAccepted();
++    } on AccountOperationException catch (error) {
++      if (error.code == 'user-not-found' || error.code == 'email-not-found') {
++        _showAccepted();
++      } else {
++        if (mounted) setState(() => _retryEmail = normalizedEmail);
++        _showMessage(AccountErrorMapper.messageFor(error.code));
++      }
++    } on Object {
++      if (mounted) setState(() => _retryEmail = normalizedEmail);
++      _showMessage(AccountErrorMapper.messageFor('unknown'));
++    } finally {
++      if (mounted) setState(() => _isSubmitting = false);
++    }
++  }
++
++  void _showAccepted() {
++    _cooldown.start();
++    if (mounted) {
++      setState(() => _retryEmail = null);
++      _showMessage(AccountErrorMapper.recoveryAcceptedMessage);
++    }
++  }
++
++  void _showMessage(String message) {
++    if (!mounted) return;
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
++  @override
++  void dispose() {
++    _emailController.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Scaffold(
++      appBar: AppBar(title: const Text('ลืมรหัสผ่าน')),
++      body: Center(
++        child: SingleChildScrollView(
++          padding: const EdgeInsets.all(24),
++          child: ConstrainedBox(
++            constraints: const BoxConstraints(maxWidth: 420),
++            child: Form(
++              key: _formKey,
++              child: Column(
++                mainAxisSize: MainAxisSize.min,
++                crossAxisAlignment: CrossAxisAlignment.stretch,
++                children: [
++                  const Text(
++                    'ตั้งรหัสผ่านใหม่',
++                    textAlign: TextAlign.center,
++                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
++                  ),
++                  const SizedBox(height: 20),
++                  TextFormField(
++                    key: const ValueKey<String>('recovery-email'),
++                    controller: _emailController,
++                    keyboardType: TextInputType.emailAddress,
++                    autofillHints: const [AutofillHints.email],
++                    validator: _validateEmail,
++                    decoration: const InputDecoration(
++                      labelText: 'อีเมล',
++                      border: OutlineInputBorder(),
++                    ),
++                  ),
++                  const SizedBox(height: 16),
++                  FilledButton(
++                    key: const ValueKey<String>('recovery-submit'),
++                    onPressed: _isSubmitting ? null : _submit,
++                    child: const Text('ส่งลิงก์ตั้งรหัสผ่านใหม่'),
++                  ),
++                  if (_retryEmail != null)
++                    TextButton(
++                      key: const ValueKey<String>('recovery-retry'),
++                      onPressed: _isSubmitting
++                          ? null
++                          : () => _submit(_retryEmail),
++                      child: const Text('ลองส่งอีกครั้ง'),
++                    ),
++                ],
++              ),
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/screens/reset_password_screen.dart b/lib/screens/reset_password_screen.dart
+new file mode 100644
+index 0000000..36ba913
+--- /dev/null
++++ b/lib/screens/reset_password_screen.dart
+@@ -0,0 +1,191 @@
++import 'package:flutter/material.dart';
++
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../navigation/app_route.dart';
++
++class ResetPasswordScreen extends StatefulWidget {
++  const ResetPasswordScreen({
++    super.key,
++    required this.accountGateway,
++    required this.code,
++  });
++
++  final AccountGateway accountGateway;
++  final String code;
++
++  @override
++  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
++}
++
++class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
++  final _formKey = GlobalKey<FormState>();
++  final _passwordController = TextEditingController();
++  final _confirmationController = TextEditingController();
++  bool _isVerifying = true;
++  bool _isSubmitting = false;
++  bool _canSubmit = false;
++  bool _requiresNewLink = false;
++
++  @override
++  void initState() {
++    super.initState();
++    _verifyCode();
++  }
++
++  Future<void> _verifyCode() async {
++    try {
++      await widget.accountGateway.verifyPasswordResetCode(widget.code);
++      if (mounted) setState(() => _canSubmit = true);
++    } on AccountOperationException catch (error) {
++      if (mounted) {
++        setState(() => _requiresNewLink = _isInvalidResetCode(error.code));
++        _showMessage(AccountErrorMapper.messageFor(error.code));
++      }
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
++    } finally {
++      if (mounted) setState(() => _isVerifying = false);
++    }
++  }
++
++  String? _validatePassword(String? value) {
++    final password = value ?? '';
++    final isValid =
++        password.length >= 8 &&
++        RegExp(r'[A-Za-z]').hasMatch(password) &&
++        RegExp(r'[0-9]').hasMatch(password);
++    return isValid
++        ? null
++        : 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรและตัวเลข';
++  }
++
++  String? _validateConfirmation(String? value) =>
++      value == _passwordController.text ? null : 'รหัสผ่านยืนยันไม่ตรงกัน';
++
++  Future<void> _submit() async {
++    if (_isVerifying ||
++        _isSubmitting ||
++        !_canSubmit ||
++        !(_formKey.currentState?.validate() ?? false)) {
++      return;
++    }
++    setState(() => _isSubmitting = true);
++    try {
++      await widget.accountGateway.confirmPasswordReset(
++        code: widget.code,
++        newPassword: _passwordController.text,
++      );
++      if (mounted) {
++        Navigator.of(
++          context,
++        ).pushNamedAndRemoveUntil(AppRoute.login.path, (_) => false);
++      }
++    } on AccountOperationException catch (error) {
++      if (mounted) {
++        if (_isInvalidResetCode(error.code)) {
++          setState(() {
++            _canSubmit = false;
++            _requiresNewLink = true;
++          });
++        }
++        _showMessage(AccountErrorMapper.messageFor(error.code));
++      }
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
++    } finally {
++      if (mounted) setState(() => _isSubmitting = false);
++    }
++  }
++
++  bool _isInvalidResetCode(String code) =>
++      code == 'expired-action-code' || code == 'invalid-action-code';
++
++  void _showMessage(String message) {
++    if (!mounted) return;
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
++  @override
++  void dispose() {
++    _passwordController.dispose();
++    _confirmationController.dispose();
++    super.dispose();
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Scaffold(
++      appBar: AppBar(title: const Text('ตั้งรหัสผ่านใหม่')),
++      body: Center(
++        child: SingleChildScrollView(
++          padding: const EdgeInsets.all(24),
++          child: ConstrainedBox(
++            constraints: const BoxConstraints(maxWidth: 420),
++            child: _requiresNewLink
++                ? Column(
++                    mainAxisSize: MainAxisSize.min,
++                    crossAxisAlignment: CrossAxisAlignment.stretch,
++                    children: [
++                      const Text(
++                        'ลิงก์นี้ใช้ไม่ได้แล้ว',
++                        textAlign: TextAlign.center,
++                      ),
++                      TextButton(
++                        key: const ValueKey<String>('reset-request-new-link'),
++                        onPressed: () => Navigator.of(
++                          context,
++                        ).pushReplacementNamed(AppRoute.forgotPassword.path),
++                        child: const Text('ขอลิงก์ใหม่'),
++                      ),
++                    ],
++                  )
++                : Form(
++                    key: _formKey,
++                    child: Column(
++                      mainAxisSize: MainAxisSize.min,
++                      crossAxisAlignment: CrossAxisAlignment.stretch,
++                      children: [
++                        TextFormField(
++                          key: const ValueKey<String>('reset-password'),
++                          controller: _passwordController,
++                          obscureText: true,
++                          validator: _validatePassword,
++                          decoration: const InputDecoration(
++                            labelText: 'รหัสผ่านใหม่',
++                            border: OutlineInputBorder(),
++                          ),
++                        ),
++                        const SizedBox(height: 16),
++                        TextFormField(
++                          key: const ValueKey<String>('reset-confirmation'),
++                          controller: _confirmationController,
++                          obscureText: true,
++                          validator: _validateConfirmation,
++                          decoration: const InputDecoration(
++                            labelText: 'ยืนยันรหัสผ่านใหม่',
++                            border: OutlineInputBorder(),
++                          ),
++                        ),
++                        const SizedBox(height: 16),
++                        FilledButton(
++                          key: const ValueKey<String>('reset-submit'),
++                          onPressed:
++                              _canSubmit && !_isSubmitting && !_isVerifying
++                              ? _submit
++                              : null,
++                          child: _isVerifying
++                              ? const CircularProgressIndicator()
++                              : const Text('บันทึกรหัสผ่านใหม่'),
++                        ),
++                      ],
++                    ),
++                  ),
++          ),
++        ),
++      ),
++    );
++  }
++}
+diff --git a/linux/flutter/generated_plugin_registrant.cc b/linux/flutter/generated_plugin_registrant.cc
+index 1830e5c..0451cda 100644
+--- a/linux/flutter/generated_plugin_registrant.cc
++++ b/linux/flutter/generated_plugin_registrant.cc
+@@ -1,15 +1,19 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ // clang-format off
+ 
+ #include "generated_plugin_registrant.h"
+ 
+ #include <audioplayers_linux/audioplayers_linux_plugin.h>
++#include <gtk/gtk_plugin.h>
+ 
+ void fl_register_plugins(FlPluginRegistry* registry) {
+   g_autoptr(FlPluginRegistrar) audioplayers_linux_registrar =
+       fl_plugin_registry_get_registrar_for_plugin(registry, "AudioplayersLinuxPlugin");
+   audioplayers_linux_plugin_register_with_registrar(audioplayers_linux_registrar);
++  g_autoptr(FlPluginRegistrar) gtk_registrar =
++      fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
++  gtk_plugin_register_with_registrar(gtk_registrar);
+ }
+diff --git a/linux/flutter/generated_plugins.cmake b/linux/flutter/generated_plugins.cmake
+index f4bf1dc..4c209f6 100644
+--- a/linux/flutter/generated_plugins.cmake
++++ b/linux/flutter/generated_plugins.cmake
+@@ -1,16 +1,17 @@
+ #
+ # Generated file, do not edit.
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
+   audioplayers_linux
++  gtk
+ )
+ 
+ list(APPEND FLUTTER_FFI_PLUGIN_LIST
+   jni
+ )
+ 
+ set(PLUGIN_BUNDLED_LIBRARIES)
+ 
+ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+   add_subdirectory(flutter/ephemeral/.plugin_symlinks/${plugin}/linux plugins/${plugin})
+diff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift
+index 7522241..1a2f0bc 100644
+--- a/macos/Flutter/GeneratedPluginRegistrant.swift
++++ b/macos/Flutter/GeneratedPluginRegistrant.swift
+@@ -1,28 +1,30 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ import FlutterMacOS
+ import Foundation
+ 
++import app_links
+ import audioplayers_darwin
+ import cloud_firestore
+ import cloud_functions
+ import firebase_app_check
+ import firebase_auth
+ import firebase_core
+ import flutter_tts
+ import shared_preferences_foundation
+ import speech_to_text
+ 
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
++  AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
+   AudioplayersDarwinPlugin.register(with: registry.registrar(forPlugin: "AudioplayersDarwinPlugin"))
+   FLTFirebaseFirestorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseFirestorePlugin"))
+   FirebaseFunctionsPlugin.register(with: registry.registrar(forPlugin: "FirebaseFunctionsPlugin"))
+   FirebaseAppCheckPlugin.register(with: registry.registrar(forPlugin: "FirebaseAppCheckPlugin"))
+   FLTFirebaseAuthPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseAuthPlugin"))
+   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
+   FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
+   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+   SpeechToTextPlugin.register(with: registry.registrar(forPlugin: "SpeechToTextPlugin"))
+ }
+diff --git a/pubspec.lock b/pubspec.lock
+index 66a5f9e..7e2c33a 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -18,20 +18,52 @@ packages:
+     source: hosted
+     version: "1.3.75"
+   analyzer:
+     dependency: transitive
+     description:
+       name: analyzer
+       sha256: "6ba98576948803398b69e3a444df24eacdbe12ed699c7014e120ea38552debbf"
+       url: "https://pub.dev"
+     source: hosted
+     version: "13.0.0"
++  app_links:
++    dependency: "direct main"
++    description:
++      name: app_links
++      sha256: f8db46d2ea9ff6f3a37191a7fd5b7813da1253ace8c32c1b9eadace41d1188ea
++      url: "https://pub.dev"
++    source: hosted
++    version: "7.2.1"
++  app_links_linux:
++    dependency: transitive
++    description:
++      name: app_links_linux
++      sha256: f5f7173a78609f3dfd4c2ff2c95bd559ab43c80a87dc6a095921d96c05688c81
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.3"
++  app_links_platform_interface:
++    dependency: transitive
++    description:
++      name: app_links_platform_interface
++      sha256: "7546f09a6e93f4a2df2fe2bd40a5c6c64310ac461b036d82b43033be7a59f809"
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.0.4"
++  app_links_web:
++    dependency: transitive
++    description:
++      name: app_links_web
++      sha256: af060ed76183f9e2b87510a9480e56a5352b6c249778d07bd2c95fc35632a555
++      url: "https://pub.dev"
++    source: hosted
++    version: "1.0.4"
+   args:
+     dependency: transitive
+     description:
+       name: args
+       sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.7.0"
+   async:
+     dependency: transitive
+@@ -483,20 +515,28 @@ packages:
+     source: hosted
+     version: "8.2.0"
+   graphs:
+     dependency: transitive
+     description:
+       name: graphs
+       sha256: "741bbf84165310a68ff28fe9e727332eef1407342fca52759cb21ad8177bb8d0"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.3.2"
++  gtk:
++    dependency: transitive
++    description:
++      name: gtk
++      sha256: "4ff85b2a16724029dd9e5bbb5a94b6918f9973f74ba571c949d2002801879cf5"
++      url: "https://pub.dev"
++    source: hosted
++    version: "2.2.0"
+   hooks:
+     dependency: transitive
+     description:
+       name: hooks
+       sha256: "9a62a50b50b769a737bc0a8ff381f333529df3ab746b2f6b02e83760231455ba"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.0.2"
+   http:
+     dependency: "direct main"
+diff --git a/pubspec.yaml b/pubspec.yaml
+index b65f3bc..2019143 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -22,20 +22,21 @@ dependencies:
+   shared_preferences: ^2.5.5
+   flutter_speed_dial: ^7.0.0
+   audioplayers: ^6.8.1
+   drift: ^2.34.3
+   sqlite3: ^3.5.0
+   path: ^1.9.1
+   path_provider: ^2.1.6
+   crypto: ^3.0.7
+   cloud_functions: ^6.3.5
+   firebase_app_check: ^0.4.5+2
++  app_links: ^7.2.1
+ 
+ dev_dependencies:
+   flutter_test:
+     sdk: flutter
+   flutter_lints: ^6.0.0
+   drift_dev: ^2.34.5
+   build_runner: ^2.15.1
+   integration_test:
+     sdk: flutter
+ 
+diff --git a/test/account/account_models_test.dart b/test/account/account_models_test.dart
+index 9f2f55f..30b8228 100644
+--- a/test/account/account_models_test.dart
++++ b/test/account/account_models_test.dart
+@@ -39,12 +39,21 @@ void main() {
+     );
+     expect(
+       AccountActionLink.tryParse(
+         Uri.parse(
+           'https://vocab-learning-app-219ef.web.app/auth/action'
+           '?mode=resetPassword',
+         ),
+       ),
+       isNull,
+     );
++    expect(
++      AccountActionLink.tryParse(
++        Uri.parse(
++          'https://vocab-learning-app-219ef.web.app/auth/action'
++          '?mode=recoverEmail&oobCode=x',
++        ),
++      ),
++      isNull,
++    );
+   });
+ }
+diff --git a/test/config/android_network_security_test.dart b/test/config/android_network_security_test.dart
+index e0ee5b8..2b06e06 100644
+--- a/test/config/android_network_security_test.dart
++++ b/test/config/android_network_security_test.dart
+@@ -48,20 +48,44 @@ void main() {
+       expect(manifest.existsSync(), isTrue);
+     });
+ 
+     test('main manifest never globally permits cleartext', () {
+       final manifest = File('${androidAppSrc.path}/main/AndroidManifest.xml');
+       expect(
+         _readOrEmpty(manifest),
+         isNot(contains('usesCleartextTraffic="true"')),
+       );
+     });
++
++    test(
++      'main manifest locks the Firebase Hosting Android App Link contract',
++      () {
++        final manifest = File('${androidAppSrc.path}/main/AndroidManifest.xml');
++        final content = _readOrEmpty(manifest);
++        expect(content, contains('<intent-filter android:autoVerify="true">'));
++        expect(content, contains('android:name="android.intent.action.VIEW"'));
++        expect(
++          content,
++          contains('android:name="android.intent.category.DEFAULT"'),
++        );
++        expect(
++          content,
++          contains('android:name="android.intent.category.BROWSABLE"'),
++        );
++        expect(content, contains('android:scheme="https"'));
++        expect(
++          content,
++          contains('android:host="vocab-learning-app-219ef.web.app"'),
++        );
++        expect(content, contains('android:pathPrefix="/auth/action"'));
++      },
++    );
+   });
+ 
+   group('debug Android outlet is narrowed by the Dart RFC 1918 allowlist', () {
+     test('debug AndroidManifest.xml exists', () {
+       final manifest = File('${androidAppSrc.path}/debug/AndroidManifest.xml');
+       expect(manifest.existsSync(), isTrue);
+     });
+ 
+     test('debug application references its network security config', () {
+       final manifest = File('${androidAppSrc.path}/debug/AndroidManifest.xml');
+diff --git a/test/navigation/account_link_coordinator_test.dart b/test/navigation/account_link_coordinator_test.dart
+new file mode 100644
+index 0000000..7f1c130
+--- /dev/null
++++ b/test/navigation/account_link_coordinator_test.dart
+@@ -0,0 +1,151 @@
++import 'dart:async';
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/navigation/account_link_coordinator.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
++
++void main() {
++  final resetLink = Uri.parse(
++    'https://vocab-learning-app-219ef.web.app/auth/action?mode=resetPassword&oobCode=reset-code',
++  );
++  final verifyLink = Uri.parse(
++    'https://vocab-learning-app-219ef.web.app/auth/action?mode=verifyEmail&oobCode=verify-code',
++  );
++
++  test('cold reset action link navigates to the typed reset route', () async {
++    final navigations = <({AppRoute route, Object? arguments})>[];
++    final coordinator = AccountLinkCoordinator.forTesting(
++      initialLink: Future<Uri?>.value(resetLink),
++      uriLinks: const Stream<Uri>.empty(),
++      navigate: (route, arguments) =>
++          navigations.add((route: route, arguments: arguments)),
++    );
++
++    await coordinator.start();
++
++    expect(navigations, hasLength(1));
++    expect(navigations.single.route, AppRoute.resetPassword);
++    expect(navigations.single.arguments, isA<ResetPasswordRouteArgs>());
++    expect(
++      (navigations.single.arguments! as ResetPasswordRouteArgs).code,
++      'reset-code',
++    );
++  });
++
++  test('handles a duplicate cold reset link only once', () async {
++    final controller = StreamController<Uri>();
++    final navigations = <({AppRoute route, Object? arguments})>[];
++    final coordinator = AccountLinkCoordinator.forTesting(
++      initialLink: Future<Uri?>.value(resetLink),
++      uriLinks: controller.stream,
++      navigate: (route, arguments) =>
++          navigations.add((route: route, arguments: arguments)),
++    );
++
++    await coordinator.start();
++    controller.add(resetLink);
++    await Future<void>.delayed(Duration.zero);
++
++    expect(navigations, hasLength(1));
++    expect(navigations.single.route, AppRoute.resetPassword);
++    await controller.close();
++    coordinator.dispose();
++  });
++
++  test('handles a duplicate cold verification link only once', () async {
++    final controller = StreamController<Uri>();
++    final navigations = <({AppRoute route, Object? arguments})>[];
++    final coordinator = AccountLinkCoordinator.forTesting(
++      initialLink: Future<Uri?>.value(verifyLink),
++      uriLinks: controller.stream,
++      navigate: (route, arguments) =>
++          navigations.add((route: route, arguments: arguments)),
++    );
++
++    await coordinator.start();
++    controller.add(verifyLink);
++    await Future<void>.delayed(Duration.zero);
++
++    expect(navigations, hasLength(1));
++    expect(navigations.single.route, AppRoute.verifyEmail);
++    await controller.close();
++    coordinator.dispose();
++  });
++
++  test(
++    'handles a later distinct action link after deduplicating a cold link',
++    () async {
++      final controller = StreamController<Uri>();
++      final navigations = <({AppRoute route, Object? arguments})>[];
++      final coordinator = AccountLinkCoordinator.forTesting(
++        initialLink: Future<Uri?>.value(resetLink),
++        uriLinks: controller.stream,
++        navigate: (route, arguments) =>
++            navigations.add((route: route, arguments: arguments)),
++      );
++
++      await coordinator.start();
++      controller
++        ..add(resetLink)
++        ..add(
++          Uri.parse(
++            'https://vocab-learning-app-219ef.web.app/auth/action?mode=resetPassword&oobCode=later-code',
++          ),
++        );
++      await Future<void>.delayed(Duration.zero);
++
++      expect(navigations, hasLength(2));
++      expect(
++        (navigations.last.arguments! as ResetPasswordRouteArgs).code,
++        'later-code',
++      );
++      await controller.close();
++      coordinator.dispose();
++    },
++  );
++
++  test(
++    'warm verification action link navigates to the typed verification route',
++    () async {
++      final controller = StreamController<Uri>();
++      final navigations = <({AppRoute route, Object? arguments})>[];
++      final coordinator = AccountLinkCoordinator.forTesting(
++        initialLink: Future<Uri?>.value(null),
++        uriLinks: controller.stream,
++        navigate: (route, arguments) =>
++            navigations.add((route: route, arguments: arguments)),
++      );
++      await coordinator.start();
++      controller.add(verifyLink);
++      await Future<void>.delayed(Duration.zero);
++
++      expect(navigations, hasLength(1));
++      expect(navigations.single.route, AppRoute.verifyEmail);
++      expect(navigations.single.arguments, isA<VerifyEmailActionRouteArgs>());
++      expect(
++        (navigations.single.arguments! as VerifyEmailActionRouteArgs).code,
++        'verify-code',
++      );
++      await controller.close();
++      coordinator.dispose();
++    },
++  );
++
++  test('foreign and malformed links are ignored without navigation', () async {
++    final navigations = <({AppRoute route, Object? arguments})>[];
++    final coordinator = AccountLinkCoordinator.forTesting(
++      initialLink: Future<Uri?>.value(
++        Uri.parse(
++          'https://evil.example/auth/action?mode=resetPassword&oobCode=secret',
++        ),
++      ),
++      uriLinks: const Stream<Uri>.empty(),
++      navigate: (route, arguments) =>
++          navigations.add((route: route, arguments: arguments)),
++    );
++
++    await coordinator.start();
++
++    expect(navigations, isEmpty);
++  });
++}
+diff --git a/test/navigation/app_router_test.dart b/test/navigation/app_router_test.dart
+index d5dc0f1..f3b7bdc 100644
+--- a/test/navigation/app_router_test.dart
++++ b/test/navigation/app_router_test.dart
+@@ -1,31 +1,41 @@
++import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+-import 'package:flutter/widgets.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
+ import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/navigation/app_router.dart';
+ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway({this.applyVerificationError});
++
++  final Object? applyVerificationError;
++  final List<String> appliedVerificationCodes = <String>[];
++
+   @override
+   AccountSession? get currentSession => null;
+ 
+   @override
+   Stream<AccountSession?> authStateChanges() =>
+       Stream<AccountSession?>.value(null);
+ 
+   @override
+-  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  Future<void> applyVerificationCode(String code) async {
++    appliedVerificationCodes.add(code);
++    final error = applyVerificationError;
++    if (error != null) throw error;
++  }
++
+   @override
+   Future<void> changePassword({
+     required String currentPassword,
+     required String newPassword,
+   }) => throw UnimplementedError();
+   @override
+   Future<void> confirmPasswordReset({
+     required String code,
+     required String newPassword,
+   }) => throw UnimplementedError();
+@@ -67,28 +77,28 @@ final class _FakeProfileProvisioner implements AccountProfileProvisioning {
+   const _FakeProfileProvisioner();
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) =>
+       throw UnimplementedError();
+ 
+   @override
+   Future<bool> isProvisioningComplete(String uid) async => true;
+ }
+ 
+-AppRouter _router() => AppRouter(
++AppRouter _router({_FakeAccountGateway? accountGateway}) => AppRouter(
+   AppDependencies(
+     runtimeStatus: const AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
+     ),
+     config: null,
+-    accountGateway: _FakeAccountGateway(),
++    accountGateway: accountGateway ?? _FakeAccountGateway(),
+     accountProfileProvisioning: const _FakeProfileProvisioner(),
+     guestSessionService: _FakeGuestSessionService(),
+   ),
+ );
+ 
+ void main() {
+   test('canonical account routes are unique and stable', () {
+     expect(
+       AppRoute.values.map((route) => route.path).toSet().length,
+       AppRoute.values.length,
+@@ -129,11 +139,80 @@ void main() {
+       router.generateRoute(
+         const RouteSettings(name: '/verify-email', arguments: 'email'),
+       ),
+       isNull,
+     );
+     expect(
+       router.generateRoute(const RouteSettings(name: '/verify-email')),
+       isNull,
+     );
+   });
++
++  testWidgets('verification action applies its code once and routes to login', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    final router = _router(accountGateway: gateway);
++    await tester.pumpWidget(
++      MaterialApp(
++        onGenerateRoute: router.generateRoute,
++        home: Builder(
++          builder: (context) => FilledButton(
++            onPressed: () => Navigator.of(context).pushNamed(
++              AppRoute.verifyEmail.path,
++              arguments: const VerifyEmailActionRouteArgs(
++                code: 'verification-code',
++              ),
++            ),
++            child: const Text('OPEN_ACTION'),
++          ),
++        ),
++      ),
++    );
++
++    await tester.tap(find.text('OPEN_ACTION'));
++    await tester.pumpAndSettle();
++
++    expect(
++      gateway.appliedVerificationCodes,
++      equals(<String>['verification-code']),
++    );
++    expect(find.byKey(const ValueKey<String>('login-email')), findsOneWidget);
++  });
++
++  testWidgets('verification action failure keeps the code out of the UI', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway(
++      applyVerificationError: const AccountOperationException(
++        'invalid-action-code',
++      ),
++    );
++    final router = _router(accountGateway: gateway);
++    await tester.pumpWidget(
++      MaterialApp(
++        onGenerateRoute: router.generateRoute,
++        home: Builder(
++          builder: (context) => FilledButton(
++            onPressed: () => Navigator.of(context).pushNamed(
++              AppRoute.verifyEmail.path,
++              arguments: const VerifyEmailActionRouteArgs(
++                code: 'private-action-code',
++              ),
++            ),
++            child: const Text('OPEN_ACTION'),
++          ),
++        ),
++      ),
++    );
++
++    await tester.tap(find.text('OPEN_ACTION'));
++    await tester.pumpAndSettle();
++
++    expect(
++      gateway.appliedVerificationCodes,
++      equals(<String>['private-action-code']),
++    );
++    expect(find.byKey(const ValueKey<String>('login-email')), findsNothing);
++    expect(find.textContaining('private-action-code'), findsNothing);
++  });
+ }
+diff --git a/test/screens/forgot_password_screen_test.dart b/test/screens/forgot_password_screen_test.dart
+new file mode 100644
+index 0000000..a8e0aa4
+--- /dev/null
++++ b/test/screens/forgot_password_screen_test.dart
+@@ -0,0 +1,138 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_cooldown.dart';
++import 'package:vocab_learning_app/account/account_error_mapper.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/screens/forgot_password_screen.dart';
++
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway({this.resetError});
++
++  final Object? resetError;
++  final List<String> resetRequests = <String>[];
++
++  @override
++  AccountSession? get currentSession => null;
++  @override
++  Stream<AccountSession?> authStateChanges() => const Stream.empty();
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) async {
++    resetRequests.add(email);
++    final error = resetError;
++    if (error != null) throw error;
++  }
++
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
++Widget _subject(_FakeAccountGateway gateway) => MaterialApp(
++  home: ForgotPasswordScreen(
++    accountGateway: gateway,
++    cooldown: AccountCooldown(duration: Duration.zero),
++  ),
++);
++
++Future<void> _submit(WidgetTester tester, String email) async {
++  await tester.enterText(
++    find.byKey(const ValueKey<String>('recovery-email')),
++    email,
++  );
++  await tester.tap(find.byKey(const ValueKey<String>('recovery-submit')));
++  await tester.pump();
++}
++
++void main() {
++  for (final error in <Object?>[
++    null,
++    const AccountOperationException('user-not-found'),
++    const AccountOperationException('email-not-found'),
++  ]) {
++    testWidgets(
++      'shows neutral acknowledgement for accepted and non-existent accounts',
++      (tester) async {
++        final gateway = _FakeAccountGateway(resetError: error);
++        await tester.pumpWidget(_subject(gateway));
++
++        await _submit(tester, ' Student@Example.com ');
++
++        expect(gateway.resetRequests, equals(<String>['student@example.com']));
++        expect(
++          find.text(AccountErrorMapper.recoveryAcceptedMessage),
++          findsOneWidget,
++        );
++      },
++    );
++  }
++
++  testWidgets('rejects an invalid local email before calling the gateway', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_subject(gateway));
++
++    await _submit(tester, 'not-an-email');
++
++    expect(gateway.resetRequests, isEmpty);
++  });
++
++  testWidgets(
++    'shows a network failure instead of an accepted acknowledgement',
++    (tester) async {
++      final gateway = _FakeAccountGateway(
++        resetError: const AccountOperationException('network-request-failed'),
++      );
++      await tester.pumpWidget(_subject(gateway));
++
++      await _submit(tester, 'student@example.com');
++
++      expect(
++        find.text(AccountErrorMapper.recoveryAcceptedMessage),
++        findsNothing,
++      );
++      expect(
++        find.text(AccountErrorMapper.messageFor('network-request-failed')),
++        findsOneWidget,
++      );
++      expect(
++        find.byKey(const ValueKey<String>('recovery-retry')),
++        findsOneWidget,
++      );
++    },
++  );
++}
+diff --git a/test/screens/reset_password_screen_test.dart b/test/screens/reset_password_screen_test.dart
+new file mode 100644
+index 0000000..94ddd19
+--- /dev/null
++++ b/test/screens/reset_password_screen_test.dart
+@@ -0,0 +1,211 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
++import 'package:vocab_learning_app/screens/reset_password_screen.dart';
++
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway({this.verifyError, this.confirmError});
++
++  final Object? verifyError;
++  final Object? confirmError;
++  final List<String> verifiedCodes = <String>[];
++  final List<({String code, String password})> confirmedResets =
++      <({String code, String password})>[];
++
++  @override
++  AccountSession? get currentSession => null;
++  @override
++  Stream<AccountSession?> authStateChanges() => const Stream.empty();
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) async {
++    confirmedResets.add((code: code, password: newPassword));
++    final error = confirmError;
++    if (error != null) throw error;
++  }
++
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) async {
++    verifiedCodes.add(code);
++    final error = verifyError;
++    if (error != null) throw error;
++    return 'student@example.com';
++  }
++}
++
++Widget _subject(_FakeAccountGateway gateway) => MaterialApp(
++  onGenerateRoute: (settings) => MaterialPageRoute<void>(
++    settings: settings,
++    builder: (_) => settings.name == AppRoute.login.path
++        ? const Scaffold(body: Text('LOGIN_REACHED'))
++        : ResetPasswordScreen(accountGateway: gateway, code: 'one-time-code'),
++  ),
++  home: ResetPasswordScreen(accountGateway: gateway, code: 'one-time-code'),
++);
++
++void main() {
++  testWidgets('verifies the reset code before enabling password submission', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_subject(gateway));
++
++    expect(
++      tester
++          .widget<FilledButton>(
++            find.byKey(const ValueKey<String>('reset-submit')),
++          )
++          .onPressed,
++      isNull,
++    );
++    await tester.pumpAndSettle();
++
++    expect(gateway.verifiedCodes, equals(<String>['one-time-code']));
++    expect(
++      tester
++          .widget<FilledButton>(
++            find.byKey(const ValueKey<String>('reset-submit')),
++          )
++          .onPressed,
++      isNotNull,
++    );
++  });
++
++  testWidgets(
++    'enforces password policy and confirmation before confirming reset',
++    (tester) async {
++      final gateway = _FakeAccountGateway();
++      await tester.pumpWidget(_subject(gateway));
++      await tester.pumpAndSettle();
++
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-password')),
++        'short',
++      );
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-confirmation')),
++        'short',
++      );
++      await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++      await tester.pump();
++      expect(gateway.confirmedResets, isEmpty);
++
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-password')),
++        'Password1',
++      );
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-confirmation')),
++        'Different1',
++      );
++      await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++      await tester.pump();
++      expect(gateway.confirmedResets, isEmpty);
++    },
++  );
++
++  testWidgets('confirms exactly once and routes to login', (tester) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_subject(gateway));
++    await tester.pumpAndSettle();
++
++    await tester.enterText(
++      find.byKey(const ValueKey<String>('reset-password')),
++      'Password1',
++    );
++    await tester.enterText(
++      find.byKey(const ValueKey<String>('reset-confirmation')),
++      'Password1',
++    );
++    await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++    await tester.pumpAndSettle();
++
++    expect(
++      gateway.confirmedResets,
++      equals(<({String code, String password})>[
++        (code: 'one-time-code', password: 'Password1'),
++      ]),
++    );
++    expect(find.text('LOGIN_REACHED'), findsOneWidget);
++  });
++
++  testWidgets(
++    'offers to request a new link for expired or invalid reset codes',
++    (tester) async {
++      final gateway = _FakeAccountGateway(
++        verifyError: const AccountOperationException('expired-action-code'),
++      );
++      await tester.pumpWidget(_subject(gateway));
++      await tester.pumpAndSettle();
++
++      expect(
++        find.byKey(const ValueKey<String>('reset-request-new-link')),
++        findsOneWidget,
++      );
++    },
++  );
++
++  for (final code in <String>['expired-action-code', 'invalid-action-code']) {
++    testWidgets('offers a new link when confirmation reports $code', (
++      tester,
++    ) async {
++      final gateway = _FakeAccountGateway(
++        confirmError: AccountOperationException(code),
++      );
++      await tester.pumpWidget(_subject(gateway));
++      await tester.pumpAndSettle();
++
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-password')),
++        'Password1',
++      );
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-confirmation')),
++        'Password1',
++      );
++      await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++      await tester.pumpAndSettle();
++
++      expect(gateway.confirmedResets, hasLength(1));
++      expect(
++        find.byKey(const ValueKey<String>('reset-request-new-link')),
++        findsOneWidget,
++      );
++      expect(find.byKey(const ValueKey<String>('reset-submit')), findsNothing);
++    });
++  }
++}
+diff --git a/windows/flutter/generated_plugin_registrant.cc b/windows/flutter/generated_plugin_registrant.cc
+index ccda9bc..a638e52 100644
+--- a/windows/flutter/generated_plugin_registrant.cc
++++ b/windows/flutter/generated_plugin_registrant.cc
+@@ -1,27 +1,30 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ // clang-format off
+ 
+ #include "generated_plugin_registrant.h"
+ 
++#include <app_links/app_links_plugin_c_api.h>
+ #include <audioplayers_windows/audioplayers_windows_plugin.h>
+ #include <cloud_firestore/cloud_firestore_plugin_c_api.h>
+ #include <firebase_app_check/firebase_app_check_plugin_c_api.h>
+ #include <firebase_auth/firebase_auth_plugin_c_api.h>
+ #include <firebase_core/firebase_core_plugin_c_api.h>
+ #include <flutter_tts/flutter_tts_plugin.h>
+ #include <speech_to_text_windows/speech_to_text_windows.h>
+ 
+ void RegisterPlugins(flutter::PluginRegistry* registry) {
++  AppLinksPluginCApiRegisterWithRegistrar(
++      registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
+   AudioplayersWindowsPluginRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
+   CloudFirestorePluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
+   FirebaseAppCheckPluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseAppCheckPluginCApi"));
+   FirebaseAuthPluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseAuthPluginCApi"));
+   FirebaseCorePluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
+diff --git a/windows/flutter/generated_plugins.cmake b/windows/flutter/generated_plugins.cmake
+index 80fcaed..240383f 100644
+--- a/windows/flutter/generated_plugins.cmake
++++ b/windows/flutter/generated_plugins.cmake
+@@ -1,15 +1,16 @@
+ #
+ # Generated file, do not edit.
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
++  app_links
+   audioplayers_windows
+   cloud_firestore
+   firebase_app_check
+   firebase_auth
+   firebase_core
+   flutter_tts
+   speech_to_text_windows
+ )
+ 
+ list(APPEND FLUTTER_FFI_PLUGIN_LIST

@@ -1,0 +1,712 @@
+# Review package: bf2ec36..d2ed02d
+
+## Commits
+d2ed02d fix: make account deployment gates reproducible
+ac0f4aa test: qualify the complete account lifecycle
+7384608 fix: defer category Firebase construction
+
+## Files changed
+ .github/workflows/ci.yml                         |   7 +
+ .github/workflows/production-release.yml         |  16 +++
+ docs/runbooks/firebase-auth-actions.md           | 136 ++++++++++++++++++
+ integration_test/account_lifecycle_test.dart     | 175 +++++++++++++++++++++++
+ lib/services/category_service.dart               |   7 +-
+ test/services/category_default_seeding_test.dart |   4 +
+ tool/cli/tests/ci-workflow.tests.ps1             |   8 ++
+ tool/cli/tests/firebase-auth-actions.tests.ps1   |  96 +++++++++++++
+ tool/cli/verify.ps1                              |   5 +
+ 9 files changed, 451 insertions(+), 3 deletions(-)
+
+## Diff
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index bf01b12..7ffddfa 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -35,20 +35,21 @@ jobs:
+           enable-cache: true
+ 
+       - name: Provision Python 3.11
+         run: uv python install 3.11
+ 
+       - name: CLI contract tests
+         shell: pwsh
+         run: |
+           ./tool/cli/tests/runtime-probes.tests.ps1
+           ./tool/cli/tests/run-android.tests.ps1
++          ./tool/cli/tests/firebase-auth-actions.tests.ps1
+           ./tool/cli/tests/verify-scope.tests.ps1
+           ./tool/cli/tests/ci-workflow.tests.ps1
+           ./tool/cli/tests/dependabot-config.tests.ps1
+           ./tool/cli/tests/osv-pr-workflow.tests.ps1
+           ./tool/cli/tests/osv-scheduled-workflow.tests.ps1
+           ./tool/cli/tests/osv-config.tests.ps1
+           ./tool/cli/tests/firebase-seed-security.tests.ps1
+           ./tool/cli/tests/model-loading-security.tests.ps1
+           ./tool/cli/tests/android-manifest-security.tests.ps1
+           ./tool/cli/tests/production-release-workflow.tests.ps1
+@@ -84,20 +85,26 @@ jobs:
+ 
+       - name: Check Dart formatting (tracked sources only)
+         run: |
+           git ls-files '*.dart' \
+             | grep -vE '(^|/)(build|\.dart_tool|generated|vendor|checkpoints?)(/|$)' \
+             | xargs -r dart format --output=none --set-exit-if-changed
+ 
+       - name: Flutter static analysis
+         run: flutter analyze
+ 
++      - name: Flutter focused account action-link tests
++        run: flutter test test/account/account_models_test.dart test/navigation/account_link_coordinator_test.dart
++
++      - name: Flutter account recovery integration test (Linux desktop)
++        run: flutter test integration_test/account_lifecycle_test.dart -d linux --timeout 2m
++
+       - name: Flutter unit and widget tests
+         run: flutter test --reporter compact
+ 
+       - name: Voice API CPU-only tests
+         working-directory: backend/voice_api
+         run: |
+           uv sync --frozen --group dev --no-group gpu
+           uv run --frozen --group dev --no-group gpu pytest tests -q --ignore=tests/integration
+ 
+       - name: AI API CPU-only tests
+diff --git a/.github/workflows/production-release.yml b/.github/workflows/production-release.yml
+index de98a60..d5f5992 100644
+--- a/.github/workflows/production-release.yml
++++ b/.github/workflows/production-release.yml
+@@ -44,20 +44,36 @@ jobs:
+           cat > android/key.properties <<EOF
+           storeFile=${RUNNER_TEMP}/lexiquest-release.jks
+           storePassword=${STORE_PASSWORD}
+           keyAlias=${KEY_ALIAS}
+           keyPassword=${KEY_PASSWORD}
+           EOF
+ 
+       - name: Resolve Flutter dependencies
+         run: flutter pub get
+ 
++      - name: Account action-link contracts
++        shell: pwsh
++        run: |
++          ./tool/cli/tests/firebase-auth-actions.tests.ps1
++          flutter test test/account/account_models_test.dart test/navigation/account_link_coordinator_test.dart
++
++      - name: Validate Firebase Hosting App Link fingerprint
++        env:
++          ANDROID_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
++        run: |
++          test -n "${ANDROID_RELEASE_CERT_SHA256}"
++          if ! [[ "${ANDROID_RELEASE_CERT_SHA256}" =~ ^[A-Fa-f0-9]{2}(:[A-Fa-f0-9]{2}){31}$ ]]; then
++            echo "ANDROID_RELEASE_CERT_SHA256 must be a colon-separated SHA-256 fingerprint." >&2
++            exit 1
++          fi
++
+       - name: Validate production API origins
+         env:
+           LEXIQUEST_VOICE_API_URL: ${{ vars.LEXIQUEST_VOICE_API_URL }}
+           LEXIQUEST_AI_API_URL: ${{ vars.LEXIQUEST_AI_API_URL }}
+         run: |
+           test -n "${LEXIQUEST_VOICE_API_URL}"
+           test -n "${LEXIQUEST_AI_API_URL}"
+           python3 - "${LEXIQUEST_VOICE_API_URL}" "${LEXIQUEST_AI_API_URL}" <<'PY'
+           import sys
+           from urllib.parse import urlsplit
+diff --git a/docs/runbooks/firebase-auth-actions.md b/docs/runbooks/firebase-auth-actions.md
+new file mode 100644
+index 0000000..a76bcf0
+--- /dev/null
++++ b/docs/runbooks/firebase-auth-actions.md
+@@ -0,0 +1,136 @@
++# Firebase Auth email actions and Android App Links
++
++## Scope and release boundary
++
++This runbook qualifies the Firebase Auth verification and password-reset path
++for LexiQuest v0.1. It does not authorize a deployment. Completing local tests
++or an Android debug build does not prove Firebase Hosting, Firebase Auth email
++delivery, or Android App Links parity in production.
++
++The action host and handler are fixed for v0.1:
++
++- Android package: `com.lexiquest.app`
++- Hosting host: `vocab-learning-app-219ef.web.app`
++- Action handler: `https://vocab-learning-app-219ef.web.app/auth/action`
++- Supported modes: `verifyEmail` and `resetPassword`
++
++Do not use the retired `.page.link` or Firebase Dynamic Links system.
++
++## Owner-controlled prerequisites
++
++| Owner | Gate | Evidence required before signed v0.1 distribution |
++| --- | --- | --- |
++| Firebase owner | Add `vocab-learning-app-219ef.web.app` in Firebase Authentication **Authorized domains**. | Console screenshot or change record. |
++| Firebase owner | Configure the custom email action handler URL as `https://vocab-learning-app-219ef.web.app/auth/action`. | Console screenshot or change record. |
++| Android release owner | Set GitHub production variable `ANDROID_RELEASE_CERT_SHA256` to the exact, colon-separated SHA-256 fingerprint of the protected release signing certificate. | Protected-environment run validates its format without printing it. |
++| Hosting owner | Publish `/.well-known/assetlinks.json` at the Hosting host for `com.lexiquest.app`, containing only the approved release certificate fingerprint and the required Android App Links relation. | HTTPS retrieval and Android App Links output below. |
++| Firebase owner | Review the password reset template and verification template so each uses the approved handler and does not leak account state. | Sent-email review on a physical test device. |
++
++The GitHub workflow validates only the fingerprint format. It never prints the
++value and never deploys Hosting. Hosting deployment requires the owning
++operator's explicit credentials and change approval.
++
++## Hosting and Firebase Console checklist
++
++1. In Firebase Authentication, add `vocab-learning-app-219ef.web.app` to
++   **Authorized domains**.
++2. Configure the custom email action handler URL as
++   `https://vocab-learning-app-219ef.web.app/auth/action`.
++3. Configure and review the Firebase Auth password reset template. Its reset
++   link must resolve through the handler above.
++4. Configure and review the Firebase Auth verification template. Its
++   verification link must resolve through the same handler.
++5. Publish the Hosting asset-link file at
++   `https://vocab-learning-app-219ef.web.app/.well-known/assetlinks.json`.
++   Use this exact template, substituting only the protected release-certificate
++   fingerprint. Do not commit a real fingerprint.
++
++   ```json
++   [
++     {
++       "relation": ["delegate_permission/common.handle_all_urls"],
++       "target": {
++         "namespace": "android_app",
++         "package_name": "com.lexiquest.app",
++         "sha256_cert_fingerprints": ["<ANDROID_RELEASE_CERT_SHA256>"]
++       }
++     }
++   ]
++   ```
++
++6. Run this read-only verification with `ANDROID_RELEASE_CERT_SHA256` provided
++   through the operator's protected shell environment. It fetches the public
++   JSON and asserts the required relation, namespace, package, and exact
++   fingerprint without printing the value:
++
++   ```powershell
++   $ErrorActionPreference = 'Stop'
++   if ([string]::IsNullOrWhiteSpace($env:ANDROID_RELEASE_CERT_SHA256)) {
++     throw 'ANDROID_RELEASE_CERT_SHA256 is required.'
++   }
++   if ($env:ANDROID_RELEASE_CERT_SHA256 -notmatch '^[A-Fa-f0-9]{2}(:[A-Fa-f0-9]{2}){31}$') {
++     throw 'ANDROID_RELEASE_CERT_SHA256 must be a colon-separated SHA-256 fingerprint.'
++   }
++   $assetLinks = @(
++     (Invoke-WebRequest -UseBasicParsing `
++       https://vocab-learning-app-219ef.web.app/.well-known/assetlinks.json).Content |
++       ConvertFrom-Json
++   )
++   $approved = @(
++     $assetLinks | Where-Object {
++       $_.relation -contains 'delegate_permission/common.handle_all_urls' -and
++       $_.target.namespace -eq 'android_app' -and
++       $_.target.package_name -eq 'com.lexiquest.app' -and
++       $_.target.sha256_cert_fingerprints -contains $env:ANDROID_RELEASE_CERT_SHA256
++     }
++   )
++   if ($approved.Count -ne 1) {
++     throw 'Published assetlinks.json does not contain the required Android App Links target.'
++   }
++   Write-Host 'assetlinks.json contract verified.'
++   ```
++
++7. Confirm the command passes over HTTPS. Do not paste the fingerprint into
++   tickets, logs, or CI output.
++
++## Physical-device qualification
++
++Use a release-signed build installed on a physical Android device. Debug keys
++do not qualify the production App Link certificate relationship.
++
++1. Reset Android's verification state if needed, then open a valid action URL.
++2. Verify Android reports the host as verified:
++
++   ```powershell
++   adb shell pm get-app-links com.lexiquest.app
++   ```
++
++3. Send a real verification email to a controlled test account, open it on the
++   physical test device, and confirm the app consumes it once.
++4. Send a real password-reset email to a controlled test account, open it on
++   the physical test device, set a valid password, and confirm that the same
++   link cannot be consumed again.
++5. Confirm an unknown email receives the product's neutral acknowledgement;
++   do not use email delivery behavior to reveal whether the account exists.
++6. Record the device model, Android version, app version/build ID, timestamps,
++   and pass/fail result in the release evidence. Never record passwords,
++   action codes, ID tokens, email addresses, or provider diagnostics.
++
++## Local and CI contracts
++
++Run these checks before requesting the remote owner gates:
++
++```powershell
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/firebase-auth-actions.tests.ps1
++flutter test test/account/account_models_test.dart test/navigation/account_link_coordinator_test.dart
++flutter test integration_test/account_lifecycle_test.dart -d windows --timeout 2m
++flutter analyze
++flutter test --reporter compact
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify.ps1
++```
++
++The final command builds a debug APK locally. It does not establish Firebase
++Console, Hosting, email-template, email-delivery, or verified-App-Link parity.
++The Windows integration test uses provider-neutral fakes and a typed test link
++to cover the local account-recovery UI/router lifecycle; it does not prove real
++Firebase, email delivery, or Android intent delivery.
+diff --git a/integration_test/account_lifecycle_test.dart b/integration_test/account_lifecycle_test.dart
+new file mode 100644
+index 0000000..f679ea2
+--- /dev/null
++++ b/integration_test/account_lifecycle_test.dart
+@@ -0,0 +1,175 @@
++import 'dart:async';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:integration_test/integration_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/main.dart';
++import 'package:vocab_learning_app/navigation/account_link_coordinator.dart';
++import 'package:vocab_learning_app/navigation/app_router.dart';
++import 'package:vocab_learning_app/runtime/app_dependencies.dart';
++import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
++import 'package:vocab_learning_app/services/guest_session_service.dart';
++
++final class _RecoveryAccountGateway implements AccountGateway {
++  final resetRequests = <String>[];
++  final verifiedCodes = <String>[];
++  final confirmedResets = <({String code, String password})>[];
++  final resetCompletion = Completer<void>();
++
++  @override
++  AccountSession? get currentSession => null;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++
++  @override
++  Future<void> requestPasswordReset(String email) async {
++    resetRequests.add(email);
++  }
++
++  @override
++  Future<String> verifyPasswordResetCode(String code) async {
++    verifiedCodes.add(code);
++    return 'student@example.com';
++  }
++
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) async {
++    confirmedResets.add((code: code, password: newPassword));
++    await resetCompletion.future;
++  }
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++}
++
++final class _UnavailableGuestSessionService implements GuestSessionService {
++  @override
++  Future<GuestSessionResult> start() async =>
++      const GuestSessionFailed(GuestSessionFailure.providerDisabled);
++}
++
++AppDependencies _dependencies(_RecoveryAccountGateway gateway) =>
++    AppDependencies(
++      runtimeStatus: const AppRuntimeStatus(
++        firebase: RuntimeAvailability.unavailable,
++        backends: RuntimeAvailability.unavailable,
++      ),
++      config: null,
++      accountGateway: gateway,
++      guestSessionService: _UnavailableGuestSessionService(),
++      guestUpgradeHandoff: noOpGuestUpgradeHandoff,
++    );
++
++void main() {
++  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
++
++  testWidgets(
++    'completes the local account recovery UI lifecycle through typed routing',
++    (tester) async {
++      final gateway = _RecoveryAccountGateway();
++      final coordinator = AccountLinkCoordinator.forTesting(
++        initialLink: Future<Uri?>.value(
++          Uri.parse(
++            'https://vocab-learning-app-219ef.web.app/auth/action'
++            '?mode=resetPassword&oobCode=local-reset-code',
++          ),
++        ),
++        uriLinks: const Stream<Uri>.empty(),
++        navigate: (route, arguments) {
++          AppRouter.navigatorKey.currentState?.pushNamed(
++            route.path,
++            arguments: arguments,
++          );
++        },
++      );
++      addTearDown(coordinator.dispose);
++
++      await tester.pumpWidget(MyApp(dependencies: _dependencies(gateway)));
++      await tester.pumpAndSettle();
++
++      await tester.tap(
++        find.byKey(const ValueKey<String>('login-forgot-password')),
++      );
++      await tester.pumpAndSettle();
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('recovery-email')),
++        ' Student@Example.com ',
++      );
++      await tester.tap(find.byKey(const ValueKey<String>('recovery-submit')));
++      await tester.pumpAndSettle();
++      expect(gateway.resetRequests, <String>['student@example.com']);
++
++      await coordinator.start();
++      await tester.pumpAndSettle();
++      expect(gateway.verifiedCodes, <String>['local-reset-code']);
++      expect(
++        tester
++            .widget<FilledButton>(
++              find.byKey(const ValueKey<String>('reset-submit')),
++            )
++            .onPressed,
++        isNotNull,
++      );
++
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-password')),
++        'Password1',
++      );
++      await tester.enterText(
++        find.byKey(const ValueKey<String>('reset-confirmation')),
++        'Password1',
++      );
++      await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++      await tester.pump();
++      await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++      await tester.pump();
++      expect(gateway.confirmedResets, <({String code, String password})>[
++        (code: 'local-reset-code', password: 'Password1'),
++      ]);
++
++      gateway.resetCompletion.complete();
++      await tester.pumpAndSettle();
++      expect(find.byKey(const ValueKey<String>('login-email')), findsOneWidget);
++    },
++  );
++}
+diff --git a/lib/services/category_service.dart b/lib/services/category_service.dart
+index 5656c47..0776d02 100644
+--- a/lib/services/category_service.dart
++++ b/lib/services/category_service.dart
+@@ -70,24 +70,25 @@ final class FirestoreDefaultCategoryStore implements DefaultCategoryStore {
+           'is_global': false,
+           'created_at': Timestamp.now(),
+         });
+       }
+     });
+   }
+ }
+ 
+ class CategoryService {
+   CategoryService({DefaultCategoryStore? defaultCategoryStore})
+-    : _defaultCategoryStore =
+-          defaultCategoryStore ?? FirestoreDefaultCategoryStore();
++    : _configuredDefaultCategoryStore = defaultCategoryStore;
+ 
+-  final DefaultCategoryStore _defaultCategoryStore;
++  final DefaultCategoryStore? _configuredDefaultCategoryStore;
++  late final DefaultCategoryStore _defaultCategoryStore =
++      _configuredDefaultCategoryStore ?? FirestoreDefaultCategoryStore();
+ 
+   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+ 
+   CollectionReference get _categoriesCollection {
+     return FirebaseFirestore.instance.collection('categories');
+   }
+ 
+   /// เพิ่ม Category ใหม่ พร้อมบันทึก uid ของผู้ใช้
+   Future<void> addCategory(String categoryName) async {
+     final user = FirebaseAuth.instance.currentUser;
+diff --git a/test/services/category_default_seeding_test.dart b/test/services/category_default_seeding_test.dart
+index fbbcf25..f800173 100644
+--- a/test/services/category_default_seeding_test.dart
++++ b/test/services/category_default_seeding_test.dart
+@@ -26,20 +26,24 @@ final class _PartialDefaultCategoryStore implements DefaultCategoryStore {
+   }) async {
+     wordIds.add('$categoryId/$id');
+     if (remainingFailures > 0) {
+       remainingFailures--;
+       throw StateError('interrupted-default-seed');
+     }
+   }
+ }
+ 
+ void main() {
++  test('constructs without resolving Firebase until default seeding runs', () {
++    expect(CategoryService.new, returnsNormally);
++  });
++
+   test(
+     'retries default seeding without replacing deterministic records',
+     () async {
+       final store = _PartialDefaultCategoryStore();
+       final service = CategoryService(defaultCategoryStore: store);
+ 
+       await expectLater(
+         service.addDefaultCategoriesForNewUser('student-1'),
+         throwsStateError,
+       );
+diff --git a/tool/cli/tests/ci-workflow.tests.ps1 b/tool/cli/tests/ci-workflow.tests.ps1
+index 4343896..a232771 100644
+--- a/tool/cli/tests/ci-workflow.tests.ps1
++++ b/tool/cli/tests/ci-workflow.tests.ps1
+@@ -123,26 +123,29 @@ function Invoke-OfficialActionTests {
+ }
+ 
+ function Invoke-JobCoverageTests {
+     param([string]$Text)
+     Assert-ContainsString $Text 'flutter pub get' 'job resolves Flutter dependencies'
+     Assert-ContainsString $Text 'git ls-files' 'format check selects tracked sources'
+     Assert-ContainsString $Text 'dart format' 'job checks tracked Dart formatting'
+     Assert-ContainsString $Text '--set-exit-if-changed' 'format check fails on changes'
+     Assert-ContainsString $Text 'flutter analyze' 'job runs flutter analyze'
+     Assert-ContainsString $Text 'flutter test' 'job runs flutter test'
++    Assert-ContainsString $Text 'flutter test test/account/account_models_test.dart test/navigation/account_link_coordinator_test.dart' 'job runs focused account action-link tests'
++    Assert-ContainsString $Text 'flutter test integration_test/account_lifecycle_test.dart -d linux --timeout 2m' 'job runs the bounded Linux account recovery integration test'
+     Assert-ContainsString $Text 'pytest' 'backend suites run via pytest'
+     Assert-ContainsString $Text 'voice_api' 'job covers backend/voice_api CPU tests'
+     Assert-ContainsString $Text 'ai_api' 'job covers backend/ai_api CPU tests'
+     Assert-ContainsString $Text 'lexiquest_lm' 'job covers backend/lexiquest_lm CPU tests'
+     Assert-ContainsString $Text 'runtime-probes.tests.ps1' 'job runs runtime probe tests'
+     Assert-ContainsString $Text 'run-android.tests.ps1' 'job runs Android command tests'
++    Assert-ContainsString $Text 'firebase-auth-actions.tests.ps1' 'job runs Firebase Auth action-link contracts'
+     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
+     Assert-ContainsString $Text 'apk' 'Android build produces an APK'
+     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
+     Assert-NotContainsString $Text 'supabase/setup-cli@' 'CI must not provision Supabase'
+     Assert-NotContainsString $Text 'supabase db start' 'CI must not start Supabase'
+     Assert-NotContainsString $Text 'LEXIQUEST_SUPABASE' 'CI builds must not require Supabase'
+     Assert-ContainsString $Text '--dart-define=LEXIQUEST_VERSION=0.1.0+1' 'CI builds v0.1'
+     Assert-ContainsString $Text 'Create ephemeral release signing key' 'CI creates a disposable release signing key'
+     Assert-ContainsString $Text 'flutter build appbundle --release' 'CI builds a release candidate AAB'
+     Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'CI verifies the release candidate signature'
+@@ -153,20 +156,25 @@ function Invoke-JobCoverageTests {
+     Assert-ContainsString $Text 'Remove ephemeral signing material' 'CI removes disposable signing material'
+ }
+ 
+ function Invoke-ProductionReleaseTests {
+     param([string]$Text)
+     Assert-NotContainsString $Text 'LEXIQUEST_SUPABASE' 'production release must not require Supabase'
+     Assert-ContainsString $Text '--dart-define=LEXIQUEST_VERSION=0.1.0+1' 'production release builds v0.1'
+     Assert-ContainsString $Text 'LEXIQUEST_BUILD_ID' 'production release retains the build ID input'
+     Assert-ContainsString $Text 'LEXIQUEST_VOICE_API_URL' 'production release retains the Voice API input'
+     Assert-ContainsString $Text 'LEXIQUEST_AI_API_URL' 'production release retains the AI API input'
++    Assert-ContainsString $Text 'firebase-auth-actions.tests.ps1' 'production release runs Firebase Auth action-link contracts'
++    Assert-ContainsString $Text 'flutter test test/account/account_models_test.dart test/navigation/account_link_coordinator_test.dart' 'production release runs focused account action-link tests'
++    Assert-ContainsString $Text 'vars.ANDROID_RELEASE_CERT_SHA256' 'production release reads the release certificate fingerprint variable'
++    Assert-ContainsString $Text 'test -n "${ANDROID_RELEASE_CERT_SHA256}"' 'production release requires the release certificate fingerprint'
++    Assert-ContainsString $Text '^[A-Fa-f0-9]{2}(:[A-Fa-f0-9]{2}){31}$' 'production release validates the SHA-256 fingerprint format'
+     Assert-ContainsString $Text 'test -n "${LEXIQUEST_VOICE_API_URL}"' 'production release requires the Voice API URL'
+     Assert-ContainsString $Text 'test -n "${LEXIQUEST_AI_API_URL}"' 'production release requires the AI API URL'
+     Assert-ContainsString $Text 'urlsplit' 'production release parses endpoint URLs before building'
+     Assert-ContainsString $Text "parsed.scheme != 'https'" 'production release requires the exact HTTPS scheme'
+     Assert-ContainsString $Text 'not parsed.netloc' 'production release requires endpoint authority'
+     Assert-ContainsString $Text 'not parsed.hostname' 'production release requires a non-empty endpoint host'
+     Assert-ContainsString $Text 'parsed.username is not None' 'production release rejects endpoint usernames'
+     Assert-ContainsString $Text 'parsed.password is not None' 'production release rejects endpoint passwords'
+     Assert-ContainsString $Text "'@' in parsed.netloc" 'production release rejects endpoint userinfo'
+     Assert-ContainsString $Text "'?' in raw" 'production release rejects endpoint queries'
+diff --git a/tool/cli/tests/firebase-auth-actions.tests.ps1 b/tool/cli/tests/firebase-auth-actions.tests.ps1
+new file mode 100644
+index 0000000..10ce088
+--- /dev/null
++++ b/tool/cli/tests/firebase-auth-actions.tests.ps1
+@@ -0,0 +1,96 @@
++#Requires -Version 5.1
++<#
++.SYNOPSIS
++    Repository contract tests for Firebase Auth email actions and Android App Links.
++
++.DESCRIPTION
++    Verifies only checked-in deployment contracts. This script never contacts
++    Firebase, deploys Hosting, prints certificate fingerprints, or sends email.
++#>
++Set-StrictMode -Version 3.0
++$ErrorActionPreference = 'Stop'
++
++$script:Passed = 0
++$script:Failed = 0
++
++function Assert-True {
++    param([object]$Value, [string]$Message)
++    if ($Value) { $script:Passed++ } else {
++        $script:Failed++
++        Write-Host ('  [FAIL] ' + $Message) -ForegroundColor Red
++    }
++}
++
++function Assert-Match {
++    param([string]$Text, [string]$Pattern, [string]$Message)
++    Assert-True ($Text -match $Pattern) $Message
++}
++
++function Assert-NoMatch {
++    param([string]$Text, [string]$Pattern, [string]$Message)
++    Assert-True ($Text -notmatch $Pattern) $Message
++}
++
++function Get-RequiredText {
++    param([string]$Path)
++    Assert-True (Test-Path -LiteralPath $Path) ('required file exists: ' + $Path)
++    if (-not (Test-Path -LiteralPath $Path)) { return '' }
++    return ([System.IO.File]::ReadAllText($Path) -replace "`r`n", "`n") -replace "`r", "`n"
++}
++
++$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
++$manifest = Get-RequiredText (Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml')
++$gradle = Get-RequiredText (Join-Path $repoRoot 'android\app\build.gradle.kts')
++$runbook = Get-RequiredText (Join-Path $repoRoot 'docs\runbooks\firebase-auth-actions.md')
++$ci = Get-RequiredText (Join-Path $repoRoot '.github\workflows\ci.yml')
++$productionRelease = Get-RequiredText (Join-Path $repoRoot '.github\workflows\production-release.yml')
++$pubspec = Get-RequiredText (Join-Path $repoRoot 'pubspec.yaml')
++
++Assert-Match $gradle 'applicationId\s*=\s*"com\.lexiquest\.app"' 'Android application ID is com.lexiquest.app'
++Assert-Match $manifest '<intent-filter\s+android:autoVerify="true">' 'Android action-link intent filter enables auto verification'
++Assert-Match $manifest 'android:scheme="https"' 'Android action-link intent filter is HTTPS only'
++Assert-Match $manifest 'android:host="vocab-learning-app-219ef\.web\.app"' 'Android action-link host is Firebase Hosting'
++Assert-Match $manifest 'android:pathPrefix="/auth/action"' 'Android action-link path is /auth/action'
++
++Assert-NoMatch $manifest '\.page\.link' 'Android manifest does not reference retired Dynamic Links'
++Assert-NoMatch $pubspec '(?im)^\s*firebase_dynamic_links\s*:' 'Flutter dependencies exclude Firebase Dynamic Links'
++Assert-Match $runbook 'Do not use the retired `\.page\.link`' 'runbook prohibits retired Dynamic Links'
++Assert-Match $runbook 'ANDROID_RELEASE_CERT_SHA256' 'runbook requires the release certificate fingerprint variable'
++Assert-Match $runbook '/\.well-known/assetlinks\.json' 'runbook verifies the published asset links document'
++Assert-Match $runbook 'delegate_permission/common\.handle_all_urls' 'runbook specifies the Android App Links relation'
++Assert-Match $runbook '"namespace"\s*:\s*"android_app"' 'runbook specifies the Android App Links namespace'
++Assert-Match $runbook '"package_name"\s*:\s*"com\.lexiquest\.app"' 'runbook specifies the Android App Links package'
++Assert-Match $runbook '"sha256_cert_fingerprints"' 'runbook specifies the Android App Links fingerprint array'
++Assert-Match $runbook 'Invoke-WebRequest' 'runbook fetches the published asset links document read-only'
++Assert-Match $runbook 'ConvertFrom-Json' 'runbook validates the published asset links JSON'
++Assert-Match $runbook '\$env:ANDROID_RELEASE_CERT_SHA256' 'runbook validates the exact protected fingerprint without printing it'
++Assert-Match $runbook 'Authorized domains' 'runbook includes the Firebase Auth authorized-domain gate'
++Assert-Match $runbook 'https://vocab-learning-app-219ef\.web\.app/auth/action' 'runbook records the custom action handler URL'
++Assert-Match $runbook 'password reset template' 'runbook includes the password-reset email-template gate'
++Assert-Match $runbook 'verification template' 'runbook includes the verification email-template gate'
++Assert-Match $runbook 'pm get-app-links com\.lexiquest\.app' 'runbook includes Android App Links verification'
++Assert-Match $runbook 'physical test device' 'runbook requires physical-device email-action testing'
++
++Assert-Match $ci 'firebase-auth-actions\.tests\.ps1' 'CI runs Firebase Auth action-link repository contracts'
++Assert-Match $ci 'flutter test test/account/account_models_test\.dart test/navigation/account_link_coordinator_test\.dart' 'CI runs focused account action-link tests'
++Assert-Match $ci 'flutter test integration_test/account_lifecycle_test\.dart -d linux --timeout 2m' 'CI runs the bounded Linux account recovery integration test'
++Assert-Match $productionRelease 'firebase-auth-actions\.tests\.ps1' 'production release runs Firebase Auth action-link contracts'
++Assert-Match $productionRelease 'flutter test test/account/account_models_test\.dart test/navigation/account_link_coordinator_test\.dart' 'production release runs focused account action-link tests'
++Assert-Match $productionRelease 'vars\.ANDROID_RELEASE_CERT_SHA256' 'production release reads the release certificate fingerprint from a protected variable'
++Assert-Match $productionRelease 'test -n "\$\{ANDROID_RELEASE_CERT_SHA256\}"' 'production release requires a release certificate fingerprint'
++Assert-Match $productionRelease '\^\[A-Fa-f0-9\]\{2\}\(:\[A-Fa-f0-9\]\{2\}\)\{31\}\$' 'production release validates the SHA-256 fingerprint format'
++Assert-NoMatch $productionRelease 'firebase\s+deploy' 'production release does not deploy Hosting'
++
++$verifyScript = Get-RequiredText (Join-Path $repoRoot 'tool\cli\verify.ps1')
++Assert-Match $verifyScript 'flutter test integration_test/account_lifecycle_test\.dart -d windows --timeout 2m' 'local verifier runs the bounded Windows account recovery integration test'
++
++$contractsIndex = $productionRelease.IndexOf('firebase-auth-actions.tests.ps1')
++$buildIndex = $productionRelease.IndexOf('flutter build appbundle --release')
++Assert-True (
++    $contractsIndex -ge 0 -and $buildIndex -ge 0 -and $contractsIndex -lt $buildIndex
++) 'production release runs action-link contracts before building'
++
++Write-Host ("Firebase Auth action contracts: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
++if ($script:Failed -gt 0) { exit 1 }
++Write-Host 'PASS' -ForegroundColor Green
++exit 0
+diff --git a/tool/cli/verify.ps1 b/tool/cli/verify.ps1
+index 9fb989b..5b485bb 100644
+--- a/tool/cli/verify.ps1
++++ b/tool/cli/verify.ps1
+@@ -89,20 +89,21 @@ try {
+     }
+ 
+     Invoke-VerifyPhase '02' 'Android command construction tests' {
+         & powershell -NoProfile -ExecutionPolicy Bypass -File `
+             (Join-Path $scriptDir 'tests\run-android.tests.ps1')
+     }
+ 
+     Invoke-VerifyPhase '02.1' 'CI/CD contract tests' {
+         $contractTests = @(
+             'ci-workflow.tests.ps1',
++            'firebase-auth-actions.tests.ps1',
+             'verify-backend-environments.tests.ps1',
+             'verify-scope.tests.ps1',
+             'dependabot-config.tests.ps1',
+             'osv-pr-workflow.tests.ps1',
+             'osv-scheduled-workflow.tests.ps1',
+             'osv-config.tests.ps1',
+             'firebase-seed-security.tests.ps1',
+             'firestore-rules-security.tests.ps1',
+             'model-loading-security.tests.ps1',
+             'android-manifest-security.tests.ps1',
+@@ -155,20 +156,24 @@ try {
+     }
+ 
+     Invoke-VerifyPhase '05' 'Flutter static analysis' {
+         & flutter analyze
+     }
+ 
+     Invoke-VerifyPhase '06' 'Flutter unit and widget tests' {
+         & flutter test --reporter compact
+     }
+ 
++    Invoke-VerifyPhase '06.0' 'Account recovery integration test (Windows desktop)' {
++        & flutter test integration_test/account_lifecycle_test.dart -d windows --timeout 2m
++    }
++
+     Invoke-VerifyPhase '06.1' 'Trusted writer tests' {
+         & npm --prefix functions test
+     }
+ 
+     Invoke-VerifyPhase '06.2' 'Trusted writer emulator tests' {
+         & npm run test:functions-emulator
+     }
+ 
+     Invoke-VerifyPhase '07' 'Voice API CPU-only tests' {
+         & uv run `

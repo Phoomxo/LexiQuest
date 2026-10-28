@@ -1,0 +1,3176 @@
+# Review package: 45e8312..bf61062
+
+## Commits
+bf61062 test: harden Android memory capability contract
+765d726 fix: harden Android capability readiness
+409bbfa feat: connect Android device capability probing
+658ede1 fix: clarify asserted inference evidence
+dfdd388 fix: harden device inference evidence policy
+fd2d239 feat: add fail-safe device inference policy
+ae0b8c5 test: tighten prototype contract coverage
+6bee614 docs: freeze the prototype feature contract
+
+## Files changed
+ README.md                                          |   4 +
+ android/.gitignore                                 |   1 +
+ android/app/build.gradle.kts                       |   2 +-
+ .../com/lexiquest/app/DeviceCapabilityPlugin.kt    | 101 ++++
+ .../main/kotlin/com/lexiquest/app/MainActivity.kt  |   8 +-
+ docs/prototype/feature-inventory.md                | 124 +++++
+ lib/device/device_capability_models.dart           | 270 +++++++++++
+ lib/device/device_capability_probe.dart            | 122 +++++
+ lib/device/inference_policy.dart                   | 108 +++++
+ lib/runtime/app_bootstrap.dart                     |  17 +
+ lib/runtime/app_dependencies.dart                  |   3 +
+ lib/runtime/app_runtime_status.dart                |  10 +-
+ lib/screens/main_navigation_screen.dart            |   2 +
+ test/device/device_capability_models_test.dart     | 267 +++++++++++
+ test/device/device_capability_probe_test.dart      | 200 ++++++++
+ test/device/inference_policy_test.dart             | 325 +++++++++++++
+ test/runtime/app_bootstrap_test.dart               | 121 +++++
+ test/runtime/app_runtime_status_test.dart          |  12 +
+ test/screens/production_shell_navigation_test.dart |  29 +-
+ tool/cli/prototype-production-paths.allowlist.json | 113 +++++
+ .../android-device-capability-contract.tests.ps1   | 266 +++++++++++
+ .../cli/tests/prototype-production-paths.tests.ps1 | 515 +++++++++++++++++++++
+ 22 files changed, 2614 insertions(+), 6 deletions(-)
+
+## Diff
+diff --git a/README.md b/README.md
+index ca3c423..ff14c7d 100644
+--- a/README.md
++++ b/README.md
+@@ -5,20 +5,24 @@ An AI-enhanced gamified vocabulary learning application built with Flutter, Fire
+ ## Overview
+ 
+ LexiQuest combines gamified vocabulary learning (quizzes, word scrambles, category management) with research-grade voice synthesis. It implements a **Hybrid Voice Pipeline** that routes speech requests between an authenticated cloud OmniVoice WAV API and native device TTS, backing practice modes and research evaluation.
+ 
+ ## Current prototype direction
+ 
+ Active implementation follows the
+ [Real Local-First Prototype design](docs/superpowers/specs/2026-07-30-real-local-first-prototype-design.md)
+ and its
+ [master plan](docs/superpowers/plans/2026-07-30-real-local-first-prototype-master-plan.md).
++The active
++[prototype feature inventory](docs/prototype/feature-inventory.md)
++records the truthful readiness, unavailable behavior, and known debt for every
++current entry point.
+ Older experimental plans are available from Git history rather than the active
+ documentation tree.
+ 
+ ## Tech Stack & Architecture
+ 
+ - **Frontend**: Flutter 3.44.7 / Dart 3.12.2 (Android API 36 / JVM 17)
+ - **Voice Pipeline**: `HybridVoiceService`, bounded in-memory LRU audio cache (`MemoryVoiceAudioCache`), native TTS fallback (`NativeTtsProvider`), and WAV audio player (`PluginVoiceAudioPlayer`).
+ - **Telemetry & Privacy**: `FirestoreVoiceTelemetrySink` recording privacy-by-construction metrics (`schemaVersion: voice_telemetry_v1`).
+ - **Backend API**: Python 3.11 FastAPI service (`backend/voice_api`) serving OmniVoice 0.2.1 24 kHz WAV synthesis with Firebase ID token authentication.
+ 
+diff --git a/android/.gitignore b/android/.gitignore
+index 55afd91..3a6544c 100644
+--- a/android/.gitignore
++++ b/android/.gitignore
+@@ -1,12 +1,13 @@
+ gradle-wrapper.jar
+ /.gradle
++/.kotlin/
+ /captures/
+ /gradlew
+ /gradlew.bat
+ /local.properties
+ GeneratedPluginRegistrant.java
+ 
+ # Remember to never publicly share your keystore.
+ # See https://flutter.dev/to/reference-keystore
+ key.properties
+ **/*.keystore
+diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
+index cd9c7bd..b06a838 100644
+--- a/android/app/build.gradle.kts
++++ b/android/app/build.gradle.kts
+@@ -23,21 +23,21 @@ android {
+     compileSdk = flutter.compileSdkVersion
+     ndkVersion = flutter.ndkVersion
+ 
+     compileOptions {
+         sourceCompatibility = JavaVersion.VERSION_17
+         targetCompatibility = JavaVersion.VERSION_17
+     }
+ 
+     defaultConfig {
+         applicationId = "com.lexiquest.app"
+-        minSdk = flutter.minSdkVersion
++        minSdk = 29
+         targetSdk = flutter.targetSdkVersion
+         versionCode = flutter.versionCode
+         versionName = flutter.versionName
+     }
+ 
+     signingConfigs {
+         create("release") {
+             if (releaseSigningReady) {
+                 storeFile = file(keystoreProperties["storeFile"] as String)
+                 storePassword = keystoreProperties["storePassword"] as String
+diff --git a/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt b/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt
+new file mode 100644
+index 0000000..9991e11
+--- /dev/null
++++ b/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt
+@@ -0,0 +1,101 @@
++package com.lexiquest.app
++
++import android.app.ActivityManager
++import android.content.Context
++import android.os.Build
++import android.os.PowerManager
++import android.os.StatFs
++import io.flutter.embedding.engine.plugins.FlutterPlugin
++import io.flutter.plugin.common.MethodCall
++import io.flutter.plugin.common.MethodChannel
++import java.util.Locale
++
++class DeviceCapabilityPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
++    private var applicationContext: Context? = null
++    private var channel: MethodChannel? = null
++
++    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
++        applicationContext = binding.applicationContext
++        channel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME).also {
++            it.setMethodCallHandler(this)
++        }
++    }
++
++    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
++        channel?.setMethodCallHandler(null)
++        channel = null
++        applicationContext = null
++    }
++
++    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
++        if (call.method != METHOD_SNAPSHOT) {
++            result.notImplemented()
++            return
++        }
++
++        val context = applicationContext
++        if (context == null) {
++            result.error("channel-unavailable", null, null)
++            return
++        }
++
++        try {
++            result.success(readSnapshot(context))
++        } catch (_: Exception) {
++            result.error("capability-unavailable", null, null)
++        }
++    }
++
++    private fun readSnapshot(context: Context): Map<String, Any?> {
++        val activityManager =
++            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
++                ?: throw DeviceCapabilityUnavailableException()
++        val memoryInfo =
++            ActivityManager.MemoryInfo().also(activityManager::getMemoryInfo)
++        val powerManager =
++            context.getSystemService(Context.POWER_SERVICE) as? PowerManager
++        val deviceConfiguration = activityManager.deviceConfigurationInfo
++        val requestedGlEsVersion = deviceConfiguration.reqGlEsVersion
++
++        return mapOf<String, Any?>(
++            "sdkInt" to Build.VERSION.SDK_INT,
++            "primaryAbi" to (
++                Build.SUPPORTED_ABIS.firstOrNull()?.lowercase(Locale.ROOT) ?: "unknown"
++            ),
++            "memoryClassMb" to activityManager.memoryClass,
++            "availableMemoryMb" to memoryInfo.availMem.let(::bytesToWholeMiB),
++            "freeStorageBytes" to StatFs(context.filesDir.absolutePath).availableBytes,
++            "lowMemory" to memoryInfo.lowMemory,
++            "batterySaverEnabled" to powerManager?.isPowerSaveMode,
++            "thermalState" to thermalStateName(powerManager?.currentThermalStatus),
++            "gpuApiCandidate" to requestedGlEsVersion?.let {
++                it >= MINIMUM_CANDIDATE_GL_ES_VERSION
++            },
++        )
++    }
++
++    private fun thermalStateName(status: Int?): String =
++        when (status) {
++            PowerManager.THERMAL_STATUS_NONE -> "nominal"
++            PowerManager.THERMAL_STATUS_LIGHT,
++            PowerManager.THERMAL_STATUS_MODERATE,
++            -> "fair"
++            PowerManager.THERMAL_STATUS_SEVERE -> "serious"
++            PowerManager.THERMAL_STATUS_CRITICAL,
++            PowerManager.THERMAL_STATUS_EMERGENCY,
++            PowerManager.THERMAL_STATUS_SHUTDOWN,
++            -> "critical"
++            else -> "unknown"
++        }
++
++    private fun bytesToWholeMiB(bytes: Long): Long = bytes / BYTES_PER_MIB
++
++    private companion object {
++        const val CHANNEL_NAME = "com.lexiquest.app/device_capabilities"
++        const val METHOD_SNAPSHOT = "snapshot"
++        const val BYTES_PER_MIB = 1024L * 1024L
++        const val MINIMUM_CANDIDATE_GL_ES_VERSION = 0x00030000
++    }
++}
++
++private class DeviceCapabilityUnavailableException : Exception()
+diff --git a/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt b/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
+index f61a6ff..51a9951 100644
+--- a/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
++++ b/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
+@@ -1,5 +1,11 @@
+ package com.lexiquest.app
+ 
+ import io.flutter.embedding.android.FlutterActivity
++import io.flutter.embedding.engine.FlutterEngine
+ 
+-class MainActivity: FlutterActivity()
++class MainActivity : FlutterActivity() {
++    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
++        super.configureFlutterEngine(flutterEngine)
++        flutterEngine.plugins.add(DeviceCapabilityPlugin())
++    }
++}
+diff --git a/docs/prototype/feature-inventory.md b/docs/prototype/feature-inventory.md
+new file mode 100644
+index 0000000..5b711b8
+--- /dev/null
++++ b/docs/prototype/feature-inventory.md
+@@ -0,0 +1,124 @@
++# Prototype feature inventory
++
++This is the active, source-backed contract for the Real Local-First Prototype
++at the Phase 0 baseline. A visible label or a constructed screen is evidence of
++reachability only; it is not evidence that the feature works on a device.
++
++Readiness is recorded at the start of **Known blocker**:
++
++- **ready**: the bounded source review found a truthful local behavior and no
++  known production-path debt for the stated scope;
++- **degraded**: a real behavior exists, but persistence, connectivity,
++  integration, or device evidence is incomplete;
++- **blocked**: the current behavior can fabricate a result/history or cannot
++  meet the approved prototype contract;
++- **not exposed**: production code exists but no current menu/route reaches it,
++  or a closed policy deliberately hides it.
++
++The inventory covers 63 entry points: 8 typed account routes, 5 primary
++destinations, 3 drawer entries, 20 learning/practice entries, 9 settings and
++account actions, 4 category-management entries, 8 nested practice entries, and
++6 hidden legacy/research/device entries. It names all 43 production screen
++files reachable from the current route/menu surfaces, including policy-gated
++surfaces. The baseline allowlist contains 18 exact debt pairs, including 6
++direct Firebase screen pairs, 1 direct HTTP screen pair, and 2 direct plugin
++screen pairs (one screen has both Firebase and plugin debt).
++
++Curated vocabulary, questions, sentences, stories, equipment, and export
++examples are **product content**, not user history. They may remain as labelled
++starter/demo packs. Default scores, past attempts, weakness records, speech
++measurements, or achievements that appear to describe the current user are
++different: they require real records or an explicit unavailable/empty state.
++Quiz option shuffling, secure ID entropy, statistical `sample` terminology,
++and test-injected fake providers are not production debt.
++
++Navigation terminology:
++
++- **Typed route** means an `AppRoute` path resolved by `AppRouter`.
++- **Direct route** means a screen constructs `MaterialPageRoute` itself.
++- **Indexed destination** means the main `IndexedStack`; it is not a typed
++  route even though `/home` reaches the containing shell.
++
++Feature ID | Visible entry | Screen/route | Current data/device/provider | Offline behavior | Permission/configuration | Truthful unavailable state | Known blocker | Target phase | Evidence
++--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
++account.session-gate | App launch gate | Typed route `/` | Injected account gateway, guest session, and profile provisioner | Guest handoff can continue locally; registered session checks depend on Firebase | Firebase configuration for registered accounts | Account errors are mapped; guest path remains available | degraded — remote session/device lifecycle still needs integrated proof | 1 | `lib/navigation/app_route.dart`; `lib/navigation/app_router.dart`; `lib/screens/session_gate_screen.dart`
++account.login | Sign in | Typed route `/login` | Injected Firebase-backed account gateway | Remote sign-in is unavailable offline | Firebase Auth | Mapped account failure; no claim of offline sign-in | degraded — online identity boundary | 1 | `lib/navigation/app_route.dart`; `lib/navigation/app_router.dart`; `lib/screens/login_screen.dart`
++account.register | Create account | Typed route `/register` | Injected account gateway, provisioning, and guest-upgrade handoff | Registration is unavailable offline; guest data remains local | Firebase Auth and profile provisioning | Mapped account failure | degraded — remote registration and migration require integration evidence | 1 | `lib/navigation/app_router.dart`; `lib/screens/register_screen.dart`
++account.verify-email | Enter/apply verification code | Typed route `/verify-email` | `OTPScreen` or router-owned verification action through account gateway | Verification is unavailable offline | Firebase email action configuration and valid code | Error state is shown; no successful verification is fabricated | degraded — external email/App Link owner gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/otp_screen.dart`
++account.forgot-password | Forgot password | Typed route `/forgot-password` | Injected account gateway | Request is unavailable offline | Firebase Auth email action configuration | Mapped failure | degraded — external email delivery gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/forgot_password_screen.dart`
++account.reset-password | Reset-password link | Typed route `/reset-password` | Injected account gateway plus reset code | Reset is unavailable offline | Valid Firebase action code/App Link | Invalid or failed code is reported | degraded — external App Link gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/reset_password_screen.dart`
++account.home | Auth/guest completion | Typed route `/home` | Constructs the main navigation shell | Shell is available offline | No additional permission | Runtime summary reports unavailable online systems | degraded — child features have independent debt | 7 | `lib/navigation/app_router.dart`; `lib/screens/main_navigation_screen.dart`
++account.change-password | Change password | Typed route `/change-password` | Injected account gateway | Change is unavailable offline | Registered account and Firebase Auth | Mapped failure | degraded — remote account operation | 1 | `lib/navigation/app_router.dart`; `lib/screens/change_password_screen.dart`
++learn.mode-picker | Bottom destination: Learn | Indexed destination | Mode list plus direct Firestore access for two quiz entries | Curated modes render; Firestore quiz entries do not have a local repository boundary | Firebase for default/category quiz | Empty collections show a message; Firebase failures are not consistently surfaced | degraded — direct screen Firebase access | 2 | `lib/screens/main_navigation_screen.dart`; `lib/screens/choose_mode_screen.dart`
++progress.mastery-dashboard | Bottom destination: Statistics | Indexed destination | Constructor defaults display four scores and a streak | Values render offline | None | No unavailable/empty state distinguishes absent history | blocked — fabricated user progress defaults | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/mastery_dashboard_screen.dart`
++progress.weakness-clinic | Bottom destination: Weakness | Indexed destination | Default `SrsItem` records dated at runtime | Fabricated deck renders offline | None | No empty-history state on the primary entry | blocked — fabricated user weakness history | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/weakness_clinic_screen.dart`
++progress.achievements | Bottom destination: Achievements | Indexed destination | Empty injected badge list; remote economy closed by default | Truthful empty state works offline | Remote economy policy controls spendable UI | Explicitly says no achievements verified from practice data | degraded — no persisted achievement projection yet | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/achievements_screen.dart`
++account.profile-settings | Bottom destination: Profile | Indexed destination | Account gateway and runtime dependency scope | Account actions degrade offline; shell remains visible | Firebase for registered-account actions | Account errors are mapped | degraded — profile projection is not populated here | 1 | `lib/screens/main_navigation_screen.dart`; `lib/screens/profile_settings_screen.dart`
++library.categories | Drawer: Category library | Direct route | Screen directly uses Firestore, Firebase Auth, and SharedPreferences | No canonical local category repository | Firebase Auth/Firestore and preferences plugin | Stream/error behavior is provider-dependent | degraded — direct screen Firebase and plugin access | 2 | `lib/screens/main_navigation_screen.dart`; `lib/screens/categories_page.dart`
++economy.shop | Drawer: Shop, policy-gated | Direct route when policy is enabled | Placeholder screen only | Hidden under the default closed policy | Trusted economy policy cannot be enabled by public configuration | Default behavior is absence from the drawer | not exposed — placeholder transaction feature | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/shop_page.dart`
++settings.legacy | Drawer: Legacy settings | Direct route | Injected account gateway plus local reset and direct child routes | Screen renders offline; remote actions degrade | Remote economy policy gates wallpaper | Individual actions expose their own state | degraded — mixed legacy boundaries | 7 | `lib/screens/main_navigation_screen.dart`; `lib/screens/setting_screen.dart`
++content.cefr-library | CEFR vocabulary A1–C2 | Direct route | CEFR service/content pack, then SRS screen | Curated content may render; provider refresh is not proven offline | No screen-level device permission | Empty content should remain empty rather than user-derived | degraded — service persistence/connectivity not integrated | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_selection_screen.dart`
++learn.mastery-link | Mastery dashboard mode button | Direct route | Same constructor defaults as primary Statistics destination | Fabricated values render offline | None | No unavailable/empty state | blocked — duplicate entry to fabricated user progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/mastery_dashboard_screen.dart`
++assessment.cefr-diagnostic | CEFR diagnostic test | Direct route | Curated questions and in-memory answers | Works for the current session offline | None | A real local result is shown only from current answers | ready — curated assessment, not user history | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_diagnostic_test_screen.dart`
++practice.dictation | Dictation quiz | Direct route | Curated target word and injected/factory voice provider | Native TTS fallback is intended; device proof pending | Audio output availability | Voice failure must remain unavailable/silent, not generate a score | degraded — device voice evidence pending | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/dictation_quiz_screen.dart`
++practice.shadowing | Shadowing challenge | Direct route | Voice provider plus generated waveform and fixed pitch arrays | UI runs offline without captured audio | Microphone is implied but no real capture adapter supplies measurements | No truthful unavailable state for absent capture | blocked — random/fixed fabricated speech measurements | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/shadowing_challenge_screen.dart`
++practice.sentence-scramble | Sentence scramble | Direct route | Curated sentence passed by the mode picker | Session works offline | None | No remote dependency | ready — curated exercise content | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/sentence_scramble_screen.dart`
++practice.srs | SRS flashcards | Direct route | Curated starter word list passed by the mode picker | Session works offline; durability is not established by this entry | None | Empty input can be represented without invented history | degraded — starter pack is not persisted learner state | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.audio-playlist | Vocabulary audio playlist | Direct route | Curated starter list plus voice provider | Native TTS fallback intended; playlist state is in memory | Audio output availability | Voice failure must not claim playback | degraded — device playback evidence pending | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/smart_audio_playlist_screen.dart`
++reading.cefr-article | CEFR article reader | Direct route | Curated article title/content/level | Curated article renders offline | Optional voice capability | Voice enrichment may be unavailable while text remains readable | ready — clearly curated product content | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_article_reader_screen.dart`
++game.boss-battle | Daily boss battle | Direct route | Curated words and current-session gameplay | Current session works offline | None | No historical result should be inferred | degraded — not connected to canonical progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/boss_battle_screen.dart`
++practice.ghost-shadow-duel | Ghost shadow duel | Direct route | Hard-coded prior snapshot, accuracy, latency, and weak words | Fabricated opponent renders offline | None | No empty-history state | blocked — fabricated user history | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/ghost_shadow_duel_screen.dart`
++reading.storybook | Interactive storybook | Direct route | Curated bilingual story service plus voice provider | Curated story can render offline | Audio output availability | Voice can be unavailable without changing story text | ready — curated story, not user history | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/interactive_storybook_screen.dart`
++library.wordbook-import | Import wordbook | Direct route | User-pasted CSV/JSON parsed in memory | Parsing and preview work offline | Clipboard/paste only; no file picker | Parse errors are shown | degraded — import is not committed to canonical storage | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/wordbook_import_screen.dart`
++research.export-center | Anki and PDF export | Direct route | Curated sample cards produce text previews; clipboard copy | Preview works offline | Clipboard only; no file/share permission path | No claim that current-user records were exported | degraded — curated sample, not real persisted records or files | 6 | `lib/screens/choose_mode_screen.dart`; `lib/screens/export_center_screen.dart`
++practice.phonetic-explorer | Phonetic explorer | Direct route | Curated IPA/collocation content plus voice provider | Text content works offline | Audio output availability | Voice can be unavailable while IPA remains visible | ready — curated reference content | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/phonetic_explorer_screen.dart`
++economy.avatar-gear | Avatar gear | Direct route | Curated equipment list; screen starts with local in-memory equipment | UI works offline for the session | None under closed economy | No purchase claim; ownership is not durable | degraded — equipment state is not persisted/authoritative | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/avatar_equipment_screen.dart`
++learn.ai-tutor | AI roleplay tutor | Direct route | Content provider and voice provider, but fake microphone input and canned fallback remain | Canned responses make offline behavior look live | Gemini BYOK and microphone capability are not wired here | Required behavior is explicit unavailable, not canned success | blocked — simulated device result and canned AI response | 4 | `lib/screens/choose_mode_screen.dart`; `lib/screens/ai_tutor_screen.dart`
++game.world-map | World map campaign | Direct route | Curated static map/progression presentation | Map renders offline | None | No remote progress should be inferred | degraded — not connected to canonical progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/learning_world_map_screen.dart`
++practice.quiz | Start with app vocabulary | Direct route | Mode picker and quiz screen directly read Firebase; quiz options legitimately shuffle | No guaranteed local vocabulary source | Firebase Auth/Firestore | Empty collection message exists; provider failure path is incomplete | degraded — direct screen Firebase access | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/quiz_screen.dart`
++library.category-quiz | Start with user category | Direct route | Category selector and quiz directly use Firebase; selected words legitimately shuffle | No canonical local category/vocabulary source | Firebase Auth/Firestore | Empty category message exists; provider failure path is incomplete | degraded — direct screen Firebase access | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/select_category_for_quiz.dart`
++account.guest-upgrade | Profile: create backup account | Typed route `/register` | Guest upgrade handoff through injected dependencies | Registration unavailable offline; local guest ownership should remain | Firebase Auth | Mapped account failure | degraded — migration completion is Phase 1 work | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/register_screen.dart`
++account.change-password-entry | Profile: change password | Typed route `/change-password` | Injected account gateway | Unavailable offline | Registered Firebase account | Mapped account failure | degraded — remote operation | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/change_password_screen.dart`
++account.logout-profile | Profile: sign out | Typed reset to `/` | Injected account gateway | Remote sign-out may fail; current screen remains | Firebase Auth | Mapped failure | degraded — account operation requires provider | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/session_gate_screen.dart`
++account.logout-legacy | Legacy settings: sign out | Typed reset to `/` | Injected account gateway | Remote sign-out may fail; current screen remains | Firebase Auth | Mapped failure | degraded — account operation requires provider | 1 | `lib/screens/setting_screen.dart`; `lib/screens/session_gate_screen.dart`
++economy.wallpaper | Legacy settings: wallpaper, policy-gated | Direct route | Screen directly uses Firebase Auth/Firestore | Hidden under the default closed economy policy | Trusted remote economy policy | Default behavior is absence of the action | not exposed — direct screen Firebase access and no trusted purchase path | 5 | `lib/screens/setting_screen.dart`; `lib/screens/select_wallpaper_screen.dart`
++economy.avatar-settings | Legacy settings: avatar gear | Direct route | Same curated, in-memory equipment screen | Works for current session offline | None under closed economy | No purchase claim | degraded — ownership is not persisted | 5 | `lib/screens/setting_screen.dart`; `lib/screens/avatar_equipment_screen.dart`
++progress.achievements-settings | Legacy settings: achievements | Direct route | Empty badge list by default | Truthful empty state works offline | Remote economy closed | Explicit no-verified-achievements state | degraded — no persisted projection | 5 | `lib/screens/setting_screen.dart`; `lib/screens/achievements_screen.dart`
++research.export-settings | Legacy settings: export | Direct route | Curated sample preview | Preview works offline | Clipboard only | Does not claim user data export | degraded — no canonical dataset/file sharing | 6 | `lib/screens/setting_screen.dart`; `lib/screens/export_center_screen.dart`
++local.reset | Legacy settings: reset local progress | In-screen action | `LocalUserProgressStore.clearAll()` | Executes locally | Destructive confirmation is not present | Success snackbar follows awaited clear | degraded — legacy store is not the full canonical database | 1 | `lib/screens/setting_screen.dart`
++library.category-list | Category card | Direct route | Firestore category/document stream | No canonical local repository | Firebase Auth/Firestore | Provider stream determines empty/error behavior | degraded — direct Firebase boundary | 2 | `lib/screens/categories_page.dart`; `lib/screens/vocab_list_screen.dart`
++library.vocab-list | Vocabulary list | Direct route from category | Service-backed Firestore vocabulary and UI speed dial | No guaranteed local repository | Firebase Auth/Firestore through services | Provider errors are not a complete local unavailable state | degraded — legacy remote data path | 2 | `lib/screens/vocab_list_screen.dart`
++library.add-word | Vocabulary list: add/edit word | Direct route | Screen directly uses HTTP plus Firestore-backed services | Manual entry can render; lookup/commit depends on network | Network and Firebase | Exceptions are shown, but raw screen networking bypasses runtime status | degraded — direct screen HTTP access | 2 | `lib/screens/vocab_list_screen.dart`; `lib/screens/add_vocab_screen.dart`
++library.add-many | Vocabulary list: add many | Direct route | Suggestion/category services | Network suggestions are provider-dependent | Network and Firebase through services | Errors must remain errors, not invented suggestions presented as user data | degraded — not connected to canonical local repository | 2 | `lib/screens/vocab_list_screen.dart`; `lib/screens/add_multiple_words_screen.dart`
++practice.quiz-score | Quiz completion | Direct route | Current-session score and persistence hooks | Current score exists offline; sync evidence is separate | None for local score | Score derives from current answers | degraded — projection/sync integration incomplete | 2 | `lib/screens/quiz_screen.dart`; `lib/screens/score_screen.dart`
++practice.speech-recognition | Correct quiz answer: speak word | Direct route | Screen directly instantiates `speech_to_text`; voice output uses provider | Device recognizer availability varies | Microphone permission and Android speech service | Unavailable recognizer only stops listening; user-facing state is incomplete | degraded — direct screen plugin access | 3 | `lib/screens/quiz_screen.dart`; `lib/screens/speak_to_text_screen.dart`
++practice.word-scramble | Successful speech: word scramble | Direct replacement route | Current quiz word; legitimate letter shuffling | Works offline | None | No remote dependency | ready — shuffle is game behavior | 2 | `lib/screens/speak_to_text_screen.dart`; `lib/screens/word_scramble_screen.dart`
++practice.fill-blanks | Word scramble completion: fill blanks | Direct route | Current word and in-memory answer | Works offline | None | No remote dependency | ready — current-session exercise | 2 | `lib/screens/word_scramble_screen.dart`; `lib/screens/fill_in_the_blanks_screen.dart`
++practice.cefr-srs-link | CEFR level: review cards | Direct route | Curated CEFR selection passed to SRS | Current session works offline when content exists | None | Empty content must remain empty | degraded — no persisted scheduling projection | 2 | `lib/screens/cefr_selection_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.weakness-srs-link | Weakness Clinic: practice now | Direct route | Fabricated weakness items converted to flashcards | Runs offline with fabricated source records | None | No empty-history state at source | blocked — inherits fabricated user history | 5 | `lib/screens/weakness_clinic_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.import-srs-link | Imported preview: start learning | Direct route | User-pasted, parsed words | Works for current session offline | None | Parse failures are shown | degraded — imported set is not persisted | 2 | `lib/screens/wordbook_import_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++game.world-map-cefr-link | World node: open CEFR library | Direct route | Curated map links to CEFR selection | Works offline when curated content is available | None | No remote progress claim | degraded — map state is not canonical progress | 5 | `lib/screens/learning_world_map_screen.dart`; `lib/screens/cefr_selection_screen.dart`
++device.object-scanner | Object scanner code | No current route/menu | Built-in vocabulary simulation; ML service explicitly unavailable | Simulation runs offline but is not a scan | Camera/model permissions are not wired | UI labels simulation, but no real scanner entry exists | not exposed — simulated device result and placeholder ML feature | 3 | `lib/screens/object_scanner_screen.dart`; `lib/services/ml_image_labeling_service.dart`
++admin.main-vocabulary-seed | Add starter vocabulary utility | No current route/menu | Screen directly writes a curated pack to Firestore | Cannot seed offline | Firebase Auth/Firestore rules | No active UI state because it is unreachable | not exposed — direct screen Firebase access | 2 | `lib/screens/main_vocabulary.dart`
++research.thesis-chart | Thesis chart screen | No current route/menu | Caller-supplied pre/post scores and latency trend | Would render supplied data offline | None | No current entry or dataset builder | not exposed — orphaned research visualization | 6 | `lib/screens/thesis_chart_screen.dart`
++reading.associative-session | Associative reading session | No current route/menu | Injected reading coordinator/session records | Depends on caller-provided session | Voice/provider capability depends on injection | No current entry | not exposed — orphaned screen | 2 | `lib/screens/associative_reading_session_screen.dart`
++legacy.home | Legacy Home wrapper | No current typed route/menu | Directly constructs main navigation | Would work offline as a wrapper | None | No current entry | not exposed — `/home` uses `MainNavigationScreen` directly | 7 | `lib/screens/home.dart`
++legacy.result | Legacy result screen | No current route/menu | Caller-supplied score | Would render supplied current-session score offline | None | No current entry | not exposed — quiz uses `ScoreScreen` instead | 7 | `lib/screens/result_screen.dart`
++
++## Direct production boundaries
++
++Direct screen imports found by the bounded scan are:
++
++- Firebase: `categories_page.dart`, `choose_mode_screen.dart`,
++  `main_vocabulary.dart`, `quiz_screen.dart`,
++  `select_category_for_quiz.dart`, and `select_wallpaper_screen.dart`.
++- HTTP: `add_vocab_screen.dart`.
++- Plugins: `categories_page.dart` (`shared_preferences`) and
++  `speak_to_text_screen.dart` (`speech_to_text`).
++- UI-only packages such as `fl_chart` and `flutter_speed_dial` are recorded as
++  presentation dependencies, not device/provider production debt.
++
++All current navigation outside the eight `AppRoute` values uses direct
++`MaterialPageRoute` construction. Completing the typed route registry and
++removing screen-owned provider/plugin boundaries remains Phase 7 work after
++feature interfaces stabilize.
+diff --git a/lib/device/device_capability_models.dart b/lib/device/device_capability_models.dart
+new file mode 100644
+index 0000000..9736198
+--- /dev/null
++++ b/lib/device/device_capability_models.dart
+@@ -0,0 +1,270 @@
++/// Coarse capability bands used by the on-device inference policy.
++enum DevicePerformanceTier { lite, balanced, enhanced }
++
++/// Normalized thermal states that are safe to carry across platform boundaries.
++enum DeviceThermalState {
++  nominal,
++  fair,
++  serious,
++  critical,
++  unknown;
++
++  /// Converts Android's numeric thermal status to the safe internal taxonomy.
++  static DeviceThermalState fromNativeValue(int value) {
++    switch (value) {
++      case 0:
++        return DeviceThermalState.nominal;
++      case 1:
++      case 2:
++        return DeviceThermalState.fair;
++      case 3:
++        return DeviceThermalState.serious;
++      case 4:
++      case 5:
++      case 6:
++        return DeviceThermalState.critical;
++      default:
++        return DeviceThermalState.unknown;
++    }
++  }
++
++  /// Alias retained for platform adapters that use the shorter conversion name.
++  static DeviceThermalState fromNative(int value) => fromNativeValue(value);
++}
++
++enum InferenceBackend { xnnpackCpu, gpuDelegate }
++
++/// Caller-asserted provenance metadata; it is not proof of hardware execution.
++enum InferenceBenchmarkProvenance { assertedOnDeviceInferenceAdapter }
++
++/// Closed, privacy-safe reason codes produced by [InferencePolicy].
++enum InferenceDecisionReason {
++  cpuBenchmarkDegraded('cpu-benchmark-degraded'),
++  sdkUnsupported('sdk-unsupported'),
++  capabilityEvidenceMissing('capability-evidence-missing'),
++  batterySaver('battery-saver'),
++  thermalConstrained('thermal-constrained'),
++  lowMemory('low-memory'),
++  availableMemoryConstrained('available-memory-constrained'),
++  storageConstrained('storage-constrained'),
++  balancedMemory('balanced-memory'),
++  storageNotEnhanced('storage-not-enhanced'),
++  gpuNotCandidate('gpu-not-candidate'),
++  gpuBenchmarkMissing('gpu-benchmark-missing'),
++  gpuBenchmarkFailed('gpu-benchmark-failed'),
++  gpuEvidenceMismatch('gpu-evidence-mismatch'),
++  gpuEvidenceProvenanceMissing('gpu-evidence-provenance-missing'),
++  gpuSlowerThanCpu('gpu-slower-than-cpu'),
++  gpuBenchmarkQualified('gpu-benchmark-qualified');
++
++  const InferenceDecisionReason(this.code);
++
++  final String code;
++}
++
++/// An immutable, privacy-safe view of the capability signals used by policy.
++class DeviceCapabilitySnapshot {
++  factory DeviceCapabilitySnapshot({
++    required int sdkInt,
++    required String primaryAbi,
++    required int memoryClassMb,
++    required int? availableMemoryMb,
++    required int? freeStorageBytes,
++    required bool? lowMemory,
++    required bool? batterySaverEnabled,
++    required DeviceThermalState thermalState,
++    required bool? gpuApiCandidate,
++  }) {
++    final normalizedAbi = primaryAbi.trim().toLowerCase();
++    if (normalizedAbi.isEmpty) {
++      throw ArgumentError.value(primaryAbi, 'primaryAbi', 'must not be empty');
++    }
++    if (memoryClassMb < 0 ||
++        (availableMemoryMb != null && availableMemoryMb < 0) ||
++        (freeStorageBytes != null && freeStorageBytes < 0)) {
++      throw ArgumentError('memory and storage values must not be negative');
++    }
++
++    return DeviceCapabilitySnapshot._(
++      sdkInt: sdkInt,
++      primaryAbi: normalizedAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  const DeviceCapabilitySnapshot._({
++    required this.sdkInt,
++    required this.primaryAbi,
++    required this.memoryClassMb,
++    required this.availableMemoryMb,
++    required this.freeStorageBytes,
++    required this.lowMemory,
++    required this.batterySaverEnabled,
++    required this.thermalState,
++    required this.gpuApiCandidate,
++  });
++
++  final int sdkInt;
++  final String primaryAbi;
++  final int memoryClassMb;
++  final int? availableMemoryMb;
++  final int? freeStorageBytes;
++  final bool? lowMemory;
++  final bool? batterySaverEnabled;
++  final DeviceThermalState thermalState;
++  final bool? gpuApiCandidate;
++
++  bool get isSupported => sdkInt >= 29;
++
++  bool get hasRequiredPolicyEvidence =>
++      availableMemoryMb != null &&
++      freeStorageBytes != null &&
++      lowMemory != null &&
++      batterySaverEnabled != null &&
++      gpuApiCandidate != null;
++
++  @override
++  String toString() => 'DeviceCapabilitySnapshot';
++}
++
++/// Result of a bounded benchmark for one inference backend.
++///
++/// Model identity and provenance are asserted metadata supplied by the caller.
++/// This value object and the pure policy can verify internal consistency only;
++/// they cannot prove that a backend ran or that a model was loaded. Production
++/// adapter construction and loaded-model SHA validation are required later
++/// inference-adapter integration work.
++class InferenceBenchmark {
++  factory InferenceBenchmark({
++    required InferenceBackend backend,
++    required bool successful,
++    int? medianLatencyMicros,
++    required int completedRuns,
++    String? failureCode,
++    required String modelId,
++    required String modelVersion,
++    required String modelSha256,
++    required InferenceBenchmarkProvenance? provenance,
++  }) {
++    final normalizedModelId = modelId.trim().toLowerCase();
++    final normalizedModelVersion = modelVersion.trim();
++    final normalizedModelSha256 = modelSha256.trim().toLowerCase();
++    if (normalizedModelId.isEmpty ||
++        !_semanticVersionPattern.hasMatch(normalizedModelVersion)) {
++      throw ArgumentError('model identity values are invalid');
++    }
++    if (!_sha256Pattern.hasMatch(normalizedModelSha256)) {
++      throw ArgumentError.value(
++        modelSha256,
++        'modelSha256',
++        'must be a 64-character hexadecimal SHA-256 fingerprint',
++      );
++    }
++    if (completedRuns < 0 ||
++        completedRuns > maximumCompletedRuns ||
++        (medianLatencyMicros != null &&
++            (medianLatencyMicros < 0 ||
++                medianLatencyMicros > maximumMedianLatencyMicros))) {
++      throw ArgumentError('benchmark values are outside safe bounds');
++    }
++    if (successful &&
++        (medianLatencyMicros == null ||
++            medianLatencyMicros == 0 ||
++            completedRuns == 0 ||
++            failureCode != null)) {
++      throw ArgumentError(
++        'successful benchmarks require completed measurements',
++      );
++    }
++    if (!successful &&
++        (failureCode == null || !_stableFailureCodes.contains(failureCode))) {
++      throw ArgumentError.value(failureCode, 'failureCode', 'is not stable');
++    }
++
++    return InferenceBenchmark._(
++      backend: backend,
++      successful: successful,
++      medianLatencyMicros: medianLatencyMicros,
++      completedRuns: completedRuns,
++      failureCode: failureCode,
++      modelId: normalizedModelId,
++      modelVersion: normalizedModelVersion,
++      modelSha256: normalizedModelSha256,
++      provenance: provenance,
++    );
++  }
++
++  const InferenceBenchmark._({
++    required this.backend,
++    required this.successful,
++    required this.medianLatencyMicros,
++    required this.completedRuns,
++    required this.failureCode,
++    required this.modelId,
++    required this.modelVersion,
++    required this.modelSha256,
++    required this.provenance,
++  });
++
++  static const int maximumMedianLatencyMicros = 60000000;
++  static const int maximumCompletedRuns = 10000;
++  static const Set<String> _stableFailureCodes = {
++    'delegate-unavailable',
++    'delegate-init-failed',
++    'model-unsupported',
++    'benchmark-failed',
++    'benchmark-missing',
++  };
++  static final RegExp _sha256Pattern = RegExp(r'^[a-f0-9]{64}$');
++  // Supported form is canonical SemVer core only: MAJOR.MINOR.PATCH.
++  static final RegExp _semanticVersionPattern = RegExp(
++    r'^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$',
++  );
++
++  final InferenceBackend backend;
++  final bool successful;
++  final int? medianLatencyMicros;
++  final int completedRuns;
++  final String? failureCode;
++  final String modelId;
++  final String modelVersion;
++  final String modelSha256;
++  final InferenceBenchmarkProvenance? provenance;
++
++  bool hasSameModelAs(InferenceBenchmark other) =>
++      modelId == other.modelId &&
++      modelVersion == other.modelVersion &&
++      modelSha256 == other.modelSha256;
++
++  @override
++  String toString() =>
++      'InferenceBenchmark(backend: ${backend.name}, failureCode: $failureCode)';
++}
++
++/// The single safe configuration selected for a snapshot and its evidence.
++class InferenceDecision {
++  const InferenceDecision({
++    required this.tier,
++    required this.backend,
++    required this.analysisFrequency,
++    required this.reason,
++  });
++
++  final DevicePerformanceTier tier;
++  final InferenceBackend backend;
++  final String analysisFrequency;
++  final InferenceDecisionReason reason;
++
++  String get reasonCode => reason.code;
++
++  @override
++  String toString() =>
++      'InferenceDecision(tier: ${tier.name}, backend: ${backend.name}, '
++      'reasonCode: ${reason.code})';
++}
+diff --git a/lib/device/device_capability_probe.dart b/lib/device/device_capability_probe.dart
+new file mode 100644
+index 0000000..9927a11
+--- /dev/null
++++ b/lib/device/device_capability_probe.dart
+@@ -0,0 +1,122 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart';
++
++import 'device_capability_models.dart';
++
++abstract interface class DeviceCapabilityProbe {
++  Future<DeviceCapabilitySnapshot> snapshot();
++}
++
++final class MethodChannelDeviceCapabilityProbe
++    implements DeviceCapabilityProbe {
++  const MethodChannelDeviceCapabilityProbe();
++
++  static const MethodChannel _channel = MethodChannel(
++    'com.lexiquest.app/device_capabilities',
++  );
++  static const String _snapshotMethod = 'snapshot';
++  static const Set<String> _snapshotKeys = <String>{
++    'sdkInt',
++    'primaryAbi',
++    'memoryClassMb',
++    'availableMemoryMb',
++    'freeStorageBytes',
++    'lowMemory',
++    'batterySaverEnabled',
++    'thermalState',
++    'gpuApiCandidate',
++  };
++
++  @override
++  Future<DeviceCapabilitySnapshot> snapshot() async {
++    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
++      throw const DeviceCapabilityUnavailable('unsupported-platform');
++    }
++
++    final Object? payload;
++    try {
++      payload = await _channel.invokeMethod<Object?>(_snapshotMethod);
++    } on MissingPluginException {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    } on PlatformException {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    } on Object {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    }
++
++    try {
++      final snapshot = _parseSnapshot(payload);
++      if (!snapshot.isSupported) {
++        throw const DeviceCapabilityUnavailable('android-version-unsupported');
++      }
++      return snapshot;
++    } on DeviceCapabilityUnavailable {
++      rethrow;
++    } on Object {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++  }
++
++  DeviceCapabilitySnapshot _parseSnapshot(Object? payload) {
++    if (payload is! Map<Object?, Object?> ||
++        payload.length != _snapshotKeys.length ||
++        payload.keys.any((key) => key is! String) ||
++        !payload.keys.cast<String>().toSet().containsAll(_snapshotKeys)) {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++
++    final sdkInt = payload['sdkInt'];
++    final primaryAbi = payload['primaryAbi'];
++    final memoryClassMb = payload['memoryClassMb'];
++    final availableMemoryMb = payload['availableMemoryMb'];
++    final freeStorageBytes = payload['freeStorageBytes'];
++    final lowMemory = payload['lowMemory'];
++    final batterySaverEnabled = payload['batterySaverEnabled'];
++    final thermalState = payload['thermalState'];
++    final gpuApiCandidate = payload['gpuApiCandidate'];
++
++    if (sdkInt is! int ||
++        primaryAbi is! String ||
++        memoryClassMb is! int ||
++        !_isNullable<int>(availableMemoryMb) ||
++        !_isNullable<int>(freeStorageBytes) ||
++        !_isNullable<bool>(lowMemory) ||
++        !_isNullable<bool>(batterySaverEnabled) ||
++        thermalState is! String ||
++        !_isNullable<bool>(gpuApiCandidate)) {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++
++    final normalizedThermalState = switch (thermalState) {
++      'nominal' => DeviceThermalState.nominal,
++      'fair' => DeviceThermalState.fair,
++      'serious' => DeviceThermalState.serious,
++      'critical' => DeviceThermalState.critical,
++      'unknown' => DeviceThermalState.unknown,
++      _ => throw const DeviceCapabilityUnavailable('malformed-snapshot'),
++    };
++
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: primaryAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb as int?,
++      freeStorageBytes: freeStorageBytes as int?,
++      lowMemory: lowMemory as bool?,
++      batterySaverEnabled: batterySaverEnabled as bool?,
++      thermalState: normalizedThermalState,
++      gpuApiCandidate: gpuApiCandidate as bool?,
++    );
++  }
++
++  bool _isNullable<T>(Object? value) => value == null || value is T;
++}
++
++final class DeviceCapabilityUnavailable implements Exception {
++  const DeviceCapabilityUnavailable(this.code);
++
++  final String code;
++
++  @override
++  String toString() => 'DeviceCapabilityUnavailable($code)';
++}
+diff --git a/lib/device/inference_policy.dart b/lib/device/inference_policy.dart
+new file mode 100644
+index 0000000..df49552
+--- /dev/null
++++ b/lib/device/inference_policy.dart
+@@ -0,0 +1,108 @@
++import 'device_capability_models.dart';
++
++/// Deterministically selects the safest available inference configuration.
++///
++/// This pure policy checks asserted evidence metadata for consistency. It does
++/// not initialize XNNPACK or a GPU delegate, prove hardware execution, or
++/// validate a loaded model's SHA-256; those are later adapter integration work.
++class InferencePolicy {
++  InferencePolicy._();
++
++  static const int _minimumAvailableMemoryMb = 768;
++  static const int _enhancedAvailableMemoryMb = 2048;
++  static const int _minimumFreeStorageBytes = 512 * 1024 * 1024;
++  static const int _enhancedFreeStorageBytes = 1024 * 1024 * 1024;
++
++  static InferenceDecision select(
++    DeviceCapabilitySnapshot snapshot,
++    InferenceBenchmark cpuBenchmark, [
++    InferenceBenchmark? gpuBenchmark,
++  ]) {
++    if (!snapshot.hasRequiredPolicyEvidence) {
++      return _lite(InferenceDecisionReason.capabilityEvidenceMissing);
++    }
++    if (cpuBenchmark.backend != InferenceBackend.xnnpackCpu ||
++        !cpuBenchmark.successful) {
++      return _lite(InferenceDecisionReason.cpuBenchmarkDegraded);
++    }
++    if (!snapshot.isSupported) {
++      return _lite(InferenceDecisionReason.sdkUnsupported);
++    }
++    if (snapshot.batterySaverEnabled!) {
++      return _lite(InferenceDecisionReason.batterySaver);
++    }
++    if (_isThermallyConstrained(snapshot.thermalState)) {
++      return _lite(InferenceDecisionReason.thermalConstrained);
++    }
++    if (snapshot.lowMemory!) {
++      return _lite(InferenceDecisionReason.lowMemory);
++    }
++    if (snapshot.availableMemoryMb! < _minimumAvailableMemoryMb) {
++      return _lite(InferenceDecisionReason.availableMemoryConstrained);
++    }
++    if (snapshot.freeStorageBytes! < _minimumFreeStorageBytes) {
++      return _lite(InferenceDecisionReason.storageConstrained);
++    }
++    if (snapshot.availableMemoryMb! < _enhancedAvailableMemoryMb) {
++      return _balanced(InferenceDecisionReason.balancedMemory);
++    }
++    if (snapshot.freeStorageBytes! < _enhancedFreeStorageBytes) {
++      return _balanced(InferenceDecisionReason.storageNotEnhanced);
++    }
++    if (!snapshot.gpuApiCandidate!) {
++      return _balanced(InferenceDecisionReason.gpuNotCandidate);
++    }
++    if (gpuBenchmark == null) {
++      return _balanced(InferenceDecisionReason.gpuBenchmarkMissing);
++    }
++    if (gpuBenchmark.backend != InferenceBackend.gpuDelegate ||
++        !gpuBenchmark.successful) {
++      return _balanced(InferenceDecisionReason.gpuBenchmarkFailed);
++    }
++    if (cpuBenchmark.provenance !=
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter ||
++        gpuBenchmark.provenance !=
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter) {
++      return _balanced(InferenceDecisionReason.gpuEvidenceProvenanceMissing);
++    }
++    if (!cpuBenchmark.hasSameModelAs(gpuBenchmark)) {
++      return _balanced(InferenceDecisionReason.gpuEvidenceMismatch);
++    }
++
++    final cpuLatency = cpuBenchmark.medianLatencyMicros!;
++    final gpuLatency = gpuBenchmark.medianLatencyMicros!;
++    final latencyDifference = gpuLatency - cpuLatency;
++    // Benchmark bounds cap this multiplication below 600,000,000 microseconds.
++    if (latencyDifference > 0 && latencyDifference * 10 > cpuLatency) {
++      return _balanced(InferenceDecisionReason.gpuSlowerThanCpu);
++    }
++
++    return const InferenceDecision(
++      tier: DevicePerformanceTier.enhanced,
++      backend: InferenceBackend.gpuDelegate,
++      analysisFrequency: 'enhanced',
++      reason: InferenceDecisionReason.gpuBenchmarkQualified,
++    );
++  }
++
++  static bool _isThermallyConstrained(DeviceThermalState state) =>
++      state == DeviceThermalState.serious ||
++      state == DeviceThermalState.critical ||
++      state == DeviceThermalState.unknown;
++
++  static InferenceDecision _lite(InferenceDecisionReason reason) =>
++      InferenceDecision(
++        tier: DevicePerformanceTier.lite,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'low',
++        reason: reason,
++      );
++
++  static InferenceDecision _balanced(InferenceDecisionReason reason) =>
++      InferenceDecision(
++        tier: DevicePerformanceTier.balanced,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'standard',
++        reason: reason,
++      );
++}
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index d6f7745..2ddda79 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -3,20 +3,22 @@ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/foundation.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
+ import '../account/account_profile_provisioner.dart';
+ import '../account/firebase_account_gateway.dart';
+ import '../ai/ai_service_factory.dart';
+ import '../ai/generated_reading_content_source.dart';
+ import '../config/app_config.dart';
++import '../device/device_capability_models.dart';
++import '../device/device_capability_probe.dart';
+ import '../firebase_options.dart';
+ import '../learning/adaptive_associative_scheduler.dart';
+ import '../learning/association_prompt.dart';
+ import '../learning/associative_memory.dart';
+ import '../learning/associative_reading_coordinator.dart';
+ import '../learning/reading_content_source.dart';
+ import '../learning/secure_id_generator.dart';
+ import '../learning/storage/drift_learning_repository.dart';
+ import '../learning/storage/learning_database_factory.dart';
+ import '../learning/vocabulary_mixer.dart';
+@@ -165,20 +167,21 @@ final class AppBootstrap {
+     required this.loadConfig,
+     required this.guestSessionService,
+     this.createAccountGateway = _unavailableAccountGateway,
+     this.createAccountProfileProvisioning =
+         _unavailableAccountProfileProvisioning,
+     this.loadProgressRepository = _loadProgressRepositoryProduction,
+     this.progressRemoteWriter,
+     this.purchaseRemoteWriter,
+     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+     this.loadLearningDependencies = _loadLearningDependenciesProduction,
++    this.deviceCapabilityProbe = const MethodChannelDeviceCapabilityProbe(),
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
+       createAccountGateway: FirebaseAccountGateway.new,
+       createAccountProfileProvisioning: AccountProfileProvisioner.new,
+       loadProgressRepository: _loadProgressRepositoryProduction,
+@@ -190,20 +193,21 @@ final class AppBootstrap {
+   final RuntimeInitializer initializeFirebase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+   final AccountGatewayFactory createAccountGateway;
+   final AccountProfileProvisioningFactory createAccountProfileProvisioning;
+   final ProgressRepositoryLoader loadProgressRepository;
+   final ProgressRemoteWriter? progressRemoteWriter;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningFeatureFlags featureFlags;
+   final LearningDependenciesLoader loadLearningDependencies;
++  final DeviceCapabilityProbe deviceCapabilityProbe;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+     final accountGateway = firebase == RuntimeAvailability.ready
+         ? createAccountGateway()
+         : _unavailableAccountGateway();
+     final accountProfileProvisioning = firebase == RuntimeAvailability.ready
+         ? createAccountProfileProvisioning()
+         : _unavailableAccountProfileProvisioning();
+     final config = _loadConfig();
+@@ -211,38 +215,43 @@ final class AppBootstrap {
+     final progressSyncService =
+         progressRepository == null || progressRemoteWriter == null
+         ? null
+         : ProgressSyncService(
+             repository: progressRepository,
+             remoteWriter: progressRemoteWriter!,
+           );
+     final learningDependencies = featureFlags.associativeReadingEnabled
+         ? await _loadLearningDependencies(config)
+         : null;
++    final deviceCapabilitySnapshot = await _loadDeviceCapabilitySnapshot();
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
++        deviceCompute: deviceCapabilitySnapshot == null
++            ? RuntimeAvailability.unavailable
++            : RuntimeAvailability.ready,
+       ),
+       config: config,
+       accountGateway: accountGateway,
+       accountProfileProvisioning: accountProfileProvisioning,
+       guestSessionService: guestSessionService,
+       guestUpgradeHandoff: noOpGuestUpgradeHandoff,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
+       progressRepository: progressRepository,
+       progressSyncService: progressSyncService,
+       purchaseRemoteWriter: purchaseRemoteWriter,
+       learningDependencies: learningDependencies,
++      deviceCapabilitySnapshot: deviceCapabilitySnapshot,
+     );
+   }
+ 
+   Future<RuntimeAvailability> _availability(
+     RuntimeInitializer initializer,
+   ) async {
+     try {
+       await initializer();
+       return RuntimeAvailability.ready;
+     } catch (_) {
+@@ -268,20 +277,28 @@ final class AppBootstrap {
+ 
+   Future<LearningDependencies?> _loadLearningDependencies(
+     AppConfig? config,
+   ) async {
+     try {
+       return await loadLearningDependencies(config, featureFlags);
+     } catch (_) {
+       return null;
+     }
+   }
++
++  Future<DeviceCapabilitySnapshot?> _loadDeviceCapabilitySnapshot() async {
++    try {
++      return await deviceCapabilityProbe.snapshot();
++    } catch (_) {
++      return null;
++    }
++  }
+ }
+ 
+ AccountGateway _unavailableAccountGateway() =>
+     const _UnavailableAccountGateway();
+ 
+ AccountProfileProvisioning _unavailableAccountProfileProvisioning() =>
+     const UnavailableAccountProfileProvisioner();
+ 
+ final class _UnavailableAccountGateway implements AccountGateway {
+   const _UnavailableAccountGateway();
+diff --git a/lib/runtime/app_dependencies.dart b/lib/runtime/app_dependencies.dart
+index ea6524c..ea377c4 100644
+--- a/lib/runtime/app_dependencies.dart
++++ b/lib/runtime/app_dependencies.dart
+@@ -1,17 +1,18 @@
+ import 'package:flutter/widgets.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
+ import '../account/account_profile_provisioner.dart';
+ import '../config/app_config.dart';
+ import '../config/remote_economy_policy.dart';
++import '../device/device_capability_models.dart';
+ import '../progress/progress_repository.dart';
+ import '../progress/progress_sync_service.dart';
+ import '../progress/purchase_remote_writer.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ 
+ final class AppDependencies {
+   const AppDependencies({
+@@ -21,34 +22,36 @@ final class AppDependencies {
+     required this.guestSessionService,
+     required this.guestUpgradeHandoff,
+     this.accountProfileProvisioning =
+         const UnavailableAccountProfileProvisioner(),
+     this.buildInfo = const AppBuildInfo.fromEnvironment(),
+     this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
+     this.progressRepository,
+     this.progressSyncService,
+     this.purchaseRemoteWriter,
+     this.learningDependencies,
++    this.deviceCapabilitySnapshot,
+   });
+ 
+   final AppRuntimeStatus runtimeStatus;
+   final AppConfig? config;
+   final AccountGateway accountGateway;
+   final GuestSessionService guestSessionService;
+   final GuestUpgradeHandoff guestUpgradeHandoff;
+   final AccountProfileProvisioning accountProfileProvisioning;
+   final AppBuildInfo buildInfo;
+   final RemoteEconomyPolicy remoteEconomyPolicy;
+   final ProgressRepository? progressRepository;
+   final ProgressSyncService? progressSyncService;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningDependencies? learningDependencies;
++  final DeviceCapabilitySnapshot? deviceCapabilitySnapshot;
+ 
+   @override
+   String toString() => 'AppDependencies';
+ }
+ 
+ final class AppDependenciesScope extends InheritedWidget {
+   const AppDependenciesScope({
+     super.key,
+     required this.dependencies,
+     required super.child,
+diff --git a/lib/runtime/app_runtime_status.dart b/lib/runtime/app_runtime_status.dart
+index 247d95d..7c87900 100644
+--- a/lib/runtime/app_runtime_status.dart
++++ b/lib/runtime/app_runtime_status.dart
+@@ -1,17 +1,23 @@
+ enum RuntimeAvailability { ready, degraded, unavailable }
+ 
+ final class AppRuntimeStatus {
+-  const AppRuntimeStatus({required this.firebase, required this.backends});
++  const AppRuntimeStatus({
++    required this.firebase,
++    required this.backends,
++    this.deviceCompute = RuntimeAvailability.unavailable,
++  });
+ 
+   final RuntimeAvailability firebase;
+   final RuntimeAvailability backends;
++  final RuntimeAvailability deviceCompute;
+ 
+   bool get isFullyReady =>
+       firebase == RuntimeAvailability.ready &&
+-      backends == RuntimeAvailability.ready;
++      backends == RuntimeAvailability.ready &&
++      deviceCompute == RuntimeAvailability.ready;
+ 
+   bool get isCoreLearningAvailable => true;
+ 
+   @override
+   String toString() => 'AppRuntimeStatus';
+ }
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index f7de0bb..ed64738 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -42,20 +42,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+     if (status == null) {
+       return 'โหมดทดสอบ · ระบบอาจไม่พร้อมใช้งาน';
+     }
+     if (status.isFullyReady) {
+       return 'ระบบพร้อมใช้งาน รวมบริการออนไลน์';
+     }
+ 
+     final unavailable = <String>[
+       if (status.firebase != RuntimeAvailability.ready) 'การซิงค์บัญชี',
+       if (status.backends != RuntimeAvailability.ready) 'AI/เสียงออนไลน์',
++      if (status.deviceCompute != RuntimeAvailability.ready)
++        'On-device compute',
+     ];
+     return 'เรียนแบบออฟไลน์ได้ · ${unavailable.join(' · ')} ยังไม่พร้อม';
+   }
+ 
+   String _buildIdentity(BuildContext context) {
+     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
+     if (buildInfo == null) return '';
+     return '${buildInfo.version} · ${buildInfo.buildId}';
+   }
+ 
+diff --git a/test/device/device_capability_models_test.dart b/test/device/device_capability_models_test.dart
+new file mode 100644
+index 0000000..cbeffb0
+--- /dev/null
++++ b/test/device/device_capability_models_test.dart
+@@ -0,0 +1,267 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++
++void main() {
++  DeviceCapabilitySnapshot supportedSnapshot({
++    int sdkInt = 29,
++    String primaryAbi = '  ARM64-V8A  ',
++    int memoryClassMb = 256,
++    int? availableMemoryMb = 2048,
++    int? freeStorageBytes = 1024 * 1024 * 1024,
++    bool? lowMemory = false,
++    bool? batterySaverEnabled = false,
++    DeviceThermalState thermalState = DeviceThermalState.nominal,
++    bool? gpuApiCandidate = true,
++  }) {
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: primaryAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  test('marks snapshots below SDK 29 as unsupported', () {
++    final snapshot = supportedSnapshot(sdkInt: 28);
++
++    expect(snapshot.isSupported, isFalse);
++  });
++
++  test('normalizes a primary ABI to one non-empty value', () {
++    final snapshot = supportedSnapshot(primaryAbi: '  ARM64-V8A  ');
++
++    expect(snapshot.primaryAbi, 'arm64-v8a');
++    expect(() => supportedSnapshot(primaryAbi: '   '), throwsArgumentError);
++  });
++
++  test('rejects negative memory and storage values', () {
++    expect(() => supportedSnapshot(memoryClassMb: -1), throwsArgumentError);
++    expect(() => supportedSnapshot(availableMemoryMb: -1), throwsArgumentError);
++    expect(() => supportedSnapshot(freeStorageBytes: -1), throwsArgumentError);
++  });
++
++  test('maps unknown native thermal values to unknown', () {
++    expect(DeviceThermalState.fromNativeValue(-1), DeviceThermalState.unknown);
++    expect(DeviceThermalState.fromNativeValue(99), DeviceThermalState.unknown);
++  });
++
++  test('maps every known native thermal value to its safety state', () {
++    expect(DeviceThermalState.fromNativeValue(0), DeviceThermalState.nominal);
++    expect(DeviceThermalState.fromNativeValue(1), DeviceThermalState.fair);
++    expect(DeviceThermalState.fromNativeValue(2), DeviceThermalState.fair);
++    expect(DeviceThermalState.fromNativeValue(3), DeviceThermalState.serious);
++    expect(DeviceThermalState.fromNativeValue(4), DeviceThermalState.critical);
++    expect(DeviceThermalState.fromNativeValue(5), DeviceThermalState.critical);
++    expect(DeviceThermalState.fromNativeValue(6), DeviceThermalState.critical);
++  });
++
++  test('preserves unavailable capability signals as unavailable', () {
++    final snapshot = supportedSnapshot(
++      availableMemoryMb: null,
++      freeStorageBytes: null,
++      lowMemory: null,
++      batterySaverEnabled: null,
++      gpuApiCandidate: null,
++    );
++
++    expect(snapshot.availableMemoryMb, isNull);
++    expect(snapshot.freeStorageBytes, isNull);
++    expect(snapshot.lowMemory, isNull);
++    expect(snapshot.batterySaverEnabled, isNull);
++    expect(snapshot.gpuApiCandidate, isNull);
++  });
++
++  test('normalizes and validates model-specific benchmark identity', () {
++    final benchmark = InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: true,
++      medianLatencyMicros: 1000,
++      completedRuns: 5,
++      modelId: '  Lexi.Analysis  ',
++      modelVersion: ' 1.2.3 ',
++      modelSha256: 'A' * 64,
++      provenance: InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++    );
++
++    expect(benchmark.modelId, 'lexi.analysis');
++    expect(benchmark.modelVersion, '1.2.3');
++    expect(benchmark.modelSha256, 'a' * 64);
++  });
++
++  test('rejects malformed model identity and oversized benchmark values', () {
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: 'not a semantic version',
++        modelSha256: 'a' * 64,
++        provenance:
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 63,
++        provenance:
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 60000001,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance:
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 10001,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance:
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++  });
++
++  test('accepts canonical SemVer core versions only', () {
++    for (final version in const ['0.0.0', '1.2.3', '12.34.56']) {
++      expect(
++        () => InferenceBenchmark(
++          backend: InferenceBackend.xnnpackCpu,
++          successful: true,
++          medianLatencyMicros: 1000,
++          completedRuns: 5,
++          modelId: 'lexi.analysis',
++          modelVersion: version,
++          modelSha256: 'a' * 64,
++          provenance:
++              InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++        ),
++        returnsNormally,
++      );
++    }
++
++    for (final version in const [
++      '01.2.3',
++      '1.02.3',
++      '1.2.03',
++      '1.2.3-beta',
++      '1.2',
++      'v1.2.3',
++    ]) {
++      expect(
++        () => InferenceBenchmark(
++          backend: InferenceBackend.xnnpackCpu,
++          successful: true,
++          medianLatencyMicros: 1000,
++          completedRuns: 5,
++          modelId: 'lexi.analysis',
++          modelVersion: version,
++          modelSha256: 'a' * 64,
++          provenance:
++              InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++        ),
++        throwsArgumentError,
++      );
++    }
++  });
++
++  test('rejects unstable benchmark failure codes', () {
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.gpuDelegate,
++        successful: false,
++        completedRuns: 0,
++        failureCode: 'raw-platform-error',
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance:
++            InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++  });
++
++  test('string representations exclude raw hardware values', () {
++    final snapshot = supportedSnapshot(
++      primaryAbi: 'device-secret-abi',
++      memoryClassMb: 513,
++      availableMemoryMb: 2053,
++      freeStorageBytes: 123456789,
++    );
++    final benchmark = InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: true,
++      medianLatencyMicros: 54321,
++      completedRuns: 7,
++      modelId: 'secret-model-id',
++      modelVersion: '9.9.9',
++      modelSha256: 'b' * 64,
++      provenance: InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++    );
++    const decision = InferenceDecision(
++      tier: DevicePerformanceTier.balanced,
++      backend: InferenceBackend.xnnpackCpu,
++      analysisFrequency: 'standard',
++      reason: InferenceDecisionReason.gpuBenchmarkMissing,
++    );
++
++    final output = '$snapshot $benchmark $decision';
++
++    expect(output, isNot(contains('device-secret-abi')));
++    expect(output, isNot(contains('2053')));
++    expect(output, isNot(contains('123456789')));
++    expect(output, isNot(contains('secret-model-id')));
++    expect(output, isNot(contains('9.9.9')));
++    expect(output, isNot(contains('54321')));
++    expect(output, isNot(contains('b' * 64)));
++    expect(output, contains('DeviceCapabilitySnapshot'));
++    expect(output, contains('xnnpackCpu'));
++    expect(output, contains('balanced'));
++    expect(output, contains('gpu-benchmark-missing'));
++  });
++
++  test('decision reasons cannot be supplied as arbitrary caller text', () {
++    dynamic untrustedReason = 'untrusted-reason';
++
++    expect(
++      () => InferenceDecision(
++        tier: DevicePerformanceTier.lite,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'low',
++        reason: untrustedReason,
++      ),
++      throwsA(isA<TypeError>()),
++    );
++  });
++}
+diff --git a/test/device/device_capability_probe_test.dart b/test/device/device_capability_probe_test.dart
+new file mode 100644
+index 0000000..7ae41b3
+--- /dev/null
++++ b/test/device/device_capability_probe_test.dart
+@@ -0,0 +1,200 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/device_capability_probe.dart';
++
++const _channel = MethodChannel('com.lexiquest.app/device_capabilities');
++
++Map<String, Object?> _validSnapshot({
++  int sdkInt = 35,
++  Object? availableMemoryMb = 3072,
++  Object? freeStorageBytes = 4294967296,
++  Object? lowMemory = false,
++  Object? batterySaverEnabled = false,
++  Object? gpuApiCandidate = true,
++}) {
++  return <String, Object?>{
++    'sdkInt': sdkInt,
++    'primaryAbi': 'arm64-v8a',
++    'memoryClassMb': 512,
++    'availableMemoryMb': availableMemoryMb,
++    'freeStorageBytes': freeStorageBytes,
++    'lowMemory': lowMemory,
++    'batterySaverEnabled': batterySaverEnabled,
++    'thermalState': 'fair',
++    'gpuApiCandidate': gpuApiCandidate,
++  };
++}
++
++void main() {
++  TestWidgetsFlutterBinding.ensureInitialized();
++  final messenger =
++      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
++
++  setUp(() {
++    debugDefaultTargetPlatformOverride = TargetPlatform.android;
++  });
++
++  tearDown(() {
++    messenger.setMockMethodCallHandler(_channel, null);
++    debugDefaultTargetPlatformOverride = null;
++  });
++
++  test(
++    'uses the exact Android capability channel and snapshot method',
++    () async {
++      MethodCall? receivedCall;
++      messenger.setMockMethodCallHandler(_channel, (call) async {
++        receivedCall = call;
++        return _validSnapshot();
++      });
++
++      await const MethodChannelDeviceCapabilityProbe().snapshot();
++
++      expect(receivedCall, isNotNull);
++      expect(receivedCall!.method, 'snapshot');
++      expect(receivedCall!.arguments, isNull);
++    },
++  );
++
++  test(
++    'parses a complete typed platform map without inventing signals',
++    () async {
++      messenger.setMockMethodCallHandler(
++        _channel,
++        (_) async => _validSnapshot(
++          availableMemoryMb: null,
++          freeStorageBytes: null,
++          lowMemory: null,
++          batterySaverEnabled: null,
++          gpuApiCandidate: null,
++        ),
++      );
++
++      final snapshot = await const MethodChannelDeviceCapabilityProbe()
++          .snapshot();
++
++      expect(snapshot.sdkInt, 35);
++      expect(snapshot.primaryAbi, 'arm64-v8a');
++      expect(snapshot.memoryClassMb, 512);
++      expect(snapshot.availableMemoryMb, isNull);
++      expect(snapshot.freeStorageBytes, isNull);
++      expect(snapshot.lowMemory, isNull);
++      expect(snapshot.batterySaverEnabled, isNull);
++      expect(snapshot.thermalState, DeviceThermalState.fair);
++      expect(snapshot.gpuApiCandidate, isNull);
++      expect(snapshot.hasRequiredPolicyEvidence, isFalse);
++    },
++  );
++
++  test(
++    'rejects malformed and missing snapshot fields with a stable code',
++    () async {
++      for (final payload in <Object?>[
++        <String, Object?>{..._validSnapshot()}..remove('primaryAbi'),
++        <String, Object?>{..._validSnapshot(), 'memoryClassMb': '512'},
++        <String, Object?>{..._validSnapshot(), 'thermalState': 'hot'},
++        <String, Object?>{..._validSnapshot(), 'unexpected': true},
++      ]) {
++        messenger.setMockMethodCallHandler(_channel, (_) async => payload);
++
++        await expectLater(
++          const MethodChannelDeviceCapabilityProbe().snapshot(),
++          throwsA(
++            isA<DeviceCapabilityUnavailable>().having(
++              (error) => error.code,
++              'code',
++              'malformed-snapshot',
++            ),
++          ),
++        );
++      }
++    },
++  );
++
++  test(
++    'maps a native PlatformException without exposing its details',
++    () async {
++      const sentinel = 'NATIVE-CAPABILITY-SECRET-7c9f3a';
++      messenger.setMockMethodCallHandler(
++        _channel,
++        (_) async => throw PlatformException(
++          code: 'capability-unavailable',
++          message: sentinel,
++          details: <String, Object?>{'secret': sentinel},
++        ),
++      );
++
++      Object? captured;
++      try {
++        await const MethodChannelDeviceCapabilityProbe().snapshot();
++      } catch (error) {
++        captured = error;
++      }
++
++      expect(captured, isA<DeviceCapabilityUnavailable>());
++      expect(
++        (captured! as DeviceCapabilityUnavailable).code,
++        'channel-unavailable',
++      );
++      expect(captured.toString(), isNot(contains(sentinel)));
++      expect(
++        captured.toString(),
++        'DeviceCapabilityUnavailable(channel-unavailable)',
++      );
++    },
++  );
++
++  test('maps a missing plugin to channel-unavailable', () async {
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'channel-unavailable',
++        ),
++      ),
++    );
++  });
++
++  test('rejects a valid pre-Android-10 snapshot', () async {
++    messenger.setMockMethodCallHandler(
++      _channel,
++      (_) async => _validSnapshot(sdkInt: 28),
++    );
++
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'android-version-unsupported',
++        ),
++      ),
++    );
++  });
++
++  test('rejects non-Android platforms before invoking the channel', () async {
++    var invoked = false;
++    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
++    messenger.setMockMethodCallHandler(_channel, (_) async {
++      invoked = true;
++      return _validSnapshot();
++    });
++
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'unsupported-platform',
++        ),
++      ),
++    );
++    expect(invoked, isFalse);
++  });
++}
+diff --git a/test/device/inference_policy_test.dart b/test/device/inference_policy_test.dart
+new file mode 100644
+index 0000000..893f1b0
+--- /dev/null
++++ b/test/device/inference_policy_test.dart
+@@ -0,0 +1,325 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/inference_policy.dart';
++
++void main() {
++  DeviceCapabilitySnapshot snapshot({
++    int sdkInt = 29,
++    int? availableMemoryMb = 4096,
++    int? freeStorageBytes = 2 * 1024 * 1024 * 1024,
++    bool? lowMemory = false,
++    bool? batterySaverEnabled = false,
++    DeviceThermalState thermalState = DeviceThermalState.nominal,
++    bool? gpuApiCandidate = true,
++  }) {
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: 'arm64-v8a',
++      memoryClassMb: 256,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  InferenceBenchmark cpu({
++    bool successful = true,
++    int latencyMicros = 10000,
++    String modelId = 'lexi.analysis',
++    String modelVersion = '1.0.0',
++    String modelSha256 =
++        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
++    InferenceBenchmarkProvenance? provenance =
++        InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++  }) {
++    return InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: successful,
++      medianLatencyMicros: successful ? latencyMicros : null,
++      completedRuns: successful ? 5 : 0,
++      failureCode: successful ? null : 'benchmark-failed',
++      modelId: modelId,
++      modelVersion: modelVersion,
++      modelSha256: modelSha256,
++      provenance: provenance,
++    );
++  }
++
++  InferenceBenchmark gpu({
++    bool successful = true,
++    int latencyMicros = 9000,
++    String modelId = 'lexi.analysis',
++    String modelVersion = '1.0.0',
++    String modelSha256 =
++        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
++    InferenceBenchmarkProvenance? provenance =
++        InferenceBenchmarkProvenance.assertedOnDeviceInferenceAdapter,
++  }) {
++    return InferenceBenchmark(
++      backend: InferenceBackend.gpuDelegate,
++      successful: successful,
++      medianLatencyMicros: successful ? latencyMicros : null,
++      completedRuns: successful ? 5 : 0,
++      failureCode: successful ? null : 'delegate-init-failed',
++      modelId: modelId,
++      modelVersion: modelVersion,
++      modelSha256: modelSha256,
++      provenance: provenance,
++    );
++  }
++
++  test('uses CPU when the GPU benchmark is missing', () {
++    final decision = InferencePolicy.select(snapshot(), cpu());
++
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'gpu-benchmark-missing');
++  });
++
++  test(
++    'uses CPU when a GPU API candidate has no successful delegate benchmark',
++    () {
++      final decision = InferencePolicy.select(
++        snapshot(),
++        cpu(),
++        gpu(successful: false),
++      );
++
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'gpu-benchmark-failed');
++    },
++  );
++
++  test('uses GPU for an enhanced candidate with successful evidence', () {
++    final decision = InferencePolicy.select(snapshot(), cpu(), gpu());
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++    expect(decision.analysisFrequency, 'enhanced');
++    expect(decision.reasonCode, 'gpu-benchmark-qualified');
++  });
++
++  test(
++    'uses CPU when GPU latency is more than ten percent slower than CPU',
++    () {
++      final decision = InferencePolicy.select(
++        snapshot(),
++        cpu(),
++        gpu(latencyMicros: 11001),
++      );
++
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'gpu-slower-than-cpu');
++    },
++  );
++
++  test('allows GPU latency exactly ten percent slower than CPU', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(latencyMicros: 11000),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++  });
++
++  test('uses CPU when benchmark model identities do not match exactly', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(modelVersion: '1.0.1'),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-mismatch');
++  });
++
++  test('uses CPU when benchmark model IDs do not match', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(modelId: 'lexi.alternate'),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-mismatch');
++  });
++
++  test('uses CPU when benchmark model SHA-256 values do not match', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(
++        modelSha256:
++            'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
++      ),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-mismatch');
++  });
++
++  test('uses CPU when required adapter provenance is missing', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(provenance: null),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-provenance-missing');
++  });
++
++  test('uses Lite CPU when any required capability signal is unavailable', () {
++    final missingSignals = [
++      snapshot(batterySaverEnabled: null),
++      snapshot(lowMemory: null),
++      snapshot(availableMemoryMb: null),
++      snapshot(freeStorageBytes: null),
++      snapshot(gpuApiCandidate: null),
++    ];
++
++    for (final unavailableSnapshot in missingSignals) {
++      final decision = InferencePolicy.select(
++        unavailableSnapshot,
++        cpu(),
++        gpu(),
++      );
++
++      expect(decision.tier, DevicePerformanceTier.lite);
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'capability-evidence-missing');
++    }
++  });
++
++  test('uses Lite CPU in Battery Saver mode', () {
++    final decision = InferencePolicy.select(
++      snapshot(batterySaverEnabled: true),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.lite);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'low');
++    expect(decision.reasonCode, 'battery-saver');
++  });
++
++  test('uses Lite CPU for serious, critical, and unknown thermal states', () {
++    for (final thermalState in const [
++      DeviceThermalState.serious,
++      DeviceThermalState.critical,
++      DeviceThermalState.unknown,
++    ]) {
++      final decision = InferencePolicy.select(
++        snapshot(thermalState: thermalState),
++        cpu(),
++        gpu(),
++      );
++
++      expect(decision.tier, DevicePerformanceTier.lite);
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'thermal-constrained');
++    }
++  });
++
++  test('uses Lite CPU for low-memory signals and storage below 512 MB', () {
++    final lowMemory = InferencePolicy.select(
++      snapshot(lowMemory: true),
++      cpu(),
++      gpu(),
++    );
++    final lowAvailableMemory = InferencePolicy.select(
++      snapshot(availableMemoryMb: 767),
++      cpu(),
++      gpu(),
++    );
++    final lowStorage = InferencePolicy.select(
++      snapshot(freeStorageBytes: 511 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(lowMemory.tier, DevicePerformanceTier.lite);
++    expect(lowAvailableMemory.tier, DevicePerformanceTier.lite);
++    expect(lowStorage.tier, DevicePerformanceTier.lite);
++    expect(lowStorage.reasonCode, 'storage-constrained');
++  });
++
++  test('uses Balanced CPU with 768 to 2047 MB of available memory', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 768),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'standard');
++    expect(decision.reasonCode, 'balanced-memory');
++  });
++
++  test('uses Balanced CPU at the exact 2047 MB memory boundary', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 2047),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'balanced-memory');
++  });
++
++  test('uses Balanced CPU at exactly 512 MiB of free storage', () {
++    final decision = InferencePolicy.select(
++      snapshot(freeStorageBytes: 512 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'storage-not-enhanced');
++  });
++
++  test('permits enhanced GPU at exactly 1 GiB of free storage', () {
++    final decision = InferencePolicy.select(
++      snapshot(freeStorageBytes: 1024 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++  });
++
++  test('requires successful GPU evidence before an enhanced decision', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 2048, freeStorageBytes: 1024 * 1024 * 1024),
++      cpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++  });
++
++  test('returns degraded CPU when the CPU benchmark is unsuccessful', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(successful: false),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.lite);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'low');
++    expect(decision.reasonCode, 'cpu-benchmark-degraded');
++  });
++}
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index 18c98e3..4a53910 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -1,14 +1,16 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:vocab_learning_app/config/app_config.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/device_capability_probe.dart';
+ import 'package:vocab_learning_app/progress/progress_remote_writer.dart';
+ import 'package:vocab_learning_app/progress/progress_repository.dart';
+ import 'package:vocab_learning_app/progress/purchase_remote_writer.dart';
+ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _StubGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+@@ -47,20 +49,45 @@ class _StubProgressRemoteWriter implements ProgressRemoteWriter {
+ class _StubPurchaseRemoteWriter implements PurchaseRemoteWriter {
+   @override
+   Future<PurchaseRemoteResult> purchaseItem(String productId) async {
+     return const PurchaseRemoteAccepted(
+       alreadyOwned: false,
+       remainingPoints: 0,
+     );
+   }
+ }
+ 
++class _StubDeviceCapabilityProbe implements DeviceCapabilityProbe {
++  _StubDeviceCapabilityProbe(this.result);
++
++  final Future<DeviceCapabilitySnapshot> Function() result;
++  int invocationCount = 0;
++
++  @override
++  Future<DeviceCapabilitySnapshot> snapshot() {
++    invocationCount++;
++    return result();
++  }
++}
++
++DeviceCapabilitySnapshot _validDeviceSnapshot() => DeviceCapabilitySnapshot(
++  sdkInt: 35,
++  primaryAbi: 'arm64-v8a',
++  memoryClassMb: 512,
++  availableMemoryMb: 3072,
++  freeStorageBytes: 4294967296,
++  lowMemory: false,
++  batterySaverEnabled: false,
++  thermalState: DeviceThermalState.nominal,
++  gpuApiCandidate: true,
++);
++
+ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   aiApiUrl: 'https://ai.example.com',
+   isDebug: false,
+ );
+ 
+ void main() {
+   TestWidgetsFlutterBinding.ensureInitialized();
+ 
+   setUp(() {
+@@ -172,20 +199,114 @@ void main() {
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(identical(dependencies.config, expectedConfig), isTrue);
+     });
+ 
++    test(
++      'retains one successful device capability snapshot as ready',
++      () async {
++        final expectedSnapshot = _validDeviceSnapshot();
++        final probe = _StubDeviceCapabilityProbe(() async => expectedSnapshot);
++        final bootstrap = AppBootstrap(
++          initializeFirebase: () async {},
++          loadConfig: _validConfig,
++          guestSessionService: _StubGuestSessionService(),
++          deviceCapabilityProbe: probe,
++        );
++
++        final dependencies = await bootstrap.initialize();
++
++        expect(probe.invocationCount, 1);
++        expect(
++          identical(dependencies.deviceCapabilitySnapshot, expectedSnapshot),
++          isTrue,
++        );
++        expect(
++          dependencies.runtimeStatus.deviceCompute,
++          RuntimeAvailability.ready,
++        );
++        expect(dependencies.runtimeStatus.isFullyReady, isTrue);
++      },
++    );
++
++    test(
++      'device capability unavailability does not block other startup paths',
++      () async {
++        final expectedRepository = _StubProgressRepository();
++        final probe = _StubDeviceCapabilityProbe(
++          () async =>
++              throw const DeviceCapabilityUnavailable('channel-unavailable'),
++        );
++        final bootstrap = AppBootstrap(
++          initializeFirebase: () async {},
++          loadConfig: _validConfig,
++          guestSessionService: _StubGuestSessionService(),
++          loadProgressRepository: () async => expectedRepository,
++          deviceCapabilityProbe: probe,
++        );
++
++        final dependencies = await bootstrap.initialize();
++
++        expect(probe.invocationCount, 1);
++        expect(dependencies.deviceCapabilitySnapshot, isNull);
++        expect(
++          dependencies.runtimeStatus.deviceCompute,
++          RuntimeAvailability.unavailable,
++        );
++        expect(dependencies.runtimeStatus.isFullyReady, isFalse);
++        expect(dependencies.runtimeStatus.isCoreLearningAvailable, isTrue);
++        expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
++        expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
++        expect(
++          identical(dependencies.progressRepository, expectedRepository),
++          isTrue,
++        );
++        expect(dependencies.config, isNotNull);
++      },
++    );
++
++    test('redacts unexpected device probe exception details', () async {
++      const sentinel = 'NATIVE-DEVICE-PROBE-SECRET-7c9f3a';
++      final probe = _StubDeviceCapabilityProbe(
++        () async => throw StateError(sentinel),
++      );
++      final bootstrap = AppBootstrap(
++        initializeFirebase: () async {},
++        loadConfig: _validConfig,
++        guestSessionService: _StubGuestSessionService(),
++        deviceCapabilityProbe: probe,
++      );
++
++      final dependencies = await bootstrap.initialize();
++      final rendered = <String>[
++        dependencies.toString(),
++        dependencies.runtimeStatus.toString(),
++        dependencies.runtimeStatus.deviceCompute.name,
++        '${dependencies.deviceCapabilitySnapshot}',
++      ];
++
++      expect(probe.invocationCount, 1);
++      expect(dependencies.deviceCapabilitySnapshot, isNull);
++      expect(
++        dependencies.runtimeStatus.deviceCompute,
++        RuntimeAvailability.unavailable,
++      );
++      for (final value in rendered) {
++        expect(value, isNot(contains(sentinel)));
++      }
++    });
++
+     test('records Firebase failure and still returns', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+diff --git a/test/runtime/app_runtime_status_test.dart b/test/runtime/app_runtime_status_test.dart
+index 18697fb..e777057 100644
+--- a/test/runtime/app_runtime_status_test.dart
++++ b/test/runtime/app_runtime_status_test.dart
+@@ -1,19 +1,31 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ 
+ void main() {
+   test('fully ready requires Firebase and configured cloud enhancements', () {
+     const ready = AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
++      deviceCompute: RuntimeAvailability.ready,
+     );
+     const offlineCapable = AppRuntimeStatus(
+       firebase: RuntimeAvailability.unavailable,
+       backends: RuntimeAvailability.unavailable,
+     );
+ 
+     expect(ready.isFullyReady, isTrue);
+     expect(offlineCapable.isFullyReady, isFalse);
+     expect(offlineCapable.isCoreLearningAvailable, isTrue);
+   });
++
++  test('device compute unavailability prevents aggregate full readiness', () {
++    const status = AppRuntimeStatus(
++      firebase: RuntimeAvailability.ready,
++      backends: RuntimeAvailability.ready,
++      deviceCompute: RuntimeAvailability.unavailable,
++    );
++
++    expect(status.isFullyReady, isFalse);
++    expect(status.isCoreLearningAvailable, isTrue);
++  });
+ }
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index e6014d7..4942b8f 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -64,38 +64,48 @@ final class _FakeAccountGateway implements AccountGateway {
+   @override
+   Future<String> verifyPasswordResetCode(String code) =>
+       throw UnimplementedError();
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+ 
+ AppDependencies _dependencies({
+   RuntimeAvailability firebase = RuntimeAvailability.ready,
+   RuntimeAvailability backends = RuntimeAvailability.ready,
++  RuntimeAvailability deviceCompute = RuntimeAvailability.ready,
+ }) {
+   return AppDependencies(
+-    runtimeStatus: AppRuntimeStatus(firebase: firebase, backends: backends),
++    runtimeStatus: AppRuntimeStatus(
++      firebase: firebase,
++      backends: backends,
++      deviceCompute: deviceCompute,
++    ),
+     config: null,
+     accountGateway: _FakeAccountGateway(),
+     guestSessionService: _FakeGuestSessionService(),
+     guestUpgradeHandoff: noOpGuestUpgradeHandoff,
+   );
+ }
+ 
+ Future<void> _pumpHome(
+   WidgetTester tester, {
+   RuntimeAvailability firebase = RuntimeAvailability.ready,
+   RuntimeAvailability backends = RuntimeAvailability.ready,
++  RuntimeAvailability deviceCompute = RuntimeAvailability.ready,
+ }) async {
+   await tester.pumpWidget(
+     MyApp(
+-      dependencies: _dependencies(firebase: firebase, backends: backends),
++      dependencies: _dependencies(
++        firebase: firebase,
++        backends: backends,
++        deviceCompute: deviceCompute,
++      ),
+     ),
+   );
+   await tester.pump();
+   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+   navigator.pushReplacementNamed('/home');
+   await tester.pump();
+   await tester.pump(const Duration(milliseconds: 350));
+ }
+ 
+ Future<void> _openDrawer(WidgetTester tester) async {
+@@ -188,20 +198,35 @@ void main() {
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+     expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
+     expect(status.data, contains('การซิงค์บัญชี'));
+     expect(status.data, contains('AI/เสียงออนไลน์'));
+     expect(status.data, isNot(contains('Supabase')));
+   });
+ 
++  testWidgets(
++    'drawer names on-device compute when only device compute is unavailable',
++    (tester) async {
++      await _pumpHome(tester, deviceCompute: RuntimeAvailability.unavailable);
++      await _openDrawer(tester);
++
++      final status = tester.widget<Text>(
++        find.byKey(const ValueKey<String>('runtime-status-summary')),
++      );
++      expect(status.data, contains('On-device compute'));
++      expect(status.data, isNot(contains('ระบบพร้อมใช้งาน')));
++      expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
++    },
++  );
++
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(CategoriesPage), findsOneWidget);
+   });
+diff --git a/tool/cli/prototype-production-paths.allowlist.json b/tool/cli/prototype-production-paths.allowlist.json
+new file mode 100644
+index 0000000..dc55b86
+--- /dev/null
++++ b/tool/cli/prototype-production-paths.allowlist.json
+@@ -0,0 +1,113 @@
++{
++  "schemaVersion": 1,
++  "entries": [
++    {
++      "path": "lib/screens/ai_tutor_screen.dart",
++      "rule": "canned-ai-response",
++      "targetPhase": 4,
++      "featureId": "learn.ai-tutor"
++    },
++    {
++      "path": "lib/screens/ai_tutor_screen.dart",
++      "rule": "simulated-device-result",
++      "targetPhase": 3,
++      "featureId": "learn.ai-tutor"
++    },
++    {
++      "path": "lib/screens/object_scanner_screen.dart",
++      "rule": "simulated-device-result",
++      "targetPhase": 3,
++      "featureId": "device.object-scanner"
++    },
++    {
++      "path": "lib/services/ml_image_labeling_service.dart",
++      "rule": "placeholder-transaction-feature",
++      "targetPhase": 3,
++      "featureId": "device.object-scanner"
++    },
++    {
++      "path": "lib/screens/shadowing_challenge_screen.dart",
++      "rule": "random-fabricated-measurement",
++      "targetPhase": 3,
++      "featureId": "practice.shadowing"
++    },
++    {
++      "path": "lib/screens/mastery_dashboard_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "progress.mastery-dashboard"
++    },
++    {
++      "path": "lib/screens/weakness_clinic_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "progress.weakness-clinic"
++    },
++    {
++      "path": "lib/screens/ghost_shadow_duel_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "practice.ghost-shadow-duel"
++    },
++    {
++      "path": "lib/screens/shop_page.dart",
++      "rule": "placeholder-transaction-feature",
++      "targetPhase": 5,
++      "featureId": "economy.shop"
++    },
++    {
++      "path": "lib/screens/categories_page.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "library.categories"
++    },
++    {
++      "path": "lib/screens/categories_page.dart",
++      "rule": "direct-screen-plugin-access",
++      "targetPhase": 2,
++      "featureId": "library.categories"
++    },
++    {
++      "path": "lib/screens/choose_mode_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "learn.mode-picker"
++    },
++    {
++      "path": "lib/screens/main_vocabulary.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "admin.main-vocabulary-seed"
++    },
++    {
++      "path": "lib/screens/quiz_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "practice.quiz"
++    },
++    {
++      "path": "lib/screens/select_category_for_quiz.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "library.category-quiz"
++    },
++    {
++      "path": "lib/screens/select_wallpaper_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 5,
++      "featureId": "economy.wallpaper"
++    },
++    {
++      "path": "lib/screens/add_vocab_screen.dart",
++      "rule": "direct-screen-http-access",
++      "targetPhase": 2,
++      "featureId": "library.add-word"
++    },
++    {
++      "path": "lib/screens/speak_to_text_screen.dart",
++      "rule": "direct-screen-plugin-access",
++      "targetPhase": 3,
++      "featureId": "practice.speech-recognition"
++    }
++  ]
++}
+diff --git a/tool/cli/tests/android-device-capability-contract.tests.ps1 b/tool/cli/tests/android-device-capability-contract.tests.ps1
+new file mode 100644
+index 0000000..e8072cc
+--- /dev/null
++++ b/tool/cli/tests/android-device-capability-contract.tests.ps1
+@@ -0,0 +1,266 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
++$gradlePath = Join-Path $repositoryRoot 'android\app\build.gradle.kts'
++$dartPath = Join-Path $repositoryRoot 'lib\device\device_capability_probe.dart'
++$activityPath = Join-Path $repositoryRoot 'android\app\src\main\kotlin\com\lexiquest\app\MainActivity.kt'
++$pluginPath = Join-Path $repositoryRoot 'android\app\src\main\kotlin\com\lexiquest\app\DeviceCapabilityPlugin.kt'
++
++function Read-Source {
++    param([string]$Path)
++    if (Test-Path -LiteralPath $Path -PathType Leaf) {
++        return [System.IO.File]::ReadAllText($Path)
++    }
++    return ''
++}
++
++function Get-DartSnapshotKeys {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Source
++    )
++
++    $setMatch = [regex]::Match(
++        $Source,
++        '(?ms)static\s+const\s+Set<String>\s+_snapshotKeys\s*=\s*<String>\s*\{(?<body>.*?)^\s*\};\r?$'
++    )
++    if (-not $setMatch.Success) {
++        return @()
++    }
++    return @(
++        [regex]::Matches(
++            $setMatch.Groups['body'].Value,
++            "'(?<key>[A-Za-z][A-Za-z0-9]*)'\s*,"
++        ) |
++            ForEach-Object { $_.Groups['key'].Value }
++    )
++}
++
++function Get-KotlinResultMapKeys {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Source
++    )
++
++    $mapMatch = [regex]::Match(
++        $Source,
++        '(?ms)return\s+mapOf<String,\s*Any\?>\s*\((?<body>.*?)^ {8}\)\r?$',
++        [System.Text.RegularExpressions.RegexOptions]::CultureInvariant
++    )
++    if (-not $mapMatch.Success) {
++        return @()
++    }
++    return @(
++        [regex]::Matches(
++            $mapMatch.Groups['body'].Value,
++            '"(?<key>[A-Za-z][A-Za-z0-9]*)"\s+to\s+'
++        ) |
++            ForEach-Object { $_.Groups['key'].Value }
++    )
++}
++
++function Test-SnapshotKeyParity {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string[]]$DartKeys,
++        [Parameter(Mandatory = $true)]
++        [string[]]$KotlinKeys
++    )
++
++    if ($DartKeys.Count -eq 0 -or
++        $DartKeys.Count -ne @($DartKeys | Sort-Object -Unique).Count -or
++        $KotlinKeys.Count -ne @($KotlinKeys | Sort-Object -Unique).Count -or
++        $DartKeys.Count -ne $KotlinKeys.Count) {
++        return $false
++    }
++    return @(
++        Compare-Object $DartKeys $KotlinKeys -CaseSensitive
++    ).Count -eq 0
++}
++
++function Test-KotlinMemoryMappings {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Source
++    )
++
++    return (
++        $Source -match 'ActivityManager\.MemoryInfo\s*\(\s*\)\.also\s*\(\s*activityManager::getMemoryInfo\s*\)' -and
++        $Source -match '"memoryClassMb"\s+to\s+activityManager\.memoryClass(?:\s*,)?'
++    )
++}
++
++$gradle = Read-Source $gradlePath
++$dart = Read-Source $dartPath
++$activity = Read-Source $activityPath
++$plugin = Read-Source $pluginPath
++
++$channelName = 'com.lexiquest.app/device_capabilities'
++$methodName = 'snapshot'
++$dartSnapshotKeys = @(Get-DartSnapshotKeys -Source $dart)
++$pluginMapKeys = @(Get-KotlinResultMapKeys -Source $plugin)
++
++$dartParserDefined =
++    $null -ne (Get-Command Get-DartSnapshotKeys -ErrorAction SilentlyContinue)
++$parityFunctionDefined =
++    $null -ne (Get-Command Test-SnapshotKeyParity -ErrorAction SilentlyContinue)
++$mismatchFixtureRejected = $false
++if ($dartParserDefined -and $parityFunctionDefined) {
++    $mismatchDart = @'
++static const Set<String> _snapshotKeys = <String>{
++  'alpha',
++  'beta',
++};
++'@
++$mismatchKotlin = @'
++return mapOf<String, Any?>(
++    "alpha" to 1,
++    "gamma" to 2,
++        )
++'@
++    $mismatchDartKeys = @(Get-DartSnapshotKeys -Source $mismatchDart)
++    $mismatchKotlinKeys = @(Get-KotlinResultMapKeys -Source $mismatchKotlin)
++    $mismatchFixtureRejected =
++        $mismatchDartKeys.Count -eq 2 -and
++        $mismatchKotlinKeys.Count -eq 2 -and
++        -not (
++        Test-SnapshotKeyParity `
++            -DartKeys $mismatchDartKeys `
++            -KotlinKeys $mismatchKotlinKeys
++        )
++}
++
++$memoryContractDefined =
++    $null -ne (
++        Get-Command Test-KotlinMemoryMappings -ErrorAction SilentlyContinue
++    )
++$missingPopulationFixtureRejected = $false
++$hardCodedMemoryClassFixtureRejected = $false
++if ($memoryContractDefined) {
++    $validMemoryMapping = @'
++val memoryInfo =
++    ActivityManager.MemoryInfo().also(activityManager::getMemoryInfo)
++return mapOf<String, Any?>(
++    "memoryClassMb" to activityManager.memoryClass,
++        )
++'@
++    $missingPopulationCall = @'
++val memoryInfo = ActivityManager.MemoryInfo()
++return mapOf<String, Any?>(
++    "memoryClassMb" to activityManager.memoryClass,
++        )
++'@
++    $hardCodedMemoryClass = @'
++val memoryInfo =
++    ActivityManager.MemoryInfo().also(activityManager::getMemoryInfo)
++return mapOf<String, Any?>(
++    "memoryClassMb" to 512,
++        )
++'@
++    $validMemoryMappingAccepted =
++        Test-KotlinMemoryMappings -Source $validMemoryMapping
++    $missingPopulationFixtureRejected =
++        $validMemoryMappingAccepted -and
++        -not (Test-KotlinMemoryMappings -Source $missingPopulationCall)
++    $hardCodedMemoryClassFixtureRejected =
++        $validMemoryMappingAccepted -and
++        -not (Test-KotlinMemoryMappings -Source $hardCodedMemoryClass)
++}
++
++$checks = [ordered]@{
++    'Contract derives its schema authority from Dart source' =
++        $dartParserDefined
++    'Contract self-test rejects a Dart and Kotlin key mismatch' =
++        $mismatchFixtureRejected
++    'Android minimum SDK is explicitly API 29' =
++        $gradle -match '(?m)^\s*minSdk\s*=\s*29\s*$'
++    'Dart declares the exact capability channel' =
++        ([regex]::Matches($dart, [regex]::Escape("'$channelName'"))).Count -eq 1
++    'Kotlin declares the exact capability channel' =
++        ([regex]::Matches($plugin, [regex]::Escape("""$channelName"""))).Count -eq 1
++    'Dart invokes only the exact snapshot method' =
++        $dart -match "_snapshotMethod\s*=\s*'$methodName'"
++    'Kotlin handles only the exact snapshot method' =
++        $plugin -match "METHOD_SNAPSHOT\s*=\s*""$methodName"""
++    'MainActivity overrides configureFlutterEngine' =
++        $activity -match 'override\s+fun\s+configureFlutterEngine\s*\(\s*flutterEngine:\s*FlutterEngine\s*\)'
++    'MainActivity calls the superclass engine configuration' =
++        ([regex]::Matches(
++            $activity,
++            'super\.configureFlutterEngine\s*\(\s*flutterEngine\s*\)'
++        )).Count -eq 1
++    'MainActivity registers exactly one capability plugin' =
++        ([regex]::Matches(
++            $activity,
++            'flutterEngine\.plugins\.add\s*\(\s*DeviceCapabilityPlugin\s*\(\s*\)\s*\)'
++        )).Count -eq 1
++    'Plugin reads ActivityManager MemoryInfo' =
++        $plugin -match 'ActivityManager\.MemoryInfo\s*\('
++    'Plugin populates MemoryInfo through the exact ActivityManager call' =
++        $plugin -match 'ActivityManager\.MemoryInfo\s*\(\s*\)\.also\s*\(\s*activityManager::getMemoryInfo\s*\)'
++    'Plugin maps memoryClassMb directly from ActivityManager' =
++        $plugin -match '"memoryClassMb"\s+to\s+activityManager\.memoryClass(?:\s*,)?'
++    'Contract self-test rejects unpopulated MemoryInfo construction' =
++        $missingPopulationFixtureRejected
++    'Contract self-test rejects a hard-coded memoryClassMb value' =
++        $hardCodedMemoryClassFixtureRejected
++    'Plugin fails redacted when ActivityManager is unavailable' =
++        $plugin -match '(?ms)as\?\s*ActivityManager\s*\r?\n\s*\?:\s*throw\s+DeviceCapabilityUnavailableException\s*\(' -and
++        $plugin -notmatch 'activityManager\?\.memoryClass\s*\?:\s*0'
++    'Plugin reports native failures with only a stable error code' =
++        $plugin -match 'result\.error\s*\(\s*"capability-unavailable"\s*,\s*null\s*,\s*null\s*\)'
++    'Plugin reads available memory and converts it to whole MiB' =
++        $plugin -match '"availableMemoryMb"\s+to\s+memoryInfo\.availMem\.let\(::bytesToWholeMiB\)' -and
++        $plugin -match 'bytesToWholeMiB\s*\(\s*bytes:\s*Long\s*\):\s*Long\s*=\s*bytes\s*/\s*BYTES_PER_MIB' -and
++        $plugin -match 'BYTES_PER_MIB\s*=\s*1024L\s*\*\s*1024L'
++    'Plugin retains free storage in bytes' =
++        $plugin -match '"freeStorageBytes"\s+to\s+StatFs\s*\(\s*context\.filesDir\.absolutePath\s*\)\.availableBytes' -and
++        $plugin -notmatch '"freeStorageBytes"\s+to[^\r\n]*bytesToWholeMiB'
++    'Plugin reads power-save mode' =
++        $plugin -match '\.isPowerSaveMode\b'
++    'Plugin reads current thermal status' =
++        $plugin -match '\.currentThermalStatus\b'
++    'Plugin reads supported ABI data' =
++        $plugin -match 'Build\.SUPPORTED_ABIS\b'
++    'Plugin reads device configuration GPU API data' =
++        $plugin -match '\.deviceConfigurationInfo\b' -and
++        $plugin -match '\.reqGlEsVersion\b'
++    'Plugin maps every thermal constant to the exact stable name' =
++        $plugin -match 'THERMAL_STATUS_NONE\s*->\s*"nominal"' -and
++        $plugin -match '(?ms)THERMAL_STATUS_LIGHT\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_MODERATE\s*,?\s*\r?\n\s*->\s*"fair"' -and
++        $plugin -match 'THERMAL_STATUS_SEVERE\s*->\s*"serious"' -and
++        $plugin -match '(?ms)THERMAL_STATUS_CRITICAL\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_EMERGENCY\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_SHUTDOWN\s*,?\s*\r?\n\s*->\s*"critical"' -and
++        $plugin -match 'else\s*->\s*"unknown"'
++    'Plugin returns exactly the Dart snapshot keys' =
++        (Test-SnapshotKeyParity `
++            -DartKeys $dartSnapshotKeys `
++            -KotlinKeys $pluginMapKeys)
++    'Plugin does not read device model or manufacturer' =
++        $plugin -notmatch 'Build\.(?:MODEL|MANUFACTURER)\b'
++    'Plugin does not read Android ID or serial identifiers' =
++        $plugin -notmatch '(?:Settings\.Secure\.ANDROID_ID|Build\.(?:SERIAL|getSerial)\b)'
++    'Plugin contains no logging call' =
++        $plugin -notmatch '(?m)\b(?:Log\.[vdiewtf]|println|printStackTrace)\s*\('
++    'Plugin contains no network API' =
++        $plugin -notmatch '\b(?:HttpURLConnection|URLConnection|OkHttpClient|Socket|URL)\b'
++}
++
++$failed = @($checks.GetEnumerator() | Where-Object { -not $_.Value })
++foreach ($check in $checks.GetEnumerator()) {
++    $state = if ($check.Value) { 'PASS' } else { 'FAIL' }
++    Write-Host "$state - $($check.Key)"
++}
++Write-Host (
++    'Android device capability contract: {0} passed, {1} failed' -f
++    ($checks.Count - $failed.Count),
++    $failed.Count
++)
++if ($failed.Count -gt 0) {
++    exit 1
++}
++Write-Host 'PASS'
++exit 0
+diff --git a/tool/cli/tests/prototype-production-paths.tests.ps1 b/tool/cli/tests/prototype-production-paths.tests.ps1
+new file mode 100644
+index 0000000..dbe626f
+--- /dev/null
++++ b/tool/cli/tests/prototype-production-paths.tests.ps1
+@@ -0,0 +1,515 @@
++[CmdletBinding()]
++param(
++    [switch]$Strict
++)
++
++$ErrorActionPreference = 'Stop'
++Set-StrictMode -Version Latest
++
++$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
++$inventoryPath = Join-Path $repositoryRoot 'docs\prototype\feature-inventory.md'
++$allowlistPath = Join-Path $repositoryRoot 'tool\cli\prototype-production-paths.allowlist.json'
++
++function ConvertFrom-PrototypeInventoryTable {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Markdown
++    )
++
++    $expectedHeader = 'Feature ID | Visible entry | Screen/route | Current data/device/provider | Offline behavior | Permission/configuration | Truthful unavailable state | Known blocker | Target phase | Evidence'
++    $lines = @([regex]::Split($Markdown, '\r?\n'))
++    $headerIndex = -1
++    for ($index = 0; $index -lt $lines.Count; $index++) {
++        if ($lines[$index].Trim() -eq $expectedHeader) {
++            $headerIndex = $index
++            break
++        }
++    }
++    if ($headerIndex -lt 0 -or $headerIndex + 1 -ge $lines.Count) {
++        throw 'Inventory table header is missing.'
++    }
++
++    $separatorCells = @(
++        $lines[$headerIndex + 1].Split('|') |
++            ForEach-Object { $_.Trim() }
++    )
++    if ($separatorCells.Count -ne 10 -or
++        @($separatorCells | Where-Object { $_ -notmatch '^:?-{3,}:?$' }).Count -gt 0) {
++        throw 'Inventory table separator is malformed.'
++    }
++
++    $rows = [System.Collections.Generic.List[object]]::new()
++    for ($index = $headerIndex + 2; $index -lt $lines.Count; $index++) {
++        $line = $lines[$index]
++        if ([string]::IsNullOrWhiteSpace($line) -or
++            $line.TrimStart().StartsWith('#')) {
++            break
++        }
++
++        $cells = @(
++            $line.Split('|') |
++                ForEach-Object { $_.Trim() }
++        )
++        if ($cells.Count -ne 10) {
++            throw 'Inventory table row is malformed.'
++        }
++
++        $rows.Add(
++            [pscustomobject]@{
++                FeatureId = $cells[0]
++                Evidence = $cells[9]
++            }
++        )
++    }
++    if ($rows.Count -eq 0) {
++        throw 'Inventory table has no feature rows.'
++    }
++
++    return $rows
++}
++
++function Get-PrototypeInventoryCoverageErrors {
++    param(
++        [Parameter(Mandatory = $true)]
++        [object[]]$Rows,
++        [Parameter(Mandatory = $true)]
++        [string[]]$RequiredFeatureIds,
++        [Parameter(Mandatory = $true)]
++        [string[]]$RequiredScreenPaths
++    )
++
++    $featureIds = [System.Collections.Generic.HashSet[string]]::new(
++        [System.StringComparer]::Ordinal
++    )
++    $evidencePaths = [System.Collections.Generic.HashSet[string]]::new(
++        [System.StringComparer]::Ordinal
++    )
++    foreach ($row in $Rows) {
++        [void]$featureIds.Add([string]$row.FeatureId)
++        foreach ($pathMatch in [regex]::Matches(
++            [string]$row.Evidence,
++            '\blib/[A-Za-z0-9_./-]+\.dart\b'
++        )) {
++            [void]$evidencePaths.Add($pathMatch.Value)
++        }
++    }
++
++    $errors = [System.Collections.Generic.List[string]]::new()
++    foreach ($featureId in $RequiredFeatureIds) {
++        if (-not $featureIds.Contains($featureId)) {
++            $errors.Add("Inventory omits allowlisted feature: $featureId")
++        }
++    }
++    foreach ($screenPath in $RequiredScreenPaths) {
++        if (-not $evidencePaths.Contains($screenPath)) {
++            $errors.Add("Inventory omits reachable screen: $screenPath")
++        }
++    }
++
++    return $errors
++}
++
++if (-not (Test-Path -LiteralPath $inventoryPath -PathType Leaf)) {
++    Write-Error 'Prototype feature inventory is missing.'
++    exit 1
++}
++if (-not (Test-Path -LiteralPath $allowlistPath -PathType Leaf)) {
++    Write-Error 'Prototype production-path allowlist is missing.'
++    exit 1
++}
++
++$ruleSpecs = @(
++    [pscustomobject]@{
++        Name = 'sample-user-history'
++        Pattern = '\b(?:sample|mock|fake)(?:User)?(?:History|Progress|Attempts?|Sessions?|Scores?|Metrics?|Stats?)\b|this\.listeningScore\s*=\s*85\.0|widget\.customItems\s*\?\?\s*\[|_ghostSnapshot\s*=\s*GhostSnapshot\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'mock-production-provider'
++        Pattern = '(?:=|return)\s*(?:const\s+)?Mock[A-Z]\w*(?:Provider|Service|Repository|Gateway)\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'simulated-device-result'
++        Pattern = '\b(?:simulated|mock)(?:Device|Camera|Speech|Scan|Detection|Recognition|Transcription|Confidence|Result)\w*|object-scanner-simulate-button|_toggleMicListening\s*\(\)\s*\{.*?Future\.delayed.*?_sendMessage\s*\(\s*'''
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'random-fabricated-measurement'
++        Pattern = 'Random\s*\(\s*\)\.nextDouble\s*\(\s*\)'
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'placeholder-transaction-feature'
++        Pattern = '\bplaceholder\b|\bnot\s+implemented\b'
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'canned-ai-response'
++        Pattern = '\b_cannedFallbackReply\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-firebase-access'
++        Pattern = '(?m)^\s*import\s+''package:(?:cloud_firestore|firebase_[^/''"]+)/'
++        ScreensOnly = $true
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-http-access'
++        Pattern = '(?m)^\s*import\s+''package:http/'
++        ScreensOnly = $true
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-plugin-access'
++        Pattern = '(?m)^\s*import\s+''package:(?:speech_to_text|shared_preferences|image_picker|camera|google_mlkit[^/''"]*|flutter_tts|audioplayers|file_picker|permission_handler)/'
++        ScreensOnly = $true
++    }
++)
++
++$directScreenPluginRule = @(
++    $ruleSpecs |
++        Where-Object Name -eq 'direct-screen-plugin-access'
++)
++$sharedPreferencesProbe = @'
++import 'package:shared_preferences/shared_preferences.dart';
++'@
++$sharedPreferencesProbeCount = [regex]::Matches(
++    $sharedPreferencesProbe,
++    $directScreenPluginRule[0].Pattern,
++    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor
++        [System.Text.RegularExpressions.RegexOptions]::Singleline
++).Count
++if ($directScreenPluginRule.Count -ne 1 -or
++    $sharedPreferencesProbeCount -ne 1) {
++    Write-Error 'Rule self-test failed: SharedPreferences screen import.'
++    exit 1
++}
++
++$knownRuleNames = @{}
++foreach ($ruleSpec in $ruleSpecs) {
++    $knownRuleNames[$ruleSpec.Name] = $true
++}
++
++$validationErrors = [System.Collections.Generic.List[string]]::new()
++
++try {
++    $allowlistText = [System.IO.File]::ReadAllText($allowlistPath)
++    $allowlist = $allowlistText | ConvertFrom-Json
++}
++catch {
++    Write-Error 'Allowlist JSON is malformed.'
++    exit 1
++}
++
++$allowlistPropertyNames = @(
++    if ($null -ne $allowlist) {
++        $allowlist.PSObject.Properties.Name
++    }
++)
++$parsedSchemaVersion = 0
++if ($null -eq $allowlist -or
++    -not ($allowlistPropertyNames -contains 'schemaVersion') -or
++    -not [int]::TryParse(
++        [string]$allowlist.schemaVersion,
++        [ref]$parsedSchemaVersion
++    ) -or
++    $parsedSchemaVersion -ne 1) {
++    $validationErrors.Add('Allowlist schemaVersion must equal 1.')
++}
++if ($null -eq $allowlist -or
++    -not ($allowlistPropertyNames -contains 'entries') -or
++    $null -eq $allowlist.entries) {
++    $validationErrors.Add('Allowlist entries must be present.')
++    $allowlistEntries = @()
++}
++else {
++    $allowlistEntries = @($allowlist.entries)
++}
++
++$allowByKey = @{}
++foreach ($entry in $allowlistEntries) {
++    $entryPropertyNames = @(
++        if ($null -ne $entry) {
++            $entry.PSObject.Properties.Name
++        }
++    )
++    $requiredEntryProperties = @(
++        'path',
++        'rule',
++        'targetPhase',
++        'featureId'
++    )
++    $missingEntryProperties = @(
++        $requiredEntryProperties |
++            Where-Object { -not ($entryPropertyNames -contains $_) }
++    )
++    if ($null -eq $entry -or $missingEntryProperties.Count -gt 0) {
++        $validationErrors.Add('Allowlist entry is missing required fields.')
++        continue
++    }
++
++    $path = [string]$entry.path
++    $rule = [string]$entry.rule
++    $featureId = [string]$entry.featureId
++    $targetPhase = 0
++    $phaseIsValid = [int]::TryParse(
++        [string]$entry.targetPhase,
++        [ref]$targetPhase
++    )
++
++    if ([string]::IsNullOrWhiteSpace($path) -or
++        [System.IO.Path]::IsPathRooted($path) -or
++        $path.Contains('\') -or
++        $path.Contains('..') -or
++        -not $path.StartsWith('lib/')) {
++        $validationErrors.Add('Allowlist entry has an invalid relative path.')
++        continue
++    }
++    if (-not $knownRuleNames.ContainsKey($rule)) {
++        $validationErrors.Add("Allowlist entry has unknown rule: $rule")
++        continue
++    }
++    if (-not $phaseIsValid -or $targetPhase -lt 1 -or $targetPhase -gt 10) {
++        $validationErrors.Add("Allowlist entry has invalid target phase: $path")
++    }
++    if ([string]::IsNullOrWhiteSpace($featureId)) {
++        $validationErrors.Add("Allowlist entry has no feature ID: $path")
++    }
++
++    $absolutePath = Join-Path $repositoryRoot ($path.Replace('/', '\'))
++    if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
++        $validationErrors.Add("Allowlist entry names a missing file: $path")
++    }
++
++    $key = "$path::$rule"
++    if ($allowByKey.ContainsKey($key)) {
++        $validationErrors.Add("Duplicate allowlist pair: $path / $rule")
++    }
++    else {
++        $allowByKey[$key] = [pscustomobject]@{
++            Path = $path
++            Rule = $rule
++            FeatureId = $featureId
++            TargetPhase = $targetPhase
++        }
++    }
++}
++
++Push-Location $repositoryRoot
++try {
++    $candidatePaths = @(
++        & git ls-files -- 'lib/' |
++            Where-Object { $_ -match '\.dart$' } |
++            Sort-Object -Unique
++    )
++    if ($LASTEXITCODE -ne 0) {
++        Write-Error 'git ls-files failed for the bounded lib/ scan.'
++        exit 1
++    }
++}
++finally {
++    Pop-Location
++}
++
++$findingsByKey = @{}
++$regexOptions = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor
++    [System.Text.RegularExpressions.RegexOptions]::Singleline
++
++foreach ($relativePath in $candidatePaths) {
++    $absolutePath = Join-Path $repositoryRoot ($relativePath.Replace('/', '\'))
++    $content = [System.IO.File]::ReadAllText($absolutePath)
++
++    foreach ($ruleSpec in $ruleSpecs) {
++        if ($ruleSpec.ScreensOnly -and
++            -not $relativePath.StartsWith('lib/screens/')) {
++            continue
++        }
++
++        $matchCount = [regex]::Matches(
++            $content,
++            $ruleSpec.Pattern,
++            $regexOptions
++        ).Count
++        if ($matchCount -eq 0) {
++            continue
++        }
++
++        $key = "$relativePath::$($ruleSpec.Name)"
++        $findingsByKey[$key] = [pscustomobject]@{
++            Path = $relativePath
++            Rule = $ruleSpec.Name
++            Count = $matchCount
++        }
++    }
++}
++
++foreach ($findingKey in $findingsByKey.Keys) {
++    if (-not $allowByKey.ContainsKey($findingKey)) {
++        $finding = $findingsByKey[$findingKey]
++        $validationErrors.Add(
++            "New finding: $($finding.Path) / $($finding.Rule) / targetPhase=unassigned / count=$($finding.Count)"
++        )
++    }
++}
++foreach ($allowKey in $allowByKey.Keys) {
++    if (-not $findingsByKey.ContainsKey($allowKey)) {
++        $entry = $allowByKey[$allowKey]
++        $validationErrors.Add(
++            "Stale entry: $($entry.Path) / $($entry.Rule) / targetPhase=$($entry.TargetPhase) / count=0"
++        )
++    }
++}
++
++$inventoryCoverageProbe = @'
++# Probe
++
++Prose mentions prose.only and lib/screens/prose_only.dart.
++
++Feature ID | Visible entry | Screen/route | Current data/device/provider | Offline behavior | Permission/configuration | Truthful unavailable state | Known blocker | Target phase | Evidence
++--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
++actual.row | Actual | Direct route | Local | Works | None | Empty | ready | 2 | `lib/screens/actual_row.dart`
++'@
++$inventoryCoverageProbeRows = @(
++    ConvertFrom-PrototypeInventoryTable -Markdown $inventoryCoverageProbe
++)
++$proseOnlyCoverageErrors = @(
++    Get-PrototypeInventoryCoverageErrors `
++        -Rows $inventoryCoverageProbeRows `
++        -RequiredFeatureIds @('prose.only') `
++        -RequiredScreenPaths @('lib/screens/prose_only.dart')
++)
++$actualRowCoverageErrors = @(
++    Get-PrototypeInventoryCoverageErrors `
++        -Rows $inventoryCoverageProbeRows `
++        -RequiredFeatureIds @('actual.row') `
++        -RequiredScreenPaths @('lib/screens/actual_row.dart')
++)
++if ($proseOnlyCoverageErrors.Count -ne 2 -or
++    $actualRowCoverageErrors.Count -ne 0) {
++    Write-Error 'Inventory table coverage self-test failed.'
++    exit 1
++}
++
++$reachableScreenPaths = @(
++    'lib/screens/session_gate_screen.dart',
++    'lib/screens/login_screen.dart',
++    'lib/screens/register_screen.dart',
++    'lib/screens/otp_screen.dart',
++    'lib/screens/forgot_password_screen.dart',
++    'lib/screens/reset_password_screen.dart',
++    'lib/screens/change_password_screen.dart',
++    'lib/screens/main_navigation_screen.dart',
++    'lib/screens/choose_mode_screen.dart',
++    'lib/screens/mastery_dashboard_screen.dart',
++    'lib/screens/weakness_clinic_screen.dart',
++    'lib/screens/achievements_screen.dart',
++    'lib/screens/profile_settings_screen.dart',
++    'lib/screens/categories_page.dart',
++    'lib/screens/shop_page.dart',
++    'lib/screens/setting_screen.dart',
++    'lib/screens/cefr_selection_screen.dart',
++    'lib/screens/cefr_diagnostic_test_screen.dart',
++    'lib/screens/dictation_quiz_screen.dart',
++    'lib/screens/shadowing_challenge_screen.dart',
++    'lib/screens/sentence_scramble_screen.dart',
++    'lib/screens/srs_flashcards_screen.dart',
++    'lib/screens/smart_audio_playlist_screen.dart',
++    'lib/screens/cefr_article_reader_screen.dart',
++    'lib/screens/boss_battle_screen.dart',
++    'lib/screens/ghost_shadow_duel_screen.dart',
++    'lib/screens/interactive_storybook_screen.dart',
++    'lib/screens/wordbook_import_screen.dart',
++    'lib/screens/export_center_screen.dart',
++    'lib/screens/phonetic_explorer_screen.dart',
++    'lib/screens/avatar_equipment_screen.dart',
++    'lib/screens/ai_tutor_screen.dart',
++    'lib/screens/learning_world_map_screen.dart',
++    'lib/screens/quiz_screen.dart',
++    'lib/screens/select_category_for_quiz.dart',
++    'lib/screens/score_screen.dart',
++    'lib/screens/speak_to_text_screen.dart',
++    'lib/screens/word_scramble_screen.dart',
++    'lib/screens/fill_in_the_blanks_screen.dart',
++    'lib/screens/vocab_list_screen.dart',
++    'lib/screens/add_vocab_screen.dart',
++    'lib/screens/add_multiple_words_screen.dart',
++    'lib/screens/select_wallpaper_screen.dart'
++)
++
++$inventory = [System.IO.File]::ReadAllText($inventoryPath)
++try {
++    $inventoryRows = @(
++        ConvertFrom-PrototypeInventoryTable -Markdown $inventory
++    )
++}
++catch {
++    $validationErrors.Add('Inventory table is malformed.')
++    $inventoryRows = @()
++}
++
++$requiredFeatureIds = @(
++    $allowByKey.Values |
++        ForEach-Object FeatureId |
++        Sort-Object -Unique
++)
++$inventoryCoverageErrors = @(
++    Get-PrototypeInventoryCoverageErrors `
++        -Rows $inventoryRows `
++        -RequiredFeatureIds $requiredFeatureIds `
++        -RequiredScreenPaths $reachableScreenPaths
++)
++foreach ($inventoryCoverageError in $inventoryCoverageErrors) {
++    $validationErrors.Add($inventoryCoverageError)
++}
++
++$duplicateInventoryFeatureIds = @(
++    $inventoryRows |
++        Group-Object FeatureId |
++        Where-Object Count -gt 1
++)
++foreach ($duplicateInventoryFeatureId in $duplicateInventoryFeatureIds) {
++    if (-not [string]::IsNullOrWhiteSpace($duplicateInventoryFeatureId.Name)) {
++        $validationErrors.Add(
++            "Inventory has duplicate feature ID: $($duplicateInventoryFeatureId.Name)"
++        )
++    }
++}
++
++if ($validationErrors.Count -gt 0) {
++    foreach ($validationError in $validationErrors) {
++        Write-Error $validationError
++    }
++    exit 1
++}
++
++$sortedFindings = @(
++    $findingsByKey.Values |
++        Sort-Object Path, Rule
++)
++$totalMatchCount = 0
++foreach ($finding in $sortedFindings) {
++    $entry = $allowByKey["$($finding.Path)::$($finding.Rule)"]
++    $totalMatchCount += $finding.Count
++    Write-Output (
++        'path={0} rule={1} targetPhase={2} count={3}' -f
++        $finding.Path,
++        $finding.Rule,
++        $entry.TargetPhase,
++        $finding.Count
++    )
++}
++
++$knownDebtCount = $sortedFindings.Count
++Write-Output (
++    'summary candidateFiles={0} knownDebt={1} matches={2} new=0 stale=0' -f
++    $candidatePaths.Count,
++    $knownDebtCount,
++    $totalMatchCount
++)
++
++if ($Strict -and $knownDebtCount -gt 0) {
++    Write-Error "Strict mode: knownDebt=$knownDebtCount"
++    exit 1
++}
++
++exit 0

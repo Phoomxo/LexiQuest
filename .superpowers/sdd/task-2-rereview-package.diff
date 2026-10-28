@@ -1,0 +1,340 @@
+# Review package: 9577b9e..b0b54eb
+
+## Commits
+b0b54eb fix: complete account validation contracts
+5ed550f feat: add safe account validation and errors
+
+## Files changed
+ lib/account/account_cooldown.dart           | 23 ++++++++
+ lib/account/account_error_mapper.dart       | 26 +++++++++
+ lib/account/account_validation.dart         | 83 +++++++++++++++++++++++++++++
+ test/account/account_cooldown_test.dart     | 41 ++++++++++++++
+ test/account/account_error_mapper_test.dart | 66 +++++++++++++++++++++++
+ test/account/account_validation_test.dart   | 49 +++++++++++++++++
+ 6 files changed, 288 insertions(+)
+
+## Diff
+diff --git a/lib/account/account_cooldown.dart b/lib/account/account_cooldown.dart
+new file mode 100644
+index 0000000..37ff87e
+--- /dev/null
++++ b/lib/account/account_cooldown.dart
+@@ -0,0 +1,23 @@
++final class AccountCooldown {
++  AccountCooldown({
++    this.duration = const Duration(seconds: 60),
++    DateTime Function()? now,
++  }) : _now = now ?? DateTime.now;
++
++  final Duration duration;
++  final DateTime Function() _now;
++  DateTime? _expiresAt;
++
++  bool get canSubmit => remaining == Duration.zero;
++
++  Duration get remaining {
++    final expiry = _expiresAt;
++    if (expiry == null) return Duration.zero;
++    final value = expiry.difference(_now());
++    return value.isNegative ? Duration.zero : value;
++  }
++
++  void start() {
++    _expiresAt = _now().add(duration);
++  }
++}
+diff --git a/lib/account/account_error_mapper.dart b/lib/account/account_error_mapper.dart
+new file mode 100644
+index 0000000..f708033
+--- /dev/null
++++ b/lib/account/account_error_mapper.dart
+@@ -0,0 +1,26 @@
++final class AccountErrorMapper {
++  AccountErrorMapper._();
++
++  static const recoveryAcceptedMessage =
++      'หากอีเมลนี้มีบัญชี เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่แล้ว';
++
++  static String messageFor(String code) => switch (code) {
++    'user-not-found' ||
++    'wrong-password' ||
++    'invalid-credential' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
++    'network-request-failed' =>
++      'ไม่สามารถเชื่อมต่อเครือข่ายได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
++    'too-many-requests' => 'มีการพยายามทำรายการมากเกินไป กรุณาลองใหม่ภายหลัง',
++    'user-disabled' => 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
++    'weak-password' =>
++      'รหัสผ่านไม่ปลอดภัย ต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรและตัวเลข',
++    'requires-recent-login' =>
++      'เพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่ก่อนดำเนินการ',
++    'invalid-action-code' =>
++      'ลิงก์นี้ไม่ถูกต้องหรือถูกใช้งานไปแล้ว กรุณาขอลิงก์ใหม่',
++    'expired-action-code' => 'ลิงก์นี้หมดอายุแล้ว กรุณาขอลิงก์ใหม่',
++    'credential-already-in-use' =>
++      'ข้อมูลการเข้าสู่ระบบนี้ถูกใช้งานกับบัญชีอื่นแล้ว',
++    _ => 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
++  };
++}
+diff --git a/lib/account/account_validation.dart b/lib/account/account_validation.dart
+new file mode 100644
+index 0000000..4a89b25
+--- /dev/null
++++ b/lib/account/account_validation.dart
+@@ -0,0 +1,83 @@
++final class AccountValidation {
++  AccountValidation._();
++
++  static String normalizeEmail(String value) => value.trim().toLowerCase();
++
++  static String? emailError(String value) {
++    final email = normalizeEmail(value);
++    if (email.isEmpty) return 'กรุณากรอกอีเมล';
++    if (!_emailPattern.hasMatch(email)) return 'รูปแบบอีเมลไม่ถูกต้อง';
++    return null;
++  }
++
++  static String? passwordError(String value) {
++    if (value.length < 8 ||
++        !_letterPattern.hasMatch(value) ||
++        !_numberPattern.hasMatch(value)) {
++      return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรและตัวเลข';
++    }
++    return null;
++  }
++
++  static String? confirmationError(String password, String confirmation) {
++    if (confirmation.isEmpty) return 'กรุณายืนยันรหัสผ่าน';
++    if (password != confirmation) return 'รหัสผ่านไม่ตรงกัน';
++    return null;
++  }
++
++  static String? nameError(String value) =>
++      value.trim().isEmpty ? 'กรุณากรอกชื่อ' : null;
++
++  static String? firstNameError(String value) => nameError(value);
++
++  static String? lastNameError(String value) => nameError(value);
++
++  static String? ageError(Object? value) {
++    final age = switch (value) {
++      int value => value,
++      String value => int.tryParse(value.trim()),
++      _ => null,
++    };
++    if (age == null || age < 6 || age > 120) {
++      return 'อายุต้องอยู่ระหว่าง 6 ถึง 120 ปี';
++    }
++    return null;
++  }
++
++  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
++  static final _letterPattern = RegExp(
++    r'[A-Za-z'
++    r'\u00C0-\u02AF'
++    r'\u0370-\u052F'
++    r'\u0531-\u0588'
++    r'\u05D0-\u05EA'
++    r'\u05EF-\u05F2'
++    r'\u0620-\u063F'
++    r'\u0641-\u064A'
++    r'\u066E-\u066F'
++    r'\u0671-\u06D3'
++    r'\u06EE-\u06EF'
++    r'\u06FA-\u06FC'
++    r'\u06FF'
++    r'\u0904-\u0939'
++    r'\u0958-\u0961'
++    r'\u0971-\u097F'
++    r'\u0E01-\u0E2E'
++    r'\u0E30-\u0E3A'
++    r'\u0E40-\u0E4E'
++    r'\u3041-\u3096'
++    r'\u30A1-\u30FA'
++    r'\u3400-\u4DBF'
++    r'\u4E00-\u9FFF'
++    r'\uAC00-\uD7A3'
++    r'\uF900-\uFAFF]',
++  );
++  static final _numberPattern = RegExp(
++    r'[0-9'
++    r'\u0660-\u0669'
++    r'\u06F0-\u06F9'
++    r'\u0966-\u096F'
++    r'\u0E50-\u0E59'
++    r'\uFF10-\uFF19]',
++  );
++}
+diff --git a/test/account/account_cooldown_test.dart b/test/account/account_cooldown_test.dart
+new file mode 100644
+index 0000000..2ecfc79
+--- /dev/null
++++ b/test/account/account_cooldown_test.dart
+@@ -0,0 +1,41 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_cooldown.dart';
++
++void main() {
++  test('is immediately submittable before it starts', () {
++    final cooldown = AccountCooldown();
++
++    expect(cooldown.canSubmit, isTrue);
++    expect(cooldown.remaining, Duration.zero);
++  });
++
++  test('cooldown counts down from 60 seconds with an injected clock', () {
++    var now = DateTime.utc(2026, 7, 29, 12);
++    final cooldown = AccountCooldown(
++      duration: const Duration(seconds: 60),
++      now: () => now,
++    )..start();
++
++    expect(cooldown.remaining.inSeconds, 60);
++    now = now.add(const Duration(seconds: 59, milliseconds: 999));
++    expect(cooldown.remaining, const Duration(milliseconds: 1));
++    expect(cooldown.canSubmit, isFalse);
++
++    now = now.add(const Duration(milliseconds: 1));
++    expect(cooldown.canSubmit, isTrue);
++    expect(cooldown.remaining, Duration.zero);
++  });
++
++  test('restarts its expiry when started again', () {
++    var now = DateTime.utc(2026, 7, 29, 12);
++    final cooldown = AccountCooldown(
++      duration: const Duration(seconds: 60),
++      now: () => now,
++    )..start();
++    now = now.add(const Duration(seconds: 30));
++
++    cooldown.start();
++
++    expect(cooldown.remaining.inSeconds, 60);
++  });
++}
+diff --git a/test/account/account_error_mapper_test.dart b/test/account/account_error_mapper_test.dart
+new file mode 100644
+index 0000000..f72a4f2
+--- /dev/null
++++ b/test/account/account_error_mapper_test.dart
+@@ -0,0 +1,66 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_error_mapper.dart';
++
++void main() {
++  test('exposes the exact neutral recovery acknowledgement', () {
++    expect(
++      AccountErrorMapper.recoveryAcceptedMessage,
++      'หากอีเมลนี้มีบัญชี เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่แล้ว',
++    );
++  });
++
++  test('maps credential failures to one non-enumerating sign-in message', () {
++    for (final code in [
++      'user-not-found',
++      'wrong-password',
++      'invalid-credential',
++    ]) {
++      expect(
++        AccountErrorMapper.messageFor(code),
++        'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
++      );
++    }
++  });
++
++  test('maps account operation errors to safe Thai messages', () {
++    expect(
++      AccountErrorMapper.messageFor('network-request-failed'),
++      'ไม่สามารถเชื่อมต่อเครือข่ายได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต',
++    );
++    expect(
++      AccountErrorMapper.messageFor('too-many-requests'),
++      'มีการพยายามทำรายการมากเกินไป กรุณาลองใหม่ภายหลัง',
++    );
++    expect(
++      AccountErrorMapper.messageFor('user-disabled'),
++      'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
++    );
++    expect(
++      AccountErrorMapper.messageFor('weak-password'),
++      'รหัสผ่านไม่ปลอดภัย ต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรและตัวเลข',
++    );
++    expect(
++      AccountErrorMapper.messageFor('requires-recent-login'),
++      'เพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่ก่อนดำเนินการ',
++    );
++    expect(
++      AccountErrorMapper.messageFor('invalid-action-code'),
++      'ลิงก์นี้ไม่ถูกต้องหรือถูกใช้งานไปแล้ว กรุณาขอลิงก์ใหม่',
++    );
++    expect(
++      AccountErrorMapper.messageFor('expired-action-code'),
++      'ลิงก์นี้หมดอายุแล้ว กรุณาขอลิงก์ใหม่',
++    );
++    expect(
++      AccountErrorMapper.messageFor('credential-already-in-use'),
++      'ข้อมูลการเข้าสู่ระบบนี้ถูกใช้งานกับบัญชีอื่นแล้ว',
++    );
++  });
++
++  test('uses a generic fallback that cannot expose provider details', () {
++    expect(
++      AccountErrorMapper.messageFor('backend-error: sensitive detail'),
++      'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
++    );
++  });
++}
+diff --git a/test/account/account_validation_test.dart b/test/account/account_validation_test.dart
+new file mode 100644
+index 0000000..65a3935
+--- /dev/null
++++ b/test/account/account_validation_test.dart
+@@ -0,0 +1,49 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_validation.dart';
++
++void main() {
++  test('normalizes email and enforces one password policy', () {
++    expect(
++      AccountValidation.normalizeEmail(' Student@Example.COM '),
++      'student@example.com',
++    );
++    expect(AccountValidation.passwordError('short'), isNotNull);
++    expect(AccountValidation.passwordError('abcdefgh'), isNotNull);
++    expect(AccountValidation.passwordError('12345678'), isNotNull);
++    expect(AccountValidation.passwordError('learn123'), isNull);
++    expect(AccountValidation.passwordError('ภาษาไทย123'), isNull);
++    expect(AccountValidation.passwordError('ภาษาไทย๑๒๓'), isNull);
++  });
++
++  test('rejects invalid and blank email addresses', () {
++    expect(AccountValidation.emailError(''), isNotNull);
++    expect(AccountValidation.emailError('student.example.com'), isNotNull);
++    expect(AccountValidation.emailError('student@example.com'), isNull);
++  });
++
++  test('requires password confirmation to match', () {
++    expect(AccountValidation.confirmationError('learn123', ''), isNotNull);
++    expect(
++      AccountValidation.confirmationError('learn123', 'learn321'),
++      isNotNull,
++    );
++    expect(AccountValidation.confirmationError('learn123', 'learn123'), isNull);
++  });
++
++  test('requires non-empty names through every name validator', () {
++    expect(AccountValidation.nameError('  '), isNotNull);
++    expect(AccountValidation.firstNameError('  '), isNotNull);
++    expect(AccountValidation.lastNameError('  '), isNotNull);
++    expect(AccountValidation.nameError('Phet'), isNull);
++    expect(AccountValidation.firstNameError('Phet'), isNull);
++    expect(AccountValidation.lastNameError('Thong'), isNull);
++  });
++
++  test('accepts only ages from six through one hundred twenty', () {
++    expect(AccountValidation.ageError('5'), isNotNull);
++    expect(AccountValidation.ageError(121), isNotNull);
++    expect(AccountValidation.ageError('six'), isNotNull);
++    expect(AccountValidation.ageError('6'), isNull);
++    expect(AccountValidation.ageError(120), isNull);
++  });
++}

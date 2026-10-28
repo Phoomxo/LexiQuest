@@ -1,0 +1,288 @@
+# Review package: 377b9aa..dd9d6b8
+
+## Commits
+dd9d6b8 fix: restore dark theme contrast
+e7bc86e style: unify the application theme
+
+## Files changed
+ lib/config/m3_theme.dart       | 79 +++++++++++++++++++++++++++---------------
+ lib/main.dart                  | 26 +++-----------
+ test/config/m3_theme_test.dart | 77 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 133 insertions(+), 49 deletions(-)
+
+## Diff
+diff --git a/lib/config/m3_theme.dart b/lib/config/m3_theme.dart
+index c8dfbdb..21d3b10 100644
+--- a/lib/config/m3_theme.dart
++++ b/lib/config/m3_theme.dart
+@@ -1,54 +1,79 @@
+ import 'package:flutter/material.dart';
+ 
+ /// Centralized Material 3 Design System and Theme configuration for LexiQuest.
+ class M3Theme {
+   const M3Theme._();
+ 
+-  static const Color primaryBlue = Color(0xFF1E88E5);
+-  static const Color accentIndigo = Color(0xFF3F51B5);
+-  static const Color backgroundLight = Color(0xFFF8FAFC);
+-  static const Color cardSurface = Colors.white;
++  static const Color primaryBlue = Color(0xFF2457A7);
++  static const Color backgroundLight = Color(0xFFF7F8FA);
+ 
+   /// Light Theme Data for Material 3
+   static ThemeData get lightTheme {
+-    final base = ThemeData(
++    final scheme = ColorScheme.fromSeed(
++      seedColor: primaryBlue,
++      primary: primaryBlue,
++      brightness: Brightness.light,
++      surface: Colors.white,
++    );
++    return ThemeData(
+       useMaterial3: true,
+-      colorScheme: ColorScheme.fromSeed(
+-        seedColor: primaryBlue,
+-        brightness: Brightness.light,
+-      ),
++      colorScheme: scheme,
+       scaffoldBackgroundColor: backgroundLight,
+-    );
+-
+-    return base.copyWith(
+       cardTheme: CardThemeData(
+-        elevation: 2,
+-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+-        color: cardSurface,
++        elevation: 0,
++        color: scheme.surface,
++        shape: RoundedRectangleBorder(
++          borderRadius: BorderRadius.circular(16),
++          side: BorderSide(color: scheme.outlineVariant),
++        ),
+       ),
+       appBarTheme: const AppBarTheme(
+-        centerTitle: true,
++        centerTitle: false,
+         elevation: 0,
+-        backgroundColor: Colors.transparent,
++        scrolledUnderElevation: 0,
++      ),
++      filledButtonTheme: FilledButtonThemeData(
++        style: ButtonStyle(
++          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
++          shape: WidgetStatePropertyAll(
++            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
++          ),
++        ),
+       ),
+     );
+   }
+ 
+   /// Dark Theme Data for Material 3
+   static ThemeData get darkTheme {
+-    final base = ThemeData(
+-      useMaterial3: true,
+-      colorScheme: ColorScheme.fromSeed(
+-        seedColor: primaryBlue,
+-        brightness: Brightness.dark,
+-      ),
++    final scheme = ColorScheme.fromSeed(
++      seedColor: primaryBlue,
++      brightness: Brightness.dark,
+     );
+-
+-    return base.copyWith(
++    return ThemeData(
++      useMaterial3: true,
++      colorScheme: scheme,
++      scaffoldBackgroundColor: scheme.surface,
+       cardTheme: CardThemeData(
+-        elevation: 3,
+-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
++        elevation: 0,
++        color: scheme.surface,
++        shape: RoundedRectangleBorder(
++          borderRadius: BorderRadius.circular(16),
++          side: BorderSide(color: scheme.outlineVariant),
++        ),
++      ),
++      appBarTheme: const AppBarTheme(
++        centerTitle: false,
++        elevation: 0,
++        scrolledUnderElevation: 0,
++      ),
++      filledButtonTheme: FilledButtonThemeData(
++        style: ButtonStyle(
++          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
++          shape: WidgetStatePropertyAll(
++            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
++          ),
++        ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/main.dart b/lib/main.dart
+index 78e8a1f..65b6421 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,12 +1,12 @@
+ import 'package:flutter/material.dart';
+-import 'package:google_fonts/google_fonts.dart';
++import 'config/m3_theme.dart';
+ import 'runtime/app_bootstrap.dart';
+ import 'runtime/app_dependencies.dart';
+ import 'screens/main_navigation_screen.dart';
+ import 'screens/login_screen.dart';
+ import 'screens/register_screen.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   final dependencies = await AppBootstrap.production().initialize();
+   runApp(MyApp(dependencies: dependencies));
+@@ -17,41 +17,23 @@ class MyApp extends StatelessWidget {
+ 
+   final AppDependencies dependencies;
+ 
+   @override
+   Widget build(BuildContext context) {
+     return AppDependenciesScope(
+       dependencies: dependencies,
+       child: MaterialApp(
+         debugShowCheckedModeBanner: false,
+         title: 'LexiQuest - AI Vocab Learning',
+-        theme: ThemeData(
+-          useMaterial3: true,
+-          colorScheme: ColorScheme.fromSeed(
+-            seedColor: Colors.deepPurple,
+-            primary: Colors.deepPurple,
+-            secondary: Colors.indigo,
+-            tertiary: Colors.teal,
+-          ),
+-          textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
+-          cardTheme: CardThemeData(
+-            elevation: 4,
+-            shape: RoundedRectangleBorder(
+-              borderRadius: BorderRadius.circular(16),
+-            ),
+-          ),
+-          appBarTheme: const AppBarTheme(
+-            centerTitle: true,
+-            elevation: 0,
+-            backgroundColor: Colors.transparent,
+-          ),
+-        ),
++        theme: M3Theme.lightTheme,
++        darkTheme: M3Theme.darkTheme,
++        themeMode: ThemeMode.system,
+         initialRoute: '/login',
+         routes: {
+           '/login': (context) => LoginScreen(
+             guestSessionService: AppDependenciesScope.of(
+               context,
+             ).guestSessionService,
+           ),
+           '/register': (context) => const RegisterScreen(),
+           '/home': (context) => const MainNavigationScreen(),
+         },
+diff --git a/test/config/m3_theme_test.dart b/test/config/m3_theme_test.dart
+index 402aca8..a7ff312 100644
+--- a/test/config/m3_theme_test.dart
++++ b/test/config/m3_theme_test.dart
+@@ -1,19 +1,96 @@
++import 'dart:io';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/config/m3_theme.dart';
+ 
++Directory? _findRepoRoot(String start) {
++  var directory = Directory(start);
++  for (var depth = 0; depth < 16; depth++) {
++    if (File('${directory.path}/pubspec.yaml').existsSync() &&
++        Directory('${directory.path}/lib').existsSync()) {
++      return directory;
++    }
++    final parent = directory.parent;
++    if (parent.path == directory.path) return null;
++    directory = parent;
++  }
++  return null;
++}
++
++Directory _repositoryRoot() {
++  for (final start in <String>[
++    File(Platform.script.toFilePath()).parent.path,
++    Directory.current.path,
++  ]) {
++    final found = _findRepoRoot(start);
++    if (found != null) return found;
++  }
++  return Directory.current;
++}
++
+ void main() {
+   TestWidgetsFlutterBinding.ensureInitialized();
+ 
+   test('lightTheme has Material 3 enabled and correct brightness', () {
+     final theme = M3Theme.lightTheme;
+     expect(theme.useMaterial3, isTrue);
+     expect(theme.colorScheme.brightness, Brightness.light);
+   });
+ 
+   test('darkTheme has Material 3 enabled and dark brightness', () {
+     final theme = M3Theme.darkTheme;
+     expect(theme.useMaterial3, isTrue);
+     expect(theme.colorScheme.brightness, Brightness.dark);
+   });
++
++  test('light theme uses the approved restrained component tokens', () {
++    final theme = M3Theme.lightTheme;
++
++    expect(theme.colorScheme.primary, const Color(0xFF2457A7));
++    expect(theme.scaffoldBackgroundColor, const Color(0xFFF7F8FA));
++    expect(theme.cardTheme.elevation, 0);
++    expect(theme.appBarTheme.centerTitle, isFalse);
++    expect(theme.filledButtonTheme.style?.minimumSize?.resolve({})?.height, 48);
++  });
++
++  test(
++    'dark theme keeps accessible primary contrast and component geometry',
++    () {
++      final lightTheme = M3Theme.lightTheme;
++      final darkTheme = M3Theme.darkTheme;
++      final scheme = darkTheme.colorScheme;
++      final primaryLuminance = scheme.primary.computeLuminance();
++      final onPrimaryLuminance = scheme.onPrimary.computeLuminance();
++      final brighterLuminance = primaryLuminance > onPrimaryLuminance
++          ? primaryLuminance
++          : onPrimaryLuminance;
++      final darkerLuminance = primaryLuminance > onPrimaryLuminance
++          ? onPrimaryLuminance
++          : primaryLuminance;
++      final contrastRatio = (brighterLuminance + .05) / (darkerLuminance + .05);
++
++      expect(contrastRatio, greaterThanOrEqualTo(4.5));
++      expect(darkTheme.cardTheme.elevation, lightTheme.cardTheme.elevation);
++      expect(
++        darkTheme.appBarTheme.centerTitle,
++        lightTheme.appBarTheme.centerTitle,
++      );
++      expect(
++        darkTheme.filledButtonTheme.style?.minimumSize?.resolve({})?.height,
++        lightTheme.filledButtonTheme.style?.minimumSize?.resolve({})?.height,
++      );
++    },
++  );
++
++  test('application consumes M3Theme instead of declaring an inline seed', () {
++    final source = File(
++      '${_repositoryRoot().path}/lib/main.dart',
++    ).readAsStringSync();
++
++    expect(source, contains('theme: M3Theme.lightTheme'));
++    expect(source, contains('darkTheme: M3Theme.darkTheme'));
++    expect(source, isNot(contains('ColorScheme.fromSeed')));
++    expect(source, isNot(contains('GoogleFonts.')));
++  });
+ }

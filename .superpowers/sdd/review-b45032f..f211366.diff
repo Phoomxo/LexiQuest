@@ -1,0 +1,2244 @@
+# Review package: b45032f..f211366
+
+## Commits
+f211366 fix: close Plan 2 final review findings
+
+## Files changed
+ .superpowers/sdd/plan-2-final-fix-report.md        | 196 +++++++++++++++++++++
+ lib/account/account_profile_provisioner.dart       |  69 +++++++-
+ lib/navigation/account_link_coordinator.dart       |  25 ++-
+ lib/screens/forgot_password_screen.dart            |  17 +-
+ lib/screens/login_screen.dart                      |  12 +-
+ lib/screens/otp_screen.dart                        |  10 +-
+ lib/screens/reset_password_screen.dart             |  18 +-
+ lib/screens/session_gate_screen.dart               | 124 ++++++++++---
+ lib/screens/setting_screen.dart                    |  33 +++-
+ lib/services/auth_service.dart                     | 162 -----------------
+ test/account/account_profile_provisioner_test.dart | 114 +++++++++++-
+ test/account/guest_upgrade_test.dart               |   3 +-
+ test/navigation/account_link_coordinator_test.dart |  71 ++++++++
+ test/navigation/app_router_test.dart               |   3 +-
+ test/screens/account_validation_contract_test.dart | 158 +++++++++++++++++
+ test/screens/forgot_password_screen_test.dart      |   5 +
+ test/screens/full_system_audit_test.dart           |  10 +-
+ test/screens/login_screen_test.dart                |  15 ++
+ test/screens/otp_screen_test.dart                  |   5 +-
+ test/screens/registration_flow_test.dart           |   5 +-
+ test/screens/reset_password_screen_test.dart       |  24 +++
+ test/screens/session_gate_screen_test.dart         |  93 +++++++++-
+ test/screens/setting_screen_test.dart              |  66 +++++++
+ .../services/auth_service_error_handling_test.dart |  40 -----
+ test/services/auth_service_test.dart               |  44 -----
+ 25 files changed, 989 insertions(+), 333 deletions(-)
+
+## Diff
+diff --git a/.superpowers/sdd/plan-2-final-fix-report.md b/.superpowers/sdd/plan-2-final-fix-report.md
+new file mode 100644
+index 0000000..f723b32
+--- /dev/null
++++ b/.superpowers/sdd/plan-2-final-fix-report.md
+@@ -0,0 +1,196 @@
++# Plan 2 final-review consolidated fix report
++
++## Status
++
++All three Important findings and bounded Minor findings 1 and 2 are fixed on
++`release/v0.1-complete-system` from base `b45032f`. Minor 3 is deferred for the
++reason recorded below. No Codex Security, Security Scan, or Deep Scan workflow
++was used.
++
++## Root-cause confirmation
++
++### Important 1 — provisioning availability was collapsed into `bool`
++
++- `SessionGateScreen` treated every result other than literal `true`, including
++  a failed `Future`, as incomplete and opened `RegisterScreen`.
++- `FirestoreAccountProfileWriter` performed only a remote document read, so no
++  durable completion evidence existed for offline startup.
++- The working local-first pattern already used by the repository is
++  `SharedPreferences`-backed state with a fresh-instance restoration test.
++- Fix: `AccountProvisioningState` now distinguishes `complete`, `incomplete`,
++  and `unavailable`. Successful provisioning is recorded per UID in
++  `SharedPreferences`. A remote `incomplete` result remains authoritative and
++  overrides stale local completion; only a failed remote lookup may fall back
++  to a durable completed UID. A no-cache failure shows a retry boundary and is
++  neither admitted to the shell nor mislabeled as incomplete.
++
++### Important 2 — screens owned duplicate validation rules
++
++- Reset password used an ASCII-only password regular expression even though
++  register/change-password and `AccountValidation` accept documented Thai
++  letters and digits.
++- Login and recovery each owned a stricter, duplicate email expression and
++  manual normalization.
++- Fix: reset password delegates password and confirmation checks to
++  `AccountValidation`; login and recovery delegate email validation and
++  normalization to the same policy. A cross-screen contract test covers
++  register/reset/change and register/login/recovery with the same cases.
++
++### Important 3 — App Links subscribed after the initial await
++
++- `AccountLinkCoordinator.start()` awaited `getInitialLink()` before listening
++  to `uriLinkStream`, creating a warm-link loss window.
++- An initial-link exception skipped subscription, and the stream had no error
++  handler.
++- Fix: subscription is established first; initial lookup and stream errors are
++  contained; parsing/navigation remains deduplicated and guarded. No URL,
++  email, action code, token, or provider diagnostic is logged.
++
++### Minor 1 — settings sign-out lacked the guarded UI pattern
++
++- `SettingScreen._logout` awaited `signOut()` without a pending guard or error
++  boundary, unlike the existing guarded profile-settings path.
++- Fix: repeated taps are blocked, typed failures use `AccountErrorMapper`,
++  unexpected failures use the safe unknown message, and navigation remains on
++  settings when sign-out fails.
++
++### Minor 2 — legacy provider-specific error translation remained live
++
++- Repository search found `AuthService` consumers only in its own tests and the
++  full-system audit assertion.
++- Fix: the audit now asserts `AccountErrorMapper`; the legacy service and its
++  two test files are deleted.
++
++## TDD RED evidence
++
++### Important 1
++
++Command:
++
++```text
++flutter test test/screens/session_gate_screen_test.dart
++```
++
++Result: exit 1, `+8 -2`. The no-cache lookup failure incorrectly rendered
++`RegisterScreen`, and no `provisioning-retry` control existed for restored
++connectivity.
++
++### Important 2
++
++Command:
++
++```text
++flutter test test/screens/reset_password_screen_test.dart test/screens/login_screen_test.dart test/screens/forgot_password_screen_test.dart
++```
++
++Result: exit 1, `+21 -3`. Thai password reset produced no gateway call, and
++login/recovery rendered their duplicate email error instead of the centralized
++policy message.
++
++### Important 3
++
++Command:
++
++```text
++flutter test test/navigation/account_link_coordinator_test.dart
++```
++
++Result: exit 1, `+6 -3`. A warm link emitted during delayed initial lookup was
++lost, the initial-link failure escaped, and the stream error reached the
++uncaught zone.
++
++## GREEN and focused gate evidence
++
++The first consolidated run reached 99/100 and exposed one implementation issue:
++the retry callback used an expression-bodied `setState` whose assignment
++returned the new `Future`. The callback was changed to a synchronous block and
++the complete bounded gate was rerun.
++
++Command:
++
++```text
++flutter test test/account/account_profile_provisioner_test.dart test/account/account_validation_test.dart test/account/guest_upgrade_test.dart test/navigation/account_link_coordinator_test.dart test/navigation/app_router_test.dart test/screens/account_validation_contract_test.dart test/screens/session_gate_screen_test.dart test/screens/otp_screen_test.dart test/screens/registration_flow_test.dart test/screens/reset_password_screen_test.dart test/screens/login_screen_test.dart test/screens/forgot_password_screen_test.dart test/screens/change_password_screen_test.dart test/screens/setting_screen_test.dart test/screens/full_system_audit_test.dart
++```
++
++Result: exit 0, `+100`, `All tests passed!`
++
++Focused static gate:
++
++```text
++flutter analyze <21 changed account/navigation/settings source and test files>
++```
++
++Result: exit 0, `No issues found!`
++
++`git diff --check` also exited 0.
++
++## Files changed
++
++Production:
++
++- `lib/account/account_profile_provisioner.dart`
++- `lib/navigation/account_link_coordinator.dart`
++- `lib/screens/forgot_password_screen.dart`
++- `lib/screens/login_screen.dart`
++- `lib/screens/otp_screen.dart`
++- `lib/screens/reset_password_screen.dart`
++- `lib/screens/session_gate_screen.dart`
++- `lib/screens/setting_screen.dart`
++- deleted `lib/services/auth_service.dart`
++
++Tests:
++
++- `test/account/account_profile_provisioner_test.dart`
++- `test/account/guest_upgrade_test.dart`
++- `test/navigation/account_link_coordinator_test.dart`
++- `test/navigation/app_router_test.dart`
++- added `test/screens/account_validation_contract_test.dart`
++- `test/screens/forgot_password_screen_test.dart`
++- `test/screens/full_system_audit_test.dart`
++- `test/screens/login_screen_test.dart`
++- `test/screens/otp_screen_test.dart`
++- `test/screens/registration_flow_test.dart`
++- `test/screens/reset_password_screen_test.dart`
++- `test/screens/session_gate_screen_test.dart`
++- `test/screens/setting_screen_test.dart`
++- deleted `test/services/auth_service_error_handling_test.dart`
++- deleted `test/services/auth_service_test.dart`
++
++## Self-review
++
++- Confirmed remote `incomplete` cannot be overridden by stale local state.
++- Confirmed verified users with durable completion can enter the local shell
++  when the remote lookup fails.
++- Confirmed unknown/no-cache failures enter neither shell nor registration
++  recovery and can retry after connectivity returns.
++- Confirmed App Links subscribes before the initial lookup and all tested error
++  boundaries stay active without sensitive logging.
++- Confirmed all credential-screen validators now use the central policy at the
++  required lifecycle points.
++- Confirmed settings failure paths do not clear the route stack.
++- Confirmed no tracked `AuthService` or `services/auth_service` reference
++  remains under `lib/` or `test/`.
++- Focused search found no new `print`, `debugPrint`, logger, or developer-log
++  call in the changed production files.
++- Diff review found no build/cache enumeration, unrelated refactor, generated
++  file, or dependency change.
++
++## Deferred finding
++
++### Minor 3 — production Firebase adapter contract depth
++
++Deferred to the post-Prototype provider-adapter hardening phase. A useful seam
++cannot be introduced narrowly: Firebase `User`, `UserCredential`,
++reauthentication credentials, anonymous linking, reload state, and every
++gateway operation would all need a provider-neutral facade or an Auth emulator.
++Wrapping only one or two methods would leave the review finding materially
++unresolved, while wrapping all methods is a broad adapter refactor outside this
++bounded account/navigation/settings wave.
++
++Target phase: immediately after the Prototype baseline, before any production
++Firebase qualification claim. Scope should be either:
++
++1. a complete injectable Firebase-auth facade covering every gateway method,
++   session mapping, missing-user behavior, and sanitized exception translation;
++   or
++2. bounded Firebase Auth emulator contract tests covering the same behavior.
+diff --git a/lib/account/account_profile_provisioner.dart b/lib/account/account_profile_provisioner.dart
+index 7a68a4c..81460aa 100644
+--- a/lib/account/account_profile_provisioner.dart
++++ b/lib/account/account_profile_provisioner.dart
+@@ -1,11 +1,12 @@
+ import 'package:cloud_firestore/cloud_firestore.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import 'account_gateway.dart';
+ import 'account_validation.dart';
+ import '../services/category_service.dart';
+ 
+ final class AccountProfile {
+   const AccountProfile({
+     required this.firstName,
+     required this.lastName,
+     required this.email,
+@@ -15,73 +16,131 @@ final class AccountProfile {
+   final String firstName;
+   final String lastName;
+   final String email;
+   final int age;
+ 
+   String get normalizedEmail => AccountValidation.normalizeEmail(email);
+ }
+ 
+ abstract interface class AccountProfileProvisioning {
+   Future<void> ensureProfile(String uid, AccountProfile profile);
+-  Future<bool> isProvisioningComplete(String uid);
++  Future<AccountProvisioningState> provisioningState(String uid);
+ }
+ 
++enum AccountProvisioningState { complete, incomplete, unavailable }
++
+ abstract interface class AccountProfileWriter {
+   Future<void> writeProfile({
+     required String uid,
+     required AccountProfile profile,
+     required bool merge,
+   });
+   Future<void> markProvisioningComplete(String uid);
+   Future<bool> isProvisioningComplete(String uid);
+ }
+ 
++abstract interface class AccountProvisioningCompletionStore {
++  Future<bool> isComplete(String uid);
++  Future<void> markComplete(String uid);
++}
++
+ abstract interface class DefaultCategoryProvisioner {
+   Future<void> ensureDefaults(String uid);
+ }
+ 
+ final class AccountProfileProvisioner implements AccountProfileProvisioning {
+   AccountProfileProvisioner({
+     AccountProfileWriter? profileWriter,
+     DefaultCategoryProvisioner? defaultCategoryProvisioner,
++    AccountProvisioningCompletionStore? completionStore,
+   }) : _profileWriter = profileWriter ?? FirestoreAccountProfileWriter(),
+        _defaultCategoryProvisioner =
+            defaultCategoryProvisioner ??
+-           CategoryServiceDefaultCategoryProvisioner();
++           CategoryServiceDefaultCategoryProvisioner(),
++       _completionStore =
++           completionStore ??
++           SharedPreferencesAccountProvisioningCompletionStore();
+ 
+   final AccountProfileWriter _profileWriter;
+   final DefaultCategoryProvisioner _defaultCategoryProvisioner;
++  final AccountProvisioningCompletionStore _completionStore;
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) async {
+     await _profileWriter.writeProfile(uid: uid, profile: profile, merge: true);
+     await _defaultCategoryProvisioner.ensureDefaults(uid);
+     await _profileWriter.markProvisioningComplete(uid);
++    await _completionStore.markComplete(uid);
+   }
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) =>
+-      _profileWriter.isProvisioningComplete(uid);
++  Future<AccountProvisioningState> provisioningState(String uid) async {
++    try {
++      final complete = await _profileWriter.isProvisioningComplete(uid);
++      if (!complete) return AccountProvisioningState.incomplete;
++      try {
++        await _completionStore.markComplete(uid);
++      } on Object {
++        // The current remote result is authoritative for this launch. A later
++        // offline launch remains unavailable until the durable write succeeds.
++      }
++      return AccountProvisioningState.complete;
++    } on Object {
++      try {
++        return await _completionStore.isComplete(uid)
++            ? AccountProvisioningState.complete
++            : AccountProvisioningState.unavailable;
++      } on Object {
++        return AccountProvisioningState.unavailable;
++      }
++    }
++  }
+ }
+ 
+ final class UnavailableAccountProfileProvisioner
+     implements AccountProfileProvisioning {
+   const UnavailableAccountProfileProvisioner();
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) =>
+       Future<void>.error(
+         const AccountOperationException('profile-provisioning-unavailable'),
+       );
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => false;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      AccountProvisioningState.unavailable;
++}
++
++final class SharedPreferencesAccountProvisioningCompletionStore
++    implements AccountProvisioningCompletionStore {
++  SharedPreferencesAccountProvisioningCompletionStore({
++    Future<SharedPreferences> Function()? getPreferences,
++  }) : _getPreferences = getPreferences ?? SharedPreferences.getInstance;
++
++  static const _keyPrefix = 'account.provisioning.complete.';
++  final Future<SharedPreferences> Function() _getPreferences;
++
++  @override
++  Future<bool> isComplete(String uid) async =>
++      (await _getPreferences()).getBool('$_keyPrefix$uid') == true;
++
++  @override
++  Future<void> markComplete(String uid) async {
++    final saved = await (await _getPreferences()).setBool(
++      '$_keyPrefix$uid',
++      true,
++    );
++    if (!saved) {
++      throw StateError('account-provisioning-completion-write-failed');
++    }
++  }
+ }
+ 
+ final class FirestoreAccountProfileWriter implements AccountProfileWriter {
+   FirestoreAccountProfileWriter({FirebaseFirestore? firestore})
+     : _firestore = firestore ?? FirebaseFirestore.instance;
+ 
+   final FirebaseFirestore _firestore;
+ 
+   @override
+   Future<void> writeProfile({
+diff --git a/lib/navigation/account_link_coordinator.dart b/lib/navigation/account_link_coordinator.dart
+index d334849..94bce81 100644
+--- a/lib/navigation/account_link_coordinator.dart
++++ b/lib/navigation/account_link_coordinator.dart
+@@ -22,23 +22,42 @@ final class AccountLinkCoordinator {
+ 
+   AccountLinkCoordinator._(this._initialLink, this._uriLinks, this._navigate);
+ 
+   final Future<Uri?> Function() _initialLink;
+   final Stream<Uri> _uriLinks;
+   final AccountRouteNavigator _navigate;
+   final Set<AccountActionLink> _handledActions = <AccountActionLink>{};
+   StreamSubscription<Uri>? _subscription;
+ 
+   Future<void> start() async {
+-    final initialLink = await _initialLink();
+-    _handle(initialLink);
+-    _subscription ??= _uriLinks.listen(_handle);
++    _subscription ??= _uriLinks.listen(
++      _handleSafely,
++      onError: _containStreamError,
++    );
++    try {
++      _handleSafely(await _initialLink());
++    } on Object {
++      // Platform lookup failures are non-fatal. The warm-link subscription
++      // remains active and no link contents or provider details are logged.
++    }
++  }
++
++  void _handleSafely(Uri? uri) {
++    try {
++      _handle(uri);
++    } on Object {
++      // Navigation/parser failures must not escape the asynchronous boundary.
++    }
++  }
++
++  void _containStreamError(Object error, StackTrace stackTrace) {
++    // Intentionally contained without logging sensitive link diagnostics.
+   }
+ 
+   void _handle(Uri? uri) {
+     if (uri == null) return;
+     final action = AccountActionLink.tryParse(uri);
+     if (action == null || !_handledActions.add(action)) return;
+     switch (action.mode) {
+       case AccountActionMode.resetPassword:
+         _navigate(
+           AppRoute.resetPassword,
+diff --git a/lib/screens/forgot_password_screen.dart b/lib/screens/forgot_password_screen.dart
+index c403f8e..404b827 100644
+--- a/lib/screens/forgot_password_screen.dart
++++ b/lib/screens/forgot_password_screen.dart
+@@ -1,15 +1,16 @@
+ import 'package:flutter/material.dart';
+ 
+ import '../account/account_cooldown.dart';
+ import '../account/account_error_mapper.dart';
+ import '../account/account_gateway.dart';
++import '../account/account_validation.dart';
+ 
+ class ForgotPasswordScreen extends StatefulWidget {
+   const ForgotPasswordScreen({
+     super.key,
+     required this.accountGateway,
+     this.cooldown,
+   });
+ 
+   final AccountGateway accountGateway;
+   final AccountCooldown? cooldown;
+@@ -18,42 +19,36 @@ class ForgotPasswordScreen extends StatefulWidget {
+   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+ }
+ 
+ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+   final _formKey = GlobalKey<FormState>();
+   final _emailController = TextEditingController();
+   late final AccountCooldown _cooldown = widget.cooldown ?? AccountCooldown();
+   bool _isSubmitting = false;
+   String? _retryEmail;
+ 
+-  String? _validateEmail(String? value) {
+-    final email = value?.trim() ?? '';
+-    return RegExp(
+-          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+-        ).hasMatch(email)
+-        ? null
+-        : 'กรุณากรอกอีเมลให้ถูกต้อง';
+-  }
++  String? _validateEmail(String? value) =>
++      AccountValidation.emailError(value ?? '');
+ 
+   Future<void> _submit([String? email]) async {
+     if (_isSubmitting) return;
+     if (email == null && !(_formKey.currentState?.validate() ?? false)) return;
+     if (!_cooldown.canSubmit) {
+       _showMessage(
+         'กรุณารอ ${_cooldown.remaining.inSeconds} วินาทีก่อนส่งอีเมลอีกครั้ง',
+       );
+       return;
+     }
+ 
+-    final normalizedEmail = (email ?? _emailController.text)
+-        .trim()
+-        .toLowerCase();
++    final normalizedEmail = AccountValidation.normalizeEmail(
++      email ?? _emailController.text,
++    );
+     setState(() => _isSubmitting = true);
+     try {
+       await widget.accountGateway.requestPasswordReset(normalizedEmail);
+       _showAccepted();
+     } on AccountOperationException catch (error) {
+       if (error.code == 'user-not-found' || error.code == 'email-not-found') {
+         _showAccepted();
+       } else {
+         if (mounted) setState(() => _retryEmail = normalizedEmail);
+         _showMessage(AccountErrorMapper.messageFor(error.code));
+diff --git a/lib/screens/login_screen.dart b/lib/screens/login_screen.dart
+index c79dfdf..e77bc78 100644
+--- a/lib/screens/login_screen.dart
++++ b/lib/screens/login_screen.dart
+@@ -1,14 +1,15 @@
+ import 'package:flutter/material.dart';
+ 
+ import '../account/account_error_mapper.dart';
+ import '../account/account_gateway.dart';
++import '../account/account_validation.dart';
+ import '../navigation/app_route.dart';
+ import '../services/guest_session_service.dart';
+ 
+ class LoginScreen extends StatefulWidget {
+   const LoginScreen({
+     super.key,
+     required this.accountGateway,
+     required this.guestSessionService,
+   });
+ 
+@@ -18,39 +19,34 @@ class LoginScreen extends StatefulWidget {
+   @override
+   State<LoginScreen> createState() => _LoginScreenState();
+ }
+ 
+ class _LoginScreenState extends State<LoginScreen> {
+   final _formKey = GlobalKey<FormState>();
+   final _emailController = TextEditingController();
+   final _passwordController = TextEditingController();
+   bool _isSessionActionPending = false;
+ 
+-  String? _validateEmail(String? value) {
+-    final email = value?.trim() ?? '';
+-    final valid = RegExp(
+-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+-    ).hasMatch(email);
+-    return valid ? null : 'กรุณากรอกอีเมลให้ถูกต้อง';
+-  }
++  String? _validateEmail(String? value) =>
++      AccountValidation.emailError(value ?? '');
+ 
+   String? _validatePassword(String? value) =>
+       (value ?? '').isEmpty ? 'กรุณากรอกรหัสผ่าน' : null;
+ 
+   Future<void> _login() async {
+     if (_isSessionActionPending ||
+         !(_formKey.currentState?.validate() ?? false)) {
+       return;
+     }
+     setState(() => _isSessionActionPending = true);
+ 
+-    final email = _emailController.text.trim().toLowerCase();
++    final email = AccountValidation.normalizeEmail(_emailController.text);
+     final password = _passwordController.text;
+     try {
+       final session = await widget.accountGateway.signIn(
+         email: email,
+         password: password,
+       );
+       if (!mounted) return;
+       if (!session.isEmailVerified && !session.isAnonymous) {
+         Navigator.of(context).pushReplacementNamed(
+           AppRoute.verifyEmail.path,
+diff --git a/lib/screens/otp_screen.dart b/lib/screens/otp_screen.dart
+index d47eb2c..937ac92 100644
+--- a/lib/screens/otp_screen.dart
++++ b/lib/screens/otp_screen.dart
+@@ -30,33 +30,37 @@ class _OTPScreenState extends State<OTPScreen> {
+   bool _isLoading = false;
+ 
+   Future<void> _refreshVerification() async {
+     final gateway = widget.accountGateway;
+     if (gateway == null || _isLoading) return;
+     setState(() => _isLoading = true);
+     try {
+       final session = await gateway.reloadSession();
+       if (!mounted) return;
+       if (session?.isEmailVerified ?? false) {
+-        final provisioningComplete = await widget.profileProvisioner
+-            .isProvisioningComplete(session!.uid);
++        final provisioningState = await widget.profileProvisioner
++            .provisioningState(session!.uid);
+         if (!mounted) return;
+-        if (!provisioningComplete) {
++        if (provisioningState == AccountProvisioningState.incomplete) {
+           Navigator.of(context).pushReplacementNamed(
+             AppRoute.register.path,
+             arguments: RegisterRouteArgs(
+               uid: session.uid,
+               email: session.email ?? widget.email,
+             ),
+           );
+           return;
+         }
++        if (provisioningState == AccountProvisioningState.unavailable) {
++          _showMessage(AccountErrorMapper.messageFor('network-request-failed'));
++          return;
++        }
+         Navigator.of(
+           context,
+         ).pushNamedAndRemoveUntil(AppRoute.home.path, (_) => false);
+       } else {
+         _showMessage(
+           'อีเมลยังไม่ได้รับการยืนยัน กรุณาตรวจสอบกล่องจดหมายแล้วลองใหม่',
+         );
+       }
+     } on AccountOperationException catch (error) {
+       if (mounted) _showMessage(AccountErrorMapper.messageFor(error.code));
+diff --git a/lib/screens/reset_password_screen.dart b/lib/screens/reset_password_screen.dart
+index 36ba913..d6ed0d5 100644
+--- a/lib/screens/reset_password_screen.dart
++++ b/lib/screens/reset_password_screen.dart
+@@ -1,14 +1,15 @@
+ import 'package:flutter/material.dart';
+ 
+ import '../account/account_error_mapper.dart';
+ import '../account/account_gateway.dart';
++import '../account/account_validation.dart';
+ import '../navigation/app_route.dart';
+ 
+ class ResetPasswordScreen extends StatefulWidget {
+   const ResetPasswordScreen({
+     super.key,
+     required this.accountGateway,
+     required this.code,
+   });
+ 
+   final AccountGateway accountGateway;
+@@ -42,33 +43,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+         setState(() => _requiresNewLink = _isInvalidResetCode(error.code));
+         _showMessage(AccountErrorMapper.messageFor(error.code));
+       }
+     } on Object {
+       if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+       if (mounted) setState(() => _isVerifying = false);
+     }
+   }
+ 
+-  String? _validatePassword(String? value) {
+-    final password = value ?? '';
+-    final isValid =
+-        password.length >= 8 &&
+-        RegExp(r'[A-Za-z]').hasMatch(password) &&
+-        RegExp(r'[0-9]').hasMatch(password);
+-    return isValid
+-        ? null
+-        : 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรและตัวเลข';
+-  }
++  String? _validatePassword(String? value) =>
++      AccountValidation.passwordError(value ?? '');
+ 
+   String? _validateConfirmation(String? value) =>
+-      value == _passwordController.text ? null : 'รหัสผ่านยืนยันไม่ตรงกัน';
++      AccountValidation.confirmationError(
++        _passwordController.text,
++        value ?? '',
++      );
+ 
+   Future<void> _submit() async {
+     if (_isVerifying ||
+         _isSubmitting ||
+         !_canSubmit ||
+         !(_formKey.currentState?.validate() ?? false)) {
+       return;
+     }
+     setState(() => _isSubmitting = true);
+     try {
+diff --git a/lib/screens/session_gate_screen.dart b/lib/screens/session_gate_screen.dart
+index 2295d29..d2968f2 100644
+--- a/lib/screens/session_gate_screen.dart
++++ b/lib/screens/session_gate_screen.dart
+@@ -39,40 +39,114 @@ final class SessionGateScreen extends StatelessWidget {
+         final session = snapshot.data;
+         if (session == null) {
+           return LoginScreen(
+             accountGateway: accountGateway,
+             guestSessionService: guestSessionService,
+           );
+         }
+         if (session.isAnonymous) {
+           return const MainNavigationScreen();
+         }
+-        return FutureBuilder<bool>(
+-          future: profileProvisioner.isProvisioningComplete(session.uid),
+-          builder: (context, completion) {
+-            if (completion.connectionState != ConnectionState.done) {
+-              return const Scaffold(
+-                body: Center(child: CircularProgressIndicator()),
+-              );
+-            }
+-            if (completion.data != true) {
+-              return RegisterScreen(
+-                accountGateway: accountGateway,
+-                profileProvisioner: profileProvisioner,
+-                recoveredSession: session,
+-                guestUpgradeHandoff: guestUpgradeHandoff,
+-              );
+-            }
+-            if (session.isEmailVerified) {
+-              return const MainNavigationScreen();
+-            }
+-            return OTPScreen(
+-              email: session.email ?? '',
+-              accountGateway: accountGateway,
+-              profileProvisioner: profileProvisioner,
+-            );
+-          },
++        return _ProvisioningGate(
++          key: ValueKey<String>(session.uid),
++          session: session,
++          accountGateway: accountGateway,
++          profileProvisioner: profileProvisioner,
++          guestUpgradeHandoff: guestUpgradeHandoff,
+         );
+       },
+     );
+   }
+ }
++
++final class _ProvisioningGate extends StatefulWidget {
++  const _ProvisioningGate({
++    super.key,
++    required this.session,
++    required this.accountGateway,
++    required this.profileProvisioner,
++    required this.guestUpgradeHandoff,
++  });
++
++  final AccountSession session;
++  final AccountGateway accountGateway;
++  final AccountProfileProvisioning profileProvisioner;
++  final GuestUpgradeHandoff guestUpgradeHandoff;
++
++  @override
++  State<_ProvisioningGate> createState() => _ProvisioningGateState();
++}
++
++final class _ProvisioningGateState extends State<_ProvisioningGate> {
++  late Future<AccountProvisioningState> _state = _loadState();
++
++  Future<AccountProvisioningState> _loadState() async {
++    try {
++      return await widget.profileProvisioner.provisioningState(
++        widget.session.uid,
++      );
++    } on Object {
++      return AccountProvisioningState.unavailable;
++    }
++  }
++
++  void _retry() {
++    final nextState = _loadState();
++    setState(() {
++      _state = nextState;
++    });
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return FutureBuilder<AccountProvisioningState>(
++      future: _state,
++      builder: (context, completion) {
++        if (completion.connectionState != ConnectionState.done) {
++          return const Scaffold(
++            body: Center(child: CircularProgressIndicator()),
++          );
++        }
++        return switch (completion.data ??
++            AccountProvisioningState.unavailable) {
++          AccountProvisioningState.incomplete => RegisterScreen(
++            accountGateway: widget.accountGateway,
++            profileProvisioner: widget.profileProvisioner,
++            recoveredSession: widget.session,
++            guestUpgradeHandoff: widget.guestUpgradeHandoff,
++          ),
++          AccountProvisioningState.complete =>
++            widget.session.isEmailVerified
++                ? const MainNavigationScreen()
++                : OTPScreen(
++                    email: widget.session.email ?? '',
++                    accountGateway: widget.accountGateway,
++                    profileProvisioner: widget.profileProvisioner,
++                  ),
++          AccountProvisioningState.unavailable => Scaffold(
++            body: Center(
++              child: Padding(
++                padding: const EdgeInsets.all(24),
++                child: Column(
++                  mainAxisSize: MainAxisSize.min,
++                  children: [
++                    const Text(
++                      'ยังตรวจสอบการตั้งค่าบัญชีไม่ได้ โปรดเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง',
++                      textAlign: TextAlign.center,
++                    ),
++                    const SizedBox(height: 16),
++                    FilledButton.icon(
++                      key: const ValueKey<String>('provisioning-retry'),
++                      onPressed: _retry,
++                      icon: const Icon(Icons.refresh),
++                      label: const Text('ลองอีกครั้ง'),
++                    ),
++                  ],
++                ),
++              ),
++            ),
++          ),
++        };
++      },
++    );
++  }
++}
+diff --git a/lib/screens/setting_screen.dart b/lib/screens/setting_screen.dart
+index 6551250..72bab61 100644
+--- a/lib/screens/setting_screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -1,11 +1,12 @@
+ import 'package:flutter/material.dart';
++import '../account/account_error_mapper.dart';
+ import '../account/account_gateway.dart';
+ import '../navigation/app_route.dart';
+ import '../services/local_user_progress_store.dart';
+ import '../config/remote_economy_policy.dart';
+ import '../runtime/app_dependencies.dart';
+ import 'achievements_screen.dart';
+ import 'avatar_equipment_screen.dart';
+ import 'export_center_screen.dart';
+ import 'select_wallpaper_screen.dart';
+ 
+@@ -21,33 +22,50 @@ class SettingScreen extends StatefulWidget {
+   final Map<String, dynamic>? profileData;
+   final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   State<SettingScreen> createState() => _SettingScreenState();
+ }
+ 
+ class _SettingScreenState extends State<SettingScreen> {
+   Map<String, dynamic>? _profileData;
+   IconData _selectedIcon = Icons.account_circle;
++  bool _isSigningOut = false;
+ 
+   @override
+   void initState() {
+     super.initState();
+     _profileData = widget.profileData ?? const <String, dynamic>{};
+   }
+ 
+   Future<void> _logout() async {
+-    await widget.accountGateway.signOut();
+-    if (!mounted) return;
+-    Navigator.of(
+-      context,
+-    ).pushNamedAndRemoveUntil(AppRoute.sessionGate.path, (route) => false);
++    if (_isSigningOut) return;
++    setState(() => _isSigningOut = true);
++    try {
++      await widget.accountGateway.signOut();
++      if (!mounted) return;
++      Navigator.of(
++        context,
++      ).pushNamedAndRemoveUntil(AppRoute.sessionGate.path, (route) => false);
++    } on AccountOperationException catch (error) {
++      if (mounted) _showAccountError(error.code);
++    } on Object {
++      if (mounted) _showAccountError('unknown');
++    } finally {
++      if (mounted) setState(() => _isSigningOut = false);
++    }
++  }
++
++  void _showAccountError(String code) {
++    ScaffoldMessenger.of(context).showSnackBar(
++      SnackBar(content: Text(AccountErrorMapper.messageFor(code))),
++    );
+   }
+ 
+   void _showIconPicker() {
+     showModalBottomSheet(
+       context: context,
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+       ),
+       builder: (context) {
+         return Padding(
+@@ -142,21 +160,24 @@ class _SettingScreenState extends State<SettingScreen> {
+         AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
+         const RemoteEconomyPolicy();
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'Settings',
+           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+         ),
+         backgroundColor: Colors.deepPurpleAccent,
+         actions: [
+-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
++          IconButton(
++            icon: const Icon(Icons.logout),
++            onPressed: _isSigningOut ? null : _logout,
++          ),
+         ],
+       ),
+       body: _profileData == null
+           ? const Center(child: CircularProgressIndicator())
+           : Padding(
+               padding: const EdgeInsets.all(16.0),
+               child: SingleChildScrollView(
+                 child: Column(
+                   children: [
+                     GestureDetector(
+diff --git a/lib/services/auth_service.dart b/lib/services/auth_service.dart
+deleted file mode 100644
+index 9c80606..0000000
+--- a/lib/services/auth_service.dart
++++ /dev/null
+@@ -1,162 +0,0 @@
+-import 'package:flutter/foundation.dart';
+-import 'package:cloud_firestore/cloud_firestore.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-import 'category_service.dart';
+-
+-class AuthService {
+-  FirebaseAuth? get _auth {
+-    try {
+-      return FirebaseAuth.instance;
+-    } catch (_) {
+-      return null;
+-    }
+-  }
+-
+-  FirebaseFirestore? get _firestore {
+-    try {
+-      return FirebaseFirestore.instance;
+-    } catch (_) {
+-      return null;
+-    }
+-  }
+-
+-  /// **🔹 1. ส่งอีเมลยืนยันผ่าน Firebase Authentication (พร้อมระบบสำรองสำหรับสาธิต/ทดลอง)**
+-  Future<void> sendEmailVerification(String email, String password) async {
+-    try {
+-      if (_auth != null) {
+-        UserCredential userCredential = await _auth!
+-            .createUserWithEmailAndPassword(email: email, password: password);
+-
+-        User? user = userCredential.user;
+-        if (user != null && !user.emailVerified) {
+-          await user.sendEmailVerification();
+-        }
+-      }
+-    } on FirebaseAuthException catch (e) {
+-      debugPrint('Cloud Firebase auth exception: ${e.code} - ${e.message}');
+-      rethrow;
+-    } catch (e) {
+-      debugPrint('Cloud Firebase auth fallback: $e');
+-    }
+-  }
+-
+-  /// **🔹 2. ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง (Fail-closed)**
+-  Future<bool> isEmailVerified() async {
+-    try {
+-      User? user = _auth?.currentUser;
+-      if (user != null) {
+-        await user.reload();
+-        return _auth?.currentUser?.emailVerified ?? false;
+-      }
+-    } catch (e) {
+-      debugPrint('isEmailVerified check error: $e');
+-    }
+-    return false; // Fail-closed posture: reject access if unverified or error occurs
+-  }
+-
+-  /// **🔹 ส่งอีเมลยืนยันใหม่สำหรับผู้ใช้ปัจจุบัน**
+-  Future<void> resendVerificationEmail() async {
+-    User? user = _auth?.currentUser;
+-    if (user != null) {
+-      if (!user.emailVerified) {
+-        await user.sendEmailVerification();
+-      }
+-    } else {
+-      throw Exception('ไม่พบผู้ใช้ที่ล็อกอินอยู่ในปัจจุบัน');
+-    }
+-  }
+-
+-  /// **🔹 3. สมัครสมาชิก (บันทึกข้อมูลลงระบบ)**
+-  Future<void> registerUser({
+-    required String email,
+-    required String password,
+-    required String firstName,
+-    required String lastName,
+-    required int age,
+-  }) async {
+-    try {
+-      User? user = _auth?.currentUser;
+-      if (user != null && _firestore != null) {
+-        await _firestore!.collection('users').doc(user.uid).set({
+-          'first_name': firstName,
+-          'last_name': lastName,
+-          'email': email,
+-          'age': age,
+-          'createdAt': FieldValue.serverTimestamp(),
+-        });
+-        await CategoryService().addDefaultCategoriesForNewUser(user.uid);
+-      }
+-    } on FirebaseAuthException catch (e) {
+-      debugPrint('Cloud Firestore user profile exception: ${e.code}');
+-      rethrow;
+-    } catch (e) {
+-      debugPrint('Cloud Firestore user profile fallback: $e');
+-    }
+-  }
+-
+-  /// **🔹 4. เข้าสู่ระบบ**
+-  Future<UserCredential?> signIn({
+-    required String email,
+-    required String password,
+-  }) async {
+-    try {
+-      if (_auth != null) {
+-        UserCredential userCredential = await _auth!.signInWithEmailAndPassword(
+-          email: email,
+-          password: password,
+-        );
+-        return userCredential;
+-      }
+-    } on FirebaseAuthException catch (e) {
+-      debugPrint('Cloud signIn exception: ${e.code} - ${e.message}');
+-      rethrow;
+-    } catch (e) {
+-      debugPrint('Cloud signIn fallback: $e');
+-    }
+-    return null;
+-  }
+-
+-  /// **🔹 5. ออกจากระบบ**
+-  Future<void> signOut() async {
+-    try {
+-      await _auth?.signOut();
+-    } catch (_) {}
+-  }
+-
+-  /// **🔹 6. ดึงข้อมูลผู้ใช้ปัจจุบัน**
+-  User? get currentUser => _auth?.currentUser;
+-
+-  /// **🔹 7. แปลง Error / Exception จาก Firebase Auth เป็นข้อความภาษาไทยที่เข้าใจง่าย**
+-  static String getErrorMessage(dynamic error) {
+-    if (error is FirebaseAuthException) {
+-      switch (error.code) {
+-        case 'email-already-in-use':
+-          return 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบหรือใช้อีเมลอื่น';
+-        case 'invalid-email':
+-          return 'รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง';
+-        case 'weak-password':
+-          return 'รหัสผ่านไม่ปลอดภัย ต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+-        case 'operation-not-allowed':
+-          return 'ระบบยังไม่เปิดใช้งานการสมัครสมาชิกด้วยอีเมล';
+-        case 'user-not-found':
+-          return 'ไม่พบผู้ใช้นี้ในระบบ กรุณาตรวจสอบอีเมลหรือสมัครสมาชิกใหม่';
+-        case 'wrong-password':
+-          return 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+-        case 'too-many-requests':
+-          return 'มีการพยายามทำรายการมากเกินไป กรุณาลองใหม่ในภายหลัง';
+-        case 'network-request-failed':
+-          return 'ไม่สามารถเชื่อมต่อเครือข่ายได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
+-        case 'user-disabled':
+-          return 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+-        default:
+-          return error.message ?? 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์';
+-      }
+-    }
+-
+-    String str = error.toString();
+-    if (str.startsWith('Exception: ')) {
+-      str = str.substring(11);
+-    }
+-    return str;
+-  }
+-}
+diff --git a/test/account/account_profile_provisioner_test.dart b/test/account/account_profile_provisioner_test.dart
+index 84b01bf..a9dfbe0 100644
+--- a/test/account/account_profile_provisioner_test.dart
++++ b/test/account/account_profile_provisioner_test.dart
+@@ -1,36 +1,54 @@
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
+ 
+ final class _RecordingProfileWriter implements AccountProfileWriter {
+   final writes = <({String uid, AccountProfile profile, bool merge})>[];
+   final completedUids = <String>{};
++  Object? lookupError;
+ 
+   @override
+   Future<void> writeProfile({
+     required String uid,
+     required AccountProfile profile,
+     required bool merge,
+   }) async {
+     writes.add((uid: uid, profile: profile, merge: merge));
+   }
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async =>
+-      completedUids.contains(uid);
++  Future<bool> isProvisioningComplete(String uid) async {
++    final error = lookupError;
++    if (error != null) throw error;
++    return completedUids.contains(uid);
++  }
+ 
+   @override
+   Future<void> markProvisioningComplete(String uid) async {
+     completedUids.add(uid);
+   }
+ }
+ 
++final class _MemoryCompletionStore
++    implements AccountProvisioningCompletionStore {
++  final completedUids = <String>{};
++
++  @override
++  Future<bool> isComplete(String uid) async => completedUids.contains(uid);
++
++  @override
++  Future<void> markComplete(String uid) async {
++    completedUids.add(uid);
++  }
++}
++
+ final class _PartiallyFailingDefaultCategories
+     implements DefaultCategoryProvisioner {
+   bool failFirstAttempt = true;
+   final categoryIds = <String>{};
+ 
+   @override
+   Future<void> ensureDefaults(String uid) async {
+     categoryIds.add('$uid:animals');
+     if (failFirstAttempt) {
+       failFirstAttempt = false;
+@@ -39,40 +57,128 @@ final class _PartiallyFailingDefaultCategories
+     categoryIds.add('$uid:travel');
+   }
+ }
+ 
+ void main() {
+   test(
+     'partial default category provisioning converges before completion',
+     () async {
+       final writer = _RecordingProfileWriter();
+       final categories = _PartiallyFailingDefaultCategories();
++      final completionStore = _MemoryCompletionStore();
+       final provisioner = AccountProfileProvisioner(
+         profileWriter: writer,
+         defaultCategoryProvisioner: categories,
++        completionStore: completionStore,
+       );
+       const profile = AccountProfile(
+         firstName: 'Ada',
+         lastName: 'Lovelace',
+         email: ' Ada@Example.COM ',
+         age: 20,
+       );
+ 
+       await expectLater(
+         provisioner.ensureProfile('student-1', profile),
+         throwsStateError,
+       );
+-      expect(await provisioner.isProvisioningComplete('student-1'), isFalse);
++      expect(
++        await provisioner.provisioningState('student-1'),
++        AccountProvisioningState.incomplete,
++      );
+ 
+       await provisioner.ensureProfile('student-1', profile);
+ 
+       expect(writer.writes, hasLength(2));
+       expect(writer.writes.map((write) => write.merge), everyElement(isTrue));
+       expect(
+         writer.writes.map((write) => write.profile.normalizedEmail),
+         everyElement('ada@example.com'),
+       );
+       expect(categories.categoryIds, {'student-1:animals', 'student-1:travel'});
+-      expect(await provisioner.isProvisioningComplete('student-1'), isTrue);
++      expect(
++        await provisioner.provisioningState('student-1'),
++        AccountProvisioningState.complete,
++      );
++      expect(completionStore.completedUids, contains('student-1'));
++    },
++  );
++
++  test(
++    'durable completion permits offline access after remote success',
++    () async {
++      final writer = _RecordingProfileWriter();
++      final completionStore = _MemoryCompletionStore();
++      final provisioner = AccountProfileProvisioner(
++        profileWriter: writer,
++        defaultCategoryProvisioner: _PartiallyFailingDefaultCategories()
++          ..failFirstAttempt = false,
++        completionStore: completionStore,
++      );
++      const profile = AccountProfile(
++        firstName: 'Ada',
++        lastName: 'Lovelace',
++        email: 'ada@example.com',
++        age: 20,
++      );
++
++      await provisioner.ensureProfile('student-1', profile);
++      writer.lookupError = StateError('offline');
++
++      expect(
++        await provisioner.provisioningState('student-1'),
++        AccountProvisioningState.complete,
++      );
++    },
++  );
++
++  test(
++    'remote failure without durable completion remains unavailable',
++    () async {
++      final writer = _RecordingProfileWriter()
++        ..lookupError = StateError('offline');
++      final provisioner = AccountProfileProvisioner(
++        profileWriter: writer,
++        defaultCategoryProvisioner: _PartiallyFailingDefaultCategories(),
++        completionStore: _MemoryCompletionStore(),
++      );
++
++      expect(
++        await provisioner.provisioningState('unknown-student'),
++        AccountProvisioningState.unavailable,
++      );
++    },
++  );
++
++  test(
++    'restored remote incomplete result overrides stale local completion',
++    () async {
++      final writer = _RecordingProfileWriter();
++      final completionStore = _MemoryCompletionStore()
++        ..completedUids.add('student-1');
++      final provisioner = AccountProfileProvisioner(
++        profileWriter: writer,
++        defaultCategoryProvisioner: _PartiallyFailingDefaultCategories(),
++        completionStore: completionStore,
++      );
++
++      expect(
++        await provisioner.provisioningState('student-1'),
++        AccountProvisioningState.incomplete,
++      );
++    },
++  );
++
++  test(
++    'shared preferences completion survives a new store instance per uid',
++    () async {
++      SharedPreferences.setMockInitialValues({});
++      final firstStore = SharedPreferencesAccountProvisioningCompletionStore();
++      await firstStore.markComplete('student-1');
++
++      final restoredStore =
++          SharedPreferencesAccountProvisioningCompletionStore();
++      expect(await restoredStore.isComplete('student-1'), isTrue);
++      expect(await restoredStore.isComplete('student-2'), isFalse);
+     },
+   );
+ }
+diff --git a/test/account/guest_upgrade_test.dart b/test/account/guest_upgrade_test.dart
+index b3af107..690ef8a 100644
+--- a/test/account/guest_upgrade_test.dart
++++ b/test/account/guest_upgrade_test.dart
+@@ -84,21 +84,22 @@ final class _FakeAccountGateway implements AccountGateway {
+   @override
+   Future<String> verifyPasswordResetCode(String code) =>
+       throw UnimplementedError();
+ }
+ 
+ final class _FakeProvisioner implements AccountProfileProvisioning {
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) async {}
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => true;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      AccountProvisioningState.complete;
+ }
+ 
+ Widget _subject(
+   _FakeAccountGateway gateway, {
+   required GuestUpgradeHandoff handoff,
+ }) => MaterialApp(
+   onGenerateRoute: (settings) => MaterialPageRoute<void>(
+     settings: settings,
+     builder: (_) => settings.name == AppRoute.verifyEmail.path
+         ? const Scaffold(body: Text('VERIFY_REACHED'))
+diff --git a/test/navigation/account_link_coordinator_test.dart b/test/navigation/account_link_coordinator_test.dart
+index 7f1c130..32c2a6f 100644
+--- a/test/navigation/account_link_coordinator_test.dart
++++ b/test/navigation/account_link_coordinator_test.dart
+@@ -124,20 +124,91 @@ void main() {
+       expect(navigations.single.arguments, isA<VerifyEmailActionRouteArgs>());
+       expect(
+         (navigations.single.arguments! as VerifyEmailActionRouteArgs).code,
+         'verify-code',
+       );
+       await controller.close();
+       coordinator.dispose();
+     },
+   );
+ 
++  test(
++    'subscribes to warm links before the initial lookup completes',
++    () async {
++      final initialLink = Completer<Uri?>();
++      final controller = StreamController<Uri>();
++      final navigations = <({AppRoute route, Object? arguments})>[];
++      final coordinator = AccountLinkCoordinator.forTesting(
++        initialLink: initialLink.future,
++        uriLinks: controller.stream,
++        navigate: (route, arguments) =>
++            navigations.add((route: route, arguments: arguments)),
++      );
++
++      final starting = coordinator.start();
++      controller.add(verifyLink);
++      await Future<void>.delayed(Duration.zero);
++
++      expect(navigations, hasLength(1));
++      initialLink.complete(null);
++      await starting;
++      await controller.close();
++      coordinator.dispose();
++    },
++  );
++
++  test(
++    'contains an initial-link failure and keeps warm links active',
++    () async {
++      final controller = StreamController<Uri>();
++      final navigations = <({AppRoute route, Object? arguments})>[];
++      final coordinator = AccountLinkCoordinator.forTesting(
++        initialLink: Future<Uri?>.error(StateError('initial-link-unavailable')),
++        uriLinks: controller.stream,
++        navigate: (route, arguments) =>
++            navigations.add((route: route, arguments: arguments)),
++      );
++
++      await coordinator.start();
++      controller.add(resetLink);
++      await Future<void>.delayed(Duration.zero);
++
++      expect(navigations, hasLength(1));
++      await controller.close();
++      coordinator.dispose();
++    },
++  );
++
++  test('contains stream errors without disabling later links', () async {
++    final controller = StreamController<Uri>();
++    final navigations = <({AppRoute route, Object? arguments})>[];
++    final unhandledErrors = <Object>[];
++    final coordinator = AccountLinkCoordinator.forTesting(
++      initialLink: Future<Uri?>.value(null),
++      uriLinks: controller.stream,
++      navigate: (route, arguments) =>
++          navigations.add((route: route, arguments: arguments)),
++    );
++
++    await runZonedGuarded(() async {
++      await coordinator.start();
++      controller.addError(StateError('stream-unavailable'));
++      controller.add(verifyLink);
++      await Future<void>.delayed(Duration.zero);
++    }, (error, stackTrace) => unhandledErrors.add(error));
++
++    expect(unhandledErrors, isEmpty);
++    expect(navigations, hasLength(1));
++    await controller.close();
++    coordinator.dispose();
++  });
++
+   test('foreign and malformed links are ignored without navigation', () async {
+     final navigations = <({AppRoute route, Object? arguments})>[];
+     final coordinator = AccountLinkCoordinator.forTesting(
+       initialLink: Future<Uri?>.value(
+         Uri.parse(
+           'https://evil.example/auth/action?mode=resetPassword&oobCode=secret',
+         ),
+       ),
+       uriLinks: const Stream<Uri>.empty(),
+       navigate: (route, arguments) =>
+diff --git a/test/navigation/app_router_test.dart b/test/navigation/app_router_test.dart
+index 7cebcdd..a21a1fc 100644
+--- a/test/navigation/app_router_test.dart
++++ b/test/navigation/app_router_test.dart
+@@ -76,21 +76,22 @@ final class _FakeGuestSessionService implements GuestSessionService {
+ }
+ 
+ final class _FakeProfileProvisioner implements AccountProfileProvisioning {
+   const _FakeProfileProvisioner();
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) =>
+       throw UnimplementedError();
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => true;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      AccountProvisioningState.complete;
+ }
+ 
+ AppRouter _router({
+   _FakeAccountGateway? accountGateway,
+   GuestUpgradeHandoff? guestUpgradeHandoff,
+ }) => AppRouter(
+   AppDependencies(
+     runtimeStatus: const AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
+diff --git a/test/screens/account_validation_contract_test.dart b/test/screens/account_validation_contract_test.dart
+new file mode 100644
+index 0000000..eda6dcb
+--- /dev/null
++++ b/test/screens/account_validation_contract_test.dart
+@@ -0,0 +1,158 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_validation.dart';
++import 'package:vocab_learning_app/screens/change_password_screen.dart';
++import 'package:vocab_learning_app/screens/forgot_password_screen.dart';
++import 'package:vocab_learning_app/screens/login_screen.dart';
++import 'package:vocab_learning_app/screens/register_screen.dart';
++import 'package:vocab_learning_app/screens/reset_password_screen.dart';
++import 'package:vocab_learning_app/services/guest_session_service.dart';
++
++final class _ContractGateway implements AccountGateway {
++  const _ContractGateway();
++
++  @override
++  AccountSession? get currentSession => null;
++
++  @override
++  Stream<AccountSession?> authStateChanges() => const Stream.empty();
++
++  @override
++  Future<String> verifyPasswordResetCode(String code) async =>
++      'student@example.com';
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++
++  @override
++  Future<void> requestPasswordReset(String email) =>
++      throw UnimplementedError();
++
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++}
++
++final class _ContractGuestSessionService implements GuestSessionService {
++  const _ContractGuestSessionService();
++
++  @override
++  Future<GuestSessionResult> start() => throw UnimplementedError();
++}
++
++String? _validate(WidgetTester tester, String key, String value) {
++  final field = tester.widget<TextFormField>(
++    find.byKey(ValueKey<String>(key)),
++  );
++  return field.validator!(value);
++}
++
++void main() {
++  const gateway = _ContractGateway();
++
++  testWidgets(
++    'register reset and change share the centralized password policy',
++    (tester) async {
++      const password = 'ภาษาไทย๑๒๓';
++      expect(AccountValidation.passwordError(password), isNull);
++
++      await tester.pumpWidget(
++        MaterialApp(
++          home: RegisterScreen(
++            guestUpgradeHandoff: noOpGuestUpgradeHandoff,
++          ),
++        ),
++      );
++      expect(_validate(tester, 'register-password', password), isNull);
++
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: ResetPasswordScreen(
++            accountGateway: gateway,
++            code: 'one-time-code',
++          ),
++        ),
++      );
++      await tester.pump();
++      expect(_validate(tester, 'reset-password', password), isNull);
++
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: ChangePasswordScreen(accountGateway: gateway),
++        ),
++      );
++      expect(_validate(tester, 'change-password-new', password), isNull);
++    },
++  );
++
++  testWidgets(
++    'register login and recovery share the centralized email policy',
++    (tester) async {
++      const invalidEmail = 'not-an-email';
++      final expected = AccountValidation.emailError(invalidEmail);
++
++      await tester.pumpWidget(
++        MaterialApp(
++          home: RegisterScreen(
++            guestUpgradeHandoff: noOpGuestUpgradeHandoff,
++          ),
++        ),
++      );
++      expect(_validate(tester, 'register-email', invalidEmail), expected);
++
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: LoginScreen(
++            accountGateway: gateway,
++            guestSessionService: _ContractGuestSessionService(),
++          ),
++        ),
++      );
++      expect(_validate(tester, 'login-email', invalidEmail), expected);
++
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: ForgotPasswordScreen(accountGateway: gateway),
++        ),
++      );
++      expect(_validate(tester, 'recovery-email', invalidEmail), expected);
++    },
++  );
++}
+diff --git a/test/screens/forgot_password_screen_test.dart b/test/screens/forgot_password_screen_test.dart
+index a8e0aa4..1044349 100644
+--- a/test/screens/forgot_password_screen_test.dart
++++ b/test/screens/forgot_password_screen_test.dart
+@@ -1,16 +1,17 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/account/account_cooldown.dart';
+ import 'package:vocab_learning_app/account/account_error_mapper.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_validation.dart';
+ import 'package:vocab_learning_app/screens/forgot_password_screen.dart';
+ 
+ final class _FakeAccountGateway implements AccountGateway {
+   _FakeAccountGateway({this.resetError});
+ 
+   final Object? resetError;
+   final List<String> resetRequests = <String>[];
+ 
+   @override
+   AccountSession? get currentSession => null;
+@@ -102,20 +103,24 @@ void main() {
+ 
+   testWidgets('rejects an invalid local email before calling the gateway', (
+     tester,
+   ) async {
+     final gateway = _FakeAccountGateway();
+     await tester.pumpWidget(_subject(gateway));
+ 
+     await _submit(tester, 'not-an-email');
+ 
+     expect(gateway.resetRequests, isEmpty);
++    expect(
++      find.text(AccountValidation.emailError('not-an-email')!),
++      findsOneWidget,
++    );
+   });
+ 
+   testWidgets(
+     'shows a network failure instead of an accepted acknowledgement',
+     (tester) async {
+       final gateway = _FakeAccountGateway(
+         resetError: const AccountOperationException('network-request-failed'),
+       );
+       await tester.pumpWidget(_subject(gateway));
+ 
+diff --git a/test/screens/full_system_audit_test.dart b/test/screens/full_system_audit_test.dart
+index 48a6f8b..255d80c 100644
+--- a/test/screens/full_system_audit_test.dart
++++ b/test/screens/full_system_audit_test.dart
+@@ -1,38 +1,37 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_error_mapper.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
+ import 'package:vocab_learning_app/screens/register_screen.dart';
+ import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+ import 'package:vocab_learning_app/screens/avatar_equipment_screen.dart';
+ import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+ import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+ import 'package:vocab_learning_app/screens/achievements_screen.dart';
+ import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
+ import 'package:vocab_learning_app/screens/cefr_selection_screen.dart';
+ import 'package:vocab_learning_app/screens/cefr_diagnostic_test_screen.dart';
+ import 'package:vocab_learning_app/screens/boss_battle_screen.dart';
+ import 'package:vocab_learning_app/screens/learning_world_map_screen.dart';
+ import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
+ import 'package:vocab_learning_app/services/cognitive_attention_analyzer_service.dart';
+ import 'package:vocab_learning_app/services/dynamic_story_contextualizer_service.dart';
+ import 'package:vocab_learning_app/services/rapid_naming_speed_service.dart';
+ import 'package:vocab_learning_app/services/brahmawong_research_analytics_service.dart';
+ import 'package:vocab_learning_app/services/anki_dictionary_exporter_service.dart';
+-import 'package:vocab_learning_app/services/auth_service.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ import 'package:vocab_learning_app/voice/voice_models.dart';
+ import 'package:vocab_learning_app/voice/voice_provider.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+ 
+ final class _AuditAccountGateway implements AccountGateway {
+   const _AuditAccountGateway();
+ 
+   @override
+   AccountSession? get currentSession => null;
+   @override
+   Stream<AccountSession?> authStateChanges() =>
+       Stream<AccountSession?>.value(null);
+   @override
+@@ -128,24 +127,23 @@ void main() {
+             home: RegisterScreen(guestUpgradeHandoff: noOpGuestUpgradeHandoff),
+           ),
+         );
+         await tester.pumpAndSettle();
+ 
+         expect(find.textContaining('สมัครสมาชิก'), findsWidgets);
+         expect(find.byType(TextField), findsNWidgets(6));
+       },
+     );
+ 
+-    test('Section 1 Audit: AuthService translates Firebase errors to Thai', () {
+-      final exc = FirebaseAuthException(code: 'email-already-in-use');
+-      final msg = AuthService.getErrorMessage(exc);
+-      expect(msg, contains('อีเมลนี้ถูกใช้งานในระบบแล้ว'));
++    test('Section 1 Audit: AccountErrorMapper translates account errors', () {
++      final msg = AccountErrorMapper.messageFor('email-already-in-use');
++      expect(msg, contains('บัญชีอื่น'));
+     });
+ 
+     // -------------------------------------------------------------
+     // Section 2: Mode Navigation & Main Navigation Audit
+     // -------------------------------------------------------------
+     testWidgets(
+       'Section 2 Audit: ChooseModeScreen renders mode grid and Avatar Gear button',
+       (WidgetTester tester) async {
+         await tester.pumpWidget(const MaterialApp(home: ChooseModeScreen()));
+         await tester.pumpAndSettle();
+diff --git a/test/screens/login_screen_test.dart b/test/screens/login_screen_test.dart
+index 0186aea..be2cd36 100644
+--- a/test/screens/login_screen_test.dart
++++ b/test/screens/login_screen_test.dart
+@@ -1,16 +1,17 @@
+ import 'dart:async';
+ 
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_validation.dart';
+ import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ const _emailKey = ValueKey<String>('login-email');
+ const _passwordKey = ValueKey<String>('login-password');
+ const _submitKey = ValueKey<String>('login-submit');
+ const _forgotPasswordKey = ValueKey<String>('login-forgot-password');
+ 
+ final class _FakeGuestSessionService implements GuestSessionService {
+@@ -166,20 +167,34 @@ void main() {
+     await _enterCredentials(tester, email: 'not-an-email');
+     await tester.tap(find.byKey(_submitKey));
+     await tester.pump();
+     await _enterCredentials(tester, email: 'student@example.com', password: '');
+     await tester.tap(find.byKey(_submitKey));
+     await tester.pump();
+ 
+     expect(gateway.signInRequests, isEmpty);
+   });
+ 
++  testWidgets('uses the centralized email validation contract', (tester) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await _enterCredentials(tester, email: 'not-an-email');
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++
++    expect(
++      find.text(AccountValidation.emailError('not-an-email')!),
++      findsOneWidget,
++    );
++  });
++
+   testWidgets(
+     'unverified sessions navigate with typed verification arguments',
+     (tester) async {
+       final gateway = _FakeAccountGateway(
+         signIn: (email, password) async => AccountSession(
+           uid: 'student-1',
+           email: email,
+           isAnonymous: false,
+           isEmailVerified: false,
+         ),
+diff --git a/test/screens/otp_screen_test.dart b/test/screens/otp_screen_test.dart
+index cf4110c..1c4de00 100644
+--- a/test/screens/otp_screen_test.dart
++++ b/test/screens/otp_screen_test.dart
+@@ -67,21 +67,24 @@ final class _FakeAccountGateway implements AccountGateway {
+ final class _FakeProfileProvisioner implements AccountProfileProvisioning {
+   _FakeProfileProvisioner(this.complete);
+ 
+   final bool complete;
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) =>
+       throw UnimplementedError();
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => complete;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      complete
++      ? AccountProvisioningState.complete
++      : AccountProvisioningState.incomplete;
+ }
+ 
+ Widget _harness(
+   _FakeAccountGateway gateway,
+   AccountCooldown cooldown, {
+   bool provisioningComplete = true,
+ }) => MaterialApp(
+   onGenerateRoute: (settings) => MaterialPageRoute<void>(
+     settings: settings,
+     builder: (_) {
+diff --git a/test/screens/registration_flow_test.dart b/test/screens/registration_flow_test.dart
+index a2bb1c9..6b860ba 100644
+--- a/test/screens/registration_flow_test.dart
++++ b/test/screens/registration_flow_test.dart
+@@ -102,21 +102,24 @@ final class _FakeProfileProvisioner implements AccountProfileProvisioning {
+       'ensureProfile:$uid:${profile.normalizedEmail}:${profile.firstName}:${profile.lastName}:${profile.age}',
+     );
+     if (failures > 0) {
+       failures--;
+       throw StateError('profile-write-failed');
+     }
+     categoriesComplete = true;
+   }
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => failures == 0;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      failures == 0
++      ? AccountProvisioningState.complete
++      : AccountProvisioningState.incomplete;
+ }
+ 
+ Widget _harness(
+   _FakeAccountGateway gateway, {
+   _FakeProfileProvisioner? profileProvisioner,
+ }) {
+   final events = gateway.events;
+   return MaterialApp(
+     onGenerateRoute: (settings) => MaterialPageRoute<void>(
+       settings: settings,
+diff --git a/test/screens/reset_password_screen_test.dart b/test/screens/reset_password_screen_test.dart
+index 94ddd19..e64da69 100644
+--- a/test/screens/reset_password_screen_test.dart
++++ b/test/screens/reset_password_screen_test.dart
+@@ -1,14 +1,15 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_validation.dart';
+ import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/reset_password_screen.dart';
+ 
+ final class _FakeAccountGateway implements AccountGateway {
+   _FakeAccountGateway({this.verifyError, this.confirmError});
+ 
+   final Object? verifyError;
+   final Object? confirmError;
+   final List<String> verifiedCodes = <String>[];
+   final List<({String code, String password})> confirmedResets =
+@@ -131,20 +132,43 @@ void main() {
+       await tester.enterText(
+         find.byKey(const ValueKey<String>('reset-confirmation')),
+         'Different1',
+       );
+       await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
+       await tester.pump();
+       expect(gateway.confirmedResets, isEmpty);
+     },
+   );
+ 
++  testWidgets('accepts the centralized Thai password policy', (tester) async {
++    final gateway = _FakeAccountGateway();
++    const password = 'ภาษาไทย๑๒๓';
++    expect(AccountValidation.passwordError(password), isNull);
++    await tester.pumpWidget(_subject(gateway));
++    await tester.pumpAndSettle();
++
++    await tester.enterText(
++      find.byKey(const ValueKey<String>('reset-password')),
++      password,
++    );
++    await tester.enterText(
++      find.byKey(const ValueKey<String>('reset-confirmation')),
++      password,
++    );
++    await tester.tap(find.byKey(const ValueKey<String>('reset-submit')));
++    await tester.pumpAndSettle();
++
++    expect(gateway.confirmedResets, [
++      (code: 'one-time-code', password: password),
++    ]);
++  });
++
+   testWidgets('confirms exactly once and routes to login', (tester) async {
+     final gateway = _FakeAccountGateway();
+     await tester.pumpWidget(_subject(gateway));
+     await tester.pumpAndSettle();
+ 
+     await tester.enterText(
+       find.byKey(const ValueKey<String>('reset-password')),
+       'Password1',
+     );
+     await tester.enterText(
+diff --git a/test/screens/session_gate_screen_test.dart b/test/screens/session_gate_screen_test.dart
+index d3731e3..edba4c4 100644
+--- a/test/screens/session_gate_screen_test.dart
++++ b/test/screens/session_gate_screen_test.dart
+@@ -79,21 +79,46 @@ final class _FakeAccountGateway implements AccountGateway {
+ final class _FakeProfileProvisioner implements AccountProfileProvisioning {
+   const _FakeProfileProvisioner(this.complete);
+ 
+   final bool complete;
+ 
+   @override
+   Future<void> ensureProfile(String uid, AccountProfile profile) =>
+       throw UnimplementedError();
+ 
+   @override
+-  Future<bool> isProvisioningComplete(String uid) async => complete;
++  Future<AccountProvisioningState> provisioningState(String uid) async =>
++      complete
++      ? AccountProvisioningState.complete
++      : AccountProvisioningState.incomplete;
++}
++
++final class _SequencedProfileProvisioner implements AccountProfileProvisioning {
++  _SequencedProfileProvisioner(this.results);
++
++  final List<Object> results;
++  int lookupCalls = 0;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) =>
++      throw UnimplementedError();
++
++  @override
++  Future<AccountProvisioningState> provisioningState(String uid) async {
++    final result = results[lookupCalls++];
++    if (result is bool) {
++      return result
++          ? AccountProvisioningState.complete
++          : AccountProvisioningState.incomplete;
++    }
++    throw result;
++  }
+ }
+ 
+ final class _PendingGuestSessionService implements GuestSessionService {
+   int startCalls = 0;
+   final Completer<GuestSessionResult> _completion = Completer();
+ 
+   @override
+   Future<GuestSessionResult> start() {
+     startCalls++;
+     return _completion.future;
+@@ -227,20 +252,86 @@ void main() {
+         isAnonymous: false,
+         isEmailVerified: false,
+       ),
+       provisioningComplete: false,
+     );
+ 
+     expect(find.byType(OTPScreen), findsNothing);
+     expect(find.byType(RegisterScreen), findsOneWidget);
+   });
+ 
++  testWidgets(
++    'lookup failure with no durable completion opens neither shell nor recovery',
++    (tester) async {
++      await tester.pumpWidget(
++        MaterialApp(
++          home: SessionGateScreen(
++            accountGateway: _FakeAccountGateway(
++              const AccountSession(
++                uid: 'unknown-user',
++                email: 'unknown@example.com',
++                isAnonymous: false,
++                isEmailVerified: true,
++              ),
++            ),
++            profileProvisioner: _SequencedProfileProvisioner([
++              StateError('offline'),
++            ]),
++            guestSessionService: _PendingGuestSessionService(),
++            guestUpgradeHandoff: noOpGuestUpgradeHandoff,
++          ),
++        ),
++      );
++      await tester.pumpAndSettle();
++
++      expect(find.byType(MainNavigationScreen), findsNothing);
++      expect(find.byType(RegisterScreen), findsNothing);
++      expect(
++        find.byKey(const ValueKey<String>('provisioning-retry')),
++        findsOneWidget,
++      );
++    },
++  );
++
++  testWidgets('retry after restored connectivity rechecks provisioning', (
++    tester,
++  ) async {
++    final provisioner = _SequencedProfileProvisioner([
++      StateError('offline'),
++      true,
++    ]);
++    await tester.pumpWidget(
++      MaterialApp(
++        home: SessionGateScreen(
++          accountGateway: _FakeAccountGateway(
++            const AccountSession(
++              uid: 'restored-user',
++              email: 'restored@example.com',
++              isAnonymous: false,
++              isEmailVerified: true,
++            ),
++          ),
++          profileProvisioner: provisioner,
++          guestSessionService: _PendingGuestSessionService(),
++          guestUpgradeHandoff: noOpGuestUpgradeHandoff,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.byKey(const ValueKey<String>('provisioning-retry')));
++    await tester.pumpAndSettle();
++
++    expect(provisioner.lookupCalls, 2);
++    expect(find.byType(MainNavigationScreen), findsOneWidget);
++  });
++
+   testWidgets('live session changes replace the root child without pushing', (
+     tester,
+   ) async {
+     final sessions = StreamController<AccountSession?>.broadcast();
+     final guestSessionService = _PendingGuestSessionService();
+     final observer = _CountingNavigatorObserver();
+     addTearDown(sessions.close);
+ 
+     await tester.pumpWidget(
+       MaterialApp(
+diff --git a/test/screens/setting_screen_test.dart b/test/screens/setting_screen_test.dart
+index cceb595..4ea3446 100644
+--- a/test/screens/setting_screen_test.dart
++++ b/test/screens/setting_screen_test.dart
+@@ -1,30 +1,40 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_error_mapper.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/setting_screen.dart';
+ 
+ final class _SignOutGateway implements AccountGateway {
++  _SignOutGateway({this.signOutError, this.pendingSignOut});
++
++  final Object? signOutError;
++  final Future<void>? pendingSignOut;
+   int signOutCalls = 0;
+ 
+   @override
+   AccountSession? get currentSession => null;
+ 
+   @override
+   Stream<AccountSession?> authStateChanges() =>
+       Stream<AccountSession?>.value(null);
+ 
+   @override
+   Future<void> signOut() async {
+     signOutCalls++;
++    await pendingSignOut;
++    final error = signOutError;
++    if (error != null) throw error;
+   }
+ 
+   @override
+   Future<void> applyVerificationCode(String code) => throw UnimplementedError();
+   @override
+   Future<void> changePassword({
+     required String currentPassword,
+     required String newPassword,
+   }) => throw UnimplementedError();
+   @override
+@@ -94,11 +104,67 @@ void main() {
+     );
+ 
+     await tester.tap(find.byIcon(Icons.logout));
+     await tester.pumpAndSettle();
+ 
+     expect(gateway.signOutCalls, 1);
+     expect(find.text('SESSION_GATE_REACHED'), findsOneWidget);
+     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+     expect(navigator.canPop(), isFalse);
+   });
++
++  for (final failure in <Object>[
++    const AccountOperationException('network-request-failed'),
++    StateError('unexpected'),
++  ]) {
++    testWidgets('sign-out failure stays on settings with a safe message', (
++      tester,
++    ) async {
++      final gateway = _SignOutGateway(signOutError: failure);
++      await tester.pumpWidget(
++        MaterialApp(
++          home: SettingScreen(
++            accountGateway: gateway,
++            profileData: const {'first_name': 'Phet'},
++          ),
++        ),
++      );
++
++      await tester.tap(find.byIcon(Icons.logout));
++      await tester.pumpAndSettle();
++
++      final expectedCode = failure is AccountOperationException
++          ? failure.code
++          : 'unknown';
++      expect(gateway.signOutCalls, 1);
++      expect(find.byType(SettingScreen), findsOneWidget);
++      expect(
++        find.text(AccountErrorMapper.messageFor(expectedCode)),
++        findsOneWidget,
++      );
++    });
++  }
++
++  testWidgets('sign-out ignores repeated submission while pending', (
++    tester,
++  ) async {
++    final completion = Completer<void>();
++    final gateway = _SignOutGateway(pendingSignOut: completion.future);
++    await tester.pumpWidget(
++      MaterialApp(
++        home: SettingScreen(
++          accountGateway: gateway,
++          profileData: const {'first_name': 'Phet'},
++        ),
++      ),
++    );
++
++    await tester.tap(find.byIcon(Icons.logout));
++    await tester.pump();
++    await tester.tap(find.byIcon(Icons.logout));
++    await tester.pump();
++
++    expect(gateway.signOutCalls, 1);
++    completion.complete();
++    await tester.pumpAndSettle();
++  });
+ }
+diff --git a/test/services/auth_service_error_handling_test.dart b/test/services/auth_service_error_handling_test.dart
+deleted file mode 100644
+index f9832af..0000000
+--- a/test/services/auth_service_error_handling_test.dart
++++ /dev/null
+@@ -1,40 +0,0 @@
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-import 'package:vocab_learning_app/services/auth_service.dart';
+-
+-void main() {
+-  group('AuthService getErrorMessage Tests', () {
+-    test('returns Thai translation for email-already-in-use', () {
+-      final exception = FirebaseAuthException(
+-        code: 'email-already-in-use',
+-        message: 'The email address is already in use by another account.',
+-      );
+-      final msg = AuthService.getErrorMessage(exception);
+-      expect(msg, contains('อีเมลนี้ถูกใช้งานในระบบแล้ว'));
+-    });
+-
+-    test('returns Thai translation for invalid-email', () {
+-      final exception = FirebaseAuthException(
+-        code: 'invalid-email',
+-        message: 'The email address is badly formatted.',
+-      );
+-      final msg = AuthService.getErrorMessage(exception);
+-      expect(msg, contains('รูปแบบอีเมลไม่ถูกต้อง'));
+-    });
+-
+-    test('returns Thai translation for weak-password', () {
+-      final exception = FirebaseAuthException(
+-        code: 'weak-password',
+-        message: 'The password must be 6 characters long or more.',
+-      );
+-      final msg = AuthService.getErrorMessage(exception);
+-      expect(msg, contains('รหัสผ่านไม่ปลอดภัย'));
+-    });
+-
+-    test('strips Exception prefix for standard Exception', () {
+-      final exception = Exception('ข้อความทดสอบ');
+-      final msg = AuthService.getErrorMessage(exception);
+-      expect(msg, equals('ข้อความทดสอบ'));
+-    });
+-  });
+-}
+diff --git a/test/services/auth_service_test.dart b/test/services/auth_service_test.dart
+deleted file mode 100644
+index c7ab1a7..0000000
+--- a/test/services/auth_service_test.dart
++++ /dev/null
+@@ -1,44 +0,0 @@
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:vocab_learning_app/services/auth_service.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-
+-void main() {
+-  group('AuthService Security & Fail-Closed Tests', () {
+-    final authService = AuthService();
+-
+-    test(
+-      'isEmailVerified returns false when Firebase is uninitialized or user is null (Fail-Closed)',
+-      () async {
+-        final isVerified = await authService.isEmailVerified();
+-        expect(isVerified, isFalse);
+-      },
+-    );
+-
+-    test(
+-      'resendVerificationEmail throws Exception when no user is logged in',
+-      () async {
+-        expect(
+-          () async => await authService.resendVerificationEmail(),
+-          throwsA(isA<Exception>()),
+-        );
+-      },
+-    );
+-
+-    test('getErrorMessage correctly formats FirebaseAuthExceptions', () {
+-      final ex = FirebaseAuthException(
+-        code: 'email-already-in-use',
+-        message: 'Email used',
+-      );
+-      expect(
+-        AuthService.getErrorMessage(ex),
+-        contains('อีเมลนี้ถูกใช้งานในระบบแล้ว'),
+-      );
+-
+-      final invalidEx = FirebaseAuthException(code: 'invalid-email');
+-      expect(
+-        AuthService.getErrorMessage(invalidEx),
+-        contains('รูปแบบอีเมลไม่ถูกต้อง'),
+-      );
+-    });
+-  });
+-}

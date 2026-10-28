@@ -1,0 +1,823 @@
+# Review package: 423c01b..44a9632
+
+## Commits
+44a9632 test: cover offline runtime status summary
+7786e31 refactor: remove Supabase runtime boundary
+
+## Files changed
+ lib/runtime/app_bootstrap.dart                     |  31 ------
+ lib/runtime/app_runtime_status.dart                |  17 ++--
+ lib/runtime/supabase_client_config.dart            |  21 -----
+ lib/screens/main_navigation_screen.dart            |   9 +-
+ test/runtime/app_bootstrap_test.dart               |  43 +--------
+ test/runtime/app_build_info_test.dart              |   1 -
+ test/runtime/app_runtime_status_test.dart          |  19 ++++
+ test/runtime/learning_dependencies_test.dart       |   1 -
+ test/runtime/supabase_publishable_key_test.dart    | 104 ---------------------
+ test/screens/production_shell_navigation_test.dart |  51 +++++++---
+ 10 files changed, 67 insertions(+), 230 deletions(-)
+
+## Diff
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index e79c914..78c2fd4 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -1,14 +1,13 @@
+ import 'package:firebase_app_check/firebase_app_check.dart';
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/foundation.dart';
+-import 'package:supabase_flutter/supabase_flutter.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../ai/ai_service_factory.dart';
+ import '../ai/generated_reading_content_source.dart';
+ import '../config/app_config.dart';
+ import '../firebase_options.dart';
+ import '../learning/adaptive_associative_scheduler.dart';
+ import '../learning/association_prompt.dart';
+ import '../learning/associative_memory.dart';
+ import '../learning/associative_reading_coordinator.dart';
+@@ -25,38 +24,25 @@ import '../progress/progress_repository.dart';
+ import '../progress/progress_sync_service.dart';
+ import '../progress/purchase_remote_writer.dart';
+ import '../services/guest_session_service.dart';
+ import '../voice/reading_voice_enrichment.dart';
+ import '../voice/voice_service_factory.dart';
+ import 'app_build_info.dart';
+ import 'app_dependencies.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ import 'learning_feature_flags.dart';
+-import 'supabase_client_config.dart';
+ 
+ typedef RuntimeInitializer = Future<void> Function();
+ typedef AppConfigLoader = AppConfig Function();
+ typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
+ 
+-// Public client identifiers, not server credentials. The Supabase URL keeps a
+-// public default, but the publishable key must be supplied per build.
+-const _productionSupabaseUrl = String.fromEnvironment(
+-  'LEXIQUEST_SUPABASE_URL',
+-  defaultValue: 'https://jkiyfnlegmhodyxpfwpc.supabase.co',
+-);
+-const _productionSupabasePublishableKey = String.fromEnvironment(
+-  'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
+-);
+-
+-bool _productionSupabaseInitialized = false;
+-
+ Future<void> _initializeFirebaseProduction() async {
+   if (Firebase.apps.isEmpty) {
+     await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+     );
+   }
+   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+     await FirebaseAppCheck.instance.activate(
+       providerAndroid: kDebugMode
+           ? const AndroidDebugProvider()
+@@ -66,32 +52,20 @@ Future<void> _initializeFirebaseProduction() async {
+       (defaultTargetPlatform == TargetPlatform.iOS ||
+           defaultTargetPlatform == TargetPlatform.macOS)) {
+     await FirebaseAppCheck.instance.activate(
+       providerApple: kDebugMode
+           ? const AppleDebugProvider()
+           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+     );
+   }
+ }
+ 
+-Future<void> _initializeSupabaseProduction() async {
+-  if (_productionSupabaseInitialized) return;
+-  final publishableKey = requireSupabasePublishableKey(
+-    _productionSupabasePublishableKey,
+-  );
+-  await Supabase.initialize(
+-    url: _productionSupabaseUrl,
+-    publishableKey: publishableKey,
+-  );
+-  _productionSupabaseInitialized = true;
+-}
+-
+ Future<ProgressRepository> _loadProgressRepositoryProduction() async {
+   return LocalProgressRepository(await SharedPreferences.getInstance());
+ }
+ 
+ Future<LearningDependencies> _loadLearningDependenciesProduction(
+   AppConfig? config,
+   LearningFeatureFlags flags,
+ ) async {
+   final database = await LearningDatabaseFactory().open();
+   const buildInfo = AppBuildInfo.fromEnvironment();
+@@ -174,72 +148,67 @@ Future<void> _closeLearningResources(
+     }
+   }
+   if (firstError != null) {
+     Error.throwWithStackTrace(firstError, firstStackTrace!);
+   }
+ }
+ 
+ final class AppBootstrap {
+   const AppBootstrap({
+     required this.initializeFirebase,
+-    required this.initializeSupabase,
+     required this.loadConfig,
+     required this.guestSessionService,
+     this.loadProgressRepository = _loadProgressRepositoryProduction,
+     this.progressRemoteWriter,
+     this.purchaseRemoteWriter,
+     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+     this.loadLearningDependencies = _loadLearningDependenciesProduction,
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+-      initializeSupabase: _initializeSupabaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
+       loadProgressRepository: _loadProgressRepositoryProduction,
+       progressRemoteWriter: FirebaseProgressRemoteWriter(),
+       purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
+     );
+   }
+ 
+   final RuntimeInitializer initializeFirebase;
+-  final RuntimeInitializer initializeSupabase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+   final ProgressRepositoryLoader loadProgressRepository;
+   final ProgressRemoteWriter? progressRemoteWriter;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningFeatureFlags featureFlags;
+   final LearningDependenciesLoader loadLearningDependencies;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+-    final supabase = await _availability(initializeSupabase);
+     final config = _loadConfig();
+     final progressRepository = await _loadProgressRepository();
+     final progressSyncService =
+         progressRepository == null || progressRemoteWriter == null
+         ? null
+         : ProgressSyncService(
+             repository: progressRepository,
+             remoteWriter: progressRemoteWriter!,
+           );
+     final learningDependencies = featureFlags.associativeReadingEnabled
+         ? await _loadLearningDependencies(config)
+         : null;
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+-        supabase: supabase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
+       ),
+       config: config,
+       guestSessionService: guestSessionService,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
+       progressRepository: progressRepository,
+       progressSyncService: progressSyncService,
+       purchaseRemoteWriter: purchaseRemoteWriter,
+diff --git a/lib/runtime/app_runtime_status.dart b/lib/runtime/app_runtime_status.dart
+index 7a19514..247d95d 100644
+--- a/lib/runtime/app_runtime_status.dart
++++ b/lib/runtime/app_runtime_status.dart
+@@ -1,22 +1,17 @@
+ enum RuntimeAvailability { ready, degraded, unavailable }
+ 
+ final class AppRuntimeStatus {
+-  const AppRuntimeStatus({
+-    required this.firebase,
+-    required this.supabase,
+-    required this.backends,
+-  });
++  const AppRuntimeStatus({required this.firebase, required this.backends});
+ 
+   final RuntimeAvailability firebase;
+-  final RuntimeAvailability supabase;
+   final RuntimeAvailability backends;
+ 
+-  bool get isFullyReady {
+-    return firebase == RuntimeAvailability.ready &&
+-        supabase == RuntimeAvailability.ready &&
+-        backends == RuntimeAvailability.ready;
+-  }
++  bool get isFullyReady =>
++      firebase == RuntimeAvailability.ready &&
++      backends == RuntimeAvailability.ready;
++
++  bool get isCoreLearningAvailable => true;
+ 
+   @override
+   String toString() => 'AppRuntimeStatus';
+ }
+diff --git a/lib/runtime/supabase_client_config.dart b/lib/runtime/supabase_client_config.dart
+deleted file mode 100644
+index f1393a6..0000000
+--- a/lib/runtime/supabase_client_config.dart
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/// Thrown when the Supabase client configuration is missing or malformed.
+-///
+-/// Rejected values are never included in the error text.
+-final class SupabaseConfigurationException implements Exception {
+-  const SupabaseConfigurationException();
+-
+-  @override
+-  String toString() => 'Invalid Supabase configuration.';
+-}
+-
+-final RegExp _publishableKeyPattern = RegExp(
+-  r'^sb_publishable_[A-Za-z0-9_-]+$',
+-);
+-
+-/// Returns [value] unchanged when it is a current Supabase publishable key.
+-String requireSupabasePublishableKey(String value) {
+-  if (!_publishableKeyPattern.hasMatch(value)) {
+-    throw const SupabaseConfigurationException();
+-  }
+-  return value;
+-}
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index ce69d57..8425c60 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -36,29 +36,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+     super.initState();
+     _currentIndex = widget.initialIndex.clamp(0, _screens.length - 1);
+   }
+ 
+   String _runtimeStatusSummary(BuildContext context) {
+     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
+     if (status == null) {
+       return 'โหมดทดสอบ · ระบบอาจไม่พร้อมใช้งาน';
+     }
+     if (status.isFullyReady) {
+-      return 'ระบบพร้อมใช้งาน';
++      return 'ระบบพร้อมใช้งาน รวมบริการออนไลน์';
+     }
+ 
+     final unavailable = <String>[
+-      if (status.firebase != RuntimeAvailability.ready) 'Firebase',
+-      if (status.supabase != RuntimeAvailability.ready) 'Supabase',
+-      if (status.backends != RuntimeAvailability.ready) 'AI/Voice',
++      if (status.firebase != RuntimeAvailability.ready) 'การซิงค์บัญชี',
++      if (status.backends != RuntimeAvailability.ready) 'AI/เสียงออนไลน์',
+     ];
+-    return '${unavailable.join(' · ')} ยังไม่พร้อมใช้งาน';
++    return 'เรียนแบบออฟไลน์ได้ · ${unavailable.join(' · ')} ยังไม่พร้อม';
+   }
+ 
+   String _buildIdentity(BuildContext context) {
+     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
+     if (buildInfo == null) return '';
+     return '${buildInfo.version} · ${buildInfo.buildId}';
+   }
+ 
+   void _pushLegacyDestination(Widget destination) {
+     _scaffoldKey.currentState?.closeDrawer();
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index a663822..4487fbc 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -71,42 +71,40 @@ void main() {
+       'production composition does not access Firebase before initialization',
+       () {
+         expect(AppBootstrap.production, returnsNormally);
+       },
+     );
+ 
+     test('retains the repository returned by the injected loader', () async {
+       final expectedRepository = _StubProgressRepository();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+         loadProgressRepository: () async => expectedRepository,
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         identical(dependencies.progressRepository, expectedRepository),
+         isTrue,
+       );
+     });
+ 
+     test(
+       'composes one-shot progress synchronization when both ports exist',
+       () async {
+         final repository = _StubProgressRepository();
+         final remoteWriter = _StubProgressRemoteWriter();
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           loadProgressRepository: () async => repository,
+           progressRemoteWriter: remoteWriter,
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(dependencies.progressSyncService, isNotNull);
+         expect(
+@@ -122,21 +120,20 @@ void main() {
+         );
+       },
+     );
+ 
+     test(
+       'retains the trusted purchase writer without enabling the shop',
+       () async {
+         final purchaseWriter = _StubPurchaseRemoteWriter();
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           purchaseRemoteWriter: purchaseWriter,
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(
+           identical(dependencies.purchaseRemoteWriter, purchaseWriter),
+           isTrue,
+@@ -147,169 +144,131 @@ void main() {
+         );
+       },
+     );
+ 
+     test(
+       'repository loader failure returns null without leaking details',
+       () async {
+         const sentinel = 'LOCAL-STORAGE-CREDENTIAL-7c9f3a';
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           loadProgressRepository: () async => throw StateError(sentinel),
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(dependencies.progressRepository, isNull);
+         expect(dependencies.toString(), isNot(contains(sentinel)));
+       },
+     );
+ 
+     test('marks all components ready and retains the exact config', () async {
+       final expectedConfig = _validConfig();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: () => expectedConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(identical(dependencies.config, expectedConfig), isTrue);
+     });
+ 
+     test('records Firebase failure and still returns', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         dependencies.runtimeStatus.firebase,
+         RuntimeAvailability.unavailable,
+       );
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(dependencies.config, isNotNull);
+     });
+ 
+-    test('records Supabase failure and still returns', () async {
+-      final bootstrap = AppBootstrap(
+-        initializeFirebase: () async {},
+-        initializeSupabase: () async => throw StateError('supabase-down'),
+-        loadConfig: _validConfig,
+-        guestSessionService: _StubGuestSessionService(),
+-      );
+-
+-      final dependencies = await bootstrap.initialize();
+-
+-      expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(
+-        dependencies.runtimeStatus.supabase,
+-        RuntimeAvailability.unavailable,
+-      );
+-      expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+-    });
+-
+     test('records config failure with null config', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: () => throw const AppConfigException('invalid config'),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(
+         dependencies.runtimeStatus.backends,
+         RuntimeAvailability.unavailable,
+       );
+       expect(dependencies.config, isNull);
+     });
+ 
+     test('represents multiple failures independently', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+-        initializeSupabase: () async => throw StateError('supabase-down'),
+         loadConfig: () => throw const AppConfigException('invalid config'),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         dependencies.runtimeStatus.firebase,
+         RuntimeAvailability.unavailable,
+       );
+-      expect(
+-        dependencies.runtimeStatus.supabase,
+-        RuntimeAvailability.unavailable,
+-      );
+       expect(
+         dependencies.runtimeStatus.backends,
+         RuntimeAvailability.unavailable,
+       );
+       expect(dependencies.config, isNull);
+     });
+ 
+     test('never leaks exception credential sentinels', () async {
+       const firebaseSentinel = 'FIREBASE-SECRET-7c9f3a';
+-      const supabaseSentinel = 'SUPABASE-SECRET-7c9f3a';
+       const configSentinel = 'CONFIG-SECRET-7c9f3a';
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError(firebaseSentinel),
+-        initializeSupabase: () async => throw StateError(supabaseSentinel),
+         loadConfig: () => throw const AppConfigException(configSentinel),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+       final rendered = <String>[
+         dependencies.toString(),
+         dependencies.runtimeStatus.toString(),
+         dependencies.runtimeStatus.firebase.name,
+-        dependencies.runtimeStatus.supabase.name,
+         dependencies.runtimeStatus.backends.name,
+         '${dependencies.config}',
+         dependencies.guestSessionService.toString(),
+       ];
+ 
+       for (final value in rendered) {
+-        for (final sentinel in <String>[
+-          firebaseSentinel,
+-          supabaseSentinel,
+-          configSentinel,
+-        ]) {
++        for (final sentinel in <String>[firebaseSentinel, configSentinel]) {
+           expect(value, isNot(contains(sentinel)));
+         }
+       }
+     });
+ 
+     test('retains exact injected GuestSessionService identity', () async {
+       final guestSessionService = _StubGuestSessionService();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: guestSessionService,
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         identical(dependencies.guestSessionService, guestSessionService),
+         isTrue,
+       );
+diff --git a/test/runtime/app_build_info_test.dart b/test/runtime/app_build_info_test.dart
+index 37087f8..840a860 100644
+--- a/test/runtime/app_build_info_test.dart
++++ b/test/runtime/app_build_info_test.dart
+@@ -10,21 +10,20 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async =>
+       const GuestSessionStarted(uid: 'app-build-info-test');
+ }
+ 
+ AppDependencies _dependencies(AppBuildInfo buildInfo) {
+   return AppDependencies(
+     runtimeStatus: const AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+-      supabase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
+     ),
+     config: null,
+     guestSessionService: _FakeGuestSessionService(),
+     buildInfo: buildInfo,
+   );
+ }
+ 
+ Future<void> _pumpHome(WidgetTester tester, AppBuildInfo buildInfo) async {
+   await tester.pumpWidget(MyApp(dependencies: _dependencies(buildInfo)));
+diff --git a/test/runtime/app_runtime_status_test.dart b/test/runtime/app_runtime_status_test.dart
+new file mode 100644
+index 0000000..18697fb
+--- /dev/null
++++ b/test/runtime/app_runtime_status_test.dart
+@@ -0,0 +1,19 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
++
++void main() {
++  test('fully ready requires Firebase and configured cloud enhancements', () {
++    const ready = AppRuntimeStatus(
++      firebase: RuntimeAvailability.ready,
++      backends: RuntimeAvailability.ready,
++    );
++    const offlineCapable = AppRuntimeStatus(
++      firebase: RuntimeAvailability.unavailable,
++      backends: RuntimeAvailability.unavailable,
++    );
++
++    expect(ready.isFullyReady, isTrue);
++    expect(offlineCapable.isFullyReady, isFalse);
++    expect(offlineCapable.isCoreLearningAvailable, isTrue);
++  });
++}
+diff --git a/test/runtime/learning_dependencies_test.dart b/test/runtime/learning_dependencies_test.dart
+index 6952fe0..f25e197 100644
+--- a/test/runtime/learning_dependencies_test.dart
++++ b/test/runtime/learning_dependencies_test.dart
+@@ -80,21 +80,20 @@ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   isDebug: false,
+ );
+ 
+ AppBootstrap _bootstrap({
+   required LearningFeatureFlags featureFlags,
+   required LearningDependenciesLoader loadLearningDependencies,
+ }) {
+   return AppBootstrap(
+     initializeFirebase: () async {},
+-    initializeSupabase: () async {},
+     loadConfig: _validConfig,
+     guestSessionService: _StubGuestSessionService(),
+     featureFlags: featureFlags,
+     loadLearningDependencies: loadLearningDependencies,
+   );
+ }
+ 
+ void main() {
+   test('optional learning capabilities and research are closed by default', () {
+     const flags = LearningFeatureFlags();
+diff --git a/test/runtime/supabase_publishable_key_test.dart b/test/runtime/supabase_publishable_key_test.dart
+deleted file mode 100644
+index a104124..0000000
+--- a/test/runtime/supabase_publishable_key_test.dart
++++ /dev/null
+@@ -1,104 +0,0 @@
+-import 'dart:io';
+-
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:vocab_learning_app/runtime/supabase_client_config.dart';
+-
+-const _acceptedKeys = <String>[
+-  'sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4',
+-  'sb_publishable_Aa1-_7Z9',
+-];
+-
+-const _rejectedKeys = <String>[
+-  '',
+-  '   ',
+-  'sb_publishable_',
+-  'sb_publishable',
+-  'sb_secret_VGhpc19hX3NlY3JldA',
+-  'sb_publishable_bad!chars',
+-  'sb_publishable_with space',
+-  'ey'
+-      'JhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.c2lnbmF0dXJl',
+-  ' sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4',
+-  'sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4 ',
+-];
+-
+-Directory? _findRepoRoot(String start) {
+-  var directory = Directory(start);
+-  for (var depth = 0; depth < 16; depth++) {
+-    if (File('${directory.path}/pubspec.yaml').existsSync() &&
+-        Directory('${directory.path}/lib').existsSync()) {
+-      return directory;
+-    }
+-    final parent = directory.parent;
+-    if (parent.path == directory.path) return null;
+-    directory = parent;
+-  }
+-  return null;
+-}
+-
+-Directory _repositoryRoot() {
+-  for (final start in <String>[
+-    File(Platform.script.toFilePath()).parent.path,
+-    Directory.current.path,
+-  ]) {
+-    final found = _findRepoRoot(start);
+-    if (found != null) return found;
+-  }
+-  return Directory.current;
+-}
+-
+-void main() {
+-  group('requireSupabasePublishableKey', () {
+-    for (final key in _acceptedKeys) {
+-      test('returns a valid publishable key unchanged', () {
+-        expect(requireSupabasePublishableKey(key), key);
+-      });
+-    }
+-
+-    for (final value in _rejectedKeys) {
+-      test('rejects an invalid key without leaking it', () {
+-        Object? captured;
+-        try {
+-          requireSupabasePublishableKey(value);
+-          fail('Expected SupabaseConfigurationException.');
+-        } on SupabaseConfigurationException catch (error) {
+-          captured = error;
+-        }
+-
+-        expect(captured, isA<SupabaseConfigurationException>());
+-        if (value.isNotEmpty) {
+-          expect(captured.toString(), isNot(contains(value)));
+-        }
+-      });
+-    }
+-  });
+-
+-  group('app_bootstrap.dart publishable-key sourcing', () {
+-    final source = File(
+-      '${_repositoryRoot().path}/lib/runtime/app_bootstrap.dart',
+-    ).readAsStringSync();
+-
+-    test('declares the publishable key environment variable', () {
+-      expect(source, contains('LEXIQUEST_SUPABASE_PUBLISHABLE_KEY'));
+-    });
+-
+-    test('does not bake a default into the publishable-key block', () {
+-      final block = RegExp(
+-        r"LEXIQUEST_SUPABASE_PUBLISHABLE_KEY.*?\)",
+-        dotAll: true,
+-      ).firstMatch(source);
+-
+-      expect(block, isNotNull);
+-      expect(block!.group(0), isNot(contains('defaultValue')));
+-    });
+-
+-    test('ships no legacy Supabase anon JWT literal', () {
+-      expect(source, isNot(contains('eyJ')));
+-    });
+-
+-    test('targets the controlled production project', () {
+-      expect(source, isNot(contains('anyiuoqnuimtjlbjhwuf')));
+-      expect(source, contains('https://jkiyfnlegmhodyxpfwpc.supabase.co'));
+-    });
+-  });
+-}
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index 50a0095..39d8287 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -11,37 +11,41 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionStarted(uid: 'guest-shell-test');
+   }
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+ 
+-AppDependencies _dependencies({bool ready = true}) {
+-  final availability = ready
+-      ? RuntimeAvailability.ready
+-      : RuntimeAvailability.unavailable;
++AppDependencies _dependencies({
++  RuntimeAvailability firebase = RuntimeAvailability.ready,
++  RuntimeAvailability backends = RuntimeAvailability.ready,
++}) {
+   return AppDependencies(
+-    runtimeStatus: AppRuntimeStatus(
+-      firebase: availability,
+-      supabase: availability,
+-      backends: availability,
+-    ),
++    runtimeStatus: AppRuntimeStatus(firebase: firebase, backends: backends),
+     config: null,
+     guestSessionService: _FakeGuestSessionService(),
+   );
+ }
+ 
+-Future<void> _pumpHome(WidgetTester tester, {bool ready = true}) async {
+-  await tester.pumpWidget(MyApp(dependencies: _dependencies(ready: ready)));
++Future<void> _pumpHome(
++  WidgetTester tester, {
++  RuntimeAvailability firebase = RuntimeAvailability.ready,
++  RuntimeAvailability backends = RuntimeAvailability.ready,
++}) async {
++  await tester.pumpWidget(
++    MyApp(
++      dependencies: _dependencies(firebase: firebase, backends: backends),
++    ),
++  );
+   await tester.pump();
+   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+   navigator.pushReplacementNamed('/home');
+   await tester.pump();
+   await tester.pump(const Duration(milliseconds: 350));
+ }
+ 
+ Future<void> _openDrawer(WidgetTester tester) async {
+   await tester.tap(find.byKey(_drawerButtonKey));
+   await tester.pump();
+@@ -97,34 +101,53 @@ void main() {
+       matching: find.byType(NavigationDestination),
+     );
+ 
+     for (var index = 0; index < 5; index++) {
+       await tester.tap(destinations.at(index));
+       await tester.pump(const Duration(milliseconds: 50));
+       expect(tester.widget<IndexedStack>(stackFinder).index, index);
+     }
+   });
+ 
+-  testWidgets('drawer lists legacy destinations and safe runtime status', (
++  testWidgets('drawer says the full system and online services are ready', (
++    tester,
++  ) async {
++    await _pumpHome(tester);
++    await _openDrawer(tester);
++
++    final status = tester.widget<Text>(
++      find.byKey(const ValueKey<String>('runtime-status-summary')),
++    );
++    expect(status.data, 'ระบบพร้อมใช้งาน รวมบริการออนไลน์');
++  });
++
++  testWidgets('drawer keeps local learning available when cloud is degraded', (
+     tester,
+   ) async {
+-    await _pumpHome(tester, ready: false);
++    await _pumpHome(
++      tester,
++      firebase: RuntimeAvailability.unavailable,
++      backends: RuntimeAvailability.degraded,
++    );
+     await _openDrawer(tester);
+ 
+     expect(find.text('คลังหมวดหมู่'), findsOneWidget);
+     expect(find.text('ร้านค้า'), findsNothing);
+     expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+-    expect(status.data, contains('ไม่พร้อม'));
++    expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
++    expect(status.data, contains('การซิงค์บัญชี'));
++    expect(status.data, contains('AI/เสียงออนไลน์'));
++    expect(status.data, isNot(contains('Supabase')));
+   });
+ 
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 

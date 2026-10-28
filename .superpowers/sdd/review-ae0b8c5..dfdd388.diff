@@ -1,0 +1,922 @@
+# Review package: ae0b8c5..dfdd388
+
+## Commits
+dfdd388 fix: harden device inference evidence policy
+fd2d239 feat: add fail-safe device inference policy
+
+## Files changed
+ lib/device/device_capability_models.dart       | 263 ++++++++++++++++++++++
+ lib/device/inference_policy.dart               | 104 +++++++++
+ test/device/device_capability_models_test.dart | 219 ++++++++++++++++++
+ test/device/inference_policy_test.dart         | 298 +++++++++++++++++++++++++
+ 4 files changed, 884 insertions(+)
+
+## Diff
+diff --git a/lib/device/device_capability_models.dart b/lib/device/device_capability_models.dart
+new file mode 100644
+index 0000000..f72b520
+--- /dev/null
++++ b/lib/device/device_capability_models.dart
+@@ -0,0 +1,263 @@
++/// Coarse capability bands used by the on-device inference policy.
++enum DevicePerformanceTier { lite, balanced, enhanced }
++
++/// Normalized thermal states that are safe to carry across platform boundaries.
++enum DeviceThermalState {
++  nominal,
++  fair,
++  serious,
++  critical,
++  unknown;
++
++  /// Converts Android's numeric thermal status to the safe internal taxonomy.
++  static DeviceThermalState fromNativeValue(int value) {
++    switch (value) {
++      case 0:
++        return DeviceThermalState.nominal;
++      case 1:
++      case 2:
++        return DeviceThermalState.fair;
++      case 3:
++        return DeviceThermalState.serious;
++      case 4:
++      case 5:
++      case 6:
++        return DeviceThermalState.critical;
++      default:
++        return DeviceThermalState.unknown;
++    }
++  }
++
++  /// Alias retained for platform adapters that use the shorter conversion name.
++  static DeviceThermalState fromNative(int value) => fromNativeValue(value);
++}
++
++enum InferenceBackend { xnnpackCpu, gpuDelegate }
++
++/// Identifies the trusted production boundary that produced benchmark evidence.
++enum InferenceBenchmarkProvenance { onDeviceInferenceAdapter }
++
++/// Closed, privacy-safe reason codes produced by [InferencePolicy].
++enum InferenceDecisionReason {
++  cpuBenchmarkDegraded('cpu-benchmark-degraded'),
++  sdkUnsupported('sdk-unsupported'),
++  capabilityEvidenceMissing('capability-evidence-missing'),
++  batterySaver('battery-saver'),
++  thermalConstrained('thermal-constrained'),
++  lowMemory('low-memory'),
++  availableMemoryConstrained('available-memory-constrained'),
++  storageConstrained('storage-constrained'),
++  balancedMemory('balanced-memory'),
++  storageNotEnhanced('storage-not-enhanced'),
++  gpuNotCandidate('gpu-not-candidate'),
++  gpuBenchmarkMissing('gpu-benchmark-missing'),
++  gpuBenchmarkFailed('gpu-benchmark-failed'),
++  gpuEvidenceMismatch('gpu-evidence-mismatch'),
++  gpuEvidenceProvenanceMissing('gpu-evidence-provenance-missing'),
++  gpuSlowerThanCpu('gpu-slower-than-cpu'),
++  gpuBenchmarkQualified('gpu-benchmark-qualified');
++
++  const InferenceDecisionReason(this.code);
++
++  final String code;
++}
++
++/// An immutable, privacy-safe view of the capability signals used by policy.
++class DeviceCapabilitySnapshot {
++  factory DeviceCapabilitySnapshot({
++    required int sdkInt,
++    required String primaryAbi,
++    required int memoryClassMb,
++    required int? availableMemoryMb,
++    required int? freeStorageBytes,
++    required bool? lowMemory,
++    required bool? batterySaverEnabled,
++    required DeviceThermalState thermalState,
++    required bool? gpuApiCandidate,
++  }) {
++    final normalizedAbi = primaryAbi.trim().toLowerCase();
++    if (normalizedAbi.isEmpty) {
++      throw ArgumentError.value(primaryAbi, 'primaryAbi', 'must not be empty');
++    }
++    if (memoryClassMb < 0 ||
++        (availableMemoryMb != null && availableMemoryMb < 0) ||
++        (freeStorageBytes != null && freeStorageBytes < 0)) {
++      throw ArgumentError('memory and storage values must not be negative');
++    }
++
++    return DeviceCapabilitySnapshot._(
++      sdkInt: sdkInt,
++      primaryAbi: normalizedAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  const DeviceCapabilitySnapshot._({
++    required this.sdkInt,
++    required this.primaryAbi,
++    required this.memoryClassMb,
++    required this.availableMemoryMb,
++    required this.freeStorageBytes,
++    required this.lowMemory,
++    required this.batterySaverEnabled,
++    required this.thermalState,
++    required this.gpuApiCandidate,
++  });
++
++  final int sdkInt;
++  final String primaryAbi;
++  final int memoryClassMb;
++  final int? availableMemoryMb;
++  final int? freeStorageBytes;
++  final bool? lowMemory;
++  final bool? batterySaverEnabled;
++  final DeviceThermalState thermalState;
++  final bool? gpuApiCandidate;
++
++  bool get isSupported => sdkInt >= 29;
++
++  bool get hasRequiredPolicyEvidence =>
++      availableMemoryMb != null &&
++      freeStorageBytes != null &&
++      lowMemory != null &&
++      batterySaverEnabled != null &&
++      gpuApiCandidate != null;
++
++  @override
++  String toString() => 'DeviceCapabilitySnapshot';
++}
++
++/// Result of a bounded benchmark for one inference backend.
++class InferenceBenchmark {
++  factory InferenceBenchmark({
++    required InferenceBackend backend,
++    required bool successful,
++    int? medianLatencyMicros,
++    required int completedRuns,
++    String? failureCode,
++    required String modelId,
++    required String modelVersion,
++    required String modelSha256,
++    required InferenceBenchmarkProvenance? provenance,
++  }) {
++    final normalizedModelId = modelId.trim().toLowerCase();
++    final normalizedModelVersion = modelVersion.trim();
++    final normalizedModelSha256 = modelSha256.trim().toLowerCase();
++    if (normalizedModelId.isEmpty ||
++        !_semanticVersionPattern.hasMatch(normalizedModelVersion)) {
++      throw ArgumentError('model identity values are invalid');
++    }
++    if (!_sha256Pattern.hasMatch(normalizedModelSha256)) {
++      throw ArgumentError.value(
++        modelSha256,
++        'modelSha256',
++        'must be a 64-character hexadecimal SHA-256 fingerprint',
++      );
++    }
++    if (completedRuns < 0 ||
++        completedRuns > maximumCompletedRuns ||
++        (medianLatencyMicros != null &&
++            (medianLatencyMicros < 0 ||
++                medianLatencyMicros > maximumMedianLatencyMicros))) {
++      throw ArgumentError('benchmark values are outside safe bounds');
++    }
++    if (successful &&
++        (medianLatencyMicros == null ||
++            medianLatencyMicros == 0 ||
++            completedRuns == 0 ||
++            failureCode != null)) {
++      throw ArgumentError(
++        'successful benchmarks require completed measurements',
++      );
++    }
++    if (!successful &&
++        (failureCode == null || !_stableFailureCodes.contains(failureCode))) {
++      throw ArgumentError.value(failureCode, 'failureCode', 'is not stable');
++    }
++
++    return InferenceBenchmark._(
++      backend: backend,
++      successful: successful,
++      medianLatencyMicros: medianLatencyMicros,
++      completedRuns: completedRuns,
++      failureCode: failureCode,
++      modelId: normalizedModelId,
++      modelVersion: normalizedModelVersion,
++      modelSha256: normalizedModelSha256,
++      provenance: provenance,
++    );
++  }
++
++  const InferenceBenchmark._({
++    required this.backend,
++    required this.successful,
++    required this.medianLatencyMicros,
++    required this.completedRuns,
++    required this.failureCode,
++    required this.modelId,
++    required this.modelVersion,
++    required this.modelSha256,
++    required this.provenance,
++  });
++
++  static const int maximumMedianLatencyMicros = 60000000;
++  static const int maximumCompletedRuns = 10000;
++  static const Set<String> _stableFailureCodes = {
++    'delegate-unavailable',
++    'delegate-init-failed',
++    'model-unsupported',
++    'benchmark-failed',
++    'benchmark-missing',
++  };
++  static final RegExp _sha256Pattern = RegExp(r'^[a-f0-9]{64}$');
++  static final RegExp _semanticVersionPattern = RegExp(
++    r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
++  );
++
++  final InferenceBackend backend;
++  final bool successful;
++  final int? medianLatencyMicros;
++  final int completedRuns;
++  final String? failureCode;
++  final String modelId;
++  final String modelVersion;
++  final String modelSha256;
++  final InferenceBenchmarkProvenance? provenance;
++
++  bool hasSameModelAs(InferenceBenchmark other) =>
++      modelId == other.modelId &&
++      modelVersion == other.modelVersion &&
++      modelSha256 == other.modelSha256;
++
++  @override
++  String toString() =>
++      'InferenceBenchmark(backend: ${backend.name}, failureCode: $failureCode)';
++}
++
++/// The single safe configuration selected for a snapshot and its evidence.
++class InferenceDecision {
++  const InferenceDecision({
++    required this.tier,
++    required this.backend,
++    required this.analysisFrequency,
++    required this.reason,
++  });
++
++  final DevicePerformanceTier tier;
++  final InferenceBackend backend;
++  final String analysisFrequency;
++  final InferenceDecisionReason reason;
++
++  String get reasonCode => reason.code;
++
++  @override
++  String toString() =>
++      'InferenceDecision(tier: ${tier.name}, backend: ${backend.name}, '
++      'reasonCode: ${reason.code})';
++}
+diff --git a/lib/device/inference_policy.dart b/lib/device/inference_policy.dart
+new file mode 100644
+index 0000000..598d4d2
+--- /dev/null
++++ b/lib/device/inference_policy.dart
+@@ -0,0 +1,104 @@
++import 'device_capability_models.dart';
++
++/// Deterministically selects the safest available inference configuration.
++class InferencePolicy {
++  InferencePolicy._();
++
++  static const int _minimumAvailableMemoryMb = 768;
++  static const int _enhancedAvailableMemoryMb = 2048;
++  static const int _minimumFreeStorageBytes = 512 * 1024 * 1024;
++  static const int _enhancedFreeStorageBytes = 1024 * 1024 * 1024;
++
++  static InferenceDecision select(
++    DeviceCapabilitySnapshot snapshot,
++    InferenceBenchmark cpuBenchmark, [
++    InferenceBenchmark? gpuBenchmark,
++  ]) {
++    if (!snapshot.hasRequiredPolicyEvidence) {
++      return _lite(InferenceDecisionReason.capabilityEvidenceMissing);
++    }
++    if (cpuBenchmark.backend != InferenceBackend.xnnpackCpu ||
++        !cpuBenchmark.successful) {
++      return _lite(InferenceDecisionReason.cpuBenchmarkDegraded);
++    }
++    if (!snapshot.isSupported) {
++      return _lite(InferenceDecisionReason.sdkUnsupported);
++    }
++    if (snapshot.batterySaverEnabled!) {
++      return _lite(InferenceDecisionReason.batterySaver);
++    }
++    if (_isThermallyConstrained(snapshot.thermalState)) {
++      return _lite(InferenceDecisionReason.thermalConstrained);
++    }
++    if (snapshot.lowMemory!) {
++      return _lite(InferenceDecisionReason.lowMemory);
++    }
++    if (snapshot.availableMemoryMb! < _minimumAvailableMemoryMb) {
++      return _lite(InferenceDecisionReason.availableMemoryConstrained);
++    }
++    if (snapshot.freeStorageBytes! < _minimumFreeStorageBytes) {
++      return _lite(InferenceDecisionReason.storageConstrained);
++    }
++    if (snapshot.availableMemoryMb! < _enhancedAvailableMemoryMb) {
++      return _balanced(InferenceDecisionReason.balancedMemory);
++    }
++    if (snapshot.freeStorageBytes! < _enhancedFreeStorageBytes) {
++      return _balanced(InferenceDecisionReason.storageNotEnhanced);
++    }
++    if (!snapshot.gpuApiCandidate!) {
++      return _balanced(InferenceDecisionReason.gpuNotCandidate);
++    }
++    if (gpuBenchmark == null) {
++      return _balanced(InferenceDecisionReason.gpuBenchmarkMissing);
++    }
++    if (gpuBenchmark.backend != InferenceBackend.gpuDelegate ||
++        !gpuBenchmark.successful) {
++      return _balanced(InferenceDecisionReason.gpuBenchmarkFailed);
++    }
++    if (cpuBenchmark.provenance !=
++            InferenceBenchmarkProvenance.onDeviceInferenceAdapter ||
++        gpuBenchmark.provenance !=
++            InferenceBenchmarkProvenance.onDeviceInferenceAdapter) {
++      return _balanced(InferenceDecisionReason.gpuEvidenceProvenanceMissing);
++    }
++    if (!cpuBenchmark.hasSameModelAs(gpuBenchmark)) {
++      return _balanced(InferenceDecisionReason.gpuEvidenceMismatch);
++    }
++
++    final cpuLatency = cpuBenchmark.medianLatencyMicros!;
++    final gpuLatency = gpuBenchmark.medianLatencyMicros!;
++    final latencyDifference = gpuLatency - cpuLatency;
++    // Benchmark bounds cap this multiplication below 600,000,000 microseconds.
++    if (latencyDifference > 0 && latencyDifference * 10 > cpuLatency) {
++      return _balanced(InferenceDecisionReason.gpuSlowerThanCpu);
++    }
++
++    return const InferenceDecision(
++      tier: DevicePerformanceTier.enhanced,
++      backend: InferenceBackend.gpuDelegate,
++      analysisFrequency: 'enhanced',
++      reason: InferenceDecisionReason.gpuBenchmarkQualified,
++    );
++  }
++
++  static bool _isThermallyConstrained(DeviceThermalState state) =>
++      state == DeviceThermalState.serious ||
++      state == DeviceThermalState.critical ||
++      state == DeviceThermalState.unknown;
++
++  static InferenceDecision _lite(InferenceDecisionReason reason) =>
++      InferenceDecision(
++        tier: DevicePerformanceTier.lite,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'low',
++        reason: reason,
++      );
++
++  static InferenceDecision _balanced(InferenceDecisionReason reason) =>
++      InferenceDecision(
++        tier: DevicePerformanceTier.balanced,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'standard',
++        reason: reason,
++      );
++}
+diff --git a/test/device/device_capability_models_test.dart b/test/device/device_capability_models_test.dart
+new file mode 100644
+index 0000000..5eee676
+--- /dev/null
++++ b/test/device/device_capability_models_test.dart
+@@ -0,0 +1,219 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++
++void main() {
++  DeviceCapabilitySnapshot supportedSnapshot({
++    int sdkInt = 29,
++    String primaryAbi = '  ARM64-V8A  ',
++    int memoryClassMb = 256,
++    int? availableMemoryMb = 2048,
++    int? freeStorageBytes = 1024 * 1024 * 1024,
++    bool? lowMemory = false,
++    bool? batterySaverEnabled = false,
++    DeviceThermalState thermalState = DeviceThermalState.nominal,
++    bool? gpuApiCandidate = true,
++  }) {
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: primaryAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  test('marks snapshots below SDK 29 as unsupported', () {
++    final snapshot = supportedSnapshot(sdkInt: 28);
++
++    expect(snapshot.isSupported, isFalse);
++  });
++
++  test('normalizes a primary ABI to one non-empty value', () {
++    final snapshot = supportedSnapshot(primaryAbi: '  ARM64-V8A  ');
++
++    expect(snapshot.primaryAbi, 'arm64-v8a');
++    expect(() => supportedSnapshot(primaryAbi: '   '), throwsArgumentError);
++  });
++
++  test('rejects negative memory and storage values', () {
++    expect(() => supportedSnapshot(memoryClassMb: -1), throwsArgumentError);
++    expect(() => supportedSnapshot(availableMemoryMb: -1), throwsArgumentError);
++    expect(() => supportedSnapshot(freeStorageBytes: -1), throwsArgumentError);
++  });
++
++  test('maps unknown native thermal values to unknown', () {
++    expect(DeviceThermalState.fromNativeValue(-1), DeviceThermalState.unknown);
++    expect(DeviceThermalState.fromNativeValue(99), DeviceThermalState.unknown);
++  });
++
++  test('maps every known native thermal value to its safety state', () {
++    expect(DeviceThermalState.fromNativeValue(0), DeviceThermalState.nominal);
++    expect(DeviceThermalState.fromNativeValue(1), DeviceThermalState.fair);
++    expect(DeviceThermalState.fromNativeValue(2), DeviceThermalState.fair);
++    expect(DeviceThermalState.fromNativeValue(3), DeviceThermalState.serious);
++    expect(DeviceThermalState.fromNativeValue(4), DeviceThermalState.critical);
++    expect(DeviceThermalState.fromNativeValue(5), DeviceThermalState.critical);
++    expect(DeviceThermalState.fromNativeValue(6), DeviceThermalState.critical);
++  });
++
++  test('preserves unavailable capability signals as unavailable', () {
++    final snapshot = supportedSnapshot(
++      availableMemoryMb: null,
++      freeStorageBytes: null,
++      lowMemory: null,
++      batterySaverEnabled: null,
++      gpuApiCandidate: null,
++    );
++
++    expect(snapshot.availableMemoryMb, isNull);
++    expect(snapshot.freeStorageBytes, isNull);
++    expect(snapshot.lowMemory, isNull);
++    expect(snapshot.batterySaverEnabled, isNull);
++    expect(snapshot.gpuApiCandidate, isNull);
++  });
++
++  test('normalizes and validates model-specific benchmark identity', () {
++    final benchmark = InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: true,
++      medianLatencyMicros: 1000,
++      completedRuns: 5,
++      modelId: '  Lexi.Analysis  ',
++      modelVersion: ' 1.2.3 ',
++      modelSha256: 'A' * 64,
++      provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++    );
++
++    expect(benchmark.modelId, 'lexi.analysis');
++    expect(benchmark.modelVersion, '1.2.3');
++    expect(benchmark.modelSha256, 'a' * 64);
++  });
++
++  test('rejects malformed model identity and oversized benchmark values', () {
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: 'not a semantic version',
++        modelSha256: 'a' * 64,
++        provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 63,
++        provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 60000001,
++        completedRuns: 5,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.xnnpackCpu,
++        successful: true,
++        medianLatencyMicros: 1000,
++        completedRuns: 10001,
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++  });
++
++  test('rejects unstable benchmark failure codes', () {
++    expect(
++      () => InferenceBenchmark(
++        backend: InferenceBackend.gpuDelegate,
++        successful: false,
++        completedRuns: 0,
++        failureCode: 'raw-platform-error',
++        modelId: 'lexi.analysis',
++        modelVersion: '1.2.3',
++        modelSha256: 'a' * 64,
++        provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++      ),
++      throwsArgumentError,
++    );
++  });
++
++  test('string representations exclude raw hardware values', () {
++    final snapshot = supportedSnapshot(
++      primaryAbi: 'device-secret-abi',
++      memoryClassMb: 513,
++      availableMemoryMb: 2053,
++      freeStorageBytes: 123456789,
++    );
++    final benchmark = InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: true,
++      medianLatencyMicros: 54321,
++      completedRuns: 7,
++      modelId: 'secret-model-id',
++      modelVersion: '9.9.9',
++      modelSha256: 'b' * 64,
++      provenance: InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++    );
++    const decision = InferenceDecision(
++      tier: DevicePerformanceTier.balanced,
++      backend: InferenceBackend.xnnpackCpu,
++      analysisFrequency: 'standard',
++      reason: InferenceDecisionReason.gpuBenchmarkMissing,
++    );
++
++    final output = '$snapshot $benchmark $decision';
++
++    expect(output, isNot(contains('device-secret-abi')));
++    expect(output, isNot(contains('2053')));
++    expect(output, isNot(contains('123456789')));
++    expect(output, isNot(contains('secret-model-id')));
++    expect(output, isNot(contains('9.9.9')));
++    expect(output, isNot(contains('54321')));
++    expect(output, isNot(contains('b' * 64)));
++    expect(output, contains('DeviceCapabilitySnapshot'));
++    expect(output, contains('xnnpackCpu'));
++    expect(output, contains('balanced'));
++    expect(output, contains('gpu-benchmark-missing'));
++  });
++
++  test('decision reasons cannot be supplied as arbitrary caller text', () {
++    dynamic untrustedReason = 'untrusted-reason';
++
++    expect(
++      () => InferenceDecision(
++        tier: DevicePerformanceTier.lite,
++        backend: InferenceBackend.xnnpackCpu,
++        analysisFrequency: 'low',
++        reason: untrustedReason,
++      ),
++      throwsA(isA<TypeError>()),
++    );
++  });
++}
+diff --git a/test/device/inference_policy_test.dart b/test/device/inference_policy_test.dart
+new file mode 100644
+index 0000000..46dfbd8
+--- /dev/null
++++ b/test/device/inference_policy_test.dart
+@@ -0,0 +1,298 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/inference_policy.dart';
++
++void main() {
++  DeviceCapabilitySnapshot snapshot({
++    int sdkInt = 29,
++    int? availableMemoryMb = 4096,
++    int? freeStorageBytes = 2 * 1024 * 1024 * 1024,
++    bool? lowMemory = false,
++    bool? batterySaverEnabled = false,
++    DeviceThermalState thermalState = DeviceThermalState.nominal,
++    bool? gpuApiCandidate = true,
++  }) {
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: 'arm64-v8a',
++      memoryClassMb: 256,
++      availableMemoryMb: availableMemoryMb,
++      freeStorageBytes: freeStorageBytes,
++      lowMemory: lowMemory,
++      batterySaverEnabled: batterySaverEnabled,
++      thermalState: thermalState,
++      gpuApiCandidate: gpuApiCandidate,
++    );
++  }
++
++  InferenceBenchmark cpu({
++    bool successful = true,
++    int latencyMicros = 10000,
++    String modelId = 'lexi.analysis',
++    String modelVersion = '1.0.0',
++    String modelSha256 =
++        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
++    InferenceBenchmarkProvenance? provenance =
++        InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++  }) {
++    return InferenceBenchmark(
++      backend: InferenceBackend.xnnpackCpu,
++      successful: successful,
++      medianLatencyMicros: successful ? latencyMicros : null,
++      completedRuns: successful ? 5 : 0,
++      failureCode: successful ? null : 'benchmark-failed',
++      modelId: modelId,
++      modelVersion: modelVersion,
++      modelSha256: modelSha256,
++      provenance: provenance,
++    );
++  }
++
++  InferenceBenchmark gpu({
++    bool successful = true,
++    int latencyMicros = 9000,
++    String modelId = 'lexi.analysis',
++    String modelVersion = '1.0.0',
++    String modelSha256 =
++        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
++    InferenceBenchmarkProvenance? provenance =
++        InferenceBenchmarkProvenance.onDeviceInferenceAdapter,
++  }) {
++    return InferenceBenchmark(
++      backend: InferenceBackend.gpuDelegate,
++      successful: successful,
++      medianLatencyMicros: successful ? latencyMicros : null,
++      completedRuns: successful ? 5 : 0,
++      failureCode: successful ? null : 'delegate-init-failed',
++      modelId: modelId,
++      modelVersion: modelVersion,
++      modelSha256: modelSha256,
++      provenance: provenance,
++    );
++  }
++
++  test('uses CPU when the GPU benchmark is missing', () {
++    final decision = InferencePolicy.select(snapshot(), cpu());
++
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'gpu-benchmark-missing');
++  });
++
++  test(
++    'uses CPU when a GPU API candidate has no successful delegate benchmark',
++    () {
++      final decision = InferencePolicy.select(
++        snapshot(),
++        cpu(),
++        gpu(successful: false),
++      );
++
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'gpu-benchmark-failed');
++    },
++  );
++
++  test('uses GPU for an enhanced candidate with successful evidence', () {
++    final decision = InferencePolicy.select(snapshot(), cpu(), gpu());
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++    expect(decision.analysisFrequency, 'enhanced');
++    expect(decision.reasonCode, 'gpu-benchmark-qualified');
++  });
++
++  test(
++    'uses CPU when GPU latency is more than ten percent slower than CPU',
++    () {
++      final decision = InferencePolicy.select(
++        snapshot(),
++        cpu(),
++        gpu(latencyMicros: 11001),
++      );
++
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'gpu-slower-than-cpu');
++    },
++  );
++
++  test('allows GPU latency exactly ten percent slower than CPU', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(latencyMicros: 11000),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++  });
++
++  test('uses CPU when benchmark model identities do not match exactly', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(),
++      gpu(modelVersion: '1.0.1'),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-mismatch');
++  });
++
++  test('uses CPU when required adapter provenance is missing', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(provenance: null),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.reasonCode, 'gpu-evidence-provenance-missing');
++  });
++
++  test('uses Lite CPU when any required capability signal is unavailable', () {
++    final missingSignals = [
++      snapshot(batterySaverEnabled: null),
++      snapshot(lowMemory: null),
++      snapshot(availableMemoryMb: null),
++      snapshot(freeStorageBytes: null),
++      snapshot(gpuApiCandidate: null),
++    ];
++
++    for (final unavailableSnapshot in missingSignals) {
++      final decision = InferencePolicy.select(
++        unavailableSnapshot,
++        cpu(),
++        gpu(),
++      );
++
++      expect(decision.tier, DevicePerformanceTier.lite);
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'capability-evidence-missing');
++    }
++  });
++
++  test('uses Lite CPU in Battery Saver mode', () {
++    final decision = InferencePolicy.select(
++      snapshot(batterySaverEnabled: true),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.lite);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'low');
++    expect(decision.reasonCode, 'battery-saver');
++  });
++
++  test('uses Lite CPU for serious, critical, and unknown thermal states', () {
++    for (final thermalState in const [
++      DeviceThermalState.serious,
++      DeviceThermalState.critical,
++      DeviceThermalState.unknown,
++    ]) {
++      final decision = InferencePolicy.select(
++        snapshot(thermalState: thermalState),
++        cpu(),
++        gpu(),
++      );
++
++      expect(decision.tier, DevicePerformanceTier.lite);
++      expect(decision.backend, InferenceBackend.xnnpackCpu);
++      expect(decision.reasonCode, 'thermal-constrained');
++    }
++  });
++
++  test('uses Lite CPU for low-memory signals and storage below 512 MB', () {
++    final lowMemory = InferencePolicy.select(
++      snapshot(lowMemory: true),
++      cpu(),
++      gpu(),
++    );
++    final lowAvailableMemory = InferencePolicy.select(
++      snapshot(availableMemoryMb: 767),
++      cpu(),
++      gpu(),
++    );
++    final lowStorage = InferencePolicy.select(
++      snapshot(freeStorageBytes: 511 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(lowMemory.tier, DevicePerformanceTier.lite);
++    expect(lowAvailableMemory.tier, DevicePerformanceTier.lite);
++    expect(lowStorage.tier, DevicePerformanceTier.lite);
++    expect(lowStorage.reasonCode, 'storage-constrained');
++  });
++
++  test('uses Balanced CPU with 768 to 2047 MB of available memory', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 768),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'standard');
++    expect(decision.reasonCode, 'balanced-memory');
++  });
++
++  test('uses Balanced CPU at the exact 2047 MB memory boundary', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 2047),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'balanced-memory');
++  });
++
++  test('uses Balanced CPU at exactly 512 MiB of free storage', () {
++    final decision = InferencePolicy.select(
++      snapshot(freeStorageBytes: 512 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.reasonCode, 'storage-not-enhanced');
++  });
++
++  test('permits enhanced GPU at exactly 1 GiB of free storage', () {
++    final decision = InferencePolicy.select(
++      snapshot(freeStorageBytes: 1024 * 1024 * 1024),
++      cpu(),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.enhanced);
++    expect(decision.backend, InferenceBackend.gpuDelegate);
++  });
++
++  test('requires successful GPU evidence before an enhanced decision', () {
++    final decision = InferencePolicy.select(
++      snapshot(availableMemoryMb: 2048, freeStorageBytes: 1024 * 1024 * 1024),
++      cpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.balanced);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++  });
++
++  test('returns degraded CPU when the CPU benchmark is unsuccessful', () {
++    final decision = InferencePolicy.select(
++      snapshot(),
++      cpu(successful: false),
++      gpu(),
++    );
++
++    expect(decision.tier, DevicePerformanceTier.lite);
++    expect(decision.backend, InferenceBackend.xnnpackCpu);
++    expect(decision.analysisFrequency, 'low');
++    expect(decision.reasonCode, 'cpu-benchmark-degraded');
++  });
++}

@@ -1,0 +1,322 @@
+# Review package: 44a9632..b8d06ed
+
+## Commits
+b8d06ed refactor: resolve product artwork without Supabase
+
+## Files changed
+ lib/screens/select_wallpaper_screen.dart | 127 ++++++++++++++-----------------
+ lib/shop/product_artwork.dart            |  47 ++++++++++++
+ test/shop/product_artwork_test.dart      |  32 ++++++++
+ 3 files changed, 136 insertions(+), 70 deletions(-)
+
+## Diff
+diff --git a/lib/screens/select_wallpaper_screen.dart b/lib/screens/select_wallpaper_screen.dart
+index 1919491..f756360 100644
+--- a/lib/screens/select_wallpaper_screen.dart
++++ b/lib/screens/select_wallpaper_screen.dart
+@@ -1,157 +1,144 @@
+-import 'package:flutter/material.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+-import 'package:supabase_flutter/supabase_flutter.dart';
++import 'package:flutter/material.dart';
++
++import '../shop/product_artwork.dart';
+ 
+ class SelectWallpaperScreen extends StatefulWidget {
+   const SelectWallpaperScreen({super.key});
+ 
+   @override
+   State<SelectWallpaperScreen> createState() => _SelectWallpaperScreenState();
+ }
+ 
+ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
+-  List<String> purchasedWallpapers = [];
+-  String? selectedWallpaper;
++  List<ProductArtwork> purchasedWallpapers = const [DefaultProductArtwork()];
++  ProductArtwork selectedWallpaper = const DefaultProductArtwork();
+ 
+   @override
+   void initState() {
+     super.initState();
+     _fetchPurchasedWallpapers();
+   }
+ 
+-  String _getSupabaseImageUrl(String imageName) {
+-    final supabase = Supabase.instance.client;
+-    return supabase.storage.from('Image').getPublicUrl(imageName);
+-  }
+-
+   Future<void> _fetchPurchasedWallpapers() async {
+     final user = FirebaseAuth.instance.currentUser;
+     if (user == null) return;
+ 
+     final purchasedSnapshot = await FirebaseFirestore.instance
+         .collection('purchased_items')
+         .where('user_id', isEqualTo: user.uid)
+         .get();
+ 
+-    List<String> wallpapers = ["default"];
+-    for (var doc in purchasedSnapshot.docs) {
++    final wallpapers = <ProductArtwork>[const DefaultProductArtwork()];
++    for (final doc in purchasedSnapshot.docs) {
+       final productId = doc.data()['product_id'];
+-      if (productId != null) {
+-        final productDoc = await FirebaseFirestore.instance
+-            .collection('products')
+-            .doc(productId)
+-            .get();
+-
+-        if (productDoc.exists) {
+-          final data = productDoc.data();
+-          String imageUrl = data?['image_url'] ?? '';
+-          if (imageUrl.isEmpty && data?['image_name'] != null) {
+-            try {
+-              imageUrl = _getSupabaseImageUrl(data!['image_name']);
+-            } catch (_) {}
+-          }
+-          if (imageUrl.isNotEmpty) {
+-            wallpapers.add(imageUrl);
+-          }
+-        }
++      if (productId is! String || productId.isEmpty) continue;
++
++      final productDoc = await FirebaseFirestore.instance
++          .collection('products')
++          .doc(productId)
++          .get();
++      final product = productDoc.data();
++      if (product == null) continue;
++
++      final artwork = resolveProductArtwork(Map<String, Object?>.from(product));
++      if (artwork is NetworkProductArtwork) {
++        wallpapers.add(artwork);
+       }
+     }
+ 
++    if (!mounted) return;
+     setState(() {
+       purchasedWallpapers = wallpapers;
+     });
+   }
+ 
+-  Future<void> _setWallpaper(String wallpaperUrl) async {
++  Future<void> _setWallpaper(ProductArtwork artwork) async {
+     final user = FirebaseAuth.instance.currentUser;
+-    if (user != null) {
+-      await FirebaseFirestore.instance.collection('state').doc(user.uid).update(
+-        {'selectedWallpaper': wallpaperUrl == "default" ? null : wallpaperUrl},
+-      );
+-      setState(() {
+-        selectedWallpaper = wallpaperUrl;
+-      });
+-      if (mounted) {
+-        ScaffoldMessenger.of(context).showSnackBar(
+-          const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์สำเร็จ!')),
+-        );
+-      }
+-    }
++    if (user == null) return;
++
++    await FirebaseFirestore.instance.collection('state').doc(user.uid).update({
++      'selectedWallpaper': artwork.storageValue,
++    });
++    if (!mounted) return;
++    setState(() {
++      selectedWallpaper = artwork;
++    });
++    ScaffoldMessenger.of(context).showSnackBar(
++      const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์เรียบร้อยแล้ว')),
++    );
++  }
++
++  Widget _buildArtwork(ProductArtwork artwork) {
++    return switch (artwork) {
++      DefaultProductArtwork() => const ColoredBox(
++        color: Color(0xFFE8ECF3),
++        child: Center(child: Icon(Icons.wallpaper_outlined, size: 48)),
++      ),
++      NetworkProductArtwork(:final uri) => Image.network(
++        uri.toString(),
++        fit: BoxFit.cover,
++        loadingBuilder: (context, child, progress) => progress == null
++            ? child
++            : const Center(child: CircularProgressIndicator()),
++        errorBuilder: (context, error, stackTrace) => const ColoredBox(
++          color: Color(0xFFE8ECF3),
++          child: Center(child: Icon(Icons.broken_image_outlined)),
++        ),
++      ),
++    };
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(title: const Text('เลือกวอลเปเปอร์')),
+       body: purchasedWallpapers.isEmpty
+           ? const Center(child: Text('คุณยังไม่มีวอลเปเปอร์ที่ซื้อ'))
+           : Padding(
+               padding: const EdgeInsets.all(10),
+               child: GridView.builder(
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                   crossAxisSpacing: 15,
+                   mainAxisSpacing: 15,
+                   childAspectRatio: 0.8,
+                 ),
+                 itemCount: purchasedWallpapers.length,
+                 itemBuilder: (context, index) {
+-                  final wallpaper = purchasedWallpapers[index];
+-                  final isSelected = selectedWallpaper == wallpaper;
++                  final artwork = purchasedWallpapers[index];
++                  final isSelected = selectedWallpaper == artwork;
+ 
+                   return GestureDetector(
+-                    onTap: () => _setWallpaper(wallpaper),
++                    onTap: () => _setWallpaper(artwork),
+                     child: AnimatedContainer(
+                       duration: const Duration(milliseconds: 300),
+                       decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(12),
+                         boxShadow: [
+                           BoxShadow(
+                             color: Colors.black.withValues(alpha: 0.2),
+                             blurRadius: 5,
+                             spreadRadius: 2,
+                           ),
+                         ],
+                         border: Border.all(
+                           color: isSelected
+                               ? Colors.blueAccent
+                               : Colors.transparent,
+                           width: 3,
+                         ),
+                       ),
+                       child: ClipRRect(
+                         borderRadius: BorderRadius.circular(12),
+-                        child: wallpaper == "default"
+-                            ? Container(
+-                                color: Colors.grey.shade300,
+-                                child: const Center(
+-                                  child: Icon(
+-                                    Icons.image,
+-                                    size: 50,
+-                                    color: Colors.grey,
+-                                  ),
+-                                ),
+-                              )
+-                            : Image.network(
+-                                wallpaper,
+-                                fit: BoxFit.cover,
+-                                loadingBuilder:
+-                                    (context, child, loadingProgress) {
+-                                      if (loadingProgress == null) return child;
+-                                      return const Center(
+-                                        child: CircularProgressIndicator(),
+-                                      );
+-                                    },
+-                                errorBuilder: (context, error, stackTrace) =>
+-                                    const Icon(Icons.error, color: Colors.red),
+-                              ),
++                        child: _buildArtwork(artwork),
+                       ),
+                     ),
+                   );
+                 },
+               ),
+             ),
+     );
+   }
+ }
+diff --git a/lib/shop/product_artwork.dart b/lib/shop/product_artwork.dart
+new file mode 100644
+index 0000000..55bccf4
+--- /dev/null
++++ b/lib/shop/product_artwork.dart
+@@ -0,0 +1,47 @@
++sealed class ProductArtwork {
++  const ProductArtwork();
++
++  String? get storageValue;
++}
++
++final class DefaultProductArtwork extends ProductArtwork {
++  const DefaultProductArtwork();
++
++  @override
++  String? get storageValue => null;
++
++  @override
++  bool operator ==(Object other) => other is DefaultProductArtwork;
++
++  @override
++  int get hashCode => runtimeType.hashCode;
++}
++
++final class NetworkProductArtwork extends ProductArtwork {
++  const NetworkProductArtwork(this.uri);
++
++  final Uri uri;
++
++  @override
++  String get storageValue => uri.toString();
++
++  @override
++  bool operator ==(Object other) =>
++      other is NetworkProductArtwork && other.uri == uri;
++
++  @override
++  int get hashCode => uri.hashCode;
++}
++
++ProductArtwork resolveProductArtwork(Map<String, Object?> product) {
++  final rawUrl = product['image_url'];
++  if (rawUrl is! String) return const DefaultProductArtwork();
++  final uri = Uri.tryParse(rawUrl.trim());
++  if (uri == null ||
++      uri.scheme != 'https' ||
++      !uri.hasAuthority ||
++      uri.userInfo.isNotEmpty) {
++    return const DefaultProductArtwork();
++  }
++  return NetworkProductArtwork(uri);
++}
+diff --git a/test/shop/product_artwork_test.dart b/test/shop/product_artwork_test.dart
+new file mode 100644
+index 0000000..14e304b
+--- /dev/null
++++ b/test/shop/product_artwork_test.dart
+@@ -0,0 +1,32 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/shop/product_artwork.dart';
++
++void main() {
++  group('resolveProductArtwork', () {
++    test('accepts an HTTPS product image URL', () {
++      final artwork = resolveProductArtwork({
++        'image_url': 'https://cdn.example.test/wallpapers/forest.webp',
++      });
++
++      expect(
++        artwork,
++        NetworkProductArtwork(
++          Uri.parse('https://cdn.example.test/wallpapers/forest.webp'),
++        ),
++      );
++    });
++
++    test('uses the built-in default for absent or unsafe URLs', () {
++      expect(
++        resolveProductArtwork(const {'image_name': 'legacy.png'}),
++        const DefaultProductArtwork(),
++      );
++      expect(
++        resolveProductArtwork(const {
++          'image_url': 'http://cdn.example.test/legacy.png',
++        }),
++        const DefaultProductArtwork(),
++      );
++    });
++  });
++}

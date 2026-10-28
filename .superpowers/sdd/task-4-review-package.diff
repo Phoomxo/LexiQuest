@@ -1,0 +1,1489 @@
+# Review package: 32f044b..d27e57f
+
+## Commits
+d27e57f feat: complete typed sign-in and sign-out
+
+## Files changed
+ lib/navigation/app_router.dart             |   5 +-
+ lib/screens/login_screen.dart              | 385 +++++++++++------------------
+ lib/screens/main_navigation_screen.dart    |   8 +-
+ lib/screens/register_screen.dart           |  22 +-
+ lib/screens/session_gate_screen.dart       |   5 +-
+ lib/screens/setting_screen.dart            |  67 ++---
+ test/screens/full_system_audit_test.dart   |  67 ++++-
+ test/screens/login_guest_mode_test.dart    |  58 ++++-
+ test/screens/login_screen_test.dart        | 248 +++++++++++++++++++
+ test/screens/session_gate_screen_test.dart |   2 +-
+ test/screens/setting_screen_test.dart      |  90 ++++++-
+ test/widget_test.dart                      |  85 +++++--
+ 12 files changed, 706 insertions(+), 336 deletions(-)
+
+## Diff
+diff --git a/lib/navigation/app_router.dart b/lib/navigation/app_router.dart
+index 1784dfb..9ea1d46 100644
+--- a/lib/navigation/app_router.dart
++++ b/lib/navigation/app_router.dart
+@@ -22,21 +22,24 @@ final class AppRouter {
+         settings,
+         SessionGateScreen(
+           accountGateway: dependencies.accountGateway,
+           guestSessionService: dependencies.guestSessionService,
+         ),
+       );
+     }
+     if (path == AppRoute.login.path) {
+       return _route(
+         settings,
+-        LoginScreen(guestSessionService: dependencies.guestSessionService),
++        LoginScreen(
++          accountGateway: dependencies.accountGateway,
++          guestSessionService: dependencies.guestSessionService,
++        ),
+       );
+     }
+     if (path == AppRoute.register.path) {
+       return _route(settings, const RegisterScreen());
+     }
+     if (path == AppRoute.verifyEmail.path) {
+       return _verifyEmailRoute(settings);
+     }
+     if (path == AppRoute.home.path) {
+       return _route(settings, const MainNavigationScreen());
+diff --git a/lib/screens/login_screen.dart b/lib/screens/login_screen.dart
+index d9ff6c2..37eec0d 100644
+--- a/lib/screens/login_screen.dart
++++ b/lib/screens/login_screen.dart
+@@ -1,310 +1,213 @@
+ import 'package:flutter/material.dart';
+-import 'register_screen.dart';
+-import '../services/auth_service.dart';
++
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../account/firebase_account_gateway.dart';
++import '../navigation/app_route.dart';
+ import '../services/guest_session_service.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-import 'otp_screen.dart'; // เพิ่มไฟล์ OTP Screen
+ 
+ class LoginScreen extends StatefulWidget {
+-  const LoginScreen({super.key, this.guestSessionService});
++  const LoginScreen({
++    super.key,
++    required this.accountGateway,
++    required this.guestSessionService,
++  });
+ 
+-  final GuestSessionService? guestSessionService;
++  final AccountGateway accountGateway;
++  final GuestSessionService guestSessionService;
+ 
+   @override
+   State<LoginScreen> createState() => _LoginScreenState();
+ }
+ 
+ class _LoginScreenState extends State<LoginScreen> {
+-  final TextEditingController _emailController = TextEditingController();
+-  final TextEditingController _passwordController = TextEditingController();
+-  AuthService? _authServiceInstance;
+-
+-  AuthService get _authService {
+-    _authServiceInstance ??= AuthService();
+-    return _authServiceInstance!;
+-  }
+-
+-  GuestSessionService? _guestSessionServiceInstance;
+-
+-  GuestSessionService get _guestSessionService {
+-    final injected = widget.guestSessionService;
+-    if (injected != null) return injected;
+-    _guestSessionServiceInstance ??= FirebaseGuestSessionService.production();
+-    return _guestSessionServiceInstance!;
+-  }
+-
++  final _formKey = GlobalKey<FormState>();
++  final _emailController = TextEditingController();
++  final _passwordController = TextEditingController();
+   bool _isLoading = false;
+   bool _isGuestLoading = false;
+ 
+-  bool _isValidEmail(String email) {
+-    final RegExp regex = RegExp(
+-      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+-    );
+-    return regex.hasMatch(email);
++  String? _validateEmail(String? value) {
++    final email = value?.trim() ?? '';
++    final valid = RegExp(
++      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
++    ).hasMatch(email);
++    return valid ? null : 'กรุณากรอกอีเมลให้ถูกต้อง';
+   }
+ 
++  String? _validatePassword(String? value) =>
++      (value ?? '').isEmpty ? 'กรุณากรอกรหัสผ่าน' : null;
++
+   Future<void> _login() async {
++    if (_isLoading || !(_formKey.currentState?.validate() ?? false)) return;
+     setState(() => _isLoading = true);
+ 
++    final email = _emailController.text.trim().toLowerCase();
++    final password = _passwordController.text;
+     try {
+-      String email = _emailController.text.trim();
+-      String password = _passwordController.text.trim();
+-
+-      if (!_isValidEmail(email)) {
+-        throw FirebaseAuthException(
+-          code: 'invalid-email',
+-          message: 'รูปแบบอีเมลไม่ถูกต้อง',
+-        );
+-      }
+-      if (password.isEmpty) {
+-        throw FirebaseAuthException(
+-          code: 'empty-password',
+-          message: 'กรุณากรอกรหัสผ่าน',
+-        );
+-      }
+-
+-      // เข้าสู่ระบบ
+-      UserCredential? userCredential = await _authService.signIn(
++      final session = await widget.accountGateway.signIn(
+         email: email,
+         password: password,
+       );
+-
+-      User? user = userCredential?.user;
+-      if (user != null && !user.emailVerified) {
+-        if (!mounted) return;
+-        ScaffoldMessenger.of(context).showSnackBar(
+-          const SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
+-        );
+-        Navigator.push(
+-          context,
+-          MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
++      if (!mounted) return;
++      if (!session.isEmailVerified && !session.isAnonymous) {
++        Navigator.of(context).pushReplacementNamed(
++          AppRoute.verifyEmail.path,
++          arguments: VerifyEmailRouteArgs(email: session.email ?? email),
+         );
+         return;
+       }
+-
+-      // อนุญาตให้เข้าสู่ระบบ
+-      if (!mounted) return;
+-      Navigator.pushReplacementNamed(context, '/home');
+-    } on FirebaseAuthException catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Row(
+-            children: [
+-              const Icon(Icons.error_outline, color: Colors.white),
+-              const SizedBox(width: 10),
+-              Expanded(child: Text(AuthService.getErrorMessage(e))),
+-            ],
+-          ),
+-          backgroundColor: Colors.redAccent,
+-          behavior: SnackBarBehavior.floating,
+-          margin: const EdgeInsets.all(16),
+-          shape: RoundedRectangleBorder(
+-            borderRadius: BorderRadius.circular(10),
+-          ),
+-        ),
+-      );
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Row(
+-            children: [
+-              const Icon(Icons.error_outline, color: Colors.white),
+-              const SizedBox(width: 10),
+-              Expanded(child: Text(AuthService.getErrorMessage(e))),
+-            ],
+-          ),
+-          backgroundColor: Colors.redAccent,
+-          behavior: SnackBarBehavior.floating,
+-          margin: const EdgeInsets.all(16),
+-          shape: RoundedRectangleBorder(
+-            borderRadius: BorderRadius.circular(10),
+-          ),
+-        ),
+-      );
++      Navigator.of(context).pushReplacementNamed(AppRoute.home.path);
++    } on AccountOperationException catch (error) {
++      if (mounted) _showError(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showError(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+-      if (mounted) {
+-        setState(() => _isLoading = false);
+-      }
++      if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
+   Future<void> _startGuestSession() async {
+     if (_isGuestLoading) return;
+     setState(() => _isGuestLoading = true);
+-
+-    final GuestSessionResult result;
+     try {
+-      result = await _guestSessionService.start();
+-    } catch (_) {
++      final result = await widget.guestSessionService.start();
+       if (!mounted) return;
+-      _showGuestFailureSnackBar(GuestSessionFailure.unknown);
+-      setState(() => _isGuestLoading = false);
+-      return;
+-    }
+-
+-    if (!mounted) return;
+-    switch (result) {
+-      case GuestSessionStarted():
+-        Navigator.pushReplacementNamed(context, '/home');
+-      case GuestSessionFailed(:final reason):
+-        _showGuestFailureSnackBar(reason);
++      switch (result) {
++        case GuestSessionStarted():
++          Navigator.of(context).pushReplacementNamed(AppRoute.home.path);
++        case GuestSessionFailed(:final reason):
++          _showError(_guestFailureMessage(reason));
++          setState(() => _isGuestLoading = false);
++      }
++    } on Object {
++      if (mounted) {
++        _showError(_guestFailureMessage(GuestSessionFailure.unknown));
+         setState(() => _isGuestLoading = false);
++      }
+     }
+   }
+ 
+-  void _showGuestFailureSnackBar(GuestSessionFailure reason) {
++  void _showError(String message) {
+     ScaffoldMessenger.of(context).showSnackBar(
+       SnackBar(
+-        content: Text(_guestFailureMessage(reason)),
++        content: Text(message),
+         backgroundColor: Colors.redAccent,
+         behavior: SnackBarBehavior.floating,
+       ),
+     );
+   }
+ 
+-  String _guestFailureMessage(GuestSessionFailure reason) {
+-    return switch (reason) {
+-      GuestSessionFailure.firebaseUnavailable =>
+-        'ระบบยืนยันตัวตนยังไม่พร้อม กรุณาลองใหม่ภายหลัง',
+-      GuestSessionFailure.providerDisabled =>
+-        'โหมดผู้เยี่ยมชมยังไม่เปิดใช้งาน กรุณาเข้าสู่ระบบด้วยอีเมล',
+-      GuestSessionFailure.network =>
+-        'เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+-      GuestSessionFailure.unknown =>
+-        'เริ่มโหมดผู้เยี่ยมชมไม่ได้ กรุณาลองใหม่หรือเข้าสู่ระบบด้วยอีเมล',
+-    };
+-  }
++  String _guestFailureMessage(GuestSessionFailure reason) => switch (reason) {
++    GuestSessionFailure.firebaseUnavailable =>
++      'ระบบยืนยันตัวตนยังไม่พร้อม กรุณาลองใหม่ภายหลัง',
++    GuestSessionFailure.providerDisabled =>
++      'โหมดผู้เยี่ยมชมยังไม่เปิดใช้งาน กรุณาเข้าสู่ระบบด้วยอีเมล',
++    GuestSessionFailure.network =>
++      'เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
++    GuestSessionFailure.unknown =>
++      'เริ่มโหมดผู้เยี่ยมชมไม่ได้ กรุณาลองใหม่หรือเข้าสู่ระบบด้วยอีเมล',
++  };
+ 
+   @override
+   void dispose() {
+     _emailController.dispose();
+     _passwordController.dispose();
+     super.dispose();
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      body: Container(
+-        decoration: const BoxDecoration(
+-          gradient: LinearGradient(
+-            colors: [Colors.deepPurple, Colors.indigo],
+-            begin: Alignment.topLeft,
+-            end: Alignment.bottomRight,
+-          ),
+-        ),
+-        child: Center(
+-          child: Padding(
+-            padding: const EdgeInsets.all(20.0),
+-            child: Card(
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(20),
+-              ),
+-              elevation: 5,
+-              child: Padding(
+-                padding: const EdgeInsets.all(25.0),
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  children: [
+-                    const Text(
+-                      '🔑 เข้าสู่ระบบ (Login)',
+-                      style: TextStyle(
+-                        fontSize: 26,
+-                        fontWeight: FontWeight.bold,
+-                      ),
+-                    ),
+-                    const SizedBox(height: 4),
+-                    const Text(
+-                      'LexiQuest: แอปพลิเคชันเรียนรู้คำศัพท์ภาษาอังกฤษ',
+-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+-                    ),
+-                    const SizedBox(height: 20),
+-                    TextField(
+-                      controller: _emailController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'อีเมล (Email)',
+-                        hintText: 'กรอกอีเมลของคุณ',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.email),
+-                      ),
+-                    ),
+-                    const SizedBox(height: 15),
+-                    TextField(
+-                      controller: _passwordController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'รหัสผ่าน (Password)',
+-                        hintText: 'กรอกรหัสผ่าน',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.lock),
+-                      ),
+-                      obscureText: true,
++      body: Center(
++        child: SingleChildScrollView(
++          padding: const EdgeInsets.all(24),
++          child: ConstrainedBox(
++            constraints: const BoxConstraints(maxWidth: 420),
++            child: Form(
++              key: _formKey,
++              child: Column(
++                mainAxisSize: MainAxisSize.min,
++                crossAxisAlignment: CrossAxisAlignment.stretch,
++                children: [
++                  const Text(
++                    'เข้าสู่ระบบ (Login)',
++                    textAlign: TextAlign.center,
++                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
++                  ),
++                  const SizedBox(height: 24),
++                  TextFormField(
++                    key: const ValueKey<String>('login-email'),
++                    controller: _emailController,
++                    keyboardType: TextInputType.emailAddress,
++                    autofillHints: const [AutofillHints.username],
++                    validator: _validateEmail,
++                    decoration: const InputDecoration(
++                      labelText: 'อีเมล (Email)',
++                      border: OutlineInputBorder(),
++                      prefixIcon: Icon(Icons.email),
+                     ),
+-                    const SizedBox(height: 20),
+-                    _isLoading
+-                        ? const CircularProgressIndicator()
+-                        : ElevatedButton(
+-                            onPressed: _login,
+-                            style: ElevatedButton.styleFrom(
+-                              padding: const EdgeInsets.symmetric(
+-                                vertical: 14,
+-                                horizontal: 50,
+-                              ),
+-                              backgroundColor: Colors.deepPurple,
+-                              shape: RoundedRectangleBorder(
+-                                borderRadius: BorderRadius.circular(12),
+-                              ),
+-                            ),
+-                            child: const Text(
+-                              'เข้าสู่ระบบ (Login)',
+-                              style: TextStyle(
+-                                fontSize: 18,
+-                                color: Colors.white,
+-                                fontWeight: FontWeight.bold,
+-                              ),
+-                            ),
+-                          ),
+-                    const SizedBox(height: 10),
+-                    OutlinedButton.icon(
+-                      key: const ValueKey<String>('guest-mode-button'),
+-                      onPressed: _isGuestLoading ? null : _startGuestSession,
+-                      icon: _isGuestLoading
+-                          ? const SizedBox(
+-                              width: 18,
+-                              height: 18,
+-                              child: CircularProgressIndicator(strokeWidth: 2),
+-                            )
+-                          : const Icon(Icons.play_arrow, color: Colors.green),
+-                      label: const Text(
+-                        '🚀 ทดลองใช้งานทันที (Guest Mode)',
+-                        style: TextStyle(
+-                          fontSize: 15,
+-                          fontWeight: FontWeight.bold,
+-                          color: Colors.green,
+-                        ),
+-                      ),
++                  ),
++                  const SizedBox(height: 16),
++                  TextFormField(
++                    key: const ValueKey<String>('login-password'),
++                    controller: _passwordController,
++                    obscureText: true,
++                    autofillHints: const [AutofillHints.password],
++                    validator: _validatePassword,
++                    decoration: const InputDecoration(
++                      labelText: 'รหัสผ่าน (Password)',
++                      border: OutlineInputBorder(),
++                      prefixIcon: Icon(Icons.lock),
+                     ),
+-                    TextButton(
+-                      onPressed: () {
+-                        Navigator.push(
+-                          context,
+-                          MaterialPageRoute(
+-                            builder: (context) => const RegisterScreen(),
+-                          ),
+-                        );
+-                      },
+-                      child: const Text(
+-                        "ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่ (Register)",
+-                      ),
++                  ),
++                  Align(
++                    alignment: Alignment.centerRight,
++                    child: TextButton(
++                      key: const ValueKey<String>('login-forgot-password'),
++                      onPressed: _isLoading
++                          ? null
++                          : () => Navigator.of(
++                              context,
++                            ).pushNamed(AppRoute.forgotPassword.path),
++                      child: const Text('ลืมรหัสผ่าน?'),
+                     ),
+-                  ],
+-                ),
++                  ),
++                  FilledButton(
++                    key: const ValueKey<String>('login-submit'),
++                    onPressed: _isLoading ? null : _login,
++                    child: _isLoading
++                        ? const SizedBox(
++                            width: 20,
++                            height: 20,
++                            child: CircularProgressIndicator(strokeWidth: 2),
++                          )
++                        : const Text('เข้าสู่ระบบ (Login)'),
++                  ),
++                  const SizedBox(height: 12),
++                  OutlinedButton.icon(
++                    key: const ValueKey<String>('login-guest'),
++                    onPressed: _isGuestLoading ? null : _startGuestSession,
++                    icon: _isGuestLoading
++                        ? const SizedBox(
++                            width: 18,
++                            height: 18,
++                            child: CircularProgressIndicator(strokeWidth: 2),
++                          )
++                        : const Icon(Icons.play_arrow),
++                    label: const Text('ทดลองใช้งานทันที (Guest Mode)'),
++                  ),
++                  TextButton(
++                    onPressed: () =>
++                        Navigator.of(context).pushNamed(AppRoute.register.path),
++                    child: const Text('ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่'),
++                  ),
++                ],
+               ),
+             ),
+           ),
+         ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index 8425c60..f7de0bb 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -100,21 +100,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+                   )?.remoteEconomyPolicy.shopAndPurchasesEnabled ??
+                   false)
+                 ListTile(
+                   leading: const Icon(Icons.shopping_bag),
+                   title: const Text('ร้านค้า'),
+                   onTap: () => _pushLegacyDestination(const ShopPage()),
+                 ),
+               ListTile(
+                 leading: const Icon(Icons.settings),
+                 title: const Text('ตั้งค่าเดิม'),
+-                onTap: () => _pushLegacyDestination(const SettingScreen()),
++                onTap: () {
++                  final dependencies = AppDependenciesScope.maybeOf(context);
++                  if (dependencies == null) return;
++                  _pushLegacyDestination(
++                    SettingScreen(accountGateway: dependencies.accountGateway),
++                  );
++                },
+               ),
+               const Divider(),
+               Padding(
+                 padding: const EdgeInsets.symmetric(
+                   horizontal: 16,
+                   vertical: 12,
+                 ),
+                 child: Text(
+                   _runtimeStatusSummary(context),
+                   key: const ValueKey<String>('runtime-status-summary'),
+diff --git a/lib/screens/register_screen.dart b/lib/screens/register_screen.dart
+index 7719e98..d132180 100644
+--- a/lib/screens/register_screen.dart
++++ b/lib/screens/register_screen.dart
+@@ -1,15 +1,15 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+-import 'login_screen.dart';
+ import '../services/auth_service.dart';
+ import 'otp_screen.dart';
++import '../navigation/app_route.dart';
+ 
+ class RegisterScreen extends StatefulWidget {
+   const RegisterScreen({super.key});
+ 
+   @override
+   State<RegisterScreen> createState() => _RegisterScreenState();
+ }
+ 
+ class _RegisterScreenState extends State<RegisterScreen> {
+   final TextEditingController _emailController = TextEditingController();
+@@ -75,28 +75,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
+           ),
+           backgroundColor: Colors.redAccent,
+           behavior: SnackBarBehavior.floating,
+           shape: RoundedRectangleBorder(
+             borderRadius: BorderRadius.circular(10),
+           ),
+           action: isEmailInUse
+               ? SnackBarAction(
+                   label: 'เข้าสู่ระบบ',
+                   textColor: Colors.amber,
+-                  onPressed: () {
+-                    Navigator.push(
+-                      context,
+-                      MaterialPageRoute(
+-                        builder: (context) => const LoginScreen(),
+-                      ),
+-                    );
+-                  },
++                  onPressed: () =>
++                      Navigator.of(context).pushNamed(AppRoute.login.path),
+                 )
+               : null,
+         ),
+       );
+     } finally {
+       if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
+   @override
+@@ -174,28 +168,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
+                             child: const Text(
+                               'ส่งอีเมลยืนยัน (Send Email)',
+                               style: TextStyle(
+                                 fontSize: 18,
+                                 color: Colors.white,
+                                 fontWeight: FontWeight.bold,
+                               ),
+                             ),
+                           ),
+                     TextButton(
+-                      onPressed: () {
+-                        Navigator.push(
+-                          context,
+-                          MaterialPageRoute(
+-                            builder: (context) => const LoginScreen(),
+-                          ),
+-                        );
+-                      },
++                      onPressed: () =>
++                          Navigator.of(context).pushNamed(AppRoute.login.path),
+                       child: const Text(
+                         'มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)',
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+         ),
+diff --git a/lib/screens/session_gate_screen.dart b/lib/screens/session_gate_screen.dart
+index 4433cfa..0cb25bf 100644
+--- a/lib/screens/session_gate_screen.dart
++++ b/lib/screens/session_gate_screen.dart
+@@ -25,20 +25,23 @@ final class SessionGateScreen extends StatelessWidget {
+       builder: (context, snapshot) {
+         if (snapshot.connectionState == ConnectionState.waiting &&
+             !snapshot.hasData) {
+           return const Scaffold(
+             body: Center(child: CircularProgressIndicator()),
+           );
+         }
+ 
+         final session = snapshot.data;
+         if (session == null) {
+-          return LoginScreen(guestSessionService: guestSessionService);
++          return LoginScreen(
++            accountGateway: accountGateway,
++            guestSessionService: guestSessionService,
++          );
+         }
+         if (session.isAnonymous || session.isEmailVerified) {
+           return const MainNavigationScreen();
+         }
+         return OTPScreen(email: session.email ?? '');
+       },
+     );
+   }
+ }
+diff --git a/lib/screens/setting_screen.dart b/lib/screens/setting_screen.dart
+index b63e51d..6551250 100644
+--- a/lib/screens/setting_screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -1,90 +1,53 @@
+ import 'package:flutter/material.dart';
+-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+-import 'package:cloud_firestore/cloud_firestore.dart';
++import '../account/account_gateway.dart';
++import '../navigation/app_route.dart';
+ import '../services/local_user_progress_store.dart';
+ import '../config/remote_economy_policy.dart';
+ import '../runtime/app_dependencies.dart';
+ import 'achievements_screen.dart';
+ import 'avatar_equipment_screen.dart';
+ import 'export_center_screen.dart';
+ import 'select_wallpaper_screen.dart';
+ 
+ class SettingScreen extends StatefulWidget {
+-  const SettingScreen({super.key, this.profileData, this.remoteEconomyPolicy});
++  const SettingScreen({
++    super.key,
++    required this.accountGateway,
++    this.profileData,
++    this.remoteEconomyPolicy,
++  });
+ 
++  final AccountGateway accountGateway;
+   final Map<String, dynamic>? profileData;
+   final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   State<SettingScreen> createState() => _SettingScreenState();
+ }
+ 
+ class _SettingScreenState extends State<SettingScreen> {
+-  firebase_auth.FirebaseAuth? _auth;
+-  FirebaseFirestore? _firestore;
+   Map<String, dynamic>? _profileData;
+   IconData _selectedIcon = Icons.account_circle;
+ 
+-  firebase_auth.User? get _currentUser => _auth?.currentUser;
+-
+   @override
+   void initState() {
+     super.initState();
+-    _auth = _resolveAuth();
+-    _firestore = _resolveFirestore();
+-    _profileData = widget.profileData;
+-    if (_profileData == null && _currentUser != null) {
+-      _fetchUserProfile();
+-    }
+-  }
+-
+-  firebase_auth.FirebaseAuth? _resolveAuth() {
+-    try {
+-      return firebase_auth.FirebaseAuth.instance;
+-    } catch (_) {
+-      return null;
+-    }
+-  }
+-
+-  FirebaseFirestore? _resolveFirestore() {
+-    try {
+-      return FirebaseFirestore.instance;
+-    } catch (_) {
+-      return null;
+-    }
+-  }
+-
+-  Future<void> _fetchUserProfile() async {
+-    final firestore = _firestore;
+-    final user = _currentUser;
+-    if (firestore == null || user == null) return;
+-
+-    try {
+-      final doc = await firestore.collection('users').doc(user.uid).get();
+-      if (doc.exists) {
+-        if (!mounted) return;
+-        setState(() {
+-          _profileData = doc.data();
+-        });
+-      }
+-    } catch (_) {
+-      // Profile remains unavailable without surfacing provider diagnostics.
+-    }
++    _profileData = widget.profileData ?? const <String, dynamic>{};
+   }
+ 
+-  void _logout() async {
+-    final auth = _auth;
+-    if (auth == null) return;
+-    await auth.signOut();
++  Future<void> _logout() async {
++    await widget.accountGateway.signOut();
+     if (!mounted) return;
+-    Navigator.pushReplacementNamed(context, '/login');
++    Navigator.of(
++      context,
++    ).pushNamedAndRemoveUntil(AppRoute.sessionGate.path, (route) => false);
+   }
+ 
+   void _showIconPicker() {
+     showModalBottomSheet(
+       context: context,
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+       ),
+       builder: (context) {
+         return Padding(
+diff --git a/test/screens/full_system_audit_test.dart b/test/screens/full_system_audit_test.dart
+index 98a1391..c3f32f2 100644
+--- a/test/screens/full_system_audit_test.dart
++++ b/test/screens/full_system_audit_test.dart
+@@ -1,36 +1,94 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
+ import 'package:vocab_learning_app/screens/register_screen.dart';
+ import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+ import 'package:vocab_learning_app/screens/avatar_equipment_screen.dart';
+ import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+ import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+ import 'package:vocab_learning_app/screens/achievements_screen.dart';
+ import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
+ import 'package:vocab_learning_app/screens/cefr_selection_screen.dart';
+ import 'package:vocab_learning_app/screens/cefr_diagnostic_test_screen.dart';
+ import 'package:vocab_learning_app/screens/boss_battle_screen.dart';
+ import 'package:vocab_learning_app/screens/learning_world_map_screen.dart';
+ import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
+ import 'package:vocab_learning_app/services/cognitive_attention_analyzer_service.dart';
+ import 'package:vocab_learning_app/services/dynamic_story_contextualizer_service.dart';
+ import 'package:vocab_learning_app/services/rapid_naming_speed_service.dart';
+ import 'package:vocab_learning_app/services/brahmawong_research_analytics_service.dart';
+ import 'package:vocab_learning_app/services/anki_dictionary_exporter_service.dart';
+ import 'package:vocab_learning_app/services/auth_service.dart';
++import 'package:vocab_learning_app/services/guest_session_service.dart';
+ import 'package:vocab_learning_app/voice/voice_models.dart';
+ import 'package:vocab_learning_app/voice/voice_provider.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+ 
++final class _AuditAccountGateway implements AccountGateway {
++  const _AuditAccountGateway();
++
++  @override
++  AccountSession? get currentSession => null;
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
++final class _AuditGuestSessionService implements GuestSessionService {
++  const _AuditGuestSessionService();
++
++  @override
++  Future<GuestSessionResult> start() => throw UnimplementedError();
++}
++
+ class AuditFakeVoiceProvider implements VoiceProvider {
+   @override
+   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+     return const VoicePlaybackResult(
+       requestedEngine: VoiceEngine.omniVoice,
+       actualEngine: VoiceEngine.omniVoice,
+       usedFallback: false,
+       cacheHit: false,
+     );
+   }
+@@ -40,21 +98,28 @@ class AuditFakeVoiceProvider implements VoiceProvider {
+ }
+ 
+ void main() {
+   group('LexiQuest Master Full System Audit (All Sections & Research Engines)', () {
+     // -------------------------------------------------------------
+     // Section 1: Authentication & Error Translation Audit
+     // -------------------------------------------------------------
+     testWidgets(
+       'Section 1 Audit: LoginScreen renders Thai UI & Guest Mode button',
+       (WidgetTester tester) async {
+-        await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
++        await tester.pumpWidget(
++          const MaterialApp(
++            home: LoginScreen(
++              accountGateway: _AuditAccountGateway(),
++              guestSessionService: _AuditGuestSessionService(),
++            ),
++          ),
++        );
+         await tester.pumpAndSettle();
+ 
+         expect(find.textContaining('เข้าสู่ระบบ'), findsWidgets);
+         expect(find.textContaining('Guest Mode'), findsOneWidget);
+       },
+     );
+ 
+     testWidgets(
+       'Section 1 Audit: RegisterScreen & OTPScreen render verification UI',
+       (WidgetTester tester) async {
+diff --git a/test/screens/login_guest_mode_test.dart b/test/screens/login_guest_mode_test.dart
+index dfb50a8..cbf9136 100644
+--- a/test/screens/login_guest_mode_test.dart
++++ b/test/screens/login_guest_mode_test.dart
+@@ -1,40 +1,92 @@
+ import 'dart:async';
+ 
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _CompleterGuestSessionService implements GuestSessionService {
+   final Completer<GuestSessionResult> _completer =
+       Completer<GuestSessionResult>();
+ 
+   int startCalls = 0;
+ 
+   @override
+   Future<GuestSessionResult> start() {
+     startCalls++;
+     return _completer.future;
+   }
+ 
+   void complete(GuestSessionResult result) => _completer.complete(result);
+ }
+ 
+-const guestModeButtonKey = ValueKey<String>('guest-mode-button');
++const guestModeButtonKey = ValueKey<String>('login-guest');
++
++final class _GuestModeAccountGateway implements AccountGateway {
++  @override
++  AccountSession? get currentSession => null;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
+ 
+ Widget _loginHarness({required GuestSessionService guestSessionService}) {
+   return MaterialApp(
+     initialRoute: '/login',
+     routes: <String, WidgetBuilder>{
+-      '/login': (context) =>
+-          LoginScreen(guestSessionService: guestSessionService),
++      '/login': (context) => LoginScreen(
++        accountGateway: _GuestModeAccountGateway(),
++        guestSessionService: guestSessionService,
++      ),
+       '/home': (context) =>
+           const Scaffold(body: Center(child: Text('HOME_SCREEN_REACHED'))),
+     },
+   );
+ }
+ 
+ void main() {
+   testWidgets('guest tap starts once and waits before navigating', (
+     tester,
+   ) async {
+diff --git a/test/screens/login_screen_test.dart b/test/screens/login_screen_test.dart
+new file mode 100644
+index 0000000..3e710a3
+--- /dev/null
++++ b/test/screens/login_screen_test.dart
+@@ -0,0 +1,248 @@
++import 'dart:async';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/firebase_account_gateway.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
++import 'package:vocab_learning_app/screens/login_screen.dart';
++import 'package:vocab_learning_app/services/guest_session_service.dart';
++
++const _emailKey = ValueKey<String>('login-email');
++const _passwordKey = ValueKey<String>('login-password');
++const _submitKey = ValueKey<String>('login-submit');
++const _forgotPasswordKey = ValueKey<String>('login-forgot-password');
++
++final class _FakeGuestSessionService implements GuestSessionService {
++  @override
++  Future<GuestSessionResult> start() async =>
++      const GuestSessionStarted(uid: 'guest-test');
++}
++
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway({
++    Future<AccountSession> Function(String email, String password)? signIn,
++  }) : _signIn = signIn ?? _verifiedSignIn;
++
++  final Future<AccountSession> Function(String email, String password) _signIn;
++  final List<(String email, String password)> signInRequests = [];
++
++  static Future<AccountSession> _verifiedSignIn(
++    String email,
++    String password,
++  ) async => AccountSession(
++    uid: 'student-1',
++    email: email,
++    isAnonymous: false,
++    isEmailVerified: true,
++  );
++
++  @override
++  AccountSession? get currentSession => null;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) {
++    signInRequests.add((email, password));
++    return _signIn(email, password);
++  }
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
++Widget _loginHarness(_FakeAccountGateway gateway) {
++  return MaterialApp(
++    onGenerateRoute: (settings) => MaterialPageRoute<void>(
++      settings: settings,
++      builder: (_) {
++        if (settings.name == AppRoute.home.path) {
++          return const Scaffold(body: Center(child: Text('HOME_REACHED')));
++        }
++        if (settings.name == AppRoute.verifyEmail.path) {
++          return Scaffold(
++            body: Center(
++              child: Text(
++                'VERIFY:${(settings.arguments! as VerifyEmailRouteArgs).email}',
++              ),
++            ),
++          );
++        }
++        if (settings.name == AppRoute.forgotPassword.path) {
++          return const Scaffold(body: Center(child: Text('FORGOT_REACHED')));
++        }
++        return LoginScreen(
++          accountGateway: gateway,
++          guestSessionService: _FakeGuestSessionService(),
++        );
++      },
++    ),
++  );
++}
++
++Future<void> _enterCredentials(
++  WidgetTester tester, {
++  String email = ' Student@Example.COM ',
++  String password = ' pass word ',
++}) async {
++  await tester.enterText(find.byKey(_emailKey), email);
++  await tester.enterText(find.byKey(_passwordKey), password);
++}
++
++void main() {
++  testWidgets('submits a normalized email without trimming the password', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await _enterCredentials(tester);
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pumpAndSettle();
++
++    expect(gateway.signInRequests, [('student@example.com', ' pass word ')]);
++  });
++
++  testWidgets('invalid email and empty password do not call the gateway', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await _enterCredentials(tester, email: 'not-an-email');
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++    await _enterCredentials(tester, email: 'student@example.com', password: '');
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++
++    expect(gateway.signInRequests, isEmpty);
++  });
++
++  testWidgets(
++    'unverified sessions navigate with typed verification arguments',
++    (tester) async {
++      final gateway = _FakeAccountGateway(
++        signIn: (email, password) async => AccountSession(
++          uid: 'student-1',
++          email: email,
++          isAnonymous: false,
++          isEmailVerified: false,
++        ),
++      );
++      await tester.pumpWidget(_loginHarness(gateway));
++
++      await _enterCredentials(tester);
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pumpAndSettle();
++
++      expect(find.text('VERIFY:student@example.com'), findsOneWidget);
++    },
++  );
++
++  testWidgets('verified sessions navigate home', (tester) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await _enterCredentials(tester);
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pumpAndSettle();
++
++    expect(find.text('HOME_REACHED'), findsOneWidget);
++  });
++
++  for (final code in <String>[
++    'invalid-credential',
++    'user-not-found',
++    'wrong-password',
++  ]) {
++    testWidgets('$code shows the generic invalid credentials Thai message', (
++      tester,
++    ) async {
++      final gateway = _FakeAccountGateway(
++        signIn: (email, password) =>
++            Future<AccountSession>.error(AccountOperationException(code)),
++      );
++      await tester.pumpWidget(_loginHarness(gateway));
++
++      await _enterCredentials(tester);
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pump();
++
++      expect(find.text('อีเมลหรือรหัสผ่านไม่ถูกต้อง'), findsOneWidget);
++    });
++  }
++
++  testWidgets('a pending login ignores repeated submit taps', (tester) async {
++    final completer = Completer<AccountSession>();
++    final gateway = _FakeAccountGateway(
++      signIn: (email, password) => completer.future,
++    );
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await _enterCredentials(tester);
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++    await tester.tap(find.byKey(_submitKey), warnIfMissed: false);
++    await tester.pump();
++
++    expect(gateway.signInRequests, hasLength(1));
++    completer.complete(
++      await _FakeAccountGateway._verifiedSignIn(
++        'student@example.com',
++        ' pass word ',
++      ),
++    );
++    await tester.pumpAndSettle();
++  });
++
++  testWidgets('forgot-password control uses the typed route path', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_loginHarness(gateway));
++
++    await tester.tap(find.byKey(_forgotPasswordKey));
++    await tester.pumpAndSettle();
++
++    expect(find.text('FORGOT_REACHED'), findsOneWidget);
++  });
++}
+diff --git a/test/screens/session_gate_screen_test.dart b/test/screens/session_gate_screen_test.dart
+index 20db4c7..5fcafa6 100644
+--- a/test/screens/session_gate_screen_test.dart
++++ b/test/screens/session_gate_screen_test.dart
+@@ -122,21 +122,21 @@ void main() {
+ 
+     expect(find.byType(LoginScreen), findsOneWidget);
+   });
+ 
+   testWidgets('signed-out root guest entry uses the injected service', (
+     tester,
+   ) async {
+     final guestSessionService = _PendingGuestSessionService();
+     await _pumpGate(tester, null, guestSessionService: guestSessionService);
+ 
+-    await tester.tap(find.byKey(const ValueKey<String>('guest-mode-button')));
++    await tester.tap(find.byKey(const ValueKey<String>('login-guest')));
+     await tester.pump();
+ 
+     expect(guestSessionService.startCalls, 1);
+   });
+ 
+   testWidgets('anonymous sessions open MainNavigationScreen', (tester) async {
+     await _pumpGate(
+       tester,
+       const AccountSession(
+         uid: 'anonymous-user',
+diff --git a/test/screens/setting_screen_test.dart b/test/screens/setting_screen_test.dart
+index d978200..cceb595 100644
+--- a/test/screens/setting_screen_test.dart
++++ b/test/screens/setting_screen_test.dart
+@@ -1,18 +1,104 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/setting_screen.dart';
+ 
++final class _SignOutGateway implements AccountGateway {
++  int signOutCalls = 0;
++
++  @override
++  AccountSession? get currentSession => null;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++
++  @override
++  Future<void> signOut() async {
++    signOutCalls++;
++  }
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
+ void main() {
+   testWidgets(
+     'settings hides wallpaper selection while remote economy is disabled',
+     (tester) async {
+       await tester.pumpWidget(
+-        const MaterialApp(
+-          home: SettingScreen(profileData: {'first_name': 'Phet'}),
++        MaterialApp(
++          home: SettingScreen(
++            accountGateway: _SignOutGateway(),
++            profileData: const {'first_name': 'Phet'},
++          ),
+         ),
+       );
+ 
+       expect(find.byIcon(Icons.wallpaper), findsNothing);
+     },
+   );
++
++  testWidgets('sign-out clears navigation back to the session gate', (
++    tester,
++  ) async {
++    final gateway = _SignOutGateway();
++    await tester.pumpWidget(
++      MaterialApp(
++        initialRoute: '/settings',
++        routes: {
++          '/settings': (_) => SettingScreen(
++            accountGateway: gateway,
++            profileData: const {'first_name': 'Phet'},
++          ),
++          AppRoute.sessionGate.path: (_) =>
++              const Scaffold(body: Center(child: Text('SESSION_GATE_REACHED'))),
++        },
++      ),
++    );
++
++    await tester.tap(find.byIcon(Icons.logout));
++    await tester.pumpAndSettle();
++
++    expect(gateway.signOutCalls, 1);
++    expect(find.text('SESSION_GATE_REACHED'), findsOneWidget);
++    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
++    expect(navigator.canPop(), isFalse);
++  });
+ }
+diff --git a/test/widget_test.dart b/test/widget_test.dart
+index ce96df4..d503d35 100644
+--- a/test/widget_test.dart
++++ b/test/widget_test.dart
+@@ -1,29 +1,82 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
++import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+-void main() {
+-  testWidgets('LoginScreen smoke test', (WidgetTester tester) async {
+-    // Build LoginScreen and trigger a frame.
+-    await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
++final class _SmokeAccountGateway implements AccountGateway {
++  const _SmokeAccountGateway();
++
++  @override
++  AccountSession? get currentSession => null;
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> sendVerificationEmail() => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
+ 
+-    // Verify the Login title appears
+-    expect(find.textContaining('เข้าสู่ระบบ'), findsWidgets);
++final class _SmokeGuestSessionService implements GuestSessionService {
++  const _SmokeGuestSessionService();
+ 
+-    // Verify Email and Password TextFields are present
+-    expect(find.widgetWithText(TextField, 'อีเมล (Email)'), findsOneWidget);
+-    expect(
+-      find.widgetWithText(TextField, 'รหัสผ่าน (Password)'),
+-      findsOneWidget,
++  @override
++  Future<GuestSessionResult> start() => throw UnimplementedError();
++}
++
++void main() {
++  testWidgets('LoginScreen smoke test', (WidgetTester tester) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: LoginScreen(
++          accountGateway: _SmokeAccountGateway(),
++          guestSessionService: _SmokeGuestSessionService(),
++        ),
++      ),
+     );
+ 
+-    // Verify the Login button
++    expect(find.byKey(const ValueKey<String>('login-email')), findsOneWidget);
+     expect(
+-      find.widgetWithText(ElevatedButton, 'เข้าสู่ระบบ (Login)'),
++      find.byKey(const ValueKey<String>('login-password')),
+       findsOneWidget,
+     );
+-
+-    // Verify the registration prompt
+-    expect(find.textContaining('สมัครสมาชิก'), findsOneWidget);
++    expect(find.byKey(const ValueKey<String>('login-submit')), findsOneWidget);
++    expect(find.byKey(const ValueKey<String>('login-guest')), findsOneWidget);
+   });
+ }

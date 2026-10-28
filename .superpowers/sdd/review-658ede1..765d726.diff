@@ -1,0 +1,1312 @@
+# Review package: 658ede1..765d726
+
+## Commits
+765d726 fix: harden Android capability readiness
+409bbfa feat: connect Android device capability probing
+
+## Files changed
+ android/.gitignore                                 |   1 +
+ android/app/build.gradle.kts                       |   2 +-
+ .../com/lexiquest/app/DeviceCapabilityPlugin.kt    | 101 ++++++++++
+ .../main/kotlin/com/lexiquest/app/MainActivity.kt  |   8 +-
+ lib/device/device_capability_probe.dart            | 122 ++++++++++++
+ lib/runtime/app_bootstrap.dart                     |  17 ++
+ lib/runtime/app_dependencies.dart                  |   3 +
+ lib/runtime/app_runtime_status.dart                |  10 +-
+ lib/screens/main_navigation_screen.dart            |   2 +
+ test/device/device_capability_probe_test.dart      | 200 ++++++++++++++++++++
+ test/runtime/app_bootstrap_test.dart               | 121 ++++++++++++
+ test/runtime/app_runtime_status_test.dart          |  12 ++
+ test/screens/production_shell_navigation_test.dart |  29 ++-
+ .../android-device-capability-contract.tests.ps1   | 209 +++++++++++++++++++++
+ 14 files changed, 831 insertions(+), 6 deletions(-)
+
+## Diff
+diff --git a/android/.gitignore b/android/.gitignore
+index 55afd91..3a6544c 100644
+--- a/android/.gitignore
++++ b/android/.gitignore
+@@ -1,12 +1,13 @@
+ gradle-wrapper.jar
+ /.gradle
++/.kotlin/
+ /captures/
+ /gradlew
+ /gradlew.bat
+ /local.properties
+ GeneratedPluginRegistrant.java
+ 
+ # Remember to never publicly share your keystore.
+ # See https://flutter.dev/to/reference-keystore
+ key.properties
+ **/*.keystore
+diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
+index cd9c7bd..b06a838 100644
+--- a/android/app/build.gradle.kts
++++ b/android/app/build.gradle.kts
+@@ -23,21 +23,21 @@ android {
+     compileSdk = flutter.compileSdkVersion
+     ndkVersion = flutter.ndkVersion
+ 
+     compileOptions {
+         sourceCompatibility = JavaVersion.VERSION_17
+         targetCompatibility = JavaVersion.VERSION_17
+     }
+ 
+     defaultConfig {
+         applicationId = "com.lexiquest.app"
+-        minSdk = flutter.minSdkVersion
++        minSdk = 29
+         targetSdk = flutter.targetSdkVersion
+         versionCode = flutter.versionCode
+         versionName = flutter.versionName
+     }
+ 
+     signingConfigs {
+         create("release") {
+             if (releaseSigningReady) {
+                 storeFile = file(keystoreProperties["storeFile"] as String)
+                 storePassword = keystoreProperties["storePassword"] as String
+diff --git a/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt b/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt
+new file mode 100644
+index 0000000..9991e11
+--- /dev/null
++++ b/android/app/src/main/kotlin/com/lexiquest/app/DeviceCapabilityPlugin.kt
+@@ -0,0 +1,101 @@
++package com.lexiquest.app
++
++import android.app.ActivityManager
++import android.content.Context
++import android.os.Build
++import android.os.PowerManager
++import android.os.StatFs
++import io.flutter.embedding.engine.plugins.FlutterPlugin
++import io.flutter.plugin.common.MethodCall
++import io.flutter.plugin.common.MethodChannel
++import java.util.Locale
++
++class DeviceCapabilityPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
++    private var applicationContext: Context? = null
++    private var channel: MethodChannel? = null
++
++    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
++        applicationContext = binding.applicationContext
++        channel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME).also {
++            it.setMethodCallHandler(this)
++        }
++    }
++
++    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
++        channel?.setMethodCallHandler(null)
++        channel = null
++        applicationContext = null
++    }
++
++    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
++        if (call.method != METHOD_SNAPSHOT) {
++            result.notImplemented()
++            return
++        }
++
++        val context = applicationContext
++        if (context == null) {
++            result.error("channel-unavailable", null, null)
++            return
++        }
++
++        try {
++            result.success(readSnapshot(context))
++        } catch (_: Exception) {
++            result.error("capability-unavailable", null, null)
++        }
++    }
++
++    private fun readSnapshot(context: Context): Map<String, Any?> {
++        val activityManager =
++            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
++                ?: throw DeviceCapabilityUnavailableException()
++        val memoryInfo =
++            ActivityManager.MemoryInfo().also(activityManager::getMemoryInfo)
++        val powerManager =
++            context.getSystemService(Context.POWER_SERVICE) as? PowerManager
++        val deviceConfiguration = activityManager.deviceConfigurationInfo
++        val requestedGlEsVersion = deviceConfiguration.reqGlEsVersion
++
++        return mapOf<String, Any?>(
++            "sdkInt" to Build.VERSION.SDK_INT,
++            "primaryAbi" to (
++                Build.SUPPORTED_ABIS.firstOrNull()?.lowercase(Locale.ROOT) ?: "unknown"
++            ),
++            "memoryClassMb" to activityManager.memoryClass,
++            "availableMemoryMb" to memoryInfo.availMem.let(::bytesToWholeMiB),
++            "freeStorageBytes" to StatFs(context.filesDir.absolutePath).availableBytes,
++            "lowMemory" to memoryInfo.lowMemory,
++            "batterySaverEnabled" to powerManager?.isPowerSaveMode,
++            "thermalState" to thermalStateName(powerManager?.currentThermalStatus),
++            "gpuApiCandidate" to requestedGlEsVersion?.let {
++                it >= MINIMUM_CANDIDATE_GL_ES_VERSION
++            },
++        )
++    }
++
++    private fun thermalStateName(status: Int?): String =
++        when (status) {
++            PowerManager.THERMAL_STATUS_NONE -> "nominal"
++            PowerManager.THERMAL_STATUS_LIGHT,
++            PowerManager.THERMAL_STATUS_MODERATE,
++            -> "fair"
++            PowerManager.THERMAL_STATUS_SEVERE -> "serious"
++            PowerManager.THERMAL_STATUS_CRITICAL,
++            PowerManager.THERMAL_STATUS_EMERGENCY,
++            PowerManager.THERMAL_STATUS_SHUTDOWN,
++            -> "critical"
++            else -> "unknown"
++        }
++
++    private fun bytesToWholeMiB(bytes: Long): Long = bytes / BYTES_PER_MIB
++
++    private companion object {
++        const val CHANNEL_NAME = "com.lexiquest.app/device_capabilities"
++        const val METHOD_SNAPSHOT = "snapshot"
++        const val BYTES_PER_MIB = 1024L * 1024L
++        const val MINIMUM_CANDIDATE_GL_ES_VERSION = 0x00030000
++    }
++}
++
++private class DeviceCapabilityUnavailableException : Exception()
+diff --git a/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt b/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
+index f61a6ff..51a9951 100644
+--- a/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
++++ b/android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt
+@@ -1,5 +1,11 @@
+ package com.lexiquest.app
+ 
+ import io.flutter.embedding.android.FlutterActivity
++import io.flutter.embedding.engine.FlutterEngine
+ 
+-class MainActivity: FlutterActivity()
++class MainActivity : FlutterActivity() {
++    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
++        super.configureFlutterEngine(flutterEngine)
++        flutterEngine.plugins.add(DeviceCapabilityPlugin())
++    }
++}
+diff --git a/lib/device/device_capability_probe.dart b/lib/device/device_capability_probe.dart
+new file mode 100644
+index 0000000..9927a11
+--- /dev/null
++++ b/lib/device/device_capability_probe.dart
+@@ -0,0 +1,122 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart';
++
++import 'device_capability_models.dart';
++
++abstract interface class DeviceCapabilityProbe {
++  Future<DeviceCapabilitySnapshot> snapshot();
++}
++
++final class MethodChannelDeviceCapabilityProbe
++    implements DeviceCapabilityProbe {
++  const MethodChannelDeviceCapabilityProbe();
++
++  static const MethodChannel _channel = MethodChannel(
++    'com.lexiquest.app/device_capabilities',
++  );
++  static const String _snapshotMethod = 'snapshot';
++  static const Set<String> _snapshotKeys = <String>{
++    'sdkInt',
++    'primaryAbi',
++    'memoryClassMb',
++    'availableMemoryMb',
++    'freeStorageBytes',
++    'lowMemory',
++    'batterySaverEnabled',
++    'thermalState',
++    'gpuApiCandidate',
++  };
++
++  @override
++  Future<DeviceCapabilitySnapshot> snapshot() async {
++    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
++      throw const DeviceCapabilityUnavailable('unsupported-platform');
++    }
++
++    final Object? payload;
++    try {
++      payload = await _channel.invokeMethod<Object?>(_snapshotMethod);
++    } on MissingPluginException {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    } on PlatformException {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    } on Object {
++      throw const DeviceCapabilityUnavailable('channel-unavailable');
++    }
++
++    try {
++      final snapshot = _parseSnapshot(payload);
++      if (!snapshot.isSupported) {
++        throw const DeviceCapabilityUnavailable('android-version-unsupported');
++      }
++      return snapshot;
++    } on DeviceCapabilityUnavailable {
++      rethrow;
++    } on Object {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++  }
++
++  DeviceCapabilitySnapshot _parseSnapshot(Object? payload) {
++    if (payload is! Map<Object?, Object?> ||
++        payload.length != _snapshotKeys.length ||
++        payload.keys.any((key) => key is! String) ||
++        !payload.keys.cast<String>().toSet().containsAll(_snapshotKeys)) {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++
++    final sdkInt = payload['sdkInt'];
++    final primaryAbi = payload['primaryAbi'];
++    final memoryClassMb = payload['memoryClassMb'];
++    final availableMemoryMb = payload['availableMemoryMb'];
++    final freeStorageBytes = payload['freeStorageBytes'];
++    final lowMemory = payload['lowMemory'];
++    final batterySaverEnabled = payload['batterySaverEnabled'];
++    final thermalState = payload['thermalState'];
++    final gpuApiCandidate = payload['gpuApiCandidate'];
++
++    if (sdkInt is! int ||
++        primaryAbi is! String ||
++        memoryClassMb is! int ||
++        !_isNullable<int>(availableMemoryMb) ||
++        !_isNullable<int>(freeStorageBytes) ||
++        !_isNullable<bool>(lowMemory) ||
++        !_isNullable<bool>(batterySaverEnabled) ||
++        thermalState is! String ||
++        !_isNullable<bool>(gpuApiCandidate)) {
++      throw const DeviceCapabilityUnavailable('malformed-snapshot');
++    }
++
++    final normalizedThermalState = switch (thermalState) {
++      'nominal' => DeviceThermalState.nominal,
++      'fair' => DeviceThermalState.fair,
++      'serious' => DeviceThermalState.serious,
++      'critical' => DeviceThermalState.critical,
++      'unknown' => DeviceThermalState.unknown,
++      _ => throw const DeviceCapabilityUnavailable('malformed-snapshot'),
++    };
++
++    return DeviceCapabilitySnapshot(
++      sdkInt: sdkInt,
++      primaryAbi: primaryAbi,
++      memoryClassMb: memoryClassMb,
++      availableMemoryMb: availableMemoryMb as int?,
++      freeStorageBytes: freeStorageBytes as int?,
++      lowMemory: lowMemory as bool?,
++      batterySaverEnabled: batterySaverEnabled as bool?,
++      thermalState: normalizedThermalState,
++      gpuApiCandidate: gpuApiCandidate as bool?,
++    );
++  }
++
++  bool _isNullable<T>(Object? value) => value == null || value is T;
++}
++
++final class DeviceCapabilityUnavailable implements Exception {
++  const DeviceCapabilityUnavailable(this.code);
++
++  final String code;
++
++  @override
++  String toString() => 'DeviceCapabilityUnavailable($code)';
++}
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index d6f7745..2ddda79 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -3,20 +3,22 @@ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/foundation.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
+ import '../account/account_profile_provisioner.dart';
+ import '../account/firebase_account_gateway.dart';
+ import '../ai/ai_service_factory.dart';
+ import '../ai/generated_reading_content_source.dart';
+ import '../config/app_config.dart';
++import '../device/device_capability_models.dart';
++import '../device/device_capability_probe.dart';
+ import '../firebase_options.dart';
+ import '../learning/adaptive_associative_scheduler.dart';
+ import '../learning/association_prompt.dart';
+ import '../learning/associative_memory.dart';
+ import '../learning/associative_reading_coordinator.dart';
+ import '../learning/reading_content_source.dart';
+ import '../learning/secure_id_generator.dart';
+ import '../learning/storage/drift_learning_repository.dart';
+ import '../learning/storage/learning_database_factory.dart';
+ import '../learning/vocabulary_mixer.dart';
+@@ -165,20 +167,21 @@ final class AppBootstrap {
+     required this.loadConfig,
+     required this.guestSessionService,
+     this.createAccountGateway = _unavailableAccountGateway,
+     this.createAccountProfileProvisioning =
+         _unavailableAccountProfileProvisioning,
+     this.loadProgressRepository = _loadProgressRepositoryProduction,
+     this.progressRemoteWriter,
+     this.purchaseRemoteWriter,
+     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+     this.loadLearningDependencies = _loadLearningDependenciesProduction,
++    this.deviceCapabilityProbe = const MethodChannelDeviceCapabilityProbe(),
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
+       createAccountGateway: FirebaseAccountGateway.new,
+       createAccountProfileProvisioning: AccountProfileProvisioner.new,
+       loadProgressRepository: _loadProgressRepositoryProduction,
+@@ -190,20 +193,21 @@ final class AppBootstrap {
+   final RuntimeInitializer initializeFirebase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+   final AccountGatewayFactory createAccountGateway;
+   final AccountProfileProvisioningFactory createAccountProfileProvisioning;
+   final ProgressRepositoryLoader loadProgressRepository;
+   final ProgressRemoteWriter? progressRemoteWriter;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningFeatureFlags featureFlags;
+   final LearningDependenciesLoader loadLearningDependencies;
++  final DeviceCapabilityProbe deviceCapabilityProbe;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+     final accountGateway = firebase == RuntimeAvailability.ready
+         ? createAccountGateway()
+         : _unavailableAccountGateway();
+     final accountProfileProvisioning = firebase == RuntimeAvailability.ready
+         ? createAccountProfileProvisioning()
+         : _unavailableAccountProfileProvisioning();
+     final config = _loadConfig();
+@@ -211,38 +215,43 @@ final class AppBootstrap {
+     final progressSyncService =
+         progressRepository == null || progressRemoteWriter == null
+         ? null
+         : ProgressSyncService(
+             repository: progressRepository,
+             remoteWriter: progressRemoteWriter!,
+           );
+     final learningDependencies = featureFlags.associativeReadingEnabled
+         ? await _loadLearningDependencies(config)
+         : null;
++    final deviceCapabilitySnapshot = await _loadDeviceCapabilitySnapshot();
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
++        deviceCompute: deviceCapabilitySnapshot == null
++            ? RuntimeAvailability.unavailable
++            : RuntimeAvailability.ready,
+       ),
+       config: config,
+       accountGateway: accountGateway,
+       accountProfileProvisioning: accountProfileProvisioning,
+       guestSessionService: guestSessionService,
+       guestUpgradeHandoff: noOpGuestUpgradeHandoff,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
+       progressRepository: progressRepository,
+       progressSyncService: progressSyncService,
+       purchaseRemoteWriter: purchaseRemoteWriter,
+       learningDependencies: learningDependencies,
++      deviceCapabilitySnapshot: deviceCapabilitySnapshot,
+     );
+   }
+ 
+   Future<RuntimeAvailability> _availability(
+     RuntimeInitializer initializer,
+   ) async {
+     try {
+       await initializer();
+       return RuntimeAvailability.ready;
+     } catch (_) {
+@@ -268,20 +277,28 @@ final class AppBootstrap {
+ 
+   Future<LearningDependencies?> _loadLearningDependencies(
+     AppConfig? config,
+   ) async {
+     try {
+       return await loadLearningDependencies(config, featureFlags);
+     } catch (_) {
+       return null;
+     }
+   }
++
++  Future<DeviceCapabilitySnapshot?> _loadDeviceCapabilitySnapshot() async {
++    try {
++      return await deviceCapabilityProbe.snapshot();
++    } catch (_) {
++      return null;
++    }
++  }
+ }
+ 
+ AccountGateway _unavailableAccountGateway() =>
+     const _UnavailableAccountGateway();
+ 
+ AccountProfileProvisioning _unavailableAccountProfileProvisioning() =>
+     const UnavailableAccountProfileProvisioner();
+ 
+ final class _UnavailableAccountGateway implements AccountGateway {
+   const _UnavailableAccountGateway();
+diff --git a/lib/runtime/app_dependencies.dart b/lib/runtime/app_dependencies.dart
+index ea6524c..ea377c4 100644
+--- a/lib/runtime/app_dependencies.dart
++++ b/lib/runtime/app_dependencies.dart
+@@ -1,17 +1,18 @@
+ import 'package:flutter/widgets.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
+ import '../account/account_profile_provisioner.dart';
+ import '../config/app_config.dart';
+ import '../config/remote_economy_policy.dart';
++import '../device/device_capability_models.dart';
+ import '../progress/progress_repository.dart';
+ import '../progress/progress_sync_service.dart';
+ import '../progress/purchase_remote_writer.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ 
+ final class AppDependencies {
+   const AppDependencies({
+@@ -21,34 +22,36 @@ final class AppDependencies {
+     required this.guestSessionService,
+     required this.guestUpgradeHandoff,
+     this.accountProfileProvisioning =
+         const UnavailableAccountProfileProvisioner(),
+     this.buildInfo = const AppBuildInfo.fromEnvironment(),
+     this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
+     this.progressRepository,
+     this.progressSyncService,
+     this.purchaseRemoteWriter,
+     this.learningDependencies,
++    this.deviceCapabilitySnapshot,
+   });
+ 
+   final AppRuntimeStatus runtimeStatus;
+   final AppConfig? config;
+   final AccountGateway accountGateway;
+   final GuestSessionService guestSessionService;
+   final GuestUpgradeHandoff guestUpgradeHandoff;
+   final AccountProfileProvisioning accountProfileProvisioning;
+   final AppBuildInfo buildInfo;
+   final RemoteEconomyPolicy remoteEconomyPolicy;
+   final ProgressRepository? progressRepository;
+   final ProgressSyncService? progressSyncService;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningDependencies? learningDependencies;
++  final DeviceCapabilitySnapshot? deviceCapabilitySnapshot;
+ 
+   @override
+   String toString() => 'AppDependencies';
+ }
+ 
+ final class AppDependenciesScope extends InheritedWidget {
+   const AppDependenciesScope({
+     super.key,
+     required this.dependencies,
+     required super.child,
+diff --git a/lib/runtime/app_runtime_status.dart b/lib/runtime/app_runtime_status.dart
+index 247d95d..7c87900 100644
+--- a/lib/runtime/app_runtime_status.dart
++++ b/lib/runtime/app_runtime_status.dart
+@@ -1,17 +1,23 @@
+ enum RuntimeAvailability { ready, degraded, unavailable }
+ 
+ final class AppRuntimeStatus {
+-  const AppRuntimeStatus({required this.firebase, required this.backends});
++  const AppRuntimeStatus({
++    required this.firebase,
++    required this.backends,
++    this.deviceCompute = RuntimeAvailability.unavailable,
++  });
+ 
+   final RuntimeAvailability firebase;
+   final RuntimeAvailability backends;
++  final RuntimeAvailability deviceCompute;
+ 
+   bool get isFullyReady =>
+       firebase == RuntimeAvailability.ready &&
+-      backends == RuntimeAvailability.ready;
++      backends == RuntimeAvailability.ready &&
++      deviceCompute == RuntimeAvailability.ready;
+ 
+   bool get isCoreLearningAvailable => true;
+ 
+   @override
+   String toString() => 'AppRuntimeStatus';
+ }
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index f7de0bb..ed64738 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -42,20 +42,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+     if (status == null) {
+       return 'โหมดทดสอบ · ระบบอาจไม่พร้อมใช้งาน';
+     }
+     if (status.isFullyReady) {
+       return 'ระบบพร้อมใช้งาน รวมบริการออนไลน์';
+     }
+ 
+     final unavailable = <String>[
+       if (status.firebase != RuntimeAvailability.ready) 'การซิงค์บัญชี',
+       if (status.backends != RuntimeAvailability.ready) 'AI/เสียงออนไลน์',
++      if (status.deviceCompute != RuntimeAvailability.ready)
++        'On-device compute',
+     ];
+     return 'เรียนแบบออฟไลน์ได้ · ${unavailable.join(' · ')} ยังไม่พร้อม';
+   }
+ 
+   String _buildIdentity(BuildContext context) {
+     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
+     if (buildInfo == null) return '';
+     return '${buildInfo.version} · ${buildInfo.buildId}';
+   }
+ 
+diff --git a/test/device/device_capability_probe_test.dart b/test/device/device_capability_probe_test.dart
+new file mode 100644
+index 0000000..7ae41b3
+--- /dev/null
++++ b/test/device/device_capability_probe_test.dart
+@@ -0,0 +1,200 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/device_capability_probe.dart';
++
++const _channel = MethodChannel('com.lexiquest.app/device_capabilities');
++
++Map<String, Object?> _validSnapshot({
++  int sdkInt = 35,
++  Object? availableMemoryMb = 3072,
++  Object? freeStorageBytes = 4294967296,
++  Object? lowMemory = false,
++  Object? batterySaverEnabled = false,
++  Object? gpuApiCandidate = true,
++}) {
++  return <String, Object?>{
++    'sdkInt': sdkInt,
++    'primaryAbi': 'arm64-v8a',
++    'memoryClassMb': 512,
++    'availableMemoryMb': availableMemoryMb,
++    'freeStorageBytes': freeStorageBytes,
++    'lowMemory': lowMemory,
++    'batterySaverEnabled': batterySaverEnabled,
++    'thermalState': 'fair',
++    'gpuApiCandidate': gpuApiCandidate,
++  };
++}
++
++void main() {
++  TestWidgetsFlutterBinding.ensureInitialized();
++  final messenger =
++      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
++
++  setUp(() {
++    debugDefaultTargetPlatformOverride = TargetPlatform.android;
++  });
++
++  tearDown(() {
++    messenger.setMockMethodCallHandler(_channel, null);
++    debugDefaultTargetPlatformOverride = null;
++  });
++
++  test(
++    'uses the exact Android capability channel and snapshot method',
++    () async {
++      MethodCall? receivedCall;
++      messenger.setMockMethodCallHandler(_channel, (call) async {
++        receivedCall = call;
++        return _validSnapshot();
++      });
++
++      await const MethodChannelDeviceCapabilityProbe().snapshot();
++
++      expect(receivedCall, isNotNull);
++      expect(receivedCall!.method, 'snapshot');
++      expect(receivedCall!.arguments, isNull);
++    },
++  );
++
++  test(
++    'parses a complete typed platform map without inventing signals',
++    () async {
++      messenger.setMockMethodCallHandler(
++        _channel,
++        (_) async => _validSnapshot(
++          availableMemoryMb: null,
++          freeStorageBytes: null,
++          lowMemory: null,
++          batterySaverEnabled: null,
++          gpuApiCandidate: null,
++        ),
++      );
++
++      final snapshot = await const MethodChannelDeviceCapabilityProbe()
++          .snapshot();
++
++      expect(snapshot.sdkInt, 35);
++      expect(snapshot.primaryAbi, 'arm64-v8a');
++      expect(snapshot.memoryClassMb, 512);
++      expect(snapshot.availableMemoryMb, isNull);
++      expect(snapshot.freeStorageBytes, isNull);
++      expect(snapshot.lowMemory, isNull);
++      expect(snapshot.batterySaverEnabled, isNull);
++      expect(snapshot.thermalState, DeviceThermalState.fair);
++      expect(snapshot.gpuApiCandidate, isNull);
++      expect(snapshot.hasRequiredPolicyEvidence, isFalse);
++    },
++  );
++
++  test(
++    'rejects malformed and missing snapshot fields with a stable code',
++    () async {
++      for (final payload in <Object?>[
++        <String, Object?>{..._validSnapshot()}..remove('primaryAbi'),
++        <String, Object?>{..._validSnapshot(), 'memoryClassMb': '512'},
++        <String, Object?>{..._validSnapshot(), 'thermalState': 'hot'},
++        <String, Object?>{..._validSnapshot(), 'unexpected': true},
++      ]) {
++        messenger.setMockMethodCallHandler(_channel, (_) async => payload);
++
++        await expectLater(
++          const MethodChannelDeviceCapabilityProbe().snapshot(),
++          throwsA(
++            isA<DeviceCapabilityUnavailable>().having(
++              (error) => error.code,
++              'code',
++              'malformed-snapshot',
++            ),
++          ),
++        );
++      }
++    },
++  );
++
++  test(
++    'maps a native PlatformException without exposing its details',
++    () async {
++      const sentinel = 'NATIVE-CAPABILITY-SECRET-7c9f3a';
++      messenger.setMockMethodCallHandler(
++        _channel,
++        (_) async => throw PlatformException(
++          code: 'capability-unavailable',
++          message: sentinel,
++          details: <String, Object?>{'secret': sentinel},
++        ),
++      );
++
++      Object? captured;
++      try {
++        await const MethodChannelDeviceCapabilityProbe().snapshot();
++      } catch (error) {
++        captured = error;
++      }
++
++      expect(captured, isA<DeviceCapabilityUnavailable>());
++      expect(
++        (captured! as DeviceCapabilityUnavailable).code,
++        'channel-unavailable',
++      );
++      expect(captured.toString(), isNot(contains(sentinel)));
++      expect(
++        captured.toString(),
++        'DeviceCapabilityUnavailable(channel-unavailable)',
++      );
++    },
++  );
++
++  test('maps a missing plugin to channel-unavailable', () async {
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'channel-unavailable',
++        ),
++      ),
++    );
++  });
++
++  test('rejects a valid pre-Android-10 snapshot', () async {
++    messenger.setMockMethodCallHandler(
++      _channel,
++      (_) async => _validSnapshot(sdkInt: 28),
++    );
++
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'android-version-unsupported',
++        ),
++      ),
++    );
++  });
++
++  test('rejects non-Android platforms before invoking the channel', () async {
++    var invoked = false;
++    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
++    messenger.setMockMethodCallHandler(_channel, (_) async {
++      invoked = true;
++      return _validSnapshot();
++    });
++
++    await expectLater(
++      const MethodChannelDeviceCapabilityProbe().snapshot(),
++      throwsA(
++        isA<DeviceCapabilityUnavailable>().having(
++          (error) => error.code,
++          'code',
++          'unsupported-platform',
++        ),
++      ),
++    );
++    expect(invoked, isFalse);
++  });
++}
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index 18c98e3..4a53910 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -1,14 +1,16 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:vocab_learning_app/config/app_config.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/device/device_capability_models.dart';
++import 'package:vocab_learning_app/device/device_capability_probe.dart';
+ import 'package:vocab_learning_app/progress/progress_remote_writer.dart';
+ import 'package:vocab_learning_app/progress/progress_repository.dart';
+ import 'package:vocab_learning_app/progress/purchase_remote_writer.dart';
+ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _StubGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+@@ -47,20 +49,45 @@ class _StubProgressRemoteWriter implements ProgressRemoteWriter {
+ class _StubPurchaseRemoteWriter implements PurchaseRemoteWriter {
+   @override
+   Future<PurchaseRemoteResult> purchaseItem(String productId) async {
+     return const PurchaseRemoteAccepted(
+       alreadyOwned: false,
+       remainingPoints: 0,
+     );
+   }
+ }
+ 
++class _StubDeviceCapabilityProbe implements DeviceCapabilityProbe {
++  _StubDeviceCapabilityProbe(this.result);
++
++  final Future<DeviceCapabilitySnapshot> Function() result;
++  int invocationCount = 0;
++
++  @override
++  Future<DeviceCapabilitySnapshot> snapshot() {
++    invocationCount++;
++    return result();
++  }
++}
++
++DeviceCapabilitySnapshot _validDeviceSnapshot() => DeviceCapabilitySnapshot(
++  sdkInt: 35,
++  primaryAbi: 'arm64-v8a',
++  memoryClassMb: 512,
++  availableMemoryMb: 3072,
++  freeStorageBytes: 4294967296,
++  lowMemory: false,
++  batterySaverEnabled: false,
++  thermalState: DeviceThermalState.nominal,
++  gpuApiCandidate: true,
++);
++
+ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   aiApiUrl: 'https://ai.example.com',
+   isDebug: false,
+ );
+ 
+ void main() {
+   TestWidgetsFlutterBinding.ensureInitialized();
+ 
+   setUp(() {
+@@ -172,20 +199,114 @@ void main() {
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(identical(dependencies.config, expectedConfig), isTrue);
+     });
+ 
++    test(
++      'retains one successful device capability snapshot as ready',
++      () async {
++        final expectedSnapshot = _validDeviceSnapshot();
++        final probe = _StubDeviceCapabilityProbe(() async => expectedSnapshot);
++        final bootstrap = AppBootstrap(
++          initializeFirebase: () async {},
++          loadConfig: _validConfig,
++          guestSessionService: _StubGuestSessionService(),
++          deviceCapabilityProbe: probe,
++        );
++
++        final dependencies = await bootstrap.initialize();
++
++        expect(probe.invocationCount, 1);
++        expect(
++          identical(dependencies.deviceCapabilitySnapshot, expectedSnapshot),
++          isTrue,
++        );
++        expect(
++          dependencies.runtimeStatus.deviceCompute,
++          RuntimeAvailability.ready,
++        );
++        expect(dependencies.runtimeStatus.isFullyReady, isTrue);
++      },
++    );
++
++    test(
++      'device capability unavailability does not block other startup paths',
++      () async {
++        final expectedRepository = _StubProgressRepository();
++        final probe = _StubDeviceCapabilityProbe(
++          () async =>
++              throw const DeviceCapabilityUnavailable('channel-unavailable'),
++        );
++        final bootstrap = AppBootstrap(
++          initializeFirebase: () async {},
++          loadConfig: _validConfig,
++          guestSessionService: _StubGuestSessionService(),
++          loadProgressRepository: () async => expectedRepository,
++          deviceCapabilityProbe: probe,
++        );
++
++        final dependencies = await bootstrap.initialize();
++
++        expect(probe.invocationCount, 1);
++        expect(dependencies.deviceCapabilitySnapshot, isNull);
++        expect(
++          dependencies.runtimeStatus.deviceCompute,
++          RuntimeAvailability.unavailable,
++        );
++        expect(dependencies.runtimeStatus.isFullyReady, isFalse);
++        expect(dependencies.runtimeStatus.isCoreLearningAvailable, isTrue);
++        expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
++        expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
++        expect(
++          identical(dependencies.progressRepository, expectedRepository),
++          isTrue,
++        );
++        expect(dependencies.config, isNotNull);
++      },
++    );
++
++    test('redacts unexpected device probe exception details', () async {
++      const sentinel = 'NATIVE-DEVICE-PROBE-SECRET-7c9f3a';
++      final probe = _StubDeviceCapabilityProbe(
++        () async => throw StateError(sentinel),
++      );
++      final bootstrap = AppBootstrap(
++        initializeFirebase: () async {},
++        loadConfig: _validConfig,
++        guestSessionService: _StubGuestSessionService(),
++        deviceCapabilityProbe: probe,
++      );
++
++      final dependencies = await bootstrap.initialize();
++      final rendered = <String>[
++        dependencies.toString(),
++        dependencies.runtimeStatus.toString(),
++        dependencies.runtimeStatus.deviceCompute.name,
++        '${dependencies.deviceCapabilitySnapshot}',
++      ];
++
++      expect(probe.invocationCount, 1);
++      expect(dependencies.deviceCapabilitySnapshot, isNull);
++      expect(
++        dependencies.runtimeStatus.deviceCompute,
++        RuntimeAvailability.unavailable,
++      );
++      for (final value in rendered) {
++        expect(value, isNot(contains(sentinel)));
++      }
++    });
++
+     test('records Firebase failure and still returns', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+diff --git a/test/runtime/app_runtime_status_test.dart b/test/runtime/app_runtime_status_test.dart
+index 18697fb..e777057 100644
+--- a/test/runtime/app_runtime_status_test.dart
++++ b/test/runtime/app_runtime_status_test.dart
+@@ -1,19 +1,31 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ 
+ void main() {
+   test('fully ready requires Firebase and configured cloud enhancements', () {
+     const ready = AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
++      deviceCompute: RuntimeAvailability.ready,
+     );
+     const offlineCapable = AppRuntimeStatus(
+       firebase: RuntimeAvailability.unavailable,
+       backends: RuntimeAvailability.unavailable,
+     );
+ 
+     expect(ready.isFullyReady, isTrue);
+     expect(offlineCapable.isFullyReady, isFalse);
+     expect(offlineCapable.isCoreLearningAvailable, isTrue);
+   });
++
++  test('device compute unavailability prevents aggregate full readiness', () {
++    const status = AppRuntimeStatus(
++      firebase: RuntimeAvailability.ready,
++      backends: RuntimeAvailability.ready,
++      deviceCompute: RuntimeAvailability.unavailable,
++    );
++
++    expect(status.isFullyReady, isFalse);
++    expect(status.isCoreLearningAvailable, isTrue);
++  });
+ }
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index e6014d7..4942b8f 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -64,38 +64,48 @@ final class _FakeAccountGateway implements AccountGateway {
+   @override
+   Future<String> verifyPasswordResetCode(String code) =>
+       throw UnimplementedError();
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+ 
+ AppDependencies _dependencies({
+   RuntimeAvailability firebase = RuntimeAvailability.ready,
+   RuntimeAvailability backends = RuntimeAvailability.ready,
++  RuntimeAvailability deviceCompute = RuntimeAvailability.ready,
+ }) {
+   return AppDependencies(
+-    runtimeStatus: AppRuntimeStatus(firebase: firebase, backends: backends),
++    runtimeStatus: AppRuntimeStatus(
++      firebase: firebase,
++      backends: backends,
++      deviceCompute: deviceCompute,
++    ),
+     config: null,
+     accountGateway: _FakeAccountGateway(),
+     guestSessionService: _FakeGuestSessionService(),
+     guestUpgradeHandoff: noOpGuestUpgradeHandoff,
+   );
+ }
+ 
+ Future<void> _pumpHome(
+   WidgetTester tester, {
+   RuntimeAvailability firebase = RuntimeAvailability.ready,
+   RuntimeAvailability backends = RuntimeAvailability.ready,
++  RuntimeAvailability deviceCompute = RuntimeAvailability.ready,
+ }) async {
+   await tester.pumpWidget(
+     MyApp(
+-      dependencies: _dependencies(firebase: firebase, backends: backends),
++      dependencies: _dependencies(
++        firebase: firebase,
++        backends: backends,
++        deviceCompute: deviceCompute,
++      ),
+     ),
+   );
+   await tester.pump();
+   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+   navigator.pushReplacementNamed('/home');
+   await tester.pump();
+   await tester.pump(const Duration(milliseconds: 350));
+ }
+ 
+ Future<void> _openDrawer(WidgetTester tester) async {
+@@ -188,20 +198,35 @@ void main() {
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+     expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
+     expect(status.data, contains('การซิงค์บัญชี'));
+     expect(status.data, contains('AI/เสียงออนไลน์'));
+     expect(status.data, isNot(contains('Supabase')));
+   });
+ 
++  testWidgets(
++    'drawer names on-device compute when only device compute is unavailable',
++    (tester) async {
++      await _pumpHome(tester, deviceCompute: RuntimeAvailability.unavailable);
++      await _openDrawer(tester);
++
++      final status = tester.widget<Text>(
++        find.byKey(const ValueKey<String>('runtime-status-summary')),
++      );
++      expect(status.data, contains('On-device compute'));
++      expect(status.data, isNot(contains('ระบบพร้อมใช้งาน')));
++      expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
++    },
++  );
++
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(CategoriesPage), findsOneWidget);
+   });
+diff --git a/tool/cli/tests/android-device-capability-contract.tests.ps1 b/tool/cli/tests/android-device-capability-contract.tests.ps1
+new file mode 100644
+index 0000000..c0b35b6
+--- /dev/null
++++ b/tool/cli/tests/android-device-capability-contract.tests.ps1
+@@ -0,0 +1,209 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
++$gradlePath = Join-Path $repositoryRoot 'android\app\build.gradle.kts'
++$dartPath = Join-Path $repositoryRoot 'lib\device\device_capability_probe.dart'
++$activityPath = Join-Path $repositoryRoot 'android\app\src\main\kotlin\com\lexiquest\app\MainActivity.kt'
++$pluginPath = Join-Path $repositoryRoot 'android\app\src\main\kotlin\com\lexiquest\app\DeviceCapabilityPlugin.kt'
++
++function Read-Source {
++    param([string]$Path)
++    if (Test-Path -LiteralPath $Path -PathType Leaf) {
++        return [System.IO.File]::ReadAllText($Path)
++    }
++    return ''
++}
++
++function Get-DartSnapshotKeys {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Source
++    )
++
++    $setMatch = [regex]::Match(
++        $Source,
++        '(?ms)static\s+const\s+Set<String>\s+_snapshotKeys\s*=\s*<String>\s*\{(?<body>.*?)^\s*\};\r?$'
++    )
++    if (-not $setMatch.Success) {
++        return @()
++    }
++    return @(
++        [regex]::Matches(
++            $setMatch.Groups['body'].Value,
++            "'(?<key>[A-Za-z][A-Za-z0-9]*)'\s*,"
++        ) |
++            ForEach-Object { $_.Groups['key'].Value }
++    )
++}
++
++function Get-KotlinResultMapKeys {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string]$Source
++    )
++
++    $mapMatch = [regex]::Match(
++        $Source,
++        '(?ms)return\s+mapOf<String,\s*Any\?>\s*\((?<body>.*?)^ {8}\)\r?$',
++        [System.Text.RegularExpressions.RegexOptions]::CultureInvariant
++    )
++    if (-not $mapMatch.Success) {
++        return @()
++    }
++    return @(
++        [regex]::Matches(
++            $mapMatch.Groups['body'].Value,
++            '"(?<key>[A-Za-z][A-Za-z0-9]*)"\s+to\s+'
++        ) |
++            ForEach-Object { $_.Groups['key'].Value }
++    )
++}
++
++function Test-SnapshotKeyParity {
++    param(
++        [Parameter(Mandatory = $true)]
++        [string[]]$DartKeys,
++        [Parameter(Mandatory = $true)]
++        [string[]]$KotlinKeys
++    )
++
++    if ($DartKeys.Count -eq 0 -or
++        $DartKeys.Count -ne @($DartKeys | Sort-Object -Unique).Count -or
++        $KotlinKeys.Count -ne @($KotlinKeys | Sort-Object -Unique).Count -or
++        $DartKeys.Count -ne $KotlinKeys.Count) {
++        return $false
++    }
++    return @(
++        Compare-Object $DartKeys $KotlinKeys -CaseSensitive
++    ).Count -eq 0
++}
++
++$gradle = Read-Source $gradlePath
++$dart = Read-Source $dartPath
++$activity = Read-Source $activityPath
++$plugin = Read-Source $pluginPath
++
++$channelName = 'com.lexiquest.app/device_capabilities'
++$methodName = 'snapshot'
++$dartSnapshotKeys = @(Get-DartSnapshotKeys -Source $dart)
++$pluginMapKeys = @(Get-KotlinResultMapKeys -Source $plugin)
++
++$dartParserDefined =
++    $null -ne (Get-Command Get-DartSnapshotKeys -ErrorAction SilentlyContinue)
++$parityFunctionDefined =
++    $null -ne (Get-Command Test-SnapshotKeyParity -ErrorAction SilentlyContinue)
++$mismatchFixtureRejected = $false
++if ($dartParserDefined -and $parityFunctionDefined) {
++    $mismatchDart = @'
++static const Set<String> _snapshotKeys = <String>{
++  'alpha',
++  'beta',
++};
++'@
++$mismatchKotlin = @'
++return mapOf<String, Any?>(
++    "alpha" to 1,
++    "gamma" to 2,
++        )
++'@
++    $mismatchDartKeys = @(Get-DartSnapshotKeys -Source $mismatchDart)
++    $mismatchKotlinKeys = @(Get-KotlinResultMapKeys -Source $mismatchKotlin)
++    $mismatchFixtureRejected =
++        $mismatchDartKeys.Count -eq 2 -and
++        $mismatchKotlinKeys.Count -eq 2 -and
++        -not (
++        Test-SnapshotKeyParity `
++            -DartKeys $mismatchDartKeys `
++            -KotlinKeys $mismatchKotlinKeys
++        )
++}
++
++$checks = [ordered]@{
++    'Contract derives its schema authority from Dart source' =
++        $dartParserDefined
++    'Contract self-test rejects a Dart and Kotlin key mismatch' =
++        $mismatchFixtureRejected
++    'Android minimum SDK is explicitly API 29' =
++        $gradle -match '(?m)^\s*minSdk\s*=\s*29\s*$'
++    'Dart declares the exact capability channel' =
++        ([regex]::Matches($dart, [regex]::Escape("'$channelName'"))).Count -eq 1
++    'Kotlin declares the exact capability channel' =
++        ([regex]::Matches($plugin, [regex]::Escape("""$channelName"""))).Count -eq 1
++    'Dart invokes only the exact snapshot method' =
++        $dart -match "_snapshotMethod\s*=\s*'$methodName'"
++    'Kotlin handles only the exact snapshot method' =
++        $plugin -match "METHOD_SNAPSHOT\s*=\s*""$methodName"""
++    'MainActivity overrides configureFlutterEngine' =
++        $activity -match 'override\s+fun\s+configureFlutterEngine\s*\(\s*flutterEngine:\s*FlutterEngine\s*\)'
++    'MainActivity calls the superclass engine configuration' =
++        ([regex]::Matches(
++            $activity,
++            'super\.configureFlutterEngine\s*\(\s*flutterEngine\s*\)'
++        )).Count -eq 1
++    'MainActivity registers exactly one capability plugin' =
++        ([regex]::Matches(
++            $activity,
++            'flutterEngine\.plugins\.add\s*\(\s*DeviceCapabilityPlugin\s*\(\s*\)\s*\)'
++        )).Count -eq 1
++    'Plugin reads ActivityManager MemoryInfo' =
++        $plugin -match 'ActivityManager\.MemoryInfo\s*\('
++    'Plugin fails redacted when ActivityManager is unavailable' =
++        $plugin -match '(?ms)as\?\s*ActivityManager\s*\r?\n\s*\?:\s*throw\s+DeviceCapabilityUnavailableException\s*\(' -and
++        $plugin -notmatch 'activityManager\?\.memoryClass\s*\?:\s*0'
++    'Plugin reports native failures with only a stable error code' =
++        $plugin -match 'result\.error\s*\(\s*"capability-unavailable"\s*,\s*null\s*,\s*null\s*\)'
++    'Plugin reads available memory and converts it to whole MiB' =
++        $plugin -match '"availableMemoryMb"\s+to\s+memoryInfo\.availMem\.let\(::bytesToWholeMiB\)' -and
++        $plugin -match 'bytesToWholeMiB\s*\(\s*bytes:\s*Long\s*\):\s*Long\s*=\s*bytes\s*/\s*BYTES_PER_MIB' -and
++        $plugin -match 'BYTES_PER_MIB\s*=\s*1024L\s*\*\s*1024L'
++    'Plugin retains free storage in bytes' =
++        $plugin -match '"freeStorageBytes"\s+to\s+StatFs\s*\(\s*context\.filesDir\.absolutePath\s*\)\.availableBytes' -and
++        $plugin -notmatch '"freeStorageBytes"\s+to[^\r\n]*bytesToWholeMiB'
++    'Plugin reads power-save mode' =
++        $plugin -match '\.isPowerSaveMode\b'
++    'Plugin reads current thermal status' =
++        $plugin -match '\.currentThermalStatus\b'
++    'Plugin reads supported ABI data' =
++        $plugin -match 'Build\.SUPPORTED_ABIS\b'
++    'Plugin reads device configuration GPU API data' =
++        $plugin -match '\.deviceConfigurationInfo\b' -and
++        $plugin -match '\.reqGlEsVersion\b'
++    'Plugin maps every thermal constant to the exact stable name' =
++        $plugin -match 'THERMAL_STATUS_NONE\s*->\s*"nominal"' -and
++        $plugin -match '(?ms)THERMAL_STATUS_LIGHT\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_MODERATE\s*,?\s*\r?\n\s*->\s*"fair"' -and
++        $plugin -match 'THERMAL_STATUS_SEVERE\s*->\s*"serious"' -and
++        $plugin -match '(?ms)THERMAL_STATUS_CRITICAL\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_EMERGENCY\s*,\s*\r?\n\s*PowerManager\.THERMAL_STATUS_SHUTDOWN\s*,?\s*\r?\n\s*->\s*"critical"' -and
++        $plugin -match 'else\s*->\s*"unknown"'
++    'Plugin returns exactly the Dart snapshot keys' =
++        (Test-SnapshotKeyParity `
++            -DartKeys $dartSnapshotKeys `
++            -KotlinKeys $pluginMapKeys)
++    'Plugin does not read device model or manufacturer' =
++        $plugin -notmatch 'Build\.(?:MODEL|MANUFACTURER)\b'
++    'Plugin does not read Android ID or serial identifiers' =
++        $plugin -notmatch '(?:Settings\.Secure\.ANDROID_ID|Build\.(?:SERIAL|getSerial)\b)'
++    'Plugin contains no logging call' =
++        $plugin -notmatch '(?m)\b(?:Log\.[vdiewtf]|println|printStackTrace)\s*\('
++    'Plugin contains no network API' =
++        $plugin -notmatch '\b(?:HttpURLConnection|URLConnection|OkHttpClient|Socket|URL)\b'
++}
++
++$failed = @($checks.GetEnumerator() | Where-Object { -not $_.Value })
++foreach ($check in $checks.GetEnumerator()) {
++    $state = if ($check.Value) { 'PASS' } else { 'FAIL' }
++    Write-Host "$state - $($check.Key)"
++}
++Write-Host (
++    'Android device capability contract: {0} passed, {1} failed' -f
++    ($checks.Count - $failed.Count),
++    $failed.Count
++)
++if ($failed.Count -gt 0) {
++    exit 1
++}
++Write-Host 'PASS'
++exit 0

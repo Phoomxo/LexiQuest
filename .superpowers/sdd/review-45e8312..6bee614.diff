@@ -1,0 +1,636 @@
+# Review package: 45e8312..6bee614
+
+## Commits
+6bee614 docs: freeze the prototype feature contract
+
+## Files changed
+ README.md                                          |   4 +
+ docs/prototype/feature-inventory.md                | 121 +++++++
+ tool/cli/prototype-production-paths.allowlist.json | 107 +++++++
+ .../cli/tests/prototype-production-paths.tests.ps1 | 348 +++++++++++++++++++++
+ 4 files changed, 580 insertions(+)
+
+## Diff
+diff --git a/README.md b/README.md
+index ca3c423..ff14c7d 100644
+--- a/README.md
++++ b/README.md
+@@ -5,20 +5,24 @@ An AI-enhanced gamified vocabulary learning application built with Flutter, Fire
+ ## Overview
+ 
+ LexiQuest combines gamified vocabulary learning (quizzes, word scrambles, category management) with research-grade voice synthesis. It implements a **Hybrid Voice Pipeline** that routes speech requests between an authenticated cloud OmniVoice WAV API and native device TTS, backing practice modes and research evaluation.
+ 
+ ## Current prototype direction
+ 
+ Active implementation follows the
+ [Real Local-First Prototype design](docs/superpowers/specs/2026-07-30-real-local-first-prototype-design.md)
+ and its
+ [master plan](docs/superpowers/plans/2026-07-30-real-local-first-prototype-master-plan.md).
++The active
++[prototype feature inventory](docs/prototype/feature-inventory.md)
++records the truthful readiness, unavailable behavior, and known debt for every
++current entry point.
+ Older experimental plans are available from Git history rather than the active
+ documentation tree.
+ 
+ ## Tech Stack & Architecture
+ 
+ - **Frontend**: Flutter 3.44.7 / Dart 3.12.2 (Android API 36 / JVM 17)
+ - **Voice Pipeline**: `HybridVoiceService`, bounded in-memory LRU audio cache (`MemoryVoiceAudioCache`), native TTS fallback (`NativeTtsProvider`), and WAV audio player (`PluginVoiceAudioPlayer`).
+ - **Telemetry & Privacy**: `FirestoreVoiceTelemetrySink` recording privacy-by-construction metrics (`schemaVersion: voice_telemetry_v1`).
+ - **Backend API**: Python 3.11 FastAPI service (`backend/voice_api`) serving OmniVoice 0.2.1 24 kHz WAV synthesis with Firebase ID token authentication.
+ 
+diff --git a/docs/prototype/feature-inventory.md b/docs/prototype/feature-inventory.md
+new file mode 100644
+index 0000000..31bbf54
+--- /dev/null
++++ b/docs/prototype/feature-inventory.md
+@@ -0,0 +1,121 @@
++# Prototype feature inventory
++
++This is the active, source-backed contract for the Real Local-First Prototype
++at the Phase 0 baseline. A visible label or a constructed screen is evidence of
++reachability only; it is not evidence that the feature works on a device.
++
++Readiness is recorded at the start of **Known blocker**:
++
++- **ready**: the bounded source review found a truthful local behavior and no
++  known production-path debt for the stated scope;
++- **degraded**: a real behavior exists, but persistence, connectivity,
++  integration, or device evidence is incomplete;
++- **blocked**: the current behavior can fabricate a result/history or cannot
++  meet the approved prototype contract;
++- **not exposed**: production code exists but no current menu/route reaches it,
++  or a closed policy deliberately hides it.
++
++The inventory covers 63 entry points: 8 typed account routes, 5 primary
++destinations, 3 drawer entries, 20 learning/practice entries, 9 settings and
++account actions, 4 category-management entries, 8 nested practice entries, and
++6 hidden legacy/research/device entries. It names all 43 production screen
++files reachable from the current route/menu surfaces, including policy-gated
++surfaces.
++
++Curated vocabulary, questions, sentences, stories, equipment, and export
++examples are **product content**, not user history. They may remain as labelled
++starter/demo packs. Default scores, past attempts, weakness records, speech
++measurements, or achievements that appear to describe the current user are
++different: they require real records or an explicit unavailable/empty state.
++Quiz option shuffling, secure ID entropy, statistical `sample` terminology,
++and test-injected fake providers are not production debt.
++
++Navigation terminology:
++
++- **Typed route** means an `AppRoute` path resolved by `AppRouter`.
++- **Direct route** means a screen constructs `MaterialPageRoute` itself.
++- **Indexed destination** means the main `IndexedStack`; it is not a typed
++  route even though `/home` reaches the containing shell.
++
++Feature ID | Visible entry | Screen/route | Current data/device/provider | Offline behavior | Permission/configuration | Truthful unavailable state | Known blocker | Target phase | Evidence
++--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
++account.session-gate | App launch gate | Typed route `/` | Injected account gateway, guest session, and profile provisioner | Guest handoff can continue locally; registered session checks depend on Firebase | Firebase configuration for registered accounts | Account errors are mapped; guest path remains available | degraded — remote session/device lifecycle still needs integrated proof | 1 | `lib/navigation/app_route.dart`; `lib/navigation/app_router.dart`; `lib/screens/session_gate_screen.dart`
++account.login | Sign in | Typed route `/login` | Injected Firebase-backed account gateway | Remote sign-in is unavailable offline | Firebase Auth | Mapped account failure; no claim of offline sign-in | degraded — online identity boundary | 1 | `lib/navigation/app_route.dart`; `lib/navigation/app_router.dart`; `lib/screens/login_screen.dart`
++account.register | Create account | Typed route `/register` | Injected account gateway, provisioning, and guest-upgrade handoff | Registration is unavailable offline; guest data remains local | Firebase Auth and profile provisioning | Mapped account failure | degraded — remote registration and migration require integration evidence | 1 | `lib/navigation/app_router.dart`; `lib/screens/register_screen.dart`
++account.verify-email | Enter/apply verification code | Typed route `/verify-email` | `OTPScreen` or router-owned verification action through account gateway | Verification is unavailable offline | Firebase email action configuration and valid code | Error state is shown; no successful verification is fabricated | degraded — external email/App Link owner gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/otp_screen.dart`
++account.forgot-password | Forgot password | Typed route `/forgot-password` | Injected account gateway | Request is unavailable offline | Firebase Auth email action configuration | Mapped failure | degraded — external email delivery gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/forgot_password_screen.dart`
++account.reset-password | Reset-password link | Typed route `/reset-password` | Injected account gateway plus reset code | Reset is unavailable offline | Valid Firebase action code/App Link | Invalid or failed code is reported | degraded — external App Link gate | 10 | `lib/navigation/app_router.dart`; `lib/screens/reset_password_screen.dart`
++account.home | Auth/guest completion | Typed route `/home` | Constructs the main navigation shell | Shell is available offline | No additional permission | Runtime summary reports unavailable online systems | degraded — child features have independent debt | 7 | `lib/navigation/app_router.dart`; `lib/screens/main_navigation_screen.dart`
++account.change-password | Change password | Typed route `/change-password` | Injected account gateway | Change is unavailable offline | Registered account and Firebase Auth | Mapped failure | degraded — remote account operation | 1 | `lib/navigation/app_router.dart`; `lib/screens/change_password_screen.dart`
++learn.mode-picker | Bottom destination: Learn | Indexed destination | Mode list plus direct Firestore access for two quiz entries | Curated modes render; Firestore quiz entries do not have a local repository boundary | Firebase for default/category quiz | Empty collections show a message; Firebase failures are not consistently surfaced | degraded — direct screen Firebase access | 2 | `lib/screens/main_navigation_screen.dart`; `lib/screens/choose_mode_screen.dart`
++progress.mastery-dashboard | Bottom destination: Statistics | Indexed destination | Constructor defaults display four scores and a streak | Values render offline | None | No unavailable/empty state distinguishes absent history | blocked — fabricated user progress defaults | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/mastery_dashboard_screen.dart`
++progress.weakness-clinic | Bottom destination: Weakness | Indexed destination | Default `SrsItem` records dated at runtime | Fabricated deck renders offline | None | No empty-history state on the primary entry | blocked — fabricated user weakness history | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/weakness_clinic_screen.dart`
++progress.achievements | Bottom destination: Achievements | Indexed destination | Empty injected badge list; remote economy closed by default | Truthful empty state works offline | Remote economy policy controls spendable UI | Explicitly says no achievements verified from practice data | degraded — no persisted achievement projection yet | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/achievements_screen.dart`
++account.profile-settings | Bottom destination: Profile | Indexed destination | Account gateway and runtime dependency scope | Account actions degrade offline; shell remains visible | Firebase for registered-account actions | Account errors are mapped | degraded — profile projection is not populated here | 1 | `lib/screens/main_navigation_screen.dart`; `lib/screens/profile_settings_screen.dart`
++library.categories | Drawer: Category library | Direct route | Screen directly uses Firestore, Firebase Auth, and preferences | No canonical local category repository | Firebase Auth/Firestore | Stream/error behavior is provider-dependent | degraded — direct screen Firebase access | 2 | `lib/screens/main_navigation_screen.dart`; `lib/screens/categories_page.dart`
++economy.shop | Drawer: Shop, policy-gated | Direct route when policy is enabled | Placeholder screen only | Hidden under the default closed policy | Trusted economy policy cannot be enabled by public configuration | Default behavior is absence from the drawer | not exposed — placeholder transaction feature | 5 | `lib/screens/main_navigation_screen.dart`; `lib/screens/shop_page.dart`
++settings.legacy | Drawer: Legacy settings | Direct route | Injected account gateway plus local reset and direct child routes | Screen renders offline; remote actions degrade | Remote economy policy gates wallpaper | Individual actions expose their own state | degraded — mixed legacy boundaries | 7 | `lib/screens/main_navigation_screen.dart`; `lib/screens/setting_screen.dart`
++content.cefr-library | CEFR vocabulary A1–C2 | Direct route | CEFR service/content pack, then SRS screen | Curated content may render; provider refresh is not proven offline | No screen-level device permission | Empty content should remain empty rather than user-derived | degraded — service persistence/connectivity not integrated | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_selection_screen.dart`
++learn.mastery-link | Mastery dashboard mode button | Direct route | Same constructor defaults as primary Statistics destination | Fabricated values render offline | None | No unavailable/empty state | blocked — duplicate entry to fabricated user progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/mastery_dashboard_screen.dart`
++assessment.cefr-diagnostic | CEFR diagnostic test | Direct route | Curated questions and in-memory answers | Works for the current session offline | None | A real local result is shown only from current answers | ready — curated assessment, not user history | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_diagnostic_test_screen.dart`
++practice.dictation | Dictation quiz | Direct route | Curated target word and injected/factory voice provider | Native TTS fallback is intended; device proof pending | Audio output availability | Voice failure must remain unavailable/silent, not generate a score | degraded — device voice evidence pending | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/dictation_quiz_screen.dart`
++practice.shadowing | Shadowing challenge | Direct route | Voice provider plus generated waveform and fixed pitch arrays | UI runs offline without captured audio | Microphone is implied but no real capture adapter supplies measurements | No truthful unavailable state for absent capture | blocked — random/fixed fabricated speech measurements | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/shadowing_challenge_screen.dart`
++practice.sentence-scramble | Sentence scramble | Direct route | Curated sentence passed by the mode picker | Session works offline | None | No remote dependency | ready — curated exercise content | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/sentence_scramble_screen.dart`
++practice.srs | SRS flashcards | Direct route | Curated starter word list passed by the mode picker | Session works offline; durability is not established by this entry | None | Empty input can be represented without invented history | degraded — starter pack is not persisted learner state | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.audio-playlist | Vocabulary audio playlist | Direct route | Curated starter list plus voice provider | Native TTS fallback intended; playlist state is in memory | Audio output availability | Voice failure must not claim playback | degraded — device playback evidence pending | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/smart_audio_playlist_screen.dart`
++reading.cefr-article | CEFR article reader | Direct route | Curated article title/content/level | Curated article renders offline | Optional voice capability | Voice enrichment may be unavailable while text remains readable | ready — clearly curated product content | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/cefr_article_reader_screen.dart`
++game.boss-battle | Daily boss battle | Direct route | Curated words and current-session gameplay | Current session works offline | None | No historical result should be inferred | degraded — not connected to canonical progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/boss_battle_screen.dart`
++practice.ghost-shadow-duel | Ghost shadow duel | Direct route | Hard-coded prior snapshot, accuracy, latency, and weak words | Fabricated opponent renders offline | None | No empty-history state | blocked — fabricated user history | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/ghost_shadow_duel_screen.dart`
++reading.storybook | Interactive storybook | Direct route | Curated bilingual story service plus voice provider | Curated story can render offline | Audio output availability | Voice can be unavailable without changing story text | ready — curated story, not user history | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/interactive_storybook_screen.dart`
++library.wordbook-import | Import wordbook | Direct route | User-pasted CSV/JSON parsed in memory | Parsing and preview work offline | Clipboard/paste only; no file picker | Parse errors are shown | degraded — import is not committed to canonical storage | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/wordbook_import_screen.dart`
++research.export-center | Anki and PDF export | Direct route | Curated sample cards produce text previews; clipboard copy | Preview works offline | Clipboard only; no file/share permission path | No claim that current-user records were exported | degraded — curated sample, not real persisted records or files | 6 | `lib/screens/choose_mode_screen.dart`; `lib/screens/export_center_screen.dart`
++practice.phonetic-explorer | Phonetic explorer | Direct route | Curated IPA/collocation content plus voice provider | Text content works offline | Audio output availability | Voice can be unavailable while IPA remains visible | ready — curated reference content | 3 | `lib/screens/choose_mode_screen.dart`; `lib/screens/phonetic_explorer_screen.dart`
++economy.avatar-gear | Avatar gear | Direct route | Curated equipment list; screen starts with local in-memory equipment | UI works offline for the session | None under closed economy | No purchase claim; ownership is not durable | degraded — equipment state is not persisted/authoritative | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/avatar_equipment_screen.dart`
++learn.ai-tutor | AI roleplay tutor | Direct route | Content provider and voice provider, but fake microphone input and canned fallback remain | Canned responses make offline behavior look live | Gemini BYOK and microphone capability are not wired here | Required behavior is explicit unavailable, not canned success | blocked — simulated device result and canned AI response | 4 | `lib/screens/choose_mode_screen.dart`; `lib/screens/ai_tutor_screen.dart`
++game.world-map | World map campaign | Direct route | Curated static map/progression presentation | Map renders offline | None | No remote progress should be inferred | degraded — not connected to canonical progress | 5 | `lib/screens/choose_mode_screen.dart`; `lib/screens/learning_world_map_screen.dart`
++practice.quiz | Start with app vocabulary | Direct route | Mode picker and quiz screen directly read Firebase; quiz options legitimately shuffle | No guaranteed local vocabulary source | Firebase Auth/Firestore | Empty collection message exists; provider failure path is incomplete | degraded — direct screen Firebase access | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/quiz_screen.dart`
++library.category-quiz | Start with user category | Direct route | Category selector and quiz directly use Firebase; selected words legitimately shuffle | No canonical local category/vocabulary source | Firebase Auth/Firestore | Empty category message exists; provider failure path is incomplete | degraded — direct screen Firebase access | 2 | `lib/screens/choose_mode_screen.dart`; `lib/screens/select_category_for_quiz.dart`
++account.guest-upgrade | Profile: create backup account | Typed route `/register` | Guest upgrade handoff through injected dependencies | Registration unavailable offline; local guest ownership should remain | Firebase Auth | Mapped account failure | degraded — migration completion is Phase 1 work | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/register_screen.dart`
++account.change-password-entry | Profile: change password | Typed route `/change-password` | Injected account gateway | Unavailable offline | Registered Firebase account | Mapped account failure | degraded — remote operation | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/change_password_screen.dart`
++account.logout-profile | Profile: sign out | Typed reset to `/` | Injected account gateway | Remote sign-out may fail; current screen remains | Firebase Auth | Mapped failure | degraded — account operation requires provider | 1 | `lib/screens/profile_settings_screen.dart`; `lib/screens/session_gate_screen.dart`
++account.logout-legacy | Legacy settings: sign out | Typed reset to `/` | Injected account gateway | Remote sign-out may fail; current screen remains | Firebase Auth | Mapped failure | degraded — account operation requires provider | 1 | `lib/screens/setting_screen.dart`; `lib/screens/session_gate_screen.dart`
++economy.wallpaper | Legacy settings: wallpaper, policy-gated | Direct route | Screen directly uses Firebase Auth/Firestore | Hidden under the default closed economy policy | Trusted remote economy policy | Default behavior is absence of the action | not exposed — direct screen Firebase access and no trusted purchase path | 5 | `lib/screens/setting_screen.dart`; `lib/screens/select_wallpaper_screen.dart`
++economy.avatar-settings | Legacy settings: avatar gear | Direct route | Same curated, in-memory equipment screen | Works for current session offline | None under closed economy | No purchase claim | degraded — ownership is not persisted | 5 | `lib/screens/setting_screen.dart`; `lib/screens/avatar_equipment_screen.dart`
++progress.achievements-settings | Legacy settings: achievements | Direct route | Empty badge list by default | Truthful empty state works offline | Remote economy closed | Explicit no-verified-achievements state | degraded — no persisted projection | 5 | `lib/screens/setting_screen.dart`; `lib/screens/achievements_screen.dart`
++research.export-settings | Legacy settings: export | Direct route | Curated sample preview | Preview works offline | Clipboard only | Does not claim user data export | degraded — no canonical dataset/file sharing | 6 | `lib/screens/setting_screen.dart`; `lib/screens/export_center_screen.dart`
++local.reset | Legacy settings: reset local progress | In-screen action | `LocalUserProgressStore.clearAll()` | Executes locally | Destructive confirmation is not present | Success snackbar follows awaited clear | degraded — legacy store is not the full canonical database | 1 | `lib/screens/setting_screen.dart`
++library.category-list | Category card | Direct route | Firestore category/document stream | No canonical local repository | Firebase Auth/Firestore | Provider stream determines empty/error behavior | degraded — direct Firebase boundary | 2 | `lib/screens/categories_page.dart`; `lib/screens/vocab_list_screen.dart`
++library.vocab-list | Vocabulary list | Direct route from category | Service-backed Firestore vocabulary and UI speed dial | No guaranteed local repository | Firebase Auth/Firestore through services | Provider errors are not a complete local unavailable state | degraded — legacy remote data path | 2 | `lib/screens/vocab_list_screen.dart`
++library.add-word | Vocabulary list: add/edit word | Direct route | Screen directly uses HTTP plus Firestore-backed services | Manual entry can render; lookup/commit depends on network | Network and Firebase | Exceptions are shown, but raw screen networking bypasses runtime status | degraded — direct screen HTTP access | 2 | `lib/screens/vocab_list_screen.dart`; `lib/screens/add_vocab_screen.dart`
++library.add-many | Vocabulary list: add many | Direct route | Suggestion/category services | Network suggestions are provider-dependent | Network and Firebase through services | Errors must remain errors, not invented suggestions presented as user data | degraded — not connected to canonical local repository | 2 | `lib/screens/vocab_list_screen.dart`; `lib/screens/add_multiple_words_screen.dart`
++practice.quiz-score | Quiz completion | Direct route | Current-session score and persistence hooks | Current score exists offline; sync evidence is separate | None for local score | Score derives from current answers | degraded — projection/sync integration incomplete | 2 | `lib/screens/quiz_screen.dart`; `lib/screens/score_screen.dart`
++practice.speech-recognition | Correct quiz answer: speak word | Direct route | Screen directly instantiates `speech_to_text`; voice output uses provider | Device recognizer availability varies | Microphone permission and Android speech service | Unavailable recognizer only stops listening; user-facing state is incomplete | degraded — direct screen plugin access | 3 | `lib/screens/quiz_screen.dart`; `lib/screens/speak_to_text_screen.dart`
++practice.word-scramble | Successful speech: word scramble | Direct replacement route | Current quiz word; legitimate letter shuffling | Works offline | None | No remote dependency | ready — shuffle is game behavior | 2 | `lib/screens/speak_to_text_screen.dart`; `lib/screens/word_scramble_screen.dart`
++practice.fill-blanks | Word scramble completion: fill blanks | Direct route | Current word and in-memory answer | Works offline | None | No remote dependency | ready — current-session exercise | 2 | `lib/screens/word_scramble_screen.dart`; `lib/screens/fill_in_the_blanks_screen.dart`
++practice.cefr-srs-link | CEFR level: review cards | Direct route | Curated CEFR selection passed to SRS | Current session works offline when content exists | None | Empty content must remain empty | degraded — no persisted scheduling projection | 2 | `lib/screens/cefr_selection_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.weakness-srs-link | Weakness Clinic: practice now | Direct route | Fabricated weakness items converted to flashcards | Runs offline with fabricated source records | None | No empty-history state at source | blocked — inherits fabricated user history | 5 | `lib/screens/weakness_clinic_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++practice.import-srs-link | Imported preview: start learning | Direct route | User-pasted, parsed words | Works for current session offline | None | Parse failures are shown | degraded — imported set is not persisted | 2 | `lib/screens/wordbook_import_screen.dart`; `lib/screens/srs_flashcards_screen.dart`
++game.world-map-cefr-link | World node: open CEFR library | Direct route | Curated map links to CEFR selection | Works offline when curated content is available | None | No remote progress claim | degraded — map state is not canonical progress | 5 | `lib/screens/learning_world_map_screen.dart`; `lib/screens/cefr_selection_screen.dart`
++device.object-scanner | Object scanner code | No current route/menu | Built-in vocabulary simulation; ML service explicitly unavailable | Simulation runs offline but is not a scan | Camera/model permissions are not wired | UI labels simulation, but no real scanner entry exists | not exposed — simulated device result and placeholder ML feature | 3 | `lib/screens/object_scanner_screen.dart`; `lib/services/ml_image_labeling_service.dart`
++admin.main-vocabulary-seed | Add starter vocabulary utility | No current route/menu | Screen directly writes a curated pack to Firestore | Cannot seed offline | Firebase Auth/Firestore rules | No active UI state because it is unreachable | not exposed — direct screen Firebase access | 2 | `lib/screens/main_vocabulary.dart`
++research.thesis-chart | Thesis chart screen | No current route/menu | Caller-supplied pre/post scores and latency trend | Would render supplied data offline | None | No current entry or dataset builder | not exposed — orphaned research visualization | 6 | `lib/screens/thesis_chart_screen.dart`
++reading.associative-session | Associative reading session | No current route/menu | Injected reading coordinator/session records | Depends on caller-provided session | Voice/provider capability depends on injection | No current entry | not exposed — orphaned screen | 2 | `lib/screens/associative_reading_session_screen.dart`
++legacy.home | Legacy Home wrapper | No current typed route/menu | Directly constructs main navigation | Would work offline as a wrapper | None | No current entry | not exposed — `/home` uses `MainNavigationScreen` directly | 7 | `lib/screens/home.dart`
++legacy.result | Legacy result screen | No current route/menu | Caller-supplied score | Would render supplied current-session score offline | None | No current entry | not exposed — quiz uses `ScoreScreen` instead | 7 | `lib/screens/result_screen.dart`
++
++## Direct production boundaries
++
++Direct screen imports found by the bounded scan are:
++
++- Firebase: `categories_page.dart`, `choose_mode_screen.dart`,
++  `main_vocabulary.dart`, `quiz_screen.dart`,
++  `select_category_for_quiz.dart`, and `select_wallpaper_screen.dart`.
++- HTTP: `add_vocab_screen.dart`.
++- Device plugin: `speak_to_text_screen.dart`.
++- UI-only packages such as `fl_chart` and `flutter_speed_dial` are recorded as
++  presentation dependencies, not device/provider production debt.
++
++All current navigation outside the eight `AppRoute` values uses direct
++`MaterialPageRoute` construction. Completing the typed route registry and
++removing screen-owned provider/plugin boundaries remains Phase 7 work after
++feature interfaces stabilize.
+diff --git a/tool/cli/prototype-production-paths.allowlist.json b/tool/cli/prototype-production-paths.allowlist.json
+new file mode 100644
+index 0000000..9f3b8f2
+--- /dev/null
++++ b/tool/cli/prototype-production-paths.allowlist.json
+@@ -0,0 +1,107 @@
++{
++  "schemaVersion": 1,
++  "entries": [
++    {
++      "path": "lib/screens/ai_tutor_screen.dart",
++      "rule": "canned-ai-response",
++      "targetPhase": 4,
++      "featureId": "learn.ai-tutor"
++    },
++    {
++      "path": "lib/screens/ai_tutor_screen.dart",
++      "rule": "simulated-device-result",
++      "targetPhase": 3,
++      "featureId": "learn.ai-tutor"
++    },
++    {
++      "path": "lib/screens/object_scanner_screen.dart",
++      "rule": "simulated-device-result",
++      "targetPhase": 3,
++      "featureId": "device.object-scanner"
++    },
++    {
++      "path": "lib/services/ml_image_labeling_service.dart",
++      "rule": "placeholder-transaction-feature",
++      "targetPhase": 3,
++      "featureId": "device.object-scanner"
++    },
++    {
++      "path": "lib/screens/shadowing_challenge_screen.dart",
++      "rule": "random-fabricated-measurement",
++      "targetPhase": 3,
++      "featureId": "practice.shadowing"
++    },
++    {
++      "path": "lib/screens/mastery_dashboard_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "progress.mastery-dashboard"
++    },
++    {
++      "path": "lib/screens/weakness_clinic_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "progress.weakness-clinic"
++    },
++    {
++      "path": "lib/screens/ghost_shadow_duel_screen.dart",
++      "rule": "sample-user-history",
++      "targetPhase": 5,
++      "featureId": "practice.ghost-shadow-duel"
++    },
++    {
++      "path": "lib/screens/shop_page.dart",
++      "rule": "placeholder-transaction-feature",
++      "targetPhase": 5,
++      "featureId": "economy.shop"
++    },
++    {
++      "path": "lib/screens/categories_page.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "library.categories"
++    },
++    {
++      "path": "lib/screens/choose_mode_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "learn.mode-picker"
++    },
++    {
++      "path": "lib/screens/main_vocabulary.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "admin.main-vocabulary-seed"
++    },
++    {
++      "path": "lib/screens/quiz_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "practice.quiz"
++    },
++    {
++      "path": "lib/screens/select_category_for_quiz.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 2,
++      "featureId": "library.category-quiz"
++    },
++    {
++      "path": "lib/screens/select_wallpaper_screen.dart",
++      "rule": "direct-screen-firebase-access",
++      "targetPhase": 5,
++      "featureId": "economy.wallpaper"
++    },
++    {
++      "path": "lib/screens/add_vocab_screen.dart",
++      "rule": "direct-screen-http-access",
++      "targetPhase": 2,
++      "featureId": "library.add-word"
++    },
++    {
++      "path": "lib/screens/speak_to_text_screen.dart",
++      "rule": "direct-screen-plugin-access",
++      "targetPhase": 3,
++      "featureId": "practice.speech-recognition"
++    }
++  ]
++}
+diff --git a/tool/cli/tests/prototype-production-paths.tests.ps1 b/tool/cli/tests/prototype-production-paths.tests.ps1
+new file mode 100644
+index 0000000..67fe31f
+--- /dev/null
++++ b/tool/cli/tests/prototype-production-paths.tests.ps1
+@@ -0,0 +1,348 @@
++[CmdletBinding()]
++param(
++    [switch]$Strict
++)
++
++$ErrorActionPreference = 'Stop'
++Set-StrictMode -Version Latest
++
++$repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
++$inventoryPath = Join-Path $repositoryRoot 'docs\prototype\feature-inventory.md'
++$allowlistPath = Join-Path $repositoryRoot 'tool\cli\prototype-production-paths.allowlist.json'
++
++if (-not (Test-Path -LiteralPath $inventoryPath -PathType Leaf)) {
++    Write-Error 'Prototype feature inventory is missing.'
++    exit 1
++}
++if (-not (Test-Path -LiteralPath $allowlistPath -PathType Leaf)) {
++    Write-Error 'Prototype production-path allowlist is missing.'
++    exit 1
++}
++
++$ruleSpecs = @(
++    [pscustomobject]@{
++        Name = 'sample-user-history'
++        Pattern = '\b(?:sample|mock|fake)(?:User)?(?:History|Progress|Attempts?|Sessions?|Scores?|Metrics?|Stats?)\b|this\.listeningScore\s*=\s*85\.0|widget\.customItems\s*\?\?\s*\[|_ghostSnapshot\s*=\s*GhostSnapshot\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'mock-production-provider'
++        Pattern = '(?:=|return)\s*(?:const\s+)?Mock[A-Z]\w*(?:Provider|Service|Repository|Gateway)\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'simulated-device-result'
++        Pattern = '\b(?:simulated|mock)(?:Device|Camera|Speech|Scan|Detection|Recognition|Transcription|Confidence|Result)\w*|object-scanner-simulate-button|_toggleMicListening\s*\(\)\s*\{.*?Future\.delayed.*?_sendMessage\s*\(\s*'''
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'random-fabricated-measurement'
++        Pattern = 'Random\s*\(\s*\)\.nextDouble\s*\(\s*\)'
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'placeholder-transaction-feature'
++        Pattern = '\bplaceholder\b|\bnot\s+implemented\b'
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'canned-ai-response'
++        Pattern = '\b_cannedFallbackReply\s*\('
++        ScreensOnly = $false
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-firebase-access'
++        Pattern = '(?m)^\s*import\s+''package:(?:cloud_firestore|firebase_[^/''"]+)/'
++        ScreensOnly = $true
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-http-access'
++        Pattern = '(?m)^\s*import\s+''package:http/'
++        ScreensOnly = $true
++    },
++    [pscustomobject]@{
++        Name = 'direct-screen-plugin-access'
++        Pattern = '(?m)^\s*import\s+''package:(?:speech_to_text|image_picker|camera|google_mlkit[^/''"]*|flutter_tts|audioplayers|file_picker|permission_handler)/'
++        ScreensOnly = $true
++    }
++)
++
++$knownRuleNames = @{}
++foreach ($ruleSpec in $ruleSpecs) {
++    $knownRuleNames[$ruleSpec.Name] = $true
++}
++
++$validationErrors = [System.Collections.Generic.List[string]]::new()
++
++try {
++    $allowlistText = [System.IO.File]::ReadAllText($allowlistPath)
++    $allowlist = $allowlistText | ConvertFrom-Json
++}
++catch {
++    Write-Error 'Allowlist JSON is malformed.'
++    exit 1
++}
++
++$allowlistPropertyNames = @(
++    if ($null -ne $allowlist) {
++        $allowlist.PSObject.Properties.Name
++    }
++)
++$parsedSchemaVersion = 0
++if ($null -eq $allowlist -or
++    -not ($allowlistPropertyNames -contains 'schemaVersion') -or
++    -not [int]::TryParse(
++        [string]$allowlist.schemaVersion,
++        [ref]$parsedSchemaVersion
++    ) -or
++    $parsedSchemaVersion -ne 1) {
++    $validationErrors.Add('Allowlist schemaVersion must equal 1.')
++}
++if ($null -eq $allowlist -or
++    -not ($allowlistPropertyNames -contains 'entries') -or
++    $null -eq $allowlist.entries) {
++    $validationErrors.Add('Allowlist entries must be present.')
++    $allowlistEntries = @()
++}
++else {
++    $allowlistEntries = @($allowlist.entries)
++}
++
++$allowByKey = @{}
++foreach ($entry in $allowlistEntries) {
++    $entryPropertyNames = @(
++        if ($null -ne $entry) {
++            $entry.PSObject.Properties.Name
++        }
++    )
++    $requiredEntryProperties = @(
++        'path',
++        'rule',
++        'targetPhase',
++        'featureId'
++    )
++    $missingEntryProperties = @(
++        $requiredEntryProperties |
++            Where-Object { -not ($entryPropertyNames -contains $_) }
++    )
++    if ($null -eq $entry -or $missingEntryProperties.Count -gt 0) {
++        $validationErrors.Add('Allowlist entry is missing required fields.')
++        continue
++    }
++
++    $path = [string]$entry.path
++    $rule = [string]$entry.rule
++    $featureId = [string]$entry.featureId
++    $targetPhase = 0
++    $phaseIsValid = [int]::TryParse(
++        [string]$entry.targetPhase,
++        [ref]$targetPhase
++    )
++
++    if ([string]::IsNullOrWhiteSpace($path) -or
++        [System.IO.Path]::IsPathRooted($path) -or
++        $path.Contains('\') -or
++        $path.Contains('..') -or
++        -not $path.StartsWith('lib/')) {
++        $validationErrors.Add('Allowlist entry has an invalid relative path.')
++        continue
++    }
++    if (-not $knownRuleNames.ContainsKey($rule)) {
++        $validationErrors.Add("Allowlist entry has unknown rule: $rule")
++        continue
++    }
++    if (-not $phaseIsValid -or $targetPhase -lt 1 -or $targetPhase -gt 10) {
++        $validationErrors.Add("Allowlist entry has invalid target phase: $path")
++    }
++    if ([string]::IsNullOrWhiteSpace($featureId)) {
++        $validationErrors.Add("Allowlist entry has no feature ID: $path")
++    }
++
++    $absolutePath = Join-Path $repositoryRoot ($path.Replace('/', '\'))
++    if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
++        $validationErrors.Add("Allowlist entry names a missing file: $path")
++    }
++
++    $key = "$path::$rule"
++    if ($allowByKey.ContainsKey($key)) {
++        $validationErrors.Add("Duplicate allowlist pair: $path / $rule")
++    }
++    else {
++        $allowByKey[$key] = [pscustomobject]@{
++            Path = $path
++            Rule = $rule
++            FeatureId = $featureId
++            TargetPhase = $targetPhase
++        }
++    }
++}
++
++Push-Location $repositoryRoot
++try {
++    $candidatePaths = @(
++        & git ls-files -- 'lib/' |
++            Where-Object { $_ -match '\.dart$' } |
++            Sort-Object -Unique
++    )
++    if ($LASTEXITCODE -ne 0) {
++        Write-Error 'git ls-files failed for the bounded lib/ scan.'
++        exit 1
++    }
++}
++finally {
++    Pop-Location
++}
++
++$findingsByKey = @{}
++$regexOptions = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor
++    [System.Text.RegularExpressions.RegexOptions]::Singleline
++
++foreach ($relativePath in $candidatePaths) {
++    $absolutePath = Join-Path $repositoryRoot ($relativePath.Replace('/', '\'))
++    $content = [System.IO.File]::ReadAllText($absolutePath)
++
++    foreach ($ruleSpec in $ruleSpecs) {
++        if ($ruleSpec.ScreensOnly -and
++            -not $relativePath.StartsWith('lib/screens/')) {
++            continue
++        }
++
++        $matchCount = [regex]::Matches(
++            $content,
++            $ruleSpec.Pattern,
++            $regexOptions
++        ).Count
++        if ($matchCount -eq 0) {
++            continue
++        }
++
++        $key = "$relativePath::$($ruleSpec.Name)"
++        $findingsByKey[$key] = [pscustomobject]@{
++            Path = $relativePath
++            Rule = $ruleSpec.Name
++            Count = $matchCount
++        }
++    }
++}
++
++foreach ($findingKey in $findingsByKey.Keys) {
++    if (-not $allowByKey.ContainsKey($findingKey)) {
++        $finding = $findingsByKey[$findingKey]
++        $validationErrors.Add(
++            "New finding: $($finding.Path) / $($finding.Rule) / targetPhase=unassigned / count=$($finding.Count)"
++        )
++    }
++}
++foreach ($allowKey in $allowByKey.Keys) {
++    if (-not $findingsByKey.ContainsKey($allowKey)) {
++        $entry = $allowByKey[$allowKey]
++        $validationErrors.Add(
++            "Stale entry: $($entry.Path) / $($entry.Rule) / targetPhase=$($entry.TargetPhase) / count=0"
++        )
++    }
++}
++
++$inventory = [System.IO.File]::ReadAllText($inventoryPath)
++$requiredHeader = 'Feature ID | Visible entry | Screen/route | Current data/device/provider | Offline behavior | Permission/configuration | Truthful unavailable state | Known blocker | Target phase | Evidence'
++if (-not $inventory.Contains($requiredHeader)) {
++    $validationErrors.Add('Inventory schema header is incomplete.')
++}
++
++foreach ($entry in $allowByKey.Values) {
++    if (-not $inventory.Contains($entry.FeatureId)) {
++        $validationErrors.Add(
++            "Inventory omits allowlisted feature: $($entry.FeatureId)"
++        )
++    }
++}
++
++$reachableScreenPaths = @(
++    'lib/screens/session_gate_screen.dart',
++    'lib/screens/login_screen.dart',
++    'lib/screens/register_screen.dart',
++    'lib/screens/otp_screen.dart',
++    'lib/screens/forgot_password_screen.dart',
++    'lib/screens/reset_password_screen.dart',
++    'lib/screens/change_password_screen.dart',
++    'lib/screens/main_navigation_screen.dart',
++    'lib/screens/choose_mode_screen.dart',
++    'lib/screens/mastery_dashboard_screen.dart',
++    'lib/screens/weakness_clinic_screen.dart',
++    'lib/screens/achievements_screen.dart',
++    'lib/screens/profile_settings_screen.dart',
++    'lib/screens/categories_page.dart',
++    'lib/screens/shop_page.dart',
++    'lib/screens/setting_screen.dart',
++    'lib/screens/cefr_selection_screen.dart',
++    'lib/screens/cefr_diagnostic_test_screen.dart',
++    'lib/screens/dictation_quiz_screen.dart',
++    'lib/screens/shadowing_challenge_screen.dart',
++    'lib/screens/sentence_scramble_screen.dart',
++    'lib/screens/srs_flashcards_screen.dart',
++    'lib/screens/smart_audio_playlist_screen.dart',
++    'lib/screens/cefr_article_reader_screen.dart',
++    'lib/screens/boss_battle_screen.dart',
++    'lib/screens/ghost_shadow_duel_screen.dart',
++    'lib/screens/interactive_storybook_screen.dart',
++    'lib/screens/wordbook_import_screen.dart',
++    'lib/screens/export_center_screen.dart',
++    'lib/screens/phonetic_explorer_screen.dart',
++    'lib/screens/avatar_equipment_screen.dart',
++    'lib/screens/ai_tutor_screen.dart',
++    'lib/screens/learning_world_map_screen.dart',
++    'lib/screens/quiz_screen.dart',
++    'lib/screens/select_category_for_quiz.dart',
++    'lib/screens/score_screen.dart',
++    'lib/screens/speak_to_text_screen.dart',
++    'lib/screens/word_scramble_screen.dart',
++    'lib/screens/fill_in_the_blanks_screen.dart',
++    'lib/screens/vocab_list_screen.dart',
++    'lib/screens/add_vocab_screen.dart',
++    'lib/screens/add_multiple_words_screen.dart',
++    'lib/screens/select_wallpaper_screen.dart'
++)
++
++foreach ($screenPath in $reachableScreenPaths) {
++    if (-not $inventory.Contains($screenPath)) {
++        $validationErrors.Add("Inventory omits reachable screen: $screenPath")
++    }
++}
++
++if ($validationErrors.Count -gt 0) {
++    foreach ($validationError in $validationErrors) {
++        Write-Error $validationError
++    }
++    exit 1
++}
++
++$sortedFindings = @(
++    $findingsByKey.Values |
++        Sort-Object Path, Rule
++)
++$totalMatchCount = 0
++foreach ($finding in $sortedFindings) {
++    $entry = $allowByKey["$($finding.Path)::$($finding.Rule)"]
++    $totalMatchCount += $finding.Count
++    Write-Output (
++        'path={0} rule={1} targetPhase={2} count={3}' -f
++        $finding.Path,
++        $finding.Rule,
++        $entry.TargetPhase,
++        $finding.Count
++    )
++}
++
++$knownDebtCount = $sortedFindings.Count
++Write-Output (
++    'summary candidateFiles={0} knownDebt={1} matches={2} new=0 stale=0' -f
++    $candidatePaths.Count,
++    $knownDebtCount,
++    $totalMatchCount
++)
++
++if ($Strict -and $knownDebtCount -gt 0) {
++    Write-Error "Strict mode: knownDebt=$knownDebtCount"
++    exit 1
++}
++
++exit 0

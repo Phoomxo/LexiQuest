@@ -1,0 +1,2676 @@
+# Review package: ac336bb..b5af7da
+
+## Commits
+b5af7da fix: make default category seeding retry-safe
+99e58bc fix: make registration provisioning resumable
+e7325a8 feat: unify registration and verification
+
+## Files changed
+ firestore.rules                                    |  15 +-
+ lib/account/account_profile_provisioner.dart       | 131 ++++++++
+ lib/navigation/app_route.dart                      |   7 +
+ lib/navigation/app_router.dart                     |  34 ++-
+ lib/runtime/app_bootstrap.dart                     |  14 +
+ lib/runtime/app_dependencies.dart                  |   4 +
+ lib/screens/otp_screen.dart                        | 237 +++++++--------
+ lib/screens/register_form_screen.dart              | 126 --------
+ lib/screens/register_screen.dart                   | 337 +++++++++++----------
+ lib/screens/session_gate_screen.dart               |  32 +-
+ lib/services/category_service.dart                 | 112 +++++--
+ test/account/account_profile_provisioner_test.dart |  78 +++++
+ test/navigation/app_router_test.dart               |  13 +
+ test/screens/full_system_audit_test.dart           |   2 +-
+ test/screens/otp_screen_test.dart                  | 195 ++++++++++--
+ test/screens/registration_flow_test.dart           | 276 ++++++++++++-----
+ test/screens/session_gate_screen_test.dart         |  59 +++-
+ test/security/firestore-rules.test.cjs             |  70 +++++
+ test/services/category_default_seeding_test.dart   |  56 ++++
+ 19 files changed, 1258 insertions(+), 540 deletions(-)
+
+## Diff
+diff --git a/firestore.rules b/firestore.rules
+index edefab9..8881f38 100644
+--- a/firestore.rules
++++ b/firestore.rules
+@@ -119,50 +119,59 @@ service cloud.firestore {
+     //   read  : SettingScreen, UserService.getUserData
+     //   createdAt is server-controlled and immutable after creation.
+     // -------------------------------------------------------------------------
+     match /users/{uid} {
+       allow read: if isRegisteredUser() && request.auth.uid == uid;
+ 
+       allow create: if isRegisteredUser()
+         && request.auth.uid == uid
+         && request.resource.data is map
+         && request.resource.data.keys().hasOnly([
+-             'first_name', 'last_name', 'email', 'age', 'createdAt'
++             'first_name', 'last_name', 'email', 'age', 'createdAt',
++             'profileSchemaVersion', 'requiredProvisioningComplete'
+            ])
+         && request.resource.data.first_name is string
+         && request.resource.data.first_name.size() > 0
+         && request.resource.data.first_name.size() <= 100
+         && request.resource.data.last_name is string
+         && request.resource.data.last_name.size() <= 100
+         && request.resource.data.email is string
+         && request.resource.data.email.size() <= 254
+         && request.resource.data.age is int
+         && request.resource.data.age >= 0
+         && request.resource.data.age <= 150
++        && request.resource.data.profileSchemaVersion == 1
++        && request.resource.data.requiredProvisioningComplete is bool
++        && request.resource.data.requiredProvisioningComplete == false
+         && request.resource.data.createdAt == request.time;
+ 
+       allow update: if isRegisteredUser()
+         && request.auth.uid == uid
+         && request.resource.data is map
+         && request.resource.data.diff(resource.data).affectedKeys()
+-             .hasOnly(['first_name', 'last_name', 'email', 'age'])
++             .hasOnly([
++               'first_name', 'last_name', 'email', 'age',
++               'profileSchemaVersion', 'requiredProvisioningComplete'
++             ])
+         && request.resource.data.createdAt == resource.data.createdAt
+         && request.resource.data.first_name is string
+         && request.resource.data.first_name.size() > 0
+         && request.resource.data.first_name.size() <= 100
+         && request.resource.data.last_name is string
+         && request.resource.data.last_name.size() <= 100
+         && request.resource.data.email is string
+         && request.resource.data.email.size() <= 254
+         && request.resource.data.age is int
+         && request.resource.data.age >= 0
+-        && request.resource.data.age <= 150;
++        && request.resource.data.age <= 150
++        && request.resource.data.profileSchemaVersion == 1
++        && request.resource.data.requiredProvisioningComplete is bool;
+ 
+       allow delete: if false;
+     }
+ 
+     // -------------------------------------------------------------------------
+     // state/{uid} - legacy per-user game stats + selected wallpaper.
+     //   read  : authenticated owner only
+     //   write : clients may update selectedWallpaper only
+     // Remote counters stay read-only until a trusted server writer is deployed.
+     // -------------------------------------------------------------------------
+diff --git a/lib/account/account_profile_provisioner.dart b/lib/account/account_profile_provisioner.dart
+new file mode 100644
+index 0000000..7a68a4c
+--- /dev/null
++++ b/lib/account/account_profile_provisioner.dart
+@@ -0,0 +1,131 @@
++import 'package:cloud_firestore/cloud_firestore.dart';
++
++import 'account_gateway.dart';
++import 'account_validation.dart';
++import '../services/category_service.dart';
++
++final class AccountProfile {
++  const AccountProfile({
++    required this.firstName,
++    required this.lastName,
++    required this.email,
++    required this.age,
++  });
++
++  final String firstName;
++  final String lastName;
++  final String email;
++  final int age;
++
++  String get normalizedEmail => AccountValidation.normalizeEmail(email);
++}
++
++abstract interface class AccountProfileProvisioning {
++  Future<void> ensureProfile(String uid, AccountProfile profile);
++  Future<bool> isProvisioningComplete(String uid);
++}
++
++abstract interface class AccountProfileWriter {
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  });
++  Future<void> markProvisioningComplete(String uid);
++  Future<bool> isProvisioningComplete(String uid);
++}
++
++abstract interface class DefaultCategoryProvisioner {
++  Future<void> ensureDefaults(String uid);
++}
++
++final class AccountProfileProvisioner implements AccountProfileProvisioning {
++  AccountProfileProvisioner({
++    AccountProfileWriter? profileWriter,
++    DefaultCategoryProvisioner? defaultCategoryProvisioner,
++  }) : _profileWriter = profileWriter ?? FirestoreAccountProfileWriter(),
++       _defaultCategoryProvisioner =
++           defaultCategoryProvisioner ??
++           CategoryServiceDefaultCategoryProvisioner();
++
++  final AccountProfileWriter _profileWriter;
++  final DefaultCategoryProvisioner _defaultCategoryProvisioner;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) async {
++    await _profileWriter.writeProfile(uid: uid, profile: profile, merge: true);
++    await _defaultCategoryProvisioner.ensureDefaults(uid);
++    await _profileWriter.markProvisioningComplete(uid);
++  }
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) =>
++      _profileWriter.isProvisioningComplete(uid);
++}
++
++final class UnavailableAccountProfileProvisioner
++    implements AccountProfileProvisioning {
++  const UnavailableAccountProfileProvisioner();
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) =>
++      Future<void>.error(
++        const AccountOperationException('profile-provisioning-unavailable'),
++      );
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async => false;
++}
++
++final class FirestoreAccountProfileWriter implements AccountProfileWriter {
++  FirestoreAccountProfileWriter({FirebaseFirestore? firestore})
++    : _firestore = firestore ?? FirebaseFirestore.instance;
++
++  final FirebaseFirestore _firestore;
++
++  @override
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  }) async {
++    final reference = _firestore.collection('users').doc(uid);
++    final existing = await reference.get();
++    final data = <String, Object?>{
++      'first_name': profile.firstName.trim(),
++      'last_name': profile.lastName.trim(),
++      'email': profile.normalizedEmail,
++      'age': profile.age,
++      'profileSchemaVersion': 1,
++      'requiredProvisioningComplete': false,
++    };
++    if (!existing.exists) {
++      data['createdAt'] = FieldValue.serverTimestamp();
++    }
++    await reference.set(data, SetOptions(merge: merge));
++  }
++
++  @override
++  Future<void> markProvisioningComplete(String uid) => _firestore
++      .collection('users')
++      .doc(uid)
++      .set({'requiredProvisioningComplete': true}, SetOptions(merge: true));
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async {
++    final profile = await _firestore.collection('users').doc(uid).get();
++    return profile.data()?['requiredProvisioningComplete'] == true;
++  }
++}
++
++final class CategoryServiceDefaultCategoryProvisioner
++    implements DefaultCategoryProvisioner {
++  CategoryServiceDefaultCategoryProvisioner({CategoryService? categoryService})
++    : _categoryService = categoryService ?? CategoryService();
++
++  final CategoryService _categoryService;
++
++  @override
++  Future<void> ensureDefaults(String uid) =>
++      _categoryService.addDefaultCategoriesForNewUser(uid);
++}
+diff --git a/lib/navigation/app_route.dart b/lib/navigation/app_route.dart
+index 38b260c..e95d287 100644
+--- a/lib/navigation/app_route.dart
++++ b/lib/navigation/app_route.dart
+@@ -12,15 +12,22 @@ enum AppRoute {
+ 
+   final String path;
+ }
+ 
+ final class VerifyEmailRouteArgs {
+   const VerifyEmailRouteArgs({required this.email});
+ 
+   final String email;
+ }
+ 
++final class RegisterRouteArgs {
++  const RegisterRouteArgs({required this.uid, required this.email});
++
++  final String uid;
++  final String email;
++}
++
+ final class ResetPasswordRouteArgs {
+   const ResetPasswordRouteArgs({required this.code});
+ 
+   final String code;
+ }
+diff --git a/lib/navigation/app_router.dart b/lib/navigation/app_router.dart
+index 9ea1d46..f5ac609 100644
+--- a/lib/navigation/app_router.dart
++++ b/lib/navigation/app_router.dart
+@@ -1,12 +1,13 @@
+ import 'package:flutter/material.dart';
+ 
++import '../account/account_models.dart';
+ import '../runtime/app_dependencies.dart';
+ import '../screens/login_screen.dart';
+ import '../screens/main_navigation_screen.dart';
+ import '../screens/otp_screen.dart';
+ import '../screens/register_screen.dart';
+ import '../screens/session_gate_screen.dart';
+ import 'app_route.dart';
+ 
+ final class AppRouter {
+   AppRouter(this.dependencies);
+@@ -16,47 +17,76 @@ final class AppRouter {
+   final AppDependencies dependencies;
+ 
+   Route<dynamic>? generateRoute(RouteSettings settings) {
+     final path = settings.name;
+     if (path == AppRoute.sessionGate.path) {
+       return _route(
+         settings,
+         SessionGateScreen(
+           accountGateway: dependencies.accountGateway,
+           guestSessionService: dependencies.guestSessionService,
++          profileProvisioner: dependencies.accountProfileProvisioning,
+         ),
+       );
+     }
+     if (path == AppRoute.login.path) {
+       return _route(
+         settings,
+         LoginScreen(
+           accountGateway: dependencies.accountGateway,
+           guestSessionService: dependencies.guestSessionService,
+         ),
+       );
+     }
+     if (path == AppRoute.register.path) {
+-      return _route(settings, const RegisterScreen());
++      return _registerRoute(settings);
+     }
+     if (path == AppRoute.verifyEmail.path) {
+       return _verifyEmailRoute(settings);
+     }
+     if (path == AppRoute.home.path) {
+       return _route(settings, const MainNavigationScreen());
+     }
+     return null;
+   }
+ 
+   Route<dynamic>? _verifyEmailRoute(RouteSettings settings) {
+     final args = settings.arguments;
+     if (args is! VerifyEmailRouteArgs) return null;
+-    return _route(settings, OTPScreen(email: args.email));
++    return _route(
++      settings,
++      OTPScreen(
++        email: args.email,
++        accountGateway: dependencies.accountGateway,
++        profileProvisioner: dependencies.accountProfileProvisioning,
++      ),
++    );
++  }
++
++  Route<dynamic>? _registerRoute(RouteSettings settings) {
++    final args = settings.arguments;
++    if (args != null && args is! RegisterRouteArgs) return null;
++    final recovery = args as RegisterRouteArgs?;
++    return _route(
++      settings,
++      RegisterScreen(
++        accountGateway: dependencies.accountGateway,
++        profileProvisioner: dependencies.accountProfileProvisioning,
++        recoveredSession: recovery == null
++            ? null
++            : AccountSession(
++                uid: recovery.uid,
++                email: recovery.email,
++                isAnonymous: false,
++                isEmailVerified: false,
++              ),
++      ),
++    );
+   }
+ 
+   MaterialPageRoute<dynamic> _route(RouteSettings settings, Widget child) {
+     return MaterialPageRoute<dynamic>(
+       settings: settings,
+       builder: (_) => child,
+     );
+   }
+ }
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index 33d9159..b7d70be 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -1,17 +1,18 @@
+ import 'package:firebase_app_check/firebase_app_check.dart';
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/foundation.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
++import '../account/account_profile_provisioner.dart';
+ import '../account/firebase_account_gateway.dart';
+ import '../ai/ai_service_factory.dart';
+ import '../ai/generated_reading_content_source.dart';
+ import '../config/app_config.dart';
+ import '../firebase_options.dart';
+ import '../learning/adaptive_associative_scheduler.dart';
+ import '../learning/association_prompt.dart';
+ import '../learning/associative_memory.dart';
+ import '../learning/associative_reading_coordinator.dart';
+ import '../learning/reading_content_source.dart';
+@@ -32,20 +33,22 @@ import '../voice/voice_service_factory.dart';
+ import 'app_build_info.dart';
+ import 'app_dependencies.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ import 'learning_feature_flags.dart';
+ 
+ typedef RuntimeInitializer = Future<void> Function();
+ typedef AppConfigLoader = AppConfig Function();
+ typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
+ typedef AccountGatewayFactory = AccountGateway Function();
++typedef AccountProfileProvisioningFactory =
++    AccountProfileProvisioning Function();
+ 
+ Future<void> _initializeFirebaseProduction() async {
+   if (Firebase.apps.isEmpty) {
+     await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+     );
+   }
+   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+     await FirebaseAppCheck.instance.activate(
+       providerAndroid: kDebugMode
+@@ -155,54 +158,61 @@ Future<void> _closeLearningResources(
+     Error.throwWithStackTrace(firstError, firstStackTrace!);
+   }
+ }
+ 
+ final class AppBootstrap {
+   const AppBootstrap({
+     required this.initializeFirebase,
+     required this.loadConfig,
+     required this.guestSessionService,
+     this.createAccountGateway = _unavailableAccountGateway,
++    this.createAccountProfileProvisioning =
++        _unavailableAccountProfileProvisioning,
+     this.loadProgressRepository = _loadProgressRepositoryProduction,
+     this.progressRemoteWriter,
+     this.purchaseRemoteWriter,
+     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+     this.loadLearningDependencies = _loadLearningDependenciesProduction,
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
+       createAccountGateway: FirebaseAccountGateway.new,
++      createAccountProfileProvisioning: AccountProfileProvisioner.new,
+       loadProgressRepository: _loadProgressRepositoryProduction,
+       progressRemoteWriter: FirebaseProgressRemoteWriter(),
+       purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
+     );
+   }
+ 
+   final RuntimeInitializer initializeFirebase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+   final AccountGatewayFactory createAccountGateway;
++  final AccountProfileProvisioningFactory createAccountProfileProvisioning;
+   final ProgressRepositoryLoader loadProgressRepository;
+   final ProgressRemoteWriter? progressRemoteWriter;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningFeatureFlags featureFlags;
+   final LearningDependenciesLoader loadLearningDependencies;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+     final accountGateway = firebase == RuntimeAvailability.ready
+         ? createAccountGateway()
+         : _unavailableAccountGateway();
++    final accountProfileProvisioning = firebase == RuntimeAvailability.ready
++        ? createAccountProfileProvisioning()
++        : _unavailableAccountProfileProvisioning();
+     final config = _loadConfig();
+     final progressRepository = await _loadProgressRepository();
+     final progressSyncService =
+         progressRepository == null || progressRemoteWriter == null
+         ? null
+         : ProgressSyncService(
+             repository: progressRepository,
+             remoteWriter: progressRemoteWriter!,
+           );
+     final learningDependencies = featureFlags.associativeReadingEnabled
+@@ -211,20 +221,21 @@ final class AppBootstrap {
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
+       ),
+       config: config,
+       accountGateway: accountGateway,
++      accountProfileProvisioning: accountProfileProvisioning,
+       guestSessionService: guestSessionService,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
+       progressRepository: progressRepository,
+       progressSyncService: progressSyncService,
+       purchaseRemoteWriter: purchaseRemoteWriter,
+       learningDependencies: learningDependencies,
+     );
+   }
+ 
+   Future<RuntimeAvailability> _availability(
+@@ -261,20 +272,23 @@ final class AppBootstrap {
+       return await loadLearningDependencies(config, featureFlags);
+     } catch (_) {
+       return null;
+     }
+   }
+ }
+ 
+ AccountGateway _unavailableAccountGateway() =>
+     const _UnavailableAccountGateway();
+ 
++AccountProfileProvisioning _unavailableAccountProfileProvisioning() =>
++    const UnavailableAccountProfileProvisioner();
++
+ final class _UnavailableAccountGateway implements AccountGateway {
+   const _UnavailableAccountGateway();
+ 
+   @override
+   AccountSession? get currentSession => null;
+ 
+   @override
+   Stream<AccountSession?> authStateChanges() =>
+       Stream<AccountSession?>.value(null);
+ 
+diff --git a/lib/runtime/app_dependencies.dart b/lib/runtime/app_dependencies.dart
+index f872669..9f984d3 100644
+--- a/lib/runtime/app_dependencies.dart
++++ b/lib/runtime/app_dependencies.dart
+@@ -1,41 +1,45 @@
+ import 'package:flutter/widgets.dart';
+ 
+ import '../account/account_gateway.dart';
++import '../account/account_profile_provisioner.dart';
+ import '../config/app_config.dart';
+ import '../config/remote_economy_policy.dart';
+ import '../progress/progress_repository.dart';
+ import '../progress/progress_sync_service.dart';
+ import '../progress/purchase_remote_writer.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ 
+ final class AppDependencies {
+   const AppDependencies({
+     required this.runtimeStatus,
+     required this.config,
+     required this.accountGateway,
+     required this.guestSessionService,
++    this.accountProfileProvisioning =
++        const UnavailableAccountProfileProvisioner(),
+     this.buildInfo = const AppBuildInfo.fromEnvironment(),
+     this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
+     this.progressRepository,
+     this.progressSyncService,
+     this.purchaseRemoteWriter,
+     this.learningDependencies,
+   });
+ 
+   final AppRuntimeStatus runtimeStatus;
+   final AppConfig? config;
+   final AccountGateway accountGateway;
+   final GuestSessionService guestSessionService;
++  final AccountProfileProvisioning accountProfileProvisioning;
+   final AppBuildInfo buildInfo;
+   final RemoteEconomyPolicy remoteEconomyPolicy;
+   final ProgressRepository? progressRepository;
+   final ProgressSyncService? progressSyncService;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningDependencies? learningDependencies;
+ 
+   @override
+   String toString() => 'AppDependencies';
+ }
+diff --git a/lib/screens/otp_screen.dart b/lib/screens/otp_screen.dart
+index 5a70e35..d47eb2c 100644
+--- a/lib/screens/otp_screen.dart
++++ b/lib/screens/otp_screen.dart
+@@ -1,168 +1,143 @@
+ import 'package:flutter/material.dart';
+-import '../services/auth_service.dart';
+-import 'register_form_screen.dart';
++
++import '../account/account_cooldown.dart';
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../account/account_profile_provisioner.dart';
++import '../navigation/app_route.dart';
+ 
+ class OTPScreen extends StatefulWidget {
++  const OTPScreen({
++    super.key,
++    required this.email,
++    this.accountGateway,
++    this.profileProvisioner = const UnavailableAccountProfileProvisioner(),
++    this.resendCooldown,
++  });
++
+   final String email;
+-  const OTPScreen({super.key, required this.email});
++  final AccountGateway? accountGateway;
++  final AccountProfileProvisioning profileProvisioner;
++  final AccountCooldown? resendCooldown;
+ 
+   @override
+   State<OTPScreen> createState() => _OTPScreenState();
+ }
+ 
+ class _OTPScreenState extends State<OTPScreen> {
+-  final AuthService _authService = AuthService();
++  late final AccountCooldown _cooldown =
++      widget.resendCooldown ?? AccountCooldown();
+   bool _isLoading = false;
+ 
+-  /// ✅ ตรวจสอบว่าอีเมลได้รับการยืนยันแล้วหรือไม่
+-  Future<void> _checkEmailVerified() async {
++  Future<void> _refreshVerification() async {
++    final gateway = widget.accountGateway;
++    if (gateway == null || _isLoading) return;
+     setState(() => _isLoading = true);
+-
+     try {
+-      bool isVerified = await _authService.isEmailVerified();
+-
+-      if (isVerified) {
++      final session = await gateway.reloadSession();
++      if (!mounted) return;
++      if (session?.isEmailVerified ?? false) {
++        final provisioningComplete = await widget.profileProvisioner
++            .isProvisioningComplete(session!.uid);
+         if (!mounted) return;
+-        ScaffoldMessenger.of(context).showSnackBar(
+-          const SnackBar(content: Text('✅ อีเมลได้รับการยืนยันแล้ว!')),
+-        );
+-
+-        // 👉 ไปที่หน้ากรอกข้อมูลสมัครสมาชิก
+-        Navigator.pushReplacement(
++        if (!provisioningComplete) {
++          Navigator.of(context).pushReplacementNamed(
++            AppRoute.register.path,
++            arguments: RegisterRouteArgs(
++              uid: session.uid,
++              email: session.email ?? widget.email,
++            ),
++          );
++          return;
++        }
++        Navigator.of(
+           context,
+-          MaterialPageRoute(
+-            builder: (context) => RegisterFormScreen(email: widget.email),
+-          ),
+-        );
++        ).pushNamedAndRemoveUntil(AppRoute.home.path, (_) => false);
+       } else {
+-        if (!mounted) return;
+-        ScaffoldMessenger.of(
+-          context,
+-        ).showSnackBar(const SnackBar(content: Text('⚠ กรุณายืนยันอีเมลก่อน')));
++        _showMessage(
++          'อีเมลยังไม่ได้รับการยืนยัน กรุณาตรวจสอบกล่องจดหมายแล้วลองใหม่',
++        );
+       }
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Text(
+-            '❌ ตรวจสอบอีเมลล้มเหลว: ${AuthService.getErrorMessage(e)}',
+-          ),
+-        ),
+-      );
++    } on AccountOperationException catch (error) {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+-      setState(() => _isLoading = false);
++      if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
+-  /// ✅ ให้ Firebase ส่งอีเมลยืนยันใหม่ผ่านผู้ใช้ปัจจุบัน
+-  Future<void> _resendVerificationEmail() async {
+-    try {
+-      await _authService.resendVerificationEmail();
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(content: Text('📩 ส่งอีเมลยืนยันใหม่แล้ว!')),
+-      );
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Text(
+-            '❌ ไม่สามารถส่งอีเมลยืนยันใหม่: ${AuthService.getErrorMessage(e)}',
+-          ),
+-        ),
++  Future<void> _resendVerification() async {
++    final gateway = widget.accountGateway;
++    if (gateway == null || _isLoading) return;
++    if (!_cooldown.canSubmit) {
++      _showMessage(
++        'กรุณารอ ${_cooldown.remaining.inSeconds} วินาทีก่อนส่งอีเมลอีกครั้ง',
+       );
++      return;
++    }
++    setState(() => _isLoading = true);
++    try {
++      await gateway.sendVerificationEmail();
++      _cooldown.start();
++      if (mounted) {
++        _showMessage('ส่งอีเมลยืนยันอีกครั้งแล้ว กรุณาตรวจสอบกล่องจดหมาย');
++      }
++    } on AccountOperationException catch (error) {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showMessage(AccountErrorMapper.messageFor('unknown'));
++    } finally {
++      if (mounted) setState(() => _isLoading = false);
+     }
+   }
+ 
++  void _showMessage(String message) {
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      body: Container(
+-        width: double.infinity,
+-        decoration: const BoxDecoration(
+-          gradient: LinearGradient(
+-            colors: [Colors.deepPurple, Colors.indigo],
+-            begin: Alignment.topLeft,
+-            end: Alignment.bottomRight,
+-          ),
+-        ),
+-        child: Center(
+-          child: Padding(
+-            padding: const EdgeInsets.all(20.0),
+-            child: Card(
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(16),
++      appBar: AppBar(title: const Text('ยืนยันอีเมล')),
++      body: Center(
++        child: Padding(
++          padding: const EdgeInsets.all(24),
++          child: Column(
++            mainAxisSize: MainAxisSize.min,
++            crossAxisAlignment: CrossAxisAlignment.stretch,
++            children: [
++              const Icon(Icons.mark_email_unread_outlined, size: 72),
++              const SizedBox(height: 16),
++              const Text(
++                'ตรวจสอบอีเมลเพื่อยืนยันบัญชี',
++                textAlign: TextAlign.center,
++                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+               ),
+-              elevation: 5,
+-              color: Colors.white.withValues(alpha: 0.9),
+-              child: Padding(
+-                padding: const EdgeInsets.all(25.0),
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  children: [
+-                    const Icon(Icons.email, size: 80, color: Colors.deepPurple),
+-                    const SizedBox(height: 15),
+-                    Text(
+-                      'ยืนยันอีเมลของคุณ',
+-                      style: TextStyle(
+-                        fontSize: 22,
+-                        fontWeight: FontWeight.bold,
+-                        color: Colors.deepPurple.shade700,
+-                      ),
+-                      textAlign: TextAlign.center,
+-                    ),
+-                    const SizedBox(height: 15),
+-                    Text(
+-                      '📩 เราได้ส่งอีเมลยืนยันไปที่:\n${widget.email}',
+-                      textAlign: TextAlign.center,
+-                      style: const TextStyle(fontSize: 16),
+-                    ),
+-                    const SizedBox(height: 15),
+-                    const Text(
+-                      '✉ กรุณาตรวจสอบอีเมลของคุณและกดยืนยัน',
+-                      textAlign: TextAlign.center,
+-                    ),
+-                    const SizedBox(height: 20),
+-
+-                    _isLoading
+-                        ? const CircularProgressIndicator()
+-                        : ElevatedButton.icon(
+-                            onPressed: _checkEmailVerified,
+-                            icon: const Icon(
+-                              Icons.check_circle,
+-                              color: Colors.white,
+-                            ),
+-                            label: const Text(
+-                              '✅ ฉันได้ยืนยันแล้ว',
+-                              style: TextStyle(
+-                                fontSize: 16,
+-                                color: Colors.white,
+-                              ),
+-                            ),
+-                            style: ElevatedButton.styleFrom(
+-                              backgroundColor: Colors.green,
+-                              padding: const EdgeInsets.symmetric(
+-                                vertical: 14,
+-                                horizontal: 50,
+-                              ),
+-                              shape: RoundedRectangleBorder(
+-                                borderRadius: BorderRadius.circular(12),
+-                              ),
+-                            ),
+-                          ),
+-                    const SizedBox(height: 10),
+-                    TextButton.icon(
+-                      onPressed: _resendVerificationEmail,
+-                      icon: const Icon(Icons.refresh, color: Colors.deepPurple),
+-                      label: const Text('🔄 ส่งอีเมลยืนยันใหม่'),
+-                    ),
+-                  ],
+-                ),
++              const SizedBox(height: 12),
++              Text(
++                'เราได้ส่งลิงก์ยืนยันไปที่ ${widget.email}',
++                textAlign: TextAlign.center,
+               ),
+-            ),
++              const SizedBox(height: 24),
++              FilledButton.icon(
++                key: const ValueKey<String>('verify-refresh'),
++                onPressed: _isLoading ? null : _refreshVerification,
++                icon: const Icon(Icons.refresh),
++                label: const Text('ฉันยืนยันอีเมลแล้ว'),
++              ),
++              TextButton.icon(
++                key: const ValueKey<String>('verify-resend'),
++                onPressed: _isLoading ? null : _resendVerification,
++                icon: const Icon(Icons.email_outlined),
++                label: const Text('ส่งอีเมลยืนยันอีกครั้ง'),
++              ),
++            ],
+           ),
+         ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/screens/register_form_screen.dart b/lib/screens/register_form_screen.dart
+deleted file mode 100644
+index ecd2a8d..0000000
+--- a/lib/screens/register_form_screen.dart
++++ /dev/null
+@@ -1,126 +0,0 @@
+-import 'package:flutter/material.dart';
+-import '../services/auth_service.dart';
+-
+-class RegisterFormScreen extends StatefulWidget {
+-  final String email;
+-
+-  const RegisterFormScreen({super.key, required this.email});
+-
+-  @override
+-  State<RegisterFormScreen> createState() => _RegisterFormScreenState();
+-}
+-
+-class _RegisterFormScreenState extends State<RegisterFormScreen> {
+-  final TextEditingController _passwordController = TextEditingController();
+-  final TextEditingController _firstNameController = TextEditingController();
+-  final TextEditingController _lastNameController = TextEditingController();
+-  final TextEditingController _ageController = TextEditingController();
+-
+-  final AuthService _authService = AuthService();
+-  bool _isLoading = false;
+-
+-  Future<void> _register() async {
+-    setState(() => _isLoading = true);
+-
+-    try {
+-      await _authService.registerUser(
+-        email: widget.email,
+-        password: _passwordController.text.trim(),
+-        firstName: _firstNameController.text.trim(),
+-        lastName: _lastNameController.text.trim(),
+-        age: int.tryParse(_ageController.text.trim()) ?? 0,
+-      );
+-
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(
+-        context,
+-      ).showSnackBar(SnackBar(content: Text('สมัครสมาชิกสำเร็จ!')));
+-
+-      // ไปหน้า Home หรือ Login
+-      Navigator.pushReplacementNamed(context, '/home');
+-    } catch (e) {
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(
+-        context,
+-      ).showSnackBar(SnackBar(content: Text('สมัครไม่สำเร็จ: $e')));
+-    } finally {
+-      setState(() => _isLoading = false);
+-    }
+-  }
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    return Scaffold(
+-      appBar: AppBar(title: Text('ตั้งค่าข้อมูลบัญชี')),
+-      body: Padding(
+-        padding: const EdgeInsets.all(16.0),
+-        child: Column(
+-          children: [
+-            Text(
+-              'อีเมลของคุณ: ${widget.email}',
+-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _firstNameController,
+-              decoration: const InputDecoration(
+-                labelText: 'First Name',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.person),
+-              ),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _lastNameController,
+-              decoration: const InputDecoration(
+-                labelText: 'Last Name',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.person_outline),
+-              ),
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _ageController,
+-              decoration: const InputDecoration(
+-                labelText: 'Age',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.cake),
+-              ),
+-              keyboardType: TextInputType.number,
+-            ),
+-            const SizedBox(height: 15),
+-            TextField(
+-              controller: _passwordController,
+-              decoration: const InputDecoration(
+-                labelText: 'ตั้งรหัสผ่าน',
+-                border: OutlineInputBorder(),
+-                prefixIcon: Icon(Icons.lock),
+-              ),
+-              obscureText: true,
+-            ),
+-            const SizedBox(height: 20),
+-            _isLoading
+-                ? const CircularProgressIndicator()
+-                : ElevatedButton(
+-                    onPressed: _register,
+-                    style: ElevatedButton.styleFrom(
+-                      padding: const EdgeInsets.symmetric(
+-                        vertical: 14,
+-                        horizontal: 50,
+-                      ),
+-                      backgroundColor: Colors.blueAccent,
+-                      shape: RoundedRectangleBorder(
+-                        borderRadius: BorderRadius.circular(12),
+-                      ),
+-                    ),
+-                    child: const Text(
+-                      'สมัครสมาชิก',
+-                      style: TextStyle(fontSize: 18, color: Colors.white),
+-                    ),
+-                  ),
+-          ],
+-        ),
+-      ),
+-    );
+-  }
+-}
+diff --git a/lib/screens/register_screen.dart b/lib/screens/register_screen.dart
+index d132180..a19fc39 100644
+--- a/lib/screens/register_screen.dart
++++ b/lib/screens/register_screen.dart
+@@ -1,193 +1,214 @@
+ import 'package:flutter/material.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
+-import '../services/auth_service.dart';
+-import 'otp_screen.dart';
++
++import '../account/account_error_mapper.dart';
++import '../account/account_gateway.dart';
++import '../account/account_models.dart';
++import '../account/account_profile_provisioner.dart';
++import '../account/account_validation.dart';
+ import '../navigation/app_route.dart';
+ 
+ class RegisterScreen extends StatefulWidget {
+-  const RegisterScreen({super.key});
++  const RegisterScreen({
++    super.key,
++    this.accountGateway,
++    this.profileProvisioner,
++    this.recoveredSession,
++  });
++
++  final AccountGateway? accountGateway;
++  final AccountProfileProvisioning? profileProvisioner;
++  final AccountSession? recoveredSession;
+ 
+   @override
+   State<RegisterScreen> createState() => _RegisterScreenState();
+ }
+ 
+ class _RegisterScreenState extends State<RegisterScreen> {
+-  final TextEditingController _emailController = TextEditingController();
+-  final TextEditingController _passwordController = TextEditingController();
+-  final AuthService _authService = AuthService();
+-  bool _isLoading = false;
++  final _formKey = GlobalKey<FormState>();
++  final _emailController = TextEditingController();
++  final _passwordController = TextEditingController();
++  final _confirmationController = TextEditingController();
++  final _firstNameController = TextEditingController();
++  final _lastNameController = TextEditingController();
++  final _ageController = TextEditingController();
++  bool _isSubmitting = false;
++  AccountSession? _createdSession;
+ 
+-  bool _isValidEmail(String email) {
+-    final RegExp regex = RegExp(
+-      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+-    );
+-    return regex.hasMatch(email);
++  bool get _isRecovery =>
++      _createdSession != null || widget.recoveredSession != null;
++
++  @override
++  void initState() {
++    super.initState();
++    _emailController.text = widget.recoveredSession?.email ?? '';
+   }
+ 
+-  Future<void> _sendVerificationEmail() async {
+-    setState(() => _isLoading = true);
++  Future<void> _register() async {
++    final gateway = widget.accountGateway;
++    final provisioner = widget.profileProvisioner;
++    if (_isSubmitting || !(_formKey.currentState?.validate() ?? false)) return;
++    if (gateway == null || provisioner == null) {
++      _showError('ระบบสมัครสมาชิกยังไม่พร้อม กรุณาลองใหม่อีกครั้ง');
++      return;
++    }
+ 
++    setState(() => _isSubmitting = true);
++    final email = AccountValidation.normalizeEmail(_emailController.text);
++    final profile = AccountProfile(
++      firstName: _firstNameController.text,
++      lastName: _lastNameController.text,
++      email: email,
++      age: int.parse(_ageController.text.trim()),
++    );
+     try {
+-      String email = _emailController.text.trim();
+-      String password = _passwordController.text.trim();
+-
+-      if (!_isValidEmail(email)) {
+-        throw Exception('รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง');
+-      }
+-      if (password.length < 4) {
+-        throw Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร');
+-      }
+-
+-      await _authService.sendEmailVerification(email, password);
+-
+-      if (!mounted) return;
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(
+-          content: Text('✅ สร้างบัญชีเรียบร้อย! กำลังนำท่านไปขั้นตอนถัดไป...'),
+-          backgroundColor: Colors.green,
+-        ),
+-      );
+-
+-      // ไปที่หน้ารอการยืนยัน OTP / ขั้นตอนถัดไป
+-      Navigator.push(
+-        context,
+-        MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
+-      );
+-    } catch (e) {
++      final session =
++          _createdSession ??
++          widget.recoveredSession ??
++          await gateway.createAccount(
++            email: email,
++            password: _passwordController.text,
++          );
++      _createdSession ??= session;
++      await provisioner.ensureProfile(session.uid, profile);
++      await gateway.sendVerificationEmail();
+       if (!mounted) return;
+-      final String errorMessage = AuthService.getErrorMessage(e);
+-      final bool isEmailInUse =
+-          e is FirebaseAuthException && e.code == 'email-already-in-use';
+-
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        SnackBar(
+-          content: Row(
+-            children: [
+-              const Icon(Icons.error_outline, color: Colors.white),
+-              const SizedBox(width: 8),
+-              Expanded(
+-                child: Text(
+-                  errorMessage,
+-                  style: const TextStyle(color: Colors.white),
+-                ),
+-              ),
+-            ],
+-          ),
+-          backgroundColor: Colors.redAccent,
+-          behavior: SnackBarBehavior.floating,
+-          shape: RoundedRectangleBorder(
+-            borderRadius: BorderRadius.circular(10),
+-          ),
+-          action: isEmailInUse
+-              ? SnackBarAction(
+-                  label: 'เข้าสู่ระบบ',
+-                  textColor: Colors.amber,
+-                  onPressed: () =>
+-                      Navigator.of(context).pushNamed(AppRoute.login.path),
+-                )
+-              : null,
+-        ),
++      Navigator.of(context).pushReplacementNamed(
++        AppRoute.verifyEmail.path,
++        arguments: VerifyEmailRouteArgs(email: email),
+       );
++    } on AccountOperationException catch (error) {
++      if (mounted) _showError(AccountErrorMapper.messageFor(error.code));
++    } on Object {
++      if (mounted) _showError(AccountErrorMapper.messageFor('unknown'));
+     } finally {
+-      if (mounted) setState(() => _isLoading = false);
++      if (mounted) setState(() => _isSubmitting = false);
+     }
+   }
+ 
++  void _showError(String message) {
++    ScaffoldMessenger.of(
++      context,
++    ).showSnackBar(SnackBar(content: Text(message)));
++  }
++
++  @override
++  void dispose() {
++    _emailController.dispose();
++    _passwordController.dispose();
++    _confirmationController.dispose();
++    _firstNameController.dispose();
++    _lastNameController.dispose();
++    _ageController.dispose();
++    super.dispose();
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      body: Container(
+-        decoration: const BoxDecoration(
+-          gradient: LinearGradient(
+-            colors: [Colors.purple, Colors.blueAccent],
+-            begin: Alignment.topLeft,
+-            end: Alignment.bottomRight,
+-          ),
+-        ),
+-        child: Center(
+-          child: Padding(
+-            padding: const EdgeInsets.all(20.0),
+-            child: Card(
+-              shape: RoundedRectangleBorder(
+-                borderRadius: BorderRadius.circular(20),
+-              ),
+-              elevation: 5,
+-              child: Padding(
+-                padding: const EdgeInsets.all(25.0),
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  children: [
+-                    const Text(
+-                      '📝 สมัครสมาชิก (Register)',
+-                      style: TextStyle(
+-                        fontSize: 26,
+-                        fontWeight: FontWeight.bold,
+-                      ),
+-                    ),
+-                    const SizedBox(height: 4),
+-                    const Text(
+-                      'กรอกอีเมลเพื่อสร้างบัญชีเรียนรู้คำศัพท์ภาษาอังกฤษ',
+-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+-                    ),
+-                    const SizedBox(height: 20),
+-                    TextField(
+-                      controller: _emailController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'อีเมล (Email)',
+-                        hintText: 'กรอกอีเมลของคุณ',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.email),
+-                      ),
++      appBar: AppBar(title: const Text('สมัครสมาชิก')),
++      body: SafeArea(
++        child: SingleChildScrollView(
++          padding: const EdgeInsets.all(24),
++          child: Form(
++            key: _formKey,
++            child: Column(
++              crossAxisAlignment: CrossAxisAlignment.stretch,
++              children: [
++                const Text(
++                  'สร้างบัญชีเพื่อเริ่มเรียนกับ LexiQuest',
++                  style: TextStyle(fontSize: 18),
++                ),
++                const SizedBox(height: 20),
++                TextFormField(
++                  key: const ValueKey<String>('register-email'),
++                  controller: _emailController,
++                  readOnly: _isRecovery,
++                  keyboardType: TextInputType.emailAddress,
++                  validator: (value) =>
++                      AccountValidation.emailError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'อีเมล',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                if (!_isRecovery) ...[
++                  const SizedBox(height: 12),
++                  TextFormField(
++                    key: const ValueKey<String>('register-password'),
++                    controller: _passwordController,
++                    obscureText: true,
++                    validator: (value) =>
++                        AccountValidation.passwordError(value ?? ''),
++                    decoration: const InputDecoration(
++                      labelText: 'รหัสผ่าน',
++                      border: OutlineInputBorder(),
+                     ),
+-                    const SizedBox(height: 15),
+-                    TextField(
+-                      controller: _passwordController,
+-                      decoration: const InputDecoration(
+-                        labelText: 'ตั้งรหัสผ่าน (Password)',
+-                        hintText: 'ตั้งรหัสผ่าน 6 ตัวอักษรขึ้นไป',
+-                        border: OutlineInputBorder(),
+-                        prefixIcon: Icon(Icons.lock),
+-                      ),
+-                      obscureText: true,
++                  ),
++                  const SizedBox(height: 12),
++                  TextFormField(
++                    key: const ValueKey<String>('register-confirmation'),
++                    controller: _confirmationController,
++                    obscureText: true,
++                    validator: (value) => AccountValidation.confirmationError(
++                      _passwordController.text,
++                      value ?? '',
+                     ),
+-                    const SizedBox(height: 20),
+-                    _isLoading
+-                        ? const CircularProgressIndicator()
+-                        : ElevatedButton(
+-                            onPressed: _sendVerificationEmail,
+-                            style: ElevatedButton.styleFrom(
+-                              padding: const EdgeInsets.symmetric(
+-                                vertical: 14,
+-                                horizontal: 50,
+-                              ),
+-                              backgroundColor: Colors.blueAccent,
+-                              shape: RoundedRectangleBorder(
+-                                borderRadius: BorderRadius.circular(12),
+-                              ),
+-                            ),
+-                            child: const Text(
+-                              'ส่งอีเมลยืนยัน (Send Email)',
+-                              style: TextStyle(
+-                                fontSize: 18,
+-                                color: Colors.white,
+-                                fontWeight: FontWeight.bold,
+-                              ),
+-                            ),
+-                          ),
+-                    TextButton(
+-                      onPressed: () =>
+-                          Navigator.of(context).pushNamed(AppRoute.login.path),
+-                      child: const Text(
+-                        'มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)',
+-                      ),
++                    decoration: const InputDecoration(
++                      labelText: 'ยืนยันรหัสผ่าน',
++                      border: OutlineInputBorder(),
+                     ),
+-                  ],
++                  ),
++                ],
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-first-name'),
++                  controller: _firstNameController,
++                  validator: (value) =>
++                      AccountValidation.firstNameError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'ชื่อ',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-last-name'),
++                  controller: _lastNameController,
++                  validator: (value) =>
++                      AccountValidation.lastNameError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'นามสกุล',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 12),
++                TextFormField(
++                  key: const ValueKey<String>('register-age'),
++                  controller: _ageController,
++                  keyboardType: TextInputType.number,
++                  validator: (value) => AccountValidation.ageError(value ?? ''),
++                  decoration: const InputDecoration(
++                    labelText: 'อายุ',
++                    border: OutlineInputBorder(),
++                  ),
++                ),
++                const SizedBox(height: 20),
++                FilledButton(
++                  key: const ValueKey<String>('register-submit'),
++                  onPressed: _isSubmitting ? null : _register,
++                  child: _isSubmitting
++                      ? const SizedBox(
++                          width: 20,
++                          height: 20,
++                          child: CircularProgressIndicator(strokeWidth: 2),
++                        )
++                      : const Text('สมัครสมาชิกและส่งอีเมลยืนยัน'),
+                 ),
+-              ),
++              ],
+             ),
+           ),
+         ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/screens/session_gate_screen.dart b/lib/screens/session_gate_screen.dart
+index 0cb25bf..b753b81 100644
+--- a/lib/screens/session_gate_screen.dart
++++ b/lib/screens/session_gate_screen.dart
+@@ -1,28 +1,32 @@
+ import 'package:flutter/material.dart';
+ 
+ import '../account/account_gateway.dart';
+ import '../account/account_models.dart';
++import '../account/account_profile_provisioner.dart';
+ import 'login_screen.dart';
+ import 'main_navigation_screen.dart';
+ import 'otp_screen.dart';
++import 'register_screen.dart';
+ import '../services/guest_session_service.dart';
+ 
+ final class SessionGateScreen extends StatelessWidget {
+   const SessionGateScreen({
+     super.key,
+     required this.accountGateway,
+     required this.guestSessionService,
++    this.profileProvisioner = const UnavailableAccountProfileProvisioner(),
+   });
+ 
+   final AccountGateway accountGateway;
+   final GuestSessionService guestSessionService;
++  final AccountProfileProvisioning profileProvisioner;
+ 
+   @override
+   Widget build(BuildContext context) {
+     return StreamBuilder<AccountSession?>(
+       stream: accountGateway.authStateChanges(),
+       initialData: accountGateway.currentSession,
+       builder: (context, snapshot) {
+         if (snapshot.connectionState == ConnectionState.waiting &&
+             !snapshot.hasData) {
+           return const Scaffold(
+@@ -30,18 +34,42 @@ final class SessionGateScreen extends StatelessWidget {
+           );
+         }
+ 
+         final session = snapshot.data;
+         if (session == null) {
+           return LoginScreen(
+             accountGateway: accountGateway,
+             guestSessionService: guestSessionService,
+           );
+         }
+-        if (session.isAnonymous || session.isEmailVerified) {
++        if (session.isAnonymous) {
+           return const MainNavigationScreen();
+         }
+-        return OTPScreen(email: session.email ?? '');
++        return FutureBuilder<bool>(
++          future: profileProvisioner.isProvisioningComplete(session.uid),
++          builder: (context, completion) {
++            if (completion.connectionState != ConnectionState.done) {
++              return const Scaffold(
++                body: Center(child: CircularProgressIndicator()),
++              );
++            }
++            if (completion.data != true) {
++              return RegisterScreen(
++                accountGateway: accountGateway,
++                profileProvisioner: profileProvisioner,
++                recoveredSession: session,
++              );
++            }
++            if (session.isEmailVerified) {
++              return const MainNavigationScreen();
++            }
++            return OTPScreen(
++              email: session.email ?? '',
++              accountGateway: accountGateway,
++              profileProvisioner: profileProvisioner,
++            );
++          },
++        );
+       },
+     );
+   }
+ }
+diff --git a/lib/services/category_service.dart b/lib/services/category_service.dart
+index ad0b4ef..5656c47 100644
+--- a/lib/services/category_service.dart
++++ b/lib/services/category_service.dart
+@@ -1,16 +1,94 @@
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+ import 'package:flutter/foundation.dart' show debugPrint;
+ import '../models/category_model.dart' as models;
+ 
++abstract interface class DefaultCategoryStore {
++  Future<void> ensureCategory({
++    required String id,
++    required String name,
++    required String uid,
++  });
++
++  Future<void> ensureWord({
++    required String categoryId,
++    required String id,
++    required String uid,
++    required String word,
++    required String meaning,
++    required String partOfSpeech,
++  });
++}
++
++final class FirestoreDefaultCategoryStore implements DefaultCategoryStore {
++  FirestoreDefaultCategoryStore({FirebaseFirestore? firestore})
++    : _firestore = firestore ?? FirebaseFirestore.instance;
++
++  final FirebaseFirestore _firestore;
++
++  @override
++  Future<void> ensureCategory({
++    required String id,
++    required String name,
++    required String uid,
++  }) async {
++    final reference = _firestore.collection('categories').doc(id);
++    await _firestore.runTransaction((transaction) async {
++      final existing = await transaction.get(reference);
++      if (!existing.exists) {
++        transaction.set(reference, {
++          'category_name': name,
++          'created_at': Timestamp.now(),
++          'uid': uid,
++        });
++      }
++    });
++  }
++
++  @override
++  Future<void> ensureWord({
++    required String categoryId,
++    required String id,
++    required String uid,
++    required String word,
++    required String meaning,
++    required String partOfSpeech,
++  }) async {
++    final reference = _firestore
++        .collection('categories')
++        .doc(categoryId)
++        .collection('words')
++        .doc(id);
++    await _firestore.runTransaction((transaction) async {
++      final existing = await transaction.get(reference);
++      if (!existing.exists) {
++        transaction.set(reference, {
++          'word': word,
++          'meaning': meaning,
++          'part_of_speech': partOfSpeech,
++          'user_id': uid,
++          'is_global': false,
++          'created_at': Timestamp.now(),
++        });
++      }
++    });
++  }
++}
++
+ class CategoryService {
++  CategoryService({DefaultCategoryStore? defaultCategoryStore})
++    : _defaultCategoryStore =
++          defaultCategoryStore ?? FirestoreDefaultCategoryStore();
++
++  final DefaultCategoryStore _defaultCategoryStore;
++
+   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+ 
+   CollectionReference get _categoriesCollection {
+     return FirebaseFirestore.instance.collection('categories');
+   }
+ 
+   /// เพิ่ม Category ใหม่ พร้อมบันทึก uid ของผู้ใช้
+   Future<void> addCategory(String categoryName) async {
+     final user = FirebaseAuth.instance.currentUser;
+     if (user == null) {
+@@ -242,34 +320,34 @@ class CategoryService {
+           },
+           {
+             "word": "Adventure",
+             "meaning": "การผจญภัย",
+             "part_of_speech": "Noun",
+           },
+         ],
+       },
+     ];
+ 
+-    for (var category in defaultCategories) {
+-      final categoryRef = _firestore.collection('categories').doc();
+-      await categoryRef.set({
+-        'category_name': category['category_name'] ?? '',
+-        'created_at': Timestamp.now(),
+-        'uid': uid,
+-      });
++    for (final (categoryIndex, category) in defaultCategories.indexed) {
++      final categoryId = '${uid}_default_$categoryIndex';
++      await _defaultCategoryStore.ensureCategory(
++        id: categoryId,
++        name: category['category_name'] ?? '',
++        uid: uid,
++      );
+ 
+-      for (var wordData in category['words']) {
+-        final wordRef = categoryRef.collection('words').doc();
+-        await wordRef.set({
+-          'word': wordData["word"] ?? '',
+-          'meaning': wordData["meaning"] ?? '',
+-          'part_of_speech': wordData["part_of_speech"] ?? '',
+-          'user_id': uid,
+-          'is_global': false,
+-          'created_at': Timestamp.now(),
+-        });
++      final words = category['words']! as List<dynamic>;
++      for (final (wordIndex, wordData) in words.indexed) {
++        await _defaultCategoryStore.ensureWord(
++          categoryId: categoryId,
++          id: '$wordIndex',
++          uid: uid,
++          word: wordData['word'] ?? '',
++          meaning: wordData['meaning'] ?? '',
++          partOfSpeech: wordData['part_of_speech'] ?? '',
++        );
+       }
+     }
+ 
+     debugPrint("✅ Default categories and words added.");
+   }
+ }
+diff --git a/test/account/account_profile_provisioner_test.dart b/test/account/account_profile_provisioner_test.dart
+new file mode 100644
+index 0000000..84b01bf
+--- /dev/null
++++ b/test/account/account_profile_provisioner_test.dart
+@@ -0,0 +1,78 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
++
++final class _RecordingProfileWriter implements AccountProfileWriter {
++  final writes = <({String uid, AccountProfile profile, bool merge})>[];
++  final completedUids = <String>{};
++
++  @override
++  Future<void> writeProfile({
++    required String uid,
++    required AccountProfile profile,
++    required bool merge,
++  }) async {
++    writes.add((uid: uid, profile: profile, merge: merge));
++  }
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async =>
++      completedUids.contains(uid);
++
++  @override
++  Future<void> markProvisioningComplete(String uid) async {
++    completedUids.add(uid);
++  }
++}
++
++final class _PartiallyFailingDefaultCategories
++    implements DefaultCategoryProvisioner {
++  bool failFirstAttempt = true;
++  final categoryIds = <String>{};
++
++  @override
++  Future<void> ensureDefaults(String uid) async {
++    categoryIds.add('$uid:animals');
++    if (failFirstAttempt) {
++      failFirstAttempt = false;
++      throw StateError('interrupted-default-category-write');
++    }
++    categoryIds.add('$uid:travel');
++  }
++}
++
++void main() {
++  test(
++    'partial default category provisioning converges before completion',
++    () async {
++      final writer = _RecordingProfileWriter();
++      final categories = _PartiallyFailingDefaultCategories();
++      final provisioner = AccountProfileProvisioner(
++        profileWriter: writer,
++        defaultCategoryProvisioner: categories,
++      );
++      const profile = AccountProfile(
++        firstName: 'Ada',
++        lastName: 'Lovelace',
++        email: ' Ada@Example.COM ',
++        age: 20,
++      );
++
++      await expectLater(
++        provisioner.ensureProfile('student-1', profile),
++        throwsStateError,
++      );
++      expect(await provisioner.isProvisioningComplete('student-1'), isFalse);
++
++      await provisioner.ensureProfile('student-1', profile);
++
++      expect(writer.writes, hasLength(2));
++      expect(writer.writes.map((write) => write.merge), everyElement(isTrue));
++      expect(
++        writer.writes.map((write) => write.profile.normalizedEmail),
++        everyElement('ada@example.com'),
++      );
++      expect(categories.categoryIds, {'student-1:animals', 'student-1:travel'});
++      expect(await provisioner.isProvisioningComplete('student-1'), isTrue);
++    },
++  );
++}
+diff --git a/test/navigation/app_router_test.dart b/test/navigation/app_router_test.dart
+index 748fdc3..d5dc0f1 100644
+--- a/test/navigation/app_router_test.dart
++++ b/test/navigation/app_router_test.dart
+@@ -1,14 +1,15 @@
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:flutter/widgets.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
+ import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/navigation/app_router.dart';
+ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ final class _FakeAccountGateway implements AccountGateway {
+   @override
+   AccountSession? get currentSession => null;
+ 
+@@ -55,28 +56,40 @@ final class _FakeAccountGateway implements AccountGateway {
+   Future<String> verifyPasswordResetCode(String code) =>
+       throw UnimplementedError();
+ }
+ 
+ final class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async =>
+       const GuestSessionFailed(GuestSessionFailure.unknown);
+ }
+ 
++final class _FakeProfileProvisioner implements AccountProfileProvisioning {
++  const _FakeProfileProvisioner();
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) =>
++      throw UnimplementedError();
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async => true;
++}
++
+ AppRouter _router() => AppRouter(
+   AppDependencies(
+     runtimeStatus: const AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
+     ),
+     config: null,
+     accountGateway: _FakeAccountGateway(),
++    accountProfileProvisioning: const _FakeProfileProvisioner(),
+     guestSessionService: _FakeGuestSessionService(),
+   ),
+ );
+ 
+ void main() {
+   test('canonical account routes are unique and stable', () {
+     expect(
+       AppRoute.values.map((route) => route.path).toSet().length,
+       AppRoute.values.length,
+     );
+diff --git a/test/screens/full_system_audit_test.dart b/test/screens/full_system_audit_test.dart
+index c3f32f2..59028b0 100644
+--- a/test/screens/full_system_audit_test.dart
++++ b/test/screens/full_system_audit_test.dart
+@@ -120,21 +120,21 @@ void main() {
+       },
+     );
+ 
+     testWidgets(
+       'Section 1 Audit: RegisterScreen & OTPScreen render verification UI',
+       (WidgetTester tester) async {
+         await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+         await tester.pumpAndSettle();
+ 
+         expect(find.textContaining('สมัครสมาชิก'), findsWidgets);
+-        expect(find.byType(TextField), findsNWidgets(2)); // Email & Password
++        expect(find.byType(TextField), findsNWidgets(6));
+       },
+     );
+ 
+     test('Section 1 Audit: AuthService translates Firebase errors to Thai', () {
+       final exc = FirebaseAuthException(code: 'email-already-in-use');
+       final msg = AuthService.getErrorMessage(exc);
+       expect(msg, contains('อีเมลนี้ถูกใช้งานในระบบแล้ว'));
+     });
+ 
+     // -------------------------------------------------------------
+diff --git a/test/screens/otp_screen_test.dart b/test/screens/otp_screen_test.dart
+index bfdc38f..cf4110c 100644
+--- a/test/screens/otp_screen_test.dart
++++ b/test/screens/otp_screen_test.dart
+@@ -1,35 +1,178 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_cooldown.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/otp_screen.dart';
+ 
+-void main() {
+-  group('OTPScreen Widget Tests', () {
+-    testWidgets('renders OTP screen elements cleanly', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(
+-        const MaterialApp(home: OTPScreen(email: 'test@example.com')),
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway(this._reloadResult);
++
++  AccountSession? _reloadResult;
++  int resendCalls = 0;
++
++  @override
++  AccountSession? get currentSession => _reloadResult;
++
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(_reloadResult);
++
++  @override
++  Future<AccountSession?> reloadSession() async => _reloadResult;
++
++  @override
++  Future<void> sendVerificationEmail() async => resendCalls++;
++
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
++
++final class _FakeProfileProvisioner implements AccountProfileProvisioning {
++  _FakeProfileProvisioner(this.complete);
++
++  final bool complete;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) =>
++      throw UnimplementedError();
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async => complete;
++}
++
++Widget _harness(
++  _FakeAccountGateway gateway,
++  AccountCooldown cooldown, {
++  bool provisioningComplete = true,
++}) => MaterialApp(
++  onGenerateRoute: (settings) => MaterialPageRoute<void>(
++    settings: settings,
++    builder: (_) {
++      if (settings.name == AppRoute.home.path) {
++        return const Scaffold(body: Text('HOME_REACHED'));
++      }
++      if (settings.name == AppRoute.register.path) {
++        final args = settings.arguments! as RegisterRouteArgs;
++        return Scaffold(body: Text('RECOVER:${args.uid}:${args.email}'));
++      }
++      return OTPScreen(
++        email: 'student@example.com',
++        accountGateway: gateway,
++        profileProvisioner: _FakeProfileProvisioner(provisioningComplete),
++        resendCooldown: cooldown,
+       );
++    },
++  ),
++);
+ 
+-      expect(find.text('ยืนยันอีเมลของคุณ'), findsOneWidget);
+-      expect(find.textContaining('test@example.com'), findsOneWidget);
+-      expect(find.text('✅ ฉันได้ยืนยันแล้ว'), findsOneWidget);
+-      expect(find.text('🔄 ส่งอีเมลยืนยันใหม่'), findsOneWidget);
+-    });
+-
+-    testWidgets(
+-      'tapping check verification when unverified shows snackbar warning',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          const MaterialApp(home: OTPScreen(email: 'test@example.com')),
+-        );
+-
+-        final checkButton = find.text('✅ ฉันได้ยืนยันแล้ว');
+-        await tester.tap(checkButton);
+-        await tester.pumpAndSettle();
+-
+-        expect(find.text('⚠ กรุณายืนยันอีเมลก่อน'), findsOneWidget);
+-      },
++void main() {
++  testWidgets('refresh enters home only after a verified reload', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway(
++      const AccountSession(
++        uid: 'student-1',
++        email: 'student@example.com',
++        isAnonymous: false,
++        isEmailVerified: false,
++      ),
++    );
++    await tester.pumpWidget(_harness(gateway, AccountCooldown()));
++
++    await tester.tap(find.byKey(const ValueKey<String>('verify-refresh')));
++    await tester.pumpAndSettle();
++    expect(find.text('HOME_REACHED'), findsNothing);
++
++    gateway._reloadResult = const AccountSession(
++      uid: 'student-1',
++      email: 'student@example.com',
++      isAnonymous: false,
++      isEmailVerified: true,
+     );
++    await tester.tap(find.byKey(const ValueKey<String>('verify-refresh')));
++    await tester.pumpAndSettle();
++    expect(find.text('HOME_REACHED'), findsOneWidget);
++  });
++
++  testWidgets('resend uses a sixty-second cooldown', (tester) async {
++    var now = DateTime(2026, 7, 30, 12);
++    final gateway = _FakeAccountGateway(null);
++    final cooldown = AccountCooldown(now: () => now);
++    await tester.pumpWidget(_harness(gateway, cooldown));
++
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    expect(gateway.resendCalls, 1);
++
++    now = now.add(const Duration(seconds: 60));
++    await tester.pump();
++    await tester.tap(find.byKey(const ValueKey<String>('verify-resend')));
++    await tester.pump();
++    expect(gateway.resendCalls, 2);
+   });
++
++  testWidgets(
++    'verified reload recovers provisioning instead of entering home',
++    (tester) async {
++      final gateway = _FakeAccountGateway(
++        const AccountSession(
++          uid: 'student-1',
++          email: 'student@example.com',
++          isAnonymous: false,
++          isEmailVerified: true,
++        ),
++      );
++      await tester.pumpWidget(
++        _harness(gateway, AccountCooldown(), provisioningComplete: false),
++      );
++
++      await tester.tap(find.byKey(const ValueKey<String>('verify-refresh')));
++      await tester.pumpAndSettle();
++
++      expect(find.text('HOME_REACHED'), findsNothing);
++      expect(
++        find.text('RECOVER:student-1:student@example.com'),
++        findsOneWidget,
++      );
++    },
++  );
+ }
+diff --git a/test/screens/registration_flow_test.dart b/test/screens/registration_flow_test.dart
+index b29f3b5..588ead2 100644
+--- a/test/screens/registration_flow_test.dart
++++ b/test/screens/registration_flow_test.dart
+@@ -1,95 +1,227 @@
++import 'dart:async';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/account/account_gateway.dart';
++import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
++import 'package:vocab_learning_app/navigation/app_route.dart';
+ import 'package:vocab_learning_app/screens/register_screen.dart';
+-import 'package:vocab_learning_app/screens/otp_screen.dart';
+-import 'package:vocab_learning_app/screens/register_form_screen.dart';
+ 
+-void main() {
+-  group('Registration Flow End-to-End System Audit', () {
+-    testWidgets('RegisterScreen renders Thai labels and input fields cleanly', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+-      await tester.pumpAndSettle();
++const _emailKey = ValueKey<String>('register-email');
++const _passwordKey = ValueKey<String>('register-password');
++const _confirmationKey = ValueKey<String>('register-confirmation');
++const _firstNameKey = ValueKey<String>('register-first-name');
++const _lastNameKey = ValueKey<String>('register-last-name');
++const _ageKey = ValueKey<String>('register-age');
++const _submitKey = ValueKey<String>('register-submit');
+ 
+-      expect(find.textContaining('สมัครสมาชิก'), findsWidgets);
+-      expect(find.byType(TextField), findsNWidgets(2));
+-      expect(find.text('ส่งอีเมลยืนยัน (Send Email)'), findsOneWidget);
+-    });
++final class _FakeAccountGateway implements AccountGateway {
++  _FakeAccountGateway({this.sendFailures = 0});
+ 
+-    testWidgets('Submitting valid email and password navigates to OTPScreen', (
+-      WidgetTester tester,
+-    ) async {
+-      await tester.pumpWidget(const MaterialApp(home: RegisterScreen()));
+-      await tester.pumpAndSettle();
++  final events = <String>[];
++  int sendFailures;
++  int createCalls = 0;
+ 
+-      // Enter valid email and password into TextFields
+-      await tester.enterText(
+-        find.byType(TextField).at(0),
+-        'student@example.com',
+-      );
+-      await tester.enterText(find.byType(TextField).at(1), 'password123');
++  @override
++  AccountSession? get currentSession => null;
+ 
+-      // Tap submit button
+-      await tester.tap(find.text('ส่งอีเมลยืนยัน (Send Email)'));
+-      await tester.pumpAndSettle();
++  @override
++  Stream<AccountSession?> authStateChanges() =>
++      Stream<AccountSession?>.value(null);
+ 
+-      // Verify navigation to OTPScreen
+-      expect(find.byType(OTPScreen), findsOneWidget);
+-      expect(find.textContaining('student@example.com'), findsOneWidget);
+-    });
++  @override
++  Future<AccountSession> createAccount({
++    required String email,
++    required String password,
++  }) async {
++    createCalls++;
++    events.add('createAccount:$email:$password');
++    return AccountSession(
++      uid: 'student-1',
++      email: email,
++      isAnonymous: false,
++      isEmailVerified: false,
++    );
++  }
+ 
+-    testWidgets(
+-      'OTPScreen blocks proceed when email is unverified (fail-closed security)',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          const MaterialApp(home: OTPScreen(email: 'student@example.com')),
+-        );
+-        await tester.pumpAndSettle();
++  @override
++  Future<void> sendVerificationEmail() async {
++    events.add('sendVerificationEmail');
++    if (sendFailures > 0) {
++      sendFailures--;
++      throw const AccountOperationException('network-request-failed');
++    }
++  }
+ 
+-        expect(find.text('ยืนยันอีเมลของคุณ'), findsOneWidget);
+-        expect(find.textContaining('student@example.com'), findsOneWidget);
++  @override
++  Future<void> applyVerificationCode(String code) => throw UnimplementedError();
++  @override
++  Future<void> changePassword({
++    required String currentPassword,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> confirmPasswordReset({
++    required String code,
++    required String newPassword,
++  }) => throw UnimplementedError();
++  @override
++  Future<AccountSession> signIn({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<void> requestPasswordReset(String email) => throw UnimplementedError();
++  @override
++  Future<AccountSession?> reloadSession() => throw UnimplementedError();
++  @override
++  Future<void> signOut() => throw UnimplementedError();
++  @override
++  Future<GuestUpgradeResult> upgradeAnonymous({
++    required String email,
++    required String password,
++  }) => throw UnimplementedError();
++  @override
++  Future<String> verifyPasswordResetCode(String code) =>
++      throw UnimplementedError();
++}
+ 
+-        // Tap confirmation button when unverified
+-        await tester.tap(
+-          find.widgetWithText(ElevatedButton, '✅ ฉันได้ยืนยันแล้ว'),
+-        );
+-        await tester.pumpAndSettle();
++final class _FakeProfileProvisioner implements AccountProfileProvisioning {
++  _FakeProfileProvisioner(this.events, {this.failures = 0});
+ 
+-        // Verify fail-closed security blocks navigation and displays warning
+-        expect(find.text('⚠ กรุณายืนยันอีเมลก่อน'), findsOneWidget);
+-        expect(find.byType(RegisterFormScreen), findsNothing);
+-      },
++  final List<String> events;
++  int failures;
++  final ensuredUids = <String>[];
++  bool categoriesComplete = false;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) async {
++    ensuredUids.add(uid);
++    events.add(
++      'ensureProfile:$uid:${profile.normalizedEmail}:${profile.firstName}:${profile.lastName}:${profile.age}',
+     );
++    if (failures > 0) {
++      failures--;
++      throw StateError('profile-write-failed');
++    }
++    categoriesComplete = true;
++  }
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async => failures == 0;
++}
+ 
+-    testWidgets(
+-      'RegisterFormScreen renders fields and completes registration',
+-      (WidgetTester tester) async {
+-        await tester.pumpWidget(
+-          MaterialApp(
+-            routes: {
+-              '/home': (context) =>
+-                  const Scaffold(body: Text('HOME_SCREEN_REACHED')),
+-            },
+-            home: const RegisterFormScreen(email: 'student@example.com'),
+-          ),
++Widget _harness(
++  _FakeAccountGateway gateway, {
++  _FakeProfileProvisioner? profileProvisioner,
++}) {
++  final events = gateway.events;
++  return MaterialApp(
++    onGenerateRoute: (settings) => MaterialPageRoute<void>(
++      settings: settings,
++      builder: (_) {
++        if (settings.name == AppRoute.verifyEmail.path) {
++          final args = settings.arguments! as VerifyEmailRouteArgs;
++          return Scaffold(body: Text('VERIFY:${args.email}'));
++        }
++        return RegisterScreen(
++          accountGateway: gateway,
++          profileProvisioner:
++              profileProvisioner ?? _FakeProfileProvisioner(events),
+         );
+-        await tester.pumpAndSettle();
++      },
++    ),
++  );
++}
+ 
+-        expect(find.textContaining('student@example.com'), findsOneWidget);
++Future<void> _enterValidRegistration(WidgetTester tester) async {
++  await tester.enterText(find.byKey(_emailKey), ' Student@Example.COM ');
++  await tester.enterText(find.byKey(_passwordKey), 'password123');
++  await tester.enterText(find.byKey(_confirmationKey), 'password123');
++  await tester.enterText(find.byKey(_firstNameKey), 'Ada');
++  await tester.enterText(find.byKey(_lastNameKey), 'Lovelace');
++  await tester.enterText(find.byKey(_ageKey), '20');
++}
+ 
+-        // Fill in student profile information
+-        await tester.enterText(find.byType(TextField).at(0), 'น้องอนันต์');
+-        await tester.enterText(find.byType(TextField).at(1), 'ใจดี');
+-        await tester.enterText(find.byType(TextField).at(2), '10');
++void main() {
++  testWidgets(
++    'creates, provisions, sends verification, then uses typed verification navigation',
++    (tester) async {
++      final gateway = _FakeAccountGateway();
++      await tester.pumpWidget(_harness(gateway));
++
++      await _enterValidRegistration(tester);
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pumpAndSettle();
+ 
+-        // Tap submit registration button
+-        await tester.tap(find.text('สมัครสมาชิก'));
+-        await tester.pumpAndSettle();
++      expect(gateway.events, [
++        'createAccount:student@example.com:password123',
++        'ensureProfile:student-1:student@example.com:Ada:Lovelace:20',
++        'sendVerificationEmail',
++      ]);
++      expect(find.text('VERIFY:student@example.com'), findsOneWidget);
++    },
++  );
+ 
+-        // Verify successful navigation to Home Screen
+-        expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+-      },
++  testWidgets('invalid profile fields do not create an account', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    await tester.pumpWidget(_harness(gateway));
++
++    await tester.enterText(find.byKey(_emailKey), 'student@example.com');
++    await tester.enterText(find.byKey(_passwordKey), 'password123');
++    await tester.enterText(find.byKey(_confirmationKey), 'different');
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pump();
++
++    expect(gateway.events, isEmpty);
++  });
++
++  testWidgets('retries a failed profile provision with the created uid', (
++    tester,
++  ) async {
++    final gateway = _FakeAccountGateway();
++    final profile = _FakeProfileProvisioner(gateway.events, failures: 1);
++    await tester.pumpWidget(_harness(gateway, profileProvisioner: profile));
++    await _enterValidRegistration(tester);
++
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pumpAndSettle();
++    await tester.tap(find.byKey(_submitKey));
++    await tester.pumpAndSettle();
++
++    expect(gateway.createCalls, 1);
++    expect(profile.ensuredUids, ['student-1', 'student-1']);
++    expect(
++      gateway.events.where((event) => event == 'sendVerificationEmail'),
++      hasLength(1),
+     );
++    expect(find.text('VERIFY:student@example.com'), findsOneWidget);
+   });
++
++  testWidgets(
++    'retries verification delivery after completed category provisioning',
++    (tester) async {
++      final gateway = _FakeAccountGateway(sendFailures: 1);
++      final profile = _FakeProfileProvisioner(gateway.events);
++      await tester.pumpWidget(_harness(gateway, profileProvisioner: profile));
++      await _enterValidRegistration(tester);
++
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pumpAndSettle();
++      expect(profile.categoriesComplete, isTrue);
++      await tester.tap(find.byKey(_submitKey));
++      await tester.pumpAndSettle();
++
++      expect(gateway.createCalls, 1);
++      expect(profile.ensuredUids, ['student-1', 'student-1']);
++      expect(
++        gateway.events.where((event) => event == 'sendVerificationEmail'),
++        hasLength(2),
++      );
++      expect(find.text('VERIFY:student@example.com'), findsOneWidget);
++    },
++  );
+ }
+diff --git a/test/screens/session_gate_screen_test.dart b/test/screens/session_gate_screen_test.dart
+index 5fcafa6..6d15cdc 100644
+--- a/test/screens/session_gate_screen_test.dart
++++ b/test/screens/session_gate_screen_test.dart
+@@ -1,20 +1,22 @@
+ import 'dart:async';
+ 
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import 'package:vocab_learning_app/account/account_gateway.dart';
+ import 'package:vocab_learning_app/account/account_models.dart';
++import 'package:vocab_learning_app/account/account_profile_provisioner.dart';
+ import 'package:vocab_learning_app/screens/login_screen.dart';
+ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+ import 'package:vocab_learning_app/screens/otp_screen.dart';
++import 'package:vocab_learning_app/screens/register_screen.dart';
+ import 'package:vocab_learning_app/screens/session_gate_screen.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ final class _FakeAccountGateway implements AccountGateway {
+   _FakeAccountGateway(this.session, {Stream<AccountSession?>? authState})
+     : _authState = authState ?? Stream<AccountSession?>.value(session);
+ 
+   final AccountSession? session;
+   final Stream<AccountSession?> _authState;
+ 
+@@ -67,20 +69,33 @@ final class _FakeAccountGateway implements AccountGateway {
+   Future<GuestUpgradeResult> upgradeAnonymous({
+     required String email,
+     required String password,
+   }) => throw UnimplementedError();
+ 
+   @override
+   Future<String> verifyPasswordResetCode(String code) =>
+       throw UnimplementedError();
+ }
+ 
++final class _FakeProfileProvisioner implements AccountProfileProvisioning {
++  const _FakeProfileProvisioner(this.complete);
++
++  final bool complete;
++
++  @override
++  Future<void> ensureProfile(String uid, AccountProfile profile) =>
++      throw UnimplementedError();
++
++  @override
++  Future<bool> isProvisioningComplete(String uid) async => complete;
++}
++
+ final class _PendingGuestSessionService implements GuestSessionService {
+   int startCalls = 0;
+   final Completer<GuestSessionResult> _completion = Completer();
+ 
+   @override
+   Future<GuestSessionResult> start() {
+     startCalls++;
+     return _completion.future;
+   }
+ }
+@@ -92,31 +107,33 @@ final class _CountingNavigatorObserver extends NavigatorObserver {
+   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+     pushes++;
+     super.didPush(route, previousRoute);
+   }
+ }
+ 
+ Future<void> _pumpGate(
+   WidgetTester tester,
+   AccountSession? session, {
+   GuestSessionService? guestSessionService,
++  bool provisioningComplete = true,
+ }) async {
+   await tester.pumpWidget(
+     MaterialApp(
+       home: SessionGateScreen(
+         accountGateway: _FakeAccountGateway(session),
++        profileProvisioner: _FakeProfileProvisioner(provisioningComplete),
+         guestSessionService:
+             guestSessionService ?? _PendingGuestSessionService(),
+       ),
+     ),
+   );
+-  await tester.pump();
++  await tester.pumpAndSettle();
+ }
+ 
+ void main() {
+   setUp(() {
+     GoogleFonts.config.allowRuntimeFetching = false;
+   });
+ 
+   testWidgets('signed-out sessions open LoginScreen', (tester) async {
+     await _pumpGate(tester, null);
+ 
+@@ -172,34 +189,72 @@ void main() {
+         uid: 'unverified-user',
+         email: 'unverified@example.com',
+         isAnonymous: false,
+         isEmailVerified: false,
+       ),
+     );
+ 
+     expect(find.byType(OTPScreen), findsOneWidget);
+   });
+ 
++  testWidgets(
++    'verified incomplete sessions open profile recovery instead of home',
++    (tester) async {
++      await _pumpGate(
++        tester,
++        const AccountSession(
++          uid: 'incomplete-user',
++          email: 'incomplete@example.com',
++          isAnonymous: false,
++          isEmailVerified: true,
++        ),
++        provisioningComplete: false,
++      );
++
++      expect(find.byType(MainNavigationScreen), findsNothing);
++      expect(find.byType(RegisterScreen), findsOneWidget);
++    },
++  );
++
++  testWidgets('unverified incomplete sessions also open profile recovery', (
++    tester,
++  ) async {
++    await _pumpGate(
++      tester,
++      const AccountSession(
++        uid: 'incomplete-user',
++        email: 'incomplete@example.com',
++        isAnonymous: false,
++        isEmailVerified: false,
++      ),
++      provisioningComplete: false,
++    );
++
++    expect(find.byType(OTPScreen), findsNothing);
++    expect(find.byType(RegisterScreen), findsOneWidget);
++  });
++
+   testWidgets('live session changes replace the root child without pushing', (
+     tester,
+   ) async {
+     final sessions = StreamController<AccountSession?>.broadcast();
+     final guestSessionService = _PendingGuestSessionService();
+     final observer = _CountingNavigatorObserver();
+     addTearDown(sessions.close);
+ 
+     await tester.pumpWidget(
+       MaterialApp(
+         navigatorObservers: [observer],
+         home: SessionGateScreen(
+           accountGateway: _FakeAccountGateway(null, authState: sessions.stream),
+           guestSessionService: guestSessionService,
++          profileProvisioner: const _FakeProfileProvisioner(true),
+         ),
+       ),
+     );
+     await tester.pump();
+     sessions.add(null);
+     await tester.pump();
+ 
+     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+     expect(find.byType(LoginScreen), findsOneWidget);
+     expect(navigator.canPop(), isFalse);
+@@ -220,17 +275,17 @@ void main() {
+     expect(observer.pushes, 1);
+ 
+     sessions.add(
+       const AccountSession(
+         uid: 'unverified-user',
+         email: 'unverified@example.com',
+         isAnonymous: false,
+         isEmailVerified: false,
+       ),
+     );
+-    await tester.pump();
++    await tester.pumpAndSettle();
+ 
+     expect(find.byType(OTPScreen), findsOneWidget);
+     expect(navigator.canPop(), isFalse);
+     expect(observer.pushes, 1);
+   });
+ }
+diff --git a/test/security/firestore-rules.test.cjs b/test/security/firestore-rules.test.cjs
+index 26c0ae2..122bf47 100644
+--- a/test/security/firestore-rules.test.cjs
++++ b/test/security/firestore-rules.test.cjs
+@@ -7,20 +7,21 @@ const {
+   initializeTestEnvironment,
+ } = require('@firebase/rules-unit-testing');
+ const {
+   collection,
+   deleteField,
+   deleteDoc,
+   doc,
+   getDoc,
+   getDocs,
+   query,
++  runTransaction,
+   serverTimestamp,
+   setDoc,
+   updateDoc,
+   where,
+   writeBatch,
+ } = require('firebase/firestore');
+ 
+ const projectId = 'demo-lexiquest-rules-test';
+ const alice = 'alice_uid';
+ const bob = 'bob_uid';
+@@ -58,20 +59,22 @@ function purchaseData(totalPrice = 50) {
+     created_at: serverTimestamp(),
+   };
+ }
+ 
+ function profileData(overrides = {}) {
+   return {
+     first_name: 'Alice',
+     last_name: 'Learner',
+     email: 'alice@example.com',
+     age: 20,
++    profileSchemaVersion: 1,
++    requiredProvisioningComplete: false,
+     createdAt: serverTimestamp(),
+     ...overrides,
+   };
+ }
+ 
+ function categoryData(uid = alice, name = 'Core words') {
+   return {
+     category_name: name,
+     created_at: serverTimestamp(),
+     uid,
+@@ -82,20 +85,50 @@ function wordData(uid = alice, word = 'lexicon') {
+   return {
+     word,
+     meaning: 'A vocabulary',
+     part_of_speech: 'noun',
+     user_id: uid,
+     is_global: false,
+     created_at: serverTimestamp(),
+   };
+ }
+ 
++async function ensureDeterministicDefaultSlice(db, uid) {
++  const categoryId = `${uid}_default_0`;
++  const categoryRef = doc(db, 'categories', categoryId);
++  const words = [
++    { id: '0', word: 'Dog', meaning: 'หมา', partOfSpeech: 'Noun' },
++    { id: '1', word: 'Cat', meaning: 'แมว', partOfSpeech: 'Noun' },
++  ];
++
++  await runTransaction(db, async (transaction) => {
++    const existing = await transaction.get(categoryRef);
++    if (!existing.exists()) {
++      transaction.set(categoryRef, categoryData(uid, 'สัตว์ (Animals)'));
++    }
++  });
++
++  for (const word of words) {
++    const wordRef = doc(db, 'categories', categoryId, 'words', word.id);
++    await runTransaction(db, async (transaction) => {
++      const existing = await transaction.get(wordRef);
++      if (!existing.exists()) {
++        transaction.set(wordRef, {
++          ...wordData(uid, word.word),
++          meaning: word.meaning,
++          part_of_speech: word.partOfSpeech,
++        });
++      }
++    });
++  }
++}
++
+ function vocabularyData(word = 'abate') {
+   return {
+     word,
+     meaning: 'Become less intense',
+     part_of_speech: 'verb',
+   };
+ }
+ 
+ function globalWordData(word = 'resilient') {
+   return {
+@@ -265,20 +298,57 @@ describe('registered profile authority contract', () => {
+     const db = authDb(bob);
+ 
+     await assertFails(getDoc(doc(db, 'users', alice)));
+     await assertFails(
+       updateDoc(doc(db, 'users', alice), { first_name: 'Mallory' }),
+     );
+   });
+ });
+ 
+ describe('registered private learning record contract', () => {
++  it('retries a partial deterministic default seed by creating only missing documents', async () => {
++    const categoryId = `${alice}_default_0`;
++    const categoryPath = `categories/${categoryId}`;
++    const existingWordPath = `${categoryPath}/words/0`;
++    await seedDocuments([
++      [categoryPath, categoryData(alice, 'สัตว์ (Animals)')],
++      [existingWordPath, wordData(alice, 'Dog')],
++    ]);
++    const db = authDb();
++    const before = await getDoc(doc(db, 'categories', categoryId, 'words', '0'));
++    const originalCreatedAt = before.data().created_at.toMillis();
++
++    await assertSucceeds(ensureDeterministicDefaultSlice(db, alice));
++    await assertSucceeds(ensureDeterministicDefaultSlice(db, alice));
++
++    const words = await getDocs(collection(db, 'categories', categoryId, 'words'));
++    if (words.size !== 2) {
++      throw new Error(`Expected two deterministic words, found ${words.size}.`);
++    }
++    const after = await getDoc(doc(db, 'categories', categoryId, 'words', '0'));
++    if (after.data().created_at.toMillis() !== originalCreatedAt) {
++      throw new Error('Retry replaced the original deterministic word timestamp.');
++    }
++
++    await assertFails(updateDoc(doc(db, 'categories', categoryId), {
++      category_name: 'Mutated',
++    }));
++    await assertFails(setDoc(doc(db, 'categories', categoryId, 'words', '0'), {
++      ...wordData(alice, 'Dog'),
++    }, { merge: true }));
++    const bobDb = authDb(bob);
++    await assertFails(setDoc(
++      doc(bobDb, 'categories', categoryId),
++      categoryData(bob, 'Cross owner'),
++    ));
++  });
++
+   it('allows owner category CRUD while denying cross-owner access', async () => {
+     const db = authDb();
+     const categoryRef = doc(db, 'categories', 'alice_category');
+     const wordRef = doc(
+       db,
+       'categories',
+       'alice_category',
+       'words',
+       'alice_word',
+     );
+diff --git a/test/services/category_default_seeding_test.dart b/test/services/category_default_seeding_test.dart
+new file mode 100644
+index 0000000..fbbcf25
+--- /dev/null
++++ b/test/services/category_default_seeding_test.dart
+@@ -0,0 +1,56 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/services/category_service.dart';
++
++final class _PartialDefaultCategoryStore implements DefaultCategoryStore {
++  int remainingFailures = 1;
++  final categoryIds = <String>{};
++  final wordIds = <String>{};
++
++  @override
++  Future<void> ensureCategory({
++    required String id,
++    required String name,
++    required String uid,
++  }) async {
++    categoryIds.add(id);
++  }
++
++  @override
++  Future<void> ensureWord({
++    required String categoryId,
++    required String id,
++    required String uid,
++    required String word,
++    required String meaning,
++    required String partOfSpeech,
++  }) async {
++    wordIds.add('$categoryId/$id');
++    if (remainingFailures > 0) {
++      remainingFailures--;
++      throw StateError('interrupted-default-seed');
++    }
++  }
++}
++
++void main() {
++  test(
++    'retries default seeding without replacing deterministic records',
++    () async {
++      final store = _PartialDefaultCategoryStore();
++      final service = CategoryService(defaultCategoryStore: store);
++
++      await expectLater(
++        service.addDefaultCategoriesForNewUser('student-1'),
++        throwsStateError,
++      );
++      await service.addDefaultCategoriesForNewUser('student-1');
++
++      expect(store.categoryIds, hasLength(5));
++      expect(store.wordIds, hasLength(50));
++      expect(
++        store.wordIds.where((id) => id == 'student-1_default_0/0'),
++        hasLength(1),
++      );
++    },
++  );
++}

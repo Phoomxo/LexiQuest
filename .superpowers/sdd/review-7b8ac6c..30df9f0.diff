@@ -1,0 +1,4651 @@
+# Review package: 7b8ac6cc029c0df43f9d4e7d161da3502e6f557b..30df9f0ed00109f7475ffc7b9ad4f2db38901a81
+
+## Commits
+30df9f0 fix: address final release foundation review
+aa97664 docs: record the Firebase-only v0.1 baseline
+26cb9a3 ci: retire Supabase production release input
+b29c147 ci: retire Supabase build requirements
+dd9d6b8 fix: restore dark theme contrast
+e7bc86e style: unify the application theme
+377b9aa build: remove the retired Supabase package
+b8d06ed refactor: resolve product artwork without Supabase
+44a9632 test: cover offline runtime status summary
+7786e31 refactor: remove Supabase runtime boundary
+423c01b build: set the v0.1 version contract
+a6a7158 docs: repair release plan task extraction
+ee9a265 docs: plan the v0.1 release foundation
+7a0637e docs: adopt on-device-first v0.1 architecture
+951668b docs: define complete v0.1 system design
+
+## Files changed
+ .github/workflows/ci.yml                           |   32 +-
+ .github/workflows/production-release.yml           |   47 +-
+ README.md                                          |    2 +-
+ docs/security/supabase-access-inventory.md         |    7 +
+ .../plans/2026-07-29-v0.1-release-foundation.md    | 1112 ++++++++++++++++++++
+ .../2026-07-29-v0.1-complete-system-design.md      |  595 +++++++++++
+ lib/config/m3_theme.dart                           |   79 +-
+ lib/main.dart                                      |   26 +-
+ lib/runtime/app_bootstrap.dart                     |   31 -
+ lib/runtime/app_build_info.dart                    |    2 +-
+ lib/runtime/app_runtime_status.dart                |   17 +-
+ lib/runtime/supabase_client_config.dart            |   21 -
+ lib/screens/main_navigation_screen.dart            |    9 +-
+ lib/screens/select_wallpaper_screen.dart           |  127 +--
+ lib/shop/product_artwork.dart                      |   48 +
+ linux/flutter/generated_plugin_registrant.cc       |    8 -
+ linux/flutter/generated_plugins.cmake              |    2 -
+ macos/Flutter/GeneratedPluginRegistrant.swift      |    4 -
+ pubspec.lock                                       |  220 +---
+ pubspec.yaml                                       |    3 +-
+ test/config/flutter_dependency_surface_test.dart   |   11 +-
+ test/config/m3_theme_test.dart                     |   77 ++
+ test/runtime/app_bootstrap_test.dart               |   43 +-
+ test/runtime/app_build_info_test.dart              |    3 +-
+ test/runtime/app_runtime_status_test.dart          |   19 +
+ test/runtime/learning_dependencies_test.dart       |    1 -
+ test/runtime/supabase_publishable_key_test.dart    |  104 --
+ test/screens/production_shell_navigation_test.dart |   51 +-
+ test/shop/product_artwork_test.dart                |   59 ++
+ tool/cli/tests/ci-workflow.tests.ps1               |   79 +-
+ .../tests/production-release-workflow.tests.ps1    |   17 +-
+ tool/cli/tests/verify-scope.tests.ps1              |   23 +-
+ tool/cli/verify.ps1                                |   15 +-
+ windows/flutter/generated_plugin_registrant.cc     |    6 -
+ windows/flutter/generated_plugins.cmake            |    2 -
+ 35 files changed, 2235 insertions(+), 667 deletions(-)
+
+## Diff
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 1969d37..bf01b12 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -72,43 +72,20 @@ jobs:
+ 
+       - name: Firestore emulator contract tests
+         run: npm run test:rules
+ 
+       - name: Trusted writer tests
+         run: npm --prefix functions test
+ 
+       - name: Trusted writer emulator tests
+         run: npm run test:functions-emulator
+ 
+-      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+-        with:
+-          version: '2.109.1'
+-
+-      - name: Supabase local database
+-        run: supabase db start
+-
+-      - name: Supabase local schema reset
+-        run: supabase db reset --local --no-seed
+-
+-      - name: Supabase local schema lint
+-        run: supabase db lint --local --level warning
+-
+-      - name: Supabase local security advisors
+-        run: supabase db advisors --local --type security --level warn --fail-on error
+-
+-      - name: Supabase storage security contract
+-        run: docker exec -i supabase_db_lexiquest-local psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < test/security/supabase_storage_contract.sql
+-
+-      - name: Stop Supabase local database
+-        if: always()
+-        run: supabase stop --no-backup
+-
+       - name: Resolve Flutter dependencies
+         run: flutter pub get
+ 
+       - name: Check Dart formatting (tracked sources only)
+         run: |
+           git ls-files '*.dart' \
+             | grep -vE '(^|/)(build|\.dart_tool|generated|vendor|checkpoints?)(/|$)' \
+             | xargs -r dart format --output=none --set-exit-if-changed
+ 
+       - name: Flutter static analysis
+@@ -131,27 +108,24 @@ jobs:
+ 
+       - name: LexiQuest-LM CPU-only tests
+         working-directory: backend/lexiquest_lm
+         run: |
+           uv sync --frozen --group dev --no-group train
+           uv run --frozen --group dev --no-group train pytest tests -q
+ 
+       - name: Build Android debug APK
+         env:
+           LEXIQUEST_BUILD_ID: ${{ github.sha }}
+-          LEXIQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY }}
+         run: |
+-          test -n "${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY}"
+           flutter build apk --debug \
+-            --dart-define=LEXIQUEST_VERSION=1.0.0+1 \
++            --dart-define=LEXIQUEST_VERSION=0.1.0+1 \
+             --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
+-            --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
+             --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 \
+             --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+ 
+       - name: Create ephemeral release signing key
+         run: |
+           keytool -genkeypair -noprompt \
+             -keystore "${RUNNER_TEMP}/lexiquest-ci-release.jks" \
+             -storepass "lexiquest-ci-only" \
+             -keypass "lexiquest-ci-only" \
+             -alias "ephemeral" \
+@@ -162,26 +136,24 @@ jobs:
+           cat > android/key.properties <<EOF
+           storeFile=${RUNNER_TEMP}/lexiquest-ci-release.jks
+           storePassword=lexiquest-ci-only
+           keyAlias=ephemeral
+           keyPassword=lexiquest-ci-only
+           EOF
+ 
+       - name: Build signed release candidate smoke AAB
+         env:
+           LEXIQUEST_BUILD_ID: ${{ github.sha }}
+-          LEXIQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY }}
+         run: |
+           flutter build appbundle --release \
+-            --dart-define=LEXIQUEST_VERSION=1.0.0+1 \
++            --dart-define=LEXIQUEST_VERSION=0.1.0+1 \
+             --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
+-            --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
+             --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 \
+             --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+           signature_output="$(
+             jarsigner -verify -verbose -certs \
+               build/app/outputs/bundle/release/app-release.aab 2>&1
+           )"
+           printf '%s\n' "$signature_output"
+           grep -q "jar verified." <<<"$signature_output"
+ 
+       - name: Prepare SBOM directory
+diff --git a/.github/workflows/production-release.yml b/.github/workflows/production-release.yml
+index 4d417a3..de98a60 100644
+--- a/.github/workflows/production-release.yml
++++ b/.github/workflows/production-release.yml
+@@ -44,34 +44,67 @@ jobs:
+           cat > android/key.properties <<EOF
+           storeFile=${RUNNER_TEMP}/lexiquest-release.jks
+           storePassword=${STORE_PASSWORD}
+           keyAlias=${KEY_ALIAS}
+           keyPassword=${KEY_PASSWORD}
+           EOF
+ 
+       - name: Resolve Flutter dependencies
+         run: flutter pub get
+ 
++      - name: Validate production API origins
++        env:
++          LEXIQUEST_VOICE_API_URL: ${{ vars.LEXIQUEST_VOICE_API_URL }}
++          LEXIQUEST_AI_API_URL: ${{ vars.LEXIQUEST_AI_API_URL }}
++        run: |
++          test -n "${LEXIQUEST_VOICE_API_URL}"
++          test -n "${LEXIQUEST_AI_API_URL}"
++          python3 - "${LEXIQUEST_VOICE_API_URL}" "${LEXIQUEST_AI_API_URL}" <<'PY'
++          import sys
++          from urllib.parse import urlsplit
++
++          endpoints = (
++              ('Voice API', sys.argv[1]),
++              ('AI API', sys.argv[2]),
++          )
++          for label, raw in endpoints:
++              try:
++                  parsed = urlsplit(raw)
++                  parsed.port
++                  invalid = (
++                      parsed.scheme != 'https'
++                      or not parsed.netloc
++                      or not parsed.hostname
++                      or parsed.username is not None
++                      or parsed.password is not None
++                      or '@' in parsed.netloc
++                      or '?' in raw
++                      or '#' in raw
++                      or parsed.path not in ('', '/')
++                  )
++              except ValueError:
++                  invalid = True
++              if invalid:
++                  raise SystemExit(f'{label} URL must be a valid HTTPS origin.')
++          PY
++
+       - name: Build protected production AAB
+         env:
+           LEXIQUEST_BUILD_ID: ${{ github.sha }}
+-          LEXIQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY }}
+           LEXIQUEST_VOICE_API_URL: ${{ vars.LEXIQUEST_VOICE_API_URL }}
+           LEXIQUEST_AI_API_URL: ${{ vars.LEXIQUEST_AI_API_URL }}
+         run: |
+-          test -n "${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY}"
+           flutter build appbundle --release \
+-            --dart-define=LEXIQUEST_VERSION=1.0.0+1 \
+-            --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
+-            --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
+-            --dart-define=LEXIQUEST_VOICE_API_URL=${LEXIQUEST_VOICE_API_URL} \
+-            --dart-define=LEXIQUEST_AI_API_URL=${LEXIQUEST_AI_API_URL}
++            "--dart-define=LEXIQUEST_VERSION=0.1.0+1" \
++            "--dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID}" \
++            "--dart-define=LEXIQUEST_VOICE_API_URL=${LEXIQUEST_VOICE_API_URL}" \
++            "--dart-define=LEXIQUEST_AI_API_URL=${LEXIQUEST_AI_API_URL}"
+           signature_output="$(
+             jarsigner -verify -verbose -certs \
+               build/app/outputs/bundle/release/app-release.aab 2>&1
+           )"
+           printf '%s\n' "$signature_output"
+           grep -q "jar verified." <<<"$signature_output"
+ 
+       - name: Prepare SBOM directory
+         run: mkdir -p build/sbom
+ 
+diff --git a/README.md b/README.md
+index 75eb46a..a37d63f 100644
+--- a/README.md
++++ b/README.md
+@@ -36,21 +36,21 @@ uv run --project backend/voice_api pytest backend/voice_api/tests -q
+ ### Running Backend Golden-Set Benchmark
+ 
+ ```powershell
+ uv run --project backend/voice_api python backend/voice_api/research/run_golden_set.py
+ ```
+ 
+ ### Building Application Targets
+ 
+ ```powershell
+ flutter build apk --debug `
+-    --dart-define=LEXIQUEST_VERSION=1.0.0+1 `
++    --dart-define=LEXIQUEST_VERSION=0.1.0+1 `
+     --dart-define=LEXIQUEST_BUILD_ID=<git-short-sha> `
+     --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 `
+     --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+ ```
+ 
+ Debug builds allow cleartext only for loopback, emulator, and private-LAN
+ origins. Release builds require HTTPS.
+ 
+ ### Production Foundation Verification
+ 
+diff --git a/docs/security/supabase-access-inventory.md b/docs/security/supabase-access-inventory.md
+index 5d7f053..c9f8026 100644
+--- a/docs/security/supabase-access-inventory.md
++++ b/docs/security/supabase-access-inventory.md
+@@ -1,12 +1,19 @@
+ # Supabase Client Access Inventory
+ 
++## v0.1 retirement status
++
++Supabase is retained here as historical audit evidence only. The
++`release/v0.1-complete-system` runtime, dependency graph, CI build, and Android
++artifact do not initialize or require Supabase. Product artwork uses verified
++Firestore HTTPS URLs or the built-in default presentation.
++
+ Date: 2026-07-27
+ Branch: `feature/production-vertical-slices`
+ 
+ ## Scope summary
+ 
+ - Five files under `lib/` reference Supabase.
+ - Two files perform Supabase data access:
+   `lib/screens/shop_page.dart` and
+   `lib/screens/select_wallpaper_screen.dart`.
+ - No Postgres table, RPC, Realtime, or Supabase Auth operation exists.
+diff --git a/docs/superpowers/plans/2026-07-29-v0.1-release-foundation.md b/docs/superpowers/plans/2026-07-29-v0.1-release-foundation.md
+new file mode 100644
+index 0000000..a872306
+--- /dev/null
++++ b/docs/superpowers/plans/2026-07-29-v0.1-release-foundation.md
+@@ -0,0 +1,1112 @@
++# LexiQuest v0.1 Release Foundation Implementation Plan
++
++> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
++
++**Goal:** Produce a clean, testable Android v0.1 foundation that builds without Supabase, reports truthful runtime health, uses one Material 3 theme, and carries version `0.1.0+1`.
++
++**Architecture:** This is Plan 1 of the approved complete-system program. It removes the unused second cloud runtime before feature work, keeps Firebase as the identity/sync boundary, and makes the Flutter shell depend only on typed application status. Product artwork accepts verified HTTPS URLs or a truthful built-in default presentation without constructing Supabase URLs.
++
++**Tech Stack:** Flutter 3.44.7, Dart 3.12.2, Material 3, Firebase Core/Auth/Firestore/App Check, Drift/SQLite, PowerShell verification, GitHub Actions, Android API 36 with Android 10 as the supported device floor.
++
++## Global Constraints
++
++- The primary architecture is on-device first.
++- The supported baseline is Android 10 or newer, 4 GB RAM, and 2 GB available storage; 6 GB RAM is recommended.
++- The Android package version is `0.1.0+1`.
++- Firebase is the only account and synchronization platform in v0.1.
++- Gemini is the only AI provider and uses a user-supplied key; no provider key is bundled.
++- Supabase is absent from the v0.1 runtime and Android build inputs.
++- Production code must not return mock, sample, simulated, or fabricated results.
++- Core learning must open, run, and save without cloud availability.
++- Existing user changes outside this isolated worktree must not be modified.
++- Every production behavior change follows red-green-refactor TDD.
++- Branch names for this program must not contain `codex`.
++
++---
++
++## Program decomposition
++
++The approved system is split into independently reviewable plans so each
++subsystem ends in working software:
++
++1. **Release foundation** — this plan.
++2. **Typed navigation and accounts** — canonical routes, registration,
++   verification, guest upgrade, forgot/reset/change password.
++3. **Offline data and synchronization** — Drift source of truth, migrations,
++   outbox, conflicts, reconnect, and cross-device restore.
++4. **Core learning completion** — vocabulary, CEFR, reading, SRS, quizzes,
++   practice modes, weakness analysis, and persisted recommendations.
++5. **Trusted game and economy** — world, bosses, ghost duel, points, quests,
++   achievements, shop, equipment, wallpapers, and trusted writers.
++6. **On-device media** — capability tiers, model packs, camera recognition,
++   speech, pronunciation, native TTS, audio lifecycle, and OmniVoice fallback.
++7. **Gemini BYOK** — encrypted key lifecycle, Gemini adapter, AI tutor,
++   generated content, quotas, and offline truthfulness.
++8. **Exports and release qualification** — analytics, research exports,
++   device matrix, 30-person acceptance, signed APK, rollback, and evidence.
++
++Each subsequent plan consumes the committed interfaces and green baseline
++created by its predecessor.
++
++## File map
++
++### Runtime boundary
++
++- `lib/runtime/app_runtime_status.dart` — Firebase and backend readiness only.
++- `lib/runtime/app_bootstrap.dart` — initializes Firebase, config, local
++  repositories, and learning dependencies; contains no Supabase import or
++  initializer.
++- `lib/runtime/app_dependencies.dart` — unchanged dependency container shape
++  except for the simplified runtime status it carries.
++- `lib/runtime/app_build_info.dart` — default public version/build identity.
++- `lib/runtime/supabase_client_config.dart` — deleted.
++
++### Product artwork
++
++- `lib/shop/product_artwork.dart` — validates Firestore `image_url` values and
++  returns a sealed artwork value for presentation.
++- `lib/screens/select_wallpaper_screen.dart` — consumes `ProductArtwork`;
++  contains no Supabase import or URL builder.
++- `test/shop/product_artwork_test.dart` — URL and fallback contract.
++
++### Design system
++
++- `lib/config/m3_theme.dart` — the only application theme definition.
++- `lib/main.dart` — consumes `M3Theme.lightTheme` and
++  `M3Theme.darkTheme`; does not create a second inline theme.
++- `test/config/m3_theme_test.dart` — theme tokens and application wiring.
++
++### Build and verification
++
++- `pubspec.yaml` and `pubspec.lock` — version `0.1.0+1`; no
++  `supabase_flutter`.
++- `tool/cli/verify.ps1` — builds without a Supabase environment variable.
++- `tool/cli/tests/verify-scope.tests.ps1` — verifies the retired build input.
++- `.github/workflows/ci.yml` — removes Supabase setup/policy jobs and build
++  defines.
++- `tool/cli/tests/ci-workflow.tests.ps1` — asserts the Firebase-only workflow.
++- `docs/security/supabase-access-inventory.md` — records that the integration
++  is historical and absent from v0.1 runtime.
++- `README.md` — documents the Firebase-only build command and v0.1 version.
++
++---
++
++### Task 1: Lock the v0.1 version contract
++
++**Files:**
++- Modify: `test/runtime/app_build_info_test.dart`
++- Modify: `pubspec.yaml`
++- Modify: `lib/runtime/app_build_info.dart`
++- Generated: `pubspec.lock`
++
++**Interfaces:**
++- Consumes: Flutter package manifest and `AppBuildInfo.fromEnvironment()`.
++- Produces: default version string `0.1.0+1`.
++
++- [ ] **Step 1: Write the failing version test**
++
++```dart
++test('fromEnvironment defaults to pubspec version and a development id', () {
++  const info = AppBuildInfo.fromEnvironment();
++  expect(info.version, '0.1.0+1');
++  expect(info.buildId, 'development');
++});
++```
++
++- [ ] **Step 2: Run the tests and verify RED**
++
++Run:
++
++```powershell
++flutter test test/runtime/app_build_info_test.dart
++```
++
++Expected: FAIL because the default version is still `1.0.0+1`.
++
++- [ ] **Step 3: Apply the manifest and build identity changes**
++
++Set:
++
++```yaml
++version: 0.1.0+1
++```
++
++Set the environment default:
++
++```dart
++const AppBuildInfo.fromEnvironment()
++  : version = const String.fromEnvironment(
++      'LEXIQUEST_VERSION',
++      defaultValue: '0.1.0+1',
++    ),
++    buildId = const String.fromEnvironment(
++      'LEXIQUEST_BUILD_ID',
++      defaultValue: 'development',
++    );
++```
++
++Then resolve the lockfile:
++
++```powershell
++flutter pub get
++```
++
++- [ ] **Step 4: Run the focused tests and verify GREEN**
++
++Run:
++
++```powershell
++flutter test test/runtime/app_build_info_test.dart
++```
++
++Expected: PASS.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add pubspec.yaml pubspec.lock lib/runtime/app_build_info.dart test/runtime/app_build_info_test.dart
++git commit -m "build: set the v0.1 version contract"
++```
++
++---
++
++### Task 2: Remove Supabase from application bootstrap and runtime health
++
++**Files:**
++- Modify: `lib/runtime/app_runtime_status.dart`
++- Modify: `lib/runtime/app_bootstrap.dart`
++- Delete: `lib/runtime/supabase_client_config.dart`
++- Modify: `lib/screens/main_navigation_screen.dart`
++- Modify: `test/runtime/app_bootstrap_test.dart`
++- Modify: `test/runtime/learning_dependencies_test.dart`
++- Modify: `test/runtime/app_build_info_test.dart`
++- Modify: `test/screens/production_shell_navigation_test.dart`
++- Delete: `test/runtime/supabase_publishable_key_test.dart`
++
++**Interfaces:**
++- Consumes: `RuntimeInitializer initializeFirebase`,
++  `AppConfigLoader loadConfig`, and local repository loaders.
++- Produces:
++  `AppRuntimeStatus({required firebase, required backends})` and
++  `AppBootstrap` with no Supabase initializer.
++
++- [ ] **Step 1: Write the failing runtime surface test**
++
++Create this test in `test/runtime/app_runtime_status_test.dart`:
++
++```dart
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
++
++void main() {
++  test('fully ready requires Firebase and configured cloud enhancements', () {
++    const ready = AppRuntimeStatus(
++      firebase: RuntimeAvailability.ready,
++      backends: RuntimeAvailability.ready,
++    );
++    const offlineCapable = AppRuntimeStatus(
++      firebase: RuntimeAvailability.unavailable,
++      backends: RuntimeAvailability.unavailable,
++    );
++
++    expect(ready.isFullyReady, isTrue);
++    expect(offlineCapable.isFullyReady, isFalse);
++    expect(offlineCapable.isCoreLearningAvailable, isTrue);
++  });
++}
++```
++
++- [ ] **Step 2: Run the test and verify RED**
++
++Run:
++
++```powershell
++flutter test test/runtime/app_runtime_status_test.dart
++```
++
++Expected: compilation FAIL because the constructor still requires `supabase`
++and `isCoreLearningAvailable` does not exist.
++
++- [ ] **Step 3: Implement the two-boundary runtime status**
++
++Replace `AppRuntimeStatus` with:
++
++```dart
++enum RuntimeAvailability { ready, degraded, unavailable }
++
++final class AppRuntimeStatus {
++  const AppRuntimeStatus({
++    required this.firebase,
++    required this.backends,
++  });
++
++  final RuntimeAvailability firebase;
++  final RuntimeAvailability backends;
++
++  bool get isFullyReady =>
++      firebase == RuntimeAvailability.ready &&
++      backends == RuntimeAvailability.ready;
++
++  bool get isCoreLearningAvailable => true;
++
++  @override
++  String toString() => 'AppRuntimeStatus';
++}
++```
++
++Remove the Supabase import, constants, initializer, constructor parameter, and
++production initializer call from `app_bootstrap.dart`. The constructor and
++production factory become:
++
++```dart
++final class AppBootstrap {
++  const AppBootstrap({
++    required this.initializeFirebase,
++    required this.loadConfig,
++    required this.guestSessionService,
++    this.loadProgressRepository = _loadProgressRepositoryProduction,
++    this.progressRemoteWriter,
++    this.purchaseRemoteWriter,
++    this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
++    this.loadLearningDependencies = _loadLearningDependenciesProduction,
++  });
++
++  factory AppBootstrap.production() {
++    return AppBootstrap(
++      initializeFirebase: _initializeFirebaseProduction,
++      loadConfig: AppConfig.fromEnvironment,
++      guestSessionService: FirebaseGuestSessionService.production(),
++      loadProgressRepository: _loadProgressRepositoryProduction,
++      progressRemoteWriter: FirebaseProgressRemoteWriter(),
++      purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
++    );
++  }
++
++  final RuntimeInitializer initializeFirebase;
++  final AppConfigLoader loadConfig;
++  final GuestSessionService guestSessionService;
++  final ProgressRepositoryLoader loadProgressRepository;
++  final ProgressRemoteWriter? progressRemoteWriter;
++  final PurchaseRemoteWriter? purchaseRemoteWriter;
++  final LearningFeatureFlags featureFlags;
++  final LearningDependenciesLoader loadLearningDependencies;
++```
++
++The first part of `initialize()` and its status construction become:
++
++```dart
++Future<AppDependencies> initialize() async {
++  final firebase = await _availability(initializeFirebase);
++  final config = _loadConfig();
++  final progressRepository = await _loadProgressRepository();
++  final progressSyncService =
++      progressRepository == null || progressRemoteWriter == null
++      ? null
++      : ProgressSyncService(
++          repository: progressRepository,
++          remoteWriter: progressRemoteWriter!,
++        );
++  final learningDependencies = featureFlags.associativeReadingEnabled
++      ? await _loadLearningDependencies(config)
++      : null;
++
++  return AppDependencies(
++runtimeStatus: AppRuntimeStatus(
++  firebase: firebase,
++  backends: config == null
++      ? RuntimeAvailability.unavailable
++      : RuntimeAvailability.ready,
++),
++    config: config,
++    guestSessionService: guestSessionService,
++    buildInfo: const AppBuildInfo.fromEnvironment(),
++    progressRepository: progressRepository,
++    progressSyncService: progressSyncService,
++    purchaseRemoteWriter: purchaseRemoteWriter,
++    learningDependencies: learningDependencies,
++  );
++}
++```
++
++Delete `lib/runtime/supabase_client_config.dart` and its obsolete unit test.
++In `test/runtime/app_bootstrap_test.dart` and
++`test/runtime/learning_dependencies_test.dart`, remove every named argument:
++
++```dart
++initializeSupabase: () async {},
++```
++
++Delete the test named `records Supabase failure and still returns`. In the
++multiple-failure and credential-sentinel tests, keep only Firebase and config
++failures. Update every runtime status fixture in
++`test/runtime/app_build_info_test.dart` and
++`test/screens/production_shell_navigation_test.dart` to construct:
++
++```dart
++const AppRuntimeStatus(
++  firebase: RuntimeAvailability.ready,
++  backends: RuntimeAvailability.ready,
++)
++```
++
++Update the shell status summary to list only `Firebase` and `AI/Voice`, while
++always describing local learning as available:
++
++```dart
++if (status.isFullyReady) {
++  return 'ระบบพร้อมใช้งาน รวมบริการออนไลน์';
++}
++final unavailable = <String>[
++  if (status.firebase != RuntimeAvailability.ready) 'การซิงก์บัญชี',
++  if (status.backends != RuntimeAvailability.ready) 'AI/เสียงออนไลน์',
++];
++return 'เรียนแบบออฟไลน์ได้ • ${unavailable.join(' • ')} ยังไม่พร้อม';
++```
++
++- [ ] **Step 4: Run runtime and shell tests and verify GREEN**
++
++Run:
++
++```powershell
++flutter test test/runtime/app_runtime_status_test.dart test/runtime/app_bootstrap_test.dart test/runtime/learning_dependencies_test.dart test/runtime/app_build_info_test.dart test/screens/production_shell_navigation_test.dart
++```
++
++Expected: PASS with no Supabase constructor or source references under
++`lib/runtime`.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add lib/runtime lib/screens/main_navigation_screen.dart test/runtime test/screens/production_shell_navigation_test.dart
++git commit -m "refactor: remove Supabase runtime boundary"
++```
++
++---
++
++### Task 3: Replace Supabase wallpaper URL construction with truthful artwork
++
++**Files:**
++- Create: `lib/shop/product_artwork.dart`
++- Create: `test/shop/product_artwork_test.dart`
++- Modify: `lib/screens/select_wallpaper_screen.dart`
++
++**Interfaces:**
++- Consumes: Firestore product field `image_url`.
++- Produces:
++  `ProductArtwork resolveProductArtwork(Map<String, Object?> product)` with
++  `DefaultProductArtwork` or `NetworkProductArtwork(Uri uri)`.
++
++- [ ] **Step 1: Write the failing resolver tests**
++
++```dart
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/shop/product_artwork.dart';
++
++void main() {
++  group('resolveProductArtwork', () {
++    test('accepts an HTTPS product image URL', () {
++      final artwork = resolveProductArtwork({
++        'image_url': 'https://cdn.example.test/wallpapers/forest.webp',
++      });
++
++      expect(
++        artwork,
++        NetworkProductArtwork(
++          Uri.parse('https://cdn.example.test/wallpapers/forest.webp'),
++        ),
++      );
++    });
++
++    test('uses the built-in default for absent or unsafe URLs', () {
++      expect(
++        resolveProductArtwork(const {'image_name': 'legacy.png'}),
++        const DefaultProductArtwork(),
++      );
++      expect(
++        resolveProductArtwork(const {
++          'image_url': 'http://cdn.example.test/legacy.png',
++        }),
++        const DefaultProductArtwork(),
++      );
++    });
++  });
++}
++```
++
++- [ ] **Step 2: Run the test and verify RED**
++
++Run:
++
++```powershell
++flutter test test/shop/product_artwork_test.dart
++```
++
++Expected: compilation FAIL because `product_artwork.dart` does not exist.
++
++- [ ] **Step 3: Implement the resolver**
++
++```dart
++sealed class ProductArtwork {
++  const ProductArtwork();
++
++  String? get storageValue;
++}
++
++final class DefaultProductArtwork extends ProductArtwork {
++  const DefaultProductArtwork();
++
++  @override
++  String? get storageValue => null;
++
++  @override
++  bool operator ==(Object other) => other is DefaultProductArtwork;
++
++  @override
++  int get hashCode => runtimeType.hashCode;
++}
++
++final class NetworkProductArtwork extends ProductArtwork {
++  const NetworkProductArtwork(this.uri);
++
++  final Uri uri;
++
++  @override
++  String get storageValue => uri.toString();
++
++  @override
++  bool operator ==(Object other) =>
++      other is NetworkProductArtwork && other.uri == uri;
++
++  @override
++  int get hashCode => uri.hashCode;
++}
++
++ProductArtwork resolveProductArtwork(Map<String, Object?> product) {
++  final rawUrl = product['image_url'];
++  if (rawUrl is! String) return const DefaultProductArtwork();
++  final uri = Uri.tryParse(rawUrl.trim());
++  if (uri == null ||
++      uri.scheme != 'https' ||
++      !uri.hasAuthority ||
++      uri.userInfo.isNotEmpty) {
++    return const DefaultProductArtwork();
++  }
++  return NetworkProductArtwork(uri);
++}
++```
++
++In `select_wallpaper_screen.dart`, replace the Supabase import with:
++
++```dart
++import '../shop/product_artwork.dart';
++```
++
++Delete `_getSupabaseImageUrl` and replace the state fields with:
++
++```dart
++List<ProductArtwork> purchasedWallpapers = const [
++  DefaultProductArtwork(),
++];
++ProductArtwork selectedWallpaper = const DefaultProductArtwork();
++```
++
++Build the fetched list with:
++
++```dart
++final wallpapers = <ProductArtwork>[const DefaultProductArtwork()];
++for (final doc in purchasedSnapshot.docs) {
++  final productId = doc.data()['product_id'];
++  if (productId is! String || productId.isEmpty) continue;
++
++  final productDoc = await FirebaseFirestore.instance
++      .collection('products')
++      .doc(productId)
++      .get();
++  final product = productDoc.data();
++  if (product == null) continue;
++
++  final artwork = resolveProductArtwork(
++    Map<String, Object?>.from(product),
++  );
++  if (artwork is NetworkProductArtwork) {
++    wallpapers.add(artwork);
++  }
++}
++if (!mounted) return;
++setState(() {
++  purchasedWallpapers = wallpapers;
++});
++```
++
++Persist the selected value without a legacy sentinel:
++
++```dart
++Future<void> _setWallpaper(ProductArtwork artwork) async {
++  final user = FirebaseAuth.instance.currentUser;
++  if (user == null) return;
++
++  await FirebaseFirestore.instance.collection('state').doc(user.uid).update({
++    'selectedWallpaper': artwork.storageValue,
++  });
++  if (!mounted) return;
++  setState(() {
++    selectedWallpaper = artwork;
++  });
++  ScaffoldMessenger.of(context).showSnackBar(
++    const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์เรียบร้อยแล้ว')),
++  );
++}
++```
++
++Render the two sealed variants with:
++
++```dart
++Widget _buildArtwork(ProductArtwork artwork) {
++  return switch (artwork) {
++    DefaultProductArtwork() => ColoredBox(
++      color: const Color(0xFFE8ECF3),
++      child: const Center(
++        child: Icon(Icons.wallpaper_outlined, size: 48),
++      ),
++    ),
++    NetworkProductArtwork(:final uri) => Image.network(
++      uri.toString(),
++      fit: BoxFit.cover,
++      loadingBuilder: (context, child, progress) =>
++          progress == null
++              ? child
++              : const Center(child: CircularProgressIndicator()),
++      errorBuilder: (context, error, stackTrace) => const ColoredBox(
++        color: Color(0xFFE8ECF3),
++        child: Center(child: Icon(Icons.broken_image_outlined)),
++      ),
++    ),
++  };
++}
++```
++
++The grid item calls `_setWallpaper(artwork)` and uses
++`selectedWallpaper == artwork`. No `image_name` value is converted into a URL.
++
++- [ ] **Step 4: Run resolver and wallpaper tests and verify GREEN**
++
++Run:
++
++```powershell
++flutter test test/shop/product_artwork_test.dart test/screens/setting_screen_test.dart
++```
++
++Expected: PASS, and:
++
++```powershell
++rg -n "Supabase|supabase|getPublicUrl" lib
++```
++
++Expected: no matches.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add lib/shop/product_artwork.dart lib/screens/select_wallpaper_screen.dart test/shop/product_artwork_test.dart
++git commit -m "refactor: resolve product artwork without Supabase"
++```
++
++---
++
++### Task 4: Remove the retired Supabase package
++
++**Files:**
++- Modify: `test/config/flutter_dependency_surface_test.dart`
++- Modify: `pubspec.yaml`
++- Generated: `pubspec.lock`
++
++**Interfaces:**
++- Consumes: the Supabase-free production source completed in Tasks 2–3.
++- Produces: a Flutter dependency graph without `supabase_flutter`.
++
++- [ ] **Step 1: Write the failing dependency test**
++
++Move `supabase_flutter` from the retained list into the removed list:
++
++```dart
++test('unused direct dependencies are absent', () {
++  const removed = <String>[
++    'cupertino_icons',
++    'firebase_storage',
++    'provider',
++    'image_picker',
++    'fluttertoast',
++    'confetti',
++    'cached_network_image',
++    'google_mlkit_image_labeling',
++    'camera',
++    'supabase_flutter',
++  ];
++
++  expect(manifest.existsSync(), isTrue);
++  for (final name in removed) {
++    expect(
++      _declaresDirectDependency(contents, name),
++      isFalse,
++      reason: '$name should not be a direct dependency',
++    );
++  }
++});
++```
++
++The retained list remains:
++
++```dart
++const retained = <String>[
++  'firebase_core',
++  'firebase_auth',
++  'cloud_firestore',
++  'google_fonts',
++  'speech_to_text',
++  'flutter_tts',
++  'fl_chart',
++  'http',
++  'shared_preferences',
++  'flutter_speed_dial',
++  'audioplayers',
++];
++```
++
++- [ ] **Step 2: Run the dependency test and verify RED**
++
++Run:
++
++```powershell
++flutter test test/config/flutter_dependency_surface_test.dart
++```
++
++Expected: FAIL because `supabase_flutter` remains in `pubspec.yaml`.
++
++- [ ] **Step 3: Remove the package and refresh generated registrants**
++
++Delete this manifest entry:
++
++```yaml
++supabase_flutter: ^2.16.0
++```
++
++Then run:
++
++```powershell
++flutter pub get
++```
++
++Accept only the generated plugin-registrant removals caused by this package
++change.
++
++- [ ] **Step 4: Run the dependency and compilation tests and verify GREEN**
++
++Run:
++
++```powershell
++flutter test test/config/flutter_dependency_surface_test.dart test/runtime/app_bootstrap_test.dart test/shop/product_artwork_test.dart
++```
++
++Expected: PASS.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add pubspec.yaml pubspec.lock test/config/flutter_dependency_surface_test.dart linux/flutter macos/Flutter windows/flutter
++git commit -m "build: remove the retired Supabase package"
++```
++
++---
++
++### Task 5: Make Material 3 the single application theme
++
++**Files:**
++- Modify: `test/config/m3_theme_test.dart`
++- Modify: `lib/config/m3_theme.dart`
++- Modify: `lib/main.dart`
++
++**Interfaces:**
++- Consumes: `M3Theme.lightTheme` and `M3Theme.darkTheme`.
++- Produces: one application-wide token source with restrained blue/indigo
++  color, 8-point spacing-compatible components, and Thai-safe system text.
++
++- [ ] **Step 1: Write the failing application theme contract**
++
++Add:
++
++```dart
++test('light theme uses the approved restrained component tokens', () {
++  final theme = M3Theme.lightTheme;
++
++  expect(theme.colorScheme.primary, const Color(0xFF2457A7));
++  expect(theme.scaffoldBackgroundColor, const Color(0xFFF7F8FA));
++  expect(theme.cardTheme.elevation, 0);
++  expect(theme.appBarTheme.centerTitle, isFalse);
++  expect(theme.filledButtonTheme.style?.minimumSize?.resolve({})?.height, 48);
++});
++```
++
++Add a source-wiring test:
++
++```dart
++import 'dart:io';
++
++Directory? _findRepoRoot(String start) {
++  var directory = Directory(start);
++  for (var depth = 0; depth < 16; depth++) {
++    if (File('${directory.path}/pubspec.yaml').existsSync() &&
++        Directory('${directory.path}/lib').existsSync()) {
++      return directory;
++    }
++    final parent = directory.parent;
++    if (parent.path == directory.path) return null;
++    directory = parent;
++  }
++  return null;
++}
++
++Directory _repositoryRoot() {
++  for (final start in <String>[
++    File(Platform.script.toFilePath()).parent.path,
++    Directory.current.path,
++  ]) {
++    final found = _findRepoRoot(start);
++    if (found != null) return found;
++  }
++  return Directory.current;
++}
++
++test('application consumes M3Theme instead of declaring an inline seed', () {
++  final source = File(
++    '${_repositoryRoot().path}/lib/main.dart',
++  ).readAsStringSync();
++
++  expect(source, contains('theme: M3Theme.lightTheme'));
++  expect(source, contains('darkTheme: M3Theme.darkTheme'));
++  expect(source, isNot(contains('ColorScheme.fromSeed')));
++  expect(source, isNot(contains('GoogleFonts.')));
++});
++```
++
++- [ ] **Step 2: Run the theme test and verify RED**
++
++Run:
++
++```powershell
++flutter test test/config/m3_theme_test.dart
++```
++
++Expected: FAIL because `main.dart` declares an inline theme and the approved
++component tokens are absent.
++
++- [ ] **Step 3: Implement the central theme**
++
++Use these fixed tokens in `m3_theme.dart`:
++
++```dart
++static const Color primaryBlue = Color(0xFF2457A7);
++static const Color backgroundLight = Color(0xFFF7F8FA);
++
++static ThemeData get lightTheme {
++  final scheme = ColorScheme.fromSeed(
++    seedColor: primaryBlue,
++    brightness: Brightness.light,
++    surface: Colors.white,
++  );
++  return ThemeData(
++    useMaterial3: true,
++    colorScheme: scheme,
++    scaffoldBackgroundColor: backgroundLight,
++    cardTheme: CardThemeData(
++      elevation: 0,
++      color: scheme.surface,
++      shape: RoundedRectangleBorder(
++        borderRadius: BorderRadius.circular(16),
++        side: BorderSide(color: scheme.outlineVariant),
++      ),
++    ),
++    appBarTheme: const AppBarTheme(
++      centerTitle: false,
++      elevation: 0,
++      scrolledUnderElevation: 0,
++    ),
++    filledButtonTheme: FilledButtonThemeData(
++      style: ButtonStyle(
++        minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
++        shape: WidgetStatePropertyAll(
++          RoundedRectangleBorder(
++            borderRadius: BorderRadius.circular(12),
++          ),
++        ),
++      ),
++    ),
++  );
++}
++```
++
++Apply the equivalent dark scheme with the same component geometry. In
++`main.dart`, remove the Google Fonts import and inline theme, import
++`config/m3_theme.dart`, and set:
++
++```dart
++theme: M3Theme.lightTheme,
++darkTheme: M3Theme.darkTheme,
++themeMode: ThemeMode.system,
++```
++
++- [ ] **Step 4: Run theme and app tests and verify GREEN**
++
++Run:
++
++```powershell
++flutter test test/config/m3_theme_test.dart test/widget_test.dart test/screens/production_shell_navigation_test.dart
++```
++
++Expected: PASS.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add lib/config/m3_theme.dart lib/main.dart test/config/m3_theme_test.dart
++git commit -m "style: unify the application theme"
++```
++
++---
++
++### Task 6: Remove Supabase from local and CI verification
++
++**Files:**
++- Modify: `tool/cli/tests/verify-scope.tests.ps1`
++- Modify: `tool/cli/verify.ps1`
++- Modify: `tool/cli/tests/ci-workflow.tests.ps1`
++- Modify: `.github/workflows/ci.yml`
++
++**Interfaces:**
++- Consumes: `LEXIQUEST_VERSION`, `LEXIQUEST_BUILD_ID`,
++  `LEXIQUEST_VOICE_API_URL`, and `LEXIQUEST_AI_API_URL`.
++- Produces: debug and signed smoke builds with no Supabase variable, setup
++  step, or policy job.
++
++- [ ] **Step 1: Write failing PowerShell contract assertions**
++
++Replace the Supabase build-input assertions in
++`verify-scope.tests.ps1` with:
++
++```powershell
++Assert-NotContainsString `
++    $verifyText `
++    'LEXIQUEST_SUPABASE' `
++    'release verification must not require a retired Supabase build input'
++Assert-ContainsString `
++    $verifyText `
++    '--dart-define=LEXIQUEST_VERSION=0.1.0+1' `
++    'release verification injects the v0.1 identity'
++```
++
++Add this helper to both `verify-scope.tests.ps1` and
++`ci-workflow.tests.ps1` immediately after `Assert-ContainsString`:
++
++```powershell
++function Assert-NotContainsString {
++    param(
++        [string] $Text,
++        [string] $Needle,
++        [string] $Message
++    )
++    if ($Text.Contains($Needle)) {
++        throw $Message
++    }
++}
++```
++
++Replace CI assertions with:
++
++```powershell
++Assert-NotContainsString $workflowText 'supabase/setup-cli@' 'CI must not provision Supabase'
++Assert-NotContainsString $workflowText 'supabase db start' 'CI must not start Supabase'
++Assert-NotContainsString $workflowText 'LEXIQUEST_SUPABASE' 'CI builds must not require Supabase'
++Assert-ContainsString $workflowText '--dart-define=LEXIQUEST_VERSION=0.1.0+1' 'CI builds v0.1'
++```
++
++Delete `Invoke-SupabaseToolchainTests` and its invocation from
++`ci-workflow.tests.ps1`; the negative assertions above replace that retired
++contract.
++
++- [ ] **Step 2: Run the CLI contract tests and verify RED**
++
++Run:
++
++```powershell
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/verify-scope.tests.ps1
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/ci-workflow.tests.ps1
++```
++
++Expected: FAIL because the scripts and workflow still require Supabase.
++
++- [ ] **Step 3: Remove retired setup and build inputs**
++
++Delete `Get-RequiredSupabasePublishableKey` and its call from `verify.ps1`.
++Make the phase 10 arguments:
++
++```powershell
++$buildArguments = @(
++    'build',
++    'apk',
++    '--debug',
++    '--dart-define=LEXIQUEST_VERSION=0.1.0+1',
++    ('--dart-define=LEXIQUEST_BUILD_ID=' + $buildId),
++    '--dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001',
++    '--dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000'
++)
++```
++
++Remove from `.github/workflows/ci.yml`:
++
++- Supabase CLI setup;
++- local database start/reset/lint/advisor/contract/stop steps;
++- both `LEXIQUEST_SUPABASE_PUBLISHABLE_KEY` environment entries;
++- both Supabase `--dart-define` arguments.
++
++Change both CI version arguments to:
++
++```text
++--dart-define=LEXIQUEST_VERSION=0.1.0+1
++```
++
++- [ ] **Step 4: Run the CLI contract tests and verify GREEN**
++
++Run:
++
++```powershell
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/verify-scope.tests.ps1
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/ci-workflow.tests.ps1
++```
++
++Expected: both suites PASS.
++
++- [ ] **Step 5: Commit**
++
++```powershell
++git add tool/cli/verify.ps1 tool/cli/tests/verify-scope.tests.ps1 tool/cli/tests/ci-workflow.tests.ps1 .github/workflows/ci.yml
++git commit -m "ci: retire Supabase build requirements"
++```
++
++---
++
++### Task 7: Update the operator contract and verify a clean APK baseline
++
++**Files:**
++- Modify: `README.md`
++- Modify: `docs/security/supabase-access-inventory.md`
++- Verify only: complete repository
++
++**Interfaces:**
++- Consumes: the simplified runtime and build commands from Tasks 1–5.
++- Produces: reproducible Firebase-only local build instructions and objective
++  baseline evidence for Plan 2.
++
++- [ ] **Step 1: Write the failing documentation contract test**
++
++Add to `test/config/flutter_dependency_surface_test.dart`:
++
++```dart
++test('README build command is v0.1 and Firebase-only', () {
++  final readme = File(
++    '${_repositoryRoot().path}/README.md',
++  ).readAsStringSync();
++
++  expect(readme, contains('LEXIQUEST_VERSION=0.1.0+1'));
++  expect(readme, isNot(contains('LEXIQUEST_SUPABASE')));
++});
++```
++
++- [ ] **Step 2: Run the documentation contract and verify RED**
++
++Run:
++
++```powershell
++flutter test test/config/flutter_dependency_surface_test.dart
++```
++
++Expected: FAIL because README still documents version `1.0.0+1`.
++
++- [ ] **Step 3: Update documentation**
++
++The README debug build command must be:
++
++```powershell
++flutter build apk --debug `
++    --dart-define=LEXIQUEST_VERSION=0.1.0+1 `
++    --dart-define=LEXIQUEST_BUILD_ID=<git-short-sha> `
++    --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 `
++    --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
++```
++
++At the top of `docs/security/supabase-access-inventory.md`, add:
++
++```markdown
++## v0.1 retirement status
++
++Supabase is retained here as historical audit evidence only. The
++`release/v0.1-complete-system` runtime, dependency graph, CI build, and Android
++artifact do not initialize or require Supabase. Product artwork uses verified
++Firestore HTTPS URLs or the built-in default presentation.
++```
++
++- [ ] **Step 4: Run focused and complete verification**
++
++Run:
++
++```powershell
++flutter test test/config/flutter_dependency_surface_test.dart
++flutter analyze
++flutter test --reporter compact
++powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify.ps1
++```
++
++Expected:
++
++- documentation contract PASS;
++- Flutter analysis PASS;
++- Flutter test suite PASS;
++- complete verification reaches Android debug APK build without requesting
++  `LEXIQUEST_SUPABASE_PUBLISHABLE_KEY`;
++- `build/app/outputs/flutter-apk/app-debug.apk` exists.
++
++- [ ] **Step 5: Inspect the bounded diff**
++
++Run:
++
++```powershell
++git diff --check
++git status --short
++rg -n "Supabase|supabase|LEXIQUEST_SUPABASE" lib pubspec.yaml tool/cli/verify.ps1 .github/workflows/ci.yml README.md
++```
++
++Expected: no whitespace errors; only intended files changed; no active runtime
++or build reference to Supabase.
++
++- [ ] **Step 6: Commit**
++
++```powershell
++git add README.md docs/security/supabase-access-inventory.md test/config/flutter_dependency_surface_test.dart
++git commit -m "docs: record the Firebase-only v0.1 baseline"
++```
++
++---
++
++## Plan 1 completion gate
++
++Plan 1 is complete only when:
++
++- `pubspec.yaml`, `AppBuildInfo`, local verification, and CI all agree on
++  `0.1.0+1`;
++- `supabase_flutter` is absent from the dependency graph;
++- `lib/` contains no Supabase import, initializer, URL construction, status
++  field, or build input;
++- missing cloud endpoints do not prevent local learning from being reported as
++  available;
++- the app consumes one Material 3 theme;
++- all tests and analysis pass;
++- the full CLI suite builds the debug APK without a Supabase key;
++- the worktree is clean after the final commit.
+diff --git a/docs/superpowers/specs/2026-07-29-v0.1-complete-system-design.md b/docs/superpowers/specs/2026-07-29-v0.1-complete-system-design.md
+new file mode 100644
+index 0000000..58ffe5a
+--- /dev/null
++++ b/docs/superpowers/specs/2026-07-29-v0.1-complete-system-design.md
+@@ -0,0 +1,595 @@
++# LexiQuest v0.1 Complete-System Design
++
++**Date:** 2026-07-29
++
++**Target branch:** `release/v0.1-complete-system`
++
++**Historical comparison branch:** `baseline/2024-10` at commit `4837d81`
++
++## 1. Decision and objective
++
++LexiQuest v0.1 will not ship as a partial demo. Every feature that remains
++visible in the application must use real production logic, be reachable
++through the canonical navigation, handle expected failure states, and pass its
++release acceptance tests. Mock, sample, simulated, placeholder, or fabricated
++results may exist in automated tests and developer fixtures only; they must
++not be reachable in a production APK.
++
++The first controlled release targets approximately 30 invited Android users.
++The primary architecture is **on-device first**: learning, game rules, local
++analysis, camera recognition, and persistence run on the phone and synchronize
++after connectivity returns. Cloud features truthfully disclose when they
++require a connection. The initial AI provider is Gemini only, using an API key
++supplied by each user.
++
++“Complete” means all acceptance criteria and release gates in this document
++pass on the exact signed APK candidate. It does not mean mathematical
++certainty, perpetual third-party availability, or zero possible defects.
++
++## 2. Scope
++
++### 2.1 Included feature groups
++
++The production feature inventory includes:
++
++1. Account and identity:
++   - email/password registration;
++   - email verification and resend;
++   - sign-in and sign-out;
++   - anonymous guest mode;
++   - forgot-password email;
++   - reset-password deep link/action-code handling;
++   - change password from profile after recent authentication;
++   - guest-to-account upgrade without losing local learning data;
++   - profile and account settings.
++2. Vocabulary and content:
++   - personal categories and words;
++   - bulk word entry and wordbook import;
++   - CEFR selection and diagnostic test;
++   - article reading and interactive storybook;
++   - associative reading;
++   - dictionary, phrase, collocation, and phonetic exploration.
++3. Practice and assessment:
++   - standard quiz;
++   - SRS flashcards;
++   - word and sentence scramble;
++   - fill-in-the-blanks;
++   - dictation;
++   - speech-to-text;
++   - shadowing and pronunciation feedback;
++   - weakness clinic and adaptive recommendations.
++4. Progress and game systems:
++   - learning world map;
++   - boss battle and ghost/shadow duel;
++   - mastery dashboard;
++   - streaks, quests, ranks, achievements, points, and unlock rules;
++   - shop, avatar equipment, purchased items, and wallpapers.
++5. AI, audio, and camera:
++   - Gemini AI tutor and generated learning content;
++   - native device TTS;
++   - authenticated OmniVoice enhancement when its cloud service is available;
++   - smart audio playlists and background audio;
++   - real camera capture and on-device object recognition;
++   - automatic device capability detection and bounded model selection.
++6. Research and user-owned output:
++   - learning analytics;
++   - thesis charts;
++   - CSV/SPSS-style data export;
++   - PDF, glossary, Anki/dictionary, and appendix exports.
++7. Runtime:
++   - background reminders;
++   - offline persistence;
++   - retryable synchronization;
++   - build identity, runtime health, privacy controls, and diagnostics.
++
++### 2.2 Explicit non-goals for v0.1
++
++- Providers other than Gemini.
++- iOS, desktop, or web release artifacts.
++- Public self-service enrollment beyond the invited test group.
++- Competitive leaderboards whose outcome depends on untrusted client scoring.
++- Training a new large language model as a prerequisite for the Android
++  release.
++- Shipping a large local generative model that attempts to replace Gemini or
++  OmniVoice on every supported phone.
++
++These non-goals do not remove existing user-facing Android features. They
++prevent unrelated platform and provider expansion from delaying v0.1.
++
++## 3. Version and branch strategy
++
++- `baseline/2024-10` is an immutable historical reference to the earliest
++  repository state from 2024-10-15. It exists only for comparison and is not a
++  release source.
++- `release/v0.1-complete-system` is isolated from the user's existing dirty
++  working tree and is the only implementation branch for this stabilization.
++- The Android package version becomes `0.1.0+1`. Every subsequent test APK
++  increments the build number while retaining the v0.1 semantic version until
++  the release is accepted.
++- Comparison documentation will record user journeys, feature inventory,
++  architecture, screenshots, and test evidence for the historical baseline
++  and the release candidate. Historical code is never copied merely to restore
++  obsolete behavior or styling.
++- No branch created for this work uses `codex` in its name.
++
++## 4. Product architecture
++
++### 4.1 Application layers
++
++Each feature is migrated into four explicit layers:
++
++1. **Presentation:** screens, reusable widgets, navigation, and localized
++   user feedback.
++2. **Application/domain:** use cases, validation, learning algorithms, game
++   rules, and provider-independent contracts.
++3. **Local data:** Drift/SQLite repositories, cached content, pending sync
++   operations, and migration logic.
++4. **Remote adapters:** Firebase identity/data/functions, Gemini, and the
++   optional voice service.
++
++Screens do not call Firebase, HTTP clients, Supabase, or platform plugins
++directly. They invoke application services through injected interfaces. This
++keeps offline behavior deterministic and makes each production path testable.
++
++### 4.2 Source of truth
++
++- Drift/SQLite is the device source of truth for learning content, sessions,
++  SRS state, progress events, preferences required offline, and the sync
++  outbox.
++- Firebase Auth is the source of truth for account identity.
++- Firestore and trusted Firebase Functions are the synchronized source of
++  truth for registered-user cloud state, server-authoritative economy
++  operations, shared content, and recovery across devices.
++- The local database remains usable when remote services are unavailable.
++  Remote snapshots update local records; UI reads local projections rather
++  than waiting on the network.
++- SharedPreferences is limited to tiny non-relational boot preferences. The
++  existing progress store is migrated to Drift before v0.1.
++
++### 4.3 Offline-first sync
++
++Every syncable mutation has:
++
++- a cryptographically unique operation ID;
++- owner ID, entity type, entity ID, local revision, timestamp, and payload;
++- an outbox state of pending, in-flight, acknowledged, or failed;
++- bounded exponential backoff with jitter;
++- an idempotent remote write contract;
++- a retry classification that separates connection failures, authentication
++  failures, rejected data, and permanent conflicts.
++
++The sync worker starts after authenticated boot, after connectivity returns,
++and on a bounded background schedule. It never blocks saving a completed local
++learning session.
++
++Conflict rules are explicit:
++
++- append-only learning events merge by unique event ID;
++- SRS state derives from ordered immutable review events;
++- user-edited vocabulary uses latest accepted revision with a visible conflict
++  copy when both sides changed;
++- profile text uses server revision checks;
++- purchases, point credits, ownership, and achievement awards are processed
++  only by trusted server writers and are idempotent by operation ID;
++- deletions use tombstones until remote acknowledgement.
++
++Guest data stays local. On account upgrade, local records are assigned to the
++new Firebase UID and uploaded once through the same outbox. Signing out does
++not silently delete local data; the UI offers an explicit device-data removal
++action.
++
++### 4.4 On-device execution and device tiers
++
++The supported baseline is Android 10 or newer, 4 GB RAM, and 2 GB of available
++storage during installation and model setup. Devices with 6 GB RAM or more are
++the recommended experience. These thresholds are verified against the weakest
++physical device in the invited group; the ability to run a graphically
++intensive game is useful evidence but is not treated as proof that a phone can
++run an unbounded language or speech model.
++
++The application assigns a runtime capability tier using Android version,
++available memory, CPU architecture, model acceleration support, storage,
++thermal status, and a short bounded benchmark:
++
++- **Baseline tier:** all core learning, SRS, quizzes, game logic, Drift data,
++  native TTS, and a compact on-device camera model.
++- **Enhanced tier:** higher-frequency camera analysis, richer pronunciation
++  features, and additional offline content/model packs.
++- **Cloud-enhanced tier:** Gemini generation and OmniVoice when online and
++  explicitly configured.
++
++Feature meaning remains consistent across tiers. A lower tier may reduce model
++size, analysis frequency, animation complexity, or audio enhancement, but it
++must not fabricate a result or silently replace a requested feature with an
++unrelated one.
++
++Optional model packs:
++
++- download only after user consent, with Wi-Fi preference and visible size;
++- support pause, resume, retry, delete, and storage-space checks;
++- verify signed metadata and a cryptographic checksum before activation;
++- keep the previous valid version until the new pack is verified;
++- use versioned compatibility metadata and atomic activation;
++- never contain an API key, personal learning history, or undocumented
++  executable payload.
++
++Camera and speech inference is throttled according to lifecycle, temperature,
++and battery state. Heavy inference pauses when the app is backgrounded or the
++device reaches a severe thermal state. Models and audio buffers are loaded
++lazily and released under memory pressure. The baseline device must complete a
++30-minute representative learning session without an out-of-memory crash,
++uncontrolled background work, or sustained severe thermal state.
++
++## 5. Account design
++
++Firebase Auth remains the single identity provider in v0.1.
++
++### 5.1 Registration and verification
++
++- Validate normalized email, password policy, confirmation, and profile
++  fields before network submission.
++- Create the account, create an idempotent profile, send verification email,
++  and enter a verification-pending screen.
++- Unverified accounts may access only the explicitly allowed verification and
++  local recovery UI. They cannot write registered-user cloud data.
++- Resend is throttled in the UI and by provider limits. The screen supports
++  refresh/reload and resumes correctly after app restart.
++
++### 5.2 Sign-in and guest mode
++
++- Sign-in maps provider errors to stable Thai messages without leaking
++  implementation details.
++- Guest mode uses Firebase anonymous authentication when online and a local
++  guest session when initialization is temporarily unavailable. Cloud-private
++  data remains inaccessible until a verified account exists.
++- Upgrading an anonymous identity links credentials when possible so the UID
++  is retained. If the provider requires a new UID, migration is explicit and
++  idempotent.
++
++### 5.3 Forgot, reset, and change password
++
++- The login screen includes “ลืมรหัสผ่าน”.
++- Forgot-password accepts an email and always returns the same neutral
++  confirmation message, regardless of whether an account exists.
++- Firebase password reset links use the registered Android application link.
++  The app validates the action code before showing the new-password form.
++- The reset form validates password policy and confirmation, applies the
++  action code once, invalidates the local recovery state, and routes to
++  sign-in.
++- Change-password is available from profile settings. It requires a recently
++  authenticated user; stale sessions prompt for the current password and
++  reauthenticate before updating.
++- Offline requests do not pretend to succeed. Entered email may be preserved
++  locally for retry, but the app clearly asks the user to reconnect before the
++  recovery email can be sent.
++- Authentication attempts and recovery resend actions use cooldowns and
++  Firebase protections. Logs never contain email addresses, passwords, action
++  codes, ID tokens, or API keys.
++
++## 6. Gemini BYOK design
++
++Gemini is the sole AI provider exposed in v0.1.
++
++- A user enters their own Gemini API key in Settings after seeing a short
++  privacy and billing explanation.
++- The key is stored only in Android Keystore-backed encrypted storage. It is
++  never stored in Drift, SharedPreferences, Firestore, analytics, crash
++  reports, exports, source control, or build defines.
++- AI requests are made through a Gemini adapter whose logs redact headers,
++  query parameters, request bodies that may contain user content, and every
++  key-like value.
++- Settings provides validate, replace, and delete actions. Validation makes a
++  minimal request and distinguishes invalid key, quota exceeded, unsupported
++  model, connection failure, and service outage.
++- The production APK contains no developer Gemini key and no fallback secret.
++- Features with a curated offline equivalent use that equivalent when Gemini
++  is unavailable and label the source accurately. Features whose purpose is
++  live generative AI show an actionable unavailable state; they never invent a
++  response.
++- Gemini is not bundled or emulated by a large local language model. This
++  avoids excessive APK size, memory pressure, battery drain, and misleading
++  quality claims on baseline devices.
++- Prompts use bounded input/output length, age-appropriate system rules, and
++  response validation before generated content is added to a learning
++  session.
++
++## 7. Cloud and budget architecture
++
++### 7.1 Service selection
++
++- Firebase provides Auth, Firestore, App Check, trusted callable functions,
++  and operational telemetry.
++- A scale-to-zero managed container hosts OmniVoice only if the native TTS
++  fallback does not meet the requested voice mode. The client authenticates
++  with Firebase ID tokens; the service verifies identity and App Check.
++- Cloud services enhance the on-device product; they are not in the critical
++  path for opening the app, accessing downloaded learning content, completing
++  practice, or saving progress.
++- Supabase is removed from the v0.1 runtime because the current application
++  uses it only to generate public image URLs while storing structured data in
++  Firestore. Shop images move to packaged assets for the first 30 users or to
++  Firebase Storage if remote updates are required. This removes a second
++  identity/policy surface and the current publishable-key APK blocker.
++
++### 7.2 Cost controls
++
++The initial operational budget is capped at **THB 1,000 per month** until the
++owner changes it deliberately. Because cloud billing alerts alone are not a
++hard stop, enforcement combines:
++
++- billing alerts at 50%, 80%, and 100%;
++- per-user and per-device function rate limits;
++- maximum request and response sizes;
++- Cloud Run scale-to-zero with maximum one instance for the invited test;
++- daily project quotas for nonessential cloud actions;
++- a server-side kill switch for OmniVoice and other discretionary workloads;
++- Gemini costs charged to each user's own key and project, not LexiQuest;
++- a documented emergency action that disables cloud enhancements while
++  preserving offline learning.
++
++The invited-user gate and quotas are tested for 30 users before release. No
++paid production resource is deployed until its billing account, alerts,
++quotas, owner, and shutdown procedure are recorded.
++
++## 8. Feature completion rules
++
++### 8.1 Vocabulary, reading, and practice
++
++- The shared vocabulary seed and offline reading packs are versioned
++  production data, not demo records.
++- Personal categories and words support create, edit, delete, import, and
++  recovery after restart.
++- Every assessment draws distractors from valid vocabulary records and records
++  a stable completed-session event exactly once.
++- SRS, adaptive scheduling, weakness analysis, CEFR placement, associative
++  reading, and recommendations use persisted learner events rather than
++  screen-local sample lists.
++- Empty libraries show onboarding actions; they do not silently populate fake
++  user history.
++
++### 8.2 Voice and pronunciation
++
++- Native device TTS is the dependable offline baseline.
++- OmniVoice is an online enhancement with authentication, timeout,
++  cancellation, cache bounds, and truthful fallback metadata.
++- Speech recognition and pronunciation screens check microphone permission,
++  recognizer availability, language support, and offline capability.
++- Pronunciation feedback must be derived from real captured speech and the
++  documented evaluator. Heuristic-only scores are labeled as estimates and
++  cannot be presented as acoustic model measurements.
++- Audio playback and recording release resources on navigation and app
++  lifecycle changes.
++
++### 8.3 Object scanner
++
++The current vocabulary simulation is removed from production. Object scanner
++uses:
++
++- real camera preview and capture;
++- runtime camera permission handling;
++- on-device image labeling or an explicitly configured production model;
++- confidence thresholds and an “ไม่แน่ใจ” state;
++- user confirmation before saving a recognized word;
++- no captured-image upload by default.
++
++Unsupported devices receive a clear unavailable explanation and a manual
++vocabulary entry path. A random vocabulary result is never shown as a scan.
++Camera frame analysis uses the capability tier to select model size and
++frequency without changing the confirmation and confidence rules.
++
++### 8.4 Progress, world, achievements, and economy
++
++- All progress derives from idempotent completed-session events.
++- World nodes, bosses, quests, streaks, ranks, and achievements consume one
++  canonical progress projection and persist their awarded operation IDs.
++- Server-authoritative functions validate point credit, unlock, purchase, and
++  equipment operations. The Android client cannot mint spendable points,
++  debit balances, or create ownership documents directly.
++- Purchases atomically verify balance, prevent duplicates, write ownership,
++  and debit the canonical balance.
++- The shop, avatar equipment, wallpapers, and related navigation open only
++  after the trusted writer and migration pass. They are not permanently
++  hidden to make the APK pass.
++- Existing divergent legacy counters are migrated once and retained only for
++  compatibility/audit; they are not used as the v0.1 authority.
++
++### 8.5 Research and exports
++
++- Exports operate on the signed-in user's persisted records or an explicitly
++  selected local guest dataset.
++- Sample export cards and fabricated observations are removed from production
++  screens.
++- Every export includes schema version, time zone, app version, build ID,
++  applied filters, and whether records were local-only or synchronized.
++- Missing data yields a valid empty report with explanation, not invented
++  statistics.
++- File creation, storage permission, share-sheet cancellation, and partial
++  failures have tested user-visible outcomes.
++
++## 9. Navigation and unified UI
++
++### 9.1 Navigation
++
++A typed route registry replaces scattered direct `MaterialPageRoute` calls
++and the legacy drawer bridge.
++
++The canonical five top-level destinations remain:
++
++1. Learn
++2. Progress
++3. Weakness
++4. Rewards
++5. Profile
++
++Every included feature has exactly one production entry point under one of
++these destinations. Account recovery action links and notifications use the
++same route registry. Back behavior, process restoration, authentication
++guards, verification guards, guest restrictions, and deep links are tested.
++Duplicate screens are removed only after unique behavior and data paths have
++been migrated.
++
++### 9.2 Human design direction
++
++The UI uses one central Material 3 theme and component library:
++
++- calm blue/indigo primary palette with restrained semantic accents;
++- accessible surface contrast and typography with Thai/Latin metrics tested;
++- an 8-point spacing grid, consistent 12/16/24 corner families, and minimal
++  elevation;
++- one button hierarchy, form style, card style, dialog style, empty state,
++  loading state, and error state;
++- meaningful icons with text labels where ambiguity is possible;
++- motion only for feedback or spatial continuity;
++- no decorative gradient overload, emoji-heavy headings, generic AI sparkle
++  treatment, excessive glass effects, or inconsistent autogenerated copy.
++
++User-facing Thai copy is reviewed for natural wording and UTF-8 integrity.
++Old and new visual systems are not mixed in the same APK. Screenshots across
++the complete route inventory are part of the visual regression review.
++
++## 10. Error handling and observability
++
++- Domain errors map to stable user messages and retry actions.
++- Offline, timeout, unauthorized, quota, permission, validation, conflict, and
++  server errors remain distinguishable.
++- Global error boundaries prevent a single feature from crashing the shell.
++- Logs use structured event names and correlation IDs while excluding direct
++  personal identifiers, tokens, passwords, Gemini keys, action codes, raw
++  recordings, and vocabulary content unless the user explicitly exports it.
++- Health UI reports whether local learning, sync, Gemini, voice enhancement,
++  and cloud services are available. “Ready” is never shown when required
++  configuration is missing.
++- Crash and performance monitoring are opt-in for the invited test where
++  legally required, with retention and deletion behavior documented.
++
++## 11. Migration plan
++
++On first v0.1 launch:
++
++1. Back up the current local schema version marker.
++2. Migrate valid user vocabulary, categories, SRS records, progress sessions,
++   and selected preferences into the canonical Drift schema.
++3. Deduplicate records by stable IDs and documented normalized keys.
++4. Convert pending legacy progress into idempotent outbox events without
++   treating legacy client counters as authoritative currency.
++5. Preserve data that cannot be converted in a local quarantine table and
++   offer a diagnostic export.
++6. Commit the new schema marker only after the migration transaction
++   succeeds.
++
++Migration is restart-safe and rollback-tested from representative old
++databases. Uninstalling the old APK is not an acceptable migration strategy.
++
++## 12. Test strategy
++
++Implementation follows test-driven development: add a failing behavior test,
++implement the smallest production change, and refactor after it passes.
++
++Required coverage includes:
++
++- unit tests for validation, learning algorithms, sync state transitions,
++  conflict policy, rate limits, and economy invariants;
++- repository tests against real Drift databases;
++- Firebase emulator tests for Auth-adjacent flows, Firestore rules, trusted
++  progress writers, purchases, and idempotency;
++- adapter contract tests for Gemini, voice, camera/ML, speech, file export, and
++  platform permissions;
++- device-tier tests for capability detection, model selection, pack integrity,
++  low storage, memory pressure, battery saver, and thermal throttling;
++- widget tests for every screen state: loading, data, empty, offline,
++  recoverable error, and permanent unavailable;
++- navigation tests proving every inventory item is reachable and guarded;
++- integration tests for registration/verification, login, forgot/reset/change
++  password, guest upgrade, learning completion, offline restart, reconnect
++  sync, shop purchase, AI key lifecycle, scanner, voice fallback, and exports;
++- migration tests from captured historical schema fixtures;
++- accessibility checks for text scaling, touch targets, contrast, screen
++  reader labels, and keyboard/form order;
++- bounded dependency, secret, and policy audits using repository-approved
++  local tools;
++- manual exploratory testing on at least three representative physical
++  Android devices, including one Android 10/4 GB baseline device, followed by
++  the 30-person invited acceptance test.
++
++Production-code scans fail when they find known mock/sample/simulation entry
++points, embedded secrets, obsolete fixed tunnel URLs, or unguarded direct
++remote writes. Test fakes remain permitted under test-only paths.
++
++## 13. Release gates
++
++The exact release commit must satisfy all of the following:
++
++1. `flutter analyze` passes with no errors or warnings accepted as release
++   exceptions.
++2. All Flutter unit, widget, integration, backend, rules, and function tests
++   pass.
++3. The complete CLI verification suite passes from a clean checkout.
++4. Android release configuration uses HTTPS, production service identifiers,
++   enforced App Check, least-privilege policies, and no secret in the APK.
++5. A signed `flutter build apk --release` succeeds with version `0.1.0+1`.
++6. The APK installs, launches, upgrades from the prior test build, survives
++   restart, and completes every critical journey on physical devices.
++7. Offline learning, queued sync, reconnect, duplicate delivery, conflict,
++   and interrupted migration scenarios pass.
++8. All production routes are reachable; no production control returns sample,
++   simulated, placeholder, or fabricated data.
++9. UI review confirms one design system and natural Thai copy across the full
++   screenshot inventory.
++10. The Android 10/4 GB baseline device completes the representative
++    30-minute session without an out-of-memory crash or sustained severe
++    thermal state.
++11. Optional model downloads pass consent, storage, resume, checksum,
++    compatibility, rollback, and deletion tests.
++12. Billing alerts, enforceable quotas, runtime kill switches, rollback
++    instructions, and service ownership are verified.
++13. The invited test consent, privacy notice, support channel, known external
++    dependency limitations, and feedback path are ready.
++14. The final APK checksum, commit SHA, build command, dependency lockfiles,
++    migration version, test evidence, and rollback artifact are recorded.
++
++No APK is distributed if any gate fails. A debug APK, a build produced with
++missing runtime configuration, or a build whose unavailable features are
++disguised as success is not a v0.1 candidate.
++
++## 14. Current baseline findings
++
++The pre-implementation verification on the isolated release worktree found:
++
++- runtime probes, Android command tests, contract checks, Flutter analysis,
++  709 Flutter tests, trusted-writer tests, Firestore emulator tests, voice API
++  tests, AI API tests, and language-model tests passed;
++- the Android debug APK phase failed because
++  `LEXIQUEST_SUPABASE_PUBLISHABLE_KEY` was absent/invalid;
++- the root JavaScript dependency audit reported five high-severity findings,
++  while the Functions dependency audit reported none;
++- production code still contains sample/simulation paths, including the object
++  scanner, export center, ghost duel, tutor fallback, and story content;
++- the current app declares `1.0.0+1`, mixes theme definitions, and still uses a
++  legacy navigation bridge.
++
++These are release blockers to be closed, not accepted exceptions. Removing the
++unnecessary Supabase runtime dependency resolves the current build
++configuration blocker as part of the approved architecture; dependency
++findings are handled through bounded upgrade and regression testing rather
++than an unreviewed automatic rewrite.
++
++## 15. Definition of done
++
++Work is complete only when:
++
++- every included feature satisfies its behavior and failure-state acceptance
++  tests;
++- accounts include working forgot/reset/change-password flows;
++- core learning is functional offline and synchronization is proven after
++  reconnect;
++- the on-device baseline works on Android 10/4 GB and scales enhanced models
++  only when device capability permits;
++- Gemini BYOK is secure, replaceable, removable, and the only AI provider;
++- production contains no reachable fabricated data or simulated device
++  capability;
++- the economy and ownership paths use trusted idempotent writers;
++- UI, navigation, and Thai copy are consistent across the application;
++- migration preserves existing valid user data;
++- the signed release APK passes all gates and the invited 30-user rollout has
++  a rollback path;
++- the historical comparison remains available through `baseline/2024-10`.
+diff --git a/lib/config/m3_theme.dart b/lib/config/m3_theme.dart
+index c8dfbdb..21d3b10 100644
+--- a/lib/config/m3_theme.dart
++++ b/lib/config/m3_theme.dart
+@@ -1,54 +1,79 @@
+ import 'package:flutter/material.dart';
+ 
+ /// Centralized Material 3 Design System and Theme configuration for LexiQuest.
+ class M3Theme {
+   const M3Theme._();
+ 
+-  static const Color primaryBlue = Color(0xFF1E88E5);
+-  static const Color accentIndigo = Color(0xFF3F51B5);
+-  static const Color backgroundLight = Color(0xFFF8FAFC);
+-  static const Color cardSurface = Colors.white;
++  static const Color primaryBlue = Color(0xFF2457A7);
++  static const Color backgroundLight = Color(0xFFF7F8FA);
+ 
+   /// Light Theme Data for Material 3
+   static ThemeData get lightTheme {
+-    final base = ThemeData(
++    final scheme = ColorScheme.fromSeed(
++      seedColor: primaryBlue,
++      primary: primaryBlue,
++      brightness: Brightness.light,
++      surface: Colors.white,
++    );
++    return ThemeData(
+       useMaterial3: true,
+-      colorScheme: ColorScheme.fromSeed(
+-        seedColor: primaryBlue,
+-        brightness: Brightness.light,
+-      ),
++      colorScheme: scheme,
+       scaffoldBackgroundColor: backgroundLight,
+-    );
+-
+-    return base.copyWith(
+       cardTheme: CardThemeData(
+-        elevation: 2,
+-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+-        color: cardSurface,
++        elevation: 0,
++        color: scheme.surface,
++        shape: RoundedRectangleBorder(
++          borderRadius: BorderRadius.circular(16),
++          side: BorderSide(color: scheme.outlineVariant),
++        ),
+       ),
+       appBarTheme: const AppBarTheme(
+-        centerTitle: true,
++        centerTitle: false,
+         elevation: 0,
+-        backgroundColor: Colors.transparent,
++        scrolledUnderElevation: 0,
++      ),
++      filledButtonTheme: FilledButtonThemeData(
++        style: ButtonStyle(
++          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
++          shape: WidgetStatePropertyAll(
++            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
++          ),
++        ),
+       ),
+     );
+   }
+ 
+   /// Dark Theme Data for Material 3
+   static ThemeData get darkTheme {
+-    final base = ThemeData(
+-      useMaterial3: true,
+-      colorScheme: ColorScheme.fromSeed(
+-        seedColor: primaryBlue,
+-        brightness: Brightness.dark,
+-      ),
++    final scheme = ColorScheme.fromSeed(
++      seedColor: primaryBlue,
++      brightness: Brightness.dark,
+     );
+-
+-    return base.copyWith(
++    return ThemeData(
++      useMaterial3: true,
++      colorScheme: scheme,
++      scaffoldBackgroundColor: scheme.surface,
+       cardTheme: CardThemeData(
+-        elevation: 3,
+-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
++        elevation: 0,
++        color: scheme.surface,
++        shape: RoundedRectangleBorder(
++          borderRadius: BorderRadius.circular(16),
++          side: BorderSide(color: scheme.outlineVariant),
++        ),
++      ),
++      appBarTheme: const AppBarTheme(
++        centerTitle: false,
++        elevation: 0,
++        scrolledUnderElevation: 0,
++      ),
++      filledButtonTheme: FilledButtonThemeData(
++        style: ButtonStyle(
++          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
++          shape: WidgetStatePropertyAll(
++            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
++          ),
++        ),
+       ),
+     );
+   }
+ }
+diff --git a/lib/main.dart b/lib/main.dart
+index 78e8a1f..65b6421 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,12 +1,12 @@
+ import 'package:flutter/material.dart';
+-import 'package:google_fonts/google_fonts.dart';
++import 'config/m3_theme.dart';
+ import 'runtime/app_bootstrap.dart';
+ import 'runtime/app_dependencies.dart';
+ import 'screens/main_navigation_screen.dart';
+ import 'screens/login_screen.dart';
+ import 'screens/register_screen.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   final dependencies = await AppBootstrap.production().initialize();
+   runApp(MyApp(dependencies: dependencies));
+@@ -17,41 +17,23 @@ class MyApp extends StatelessWidget {
+ 
+   final AppDependencies dependencies;
+ 
+   @override
+   Widget build(BuildContext context) {
+     return AppDependenciesScope(
+       dependencies: dependencies,
+       child: MaterialApp(
+         debugShowCheckedModeBanner: false,
+         title: 'LexiQuest - AI Vocab Learning',
+-        theme: ThemeData(
+-          useMaterial3: true,
+-          colorScheme: ColorScheme.fromSeed(
+-            seedColor: Colors.deepPurple,
+-            primary: Colors.deepPurple,
+-            secondary: Colors.indigo,
+-            tertiary: Colors.teal,
+-          ),
+-          textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
+-          cardTheme: CardThemeData(
+-            elevation: 4,
+-            shape: RoundedRectangleBorder(
+-              borderRadius: BorderRadius.circular(16),
+-            ),
+-          ),
+-          appBarTheme: const AppBarTheme(
+-            centerTitle: true,
+-            elevation: 0,
+-            backgroundColor: Colors.transparent,
+-          ),
+-        ),
++        theme: M3Theme.lightTheme,
++        darkTheme: M3Theme.darkTheme,
++        themeMode: ThemeMode.system,
+         initialRoute: '/login',
+         routes: {
+           '/login': (context) => LoginScreen(
+             guestSessionService: AppDependenciesScope.of(
+               context,
+             ).guestSessionService,
+           ),
+           '/register': (context) => const RegisterScreen(),
+           '/home': (context) => const MainNavigationScreen(),
+         },
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index e79c914..78c2fd4 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -1,14 +1,13 @@
+ import 'package:firebase_app_check/firebase_app_check.dart';
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:flutter/foundation.dart';
+-import 'package:supabase_flutter/supabase_flutter.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../ai/ai_service_factory.dart';
+ import '../ai/generated_reading_content_source.dart';
+ import '../config/app_config.dart';
+ import '../firebase_options.dart';
+ import '../learning/adaptive_associative_scheduler.dart';
+ import '../learning/association_prompt.dart';
+ import '../learning/associative_memory.dart';
+ import '../learning/associative_reading_coordinator.dart';
+@@ -25,38 +24,25 @@ import '../progress/progress_repository.dart';
+ import '../progress/progress_sync_service.dart';
+ import '../progress/purchase_remote_writer.dart';
+ import '../services/guest_session_service.dart';
+ import '../voice/reading_voice_enrichment.dart';
+ import '../voice/voice_service_factory.dart';
+ import 'app_build_info.dart';
+ import 'app_dependencies.dart';
+ import 'app_runtime_status.dart';
+ import 'learning_dependencies.dart';
+ import 'learning_feature_flags.dart';
+-import 'supabase_client_config.dart';
+ 
+ typedef RuntimeInitializer = Future<void> Function();
+ typedef AppConfigLoader = AppConfig Function();
+ typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
+ 
+-// Public client identifiers, not server credentials. The Supabase URL keeps a
+-// public default, but the publishable key must be supplied per build.
+-const _productionSupabaseUrl = String.fromEnvironment(
+-  'LEXIQUEST_SUPABASE_URL',
+-  defaultValue: 'https://jkiyfnlegmhodyxpfwpc.supabase.co',
+-);
+-const _productionSupabasePublishableKey = String.fromEnvironment(
+-  'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
+-);
+-
+-bool _productionSupabaseInitialized = false;
+-
+ Future<void> _initializeFirebaseProduction() async {
+   if (Firebase.apps.isEmpty) {
+     await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+     );
+   }
+   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+     await FirebaseAppCheck.instance.activate(
+       providerAndroid: kDebugMode
+           ? const AndroidDebugProvider()
+@@ -66,32 +52,20 @@ Future<void> _initializeFirebaseProduction() async {
+       (defaultTargetPlatform == TargetPlatform.iOS ||
+           defaultTargetPlatform == TargetPlatform.macOS)) {
+     await FirebaseAppCheck.instance.activate(
+       providerApple: kDebugMode
+           ? const AppleDebugProvider()
+           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+     );
+   }
+ }
+ 
+-Future<void> _initializeSupabaseProduction() async {
+-  if (_productionSupabaseInitialized) return;
+-  final publishableKey = requireSupabasePublishableKey(
+-    _productionSupabasePublishableKey,
+-  );
+-  await Supabase.initialize(
+-    url: _productionSupabaseUrl,
+-    publishableKey: publishableKey,
+-  );
+-  _productionSupabaseInitialized = true;
+-}
+-
+ Future<ProgressRepository> _loadProgressRepositoryProduction() async {
+   return LocalProgressRepository(await SharedPreferences.getInstance());
+ }
+ 
+ Future<LearningDependencies> _loadLearningDependenciesProduction(
+   AppConfig? config,
+   LearningFeatureFlags flags,
+ ) async {
+   final database = await LearningDatabaseFactory().open();
+   const buildInfo = AppBuildInfo.fromEnvironment();
+@@ -174,72 +148,67 @@ Future<void> _closeLearningResources(
+     }
+   }
+   if (firstError != null) {
+     Error.throwWithStackTrace(firstError, firstStackTrace!);
+   }
+ }
+ 
+ final class AppBootstrap {
+   const AppBootstrap({
+     required this.initializeFirebase,
+-    required this.initializeSupabase,
+     required this.loadConfig,
+     required this.guestSessionService,
+     this.loadProgressRepository = _loadProgressRepositoryProduction,
+     this.progressRemoteWriter,
+     this.purchaseRemoteWriter,
+     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+     this.loadLearningDependencies = _loadLearningDependenciesProduction,
+   });
+ 
+   factory AppBootstrap.production() {
+     return AppBootstrap(
+       initializeFirebase: _initializeFirebaseProduction,
+-      initializeSupabase: _initializeSupabaseProduction,
+       loadConfig: AppConfig.fromEnvironment,
+       guestSessionService: FirebaseGuestSessionService.production(),
+       loadProgressRepository: _loadProgressRepositoryProduction,
+       progressRemoteWriter: FirebaseProgressRemoteWriter(),
+       purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
+     );
+   }
+ 
+   final RuntimeInitializer initializeFirebase;
+-  final RuntimeInitializer initializeSupabase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+   final ProgressRepositoryLoader loadProgressRepository;
+   final ProgressRemoteWriter? progressRemoteWriter;
+   final PurchaseRemoteWriter? purchaseRemoteWriter;
+   final LearningFeatureFlags featureFlags;
+   final LearningDependenciesLoader loadLearningDependencies;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+-    final supabase = await _availability(initializeSupabase);
+     final config = _loadConfig();
+     final progressRepository = await _loadProgressRepository();
+     final progressSyncService =
+         progressRepository == null || progressRemoteWriter == null
+         ? null
+         : ProgressSyncService(
+             repository: progressRepository,
+             remoteWriter: progressRemoteWriter!,
+           );
+     final learningDependencies = featureFlags.associativeReadingEnabled
+         ? await _loadLearningDependencies(config)
+         : null;
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+-        supabase: supabase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
+       ),
+       config: config,
+       guestSessionService: guestSessionService,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
+       progressRepository: progressRepository,
+       progressSyncService: progressSyncService,
+       purchaseRemoteWriter: purchaseRemoteWriter,
+diff --git a/lib/runtime/app_build_info.dart b/lib/runtime/app_build_info.dart
+index f87693f..dc6b379 100644
+--- a/lib/runtime/app_build_info.dart
++++ b/lib/runtime/app_build_info.dart
+@@ -4,20 +4,20 @@
+ /// credentials, provider keys, or anything that must stay out of the bundle.
+ final class AppBuildInfo {
+   const AppBuildInfo({required this.version, required this.buildId});
+ 
+   final String version;
+   final String buildId;
+ 
+   const AppBuildInfo.fromEnvironment()
+     : version = const String.fromEnvironment(
+         'LEXIQUEST_VERSION',
+-        defaultValue: '1.0.0+1',
++        defaultValue: '0.1.0+1',
+       ),
+       buildId = const String.fromEnvironment(
+         'LEXIQUEST_BUILD_ID',
+         defaultValue: 'development',
+       );
+ 
+   @override
+   String toString() => 'AppBuildInfo';
+ }
+diff --git a/lib/runtime/app_runtime_status.dart b/lib/runtime/app_runtime_status.dart
+index 7a19514..247d95d 100644
+--- a/lib/runtime/app_runtime_status.dart
++++ b/lib/runtime/app_runtime_status.dart
+@@ -1,22 +1,17 @@
+ enum RuntimeAvailability { ready, degraded, unavailable }
+ 
+ final class AppRuntimeStatus {
+-  const AppRuntimeStatus({
+-    required this.firebase,
+-    required this.supabase,
+-    required this.backends,
+-  });
++  const AppRuntimeStatus({required this.firebase, required this.backends});
+ 
+   final RuntimeAvailability firebase;
+-  final RuntimeAvailability supabase;
+   final RuntimeAvailability backends;
+ 
+-  bool get isFullyReady {
+-    return firebase == RuntimeAvailability.ready &&
+-        supabase == RuntimeAvailability.ready &&
+-        backends == RuntimeAvailability.ready;
+-  }
++  bool get isFullyReady =>
++      firebase == RuntimeAvailability.ready &&
++      backends == RuntimeAvailability.ready;
++
++  bool get isCoreLearningAvailable => true;
+ 
+   @override
+   String toString() => 'AppRuntimeStatus';
+ }
+diff --git a/lib/runtime/supabase_client_config.dart b/lib/runtime/supabase_client_config.dart
+deleted file mode 100644
+index f1393a6..0000000
+--- a/lib/runtime/supabase_client_config.dart
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/// Thrown when the Supabase client configuration is missing or malformed.
+-///
+-/// Rejected values are never included in the error text.
+-final class SupabaseConfigurationException implements Exception {
+-  const SupabaseConfigurationException();
+-
+-  @override
+-  String toString() => 'Invalid Supabase configuration.';
+-}
+-
+-final RegExp _publishableKeyPattern = RegExp(
+-  r'^sb_publishable_[A-Za-z0-9_-]+$',
+-);
+-
+-/// Returns [value] unchanged when it is a current Supabase publishable key.
+-String requireSupabasePublishableKey(String value) {
+-  if (!_publishableKeyPattern.hasMatch(value)) {
+-    throw const SupabaseConfigurationException();
+-  }
+-  return value;
+-}
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index ce69d57..8425c60 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -36,29 +36,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+     super.initState();
+     _currentIndex = widget.initialIndex.clamp(0, _screens.length - 1);
+   }
+ 
+   String _runtimeStatusSummary(BuildContext context) {
+     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
+     if (status == null) {
+       return 'โหมดทดสอบ · ระบบอาจไม่พร้อมใช้งาน';
+     }
+     if (status.isFullyReady) {
+-      return 'ระบบพร้อมใช้งาน';
++      return 'ระบบพร้อมใช้งาน รวมบริการออนไลน์';
+     }
+ 
+     final unavailable = <String>[
+-      if (status.firebase != RuntimeAvailability.ready) 'Firebase',
+-      if (status.supabase != RuntimeAvailability.ready) 'Supabase',
+-      if (status.backends != RuntimeAvailability.ready) 'AI/Voice',
++      if (status.firebase != RuntimeAvailability.ready) 'การซิงค์บัญชี',
++      if (status.backends != RuntimeAvailability.ready) 'AI/เสียงออนไลน์',
+     ];
+-    return '${unavailable.join(' · ')} ยังไม่พร้อมใช้งาน';
++    return 'เรียนแบบออฟไลน์ได้ · ${unavailable.join(' · ')} ยังไม่พร้อม';
+   }
+ 
+   String _buildIdentity(BuildContext context) {
+     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
+     if (buildInfo == null) return '';
+     return '${buildInfo.version} · ${buildInfo.buildId}';
+   }
+ 
+   void _pushLegacyDestination(Widget destination) {
+     _scaffoldKey.currentState?.closeDrawer();
+diff --git a/lib/screens/select_wallpaper_screen.dart b/lib/screens/select_wallpaper_screen.dart
+index 1919491..f756360 100644
+--- a/lib/screens/select_wallpaper_screen.dart
++++ b/lib/screens/select_wallpaper_screen.dart
+@@ -1,157 +1,144 @@
+-import 'package:flutter/material.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+-import 'package:supabase_flutter/supabase_flutter.dart';
++import 'package:flutter/material.dart';
++
++import '../shop/product_artwork.dart';
+ 
+ class SelectWallpaperScreen extends StatefulWidget {
+   const SelectWallpaperScreen({super.key});
+ 
+   @override
+   State<SelectWallpaperScreen> createState() => _SelectWallpaperScreenState();
+ }
+ 
+ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
+-  List<String> purchasedWallpapers = [];
+-  String? selectedWallpaper;
++  List<ProductArtwork> purchasedWallpapers = const [DefaultProductArtwork()];
++  ProductArtwork selectedWallpaper = const DefaultProductArtwork();
+ 
+   @override
+   void initState() {
+     super.initState();
+     _fetchPurchasedWallpapers();
+   }
+ 
+-  String _getSupabaseImageUrl(String imageName) {
+-    final supabase = Supabase.instance.client;
+-    return supabase.storage.from('Image').getPublicUrl(imageName);
+-  }
+-
+   Future<void> _fetchPurchasedWallpapers() async {
+     final user = FirebaseAuth.instance.currentUser;
+     if (user == null) return;
+ 
+     final purchasedSnapshot = await FirebaseFirestore.instance
+         .collection('purchased_items')
+         .where('user_id', isEqualTo: user.uid)
+         .get();
+ 
+-    List<String> wallpapers = ["default"];
+-    for (var doc in purchasedSnapshot.docs) {
++    final wallpapers = <ProductArtwork>[const DefaultProductArtwork()];
++    for (final doc in purchasedSnapshot.docs) {
+       final productId = doc.data()['product_id'];
+-      if (productId != null) {
+-        final productDoc = await FirebaseFirestore.instance
+-            .collection('products')
+-            .doc(productId)
+-            .get();
+-
+-        if (productDoc.exists) {
+-          final data = productDoc.data();
+-          String imageUrl = data?['image_url'] ?? '';
+-          if (imageUrl.isEmpty && data?['image_name'] != null) {
+-            try {
+-              imageUrl = _getSupabaseImageUrl(data!['image_name']);
+-            } catch (_) {}
+-          }
+-          if (imageUrl.isNotEmpty) {
+-            wallpapers.add(imageUrl);
+-          }
+-        }
++      if (productId is! String || productId.isEmpty) continue;
++
++      final productDoc = await FirebaseFirestore.instance
++          .collection('products')
++          .doc(productId)
++          .get();
++      final product = productDoc.data();
++      if (product == null) continue;
++
++      final artwork = resolveProductArtwork(Map<String, Object?>.from(product));
++      if (artwork is NetworkProductArtwork) {
++        wallpapers.add(artwork);
+       }
+     }
+ 
++    if (!mounted) return;
+     setState(() {
+       purchasedWallpapers = wallpapers;
+     });
+   }
+ 
+-  Future<void> _setWallpaper(String wallpaperUrl) async {
++  Future<void> _setWallpaper(ProductArtwork artwork) async {
+     final user = FirebaseAuth.instance.currentUser;
+-    if (user != null) {
+-      await FirebaseFirestore.instance.collection('state').doc(user.uid).update(
+-        {'selectedWallpaper': wallpaperUrl == "default" ? null : wallpaperUrl},
+-      );
+-      setState(() {
+-        selectedWallpaper = wallpaperUrl;
+-      });
+-      if (mounted) {
+-        ScaffoldMessenger.of(context).showSnackBar(
+-          const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์สำเร็จ!')),
+-        );
+-      }
+-    }
++    if (user == null) return;
++
++    await FirebaseFirestore.instance.collection('state').doc(user.uid).update({
++      'selectedWallpaper': artwork.storageValue,
++    });
++    if (!mounted) return;
++    setState(() {
++      selectedWallpaper = artwork;
++    });
++    ScaffoldMessenger.of(context).showSnackBar(
++      const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์เรียบร้อยแล้ว')),
++    );
++  }
++
++  Widget _buildArtwork(ProductArtwork artwork) {
++    return switch (artwork) {
++      DefaultProductArtwork() => const ColoredBox(
++        color: Color(0xFFE8ECF3),
++        child: Center(child: Icon(Icons.wallpaper_outlined, size: 48)),
++      ),
++      NetworkProductArtwork(:final uri) => Image.network(
++        uri.toString(),
++        fit: BoxFit.cover,
++        loadingBuilder: (context, child, progress) => progress == null
++            ? child
++            : const Center(child: CircularProgressIndicator()),
++        errorBuilder: (context, error, stackTrace) => const ColoredBox(
++          color: Color(0xFFE8ECF3),
++          child: Center(child: Icon(Icons.broken_image_outlined)),
++        ),
++      ),
++    };
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+       appBar: AppBar(title: const Text('เลือกวอลเปเปอร์')),
+       body: purchasedWallpapers.isEmpty
+           ? const Center(child: Text('คุณยังไม่มีวอลเปเปอร์ที่ซื้อ'))
+           : Padding(
+               padding: const EdgeInsets.all(10),
+               child: GridView.builder(
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                   crossAxisSpacing: 15,
+                   mainAxisSpacing: 15,
+                   childAspectRatio: 0.8,
+                 ),
+                 itemCount: purchasedWallpapers.length,
+                 itemBuilder: (context, index) {
+-                  final wallpaper = purchasedWallpapers[index];
+-                  final isSelected = selectedWallpaper == wallpaper;
++                  final artwork = purchasedWallpapers[index];
++                  final isSelected = selectedWallpaper == artwork;
+ 
+                   return GestureDetector(
+-                    onTap: () => _setWallpaper(wallpaper),
++                    onTap: () => _setWallpaper(artwork),
+                     child: AnimatedContainer(
+                       duration: const Duration(milliseconds: 300),
+                       decoration: BoxDecoration(
+                         borderRadius: BorderRadius.circular(12),
+                         boxShadow: [
+                           BoxShadow(
+                             color: Colors.black.withValues(alpha: 0.2),
+                             blurRadius: 5,
+                             spreadRadius: 2,
+                           ),
+                         ],
+                         border: Border.all(
+                           color: isSelected
+                               ? Colors.blueAccent
+                               : Colors.transparent,
+                           width: 3,
+                         ),
+                       ),
+                       child: ClipRRect(
+                         borderRadius: BorderRadius.circular(12),
+-                        child: wallpaper == "default"
+-                            ? Container(
+-                                color: Colors.grey.shade300,
+-                                child: const Center(
+-                                  child: Icon(
+-                                    Icons.image,
+-                                    size: 50,
+-                                    color: Colors.grey,
+-                                  ),
+-                                ),
+-                              )
+-                            : Image.network(
+-                                wallpaper,
+-                                fit: BoxFit.cover,
+-                                loadingBuilder:
+-                                    (context, child, loadingProgress) {
+-                                      if (loadingProgress == null) return child;
+-                                      return const Center(
+-                                        child: CircularProgressIndicator(),
+-                                      );
+-                                    },
+-                                errorBuilder: (context, error, stackTrace) =>
+-                                    const Icon(Icons.error, color: Colors.red),
+-                              ),
++                        child: _buildArtwork(artwork),
+                       ),
+                     ),
+                   );
+                 },
+               ),
+             ),
+     );
+   }
+ }
+diff --git a/lib/shop/product_artwork.dart b/lib/shop/product_artwork.dart
+new file mode 100644
+index 0000000..a5a7a49
+--- /dev/null
++++ b/lib/shop/product_artwork.dart
+@@ -0,0 +1,48 @@
++sealed class ProductArtwork {
++  const ProductArtwork();
++
++  String? get storageValue;
++}
++
++final class DefaultProductArtwork extends ProductArtwork {
++  const DefaultProductArtwork();
++
++  @override
++  String? get storageValue => null;
++
++  @override
++  bool operator ==(Object other) => other is DefaultProductArtwork;
++
++  @override
++  int get hashCode => runtimeType.hashCode;
++}
++
++final class NetworkProductArtwork extends ProductArtwork {
++  const NetworkProductArtwork(this.uri);
++
++  final Uri uri;
++
++  @override
++  String get storageValue => uri.toString();
++
++  @override
++  bool operator ==(Object other) =>
++      other is NetworkProductArtwork && other.uri == uri;
++
++  @override
++  int get hashCode => uri.hashCode;
++}
++
++ProductArtwork resolveProductArtwork(Map<String, Object?> product) {
++  final rawUrl = product['image_url'];
++  if (rawUrl is! String) return const DefaultProductArtwork();
++  final uri = Uri.tryParse(rawUrl.trim());
++  if (uri == null ||
++      uri.scheme != 'https' ||
++      !uri.hasAuthority ||
++      uri.host.isEmpty ||
++      uri.userInfo.isNotEmpty) {
++    return const DefaultProductArtwork();
++  }
++  return NetworkProductArtwork(uri);
++}
+diff --git a/linux/flutter/generated_plugin_registrant.cc b/linux/flutter/generated_plugin_registrant.cc
+index fb283e0..1830e5c 100644
+--- a/linux/flutter/generated_plugin_registrant.cc
++++ b/linux/flutter/generated_plugin_registrant.cc
+@@ -1,23 +1,15 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ // clang-format off
+ 
+ #include "generated_plugin_registrant.h"
+ 
+ #include <audioplayers_linux/audioplayers_linux_plugin.h>
+-#include <gtk/gtk_plugin.h>
+-#include <url_launcher_linux/url_launcher_plugin.h>
+ 
+ void fl_register_plugins(FlPluginRegistry* registry) {
+   g_autoptr(FlPluginRegistrar) audioplayers_linux_registrar =
+       fl_plugin_registry_get_registrar_for_plugin(registry, "AudioplayersLinuxPlugin");
+   audioplayers_linux_plugin_register_with_registrar(audioplayers_linux_registrar);
+-  g_autoptr(FlPluginRegistrar) gtk_registrar =
+-      fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
+-  gtk_plugin_register_with_registrar(gtk_registrar);
+-  g_autoptr(FlPluginRegistrar) url_launcher_linux_registrar =
+-      fl_plugin_registry_get_registrar_for_plugin(registry, "UrlLauncherPlugin");
+-  url_launcher_plugin_register_with_registrar(url_launcher_linux_registrar);
+ }
+diff --git a/linux/flutter/generated_plugins.cmake b/linux/flutter/generated_plugins.cmake
+index 18303b2..f4bf1dc 100644
+--- a/linux/flutter/generated_plugins.cmake
++++ b/linux/flutter/generated_plugins.cmake
+@@ -1,18 +1,16 @@
+ #
+ # Generated file, do not edit.
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
+   audioplayers_linux
+-  gtk
+-  url_launcher_linux
+ )
+ 
+ list(APPEND FLUTTER_FFI_PLUGIN_LIST
+   jni
+ )
+ 
+ set(PLUGIN_BUNDLED_LIBRARIES)
+ 
+ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+   add_subdirectory(flutter/ephemeral/.plugin_symlinks/${plugin}/linux plugins/${plugin})
+diff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift
+index 7bcc9d2..7522241 100644
+--- a/macos/Flutter/GeneratedPluginRegistrant.swift
++++ b/macos/Flutter/GeneratedPluginRegistrant.swift
+@@ -1,32 +1,28 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ import FlutterMacOS
+ import Foundation
+ 
+-import app_links
+ import audioplayers_darwin
+ import cloud_firestore
+ import cloud_functions
+ import firebase_app_check
+ import firebase_auth
+ import firebase_core
+ import flutter_tts
+ import shared_preferences_foundation
+ import speech_to_text
+-import url_launcher_macos
+ 
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+-  AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
+   AudioplayersDarwinPlugin.register(with: registry.registrar(forPlugin: "AudioplayersDarwinPlugin"))
+   FLTFirebaseFirestorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseFirestorePlugin"))
+   FirebaseFunctionsPlugin.register(with: registry.registrar(forPlugin: "FirebaseFunctionsPlugin"))
+   FirebaseAppCheckPlugin.register(with: registry.registrar(forPlugin: "FirebaseAppCheckPlugin"))
+   FLTFirebaseAuthPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseAuthPlugin"))
+   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
+   FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
+   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+   SpeechToTextPlugin.register(with: registry.registrar(forPlugin: "SpeechToTextPlugin"))
+-  UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
+ }
+diff --git a/pubspec.lock b/pubspec.lock
+index c671463..66a5f9e 100644
+--- a/pubspec.lock
++++ b/pubspec.lock
+@@ -18,52 +18,20 @@ packages:
+     source: hosted
+     version: "1.3.75"
+   analyzer:
+     dependency: transitive
+     description:
+       name: analyzer
+       sha256: "6ba98576948803398b69e3a444df24eacdbe12ed699c7014e120ea38552debbf"
+       url: "https://pub.dev"
+     source: hosted
+     version: "13.0.0"
+-  app_links:
+-    dependency: transitive
+-    description:
+-      name: app_links
+-      sha256: f8db46d2ea9ff6f3a37191a7fd5b7813da1253ace8c32c1b9eadace41d1188ea
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "7.2.1"
+-  app_links_linux:
+-    dependency: transitive
+-    description:
+-      name: app_links_linux
+-      sha256: f5f7173a78609f3dfd4c2ff2c95bd559ab43c80a87dc6a095921d96c05688c81
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "1.0.3"
+-  app_links_platform_interface:
+-    dependency: transitive
+-    description:
+-      name: app_links_platform_interface
+-      sha256: "7546f09a6e93f4a2df2fe2bd40a5c6c64310ac461b036d82b43033be7a59f809"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.0.4"
+-  app_links_web:
+-    dependency: transitive
+-    description:
+-      name: app_links_web
+-      sha256: af060ed76183f9e2b87510a9480e56a5352b6c249778d07bd2c95fc35632a555
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "1.0.4"
+   args:
+     dependency: transitive
+     description:
+       name: args
+       sha256: d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.7.0"
+   async:
+     dependency: transitive
+@@ -298,28 +266,20 @@ packages:
+     source: hosted
+     version: "3.1.2"
+   crypto:
+     dependency: "direct main"
+     description:
+       name: crypto
+       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
+       url: "https://pub.dev"
+     source: hosted
+     version: "3.0.7"
+-  dart_jsonwebtoken:
+-    dependency: transitive
+-    description:
+-      name: dart_jsonwebtoken
+-      sha256: ad84e60181696513d04d5f2078e0bbc20365b911f46f647797317414bdc88fbe
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "3.4.1"
+   dart_style:
+     dependency: transitive
+     description:
+       name: dart_style
+       sha256: "59d53ef8eaed9d288ed9767618e2b31c4fa0383a127db59d5eb2e737a7638a60"
+       url: "https://pub.dev"
+     source: hosted
+     version: "3.1.9"
+   drift:
+     dependency: "direct main"
+@@ -499,68 +459,44 @@ packages:
+   flutter_web_plugins:
+     dependency: transitive
+     description: flutter
+     source: sdk
+     version: "0.0.0"
+   fuchsia_remote_debug_protocol:
+     dependency: transitive
+     description: flutter
+     source: sdk
+     version: "0.0.0"
+-  functions_client:
+-    dependency: transitive
+-    description:
+-      name: functions_client
+-      sha256: e9685e9ab852a8b8e0579c867f6c9155da27317b294b3df796a536b8b8e0d253
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.6.4"
+   glob:
+     dependency: transitive
+     description:
+       name: glob
+       sha256: c3f1ee72c96f8f78935e18aa8cecced9ab132419e8625dc187e1c2408efc20de
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.1.3"
+   google_fonts:
+     dependency: "direct main"
+     description:
+       name: google_fonts
+       sha256: d3f251381df389f7418d4dff416bd27c0a23138df22969aafd28c4a4b1bb3cd6
+       url: "https://pub.dev"
+     source: hosted
+     version: "8.2.0"
+-  gotrue:
+-    dependency: transitive
+-    description:
+-      name: gotrue
+-      sha256: "360bba9606e58d5acc59a033ab64ae3cf571a6868f7a7267cb8e9a204b7bf1b2"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.26.0"
+   graphs:
+     dependency: transitive
+     description:
+       name: graphs
+       sha256: "741bbf84165310a68ff28fe9e727332eef1407342fca52759cb21ad8177bb8d0"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.3.2"
+-  gtk:
+-    dependency: transitive
+-    description:
+-      name: gtk
+-      sha256: "4ff85b2a16724029dd9e5bbb5a94b6918f9973f74ba571c949d2002801879cf5"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.2.0"
+   hooks:
+     dependency: transitive
+     description:
+       name: hooks
+       sha256: "9a62a50b50b769a737bc0a8ff381f333529df3ab746b2f6b02e83760231455ba"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.0.2"
+   http:
+     dependency: "direct main"
+@@ -596,24 +532,24 @@ packages:
+     description:
+       name: io
+       sha256: dfd5a80599cf0165756e3181807ed3e77daf6dd4137caaad72d0b7931597650b
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.0.5"
+   jni:
+     dependency: transitive
+     description:
+       name: jni
+-      sha256: ca1efa31ef27a0b8ecbb4f8dcf3785e5ad1b8a54c64af9b72d287ae81f93a4f4
++      sha256: "5bc9a9daac5ccfbd6a758377600b9f7fdce13d93f26e8012a8941014a5d978d1"
+       url: "https://pub.dev"
+     source: hosted
+-    version: "1.0.1"
++    version: "1.0.2"
+   jni_flutter:
+     dependency: transitive
+     description:
+       name: jni_flutter
+       sha256: "8b59e590786050b1cd866677dddaf76b1ade5e7bc751abe04b86e84d379d3ba6"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.0.1"
+   jni_util:
+     dependency: transitive
+@@ -624,28 +560,20 @@ packages:
+     source: hosted
+     version: "1.0.0"
+   json_annotation:
+     dependency: transitive
+     description:
+       name: json_annotation
+       sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
+       url: "https://pub.dev"
+     source: hosted
+     version: "4.12.0"
+-  jwt_decode:
+-    dependency: transitive
+-    description:
+-      name: jwt_decode
+-      sha256: d2e9f68c052b2225130977429d30f187aa1981d789c76ad104a32243cfdebfbb
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "0.3.1"
+   leak_tracker:
+     dependency: transitive
+     description:
+       name: leak_tracker
+       sha256: "33e2e26bdd85a0112ec15400c8cbffea70d0f9c3407491f672a2fad47915e2de"
+       url: "https://pub.dev"
+     source: hosted
+     version: "11.0.2"
+   leak_tracker_flutter_testing:
+     dependency: transitive
+@@ -728,28 +656,20 @@ packages:
+     source: hosted
+     version: "9.5.0"
+   package_config:
+     dependency: transitive
+     description:
+       name: package_config
+       sha256: f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.2.0"
+-  passkeys_platform_interface:
+-    dependency: transitive
+-    description:
+-      name: passkeys_platform_interface
+-      sha256: e810520c7b79dca629fdc266958564eedd77dc85a955f5e94430dfccb92eef68
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.9.0"
+   path:
+     dependency: "direct main"
+     description:
+       name: path
+       sha256: "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.9.1"
+   path_provider:
+     dependency: "direct main"
+@@ -808,44 +728,28 @@ packages:
+     source: hosted
+     version: "3.1.6"
+   plugin_platform_interface:
+     dependency: transitive
+     description:
+       name: plugin_platform_interface
+       sha256: "4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.1.8"
+-  pointycastle:
+-    dependency: transitive
+-    description:
+-      name: pointycastle
+-      sha256: "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "4.0.0"
+   pool:
+     dependency: transitive
+     description:
+       name: pool
+       sha256: "978783255c543aa3586a1b3c21f6e9d720eb315376a915872c61ef8b5c20177d"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.5.2"
+-  postgrest:
+-    dependency: transitive
+-    description:
+-      name: postgrest
+-      sha256: "10e3f195e131eec944fa872644aed89b33b5be998f3fc77c87325db3927bc646"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.8.0"
+   process:
+     dependency: transitive
+     description:
+       name: process
+       sha256: c6248e4526673988586e8c00bb22a49210c258dc91df5227d5da9748ecf79744
+       url: "https://pub.dev"
+     source: hosted
+     version: "5.0.5"
+   pub_semver:
+     dependency: transitive
+@@ -856,60 +760,36 @@ packages:
+     source: hosted
+     version: "2.2.0"
+   pubspec_parse:
+     dependency: transitive
+     description:
+       name: pubspec_parse
+       sha256: "0560ba233314abbed0a48a2956f7f022cce7c3e1e73df540277da7544cad4082"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.5.0"
+-  realtime_client:
+-    dependency: transitive
+-    description:
+-      name: realtime_client
+-      sha256: "0cfbe0047e2591eba348938e9b4e620d5b1a8df6c374757e8eb8645252b8387f"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.11.0"
+   recase:
+     dependency: transitive
+     description:
+       name: recase
+       sha256: e4eb4ec2dcdee52dcf99cb4ceabaffc631d7424ee55e56f280bc039737f89213
+       url: "https://pub.dev"
+     source: hosted
+     version: "4.1.0"
+   record_use:
+     dependency: transitive
+     description:
+       name: record_use
+       sha256: "2551bd8eecfe95d14ae75f6021ad0248be5c27f138c2ec12fcb52b500b3ba1ed"
+       url: "https://pub.dev"
+     source: hosted
+     version: "0.6.0"
+-  retry:
+-    dependency: transitive
+-    description:
+-      name: retry
+-      sha256: "822e118d5b3aafed083109c72d5f484c6dc66707885e07c0fbcb8b986bba7efc"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "3.1.2"
+-  rxdart:
+-    dependency: transitive
+-    description:
+-      name: rxdart
+-      sha256: "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "0.28.0"
+   shared_preferences:
+     dependency: "direct main"
+     description:
+       name: shared_preferences
+       sha256: c3025c5534b01739267eb7d76959bbc25a6d10f6988e1c2a3036940133dd10bf
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.5.5"
+   shared_preferences_android:
+     dependency: transitive
+@@ -1037,28 +917,20 @@ packages:
+     source: hosted
+     version: "0.45.0"
+   stack_trace:
+     dependency: transitive
+     description:
+       name: stack_trace
+       sha256: "8b27215b45d22309b5cddda1aa2b19bdfec9df0e765f2de506401c071d38d1b1"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.12.1"
+-  storage_client:
+-    dependency: transitive
+-    description:
+-      name: storage_client
+-      sha256: "221263cfbe0c01575b7d7fe7543e44abff380eb4d38d936372844a1caa85ba12"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.6.0"
+   stream_channel:
+     dependency: transitive
+     description:
+       name: stream_channel
+       sha256: "969e04c80b8bcdf826f8f16579c7b14d780458bd97f56d107d3950fdbeef059d"
+       url: "https://pub.dev"
+     source: hosted
+     version: "2.1.4"
+   stream_transform:
+     dependency: transitive
+@@ -1069,36 +941,20 @@ packages:
+     source: hosted
+     version: "2.1.1"
+   string_scanner:
+     dependency: transitive
+     description:
+       name: string_scanner
+       sha256: "921cd31725b72fe181906c6a94d987c78e3b98c2e205b397ea399d4054872b43"
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.4.1"
+-  supabase:
+-    dependency: transitive
+-    description:
+-      name: supabase
+-      sha256: "3879996256325fcc9abb03b62b12c07e4eaae2e008e1bf043cc1525184159a43"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.14.0"
+-  supabase_flutter:
+-    dependency: "direct main"
+-    description:
+-      name: supabase_flutter
+-      sha256: c9916c1cd512ebf3107ec0f83c9dca13d2e1e789629c2a5df896586bff46ce5f
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.16.0"
+   sync_http:
+     dependency: transitive
+     description:
+       name: sync_http
+       sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
+       url: "https://pub.dev"
+     source: hosted
+     version: "0.3.1"
+   synchronized:
+     dependency: transitive
+@@ -1125,84 +981,20 @@ packages:
+     source: hosted
+     version: "0.7.11"
+   typed_data:
+     dependency: transitive
+     description:
+       name: typed_data
+       sha256: f9049c039ebfeb4cf7a7104a675823cd72dba8297f264b6637062516699fa006
+       url: "https://pub.dev"
+     source: hosted
+     version: "1.4.0"
+-  url_launcher:
+-    dependency: transitive
+-    description:
+-      name: url_launcher
+-      sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "6.3.2"
+-  url_launcher_android:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_android
+-      sha256: b413d49b73867ac08dd2f9890efd3cc11f2a0e577618d50843440a1fb3776c32
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "6.3.32"
+-  url_launcher_ios:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_ios
+-      sha256: "580fe5dfb51671ae38191d316e027f6b76272b026370708c2d898799750a02b0"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "6.4.1"
+-  url_launcher_linux:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_linux
+-      sha256: d5e14138b3bc193a0f63c10a53c94b91d399df0512b1f29b94a043db7482384a
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "3.2.2"
+-  url_launcher_macos:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_macos
+-      sha256: "368adf46f71ad3c21b8f06614adb38346f193f3a59ba8fe9a2fd74133070ba18"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "3.2.5"
+-  url_launcher_platform_interface:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_platform_interface
+-      sha256: "552f8a1e663569be95a8190206a38187b531910283c3e982193e4f2733f01029"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.3.2"
+-  url_launcher_web:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_web
+-      sha256: "85c81589622fbc87c1c683aaea164d3604a7777495a79d91e39ffcdec39ddb34"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.4.3"
+-  url_launcher_windows:
+-    dependency: transitive
+-    description:
+-      name: url_launcher_windows
+-      sha256: "712c70ab1b99744ff066053cbe3e80c73332b38d46e5e945c98689b2e66fc15f"
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "3.1.5"
+   uuid:
+     dependency: transitive
+     description:
+       name: uuid
+       sha256: "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
+       url: "https://pub.dev"
+     source: hosted
+     version: "4.6.0"
+   vector_math:
+     dependency: transitive
+@@ -1269,21 +1061,13 @@ packages:
+     source: hosted
+     version: "1.1.0"
+   yaml:
+     dependency: transitive
+     description:
+       name: yaml
+       sha256: b9da305ac7c39faa3f030eccd175340f968459dae4af175130b3fc47e40d76ce
+       url: "https://pub.dev"
+     source: hosted
+     version: "3.1.3"
+-  yet_another_json_isolate:
+-    dependency: transitive
+-    description:
+-      name: yet_another_json_isolate
+-      sha256: eaa26beb5990b25a49d942374fd5a0c5aa67a837e03b14b4c26134aaa1ed01a9
+-      url: "https://pub.dev"
+-    source: hosted
+-    version: "2.1.1"
+ sdks:
+   dart: ">=3.12.0 <4.0.0"
+   flutter: ">=3.44.0"
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 16a81c6..b65f3bc 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,32 +1,31 @@
+ name: vocab_learning_app
+ description: "A new Flutter project."
+ publish_to: 'none'
+ 
+-version: 1.0.0+1
++version: 0.1.0+1
+ 
+ environment:
+   sdk: '>=3.12.0 <4.0.0'
+ 
+ 
+ dependencies:
+   flutter:
+     sdk: flutter
+   firebase_core: ^4.12.1
+   firebase_auth: ^6.5.6
+   cloud_firestore: ^6.7.1
+   google_fonts: ^8.2.0
+   speech_to_text: ^7.4.0
+   flutter_tts: ^4.2.5
+   fl_chart: ^1.2.0
+   http: ^1.6.0
+-  supabase_flutter: ^2.16.0
+   shared_preferences: ^2.5.5
+   flutter_speed_dial: ^7.0.0
+   audioplayers: ^6.8.1
+   drift: ^2.34.3
+   sqlite3: ^3.5.0
+   path: ^1.9.1
+   path_provider: ^2.1.6
+   crypto: ^3.0.7
+   cloud_functions: ^6.3.5
+   firebase_app_check: ^0.4.5+2
+diff --git a/test/config/flutter_dependency_surface_test.dart b/test/config/flutter_dependency_surface_test.dart
+index 36dcfea..8ad4927 100644
+--- a/test/config/flutter_dependency_surface_test.dart
++++ b/test/config/flutter_dependency_surface_test.dart
+@@ -42,20 +42,21 @@ void main() {
+     const removed = <String>[
+       'cupertino_icons',
+       'firebase_storage',
+       'provider',
+       'image_picker',
+       'fluttertoast',
+       'confetti',
+       'cached_network_image',
+       'google_mlkit_image_labeling',
+       'camera',
++      'supabase_flutter',
+     ];
+ 
+     expect(manifest.existsSync(), isTrue);
+     for (final name in removed) {
+       expect(
+         _declaresDirectDependency(contents, name),
+         isFalse,
+         reason: '$name should not be a direct dependency',
+       );
+     }
+@@ -64,25 +65,33 @@ void main() {
+   test('used direct dependencies remain', () {
+     const retained = <String>[
+       'firebase_core',
+       'firebase_auth',
+       'cloud_firestore',
+       'google_fonts',
+       'speech_to_text',
+       'flutter_tts',
+       'fl_chart',
+       'http',
+-      'supabase_flutter',
+       'shared_preferences',
+       'flutter_speed_dial',
+       'audioplayers',
+     ];
+ 
+     for (final name in retained) {
+       expect(
+         _declaresDirectDependency(contents, name),
+         isTrue,
+         reason: '$name must remain a direct dependency',
+       );
+     }
+   });
++
++  test('README build command is v0.1 and Firebase-only', () {
++    final readme = File(
++      '${_repositoryRoot().path}/README.md',
++    ).readAsStringSync();
++
++    expect(readme, contains('LEXIQUEST_VERSION=0.1.0+1'));
++    expect(readme, isNot(contains('LEXIQUEST_SUPABASE')));
++  });
+ }
+diff --git a/test/config/m3_theme_test.dart b/test/config/m3_theme_test.dart
+index 402aca8..a7ff312 100644
+--- a/test/config/m3_theme_test.dart
++++ b/test/config/m3_theme_test.dart
+@@ -1,19 +1,96 @@
++import 'dart:io';
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:vocab_learning_app/config/m3_theme.dart';
+ 
++Directory? _findRepoRoot(String start) {
++  var directory = Directory(start);
++  for (var depth = 0; depth < 16; depth++) {
++    if (File('${directory.path}/pubspec.yaml').existsSync() &&
++        Directory('${directory.path}/lib').existsSync()) {
++      return directory;
++    }
++    final parent = directory.parent;
++    if (parent.path == directory.path) return null;
++    directory = parent;
++  }
++  return null;
++}
++
++Directory _repositoryRoot() {
++  for (final start in <String>[
++    File(Platform.script.toFilePath()).parent.path,
++    Directory.current.path,
++  ]) {
++    final found = _findRepoRoot(start);
++    if (found != null) return found;
++  }
++  return Directory.current;
++}
++
+ void main() {
+   TestWidgetsFlutterBinding.ensureInitialized();
+ 
+   test('lightTheme has Material 3 enabled and correct brightness', () {
+     final theme = M3Theme.lightTheme;
+     expect(theme.useMaterial3, isTrue);
+     expect(theme.colorScheme.brightness, Brightness.light);
+   });
+ 
+   test('darkTheme has Material 3 enabled and dark brightness', () {
+     final theme = M3Theme.darkTheme;
+     expect(theme.useMaterial3, isTrue);
+     expect(theme.colorScheme.brightness, Brightness.dark);
+   });
++
++  test('light theme uses the approved restrained component tokens', () {
++    final theme = M3Theme.lightTheme;
++
++    expect(theme.colorScheme.primary, const Color(0xFF2457A7));
++    expect(theme.scaffoldBackgroundColor, const Color(0xFFF7F8FA));
++    expect(theme.cardTheme.elevation, 0);
++    expect(theme.appBarTheme.centerTitle, isFalse);
++    expect(theme.filledButtonTheme.style?.minimumSize?.resolve({})?.height, 48);
++  });
++
++  test(
++    'dark theme keeps accessible primary contrast and component geometry',
++    () {
++      final lightTheme = M3Theme.lightTheme;
++      final darkTheme = M3Theme.darkTheme;
++      final scheme = darkTheme.colorScheme;
++      final primaryLuminance = scheme.primary.computeLuminance();
++      final onPrimaryLuminance = scheme.onPrimary.computeLuminance();
++      final brighterLuminance = primaryLuminance > onPrimaryLuminance
++          ? primaryLuminance
++          : onPrimaryLuminance;
++      final darkerLuminance = primaryLuminance > onPrimaryLuminance
++          ? onPrimaryLuminance
++          : primaryLuminance;
++      final contrastRatio = (brighterLuminance + .05) / (darkerLuminance + .05);
++
++      expect(contrastRatio, greaterThanOrEqualTo(4.5));
++      expect(darkTheme.cardTheme.elevation, lightTheme.cardTheme.elevation);
++      expect(
++        darkTheme.appBarTheme.centerTitle,
++        lightTheme.appBarTheme.centerTitle,
++      );
++      expect(
++        darkTheme.filledButtonTheme.style?.minimumSize?.resolve({})?.height,
++        lightTheme.filledButtonTheme.style?.minimumSize?.resolve({})?.height,
++      );
++    },
++  );
++
++  test('application consumes M3Theme instead of declaring an inline seed', () {
++    final source = File(
++      '${_repositoryRoot().path}/lib/main.dart',
++    ).readAsStringSync();
++
++    expect(source, contains('theme: M3Theme.lightTheme'));
++    expect(source, contains('darkTheme: M3Theme.darkTheme'));
++    expect(source, isNot(contains('ColorScheme.fromSeed')));
++    expect(source, isNot(contains('GoogleFonts.')));
++  });
+ }
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index a663822..4487fbc 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -71,42 +71,40 @@ void main() {
+       'production composition does not access Firebase before initialization',
+       () {
+         expect(AppBootstrap.production, returnsNormally);
+       },
+     );
+ 
+     test('retains the repository returned by the injected loader', () async {
+       final expectedRepository = _StubProgressRepository();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+         loadProgressRepository: () async => expectedRepository,
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         identical(dependencies.progressRepository, expectedRepository),
+         isTrue,
+       );
+     });
+ 
+     test(
+       'composes one-shot progress synchronization when both ports exist',
+       () async {
+         final repository = _StubProgressRepository();
+         final remoteWriter = _StubProgressRemoteWriter();
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           loadProgressRepository: () async => repository,
+           progressRemoteWriter: remoteWriter,
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(dependencies.progressSyncService, isNotNull);
+         expect(
+@@ -122,21 +120,20 @@ void main() {
+         );
+       },
+     );
+ 
+     test(
+       'retains the trusted purchase writer without enabling the shop',
+       () async {
+         final purchaseWriter = _StubPurchaseRemoteWriter();
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           purchaseRemoteWriter: purchaseWriter,
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(
+           identical(dependencies.purchaseRemoteWriter, purchaseWriter),
+           isTrue,
+@@ -147,169 +144,131 @@ void main() {
+         );
+       },
+     );
+ 
+     test(
+       'repository loader failure returns null without leaking details',
+       () async {
+         const sentinel = 'LOCAL-STORAGE-CREDENTIAL-7c9f3a';
+         final bootstrap = AppBootstrap(
+           initializeFirebase: () async {},
+-          initializeSupabase: () async {},
+           loadConfig: _validConfig,
+           guestSessionService: _StubGuestSessionService(),
+           loadProgressRepository: () async => throw StateError(sentinel),
+         );
+ 
+         final dependencies = await bootstrap.initialize();
+ 
+         expect(dependencies.progressRepository, isNull);
+         expect(dependencies.toString(), isNot(contains(sentinel)));
+       },
+     );
+ 
+     test('marks all components ready and retains the exact config', () async {
+       final expectedConfig = _validConfig();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: () => expectedConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(identical(dependencies.config, expectedConfig), isTrue);
+     });
+ 
+     test('records Firebase failure and still returns', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         dependencies.runtimeStatus.firebase,
+         RuntimeAvailability.unavailable,
+       );
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+       expect(dependencies.config, isNotNull);
+     });
+ 
+-    test('records Supabase failure and still returns', () async {
+-      final bootstrap = AppBootstrap(
+-        initializeFirebase: () async {},
+-        initializeSupabase: () async => throw StateError('supabase-down'),
+-        loadConfig: _validConfig,
+-        guestSessionService: _StubGuestSessionService(),
+-      );
+-
+-      final dependencies = await bootstrap.initialize();
+-
+-      expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(
+-        dependencies.runtimeStatus.supabase,
+-        RuntimeAvailability.unavailable,
+-      );
+-      expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+-    });
+-
+     test('records config failure with null config', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: () => throw const AppConfigException('invalid config'),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
+-      expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
+       expect(
+         dependencies.runtimeStatus.backends,
+         RuntimeAvailability.unavailable,
+       );
+       expect(dependencies.config, isNull);
+     });
+ 
+     test('represents multiple failures independently', () async {
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError('firebase-down'),
+-        initializeSupabase: () async => throw StateError('supabase-down'),
+         loadConfig: () => throw const AppConfigException('invalid config'),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         dependencies.runtimeStatus.firebase,
+         RuntimeAvailability.unavailable,
+       );
+-      expect(
+-        dependencies.runtimeStatus.supabase,
+-        RuntimeAvailability.unavailable,
+-      );
+       expect(
+         dependencies.runtimeStatus.backends,
+         RuntimeAvailability.unavailable,
+       );
+       expect(dependencies.config, isNull);
+     });
+ 
+     test('never leaks exception credential sentinels', () async {
+       const firebaseSentinel = 'FIREBASE-SECRET-7c9f3a';
+-      const supabaseSentinel = 'SUPABASE-SECRET-7c9f3a';
+       const configSentinel = 'CONFIG-SECRET-7c9f3a';
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async => throw StateError(firebaseSentinel),
+-        initializeSupabase: () async => throw StateError(supabaseSentinel),
+         loadConfig: () => throw const AppConfigException(configSentinel),
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+       final rendered = <String>[
+         dependencies.toString(),
+         dependencies.runtimeStatus.toString(),
+         dependencies.runtimeStatus.firebase.name,
+-        dependencies.runtimeStatus.supabase.name,
+         dependencies.runtimeStatus.backends.name,
+         '${dependencies.config}',
+         dependencies.guestSessionService.toString(),
+       ];
+ 
+       for (final value in rendered) {
+-        for (final sentinel in <String>[
+-          firebaseSentinel,
+-          supabaseSentinel,
+-          configSentinel,
+-        ]) {
++        for (final sentinel in <String>[firebaseSentinel, configSentinel]) {
+           expect(value, isNot(contains(sentinel)));
+         }
+       }
+     });
+ 
+     test('retains exact injected GuestSessionService identity', () async {
+       final guestSessionService = _StubGuestSessionService();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+-        initializeSupabase: () async {},
+         loadConfig: _validConfig,
+         guestSessionService: guestSessionService,
+       );
+ 
+       final dependencies = await bootstrap.initialize();
+ 
+       expect(
+         identical(dependencies.guestSessionService, guestSessionService),
+         isTrue,
+       );
+diff --git a/test/runtime/app_build_info_test.dart b/test/runtime/app_build_info_test.dart
+index eff4e07..840a860 100644
+--- a/test/runtime/app_build_info_test.dart
++++ b/test/runtime/app_build_info_test.dart
+@@ -10,21 +10,20 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async =>
+       const GuestSessionStarted(uid: 'app-build-info-test');
+ }
+ 
+ AppDependencies _dependencies(AppBuildInfo buildInfo) {
+   return AppDependencies(
+     runtimeStatus: const AppRuntimeStatus(
+       firebase: RuntimeAvailability.ready,
+-      supabase: RuntimeAvailability.ready,
+       backends: RuntimeAvailability.ready,
+     ),
+     config: null,
+     guestSessionService: _FakeGuestSessionService(),
+     buildInfo: buildInfo,
+   );
+ }
+ 
+ Future<void> _pumpHome(WidgetTester tester, AppBuildInfo buildInfo) async {
+   await tester.pumpWidget(MyApp(dependencies: _dependencies(buildInfo)));
+@@ -47,21 +46,21 @@ void main() {
+     test('stores the provided version and build id', () {
+       const info = AppBuildInfo(version: '9.9.9+9', buildId: 'feedface');
+       expect(info.version, '9.9.9+9');
+       expect(info.buildId, 'feedface');
+     });
+ 
+     test(
+       'fromEnvironment defaults to pubspec version and a development id',
+       () {
+         const info = AppBuildInfo.fromEnvironment();
+-        expect(info.version, '1.0.0+1');
++        expect(info.version, '0.1.0+1');
+         expect(info.buildId, 'development');
+       },
+     );
+   });
+ 
+   group('MainNavigationScreen build identity', () {
+     setUp(() {
+       GoogleFonts.config.allowRuntimeFetching = false;
+     });
+ 
+diff --git a/test/runtime/app_runtime_status_test.dart b/test/runtime/app_runtime_status_test.dart
+new file mode 100644
+index 0000000..18697fb
+--- /dev/null
++++ b/test/runtime/app_runtime_status_test.dart
+@@ -0,0 +1,19 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
++
++void main() {
++  test('fully ready requires Firebase and configured cloud enhancements', () {
++    const ready = AppRuntimeStatus(
++      firebase: RuntimeAvailability.ready,
++      backends: RuntimeAvailability.ready,
++    );
++    const offlineCapable = AppRuntimeStatus(
++      firebase: RuntimeAvailability.unavailable,
++      backends: RuntimeAvailability.unavailable,
++    );
++
++    expect(ready.isFullyReady, isTrue);
++    expect(offlineCapable.isFullyReady, isFalse);
++    expect(offlineCapable.isCoreLearningAvailable, isTrue);
++  });
++}
+diff --git a/test/runtime/learning_dependencies_test.dart b/test/runtime/learning_dependencies_test.dart
+index 6952fe0..f25e197 100644
+--- a/test/runtime/learning_dependencies_test.dart
++++ b/test/runtime/learning_dependencies_test.dart
+@@ -80,21 +80,20 @@ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   isDebug: false,
+ );
+ 
+ AppBootstrap _bootstrap({
+   required LearningFeatureFlags featureFlags,
+   required LearningDependenciesLoader loadLearningDependencies,
+ }) {
+   return AppBootstrap(
+     initializeFirebase: () async {},
+-    initializeSupabase: () async {},
+     loadConfig: _validConfig,
+     guestSessionService: _StubGuestSessionService(),
+     featureFlags: featureFlags,
+     loadLearningDependencies: loadLearningDependencies,
+   );
+ }
+ 
+ void main() {
+   test('optional learning capabilities and research are closed by default', () {
+     const flags = LearningFeatureFlags();
+diff --git a/test/runtime/supabase_publishable_key_test.dart b/test/runtime/supabase_publishable_key_test.dart
+deleted file mode 100644
+index a104124..0000000
+--- a/test/runtime/supabase_publishable_key_test.dart
++++ /dev/null
+@@ -1,104 +0,0 @@
+-import 'dart:io';
+-
+-import 'package:flutter_test/flutter_test.dart';
+-import 'package:vocab_learning_app/runtime/supabase_client_config.dart';
+-
+-const _acceptedKeys = <String>[
+-  'sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4',
+-  'sb_publishable_Aa1-_7Z9',
+-];
+-
+-const _rejectedKeys = <String>[
+-  '',
+-  '   ',
+-  'sb_publishable_',
+-  'sb_publishable',
+-  'sb_secret_VGhpc19hX3NlY3JldA',
+-  'sb_publishable_bad!chars',
+-  'sb_publishable_with space',
+-  'ey'
+-      'JhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.c2lnbmF0dXJl',
+-  ' sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4',
+-  'sb_publishable_VGhpc19hX3Rlc3Rfc3VmZml4 ',
+-];
+-
+-Directory? _findRepoRoot(String start) {
+-  var directory = Directory(start);
+-  for (var depth = 0; depth < 16; depth++) {
+-    if (File('${directory.path}/pubspec.yaml').existsSync() &&
+-        Directory('${directory.path}/lib').existsSync()) {
+-      return directory;
+-    }
+-    final parent = directory.parent;
+-    if (parent.path == directory.path) return null;
+-    directory = parent;
+-  }
+-  return null;
+-}
+-
+-Directory _repositoryRoot() {
+-  for (final start in <String>[
+-    File(Platform.script.toFilePath()).parent.path,
+-    Directory.current.path,
+-  ]) {
+-    final found = _findRepoRoot(start);
+-    if (found != null) return found;
+-  }
+-  return Directory.current;
+-}
+-
+-void main() {
+-  group('requireSupabasePublishableKey', () {
+-    for (final key in _acceptedKeys) {
+-      test('returns a valid publishable key unchanged', () {
+-        expect(requireSupabasePublishableKey(key), key);
+-      });
+-    }
+-
+-    for (final value in _rejectedKeys) {
+-      test('rejects an invalid key without leaking it', () {
+-        Object? captured;
+-        try {
+-          requireSupabasePublishableKey(value);
+-          fail('Expected SupabaseConfigurationException.');
+-        } on SupabaseConfigurationException catch (error) {
+-          captured = error;
+-        }
+-
+-        expect(captured, isA<SupabaseConfigurationException>());
+-        if (value.isNotEmpty) {
+-          expect(captured.toString(), isNot(contains(value)));
+-        }
+-      });
+-    }
+-  });
+-
+-  group('app_bootstrap.dart publishable-key sourcing', () {
+-    final source = File(
+-      '${_repositoryRoot().path}/lib/runtime/app_bootstrap.dart',
+-    ).readAsStringSync();
+-
+-    test('declares the publishable key environment variable', () {
+-      expect(source, contains('LEXIQUEST_SUPABASE_PUBLISHABLE_KEY'));
+-    });
+-
+-    test('does not bake a default into the publishable-key block', () {
+-      final block = RegExp(
+-        r"LEXIQUEST_SUPABASE_PUBLISHABLE_KEY.*?\)",
+-        dotAll: true,
+-      ).firstMatch(source);
+-
+-      expect(block, isNotNull);
+-      expect(block!.group(0), isNot(contains('defaultValue')));
+-    });
+-
+-    test('ships no legacy Supabase anon JWT literal', () {
+-      expect(source, isNot(contains('eyJ')));
+-    });
+-
+-    test('targets the controlled production project', () {
+-      expect(source, isNot(contains('anyiuoqnuimtjlbjhwuf')));
+-      expect(source, contains('https://jkiyfnlegmhodyxpfwpc.supabase.co'));
+-    });
+-  });
+-}
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index 50a0095..39d8287 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -11,37 +11,41 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionStarted(uid: 'guest-shell-test');
+   }
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+ 
+-AppDependencies _dependencies({bool ready = true}) {
+-  final availability = ready
+-      ? RuntimeAvailability.ready
+-      : RuntimeAvailability.unavailable;
++AppDependencies _dependencies({
++  RuntimeAvailability firebase = RuntimeAvailability.ready,
++  RuntimeAvailability backends = RuntimeAvailability.ready,
++}) {
+   return AppDependencies(
+-    runtimeStatus: AppRuntimeStatus(
+-      firebase: availability,
+-      supabase: availability,
+-      backends: availability,
+-    ),
++    runtimeStatus: AppRuntimeStatus(firebase: firebase, backends: backends),
+     config: null,
+     guestSessionService: _FakeGuestSessionService(),
+   );
+ }
+ 
+-Future<void> _pumpHome(WidgetTester tester, {bool ready = true}) async {
+-  await tester.pumpWidget(MyApp(dependencies: _dependencies(ready: ready)));
++Future<void> _pumpHome(
++  WidgetTester tester, {
++  RuntimeAvailability firebase = RuntimeAvailability.ready,
++  RuntimeAvailability backends = RuntimeAvailability.ready,
++}) async {
++  await tester.pumpWidget(
++    MyApp(
++      dependencies: _dependencies(firebase: firebase, backends: backends),
++    ),
++  );
+   await tester.pump();
+   final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+   navigator.pushReplacementNamed('/home');
+   await tester.pump();
+   await tester.pump(const Duration(milliseconds: 350));
+ }
+ 
+ Future<void> _openDrawer(WidgetTester tester) async {
+   await tester.tap(find.byKey(_drawerButtonKey));
+   await tester.pump();
+@@ -97,34 +101,53 @@ void main() {
+       matching: find.byType(NavigationDestination),
+     );
+ 
+     for (var index = 0; index < 5; index++) {
+       await tester.tap(destinations.at(index));
+       await tester.pump(const Duration(milliseconds: 50));
+       expect(tester.widget<IndexedStack>(stackFinder).index, index);
+     }
+   });
+ 
+-  testWidgets('drawer lists legacy destinations and safe runtime status', (
++  testWidgets('drawer says the full system and online services are ready', (
++    tester,
++  ) async {
++    await _pumpHome(tester);
++    await _openDrawer(tester);
++
++    final status = tester.widget<Text>(
++      find.byKey(const ValueKey<String>('runtime-status-summary')),
++    );
++    expect(status.data, 'ระบบพร้อมใช้งาน รวมบริการออนไลน์');
++  });
++
++  testWidgets('drawer keeps local learning available when cloud is degraded', (
+     tester,
+   ) async {
+-    await _pumpHome(tester, ready: false);
++    await _pumpHome(
++      tester,
++      firebase: RuntimeAvailability.unavailable,
++      backends: RuntimeAvailability.degraded,
++    );
+     await _openDrawer(tester);
+ 
+     expect(find.text('คลังหมวดหมู่'), findsOneWidget);
+     expect(find.text('ร้านค้า'), findsNothing);
+     expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+-    expect(status.data, contains('ไม่พร้อม'));
++    expect(status.data, contains('เรียนแบบออฟไลน์ได้'));
++    expect(status.data, contains('การซิงค์บัญชี'));
++    expect(status.data, contains('AI/เสียงออนไลน์'));
++    expect(status.data, isNot(contains('Supabase')));
+   });
+ 
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+diff --git a/test/shop/product_artwork_test.dart b/test/shop/product_artwork_test.dart
+new file mode 100644
+index 0000000..b1293d0
+--- /dev/null
++++ b/test/shop/product_artwork_test.dart
+@@ -0,0 +1,59 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/shop/product_artwork.dart';
++
++void main() {
++  group('resolveProductArtwork', () {
++    test('accepts a trimmed HTTPS product image URL', () {
++      final artwork = resolveProductArtwork({
++        'image_url': '  https://cdn.example.test/wallpapers/forest.webp  ',
++      });
++
++      expect(
++        artwork,
++        NetworkProductArtwork(
++          Uri.parse('https://cdn.example.test/wallpapers/forest.webp'),
++        ),
++      );
++    });
++
++    test('rejects malformed HTTPS URLs', () {
++      expect(
++        resolveProductArtwork(const {'image_url': 'https://[unclosed'}),
++        const DefaultProductArtwork(),
++      );
++    });
++
++    test('rejects HTTPS URLs with an empty host or missing authority', () {
++      expect(
++        resolveProductArtwork(const {'image_url': 'https://'}),
++        const DefaultProductArtwork(),
++      );
++      expect(
++        resolveProductArtwork(const {'image_url': 'https:///wallpaper.webp'}),
++        const DefaultProductArtwork(),
++      );
++    });
++
++    test('rejects credential-bearing HTTPS URLs', () {
++      expect(
++        resolveProductArtwork(const {
++          'image_url': 'https://user:pass@cdn.example.test/wallpaper.webp',
++        }),
++        const DefaultProductArtwork(),
++      );
++    });
++
++    test('uses the built-in default for legacy and non-HTTPS URLs', () {
++      expect(
++        resolveProductArtwork(const {'image_name': 'legacy.png'}),
++        const DefaultProductArtwork(),
++      );
++      expect(
++        resolveProductArtwork(const {
++          'image_url': 'http://cdn.example.test/legacy.png',
++        }),
++        const DefaultProductArtwork(),
++      );
++    });
++  });
++}
+diff --git a/tool/cli/tests/ci-workflow.tests.ps1 b/tool/cli/tests/ci-workflow.tests.ps1
+index a25965b..4343896 100644
+--- a/tool/cli/tests/ci-workflow.tests.ps1
++++ b/tool/cli/tests/ci-workflow.tests.ps1
+@@ -34,20 +34,32 @@ function Assert-True {
+ 
+ function Assert-ContainsString {
+     param([string]$Haystack, [string]$Needle, [string]$Message)
+     if (-not [string]::IsNullOrEmpty($Haystack) -and $Haystack.Contains($Needle)) {
+         Write-Pass $Message
+     } else {
+         Write-Fail ($Message + " (missing '" + $Needle + "')")
+     }
+ }
+ 
++function Assert-NotContainsString {
++    param(
++        [string] $Text,
++        [string] $Needle,
++        [string] $Message
++    )
++    if ($Text.Contains($Needle)) {
++        throw $Message
++    }
++    Write-Pass $Message
++}
++
+ function Assert-RegexMatches {
+     param([string]$Haystack, [string]$Pattern, [string]$Message)
+     if (-not [string]::IsNullOrEmpty($Haystack) -and ($Haystack -match $Pattern)) {
+         Write-Pass $Message
+     } else {
+         Write-Fail ($Message + ' (regex did not match: ' + $Pattern + ')')
+     }
+ }
+ 
+ function Assert-RegexNotMatches {
+@@ -120,32 +132,68 @@ function Invoke-JobCoverageTests {
+     Assert-ContainsString $Text 'flutter test' 'job runs flutter test'
+     Assert-ContainsString $Text 'pytest' 'backend suites run via pytest'
+     Assert-ContainsString $Text 'voice_api' 'job covers backend/voice_api CPU tests'
+     Assert-ContainsString $Text 'ai_api' 'job covers backend/ai_api CPU tests'
+     Assert-ContainsString $Text 'lexiquest_lm' 'job covers backend/lexiquest_lm CPU tests'
+     Assert-ContainsString $Text 'runtime-probes.tests.ps1' 'job runs runtime probe tests'
+     Assert-ContainsString $Text 'run-android.tests.ps1' 'job runs Android command tests'
+     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
+     Assert-ContainsString $Text 'apk' 'Android build produces an APK'
+     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
+-    Assert-ContainsString $Text 'vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'build reads the Supabase publishable key from a repository variable'
+-    Assert-ContainsString $Text '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'build injects the Supabase publishable key'
++    Assert-NotContainsString $Text 'supabase/setup-cli@' 'CI must not provision Supabase'
++    Assert-NotContainsString $Text 'supabase db start' 'CI must not start Supabase'
++    Assert-NotContainsString $Text 'LEXIQUEST_SUPABASE' 'CI builds must not require Supabase'
++    Assert-ContainsString $Text '--dart-define=LEXIQUEST_VERSION=0.1.0+1' 'CI builds v0.1'
+     Assert-ContainsString $Text 'Create ephemeral release signing key' 'CI creates a disposable release signing key'
+     Assert-ContainsString $Text 'flutter build appbundle --release' 'CI builds a release candidate AAB'
+     Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'CI verifies the release candidate signature'
+     Assert-ContainsString $Text 'grep -q "jar verified."' 'CI rejects unsigned release candidates'
+     Assert-ContainsString $Text 'mkdir -p build/sbom' 'CI prepares the SBOM output directory'
+     Assert-ContainsString $Text 'release-candidate.cdx.json' 'CI creates an artifact SBOM'
+     Assert-ContainsString $Text 'source.cdx.json' 'CI creates a source SBOM'
+     Assert-ContainsString $Text 'Remove ephemeral signing material' 'CI removes disposable signing material'
+ }
+ 
++function Invoke-ProductionReleaseTests {
++    param([string]$Text)
++    Assert-NotContainsString $Text 'LEXIQUEST_SUPABASE' 'production release must not require Supabase'
++    Assert-ContainsString $Text '--dart-define=LEXIQUEST_VERSION=0.1.0+1' 'production release builds v0.1'
++    Assert-ContainsString $Text 'LEXIQUEST_BUILD_ID' 'production release retains the build ID input'
++    Assert-ContainsString $Text 'LEXIQUEST_VOICE_API_URL' 'production release retains the Voice API input'
++    Assert-ContainsString $Text 'LEXIQUEST_AI_API_URL' 'production release retains the AI API input'
++    Assert-ContainsString $Text 'test -n "${LEXIQUEST_VOICE_API_URL}"' 'production release requires the Voice API URL'
++    Assert-ContainsString $Text 'test -n "${LEXIQUEST_AI_API_URL}"' 'production release requires the AI API URL'
++    Assert-ContainsString $Text 'urlsplit' 'production release parses endpoint URLs before building'
++    Assert-ContainsString $Text "parsed.scheme != 'https'" 'production release requires the exact HTTPS scheme'
++    Assert-ContainsString $Text 'not parsed.netloc' 'production release requires endpoint authority'
++    Assert-ContainsString $Text 'not parsed.hostname' 'production release requires a non-empty endpoint host'
++    Assert-ContainsString $Text 'parsed.username is not None' 'production release rejects endpoint usernames'
++    Assert-ContainsString $Text 'parsed.password is not None' 'production release rejects endpoint passwords'
++    Assert-ContainsString $Text "'@' in parsed.netloc" 'production release rejects endpoint userinfo'
++    Assert-ContainsString $Text "'?' in raw" 'production release rejects endpoint queries'
++    Assert-ContainsString $Text "'#' in raw" 'production release rejects endpoint fragments'
++    Assert-ContainsString $Text "parsed.path not in ('', '/')" 'production release accepts only origin paths'
++    Assert-ContainsString $Text '"--dart-define=LEXIQUEST_VERSION=0.1.0+1"' 'production release quotes the version define'
++    Assert-ContainsString $Text '"--dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID}"' 'production release quotes the build ID define'
++    Assert-ContainsString $Text '"--dart-define=LEXIQUEST_VOICE_API_URL=${LEXIQUEST_VOICE_API_URL}"' 'production release quotes the Voice API define'
++    Assert-ContainsString $Text '"--dart-define=LEXIQUEST_AI_API_URL=${LEXIQUEST_AI_API_URL}"' 'production release quotes the AI API define'
++    Assert-ContainsString $Text 'Restore protected signing material' 'production release restores protected signing material'
++    Assert-ContainsString $Text 'ANDROID_RELEASE_KEYSTORE_BASE64' 'production release checks the protected keystore secret'
++    Assert-ContainsString $Text 'flutter build appbundle --release' 'production release builds a signed AAB'
++    Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'production release verifies the AAB signature'
++    Assert-ContainsString $Text 'Generate source SBOM' 'production release generates a source SBOM'
++    Assert-ContainsString $Text 'production-aab.cdx.json' 'production release generates an artifact SBOM'
++    Assert-ContainsString $Text 'Upload protected release artifacts' 'production release uploads the signed AAB and SBOM'
++    Assert-ContainsString $Text 'Remove protected signing material' 'production release cleans up signing material'
++    Assert-ContainsString $Text 'if: always()' 'production release always cleans up signing material'
++}
++
+ function Invoke-UvFrozenTests {
+     param([string]$Text)
+     $uvRun = ([regex]::Matches($Text, '\buv[ \t]+run\b')).Count
+     $uvSync = ([regex]::Matches($Text, '\buv[ \t]+sync\b')).Count
+     $frozen = ([regex]::Matches($Text, '--frozen')).Count
+     $uvCommands = $uvRun + $uvSync
+     Assert-True ($uvCommands -ge 1) 'workflow invokes uv run or sync'
+     Assert-True ($frozen -ge $uvCommands) ('every uv run or sync is frozen')
+     Assert-RegexNotMatches $Text '(?i)--group[ \t]+(gpu|train)\b' 'uv never includes the gpu or train group'
+     Assert-RegexNotMatches $Text '(?i)--extra[ \t=]*(gpu|train)\b' 'uv never includes a gpu or train extra'
+@@ -230,44 +278,43 @@ function Invoke-NpmFirebaseToolchainTests {
+         ) 'firebase-tools is pinned to exactly 15.24.0'
+     }
+     Assert-RegexMatches $WorkflowText '(?m)^[ \t]*java-version[ \t]*:[ \t]*[''"]?21\b' 'setup-java selects Java 21 (firebase-tools 15.24.0 requires Java 21+)'
+     Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
+     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
+     Assert-ContainsString $WorkflowText 'npm --prefix functions ci --ignore-scripts' 'workflow installs trusted writer dependencies reproducibly'
+     Assert-ContainsString $WorkflowText 'npm --prefix functions test' 'workflow executes trusted writer tests'
+     Assert-ContainsString $WorkflowText 'npm run test:functions-emulator' 'workflow executes trusted writer emulator tests'
+ }
+ 
+-function Invoke-SupabaseToolchainTests {
+-    param([string]$Text)
+-    Assert-RegexMatches $Text '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*supabase/setup-cli@' 'workflow provisions the official supabase/setup-cli action'
+-    Assert-RegexMatches $Text '(?<!\d)2\.109\.1(?!\d)' 'Supabase CLI is pinned to exactly 2.109.1'
+-    Assert-ContainsString $Text 'supabase db start' 'workflow runs supabase db start'
+-    Assert-ContainsString $Text 'supabase db reset --local --no-seed' 'workflow runs supabase db reset --local --no-seed'
+-    Assert-ContainsString $Text 'docker exec -i supabase_db_lexiquest-local psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < test/security/supabase_storage_contract.sql' 'workflow pipes the storage contract to psql in the local Supabase database'
+-    Assert-ContainsString $Text 'supabase db lint --local --level warning' 'workflow runs supabase db lint --local --level warning'
+-    Assert-ContainsString $Text 'supabase db advisors --local --type security --level warn --fail-on error' 'workflow runs supabase db advisors --local --type security --level warn --fail-on error'
+-}
+-
+ $repoToolCli = Split-Path $PSScriptRoot -Parent
+ $repoRoot = Split-Path (Split-Path $repoToolCli -Parent) -Parent
+ $workflowPath = Join-Path $repoRoot (Join-Path '.github' (Join-Path 'workflows' 'ci.yml'))
++$productionReleaseWorkflowPath = Join-Path $repoRoot (Join-Path '.github' (Join-Path 'workflows' 'production-release.yml'))
+ 
+ if (-not (Test-Path -LiteralPath $workflowPath)) {
+     Write-Host ("FAIL: missing CI workflow '{0}'." -f $workflowPath) -ForegroundColor Red
+     Write-Host 'CI workflow contract tests: 0 passed, 1 failed' -ForegroundColor Red
+     Write-Host 'FAILED' -ForegroundColor Red
+     exit 1
+ }
+ 
+ $workflowText = Get-CiWorkflowText -Path $workflowPath
+ 
++if (-not (Test-Path -LiteralPath $productionReleaseWorkflowPath)) {
++    Write-Host ("FAIL: missing production release workflow '{0}'." -f $productionReleaseWorkflowPath) -ForegroundColor Red
++    Write-Host 'CI workflow contract tests: 0 passed, 1 failed' -ForegroundColor Red
++    Write-Host 'FAILED' -ForegroundColor Red
++    exit 1
++}
++
++$productionReleaseWorkflowText = Get-CiWorkflowText -Path $productionReleaseWorkflowPath
++
+ $packageJsonPath = Join-Path $repoRoot 'package.json'
+ if (-not (Test-Path -LiteralPath $packageJsonPath)) {
+     Write-Host ("FAIL: missing package.json '{0}'." -f $packageJsonPath) -ForegroundColor Red
+     Write-Host 'CI workflow contract tests: 0 passed, 1 failed' -ForegroundColor Red
+     Write-Host 'FAILED' -ForegroundColor Red
+     exit 1
+ }
+ 
+ $packageJsonText = Get-CiWorkflowText -Path $packageJsonPath
+ 
+@@ -289,41 +336,41 @@ try { Invoke-ConcurrencyTests -Text $workflowText } catch { Write-Fail ('Concurr
+ 
+ Write-Host '-> Action pins' -ForegroundColor Cyan
+ try { Invoke-ActionPinTests -Text $workflowText } catch { Write-Fail ('Action pin suite threw: ' + $_.Exception.Message) }
+ 
+ Write-Host '-> Official actions' -ForegroundColor Cyan
+ try { Invoke-OfficialActionTests -Text $workflowText } catch { Write-Fail ('Official action suite threw: ' + $_.Exception.Message) }
+ 
+ Write-Host '-> Job coverage' -ForegroundColor Cyan
+ try { Invoke-JobCoverageTests -Text $workflowText } catch { Write-Fail ('Job coverage suite threw: ' + $_.Exception.Message) }
+ 
++Write-Host '-> Production release' -ForegroundColor Cyan
++try { Invoke-ProductionReleaseTests -Text $productionReleaseWorkflowText } catch { Write-Fail ('Production release suite threw: ' + $_.Exception.Message) }
++
+ Write-Host '-> uv safety' -ForegroundColor Cyan
+ try { Invoke-UvFrozenTests -Text $workflowText } catch { Write-Fail ('uv suite threw: ' + $_.Exception.Message) }
+ 
+ Write-Host '-> Secret embedding' -ForegroundColor Cyan
+ try { Invoke-SecretEmbeddingTests -Text $workflowText } catch { Write-Fail ('secret suite threw: ' + $_.Exception.Message) }
+ 
+ Write-Host '-> Gitleaks config' -ForegroundColor Cyan
+ try { Invoke-GitleaksConfigTests -Text $gitleaksConfigText } catch { Write-Fail ('Gitleaks config suite threw: ' + $_.Exception.Message) }
+ 
+ Write-Host '-> npm/Firebase toolchain' -ForegroundColor Cyan
+ try {
+     Invoke-NpmFirebaseToolchainTests `
+         -WorkflowText $workflowText `
+         -PackageJsonText $packageJsonText
+ } catch {
+     Write-Fail ('npm/Firebase toolchain suite threw: ' + $_.Exception.Message)
+ }
+ 
+-Write-Host '-> Supabase toolchain' -ForegroundColor Cyan
+-try { Invoke-SupabaseToolchainTests -Text $workflowText } catch { Write-Fail ('Supabase toolchain suite threw: ' + $_.Exception.Message) }
+-
+ $total = $script:PassedCount + $script:FailedCount
+ Write-Host ''
+ Write-Host ("CI workflow contract tests: {0} passed, {1} failed (of {2})" -f $script:PassedCount, $script:FailedCount, $total)
+ 
+ if ($script:FailedCount -gt 0) {
+     Write-Host 'FAILED' -ForegroundColor Red
+     exit 1
+ }
+ 
+ Write-Host 'PASS' -ForegroundColor Green
+diff --git a/tool/cli/tests/production-release-workflow.tests.ps1 b/tool/cli/tests/production-release-workflow.tests.ps1
+index 3e26c64..d50f40a 100644
+--- a/tool/cli/tests/production-release-workflow.tests.ps1
++++ b/tool/cli/tests/production-release-workflow.tests.ps1
+@@ -38,22 +38,35 @@ Assert-Match $text 'secrets\.ANDROID_RELEASE_STORE_PASSWORD' 'store password is
+ Assert-Match $text 'secrets\.ANDROID_RELEASE_KEY_ALIAS' 'key alias is read from a protected secret'
+ Assert-Match $text 'secrets\.ANDROID_RELEASE_KEY_PASSWORD' 'key password is read from a protected secret'
+ Assert-Match $text 'flutter build appbundle --release' 'workflow builds a production AAB'
+ Assert-Match $text 'jarsigner -verify -verbose -certs' 'workflow verifies the signed AAB'
+ Assert-Match $text 'grep -q "jar verified."' 'workflow rejects unsigned AABs'
+ Assert-Match $text 'mkdir -p build/sbom' 'workflow prepares the SBOM output directory'
+ Assert-Match $text 'anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610' 'SBOM generator is pinned'
+ Assert-Match $text 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' 'artifact upload is pinned'
+ Assert-Match $text 'production-aab\.cdx\.json' 'production AAB SBOM is retained'
+ Assert-Match $text 'source\.cdx\.json' 'source SBOM is retained'
+-Assert-NoMatch $text 'test -n "\$\{LEXIQUEST_VOICE_API_URL\}"' 'offline-first release does not require a voice endpoint'
+-Assert-NoMatch $text 'test -n "\$\{LEXIQUEST_AI_API_URL\}"' 'offline-first release does not require a generated-content endpoint'
++Assert-Match $text 'test -n "\$\{LEXIQUEST_VOICE_API_URL\}"' 'production release requires a voice endpoint'
++Assert-Match $text 'test -n "\$\{LEXIQUEST_AI_API_URL\}"' 'production release requires a generated-content endpoint'
++Assert-Match $text "parsed\.scheme != 'https'" 'production release requires the exact HTTPS scheme'
++Assert-Match $text 'not parsed\.netloc' 'production release requires endpoint authority'
++Assert-Match $text 'not parsed\.hostname' 'production release requires a non-empty endpoint host'
++Assert-Match $text 'parsed\.username is not None' 'production release rejects endpoint usernames'
++Assert-Match $text 'parsed\.password is not None' 'production release rejects endpoint passwords'
++Assert-Match $text "'@' in parsed\.netloc" 'production release rejects endpoint userinfo'
++Assert-Match $text "'\?' in raw" 'production release rejects endpoint queries'
++Assert-Match $text "'#' in raw" 'production release rejects endpoint fragments'
++Assert-Match $text "parsed\.path not in \('', '/'\)" 'production release accepts only origin paths'
++Assert-Match $text '"--dart-define=LEXIQUEST_VERSION=0\.1\.0\+1"' 'production release quotes the version define'
++Assert-Match $text '"--dart-define=LEXIQUEST_BUILD_ID=\$\{LEXIQUEST_BUILD_ID\}"' 'production release quotes the build ID define'
++Assert-Match $text '"--dart-define=LEXIQUEST_VOICE_API_URL=\$\{LEXIQUEST_VOICE_API_URL\}"' 'production release quotes the voice URL define'
++Assert-Match $text '"--dart-define=LEXIQUEST_AI_API_URL=\$\{LEXIQUEST_AI_API_URL\}"' 'production release quotes the AI URL define'
+ Assert-Match $text 'rm -f android/key\.properties' 'temporary signing properties are removed'
+ Assert-Match $text 'rm -f "\$\{RUNNER_TEMP\}/lexiquest-release\.jks"' 'temporary keystore is removed'
+ Assert-NoMatch $text '-----BEGIN[ A-Z]*PRIVATE KEY-----' 'workflow contains no embedded private key'
+ Assert-NoMatch $text '(?m)^[ \t]*(storePassword|keyPassword)[ \t]*=[ \t]*[^$]' 'workflow contains no embedded production password'
+ 
+ $uses = [regex]::Matches($text, '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*(\S+)')
+ foreach ($match in $uses) {
+     $reference = $match.Groups[1].Value.Trim('"').Trim("'")
+     if ($reference -cmatch '^[A-Za-z0-9._/-]+@[0-9A-Fa-f]{40}$') {
+         $script:Passed++
+diff --git a/tool/cli/tests/verify-scope.tests.ps1 b/tool/cli/tests/verify-scope.tests.ps1
+index c835dee..75ea557 100644
+--- a/tool/cli/tests/verify-scope.tests.ps1
++++ b/tool/cli/tests/verify-scope.tests.ps1
+@@ -26,20 +26,32 @@ function Write-Fail {
+ 
+ function Assert-ContainsString {
+     param([string]$Haystack, [string]$Needle, [string]$Message)
+     if (-not [string]::IsNullOrEmpty($Haystack) -and $Haystack.Contains($Needle)) {
+         Write-Pass $Message
+     } else {
+         Write-Fail ($Message + " (missing '" + $Needle + "')")
+     }
+ }
+ 
++function Assert-NotContainsString {
++    param(
++        [string] $Text,
++        [string] $Needle,
++        [string] $Message
++    )
++    if ($Text.Contains($Needle)) {
++        throw $Message
++    }
++    Write-Pass $Message
++}
++
+ function Assert-RegexMatches {
+     param([string]$Haystack, [string]$Pattern, [string]$Message)
+     if (-not [string]::IsNullOrEmpty($Haystack) -and ($Haystack -match $Pattern)) {
+         Write-Pass $Message
+     } else {
+         Write-Fail ($Message + ' (regex did not match: ' + $Pattern + ')')
+     }
+ }
+ 
+ function Assert-RegexNotMatches {
+@@ -106,23 +118,28 @@ Assert-RegexNotMatches $scopeText '(?i)\b(retry|attempts?|maxRetries)\b' 'runner
+ Assert-ContainsString $scopeText "-ExcludedGroup 'gpu'" 'voice backend checks exclude GPU dependencies'
+ Assert-ContainsString $scopeText "-AdditionalPytestArguments @('--ignore', 'backend\voice_api\tests\integration')" 'voice backend checks exclude live integration tests'
+ Assert-ContainsString $scopeText "'test\screens\quiz_score_persistence_regression_test.dart'" 'economy scope includes the client-writer regression contract'
+ Assert-ContainsString $scopeText "-FilePath 'npm'" 'economy scope can invoke npm'
+ Assert-ContainsString $scopeText "-Arguments @('--prefix', 'functions', 'test')" 'economy scope includes trusted writer tests'
+ Assert-ContainsString $scopeText "-Arguments @('run', 'test:functions-emulator')" 'economy subsystem includes trusted writer emulator tests'
+ Assert-ContainsString $scopeText "'Android integration static analysis'" 'targeted integration scope stays analysis-only'
+ Assert-ContainsString $scopeText "'Android device end-to-end tests'" 'integration subsystem runs bounded device E2E'
+ Assert-ContainsString $scopeText 'verify-android-e2e.ps1' 'integration subsystem delegates to the device runner'
+ Assert-ContainsString $verifyText "'verify-scope.tests.ps1'," 'full verification runs the scoped-runner contract'
+-Assert-ContainsString $verifyText '$env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'release verification reads the Supabase publishable key from the environment'
+-Assert-ContainsString $verifyText 'Get-RequiredSupabasePublishableKey' 'release verification rejects a missing or malformed Supabase publishable key'
+-Assert-ContainsString $verifyText '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'release build injects the Supabase publishable key'
++Assert-NotContainsString `
++    $verifyText `
++    'LEXIQUEST_SUPABASE' `
++    'release verification must not require a retired Supabase build input'
++Assert-ContainsString `
++    $verifyText `
++    '--dart-define=LEXIQUEST_VERSION=0.1.0+1' `
++    'release verification injects the v0.1 identity'
+ Assert-ContainsString $workflowText './tool/cli/tests/verify-scope.tests.ps1' 'CI runs the scoped-runner contract'
+ 
+ $total = $script:PassedCount + $script:FailedCount
+ Write-Host ''
+ Write-Host (
+     'Scoped verification contract tests: {0} passed, {1} failed (of {2})' -f
+     $script:PassedCount,
+     $script:FailedCount,
+     $total
+ )
+diff --git a/tool/cli/verify.ps1 b/tool/cli/verify.ps1
+index 8e1f3bc..9fb989b 100644
+--- a/tool/cli/verify.ps1
++++ b/tool/cli/verify.ps1
+@@ -10,31 +10,20 @@
+     dependencies while explicitly excluding optional GPU, LLM, and training
+     dependency groups.
+ #>
+ Set-StrictMode -Version 3.0
+ $ErrorActionPreference = 'Stop'
+ 
+ $scriptDir = $PSScriptRoot
+ $repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
+ $script:phaseResults = @()
+ 
+-function Get-RequiredSupabasePublishableKey {
+-    $value = $env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY
+-    if (
+-        [string]::IsNullOrWhiteSpace($value) -or
+-        $value -notmatch '^sb_publishable_[A-Za-z0-9_-]+$'
+-    ) {
+-        throw 'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY must be a valid publishable key.'
+-    }
+-    return $value
+-}
+-
+ function Write-VerifySummary {
+     param([string]$Title)
+ 
+     Write-Host ''
+     Write-Host $Title -ForegroundColor Cyan
+     foreach ($result in $script:phaseResults) {
+         $status = if ([int]$result.Code -eq 0) {
+             'PASS'
+         } else {
+             'FAIL exit ' + [int]$result.Code
+@@ -203,39 +192,37 @@ try {
+     Invoke-VerifyPhase '09' 'Local LM CPU-only tests' {
+         & uv run `
+             --project (Join-Path $repoRoot 'backend\lexiquest_lm') `
+             --frozen `
+             --group dev `
+             --no-group train `
+             pytest backend/lexiquest_lm/tests -q
+     }
+ 
+     Invoke-VerifyPhase '10' 'Android debug APK build (emulator loopback)' {
+-        $supabasePublishableKey = Get-RequiredSupabasePublishableKey
+         $shortSha = (& git rev-parse --short HEAD 2>$null | Select-Object -First 1)
+         if ([string]::IsNullOrWhiteSpace($shortSha)) {
+             $shortSha = 'unknown'
+         } else {
+             $shortSha = $shortSha.Trim()
+         }
+         $dirtySuffix = ''
+         if (-not [string]::IsNullOrWhiteSpace((& git status --porcelain 2>$null))) {
+             $dirtySuffix = '-dirty'
+         }
+         $buildId = $shortSha + $dirtySuffix
+         $buildArguments = @(
+             'build',
+             'apk',
+             '--debug',
+-            '--dart-define=LEXIQUEST_VERSION=1.0.0+1',
++            '--dart-define=LEXIQUEST_VERSION=0.1.0+1',
+             ('--dart-define=LEXIQUEST_BUILD_ID=' + $buildId),
+-            ('--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' + $supabasePublishableKey),
+             '--dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001',
+             '--dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000'
+         )
+         & flutter $buildArguments
+     }
+ 
+     Invoke-VerifyPhase '11' 'Read-only live GPU doctor' {
+         & powershell -NoProfile -ExecutionPolicy Bypass -File `
+             (Join-Path $scriptDir 'doctor.ps1')
+     }
+diff --git a/windows/flutter/generated_plugin_registrant.cc b/windows/flutter/generated_plugin_registrant.cc
+index 82dc2b5..ccda9bc 100644
+--- a/windows/flutter/generated_plugin_registrant.cc
++++ b/windows/flutter/generated_plugin_registrant.cc
+@@ -1,38 +1,32 @@
+ //
+ //  Generated file. Do not edit.
+ //
+ 
+ // clang-format off
+ 
+ #include "generated_plugin_registrant.h"
+ 
+-#include <app_links/app_links_plugin_c_api.h>
+ #include <audioplayers_windows/audioplayers_windows_plugin.h>
+ #include <cloud_firestore/cloud_firestore_plugin_c_api.h>
+ #include <firebase_app_check/firebase_app_check_plugin_c_api.h>
+ #include <firebase_auth/firebase_auth_plugin_c_api.h>
+ #include <firebase_core/firebase_core_plugin_c_api.h>
+ #include <flutter_tts/flutter_tts_plugin.h>
+ #include <speech_to_text_windows/speech_to_text_windows.h>
+-#include <url_launcher_windows/url_launcher_windows.h>
+ 
+ void RegisterPlugins(flutter::PluginRegistry* registry) {
+-  AppLinksPluginCApiRegisterWithRegistrar(
+-      registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
+   AudioplayersWindowsPluginRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
+   CloudFirestorePluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
+   FirebaseAppCheckPluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseAppCheckPluginCApi"));
+   FirebaseAuthPluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseAuthPluginCApi"));
+   FirebaseCorePluginCApiRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FirebaseCorePluginCApi"));
+   FlutterTtsPluginRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("FlutterTtsPlugin"));
+   SpeechToTextWindowsRegisterWithRegistrar(
+       registry->GetRegistrarForPlugin("SpeechToTextWindows"));
+-  UrlLauncherWindowsRegisterWithRegistrar(
+-      registry->GetRegistrarForPlugin("UrlLauncherWindows"));
+ }
+diff --git a/windows/flutter/generated_plugins.cmake b/windows/flutter/generated_plugins.cmake
+index 7b41531..80fcaed 100644
+--- a/windows/flutter/generated_plugins.cmake
++++ b/windows/flutter/generated_plugins.cmake
+@@ -1,24 +1,22 @@
+ #
+ # Generated file, do not edit.
+ #
+ 
+ list(APPEND FLUTTER_PLUGIN_LIST
+-  app_links
+   audioplayers_windows
+   cloud_firestore
+   firebase_app_check
+   firebase_auth
+   firebase_core
+   flutter_tts
+   speech_to_text_windows
+-  url_launcher_windows
+ )
+ 
+ list(APPEND FLUTTER_FFI_PLUGIN_LIST
+   jni
+ )
+ 
+ set(PLUGIN_BUNDLED_LIBRARIES)
+ 
+ foreach(plugin ${FLUTTER_PLUGIN_LIST})
+   add_subdirectory(flutter/ephemeral/.plugin_symlinks/${plugin}/windows plugins/${plugin})

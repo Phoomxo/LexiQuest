@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "path": "lib/screens/ai_tutor_screen.dart",
+      "rule": "canned-ai-response",
+      "targetPhase": 4,
+      "featureId": "learn.ai-tutor"
+    },
+    {
+      "path": "lib/screens/ai_tutor_screen.dart",
+      "rule": "simulated-device-result",
+      "targetPhase": 3,
+      "featureId": "learn.ai-tutor"
+    },
+    {
+      "path": "lib/screens/object_scanner_screen.dart",
+      "rule": "simulated-device-result",
+      "targetPhase": 3,
+      "featureId": "device.object-scanner"
+    },
+    {
+      "path": "lib/services/ml_image_labeling_service.dart",
+      "rule": "placeholder-transaction-feature",
+      "targetPhase": 3,
+      "featureId": "device.object-scanner"
+    },
+    {
+      "path": "lib/screens/shadowing_challenge_screen.dart",
+      "rule": "random-fabricated-measurement",
+      "targetPhase": 3,
+      "featureId": "practice.shadowing"
+    },
+    {
+      "path": "lib/screens/mastery_dashboard_screen.dart",
+      "rule": "sample-user-history",
+      "targetPhase": 5,
+      "featureId": "progress.mastery-dashboard"
+    },
+    {
+      "path": "lib/screens/weakness_clinic_screen.dart",
+      "rule": "sample-user-history",
+      "targetPhase": 5,
+      "featureId": "progress.weakness-clinic"
+    },
+    {
+      "path": "lib/screens/ghost_shadow_duel_screen.dart",
+      "rule": "sample-user-history",
+      "targetPhase": 5,
+      "featureId": "practice.ghost-shadow-duel"
+    },
+    {
+      "path": "lib/screens/shop_page.dart",
+      "rule": "placeholder-transaction-feature",
+      "targetPhase": 5,
+      "featureId": "economy.shop"
+    },
+    {
+      "path": "lib/screens/categories_page.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 2,
+      "featureId": "library.categories"
+    },
+    {
+      "path": "lib/screens/categories_page.dart",
+      "rule": "direct-screen-plugin-access",
+      "targetPhase": 2,
+      "featureId": "library.categories"
+    },
+    {
+      "path": "lib/screens/choose_mode_screen.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 2,
+      "featureId": "learn.mode-picker"
+    },
+    {
+      "path": "lib/screens/main_vocabulary.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 2,
+      "featureId": "admin.main-vocabulary-seed"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 2,
+      "featureId": "practice.quiz"
+    },
+    {
+      "path": "lib/screens/select_category_for_quiz.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 2,
+      "featureId": "library.category-quiz"
+    },
+    {
+      "path": "lib/screens/select_wallpaper_screen.dart",
+      "rule": "direct-screen-firebase-access",
+      "targetPhase": 5,
+      "featureId": "economy.wallpaper"
+    },
+    {
+      "path": "lib/screens/add_vocab_screen.dart",
+      "rule": "direct-screen-http-access",
+      "targetPhase": 2,
+      "featureId": "library.add-word"
+    },
+    {
+      "path": "lib/screens/speak_to_text_screen.dart",
+      "rule": "direct-screen-plugin-access",
+      "targetPhase": 3,
+      "featureId": "practice.speech-recognition"
+    }
+  ]
+}

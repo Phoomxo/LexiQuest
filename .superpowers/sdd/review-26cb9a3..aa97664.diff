@@ -1,0 +1,88 @@
+# Review package: 26cb9a3..aa97664
+
+## Commits
+aa97664 docs: record the Firebase-only v0.1 baseline
+
+## Files changed
+ README.md                                        | 2 +-
+ docs/security/supabase-access-inventory.md       | 7 +++++++
+ test/config/flutter_dependency_surface_test.dart | 9 +++++++++
+ 3 files changed, 17 insertions(+), 1 deletion(-)
+
+## Diff
+diff --git a/README.md b/README.md
+index 75eb46a..a37d63f 100644
+--- a/README.md
++++ b/README.md
+@@ -36,21 +36,21 @@ uv run --project backend/voice_api pytest backend/voice_api/tests -q
+ ### Running Backend Golden-Set Benchmark
+ 
+ ```powershell
+ uv run --project backend/voice_api python backend/voice_api/research/run_golden_set.py
+ ```
+ 
+ ### Building Application Targets
+ 
+ ```powershell
+ flutter build apk --debug `
+-    --dart-define=LEXIQUEST_VERSION=1.0.0+1 `
++    --dart-define=LEXIQUEST_VERSION=0.1.0+1 `
+     --dart-define=LEXIQUEST_BUILD_ID=<git-short-sha> `
+     --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 `
+     --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+ ```
+ 
+ Debug builds allow cleartext only for loopback, emulator, and private-LAN
+ origins. Release builds require HTTPS.
+ 
+ ### Production Foundation Verification
+ 
+diff --git a/docs/security/supabase-access-inventory.md b/docs/security/supabase-access-inventory.md
+index 5d7f053..c9f8026 100644
+--- a/docs/security/supabase-access-inventory.md
++++ b/docs/security/supabase-access-inventory.md
+@@ -1,12 +1,19 @@
+ # Supabase Client Access Inventory
+ 
++## v0.1 retirement status
++
++Supabase is retained here as historical audit evidence only. The
++`release/v0.1-complete-system` runtime, dependency graph, CI build, and Android
++artifact do not initialize or require Supabase. Product artwork uses verified
++Firestore HTTPS URLs or the built-in default presentation.
++
+ Date: 2026-07-27
+ Branch: `feature/production-vertical-slices`
+ 
+ ## Scope summary
+ 
+ - Five files under `lib/` reference Supabase.
+ - Two files perform Supabase data access:
+   `lib/screens/shop_page.dart` and
+   `lib/screens/select_wallpaper_screen.dart`.
+ - No Postgres table, RPC, Realtime, or Supabase Auth operation exists.
+diff --git a/test/config/flutter_dependency_surface_test.dart b/test/config/flutter_dependency_surface_test.dart
+index 8e180a6..8ad4927 100644
+--- a/test/config/flutter_dependency_surface_test.dart
++++ b/test/config/flutter_dependency_surface_test.dart
+@@ -78,11 +78,20 @@ void main() {
+     ];
+ 
+     for (final name in retained) {
+       expect(
+         _declaresDirectDependency(contents, name),
+         isTrue,
+         reason: '$name must remain a direct dependency',
+       );
+     }
+   });
++
++  test('README build command is v0.1 and Firebase-only', () {
++    final readme = File(
++      '${_repositoryRoot().path}/README.md',
++    ).readAsStringSync();
++
++    expect(readme, contains('LEXIQUEST_VERSION=0.1.0+1'));
++    expect(readme, isNot(contains('LEXIQUEST_SUPABASE')));
++  });
+ }
