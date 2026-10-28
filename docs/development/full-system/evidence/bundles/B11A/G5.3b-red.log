@@ -1,0 +1,65 @@
+test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset) ... FAIL
+test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input) ... FAIL
+test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo) ... FAIL
+test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split) ... FAIL
+test_validation_rejects_tampering_and_cross_split_owner (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_cross_split_owner) ... FAIL
+
+======================================================================
+FAIL: test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 40, in test_file_paths_cannot_escape_dataset
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 12, in api
+    self.assertIsNotNone(spec, 'versioned web dataset adapter required')
+AssertionError: unexpectedly None : versioned web dataset adapter required
+
+======================================================================
+FAIL: test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 67, in test_fresh_test_is_never_training_input
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 12, in api
+    self.assertIsNotNone(spec, 'versioned web dataset adapter required')
+AssertionError: unexpectedly None : versioned web dataset adapter required
+
+======================================================================
+FAIL: test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 16, in test_license_must_belong_to_requested_photo
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 12, in api
+    self.assertIsNotNone(spec, 'versioned web dataset adapter required')
+AssertionError: unexpectedly None : versioned web dataset adapter required
+
+======================================================================
+FAIL: test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 28, in test_related_sources_and_near_images_share_split
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 12, in api
+    self.assertIsNotNone(spec, 'versioned web dataset adapter required')
+AssertionError: unexpectedly None : versioned web dataset adapter required
+
+======================================================================
+FAIL: test_validation_rejects_tampering_and_cross_split_owner (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_cross_split_owner)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 47, in test_validation_rejects_tampering_and_cross_split_owner
+    api = self.api()
+          ^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 12, in api
+    self.assertIsNotNone(spec, 'versioned web dataset adapter required')
+AssertionError: unexpectedly None : versioned web dataset adapter required
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+FAILED (failures=5)

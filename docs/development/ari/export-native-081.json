@@ -1,0 +1,80 @@
+{
+  "checkpoint": "081",
+  "workflow": "W13",
+  "status": "NATIVE_PERSONAL_EXPORT_BASELINE_BYTES_VERIFIED_CONNECTED_PENDING",
+  "apk": "079",
+  "productionChanged": false,
+  "provider": "Disconnected/unpaired;no bridge or provider call this checkpoint",
+  "native": [
+    "Android document picker saves Anki,CSV,PDF,owner archive to local Downloads",
+    "CSV cancel returns to app and proposed destination absent",
+    "Changing Anki toCSV removes previous saved status"
+  ],
+  "reconciliation": {
+    "anki": {
+      "exactByteMatch": true,
+      "vocabularyRows": 1,
+      "columns": [
+        "word",
+        "meaning",
+        "category",
+        "recordId"
+      ]
+    },
+    "csv": {
+      "exactSelectedRowsAndFieldsMatch": true,
+      "counts": {
+        "vocabulary": 1,
+        "attempt": 108,
+        "reading": 4
+      },
+      "total": 113,
+      "noDuplicateOrOmittedEvidenceIds": true
+    },
+    "owner": {
+      "contentHashVerified": true,
+      "manifestTables": 58,
+      "threeCoreCollectionsReconciled": true,
+      "rawOwnerIdAbsent": true
+    },
+    "pdf": {
+      "pages": 4,
+      "visualReview": "All4pages readable;Thai font rendered;no observed clipping;reported113total=1vocabulary+108answers+4readings"
+    },
+    "cancel": {
+      "newDestinationAbsent": true
+    },
+    "files": {
+      "anki.tsv": {
+        "bytes": 237,
+        "sha256": "f2152046be3844551e6f043d224cff3f0f29aea134571b6e34e4feecd8a78fa3"
+      },
+      "csv.csv": {
+        "bytes": 14579,
+        "sha256": "a4414a581d95e050a232861770d605e40720ed49defc990cf507b1dca88fab70"
+      },
+      "pdf.pdf": {
+        "bytes": 19430,
+        "sha256": "851a4c3206875d5f536457f2100b6043551728e8299b1b362f2c89cb8581240f"
+      },
+      "owner.json": {
+        "bytes": 297463,
+        "sha256": "5d20f471e00b218698d7923c76a8a5ba306b4404c2a06fcc0f2670264b4e8966"
+      }
+    }
+  },
+  "privacy": "Raw files/SQLite remain ignored build/export-native-081 and native local Downloads;committed evidence contains counts/hashes/source pins only. No outbound share or research activation.",
+  "limitations": [
+    "Native provider connected/disconnected format guidance still pending",
+    "Owner archive verified58-table envelope/hash and three core collection counts;not claiming every transformed field audited here",
+    "Anki has4columns including category and recordId;vocabulary-only does not mean exactly2columns",
+    "ResearchJSON export not run;existing consent/research boundaries retained",
+    "PDF reviewed all4rendered pages;native external PDF reader not exercised"
+  ],
+  "remaining": [
+    "Native live export-format guidance and disconnect/save continuity",
+    "Failure-code context assertions if missing after source audit",
+    "Final W13/full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

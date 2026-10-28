@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-20",
+  "activePlan": "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\docs\\development\\ari-feasibility.md",
+  "authorization": "User approved Ari feasibility plan V0-V3, 12 tasks; native in-app chat required.",
+  "previous24TaskPlanIsActive": false,
+  "history": [
+    {
+      "original": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\lexiquest-mcp-system-design.md",
+      "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\history\\lexiquest-mcp-system-design.md",
+      "sha256": "901fd19760b54e3b828279c8b2be98a9898f94d569ff633f6d8f6a3814ccb517",
+      "status": "superseded-reference-only"
+    },
+    {
+      "original": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ai-access-no-surprise-plan.md",
+      "archive": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\history\\ai-access-no-surprise-plan.md",
+      "sha256": "8011c2f737ad352597756ad3bea12d7e9dbc38b799d3e4e8164915fade0a561d",
+      "status": "superseded-reference-only"
+    }
+  ],
+  "e7AcceptanceChanged": false
+}

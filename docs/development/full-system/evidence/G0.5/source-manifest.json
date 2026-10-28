@@ -1,0 +1,1438 @@
+{
+  "schemaVersion": 1,
+  "sourceSha": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+  "catalogRevision": "1.3.0",
+  "catalogSemanticHash": "41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4",
+  "configProfiles": {
+    "accepted-source-defaults": {
+      "buildRegistry": "BuildFeatureRegistry.fieldDefaults",
+      "states": {
+        "vocabulary": "enabled",
+        "quiz": "enabled",
+        "srs": "enabled",
+        "reading": "enabled",
+        "mastery": "enabled",
+        "weakness": "enabled",
+        "ghostDuel": "enabled",
+        "achievements": "enabled",
+        "shop": "enabled",
+        "objectScanner": "limited",
+        "speechPractice": "limited",
+        "aiTutor": "limited",
+        "export": "enabled",
+        "shadowRewardV2": "hidden",
+        "questV2": "limited",
+        "studyPlanning": "hidden",
+        "researchAssessment": "hidden",
+        "dailyContinuity": "hidden",
+        "offlineContent": "hidden",
+        "adventureMotivation": "hidden"
+      },
+      "learningPreviewDefault": false,
+      "cloudSyncDefault": true,
+      "effectiveDeploymentConfig": "not-observed; source defaults only; P0.8/P7.5 required",
+      "runtimeOverrides": "owner/runtime overrides and availability may further restrict; no active device state read"
+    }
+  },
+  "contentProfiles": {
+    "canonical-content": {
+      "readiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "version": "cefr-starter-3000-r1",
+      "starterQuality": "source-joined-not-independently-reviewed",
+      "starterCount": 3000,
+      "editorialVersion": "content-addressed assets in source-manifest; schemaVersion 1",
+      "contract": "Canonical pack/word revision and checksum; reviewed publication/provenance required. Starter inventory and editorial files do not certify every mode prompt. Pack detail gates definition/cloze/matching with pinned vocabulary; other registrations still require owner acceptance.",
+      "paths": [
+        "assets/content/cefr_starter/catalog.json",
+        "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+        "lib/features/learning_packs/domain/content_quality_policy.dart",
+        "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart"
+      ]
+    },
+    "owner-derived-or-foundation": {
+      "readiness": "runtime-not-run",
+      "version": "AppDatabase schema26 / accepted source e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "No independent content pack. Consumes owner-scoped preferences, canonical evidence/time/progress or shared UI/activation policy; session/content identities are inherited where relevant."
+    },
+    "ephemeral-unscored": {
+      "readiness": "implemented-off",
+      "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "Local ephemeral scratchpad; no OCR, durable response or correctness/reward inference."
+    },
+    "media-dependent": {
+      "readiness": "external-pending-for-physical-audio; local fallback not run",
+      "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "Canonical prompt and provider/model/voice identity required at session time; availability, permission and device checks remain P6.4/P6.5."
+    },
+    "journey-session-identity": {
+      "readiness": "runtime-not-run",
+      "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "Adventure mixed review pins canonical session/prompt catalog; Ghost requires compatible recorded ghost identity/time. No fabricated live ghost/content revision."
+    },
+    "assessment-question-set": {
+      "readiness": "needs-verification; research assessment hidden in field defaults",
+      "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "Authored question/answer/explanation set revision required; exposure-only reading does not satisfy MG-10. No research activation or enrollment authorized."
+    },
+    "inherit-related-records": {
+      "readiness": "runtime-not-run",
+      "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "contract": "Resolve every related record; apply MG-specific acceptance in addition to shared mode/config/content. MG-03 selected and MG-04 typed remain distinct."
+    }
+  },
+  "pins": [
+    {
+      "path": "assets/content/cefr_editorial/NOTICE.txt",
+      "sha256": "68e612bf9677f1a3fd6aed130f26882ee3f1d3a791e2c64399f02303afd447b6",
+      "gitBlob": "5dc285d8d40cfe25016335e0cb2e76622c98cebe",
+      "acceptedBytesSha256": "080de4b4e0dde7b58583e7f5c67455ad1c884500e8781fa7c5dfcd514aeb0d81",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2452
+    },
+    {
+      "path": "assets/content/cefr_editorial/batch-1.json",
+      "sha256": "d7ab58a1cce6d7d30b92418b234161ab1a75088da7934516f33d5791159b027b",
+      "gitBlob": "d6493809693a05553b79181c3b9e6b6b3d8708aa",
+      "acceptedBytesSha256": "d7ab58a1cce6d7d30b92418b234161ab1a75088da7934516f33d5791159b027b",
+      "checkoutTransform": "identical",
+      "bytes": 251186
+    },
+    {
+      "path": "assets/content/cefr_editorial/batch-2.json",
+      "sha256": "9a53ab6653d1fcebd61d8cf9a6251e11b5075e26ea865cc819e3fb29d100e46e",
+      "gitBlob": "0572ac46e9b607147cdbc87e73cd1badd20bce9e",
+      "acceptedBytesSha256": "9a53ab6653d1fcebd61d8cf9a6251e11b5075e26ea865cc819e3fb29d100e46e",
+      "checkoutTransform": "identical",
+      "bytes": 332016
+    },
+    {
+      "path": "assets/content/cefr_editorial/batch-3.json",
+      "sha256": "b2534412e7ee71bb913f229952902f25e5d46265931a094dd6cd1316d3642f06",
+      "gitBlob": "47224aeb933024e32c8f5e766726ef57b330a519",
+      "acceptedBytesSha256": "b2534412e7ee71bb913f229952902f25e5d46265931a094dd6cd1316d3642f06",
+      "checkoutTransform": "identical",
+      "bytes": 290417
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-1.json",
+      "sha256": "c615817a58afb6ecb9b5c24d8c35b8b5d9f1af133a9ba659697858d8ff953551",
+      "gitBlob": "57306e3f405cff4cbea26049a84aba12576f84a2",
+      "acceptedBytesSha256": "c615817a58afb6ecb9b5c24d8c35b8b5d9f1af133a9ba659697858d8ff953551",
+      "checkoutTransform": "identical",
+      "bytes": 537836
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-2.json",
+      "sha256": "f173b57c3540c4e44b39fe8ade0be7c6b1c75961ff39d74fbc90a930c3cab0c9",
+      "gitBlob": "0128239b5f302098fd9ebec817e420d7d6ce00ce",
+      "acceptedBytesSha256": "f173b57c3540c4e44b39fe8ade0be7c6b1c75961ff39d74fbc90a930c3cab0c9",
+      "checkoutTransform": "identical",
+      "bytes": 624452
+    },
+    {
+      "path": "assets/content/cefr_editorial/complete-3.json",
+      "sha256": "3c0d6c460b99f99c99b51371f101dbd668de48c2dc93e8ebde1cd99e24647d3f",
+      "gitBlob": "54a175837e8050fba29c4bebbd1d07e71fb8c358",
+      "acceptedBytesSha256": "3c0d6c460b99f99c99b51371f101dbd668de48c2dc93e8ebde1cd99e24647d3f",
+      "checkoutTransform": "identical",
+      "bytes": 566704
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-1.json",
+      "sha256": "c3fcc05d70288e528517a6cbea1881cd285dbb7410fcd43243e80a4c8fa223eb",
+      "gitBlob": "4cf73147a702395365780f05e89a5c87684496c5",
+      "acceptedBytesSha256": "c3fcc05d70288e528517a6cbea1881cd285dbb7410fcd43243e80a4c8fa223eb",
+      "checkoutTransform": "identical",
+      "bytes": 734506
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-2.json",
+      "sha256": "ebb94097be4a1d6a47f24849b0a76f2967af70c3f6c662e9d9e321f4d498278a",
+      "gitBlob": "867f52fee2dc70351068ebdd1bf5c3d5ce0f7602",
+      "acceptedBytesSha256": "ebb94097be4a1d6a47f24849b0a76f2967af70c3f6c662e9d9e321f4d498278a",
+      "checkoutTransform": "identical",
+      "bytes": 621966
+    },
+    {
+      "path": "assets/content/cefr_editorial/sense-review-3.json",
+      "sha256": "a2c9b8f1178fd0e6c5b4370fc46d7fd597cf477812dfbc5b326491ab5e3fd804",
+      "gitBlob": "ee1e048ffb3d13c5613da47aa519989d8fef0b40",
+      "acceptedBytesSha256": "a2c9b8f1178fd0e6c5b4370fc46d7fd597cf477812dfbc5b326491ab5e3fd804",
+      "checkoutTransform": "identical",
+      "bytes": 561140
+    },
+    {
+      "path": "assets/content/cefr_expanded/NOTICE.txt",
+      "sha256": "1f03ec83b301bd0df4ff3e32922d6dc4a7afe1b06d8e42398406de7a492b8f87",
+      "gitBlob": "50af8f3457d81ba349c020e2f65335228e787326",
+      "acceptedBytesSha256": "4c0f6de2c1c91ac62ba9ec985d71ca94668bcbbc673cbbe429feabef9d7c5b79",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2850
+    },
+    {
+      "path": "assets/content/cefr_expanded/advanced-profile.json",
+      "sha256": "694a96a5cd413aa41c8547691d54eabed8f8746ca08dcf970e3dd288fc7ebe05",
+      "gitBlob": "aabf061d8514a6a0af70003dd0002968836fc079",
+      "acceptedBytesSha256": "694a96a5cd413aa41c8547691d54eabed8f8746ca08dcf970e3dd288fc7ebe05",
+      "checkoutTransform": "identical",
+      "bytes": 155220
+    },
+    {
+      "path": "assets/content/cefr_expanded/advanced-translations.json",
+      "sha256": "3e25d52af96d5524ca786c07cc840772ee6862cb381e7b2cda96c16a1d116130",
+      "gitBlob": "909fabfb2bb597b8b9cbdba9a8d67ff0953ab379",
+      "acceptedBytesSha256": "3e25d52af96d5524ca786c07cc840772ee6862cb381e7b2cda96c16a1d116130",
+      "checkoutTransform": "identical",
+      "bytes": 270665
+    },
+    {
+      "path": "assets/content/cefr_expanded/core-extension.json",
+      "sha256": "da83baf5ecfb8b64a486da6e784c7ca3d5ae373e18e7fccc02d09179cf7bf6bf",
+      "gitBlob": "afe34e3b3f481ee7f445bc351419f630677dff75",
+      "acceptedBytesSha256": "da83baf5ecfb8b64a486da6e784c7ca3d5ae373e18e7fccc02d09179cf7bf6bf",
+      "checkoutTransform": "identical",
+      "bytes": 545822
+    },
+    {
+      "path": "assets/content/cefr_expanded/octanove-source.csv",
+      "sha256": "18c33a407f2f89f7b8de9671c6d45fe3ea0bce45e7d2d7dcaab48d73e0f7b380",
+      "gitBlob": "3a0505e98c9a6ef92be32466e43de4b7f14683d0",
+      "acceptedBytesSha256": "18c33a407f2f89f7b8de9671c6d45fe3ea0bce45e7d2d7dcaab48d73e0f7b380",
+      "checkoutTransform": "identical",
+      "bytes": 46462
+    },
+    {
+      "path": "assets/content/cefr_starter/LICENSE-th.txt",
+      "sha256": "c5ee569c4f90f797b400ca57b608b87baf90d052244e03c477ec4d2d616fbd6f",
+      "gitBlob": "cf7d8b58658779af1edf64c0c00a92779ad7a02a",
+      "acceptedBytesSha256": "c5ee569c4f90f797b400ca57b608b87baf90d052244e03c477ec4d2d616fbd6f",
+      "checkoutTransform": "identical",
+      "bytes": 13727
+    },
+    {
+      "path": "assets/content/cefr_starter/LICENSE.txt",
+      "sha256": "ad4492b38d5a82e0e57793be2ada45ed6f129f0ca04a97019f408f76545528f8",
+      "gitBlob": "805965c3e3f26b9677c37f12cacb289d4419e3ec",
+      "acceptedBytesSha256": "ad4492b38d5a82e0e57793be2ada45ed6f129f0ca04a97019f408f76545528f8",
+      "checkoutTransform": "identical",
+      "bytes": 4592
+    },
+    {
+      "path": "assets/content/cefr_starter/NOTICE.txt",
+      "sha256": "c2267164a0939906b131acc1b6b7ba9799f5f8615cfb3345e58254e4808a916a",
+      "gitBlob": "176ed368b4c11fa37f06ad1d3640f57523e5bf8a",
+      "acceptedBytesSha256": "229a5adbb63875cc7f872eb88ce30dbdd9e8a97fbf85c4daa12adf1f499b860f",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2310
+    },
+    {
+      "path": "assets/content/cefr_starter/catalog.json",
+      "sha256": "b1af6f5c444650d39d6873bf7db7632585b2220b69bce323327693c021641140",
+      "gitBlob": "ac66ba756525c13ea3c0c7146963ae1710db4ee3",
+      "acceptedBytesSha256": "b1af6f5c444650d39d6873bf7db7632585b2220b69bce323327693c021641140",
+      "checkoutTransform": "identical",
+      "bytes": 1154172
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-bag/r1.json",
+      "sha256": "9b27908a43e5f047ab8cf00ee9684d902255aa67e11f4c703032ba321856cf7b",
+      "gitBlob": "c58c92019f8b3adb07c39d6f25cb76d4cee453b7",
+      "acceptedBytesSha256": "9b27908a43e5f047ab8cf00ee9684d902255aa67e11f4c703032ba321856cf7b",
+      "checkoutTransform": "identical",
+      "bytes": 249
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-book/r1.json",
+      "sha256": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee",
+      "gitBlob": "f76c789f2c4c5354ce364110abef80c4138573ef",
+      "acceptedBytesSha256": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee",
+      "checkoutTransform": "identical",
+      "bytes": 234
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-bottle/r1.json",
+      "sha256": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562",
+      "gitBlob": "5a2c1927ba336b2f2e0ed5337313bc9638ba68a1",
+      "acceptedBytesSha256": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562",
+      "checkoutTransform": "identical",
+      "bytes": 259
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-chair/r1.json",
+      "sha256": "33d514b228ae7033e1d1242a77054178aecf1e67587b1514bb05901f47591fdd",
+      "gitBlob": "2e4f26626d9c3b38544c3266f9fd5c6d665ee446",
+      "acceptedBytesSha256": "33d514b228ae7033e1d1242a77054178aecf1e67587b1514bb05901f47591fdd",
+      "checkoutTransform": "identical",
+      "bytes": 229
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-clock/r1.json",
+      "sha256": "a662360d388bb4466a97b3f915d4fb77cd9b6cec0624b2e87b9a62176be7d3b9",
+      "gitBlob": "66d76b8539f973a1d40568c4fe51d4ccfb152ec0",
+      "acceptedBytesSha256": "a662360d388bb4466a97b3f915d4fb77cd9b6cec0624b2e87b9a62176be7d3b9",
+      "checkoutTransform": "identical",
+      "bytes": 270
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-cup/r1.json",
+      "sha256": "4af13e68ae9dc7364560bb9cd15e40c5e0fb1a43d16b8f46ea8f8376adf1cc38",
+      "gitBlob": "d5ee139a7e0c91bdc318a3df2fd4d48b66f9d630",
+      "acceptedBytesSha256": "4af13e68ae9dc7364560bb9cd15e40c5e0fb1a43d16b8f46ea8f8376adf1cc38",
+      "checkoutTransform": "identical",
+      "bytes": 260
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-door/r1.json",
+      "sha256": "c5118f9b9d159b18c0694d63d7667481c2189832a5b39307a1f83b5ef00aac04",
+      "gitBlob": "d47d2ecaf62ef97b56fe434ac6fc02392fd13651",
+      "acceptedBytesSha256": "c5118f9b9d159b18c0694d63d7667481c2189832a5b39307a1f83b5ef00aac04",
+      "checkoutTransform": "identical",
+      "bytes": 264
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-key/r1.json",
+      "sha256": "834b6e191333dc96238269dd4884dd09546eab26aee93f0ca1df19ff776e6cdf",
+      "gitBlob": "adab40777cf3ae18bc3c96b4f17c98d186f8f2b3",
+      "acceptedBytesSha256": "834b6e191333dc96238269dd4884dd09546eab26aee93f0ca1df19ff776e6cdf",
+      "checkoutTransform": "identical",
+      "bytes": 235
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-pencil/r1.json",
+      "sha256": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca",
+      "gitBlob": "37f4ec8e60f3b284464f8f45ec1176531a8958dd",
+      "acceptedBytesSha256": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca",
+      "checkoutTransform": "identical",
+      "bytes": 263
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-plate/r1.json",
+      "sha256": "4deed1ddfb40df024d5d014b8323ea08f824f5b7a0653113c7c01316ac6c05ce",
+      "gitBlob": "3e6efac943cad5b4f4a788372fb594782ccc2760",
+      "acceptedBytesSha256": "4deed1ddfb40df024d5d014b8323ea08f824f5b7a0653113c7c01316ac6c05ce",
+      "checkoutTransform": "identical",
+      "bytes": 236
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-spoon/r1.json",
+      "sha256": "8cadc285886d20ad391423309e455b82bbb6f008253480c0274894a5491c8795",
+      "gitBlob": "e440a2fcaacae9139eafda00c877e68458f6271f",
+      "acceptedBytesSha256": "8cadc285886d20ad391423309e455b82bbb6f008253480c0274894a5491c8795",
+      "checkoutTransform": "identical",
+      "bytes": 261
+    },
+    {
+      "path": "assets/content/lexical_metadata/starter-window/r1.json",
+      "sha256": "1fa2337cdb2f423fb85068d9ec2cf468dc82448c44a2b36ea22a104e2d2fbc4c",
+      "gitBlob": "3fd815b522797519621b9f8a0400e667b2d73358",
+      "acceptedBytesSha256": "1fa2337cdb2f423fb85068d9ec2cf468dc82448c44a2b36ea22a104e2d2fbc4c",
+      "checkoutTransform": "identical",
+      "bytes": 272
+    },
+    {
+      "path": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sha256": "7012117121614ac396046e179a548968812094764fb47e46ac37c3a4f86e63f4",
+      "gitBlob": "d8f5ebe1fe865e95fdc7d438fd33af87aa205c24",
+      "acceptedBytesSha256": "25ec04f84dd43e4281d09adfa664332eced6d2f7dbc317465165f25479a762e5",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 27822
+    },
+    {
+      "path": "docs/development/full-system/G0.3-authority.md",
+      "sha256": "5786c44e9bf8ae8b09b6b21c70a73a9d80079fd25a0f3f1766771e5d4c15666f",
+      "gitBlob": "75ead294841d97a1c3dbfa2cdd09cd5fcd402634",
+      "acceptedBytesSha256": "f5a0cda463d653b47101e74afff417f8485e472f89353b1dcee2f5df81a00cea",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 14779
+    },
+    {
+      "path": "docs/generated/alltcas-idea-integration-feature-map.json",
+      "sha256": "193366e347ee3719c3cc88cb727d21845caa0c2335c5cd373793c8ebd8ccda55",
+      "gitBlob": "0e8750054112417ab59f485528018eec8aad3f65",
+      "acceptedBytesSha256": "f6f623bef0fbd3e2fdde6dbb34863282aeeb03ad8c8927ccc7a5a5ec349eae53",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 50378
+    },
+    {
+      "path": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "sha256": "1764efe55240f3a5784a1b6f7340fe420078b5b0591ec86a572611182915559b",
+      "gitBlob": "1862f089582131fc426b5ec620f2ca495f71beff",
+      "acceptedBytesSha256": "bf4bcadb88b578893f7c8e8fc5582727bf0624bbc216c58155cb830925ab6f53",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 11442
+    },
+    {
+      "path": "lib/data/local/app_database.dart",
+      "sha256": "093468a3fe7321b5930b7f55488da987b4b514f812da5efb857f84f2a7ea3089",
+      "gitBlob": "d27d1446556b7f1f8aca8a460e526686ab8524e0",
+      "acceptedBytesSha256": "d7795dea32787f9dbef423b2a98529e0f1befdaf94d808a60d41917f9c717a96",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 33734
+    },
+    {
+      "path": "lib/features/accessibility/domain/accessibility_policy.dart",
+      "sha256": "db345de86b2e8c67e3517a44642d49b2471a0a51af46a2defe784df1a1c9655d",
+      "gitBlob": "88fcc370ce0baa622196c1b1ae954f140b523ccd",
+      "acceptedBytesSha256": "1fd3a9c3e1240a62fdbf2514b8cb60752836c986e9cfb3f4210bd08ef1e2fce1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 13856
+    },
+    {
+      "path": "lib/features/accessibility/presentation/accessibility_scope.dart",
+      "sha256": "41f38724db91fe74abdd490d62a54ac80d00ff50a149fc24e6e8fc2910d43646",
+      "gitBlob": "2d3f788fa54dc9bb0958a43a8c31cf879f5bc777",
+      "acceptedBytesSha256": "612a7349d97004010de4daf2642bafa13118792c7c54b55c7d8b23744973a6c5",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 7926
+    },
+    {
+      "path": "lib/features/achievements/application/achievement_share_card_use_cases.dart",
+      "sha256": "6a62c86e2c94af558c6f0e66f0207abd16f03dc82df7885c039bdc59a2973dd6",
+      "gitBlob": "d20515474a899f3aa7cdccffa1bcf7de00ca35ce",
+      "acceptedBytesSha256": "79ab19b73f37a6cd903f837ec5589264460742caa1deb8bf9242240d6911da18",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 9086
+    },
+    {
+      "path": "lib/features/achievements/presentation/achievement_share_card.dart",
+      "sha256": "ede01ee8b3cd885a34482a20c6f8e44f45049ada5d58bb3d2904404f60bc0718",
+      "gitBlob": "e129ba9947f9e9426798c0e0ab5af3a55a40efd4",
+      "acceptedBytesSha256": "159d6572881388cedeefaaf7c8ad914dc314e63a35b0d3900e8711539dd9e6fd",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 1632
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_hub_screen.dart",
+      "sha256": "7fe93f773554879562ea6c66a6d492dbb9952b6de7c89c31c7e092da71289feb",
+      "gitBlob": "206a43b2b590465da8b8ba19fe32536864178e73",
+      "acceptedBytesSha256": "6df264b472fdaf77ff35316182359cd06c17d44a24bf9b24243fa3595794f06a",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 5285
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "sha256": "338cbcf6054362a0545807e935d340f3e1bc537688e4a12cd361410b50bcfaad",
+      "gitBlob": "8661ff0d75cabe0fd3c055d1b8a3a043dab93038",
+      "acceptedBytesSha256": "6be3aacea80eab41d2a321a0ca37e5e09ccded1c7b118fab38cf69632a38ca37",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 29766
+    },
+    {
+      "path": "lib/features/learning/application/current_activity_evidence.dart",
+      "sha256": "b79550080cddf27703ce7f5eb59900a18bd0e0e17248d04495ac1172f10b1781",
+      "gitBlob": "132d90fcaeac84568493f66685d2ab768d2a1d43",
+      "acceptedBytesSha256": "422f4a30f4789a31ff1928ed4ae1fd51941a49a412fff44d3a7cdc4afca56e38",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 67717
+    },
+    {
+      "path": "lib/features/learning/application/lesson_mode_registry.dart",
+      "sha256": "a741f433f9885a283d4a84c0a922c997c6ac2b00ee4d5a730504e62800244e6b",
+      "gitBlob": "7baf0d6701d8978693f120798c4953bdb307b418",
+      "acceptedBytesSha256": "03e9947a98b3231bbba8afe6cc7187f79f12b82fefa4e805d941089e29bc8f61",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 8532
+    },
+    {
+      "path": "lib/features/learning/domain/answer_feedback.dart",
+      "sha256": "e218e5aa4837db62031922960095ddc0ed2ddd059cf8593ae5ec9ed02663bf6c",
+      "gitBlob": "c0257098760fe8b62ffe952c2dec4cfe2e7c1a19",
+      "acceptedBytesSha256": "3f17da43bb14dcd993728f9d761b4afa653a7eabd230c879429bb80cf628da6b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3752
+    },
+    {
+      "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+      "sha256": "03a93168b9abecd74528a26a6891234dd30f87dbe43eb4ad98e87aee6ef8b5b3",
+      "gitBlob": "ad5a067e50d5cc049908cc36b912c4fc7ad44970",
+      "acceptedBytesSha256": "c86aa2266b27831b48c799cf55b73016c93ee63ed264d6a7e80522632f662411",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 15443
+    },
+    {
+      "path": "lib/features/learning/domain/lesson_mode.dart",
+      "sha256": "f21ed9821f8a38e28b7837ee8b4fb2a5ca008afb67b10a8b88bf76395667a30f",
+      "gitBlob": "8b4f3221d89b9eff693de0b064c2a59142dec243",
+      "acceptedBytesSha256": "08c9306155b96447c67c12af9f0d9a5b82679e096ed6bd1d7d47c5676ef2a713",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3459
+    },
+    {
+      "path": "lib/features/learning/domain/session_configuration.dart",
+      "sha256": "a3dc9dec15bfedc93d7b37751a5546164a787c5f003af5bc3b3444a2d2068124",
+      "gitBlob": "dc17eeb25446652ffc9acbf2c39823b3543483bb",
+      "acceptedBytesSha256": "48f5a593da99a8c2e5dcc2187b30ef4bdd00d981be33fd4f7f10f510bd70766b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 22656
+    },
+    {
+      "path": "lib/features/learning/presentation/answer_feedback_panel.dart",
+      "sha256": "dc5a6318d2e9b70871c2fa7936dc486395caa7ee37ef0e2122d675fc09e040b1",
+      "gitBlob": "666280d8d3e002e50af12156387616e8a2ccb8b0",
+      "acceptedBytesSha256": "8b4f6befd7224b25ee233de78dde5517d1addf9a9eb81c066f99684b1c38aa25",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 6396
+    },
+    {
+      "path": "lib/features/learning/presentation/session_configuration_sheet.dart",
+      "sha256": "2078e6f0905dc0ca503c9e77ee4d47e79b12a32b3e65eff3a40c6b3301e7c57d",
+      "gitBlob": "0f9737ec0b82247b33b48e56f82fd4e62c6f775b",
+      "acceptedBytesSha256": "882d52452cc42112a72127ebdd2beebdfbecbd9fa0a93f18495afa0e891f0227",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 28714
+    },
+    {
+      "path": "lib/features/learning/presentation/unified_lesson_shell.dart",
+      "sha256": "aef1d12a8500b28de2f9a06050be0e0d701e605f60eccc64d2bcd79765c67c2e",
+      "gitBlob": "a1577a9ccf4fb4c41e9766b5096f55b9ae9a575e",
+      "acceptedBytesSha256": "1a3614419878096c89cc4b2f68a08adcc97f2a61f5b3291705f819ca31724998",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 60521
+    },
+    {
+      "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+      "sha256": "089cb66e49007b1396457dcd478963b51b875343efd145106354965d5e474732",
+      "gitBlob": "59817d7f25ab29e71f796d468be0d50b2576c3fc",
+      "acceptedBytesSha256": "6a6027d978b9a292630c3f193198d868ed2cff2db08b9bf0e237951d5f44ef54",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 6513
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "sha256": "8dfd36b97197fd88113de59a61fbad8572a821dec72c72c548a47e4501e0db18",
+      "gitBlob": "c0b7a7e8af5128e9f6ef6e6d703504f99164fd69",
+      "acceptedBytesSha256": "e291855949fdecd130d3704edc39d2f43edf6acbcba026573df85ac6f5a692f3",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 10960
+    },
+    {
+      "path": "lib/features/preferences/application/display_preferences_controller.dart",
+      "sha256": "449aaf800f769a1da798850930c59b5b8cceeec5f4b5c62b191717b0c49e508a",
+      "gitBlob": "125655d19c40a7f34f07e44abbf51ee98a807018",
+      "acceptedBytesSha256": "78ef4236ff442c6b8aa7b85749e6eb4b82e95d7f9fb512899332f02bab02e626",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3934
+    },
+    {
+      "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "sha256": "e50c3be2a62b8b51f0e998c591b7c7eba22941d2dca630a221f38f4bc2584304",
+      "gitBlob": "3a287fca052633f9327dedfc76caaf475da0e02b",
+      "acceptedBytesSha256": "d98a5b003de58244186b630ceff6067cf6f614e9486f882a72124c0514161a2b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4712
+    },
+    {
+      "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+      "sha256": "7faa9773368ff7762bf5ae3c4e925ec0b064db2ba09b2313babb7ae9bfc4e965",
+      "gitBlob": "cac3b89f18af8f256f34833ad3811db00ef5e5aa",
+      "acceptedBytesSha256": "4c4827b6f427dd102a543eb830e9d22f3607be635354c6794b3e2463099fcc67",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 9745
+    },
+    {
+      "path": "lib/features/progress/application/learning_calendar_use_cases.dart",
+      "sha256": "018ed80f2bf325a46fcf86f5848eb48cd3c0b988de23fcbc9ce458a61d5e261e",
+      "gitBlob": "fcab9b2d157dfa774cefa43bdf2ba680a364c23b",
+      "acceptedBytesSha256": "330525038d9bb9787ba95274c76c58cff009bfcb6d82973ce8d1762554892696",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 1106
+    },
+    {
+      "path": "lib/features/recommendation/application/recall_ladder_use_cases.dart",
+      "sha256": "5404a7b99a8f1939a3381fe4617b3716680d38938e95f978767d56dc91cf2d83",
+      "gitBlob": "52e95654a664b495fa5abead8cd8482e4cc0a336",
+      "acceptedBytesSha256": "9e724e29325010fdab2c7af8d4e41dcdde1d1d87632410e8814ba4c38a8c7b09",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2847
+    },
+    {
+      "path": "lib/features/recommendation/domain/active_recall_ladder.dart",
+      "sha256": "611fc3744e71e840404d88f151c6e7238aa590a1e8ebad486727c1df6c8c5dbe",
+      "gitBlob": "aeb939da48a5ea1f528ef098a71fd144731feebf",
+      "acceptedBytesSha256": "fef3d11971c300c98ab7dc0bddfd481eea11d3df9cb8d7f5f94a1e771a6022f8",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 22850
+    },
+    {
+      "path": "lib/features/review/application/content_report_use_cases.dart",
+      "sha256": "881439b968dce8d4419fb25a1e18b40a7fa9a4f0b07ec2af062dbc8b5679a3d8",
+      "gitBlob": "31b27bf2d531afd6628a3a7350bf11db91f3b7d5",
+      "acceptedBytesSha256": "71839d29e10e41a34c1292df29549c3c53e43499ebca83ca171bcf153b8f442a",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 962
+    },
+    {
+      "path": "lib/features/review/application/learner_intent_use_cases.dart",
+      "sha256": "e01654b9d837c314ea6de4d64ce2d9aa921713e8bb67fe64c4263a0a8f90d9ea",
+      "gitBlob": "6ddc295c18dea0d7f952708614970204980d3bd8",
+      "acceptedBytesSha256": "b083e0d74229e0a19cdda6defedc8c250955db48a0095a0a982905583db9a926",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 905
+    },
+    {
+      "path": "lib/features/review/data/drift_learner_intent_repository.dart",
+      "sha256": "1f5185d4d37c07d787f19eadbdad59149ec945dc99a2608cffbf3cc24f3358fb",
+      "gitBlob": "5ee14f162c3540d7c7f0ee388fdb354173d8837d",
+      "acceptedBytesSha256": "8be8021d93c10b51888c504bde049d8b75c065b5924bfb7a7beb36ffc64f8b60",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 8107
+    },
+    {
+      "path": "lib/features/review/presentation/content_report_sheet.dart",
+      "sha256": "09f23de746bac4699a17e783382cccd425a2d043459d0f6218a122d3486651b1",
+      "gitBlob": "63be51c5920ee6546766ac4495c97b5306f57a71",
+      "acceptedBytesSha256": "88115f37d5e36468b0a280a33c43cc1756c99e244d5f6299418a8f27dabea939",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 5718
+    },
+    {
+      "path": "lib/features/time_tracking/application/active_learning_time_controller.dart",
+      "sha256": "b7736bcbfb6bdf0b4c4a148acf8c996a8ca7387a2a8ddc1dfa40e1414349f92d",
+      "gitBlob": "0e2f80469bb89a40db69d82b987f9f90e0fb7cec",
+      "acceptedBytesSha256": "dbc4679e5cac3ad823abb6ccdfe507b78824826ac7261d1d2249bb2dfa260258",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 23974
+    },
+    {
+      "path": "lib/features/time_tracking/application/focus_timer_controller.dart",
+      "sha256": "ce23acacab55285789f8e363081daabb3414bed62bb8aae7d50d34c729f40e2c",
+      "gitBlob": "d6472a91f0e4727e6004c2a583896bab733c7e9c",
+      "acceptedBytesSha256": "5ed7b30f379abb9cc9270aa3e16d1703ba1356725209d273b6b75f30ceb76efd",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 15383
+    },
+    {
+      "path": "lib/features/time_tracking/application/focus_timer_rollout.dart",
+      "sha256": "de68df5c60314e81e20719202d982869a1fa61fdb691f82661c1d9d78b37545e",
+      "gitBlob": "e6c8f1d251889f26981e4cf9547362f7968afa47",
+      "acceptedBytesSha256": "6bb03e00a55c840e6ece8a56e0b1fa396e079019bccc6288db2d5a88d16ad5ab",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 472
+    },
+    {
+      "path": "lib/features/time_tracking/presentation/focus_timer_widget.dart",
+      "sha256": "f8d6df4b5dcdef0850658e480f7d60c2dd761eb7e2f9a38769f5f19228ab4d74",
+      "gitBlob": "94aa579c1beeb179ebf1a6d07b6f4b5893e78559",
+      "acceptedBytesSha256": "14a626d28bd0945ec1dbc59d787ac173cc694d70b8be8d39ffe416bf4ff19c40",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 8200
+    },
+    {
+      "path": "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+      "sha256": "54472620eb6c6907792ebc07c147d6d4ba5c57581e8ad5598f38947fb04213bb",
+      "gitBlob": "ccdef96a11c136c9f52331fe982e7e97f216200e",
+      "acceptedBytesSha256": "54472620eb6c6907792ebc07c147d6d4ba5c57581e8ad5598f38947fb04213bb",
+      "checkoutTransform": "identical",
+      "bytes": 1362
+    },
+    {
+      "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
+      "sha256": "d84e4f5b96e1cab24b6154a6d086ef23fae40df0f3ee5bb90b25d42bf8a926ae",
+      "gitBlob": "e28c67eab3566a0b0c5d5f7777d5bac2ba094a60",
+      "acceptedBytesSha256": "626e4f123d531d4fbfcc7dba86e9b8420fdca242d67a3dc2e77cff7109492820",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 36254
+    },
+    {
+      "path": "lib/product/feature_contract/compatibility_profiles.dart",
+      "sha256": "01ec2e78b3a13fb6c4ef5394115b3e43f1eb53b31a78acaa47b45fdd59bce97f",
+      "gitBlob": "bc130c04a1ed8c5019235f2dd56c9f34bee3ef65",
+      "acceptedBytesSha256": "46b6f11312e351fae8964f6af5d4f8d582bd028091604d657b3269a2e77613a8",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 21401
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "fa70ffdad6371f8ddb0c9e95122b16f03d60a64cff37174e13449ab67c4ed4e8",
+      "gitBlob": "d519b7b43edf65110f2a044f247b4583bf38a77f",
+      "acceptedBytesSha256": "fa70ffdad6371f8ddb0c9e95122b16f03d60a64cff37174e13449ab67c4ed4e8",
+      "checkoutTransform": "identical",
+      "bytes": 89108
+    },
+    {
+      "path": "lib/runtime/central_cost_policy.dart",
+      "sha256": "68f71868eda8181bbdda4cead339d2df7e6b2dd998529c94a122cd5a096a2582",
+      "gitBlob": "008229bb69828167a1eea0d75183b26ce7af3dd8",
+      "acceptedBytesSha256": "653b2e94bfdebb419e98fe556c655c02e958be522d09ae1292f2c252294dfdfd",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3971
+    },
+    {
+      "path": "lib/runtime/learning_preview_feature_registry.dart",
+      "sha256": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7",
+      "gitBlob": "2fa6a1544793e1a882115216e41980cde82de524",
+      "acceptedBytesSha256": "feafcddaa942e2ec9702ece1d8e1596aba942237fb40c911c4a56e1ccb113d7a",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 824
+    },
+    {
+      "path": "lib/runtime/production_feature_contract.dart",
+      "sha256": "16b7a15844529cd37ae85b60d811b8c07d2ab730dc77e1b4d72d01da6789d67d",
+      "gitBlob": "c880a686c605a68dc7401996803f3d761bbd1d03",
+      "acceptedBytesSha256": "4fa0338ead85c364bf74170c28056300bedacbefd96d839912e3b1bb74078604",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4880
+    },
+    {
+      "path": "lib/runtime/production_feature_gate.dart",
+      "sha256": "8d36ad5b1af9a4b397b370c19334453825bd29f2adaea59a97357d066b76a054",
+      "gitBlob": "e5fcbd77214416237cbe80af1ce98815e68c7906",
+      "acceptedBytesSha256": "683e01602c2ef46b2bc5d70db8cffa5dea7f2f0aec6be7b804ba3a7e92fc95dc",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4600
+    },
+    {
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348",
+      "gitBlob": "94b123321d53c0602207811b4fac37dbe0c7bb53",
+      "acceptedBytesSha256": "a3626ed61b80226f8a217e7ff6045db5df6a501528e89e779cd8db1fa439dafc",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 7399
+    },
+    {
+      "path": "lib/screens/ghost_shadow_duel_screen.dart",
+      "sha256": "b2c442657676d59d73edfe8d127039d3fa060be3759d748fdb07de83e12bdec2",
+      "gitBlob": "1b721abbb1b91f496b460809bebd4a440dda09f6",
+      "acceptedBytesSha256": "32f0cb47f1307ffe568e9d86344c2ed73bb7b0ffcee12ce18c8a081db8b984ca",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 14577
+    },
+    {
+      "path": "lib/screens/learning_calendar_screen.dart",
+      "sha256": "3d188ed56db90860479959599affaee3b73f5de036014ce0a6e40f9acc503948",
+      "gitBlob": "a3be21a3d2a37d17056b398a03d76e2dd84fa120",
+      "acceptedBytesSha256": "3d188ed56db90860479959599affaee3b73f5de036014ce0a6e40f9acc503948",
+      "checkoutTransform": "identical",
+      "bytes": 7737
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "740de09ab34fba6110b498a87e6bd6a5b4b28237efca09fe8904ef7121d46f42",
+      "gitBlob": "10d367b940bfce750da09f29fff512dafe50d690",
+      "acceptedBytesSha256": "740de09ab34fba6110b498a87e6bd6a5b4b28237efca09fe8904ef7121d46f42",
+      "checkoutTransform": "identical",
+      "bytes": 54864
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "c570ff70d610699bb84d5f4fd251aa8e80fabf00a07e3ee31d2aada8e9a22bbf",
+      "gitBlob": "c6c02e308d83dac3e58bc8e68b5010e0b2677539",
+      "acceptedBytesSha256": "c570ff70d610699bb84d5f4fd251aa8e80fabf00a07e3ee31d2aada8e9a22bbf",
+      "checkoutTransform": "identical",
+      "bytes": 3042
+    },
+    {
+      "path": "test/features/account/local_data_deletion_test.dart",
+      "sha256": "77669b2e0f12342133a7d0c4182d4595b22daf3deef9dfb96d407f53352df99c",
+      "gitBlob": "61b99d37209ec5bd2a639bfdb4c28ceb65029601",
+      "acceptedBytesSha256": "d97efa6d37edf30ec83f57415bb7ea902c964e3335c70cae99b230b36dbe4eec",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 25743
+    },
+    {
+      "path": "test/features/achievements/achievement_share_card_use_cases_test.dart",
+      "sha256": "d0fab63a75b2ce62afa03e5aea94850993a713c35f1f1eec0f1d426f7c447224",
+      "gitBlob": "5208dffa59f7fe90600d9a0b328724e932b94c1e",
+      "acceptedBytesSha256": "fda7b8d92622478e21c5d5a144592d4d4cdb6dd1a14dc3c132011570b1fb3272",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 10373
+    },
+    {
+      "path": "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+      "sha256": "01e5cb92a259db852ca80dcc4a55f916a4e02a46292925312905d13d0d453185",
+      "gitBlob": "e754a7196c8fe86cc93df2e021b1f66111e916a1",
+      "acceptedBytesSha256": "dcaf4158b9a3fe017a20c36b2688d5ef509ea845ed907a6b07900753a4b53113",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 40973
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+      "sha256": "17219d24609c212b0f9c1e7ceb917877f426028e41f854b6f85e197be462f968",
+      "gitBlob": "b1623aecc77580cb9e8d5efc67fd15e7546ffc54",
+      "acceptedBytesSha256": "87d416f17b425ab6cd91e3428558d8fa64a46e3079df9f83e44e514110a9e85c",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 32162
+    },
+    {
+      "path": "test/features/assessment/assessment_comparison_test.dart",
+      "sha256": "5d974b53f7f3cd100663ac5552f93e5757e9ec72c7a34af2b5a5da12406097fe",
+      "gitBlob": "69224547f8dcb115cd94aa961f25c632385c8d4a",
+      "acceptedBytesSha256": "33e7ac242ef090c62d206f0cb0f7e8eae1bc6cd2ed559c79b21fec001d182465",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 33976
+    },
+    {
+      "path": "test/features/assessment/assessment_isolation_test.dart",
+      "sha256": "e9a886444ed41cb85354acac451b96657e55ffd995cc1d31678ffd8d9b5bd663",
+      "gitBlob": "c673fe89d7f9bbf7083f550562c0d18f7b2454f4",
+      "acceptedBytesSha256": "6f906366492268a04b99bb7714fc39e3d0d0998b446a46c3b1af5a70635602d1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 29177
+    },
+    {
+      "path": "test/features/device_model/model_manifest_test.dart",
+      "sha256": "bf065de7e485c372db5f7c5176718d31566fafdf2b5221374325d402fdae7f9e",
+      "gitBlob": "59f1b118662b33565e0d251c34eb0975d2278bac",
+      "acceptedBytesSha256": "0be71c5491c254b345340e9909fd9b99a9a94a2adaa7b96ec15f7bbecbc4ca31",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 1923
+    },
+    {
+      "path": "test/features/goals/learning_goal_use_cases_test.dart",
+      "sha256": "993b5ace7badbc280c7cb4549eb7007897565bf5231876696ced7480440fda2c",
+      "gitBlob": "71749aae4c90b1d43695dfeb18e141429aafea4b",
+      "acceptedBytesSha256": "976cf415585909464266ddca9ef625323cbd8120cc466ffac01c068a90d94cdd",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 19450
+    },
+    {
+      "path": "test/features/history/learning_history_reader_test.dart",
+      "sha256": "a8ae607fb45fe016f232c5a09c40bf4ffe43f7e4c56537d62cdd9326955f9e66",
+      "gitBlob": "3657bcb1631380d2a88a9d45deb766c02cdbe771",
+      "acceptedBytesSha256": "a8ae607fb45fe016f232c5a09c40bf4ffe43f7e4c56537d62cdd9326955f9e66",
+      "checkoutTransform": "identical",
+      "bytes": 67018
+    },
+    {
+      "path": "test/features/history/learning_history_replay_test.dart",
+      "sha256": "853e1ebdcab287eba57ffc56804157102d4963099d43662fd23bf724d8229085",
+      "gitBlob": "dad37fc9fc62fe0ad2d9b4aae7c5c2869cba8cfe",
+      "acceptedBytesSha256": "aeabe179ed44f2eb655265cae9aaa3b771c65c43f6cbef032aeb8f2cfbb762af",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 20860
+    },
+    {
+      "path": "test/features/identity/upgrade_guest_owner_test.dart",
+      "sha256": "065c2caa3a0929b9f81e4d4c8dfb937b349b7bd49e1ff8ebd347217003422ce1",
+      "gitBlob": "e8cc990a967369588644ed05317722163109286e",
+      "acceptedBytesSha256": "445e33d6767914ae460ebe4ded0cc60bbe36ccfd4960b4bc114af4424e1c07ca",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2752
+    },
+    {
+      "path": "test/features/learning/assessment_evidence_isolation_test.dart",
+      "sha256": "26940037d99eccc0709329621f094de6c7fffb833a1d629c1fb6c42f07fbf645",
+      "gitBlob": "29fa620f616ce6b81d73e56022b3ccfd34f333ac",
+      "acceptedBytesSha256": "e5fce1b8627e58aae68f4d3fec968586398cc7e0b3ef125eb6accb9dca48e84f",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 19362
+    },
+    {
+      "path": "test/features/learning/cloze_mode_adapter_test.dart",
+      "sha256": "b0f1a5e0a2dc3f52517c9422925dc588ded807eda54ec10582017e68e7fc9765",
+      "gitBlob": "85aa22af7ac7c65d1e226c0a722f4a44c87bc38d",
+      "acceptedBytesSha256": "b0f1a5e0a2dc3f52517c9422925dc588ded807eda54ec10582017e68e7fc9765",
+      "checkoutTransform": "identical",
+      "bytes": 21754
+    },
+    {
+      "path": "test/features/learning/contrastive_feedback_test.dart",
+      "sha256": "5f59d7aadd82de34f542a7b2f349299ab57e26feb49391ce29a5515c110e5c90",
+      "gitBlob": "7ada71c9d9bf84a076f22ea75c9e7071bfc85e09",
+      "acceptedBytesSha256": "663a6bd0a4eaa742a13d4de02bd0e713f43bbda4e6abdf790e723e0724e3ed5c",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 31487
+    },
+    {
+      "path": "test/features/learning/current_activity_evidence_test.dart",
+      "sha256": "68b4000478e9bb466bf2aa023941877d85ea3727faa42406d222930da8536738",
+      "gitBlob": "b404d9b43a23ad4ea2174a158bf154acf92e8225",
+      "acceptedBytesSha256": "7f358b8e46a13794f4122f25f005c9c920b3f90bc430bf94950533a6b701cd03",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 38101
+    },
+    {
+      "path": "test/features/learning/definition_quiz_mode_adapter_test.dart",
+      "sha256": "c6f4b5e91b7464dc3a0a825dbd29aba44b581d89463a8eaabed75f9232e1b385",
+      "gitBlob": "6b869bcd73aa9df6e5f27eb41a336dcf28d51984",
+      "acceptedBytesSha256": "d046bf7720a9639deb357f1c5d3fdfac684eed1fe6d085eb129a363efc04822d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 23294
+    },
+    {
+      "path": "test/features/learning/drift_learning_repository_test.dart",
+      "sha256": "8ecfeafb4dbc86e227adbb93024e4436c195065aa691086ad49d3b5356a064d7",
+      "gitBlob": "9b644847769e023cd7cadd166c21ef93d6cd592b",
+      "acceptedBytesSha256": "8ecfeafb4dbc86e227adbb93024e4436c195065aa691086ad49d3b5356a064d7",
+      "checkoutTransform": "identical",
+      "bytes": 74463
+    },
+    {
+      "path": "test/features/learning/evidence_eligibility_policy_test.dart",
+      "sha256": "f8ebffc6db97ca94697e6fe58f55f67fa79d4064ca3776168e38e39f9745322a",
+      "gitBlob": "30bd13b80c80a419a526c0e787d23a2b7ac85d64",
+      "acceptedBytesSha256": "e4e38dae30d1ebc97f929cf50ce5f3c13ad2f09d3d4a216b16715ce751b225b7",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 24688
+    },
+    {
+      "path": "test/features/learning/handwriting_scratchpad_test.dart",
+      "sha256": "010366224025c1048096ab55b488ef26b3d7a1478852ea5f6de039d813c32a38",
+      "gitBlob": "41a14d913d076230ad651f4f6cb6d3547f5b7903",
+      "acceptedBytesSha256": "62cff1b59bc322fe8e12743f722dc00d91cb0f87c4ac0fdf8e4b59f74c8f86f1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 9123
+    },
+    {
+      "path": "test/features/learning/hint_policy_test.dart",
+      "sha256": "eca4583fd536dcb23666a08057bfd8fb1f9673f8a629f335b4936ac6938c0ced",
+      "gitBlob": "414719e6dccc3b438948204b0f1f916e2e70b7b8",
+      "acceptedBytesSha256": "dae2405e2cdc7618526d93893ceba25581bbce9eedb309545910b3767a726617",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3511
+    },
+    {
+      "path": "test/features/learning/learning_recovery_foundation_test.dart",
+      "sha256": "3f715419ebc0f277c85c6923409314edd49ba392346ff89e5a486381b2e54e0a",
+      "gitBlob": "eb28c985d09d817172bab2fa5063de04429ec06e",
+      "acceptedBytesSha256": "3f715419ebc0f277c85c6923409314edd49ba392346ff89e5a486381b2e54e0a",
+      "checkoutTransform": "identical",
+      "bytes": 42087
+    },
+    {
+      "path": "test/features/learning/learning_side_effect_reconciler_test.dart",
+      "sha256": "91892d1016b1b2f4c712255140855f05d064157acabd2008c3fe11576fde36eb",
+      "gitBlob": "ee2f17e611074830fcbbc5f3dd694e682e863fb0",
+      "acceptedBytesSha256": "91892d1016b1b2f4c712255140855f05d064157acabd2008c3fe11576fde36eb",
+      "checkoutTransform": "identical",
+      "bytes": 61353
+    },
+    {
+      "path": "test/features/learning/learning_use_cases_test.dart",
+      "sha256": "4d2fd29c9a70ffd6d7a6ac2e1b449bd828636fe71a0b90c3e89c071ea291fc04",
+      "gitBlob": "3e65dfaca97e2ae86619db5f7e2cd6bb1a0e1c58",
+      "acceptedBytesSha256": "4d2fd29c9a70ffd6d7a6ac2e1b449bd828636fe71a0b90c3e89c071ea291fc04",
+      "checkoutTransform": "identical",
+      "bytes": 76317
+    },
+    {
+      "path": "test/features/learning/lesson_mode_registry_test.dart",
+      "sha256": "b07840c10671067abaeaf11870db0113c345cfad9a758644bc62d95398b9db6f",
+      "gitBlob": "e55efd0ced403532858c26c30cc1c851ef4cb502",
+      "acceptedBytesSha256": "3daf27ad2fb25c9bff1a48b31c6ed9cede4dcbc81c4c3ea635f338e635ebb2c2",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 8946
+    },
+    {
+      "path": "test/features/learning/matching_mode_adapter_test.dart",
+      "sha256": "d0a9a2a3a722a0bedc564e9a2ab5dbb4bd2419c9826d80e1110aeeccff6d96d7",
+      "gitBlob": "b03c56370723c7098a73abc173b6e2d79f6e9f5b",
+      "acceptedBytesSha256": "860e12533f7e1a64eeddbb88273a0b8cd8f195b91626e06259e2d20ab15140a1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 187906
+    },
+    {
+      "path": "test/features/learning/native_mode_adapters_test.dart",
+      "sha256": "7d13d22905259c4c9130646be04c2106a6980b1babf58e43b118c409c51044e6",
+      "gitBlob": "813dc69364467931fd0669c1506d085153f5a951",
+      "acceptedBytesSha256": "265846d2cdcb2d95fa009a063bf37ecc8e9a04aadc6d13ae96c7f5322b5972c1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 5788
+    },
+    {
+      "path": "test/features/learning/pair_matching/pair_star_policy_test.dart",
+      "sha256": "b157c6d0b912d17bc43d82148d912f43896f6a7daf488332c5a762ac21d57dd4",
+      "gitBlob": "6f29e678755ad79f77440e145ab0f5f1d789be84",
+      "acceptedBytesSha256": "7f141cc6c02c7650e3b585b74696f26369720953b1970314ae8ee78cdfe4e7d2",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 2922
+    },
+    {
+      "path": "test/features/learning/r15_learning_feedback_visual_test.dart",
+      "sha256": "757468746e85ea451a4abb6603eed9b4e1cd855dbc29311ae60e08697cd9d104",
+      "gitBlob": "7d2ebbeb7e9058b7da98bca5d6b7c2a9afeb6711",
+      "acceptedBytesSha256": "0f45343877f36061c73afaee22e374f82bb6ee1c4051fefa3642ac5db6ea8904",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3716
+    },
+    {
+      "path": "test/features/learning/session_configuration_policy_test.dart",
+      "sha256": "c6d1daeaa41368db727ce30fccdcd7b0057e22f3bf5bf5c829c463a7e31b2063",
+      "gitBlob": "88bdc6522fda4b42758ef662f309332bdd420105",
+      "acceptedBytesSha256": "f347ab3647abe43c2dae7c898e860481d06d7d1c1ed6a0532682802091d7eb76",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 18232
+    },
+    {
+      "path": "test/features/learning/session_configuration_sheet_test.dart",
+      "sha256": "733d055e8048b9ee2da13b666835e8e123a600ba47151aeef1b20032193715f2",
+      "gitBlob": "bef8d3b49c2c580120ef8b7393d429a7d32c523f",
+      "acceptedBytesSha256": "60f678693578ef1ea8e56a34ad537e5abc944885f56126ce8e779a7bfa8ceb20",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 20120
+    },
+    {
+      "path": "test/features/learning/session_configuration_store_test.dart",
+      "sha256": "8a1a66ce9eefa83db418bad9055359cea230fe20d585a22428f6b484f5cf1c06",
+      "gitBlob": "0185181824666629a959aee6aaaa073f7671c9ae",
+      "acceptedBytesSha256": "01d0a0437b4d28334a6a9dc7b569d05dea81111bc1c7377664119bbfea65e1c8",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 14524
+    },
+    {
+      "path": "test/features/learning/srs_policy_test.dart",
+      "sha256": "31dc36aeeea2d3d8e943fdd7d0eb9027e75a5f1fa2a8b8c0dba0cb3bbb9a407a",
+      "gitBlob": "b9278a13ef11384a5aac331d1b00b75bb8969098",
+      "acceptedBytesSha256": "31dc36aeeea2d3d8e943fdd7d0eb9027e75a5f1fa2a8b8c0dba0cb3bbb9a407a",
+      "checkoutTransform": "identical",
+      "bytes": 4025
+    },
+    {
+      "path": "test/features/learning/unified_lesson_controller_test.dart",
+      "sha256": "e460be958267a91da86db7d23ff0153ca5d2cf72443dbde7e4b736788929a020",
+      "gitBlob": "1e4acdaa1ebf3ed7724655d78951c89eaf784013",
+      "acceptedBytesSha256": "ba0b083eb97b865a4f46dfebb7052ad9cb290ca665e3d94ed04ad2c38c002eac",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 221052
+    },
+    {
+      "path": "test/features/learning_packs/content_quality_policy_test.dart",
+      "sha256": "bd04299d5f06de4b03154603a8b0d41025be91e7a56760df2135610be8a8c09c",
+      "gitBlob": "068b90d68ed1d28e1f565c3cbc34ab72002362aa",
+      "acceptedBytesSha256": "4094d6c9b7548e01e4b441fe1f6f9d541ab540be42073a4065039fc85f6e1090",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 17607
+    },
+    {
+      "path": "test/features/learning_packs/learning_pack_detail_test.dart",
+      "sha256": "8951ede0138f88b61683b93402f5a3b2237daefccb10bfd5085d4a53ce7a4b6d",
+      "gitBlob": "0f78b0a73815187faa17796a22321ba0ae38cff2",
+      "acceptedBytesSha256": "8bd0cedb3637aee9e6fdcba5570267e14fcaee8225f54eaaf02155a1bb431825",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 26812
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "sha256": "b2565b087db4439520cf786fb944c750222fcde933bb4447e3244b783a697bf9",
+      "gitBlob": "0bea50ff9db4e74ee1df4f1340dee6e9dd18169d",
+      "acceptedBytesSha256": "b2565b087db4439520cf786fb944c750222fcde933bb4447e3244b783a697bf9",
+      "checkoutTransform": "identical",
+      "bytes": 17340
+    },
+    {
+      "path": "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+      "sha256": "1be357c0476d6471756c101d391bc601222c90c57646d8b39118fa782ab9874e",
+      "gitBlob": "a8e39c106b39801f6667f951855967081b3fe945",
+      "acceptedBytesSha256": "9742e3c06a660a3e9fcb5b0fedf7d3793f6c7f54bcbc55523690a73744397e0d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 1952
+    },
+    {
+      "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "sha256": "12cc01ee4db52f10e1c34c9919e6bb682b46b9fe4827b5757242a4b023df409c",
+      "gitBlob": "f9bb4874cd2ebeaf2e297d5f4c586408f700540d",
+      "acceptedBytesSha256": "12cc01ee4db52f10e1c34c9919e6bb682b46b9fe4827b5757242a4b023df409c",
+      "checkoutTransform": "identical",
+      "bytes": 16026
+    },
+    {
+      "path": "test/features/motivation/streak_use_cases_test.dart",
+      "sha256": "9f9a9049ca2dc951a5e26dc8cab50bf3d42dccb2542e5a18ae07cf963d6d05e0",
+      "gitBlob": "3403edf17341e6b40e865e8234a4d6568d311fa8",
+      "acceptedBytesSha256": "3fc1a09be7e0f7df438e54e35d52f67bbdc9b1834832a3def30dc017e55c1223",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 13166
+    },
+    {
+      "path": "test/features/motivation/timezone_policy_test.dart",
+      "sha256": "334c717fa1c4aed7be6fb5d617333023935f94fa0537200dfb918b008e5de654",
+      "gitBlob": "b44c6be03546593cf2db0ddd9b8d90562fad8168",
+      "acceptedBytesSha256": "cd3a7db8d080b83d91fbee1ec578f6e4310afcb1c781b7454bcbb3e5a9a7159b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 6633
+    },
+    {
+      "path": "test/features/offline_content/offline_content_manager_test.dart",
+      "sha256": "b55925259ef62f49da4c9b9bc6aa3343920aa4fee9a3547f08b7f6656fb34ddd",
+      "gitBlob": "4c0aafe8ec4c4a3f1fd00489d65849516943a930",
+      "acceptedBytesSha256": "023538788eb157aab7707db44a5f89d7592e052137fe8b1af26f95179f179d0f",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 65699
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "sha256": "dc46322329b2b0efb4f2d4243f28899634d12300a075edd80d15a85d93a39541",
+      "gitBlob": "edd7d7c1b36c44fa67c198440cc6f93c1d7bca93",
+      "acceptedBytesSha256": "be3bf4179d8e04a91524fac5f6a933a91dbbfb379e18ddc965100de31a4429ad",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 12080
+    },
+    {
+      "path": "test/features/preferences/learner_preferences_use_cases_test.dart",
+      "sha256": "891c72a97e7b04ac02da51bf3e0b55fe724c99fb7e4a4d45b4018027be81fdd8",
+      "gitBlob": "e448a2ea143610d667bf1c201d799d44746e407f",
+      "acceptedBytesSha256": "fc1a25cf3085ef1ff9b7494fc67982e0b51a65f95a65cdf20492de3bd336516b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 15472
+    },
+    {
+      "path": "test/features/progress/learning_calendar_reader_test.dart",
+      "sha256": "213a7f7a410e21eac8491f4c23407276bc3a71450e6afe6f9775c76c45e4497b",
+      "gitBlob": "6d547adcf35f6a267e4adde0bb68b1d29e7c60e4",
+      "acceptedBytesSha256": "5fca6ce10ef1c648ed4829c23b99189baac82833889e3a09a50ab52dec7b9f58",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 16480
+    },
+    {
+      "path": "test/features/progress/personal_learning_profile_test.dart",
+      "sha256": "47464c989e633d1e1cbc0b01011c466eccc49b9d32be1acff765396abea93601",
+      "gitBlob": "636be12e1a863e13cf18d77bec2b27b4b962c5c4",
+      "acceptedBytesSha256": "47464c989e633d1e1cbc0b01011c466eccc49b9d32be1acff765396abea93601",
+      "checkoutTransform": "identical",
+      "bytes": 24569
+    },
+    {
+      "path": "test/features/research/research_runtime_sync_integration_test.dart",
+      "sha256": "4e0241911acdd4428c06817f4df2d5841856df2459f4082609da85963c84c18f",
+      "gitBlob": "f5e23ed0dacbe0b8dc1ca8845db85b3fcc936013",
+      "acceptedBytesSha256": "4e0241911acdd4428c06817f4df2d5841856df2459f4082609da85963c84c18f",
+      "checkoutTransform": "identical",
+      "bytes": 51675
+    },
+    {
+      "path": "test/features/review/content_report_use_cases_test.dart",
+      "sha256": "19e68d0cad2810090ff5e1865c870f38c304951d7d873bc49d669176a457e45b",
+      "gitBlob": "7854ca15fdaa81cb19b5e53199f25897d91ae071",
+      "acceptedBytesSha256": "d284e4ba6ddbc6c5936809f60756dd65e6064ac0eef6ee0763efcfe72668a646",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 7122
+    },
+    {
+      "path": "test/features/review/review_center_reader_test.dart",
+      "sha256": "b359b2a99ba3ae6711d6411af46b9324d39a62d6de6cd2ac9a6f866ab972edfd",
+      "gitBlob": "f22dd0a2885fe0a43a94668dfe004fd10a5fdbe9",
+      "acceptedBytesSha256": "b359b2a99ba3ae6711d6411af46b9324d39a62d6de6cd2ac9a6f866ab972edfd",
+      "checkoutTransform": "identical",
+      "bytes": 70795
+    },
+    {
+      "path": "test/features/rewards/avatar_progression_policy_test.dart",
+      "sha256": "3eb5b10b7f9b0731b711b2c1097fbc9da5618c5987aea5c8a95b20568ee743b8",
+      "gitBlob": "af1f9b9677b1c6aa7900c37ea87bc77962617452",
+      "acceptedBytesSha256": "2814c6bcceac88c648b128270b649398dd90ae88c94cabe19325db810294810e",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 7678
+    },
+    {
+      "path": "test/features/rewards/reward_use_cases_test.dart",
+      "sha256": "f0bd7e0e5f46b6e343a387b01a21dfd52aad414ad066217d65ac6f2a451d5a8b",
+      "gitBlob": "61aca818e80961c767c9ce976a8b240a25401a82",
+      "acceptedBytesSha256": "3ba1b766b36aa5c1c7865d84884fa38d8fd12e17a4981d978e2aa0ddb5a0048d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 32096
+    },
+    {
+      "path": "test/features/sync/cloud_sync_policy_test.dart",
+      "sha256": "28d29df0411fa3363b7ff14ac80952e61f39b6a65de5de041798454fa8fdafae",
+      "gitBlob": "90ce628d64d03f970fb5f01ae327ec69aed26439",
+      "acceptedBytesSha256": "59d384d875460739df2df71fce15e61f6b34a197080879225c89302e17b62b94",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 5382
+    },
+    {
+      "path": "test/features/sync/learner_preferences_sync_test.dart",
+      "sha256": "2f4e69333d9db99665257b68e6b488876c2efb29f936bd7798324a2fb6e67ff7",
+      "gitBlob": "d859c5a014058e02d42344fb8a43a302b90e9511",
+      "acceptedBytesSha256": "944b2a3ac15bd5d3d5a407f11647d034d1dea01007cdb97b9c88b30290ec0221",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 42974
+    },
+    {
+      "path": "test/features/sync/research_withdrawal_reopen_test.dart",
+      "sha256": "34e4463f7029f2c08b508489c3bde10cdfe594a9be4612ff449ad608dd2f52d6",
+      "gitBlob": "d4188f6c234d775ef29214a62b1dd3a5dc2e9539",
+      "acceptedBytesSha256": "5b16484e05efd12ad190862bae8a9088802c8ea6f873a607e1cb0ff669725aca",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 9013
+    },
+    {
+      "path": "test/features/sync/reward_transaction_sync_test.dart",
+      "sha256": "ae2d8b05f2364dbc62539e0480df25b35c66e6c01fed618c02f128a6c32512d5",
+      "gitBlob": "825ba7879ab9f864cb48604bcfbc13587ddc1ab2",
+      "acceptedBytesSha256": "4df14c6615a47e4f08bad87ce4abf8e5786d9f1d0ac79dfdbd2ecc3e30072285",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 80751
+    },
+    {
+      "path": "test/features/sync/srs_state_sync_test.dart",
+      "sha256": "d98dcc66cdfb0fe39535e6b5384eb4033d014f4939fd41f283701a8b5053791c",
+      "gitBlob": "ead76b240a41ab739cb6a7583deaab6eec6aac7e",
+      "acceptedBytesSha256": "7ed68af293432f68ac2e32f438482ab908454c2aaca9e7e9ff2fcd92efdc0188",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 13935
+    },
+    {
+      "path": "test/features/time_tracking/active_learning_time_controller_test.dart",
+      "sha256": "ed29bb326718ad314da44b139d7699aafae8da1782643ef00beb21fecc0ba36e",
+      "gitBlob": "14d107146018705fcb7bc67f66706fbc484d2e5e",
+      "acceptedBytesSha256": "bb967321221ddafbfcba8e724736a8b47c34233c9570361532bfb43e0691a325",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 15944
+    },
+    {
+      "path": "test/features/time_tracking/focus_timer_controller_test.dart",
+      "sha256": "c2156c29e947c302b3d8686c42d18c2b4073c42cd2c350eb14dd6f015ba75c88",
+      "gitBlob": "7a6497464a2dfcb750552fd89df0a7909cb19969",
+      "acceptedBytesSha256": "386a83d0e5f9dc425b4615c90c26bdfa22e925be8088c070fa17660f1625e5f1",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 12727
+    },
+    {
+      "path": "test/features/time_tracking/focus_timer_widget_test.dart",
+      "sha256": "f986c07287ad411d5989124fdea5c6fe9837e58c50f3f5c853d5ab083ebe48c5",
+      "gitBlob": "092984a23f92ded5c3423ba3bb8ca31679dbbd19",
+      "acceptedBytesSha256": "82baf7a74e38fed6e9474757360c1bf13961daaa0c715550932b4840b1f0434d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 3270
+    },
+    {
+      "path": "test/features/time_tracking/learning_time_repository_test.dart",
+      "sha256": "d753049f8ffcf8344f601b40c7a8e16247e9d75a9f336377e6b43f7e186a15d8",
+      "gitBlob": "164766e6e9474ee1a23ceab2d1c5e358e6fb1bce",
+      "acceptedBytesSha256": "66715ca549992673d730e3f3fb7e1d3e717e547d7f0d3e954ea304968b221bc6",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 8622
+    },
+    {
+      "path": "test/features/vocabulary/cefr_sense_review_test.dart",
+      "sha256": "0f25f9714bbf6df515ed1597f1e10acc71ef39d9c8ca1b255df4ecf79bae8724",
+      "gitBlob": "126fe6d8aa0ec2c40d0b3ad3b40bfbaa4629a8a9",
+      "acceptedBytesSha256": "6e19edcd2ab8eb9babc2edc43dea7f191fe45e7d14010baacc20f0418bfbaf36",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4882
+    },
+    {
+      "path": "test/runtime/runtime_feature_controls_test.dart",
+      "sha256": "ea9b285cc2fb3e33d1c06e6d003d6c72212e2d3aca0df2e697ddb15f6ff152aa",
+      "gitBlob": "1c80349381a1061dfa2082cb025389353f120be6",
+      "acceptedBytesSha256": "e3f75645c48e619a99d8747671f7900f47c555d16d04b8e7e5f5f2ae7f1c30f7",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 21310
+    },
+    {
+      "path": "test/scenarios/file_backed_sync_recovery_test.dart",
+      "sha256": "0adea411c16a426c8aab7cf9f2ceaa6de349ce68a7177ebed44561283bb0f4a7",
+      "gitBlob": "d1f4e27b87a135c9d6380166a2d4b698ebc560fe",
+      "acceptedBytesSha256": "325676c31c716d6b95ec4b83f7aefc488c5e4d16b5e50e93e930531a5032d770",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 12673
+    },
+    {
+      "path": "test/scenarios/runtime_kill_switch_journey_test.dart",
+      "sha256": "ebeeed1f8ea52d7004353f37707c93ed9e00bcf4363cdedb842001fbe521b413",
+      "gitBlob": "69dc3d9df7fbef05e43f617489c4b25f80951dd1",
+      "acceptedBytesSha256": "ebeeed1f8ea52d7004353f37707c93ed9e00bcf4363cdedb842001fbe521b413",
+      "checkoutTransform": "identical",
+      "bytes": 16396
+    },
+    {
+      "path": "test/screens/learning_goals_screen_test.dart",
+      "sha256": "fe13bab73d82badc8f1af72bf5344b5afe5b34c0d2679dd1e77700ce6a030eb3",
+      "gitBlob": "de52c203f050fa70a2bac40a74f7ba9e003796b7",
+      "acceptedBytesSha256": "5fddb9c7ed1bfb148d9e1d65253c7626f15dfac539a26d514c0784369068b70d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 18832
+    },
+    {
+      "path": "test/screens/learning_history_screen_test.dart",
+      "sha256": "3d199cc20d4b6bcf470651dca209b56b289c5727b95d4f85a96de2f10a580b73",
+      "gitBlob": "14a810373394b71b3d0db2f6d4378635c2251dec",
+      "acceptedBytesSha256": "1f50aa8a602cdad2ef96d80bbf58a28c6add2fe7957c129294423b4eddd2cb02",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 51246
+    },
+    {
+      "path": "test/screens/learning_pack_catalog_screen_test.dart",
+      "sha256": "3e56a52f15ce498bd5185480b03e77cbe29809485a09e4fa13d740ce9cf5b5a0",
+      "gitBlob": "110b07d425d10c03bd763a988462406c50ed4e06",
+      "acceptedBytesSha256": "96696f6160bd6d9c8232211ac2d37ea73b9d54a6845309baf78fb388ee1f82a4",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 16252
+    },
+    {
+      "path": "test/screens/learning_pack_detail_screen_test.dart",
+      "sha256": "dc11d0bcd18aa69d81d2f64aba54fe2236dffe15c7e6f6d339504dc12f63c45c",
+      "gitBlob": "778e7dff0d15a85d1eb1520925c0a2a584881890",
+      "acceptedBytesSha256": "c342d666f33f8c001835716ccf5a01a2468a4c59aff744400653e571c8168b59",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 19528
+    },
+    {
+      "path": "test/screens/learning_preference_quiz_screen_test.dart",
+      "sha256": "644e3f721130a91a28b88f6969da73b73a3a5aab40b830a7b1af647fc4581e97",
+      "gitBlob": "5acf287e4360e26669cf14f78a50c3395505b6ab",
+      "acceptedBytesSha256": "644e3f721130a91a28b88f6969da73b73a3a5aab40b830a7b1af647fc4581e97",
+      "checkoutTransform": "identical",
+      "bytes": 7122
+    },
+    {
+      "path": "test/screens/mastery_dashboard_screen_test.dart",
+      "sha256": "c7dfe57bdaec76eb5b33b4ba3ca033c401851193cde23e70c7500ffa8a9234d1",
+      "gitBlob": "71ea0ec953451abe210a40956206f45388b731c0",
+      "acceptedBytesSha256": "5a69a08d258040d3f984c7d96de0f677c35ca9eebd774a2c3f75f35d5898bc75",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 18343
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "sha256": "313a2d50076b42de5dc46b963f204a7bc1825d93efe76e0d9918728ae52c34f0",
+      "gitBlob": "95446685dc3deb63749cce099511335460ae0c53",
+      "acceptedBytesSha256": "313a2d50076b42de5dc46b963f204a7bc1825d93efe76e0d9918728ae52c34f0",
+      "checkoutTransform": "identical",
+      "bytes": 41760
+    },
+    {
+      "path": "test/screens/offline_content_manager_screen_test.dart",
+      "sha256": "32e4268e5015c74ec3f5add042d6502c39fdd4e604164de19858e26fc896b0b4",
+      "gitBlob": "98bfc6776206cb05f6a0eab069459f8060ee705c",
+      "acceptedBytesSha256": "7cf785e19556ce0d1f1b2c02b28d78097f6c3613aeb6afd10170fe79574dfe1d",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 13557
+    },
+    {
+      "path": "test/screens/offline_content_settings_entry_test.dart",
+      "sha256": "191865521bff69617f7e63ce4f58c0eab43515875015385740bc40b305074a81",
+      "gitBlob": "84b6d117c811dcea545a465d9a2aa82c35656b5f",
+      "acceptedBytesSha256": "9a72046ecfd215c879547b4d64f340ad8368576529abd94ba731d3df785139b7",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4863
+    },
+    {
+      "path": "test/screens/offline_vocabulary_journey_test.dart",
+      "sha256": "5fd5f51a1a7ef4c558bef8958d397c6808e3f48d7a6652c7180a81663e407380",
+      "gitBlob": "48f06d0a5b5ef2b438ce7d4d7a21a1925855034b",
+      "acceptedBytesSha256": "5fd5f51a1a7ef4c558bef8958d397c6808e3f48d7a6652c7180a81663e407380",
+      "checkoutTransform": "identical",
+      "bytes": 14213
+    },
+    {
+      "path": "test/screens/pre_post_assessment_screen_test.dart",
+      "sha256": "125a871d29f1bfc4103cdba3901ed35213917282a2ad1ed85d776febee339fb4",
+      "gitBlob": "14f21626c16bf88e34242859e1b4f3230bcfecd7",
+      "acceptedBytesSha256": "d91f05a23e350bec32339f7c9fe201c19e08c7a11baec2d078f26050b4053a36",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 19492
+    },
+    {
+      "path": "test/screens/production_shell_navigation_test.dart",
+      "sha256": "205b163af4c7f7e0dca4be6657677e2ce897e15d2e4e7f2996fa85bd34e87f34",
+      "gitBlob": "22e82e965107c4625e566d8a08af536ab55ef1c0",
+      "acceptedBytesSha256": "205b163af4c7f7e0dca4be6657677e2ce897e15d2e4e7f2996fa85bd34e87f34",
+      "checkoutTransform": "identical",
+      "bytes": 18805
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "de775d4898ad9c5e86e763850571568bb6e7ff3c8bc48fe7f235ef4cd3c344a3",
+      "gitBlob": "c3e9784ca4ef0eac6e6601072b69ab325afe4643",
+      "acceptedBytesSha256": "d4efd1d47d58ae061026cdc0da46200ed14c624b4c6364aef43cdb2373cefb7b",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 69923
+    },
+    {
+      "path": "test/screens/review_center_screen_test.dart",
+      "sha256": "860d19e308ef9e45c4a33c054c5fd0d1800be9ff705eb82b09256e4d1fe35863",
+      "gitBlob": "e24149edebfcc0dcb2331565d74bf57d1be085d9",
+      "acceptedBytesSha256": "860d19e308ef9e45c4a33c054c5fd0d1800be9ff705eb82b09256e4d1fe35863",
+      "checkoutTransform": "identical",
+      "bytes": 35073
+    },
+    {
+      "path": "test/screens/sentence_scramble_screen_test.dart",
+      "sha256": "db7a6d3b841e30a65b4d92ec4321ddd07993088f5a16a5a93ab1c4a19b37ef4c",
+      "gitBlob": "4f64159f2e97d3052be67a0d209937b0e6f8b625",
+      "acceptedBytesSha256": "ac8a63abe01696af7ddc640abcd129fc50eaa61cd3fc71d55a8c5d0813e6e6b2",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 12317
+    },
+    {
+      "path": "test/screens/shadowing_challenge_screen_test.dart",
+      "sha256": "d4cc66ad63d00a7c4dd87089142897f68da33d40b6574c51f8263bd7c3b1b893",
+      "gitBlob": "60d16e293a25af345dbaaf2c27f6a1951115ef38",
+      "acceptedBytesSha256": "638b2b8bd55baa40ab309993ea05301f19e17b13dd35c3ac84801f6152436249",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 49962
+    },
+    {
+      "path": "test/screens/speak_to_text_screen_voice_test.dart",
+      "sha256": "6f8c54e8a70b7a77e8dd231a7f37d02955a858930bbc0c2bcbc430219f86c78c",
+      "gitBlob": "ee07be19d7c3cf5a4abd8883e30df4b30a5cc358",
+      "acceptedBytesSha256": "6f8c54e8a70b7a77e8dd231a7f37d02955a858930bbc0c2bcbc430219f86c78c",
+      "checkoutTransform": "identical",
+      "bytes": 55369
+    },
+    {
+      "path": "test/screens/srs_flashcards_screen_test.dart",
+      "sha256": "648db87b288b75e07042cf5ed916bc30a948e32ad358ac2c98595ff0dfa2d362",
+      "gitBlob": "7f0601d2fe9e6266c58abcd681de3ac02b0e9c6d",
+      "acceptedBytesSha256": "648db87b288b75e07042cf5ed916bc30a948e32ad358ac2c98595ff0dfa2d362",
+      "checkoutTransform": "identical",
+      "bytes": 47233
+    },
+    {
+      "path": "test/screens/study_reminder_settings_screen_test.dart",
+      "sha256": "cec873194102c02e8de762392ba5c8de08d051aed1b899bac3598205df496f5f",
+      "gitBlob": "51b060bda1f42046f5c4bb413641931c06eb9d4a",
+      "acceptedBytesSha256": "2e537408a63d7e195c2729d70c443ca3b081905ed1d23eb0f33780b52658fb52",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 25874
+    },
+    {
+      "path": "test/screens/today_hub_screen_test.dart",
+      "sha256": "251b129e81565a6359f3e883b39015f904ff85a4fe8cc7e332d98e03e49b0483",
+      "gitBlob": "4ef41b78268604a87a3974696ca87831e18aab30",
+      "acceptedBytesSha256": "251b129e81565a6359f3e883b39015f904ff85a4fe8cc7e332d98e03e49b0483",
+      "checkoutTransform": "identical",
+      "bytes": 47059
+    },
+    {
+      "path": "test/screens/word_scramble_screen_test.dart",
+      "sha256": "e7d16db813a04c164d9b0e19304320f7923036e042552bc7b5710863bbb08b0c",
+      "gitBlob": "9d91a043e15576bd86be3d25f5879f9bcc9689da",
+      "acceptedBytesSha256": "e7d16db813a04c164d9b0e19304320f7923036e042552bc7b5710863bbb08b0c",
+      "checkoutTransform": "identical",
+      "bytes": 9956
+    },
+    {
+      "path": "test/security/firestore-rules.test.cjs",
+      "sha256": "0d52a29fd9e7aee612046d954767df4e67470e9146d212faf9b0c3b4e385593a",
+      "gitBlob": "e5705deec2dc5def45d51901808dcb5e69f8e2fc",
+      "acceptedBytesSha256": "0d52a29fd9e7aee612046d954767df4e67470e9146d212faf9b0c3b4e385593a",
+      "checkoutTransform": "identical",
+      "bytes": 151063
+    },
+    {
+      "path": "test/widgets/gentle_streak_card_test.dart",
+      "sha256": "70e45633b2d84e49c07e30d0c282c95bc3ff8645ba89ca27a44b348b8f629b35",
+      "gitBlob": "249b91e46fd825779a93e178a8b7a24d13b59a86",
+      "acceptedBytesSha256": "97574917aac54f62df37546916439b75fac0b80e7dc9a84146768401727a65dd",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4847
+    },
+    {
+      "path": "test/widgets/recommendation_panel_test.dart",
+      "sha256": "cca1b53f4769def6f87e7a80673e229e5f22e8e21c8be73169522cfd4e537988",
+      "gitBlob": "f87d3d0b69e7b59b536731996db14591c2016ea8",
+      "acceptedBytesSha256": "16214da62e137aefe00cf5f9f9e1ca47a6e17921239b3631a1044c75f6e9ae35",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 7103
+    },
+    {
+      "path": "test/widgets/reward_avatar_preview_test.dart",
+      "sha256": "3d24b6d9c8fb00aaf5067cd8073b1cbc37ff3b001b36a3c80e0d33e9d59487a5",
+      "gitBlob": "36ad44ad5f9a2679d8f79a89f201c7325e483228",
+      "acceptedBytesSha256": "47765e143d626eeab68c0630cbcfb400af80fe2450d6b75c5d20b132e28f5deb",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 4179
+    },
+    {
+      "path": "test/widgets/rich_lexical_card_test.dart",
+      "sha256": "606c4ef20594f7c3d22d9d286be5254e9746aaf7db5ab882c482a9074af08db3",
+      "gitBlob": "8b0a1d977e5024067a388702a3414633f7ad2b5b",
+      "acceptedBytesSha256": "17efadae5e682248a1d62199e954bbe8c21d7fe884d545847f04d748dd18c469",
+      "checkoutTransform": "CRLF/LF-only",
+      "bytes": 12624
+    }
+  ],
+  "runtimeVerified": false
+}

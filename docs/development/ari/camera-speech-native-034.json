@@ -1,0 +1,34 @@
+{
+  "status": "REPRESENTATIVE_NATIVE_BASELINE_OBSERVED_FULL_ACCEPTANCE_OPEN",
+  "installedSource": "6fc67593c2a039e7062166085046d97578f8561b",
+  "apk": "build/ari-assistance-031.apk",
+  "evidence": "device-observations.jsonl",
+  "camera": {
+    "observed": "Capture/analyze returned unknown-object guidance; background/resume cleared old result and restored capture control.",
+    "limits": "No ground truth, recognized-word save, accuracy or live-provider result proven."
+  },
+  "speech": {
+    "observed": "One-time microphone permission; start/stop recording; unclear speech error with retry and no score. Returned with Android Back.",
+    "dashboardAfter": {
+      "correct": 28,
+      "responses": 42,
+      "activeSeconds": 1573,
+      "due": 0
+    },
+    "dashboardBefore": {
+      "correct": 28,
+      "responses": 42,
+      "activeSeconds": 1523,
+      "due": 0
+    },
+    "interpretation": "No added answer; active time increased50seconds. No recognized-speech or pronunciation accuracy claim."
+  },
+  "testInteraction": "Floating external bubble intercepted coordinate back tap; restored isolated app and used Android Back. Avoid overlay coordinates. No message sent.",
+  "device": "USB connected; stay_on_while_plugged_in readback2",
+  "next": [
+    "Native history and connected camera/speech checks",
+    "Remaining14workflow/mode acceptance",
+    "Whole-project review then sequential SDLC/Agile remediation"
+  ],
+  "originalAccounts": "Preserved"
+}

@@ -1,0 +1,49 @@
+{
+  "sliceId": "B18-G82-REV-09",
+  "checkpointInputSha": "3f221791bba8e78f3bd2d2e4dd3f2678049b191b",
+  "checkedAtUtc": "2026-09-19T12:16:10.642418+00:00",
+  "status": "PASS-static-integrity-only",
+  "frozenInventoryCount": 3610,
+  "policyAmendments": 3,
+  "inputHandoffHashesVerifiedAtPreflight": 27,
+  "unchangedHandoffHashesNow": 23,
+  "preservedEarlierZoneReceipts": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04",
+    "REV-05",
+    "REV-06",
+    "REV-07",
+    "REV-08"
+  ],
+  "preservedPriorFindings": 52,
+  "preservedPriorDispositions": 736,
+  "zoneDispositions": 65,
+  "focusedOracles": 52,
+  "totalDispositions": 853,
+  "pending": 576,
+  "observations": 1429,
+  "findings": 56,
+  "staticConfirmed": 18,
+  "candidates": 38,
+  "nextREV10Oracles": 5,
+  "outputHashes": {
+    "G8.2-review-ledger.json": "2450738589ecc27a6beb130770f3a0954cf7c8383366833d7dbdac9c14a0e6d1",
+    "defects.json": "569a01721eabfc23304d8bf26c6c3f6eeddd54eae7c820de94ae09019d990bf3",
+    "resume.json": "0765c0ab782672048b60996e9f2ff6be4a7c7f31e8fc5b7cd5179a80e91d61d1",
+    "continuation-context.json": "c572c23a38631b71ec46ec59a1763199ba685a72344d731febcd59d091a4f20d",
+    "REV-09-zone-review.json": "39fa6a7ce6f3aa008e60e53a08d50273649bde037ab1f52dc5ac411a845077c1",
+    "review-progress-before-REV09.json": "f926e8c9a7797756f206d43de09fb02749f21b4d6213ddb3c89987023e636004",
+    "resume-history-before-REV09.json": "db42ec0b826b0a40a86ff47687ab214b81aee9e0ac97c28250d520972b8035f6"
+  },
+  "applicationSourceChanged": false,
+  "runtimeTestsRun": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "limitations": [
+    "No runtime, provider, native device, research activation or deployment.",
+    "One failed Windows wildcard-path search corrected by actual path discovery; no acceptance skipped.",
+    "Frozen policy docs retained byte-for-byte; later user serial-dispatch authority is external."
+  ]
+}

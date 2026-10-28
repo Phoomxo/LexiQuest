@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "c2210ac4",
+  "apkSha256": "f72a2eb8f8ed8e7ae5b03dd2f16ad1c6c03ff170e4fd308fc8235d270b20cb5b",
+  "status": "REPRESENTATIVE_NATIVE_PASS_WHOLE_SCOPE_OPEN",
+  "cases": {
+    "category": "Provider navigated, filled and saved ARIQA010; saved receipt and native category observed",
+    "import": "Provider filled 3 rows, previewed then saved: accepted1 duplicate1 rejected1 missingMeaning row3; one book/หนังสือ/noun native row observed",
+    "delete": "Provider opened exact book/หนังสือ confirmation then deleted; deleted receipt and empty native category observed",
+    "disconnected": "Explicit disconnect showed not connected; native import pen,,noun returned accepted0 duplicate0 rejected1 without provider; category cleanup also worked"
+  },
+  "cleanup": {
+    "fixture": "ARIQA010 removed using native confirmation; starter category remains",
+    "bridge": "process terminal; no listener/provider observed; own reverse/capability removed, reverse list empty",
+    "temporaryDirectory": "Own _uo2udzu retained after combined cleanup command rejected by automatic policy review; unrelated alvs3idy preserved",
+    "originalAccount": "preserved; accidentally opened cached-account removal dialog then cancelled without confirming"
+  },
+  "testHarnessIssue": "Initial adb text semicolon interpreted by shell. Corrected shlex.quote; submitted prompt had duplicated opening phrase, retained in observations. Actual three-row result verified.",
+  "evidence": [
+    "evidence/vocabulary-native-010/observations.json",
+    "evidence/vocabulary-native-010/verified-delete.png"
+  ],
+  "limitations": [
+    "Representative native journeys only; all14 workflows/modes remain OPEN",
+    "Longer-than-eight-tool chained requests unverified",
+    "Late AI attachment to existing deletion confirmation unverified"
+  ]
+}

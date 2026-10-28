@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T21:42:42.876469+00:00",
+  "dispatchId": "ux-s01-ay-20260925-f934",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "selection": "deterministic current-model fallback, not Jev-selected",
+  "standardDefaultRequested": true,
+  "runtimeTier": "UNEXPOSED",
+  "liveJevCall": false,
+  "originalBudgetLedgerQuotaCache": "UNCHANGED",
+  "freshLiveRoutingPrerequisites": "executor capability, free credit/auto reload/shared spend/quota, durable reservation",
+  "controllerLoginBlock": "UNCHANGED; no repeated probes",
+  "heartbeat": "lexiquest-r3 unchanged"
+}

@@ -1,0 +1,47 @@
+{
+  "areaFingerprints": {
+    "AI": "5fe9197b8c8628ffe576d1174298b9ac08da2d50ba9d8cf8b49379a33a4e32c4"
+  },
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "3a0394c0f54bfa9d9ab81d6308559bbb54e12e28",
+  "baseSha": "3a0394c0f54bfa9d9ab81d6308559bbb54e12e28",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "5fe9197b8c8628ffe576d1174298b9ac08da2d50ba9d8cf8b49379a33a4e32c4",
+  "environmentFingerprint": "17a8b6e85d07bc1ba42f64cee4f53e43eb438fac0cc12e313303ed7d91e4e51b",
+  "selection": [
+    {
+      "Name": "Explicit Flutter tests",
+      "FilePath": "flutter",
+      "Arguments": [
+        "test",
+        "test/screens/associative_reading_session_screen_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "SourceArea": "AI",
+      "commandKey": "15aa2fb2443dfdee0fa5f0ffe325a230d9794a7db7ba03e045e5c252780de3a5"
+    }
+  ],
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-23T08:48:04.6083727+00:00",
+  "finishedAt": "2026-09-23T08:48:26.5623898+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "15aa2fb2443dfdee0fa5f0ffe325a230d9794a7db7ba03e045e5c252780de3a5",
+      "fingerprint": "5fe9197b8c8628ffe576d1174298b9ac08da2d50ba9d8cf8b49379a33a4e32c4",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-23T08:48:06.8504587+00:00",
+      "FinishedAt": "2026-09-23T08:48:21.0338484+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\3a0394c0f54bfa9d9ab81d6308559bbb54e12e28\\15aa2fb2443d-5fe9197b8c86-35c1d619\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\3a0394c0f54bfa9d9ab81d6308559bbb54e12e28\\15aa2fb2443d-5fe9197b8c86-35c1d619\\Explicit-Flutter-tests.stderr.log",
+      "postFingerprint": "5fe9197b8c8628ffe576d1174298b9ac08da2d50ba9d8cf8b49379a33a4e32c4",
+      "StdoutHash": "BB9BEBEF76701D1C70BC44E9250F67EE8B0B047447B8BC36C5030D70011AC08B",
+      "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+    }
+  ],
+  "postFingerprint": "5fe9197b8c8628ffe576d1174298b9ac08da2d50ba9d8cf8b49379a33a4e32c4"
+}

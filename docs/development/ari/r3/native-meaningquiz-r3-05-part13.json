@@ -1,0 +1,243 @@
+{
+  "taskId": "01a0d02e-195c-7aa2-917c-be297feef7c9",
+  "tablesCompared": 58,
+  "changes": {
+    "answer_attempts": {
+      "beforeRows": 117,
+      "afterRows": 118,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": []
+    },
+    "content_download_states": {
+      "beforeRows": 2,
+      "afterRows": 2,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": [
+        "updated_at_utc_ms"
+      ]
+    },
+    "events_v2": {
+      "beforeRows": 880,
+      "afterRows": 887,
+      "added": 7,
+      "removed": 0,
+      "modified": 4,
+      "keyColumns": [
+        "event_id"
+      ],
+      "changedColumns": [
+        "aggregate_id",
+        "causation_id",
+        "occurred_at_utc",
+        "payload_json",
+        "recorded_at_utc"
+      ]
+    },
+    "learning_day_log": {
+      "beforeRows": 2,
+      "afterRows": 3,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": []
+    },
+    "learning_sessions": {
+      "beforeRows": 65,
+      "afterRows": 66,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": []
+    },
+    "outbox_operations": {
+      "beforeRows": 359,
+      "afterRows": 360,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "operation_id"
+      ],
+      "changedColumns": []
+    },
+    "quest_instances": {
+      "beforeRows": 3,
+      "afterRows": 4,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "instance_id"
+      ],
+      "changedColumns": []
+    },
+    "quest_objective_progress": {
+      "beforeRows": 3,
+      "afterRows": 4,
+      "added": 1,
+      "removed": 0,
+      "modified": 0,
+      "keyColumns": [
+        "id"
+      ],
+      "changedColumns": []
+    },
+    "runtime_flags": {
+      "beforeRows": 3,
+      "afterRows": 3,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "key"
+      ],
+      "changedColumns": [
+        "expires_at_utc_ms",
+        "updated_at_utc_ms"
+      ]
+    },
+    "session_configurations": {
+      "beforeRows": 13,
+      "afterRows": 13,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "owner_id",
+        "mode"
+      ],
+      "changedColumns": [
+        "updated_at_utc_ms"
+      ]
+    },
+    "streak_states": {
+      "beforeRows": 1,
+      "afterRows": 1,
+      "added": 0,
+      "removed": 0,
+      "modified": 1,
+      "keyColumns": [
+        "owner_id"
+      ],
+      "changedColumns": [
+        "current_streak_days",
+        "last_learned_at_utc_ms",
+        "longest_streak_days",
+        "updated_at_utc_ms"
+      ]
+    }
+  },
+  "protectedTablesUnchanged": [
+    "local_owners",
+    "vocabulary_categories",
+    "vocabulary_words",
+    "vocabulary_imports",
+    "vocabulary_import_rows",
+    "srs_states",
+    "points_ledger_entries",
+    "reward_transactions",
+    "ai_usage_events"
+  ],
+  "answer": {
+    "added": 1,
+    "ownerMatchesActive": true,
+    "word": "a",
+    "promptMode": "meaningChoice",
+    "correct": false,
+    "evidenceClass": "recognition",
+    "providerProvenance": null
+  },
+  "session": {
+    "added": 1,
+    "state": "completed",
+    "correct": 0,
+    "wrong": 1
+  },
+  "installedApkSha256": "54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5",
+  "integrity": "ok before and after disposable clones",
+  "pidof": {
+    "exitCode": 1,
+    "stdoutEmpty": true
+  },
+  "restore": "restore.json",
+  "limitations": [
+    "No native review-center route execution or Pair repair/support;manual standalone quiz only.",
+    "No live provider;panel observed UNPAIRED.",
+    "Progress aggregate observed, no full history/proficiency claim."
+  ],
+  "recovery": {
+    "failedMethod": "initial audit assumed id on all tables;IndexError on events_v2",
+    "correction": "Read PRAGMA table_info and resolve actual primary keys;no native rerun"
+  },
+  "eventReconciliation": {
+    "addedEvents": 7,
+    "modifiedExisting": 4,
+    "modifiedMeaning": "Only coins/reward/quest/streak projection cursors move to the new source event, as _writeProjectionCursor implements. No old answer or source event rewritten.",
+    "source": "lib/features/learning/data/drift_learning_event_store.dart",
+    "line": 1466,
+    "newEvents": [
+      "StreakPolicyApplied",
+      "LearningProjectionApplied",
+      "LearningProjectionSkipped",
+      "LearningProjectionSkipped",
+      "LearningProjectionApplied",
+      "QuizAttempted",
+      "LearningEvidenceDecisionSet"
+    ]
+  },
+  "remainingTableChanges": "Session configuration/download/runtime refresh timestamps; one day log and streak extension; one daily quest instance/progress; one outbox operation. Detailed local delta preserved.",
+  "files": {
+    "build/ari-r3-05/part13-native/adb-stderr.log": "be162705d2062f7f2969d0844c234619948b888bf446663a0efae177088b5dd4",
+    "build/ari-r3-05/part13-native/after-result.xml": "e460e87359312cd90ca4a51dab8b6a6aec26c814eefbecd407bc2a045d2562fc",
+    "build/ari-r3-05/part13-native/after.json": "847b7570fd2165fc3303f8e3d348ebaec3b41b886414fbccc44ea2b0a15dfc9f",
+    "build/ari-r3-05/part13-native/ai-state.xml": "586058e3d91045e6ab0d63378a4c04438bd2dea034e436dc664e38263d3b1697",
+    "build/ari-r3-05/part13-native/backup.json": "cc23c6f39ae27725f5b119f4f90dba721b24850bbef7e625cad6fb9424101131",
+    "build/ari-r3-05/part13-native/drawer.xml": "19e56e4b5c6a9475628c41e3742b85c64fae7130be86bc0959bd7a4a3d5ebab5",
+    "build/ari-r3-05/part13-native/launch.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part13-native/learn-return.xml": "8674f0efe380e8867cfe3d35b69de99b34ec1a31dd8885982411d27268d61e34",
+    "build/ari-r3-05/part13-native/learn-scrolled.xml": "aaf3ca85e1e991f34faa1be2b5659893e5a4fdd321072c84bd7728af5a282f99",
+    "build/ari-r3-05/part13-native/learn-scrolled2.xml": "9b1c88325814dcdbef124894ef2537bc27cda13936b5fd5317ccd7c6a90d4869",
+    "build/ari-r3-05/part13-native/learn-scrolled3.xml": "8674f0efe380e8867cfe3d35b69de99b34ec1a31dd8885982411d27268d61e34",
+    "build/ari-r3-05/part13-native/learn-top.xml": "ddcf05ae482041dc5b340aa07a3b3b28ea449dc3682ecb30dde2bcb46d3ac84e",
+    "build/ari-r3-05/part13-native/learn-up.xml": "e460e87359312cd90ca4a51dab8b6a6aec26c814eefbecd407bc2a045d2562fc",
+    "build/ari-r3-05/part13-native/progress-bottom.xml": "56ca99379b9a30253aad7346d145af0aab4a9da42c3c9b112ccfeec881590646",
+    "build/ari-r3-05/part13-native/progress-details.xml": "dce2ae2ec59e0bee148ee5f298fa3fd4f8a47cc62dc5e4c2962d6ae9f33c5d87",
+    "build/ari-r3-05/part13-native/progress-final.xml": "4340e11001f984875f2f64b9a249c544d960d7f795443aea07e7e9bc9b5678fe",
+    "build/ari-r3-05/part13-native/progress.xml": "5617c6fcef581598c724cd10b6a4ca2114ab46690a6954429f330529c33d5c6f",
+    "build/ari-r3-05/part13-native/quiz-after-tap.png": "0b1ae3a2b1b0e708fa65ae59590c0fb1236551fe2692f42ca4eb90d73b7274bb",
+    "build/ari-r3-05/part13-native/quiz-after-wait.xml": "f943c821728bfa9bdc2650cc88111a1519f78096b3819f0837b8df1051ab2f8c",
+    "build/ari-r3-05/part13-native/quiz-feedback-bottom.xml": "e0574e948e785befeec2431aab88d7f4ec20a404006f883a18a4cb889e3cfc85",
+    "build/ari-r3-05/part13-native/quiz-launch.xml": "69b74a25066360f9e4733ab86297a5eae444e586a143e3cf10e72c1f5a6edeb1",
+    "build/ari-r3-05/part13-native/quiz-question.xml": "7613ac1d39cf111dca2ae2c24f68b69fb756842886f79f062f13910f47e7fc4c",
+    "build/ari-r3-05/part13-native/quiz-result.xml": "811128bb0d05ba9aa33d40ecd1a4db7d71ac43a3b399c5cf8e9bb805610408fb",
+    "build/ari-r3-05/part13-native/quiz-wrong-feedback.xml": "99070325eeb994595956d27845e176de93352fcd2a7a7517ae42b1efd732c185",
+    "build/ari-r3-05/part13-native/restore.json": "0ecbba6c022dcca11b72ef5c062939afa558b65e2bf04c3c0e2499fdef5ed4d0",
+    "build/ari-r3-05/part13-native/starter-category.png": "47e99a1806ec369cd6a64cd96f75e5600c111c56539f4e7e1e3e1a352767210a",
+    "build/ari-r3-05/part13-native/starter-category.xml": "616fd1d1908decbbbc2c404aeeb8d950d1fd9497ae7dd3ce0338090d1c4fc32f",
+    "build/ari-r3-05/part13-native/storage-comparison.json": "440a5981d8400c40c0786761eff407e7663aba0a8abdd5a3ee89d16bf71520f4",
+    "build/ari-r3-05/part13-native/vocabulary-open.xml": "098f7a269e4b220a65d6fb06bb8fc3128f8f47d19b30cfa629d967ce64e3d19d",
+    "build/ari-r3-05/part13-native/vocabulary.xml": "19e56e4b5c6a9475628c41e3742b85c64fae7130be86bc0959bd7a4a3d5ebab5"
+  },
+  "sourceApplicability": {
+    "installedManifest": "source-manifest-r3-05-part09.json",
+    "currentManifest": "source-manifest-r3-05-part13.json",
+    "changedLibFilesSinceInstalled": [],
+    "observedBuildOnly": true
+  }
+}

@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B07",
+  "artifacts": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/B07-packaging-review.json",
+      "sha256": "406e6b72064ece14eeb49b89032b3dd76429178024b57cd0c9a4d604ef46313c"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-defects.json",
+      "sha256": "c9419195ae7e99bd310570a73a48946835465f780f7faddc911bc188349979f5"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/5cacd71e6d7f-29dc8202251b/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/5cacd71e6d7f-29dc8202251b/Explicit-Flutter-tests.stdout.log",
+      "sha256": "ab8f3f45f2b4c5786d2ee935b7999f3b9f9f8dd13f7ae83521e8df9f73a65800"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/5cacd71e6d7f-d4a1380e98bc/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/5cacd71e6d7f-d4a1380e98bc/Explicit-Flutter-tests.stdout.log",
+      "sha256": "45baa1043459bb63312c60383598118de256f64dc7ae8682e3a2340b9ade9b96"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "994385bddd1b3170d49332baf7ab4c0cd1d90fc23ed5a3b7cc5425764f2dbfce"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "b77b3a94805f25e3fcd3fe83520c514196af4d67f898d3d73e89c9f356be2a14"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "629c9fb49a0fa727faa1df8d37c148582cc432e833e08c44e1315230aad45d29"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "202f881fbf2437ec6623dad9b1a390ad6b61ac9f0290c825db66ad6abb9b9369"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stdout.log",
+      "sha256": "764b85de900f56e8fdc698cf4c271b31477e03461e732f7a25f8f248807faafa"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/edcd350db87f-3062e5ef130a/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/edcd350db87f-3062e5ef130a/Explicit-Flutter-tests.stdout.log",
+      "sha256": "d394194240a296df777c4d10ef8a7709c4ae1d0bcd594e593c9ca69c452ea403"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-03099b7b2a6c107bbb942294a4e101be6712ca794a75f35dcf646208a8b47469.json",
+      "sha256": "49d6c1dcbfa8c8dbb45d74fe5483cb26d73cadfa3c714c4e1dd3a52eabde5a5d"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-0dfd1dbda8a9db564fd01e85456debf33dfc10ff0a5702947199f13dbf87f72e.json",
+      "sha256": "a9eec5972cb1bda61fe2df8f1bb7d354783b382b3a9e3474d5f4c1623626295f"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-880144c4372ef7b879428bd30cc6e0ed5d1550c48a4620a0fb99c6776991bc85.json",
+      "sha256": "943248276898688dc9578d8997bda1a39904a5dd11e1ba533c08c27b6161a954"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-d423dd5655c7b1837a9092473a1f0cd6b31da492dbf0abc392a4434445a8fe1c.json",
+      "sha256": "e56a2e1f8a44d4658d7cb1e28ad9f28d297ea8e8f9565c92fb26d056da5f6e1a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-line-ending-repair.json",
+      "sha256": "92e093bfcb6ecdbf5f84b38aa1897d893c0a4dc1ee86a0d024b52e3ad85ee922"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-plan.json",
+      "sha256": "bc22eced213cdd25d61ed979d67c2d5cd198867f580ee4a3589cab1c3b754e9d"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "629c9fb49a0fa727faa1df8d37c148582cc432e833e08c44e1315230aad45d29"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "202f881fbf2437ec6623dad9b1a390ad6b61ac9f0290c825db66ad6abb9b9369"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stdout.log",
+      "sha256": "764b85de900f56e8fdc698cf4c271b31477e03461e732f7a25f8f248807faafa"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-behavior-red/targeted-learning-880144c4372ef7b879428bd30cc6e0ed5d1550c48a4620a0fb99c6776991bc85.json",
+      "sha256": "a350dbf529580cb6264287b44a8434e2e24e357ba54d8fcf89d3fc3470f9fefd"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "629c9fb49a0fa727faa1df8d37c148582cc432e833e08c44e1315230aad45d29"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "202f881fbf2437ec6623dad9b1a390ad6b61ac9f0290c825db66ad6abb9b9369"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-progress-red/targeted-learning-880144c4372ef7b879428bd30cc6e0ed5d1550c48a4620a0fb99c6776991bc85.json",
+      "sha256": "ec837ecbb3b3a0888dbba5b8287f9757ecba3482299bb4638da07410b9a23765"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "994385bddd1b3170d49332baf7ab4c0cd1d90fc23ed5a3b7cc5425764f2dbfce"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "b77b3a94805f25e3fcd3fe83520c514196af4d67f898d3d73e89c9f356be2a14"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "629c9fb49a0fa727faa1df8d37c148582cc432e833e08c44e1315230aad45d29"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "202f881fbf2437ec6623dad9b1a390ad6b61ac9f0290c825db66ad6abb9b9369"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stdout.log",
+      "sha256": "764b85de900f56e8fdc698cf4c271b31477e03461e732f7a25f8f248807faafa"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/targeted-learning-03099b7b2a6c107bbb942294a4e101be6712ca794a75f35dcf646208a8b47469.json",
+      "sha256": "49d6c1dcbfa8c8dbb45d74fe5483cb26d73cadfa3c714c4e1dd3a52eabde5a5d"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-readiness-red/targeted-learning-880144c4372ef7b879428bd30cc6e0ed5d1550c48a4620a0fb99c6776991bc85.json",
+      "sha256": "943248276898688dc9578d8997bda1a39904a5dd11e1ba533c08c27b6161a954"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/5cacd71e6d7f-d4a1380e98bc/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/5cacd71e6d7f-d4a1380e98bc/Explicit-Flutter-tests.stdout.log",
+      "sha256": "45baa1043459bb63312c60383598118de256f64dc7ae8682e3a2340b9ade9b96"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/b4af748f398e-3181249aa91c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "994385bddd1b3170d49332baf7ab4c0cd1d90fc23ed5a3b7cc5425764f2dbfce"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-17206593b7c6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "b77b3a94805f25e3fcd3fe83520c514196af4d67f898d3d73e89c9f356be2a14"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "629c9fb49a0fa727faa1df8d37c148582cc432e833e08c44e1315230aad45d29"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-60ee0292dcb6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "202f881fbf2437ec6623dad9b1a390ad6b61ac9f0290c825db66ad6abb9b9369"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/cdde29923d02-e8f4bdc4838f/Explicit-Flutter-tests.stdout.log",
+      "sha256": "764b85de900f56e8fdc698cf4c271b31477e03461e732f7a25f8f248807faafa"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/targeted-learning-03099b7b2a6c107bbb942294a4e101be6712ca794a75f35dcf646208a8b47469.json",
+      "sha256": "49d6c1dcbfa8c8dbb45d74fe5483cb26d73cadfa3c714c4e1dd3a52eabde5a5d"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/targeted-learning-880144c4372ef7b879428bd30cc6e0ed5d1550c48a4620a0fb99c6776991bc85.json",
+      "sha256": "943248276898688dc9578d8997bda1a39904a5dd11e1ba533c08c27b6161a954"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-regression/targeted-learning-d423dd5655c7b1837a9092473a1f0cd6b31da492dbf0abc392a4434445a8fe1c.json",
+      "sha256": "53e7fd060928ca5141d97cfe1eb93f7ef64f86cddf973e25d648d9ff5e0a4700"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-green/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-green/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-green/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-green/8277d77c787e-97fb853b4536/Explicit-Flutter-tests.stdout.log",
+      "sha256": "edfbc8b23897cbf459096c0b7fda90c2ae11d8eeae394537fc753fb6582062e3"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-green/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "6dcb7116cf07d8b059da8941b490c9360fd66f669e8da0569f3d67432a71540b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-red/8277d77c787e-5a60d0093df4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "19fd9b0cfc255b0e910d3b5d718c3f8b7513b5c7c38f9ff76cf95c754377a670"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-ui-red/targeted-learning-0c59d46c1a1c43715dfe940988e1190f74c823f698bf54615924e4c3b3f393e7.json",
+      "sha256": "b46d4178e269f56a848fa65396078ff3f718f18f54cb14a48aafa3a3ea15761f"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.1-verification.json",
+      "sha256": "b033e1cfa7cda09b6505ea8a2b258b2d4ad38a0c2cb47e8f11c74b96bcef4b2e"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-defects.json",
+      "sha256": "fa508531d67061b10ddaff5c25c9d96efd4c4e23a31e52c0b4b269da3d0a130d"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stdout.log",
+      "sha256": "e1203de94ad7b60cd3e01e381644f4ef3859c1f7033d112adb1f83ea408a0176"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/a896badd4237-d6e9635fa3a0/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/a896badd4237-d6e9635fa3a0/Explicit-Flutter-tests.stdout.log",
+      "sha256": "f2b6978c1f8d85e5592dc20f0d0b250962eb837ac25c3fe0dc20d3ba85f9c645"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/bceb4d06905d-a78661d5782c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/bceb4d06905d-a78661d5782c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "962f9e3b91000fe3396d79fe324ea75b26bd340edea1f3ec92bb0c8fde357b0f"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/targeted-learning-45d7b09c9f81d074e7cda6a602b5c7d04db94b1d9beedd5fb6f7104e2184c219.json",
+      "sha256": "c79bbe26a041b8f7e820b9753d29c1e222f0c2f8903d0b8edd60000d9ac6ff2a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/targeted-learning-798c6b0ee046f3fb166fa7fedfaa11644b68124f293493ce8a2542b11f8b441f.json",
+      "sha256": "28d9bcdd2dac009ce0fd242b83187aecdbff8bf4222460ca7aae8a08c95ba188"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-expansion-red/targeted-learning-979afbcc66d40645ef92c335e87c9b49f21fea0bcca0eef3e42dbfd6bf8628f1.json",
+      "sha256": "26a6642c023b64daf670b62124909852be2f3e718867155da880f84037b1c219"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-final/a896badd4237-25e6081a2d25/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-final/a896badd4237-25e6081a2d25/Explicit-Flutter-tests.stdout.log",
+      "sha256": "7ba6d9a1d336419ed649e688fc5a3be9fc664f1460a0bc58f83eb1cd3c43f4c6"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-final/targeted-learning-979afbcc66d40645ef92c335e87c9b49f21fea0bcca0eef3e42dbfd6bf8628f1.json",
+      "sha256": "962074e32707c23988eaf55840674625be6c6a890eff07606af7d8bb7cfd5a68"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-plan.json",
+      "sha256": "ca6e4932d4c062e29250c89cf9b0b576504f3e55f36943732b05814491509c1b"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-red/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-red/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stdout.log",
+      "sha256": "e1203de94ad7b60cd3e01e381644f4ef3859c1f7033d112adb1f83ea408a0176"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-red/targeted-learning-798c6b0ee046f3fb166fa7fedfaa11644b68124f293493ce8a2542b11f8b441f.json",
+      "sha256": "28d9bcdd2dac009ce0fd242b83187aecdbff8bf4222460ca7aae8a08c95ba188"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/60ac952e4727-7019e6abb518/Explicit-Flutter-tests.stdout.log",
+      "sha256": "e1203de94ad7b60cd3e01e381644f4ef3859c1f7033d112adb1f83ea408a0176"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/a896badd4237-d6e9635fa3a0/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/a896badd4237-d6e9635fa3a0/Explicit-Flutter-tests.stdout.log",
+      "sha256": "f2b6978c1f8d85e5592dc20f0d0b250962eb837ac25c3fe0dc20d3ba85f9c645"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/targeted-learning-798c6b0ee046f3fb166fa7fedfaa11644b68124f293493ce8a2542b11f8b441f.json",
+      "sha256": "28d9bcdd2dac009ce0fd242b83187aecdbff8bf4222460ca7aae8a08c95ba188"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-regression-failure/targeted-learning-979afbcc66d40645ef92c335e87c9b49f21fea0bcca0eef3e42dbfd6bf8628f1.json",
+      "sha256": "26a6642c023b64daf670b62124909852be2f3e718867155da880f84037b1c219"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.2-verification.json",
+      "sha256": "234ea7feeaf0c754c5dcdfa89291a0f6d530d903585fec116440d4d7677174fe"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-defects.json",
+      "sha256": "242505e21fa2ef20f892f5916ece3c1911ae0455bd431bd86675b304e05a7f4a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-final/87613e719f56-a320398190cc/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-final/87613e719f56-a320398190cc/Explicit-Flutter-tests.stdout.log",
+      "sha256": "2633d78eb0d6f3eaf51c8a92b2322d5958f7446cc0238b6b921fdc7992d2ad0e"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-final/targeted-learning-5a736a4d36565fbff18ae8bcf38589928f0cf4e12afdf45f1c1522981c6b4519.json",
+      "sha256": "540434750fa186546da4abb47bda384860576b60e2a2d17efbe9471189cb437e"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/0511469ad892-2b41b1b891b2/Explicit-Flutter-tests.stderr.log",
+      "sha256": "7b660ea28f5e27ccc389b38b805d7e7ad24c6e61a8f700a8a33dc0b59949e356"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/0511469ad892-2b41b1b891b2/Explicit-Flutter-tests.stdout.log",
+      "sha256": "3b26f599f4114056834939201073c79b5cfb28452f0897cc62073e2f6f8856ac"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/1ff5a6f92d5a-a2e117b7ae28/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/1ff5a6f92d5a-a2e117b7ae28/Explicit-Flutter-tests.stdout.log",
+      "sha256": "89a3495843f863791c7fdffb5bbdf6fe301e1912dc6a11bd4a22ca3d8d012edd"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/8845a511f122-1a26ea227184/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/8845a511f122-1a26ea227184/Explicit-Flutter-tests.stdout.log",
+      "sha256": "663c669f616d91dfdffd4c14370a8361a918811cad71675ba30efb021ed2b526"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/targeted-learning-1ea305a1fd23536f25088f87640a6d82f6a55baa79a0f3f23451397e03812095.json",
+      "sha256": "a4e7ff825fc7a287944b33a8e87569fa3c2c4ecfef1e48b57216049115868247"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/targeted-learning-70f076260e64d1b0c9bfc2a5f6bbe835b22481c272b8710ca759727ec6146658.json",
+      "sha256": "e9ce36085383c4725818ba6de06a6968c018e403ac37a7cd66f388550526462c"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-fixture-failure/targeted-learning-c9f9af85aa4ccfcb71ce1061aeead0d1f361e3102fcc4d639497408c1f000a6b.json",
+      "sha256": "8b395bbbc16502b253dc691fe29b1bf7a5bbee7c7c0f62dc5c26fdb0e15e91ce"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-plan.json",
+      "sha256": "accb425a0854cc4cad726a60e14ebe641453b8d3e2d197221f7e76394a5783bd"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-red/1ff5a6f92d5a-a2e117b7ae28/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-red/1ff5a6f92d5a-a2e117b7ae28/Explicit-Flutter-tests.stdout.log",
+      "sha256": "89a3495843f863791c7fdffb5bbdf6fe301e1912dc6a11bd4a22ca3d8d012edd"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-red/targeted-learning-1ea305a1fd23536f25088f87640a6d82f6a55baa79a0f3f23451397e03812095.json",
+      "sha256": "a4e7ff825fc7a287944b33a8e87569fa3c2c4ecfef1e48b57216049115868247"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B07/G3.3-verification.json",
+      "sha256": "bae684e3c7eda816446db90a21872fd2c2198abecd1c14b0ea0825f05f645a77"
+    }
+  ],
+  "rawLogReferencesVerified": 60,
+  "runtimeClosureDeltaAfterFinalTests": [
+    ".gitattributes"
+  ],
+  "deltaDisposition": "B07 log/JSON byte-preservation Git attributes only; no runtime behavior delta"
+}

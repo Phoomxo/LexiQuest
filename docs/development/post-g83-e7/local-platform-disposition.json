@@ -1,0 +1,9 @@
+{
+  "case": "iOS notification integration is CocoaPods-backed at iOS 13",
+  "target": "test/architecture/notification_platform_contract_test.dart",
+  "status": "FAIL-OUTSIDE-ANDROID-EDITION",
+  "observed": "Missing ios/Podfile; source scaffold also lacks CocoaPods lock/include/workspace and notification delegate setup.",
+  "scopeAuthority": "Generated accepted test plan platform.iosExcludedByOwner=true; existing test tag release-excluded",
+  "action": "Preserve original failure; no iOS PASS. Android notification and dependency-pin cases passed in LOCAL-002. No assertions skipped/rewritten and no iOS support inferred.",
+  "requiredForAndroidRelease": false
+}

@@ -1,0 +1,162 @@
+[
+  {
+    "id": "B01",
+    "phase": 0,
+    "start": 6,
+    "end": 8,
+    "title": "ปิดฐานเอกสาร สูตร และ edition",
+    "rationale": "เอกสาร authority, formula registry และ edition decision ใช้ coverage/source pins ของ G0.5 ร่วมกันก่อนปิด G0"
+  },
+  {
+    "id": "B02",
+    "phase": 1,
+    "start": 1,
+    "end": 3,
+    "title": "Owner คำตอบ และประวัติ",
+    "rationale": "owner/session identity → answer acknowledgment → history/replay เป็นเส้นทางข้อมูลเดียวกัน"
+  },
+  {
+    "id": "B03",
+    "phase": 1,
+    "start": 4,
+    "end": 7,
+    "title": "Recovery SRS และ local runtime",
+    "rationale": "persistence/recovery, evidence readers, SRS และ runtime composition ใช้ฐานข้อมูลและ lifecycle acceptance ต่อเนื่องกัน"
+  },
+  {
+    "id": "B04",
+    "phase": 2,
+    "start": 1,
+    "end": 2,
+    "title": "Shell และ Pair Matching",
+    "rationale": "shared UI tokens/shell เป็นฐานของ Pair layout และ interaction states"
+  },
+  {
+    "id": "B05",
+    "phase": 2,
+    "start": 3,
+    "end": 5,
+    "title": "Quiz Cloze และ block spelling",
+    "rationale": "input/correctness/feedback adapters และ evidence ของโจทย์เลือก พิมพ์ และจัดตัวอักษรใช้ interaction contracts ร่วมกัน"
+  },
+  {
+    "id": "B06",
+    "phase": 2,
+    "start": 6,
+    "end": 8,
+    "title": "Study modes และ journeys",
+    "rationale": "study-mode configuration เชื่อม local tools, mode inventory และ Reading/Adventure/Ghost journeys"
+  },
+  {
+    "id": "B07",
+    "phase": 3,
+    "start": 1,
+    "end": 3,
+    "title": "Content cards และ feedback",
+    "rationale": "pack metadata/lexical presentation ใช้ content revision เดียวกับ hints/bookmarks/report"
+  },
+  {
+    "id": "B08",
+    "phase": 3,
+    "start": 4,
+    "end": 7,
+    "title": "Review progress และ assessment",
+    "rationale": "learning history/read models เชื่อม review, dashboard/formulas, assessment metadata และ content-version recovery"
+  },
+  {
+    "id": "B09",
+    "phase": 4,
+    "start": 1,
+    "end": 3,
+    "title": "Navigation goals และ effort",
+    "rationale": "Today/navigation, goals/reminders และ effort/timer ใช้ active learning/read models ร่วมกัน"
+  },
+  {
+    "id": "B10",
+    "phase": 4,
+    "start": 4,
+    "end": 6,
+    "title": "Motivation และ preferences",
+    "rationale": "reward/quest/streak readers ต่อกับ avatar/achievements และ lifecycle/preferences ของประสบการณ์เดียวกัน"
+  },
+  {
+    "id": "B11",
+    "phase": 5,
+    "start": 1,
+    "end": 3,
+    "title": "Camera runtime",
+    "rationale": "permission/model lifecycle → uncertainty/accept decision → saved vocabulary เป็น runtime transaction ต่อเนื่อง"
+  },
+  {
+    "id": "B12",
+    "phase": 5,
+    "start": 4,
+    "end": 6,
+    "title": "Model evaluation และ evidence",
+    "rationale": "dataset/model pins, metrics/resources และ device/rollback evidence ต้องอยู่บน evaluation freeze เดียวกัน"
+  },
+  {
+    "id": "B13",
+    "phase": 6,
+    "start": 1,
+    "end": 3,
+    "title": "AI session และ provider",
+    "rationale": "context/intent, request cancellation และ provider/usage finalization ใช้ attempt/session identity ร่วมกัน"
+  },
+  {
+    "id": "B14",
+    "phase": 6,
+    "start": 4,
+    "end": 6,
+    "title": "Speech evidence และ quality",
+    "rationale": "speech gateways เชื่อม speaking/shadowing/dictation และ quality/no-key journey โดยคงแยก scored/unscored evidence"
+  },
+  {
+    "id": "B15",
+    "phase": 7,
+    "start": 1,
+    "end": 2,
+    "title": "Sync และ recovery",
+    "rationale": "queue/lost ack/reopen และ owner/conflict/migration เป็น recovery protocol เดียวกัน"
+  },
+  {
+    "id": "B16",
+    "phase": 7,
+    "start": 3,
+    "end": 5,
+    "title": "Policy data lifecycle และ activation",
+    "rationale": "policy boundaries, export/delete และ runtime activation ต้องตรวจ ownership/edition ตาม data lifecycle เดียวกัน"
+  },
+  {
+    "id": "B17",
+    "phase": 7,
+    "start": 6,
+    "end": 7,
+    "title": "Service contracts และ release tooling",
+    "rationale": "cross-service contracts/resources ต่อกับ dependency/native/release tooling readiness ก่อน freeze"
+  },
+  {
+    "id": "B18",
+    "phase": 8,
+    "start": 1,
+    "end": 3,
+    "title": "Freeze รีวิวทั้งแอป และแก้ผลรีวิว",
+    "rationale": "source inventory/freeze, whole-app review และ remediation ต้องใช้ฐาน review เดียวกันก่อนอนุญาต System Test Plan"
+  },
+  {
+    "id": "B19",
+    "phase": 8,
+    "start": 4,
+    "end": 7,
+    "title": "System Test Plan และ execution",
+    "rationale": "สร้าง Test Plan หลัง B18 review accepted แล้วจึงรัน automated/build/device/fault/accessibility/resource cases บน pins ที่สัมพันธ์กัน"
+  },
+  {
+    "id": "B20",
+    "phase": 8,
+    "start": 8,
+    "end": 9,
+    "title": "Defect closure และ final ledger",
+    "rationale": "defect/retest/affected regression ปิดก่อนสรุป coverage/review/test/cleanup และ final release ledger"
+  }
+]

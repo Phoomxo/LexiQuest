@@ -1,0 +1,9 @@
+{
+  "files": {
+    "lib/main_ari_test.dart": "1b8339caae5daefb9fcd1ad9a57b58d95ec166c567051cf593f8e1c9a6164486",
+    "lib/runtime/app_bootstrap.dart": "04740ec0b9a66bdd5c3e164b5adf380546db519946be6a4ab31f705b64f4ee17",
+    "lib/runtime/ari_preview_feature_registry.dart": "186fc2368e6ea47d886045d19946dcc5e85df8bebc1de82f24bfbf320171aab9",
+    "test/runtime/ari_preview_feature_registry_test.dart": "2979e84b221ff276319093bfb3b651150b1d3fa8fccc253abd5c0b3d54ced00e"
+  },
+  "normalization": "Original equal lines restored after verification; tokens unchanged."
+}

@@ -1,0 +1,30 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W13 export",
+  "baseCommit": "795af360cfc1f03d9b13eb4569e77ad6791fe8e4",
+  "implementation": [
+    "Read-only format, effective selection, purpose, consent requirement and operation status",
+    "No new export tool; native file generation/picker remain authoritative",
+    "No artifact path or contents sent to AI",
+    "Anki vocabulary-only and owner archive not-restorable explicitly distinguished",
+    "Changing selection clears prior saved status to avoid attributing old success to new selection"
+  ],
+  "verification": {
+    "red": "Guidance test failed before context implemented",
+    "green": "Both export screen/flow files passed",
+    "analysis": "No issues found",
+    "scope": "Real local export bytes and storage with injected native picker; fixture research consent only, no production research activation",
+    "assertions": [
+      "All five formats reflect selection semantics",
+      "Saved status only after actual file bytes saved",
+      "Context excludes destination path",
+      "CSV selection change clears success without creating file",
+      "Existing cancel/failure/retry regressions retained"
+    ]
+  },
+  "open": [
+    "Native current-source baseline/connected/disconnected guidance",
+    "Failure-code context specific assertions",
+    "Full W13 and all14 workflow/mode acceptance"
+  ]
+}

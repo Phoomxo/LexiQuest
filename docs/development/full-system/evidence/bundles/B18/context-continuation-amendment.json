@@ -1,0 +1,25 @@
+{
+  "authorization": "User-approved B18 fresh-task continuation relayed by master01a09888-61dd-7680-9b19-c33035043d59 on2026-09-19; writer must release after exact committed checkpoint",
+  "authorityPlan": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/B18-context-handoff-plan.md",
+  "applicationSourceChanged": false,
+  "files": [
+    {
+      "path": "docs/development/full-system-active-index.md",
+      "frozenSha256": "9b64f14382d148358336d0cbce280097c08e01b9e9cacbda7d2263846449e308",
+      "checkpointSha256": "7986d13f32a4e4d58b126068b5604c15cd81314c6b9889b5cf5f7e4801a562db",
+      "purpose": "Authorized B18 context handoff policy only; no application source change"
+    },
+    {
+      "path": "docs/development/full-system-package-workflow.md",
+      "frozenSha256": "fb7a1936f5787fe87df5a887b312b0732a09edd0ea9491c6a6b44296af5c46bd",
+      "checkpointSha256": "6051601803a652fdd1aaaa90369ec559b9c6caaefb230eed4a3aebf368669ce3",
+      "purpose": "Authorized B18 context handoff policy only; no application source change"
+    },
+    {
+      "path": "docs/development/2026-09-13-rule-supersession-register.md",
+      "frozenSha256": "30c0663cf3603c8c683a3b1bdd9e2f5cbd5830945651d2c15f83a553184bd736",
+      "checkpointSha256": "521bcb926cc05e43253f4a2f704d1a12851a334c0b00e3bd5945621ef9e739ea",
+      "purpose": "Authorized B18 context handoff policy only; no application source change"
+    }
+  ]
+}

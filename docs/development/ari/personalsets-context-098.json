@@ -1,0 +1,38 @@
+{
+  "checkpoint": "098",
+  "workflow": "W08",
+  "status": "OPTIONAL_PERSONALSET_CONTEXT_IMPLEMENTED_HOST_PASS_NATIVE_PENDING",
+  "implementation": [
+    "Owner and generation-bound read-only summary and mounted list rows",
+    "States list/draft/preview/detail/backup/processing/unconfirmed; draft separate from lastConfirmed",
+    "Manual save only; backup/import raw content excluded; title changes refresh context",
+    "Counts and titles summarize content organization, not learning completion; list row scope explicitly partial"
+  ],
+  "host": {
+    "red": "New context test failed No element before implementation",
+    "final": "10testsPASS; twofileDartanalysisclean",
+    "coverage": [
+      "Late AI attach after baseline load",
+      "Unsaved draft and proposed revision vs confirmed data",
+      "Disconnected manualsave realDrift persistence",
+      "Reconnect readback and edit draft vs confirmed",
+      "Foreignowner hides metadata",
+      "Cancel draft and exclude rawimport",
+      "Invalid draft suppresses confirmation; generation change hides context",
+      "Existing baseline CRUD/archive/backup/owner/validation cases"
+    ]
+  },
+  "evidence": "evidence/personalsets-context-098",
+  "apk": {
+    "path": "build/ari-assistance-098.apk",
+    "sha256": "3177f33298545b7a3083b4e9ea6f989eee47ffac648827a78376097066659b76",
+    "installed": true
+  },
+  "native": "NOT_RUN for newcontext",
+  "remaining": [
+    "Actualprovider list/detail/draft/preview/readback/cancel anddisconnectednative acceptance",
+    "Deeper pending operation/failure lifecycle contextaudit",
+    "All14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

@@ -1,0 +1,317 @@
+{
+  "zone": "REV-01",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "reviewCompletedAtUtc": "2026-09-19T10:52:41.466171+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "files": [
+    {
+      "path": "lib/features/identity/application/upgrade_guest_owner.dart",
+      "sha256": "30a5feccc78f9dc509cb67ba8dad111cf2c976c9b4357fe254980834c327307e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/data/drift_local_owner_repository.dart",
+      "sha256": "5f5dc56da44c65ec2277a31153e582b5345058046e8e4c7a35ce51fa5ccc7f54",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+      "sha256": "f258d6817dd09d0e051173a2adf78b80d6db7ea193910608af273141bdfcfd68",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/domain/identity_mapping.dart",
+      "sha256": "621ab479398ce8d3839afa0975577d3bf4c7b67bc35e88fe65dbd764b4d108f1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/domain/local_owner.dart",
+      "sha256": "be6d3a900870a5614df924d884c2e8a7729508fb7514ce4c3997fe9d2c981079",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/domain/local_owner_repository.dart",
+      "sha256": "cb843ea6df37752b3ef45b81bf08a7badc1469eb6107a3f7d6aad926051ddb7c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+      "sha256": "2f6a4fdd29663fd9c00b5ffd69442c8385fd9503a0270f58b191c9e688040e8e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/identity/domain/owner_upgrade.dart",
+      "sha256": "8603d51cd3880b0cf0f07bba5ef25057ad7ad92561c6af114e5c56aac74a1296",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/session/data/shared_preferences_app_entry_state_store.dart",
+      "sha256": "dd9014571b11f3f3f14d92d46915207e7bf0164d3aaaed9a2f33fe02b0b36f93",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/session/domain/app_entry_state.dart",
+      "sha256": "1301960a1a33f8ab2c64603cf1705a718735f5330084ff3b93a78b8f55fbd65d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/main.dart",
+      "sha256": "927ada935b7e60666c30e9bd528a583245d7ac380db7027b2904c3e8df492949",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/navigation/app_route_factory.dart",
+      "sha256": "c1afbe2643df4d934048c0efde5f05621b317bbdc39dce70c62b52d411322ef6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/navigation/app_routes.dart",
+      "sha256": "da9f91869e2bb7cc556f07293d211e143fd99a677aa1353f271026dec55eff0b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/navigation/navigation_glossary.dart",
+      "sha256": "092efee7b6f98eedab4693be7ae015c45135c213bce30f07ea85839a06b2cb91",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "fd3595506142b6d79a1a67fe626974c44739917b8cbc6ad869cd9669f9d57740",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV01-01"
+      ]
+    },
+    {
+      "path": "lib/runtime/app_build_info.dart",
+      "sha256": "61d1e544d104c4777ce77f8a7afd8d7130e9f176541d2e0eb3180e99a364d175",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "e2cbc181c5f4bc9368bf8dbf65d8c5b996b606f1e1f39af0d79ec708f88691b8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/app_runtime_status.dart",
+      "sha256": "2fb7ca1b06ab49e35e826366d5c8cbada8307dcbcb8447c21dd254c52fc4bc44",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/app_start_route_resolver.dart",
+      "sha256": "b097bdb542e466c3ae4b3bbbcaffcabebde4bd5a230128a0da15705b4c58543f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/central_cost_policy.dart",
+      "sha256": "653b2e94bfdebb419e98fe556c655c02e958be522d09ae1292f2c252294dfdfd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/circuit_breaker.dart",
+      "sha256": "ace72a2fab9b0aac974de621297a819e8dbfba19a31d15d7b1ba145d463cb254",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV01-03"
+      ]
+    },
+    {
+      "path": "lib/runtime/download_counter.dart",
+      "sha256": "c4a5a7849127807bc10160201297416e9fef297f58696dddb0e687a60678425a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/field_feature.dart",
+      "sha256": "24b05179bdb0a2e42ca9ded7a41eae53db57a7e8110fb75933f16b19492ba295",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/field_feature_registry.dart",
+      "sha256": "5fb816b22f3f0a84cbe9ab65b68eab6d16054fa0ef66fb33cf9b902df2e93d09",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/learning_dependencies.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/learning_feature_flags.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/learning_preview_feature_registry.dart",
+      "sha256": "feafcddaa942e2ec9702ece1d8e1596aba942237fb40c911c4a56e1ccb113d7a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/local_storage_readiness_app.dart",
+      "sha256": "e561bb5438023101df4dd8c09f412bb8050a066dbfb15bd83d83dcde2bb58c32",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/production_feature_contract.dart",
+      "sha256": "4fa0338ead85c364bf74170c28056300bedacbefd96d839912e3b1bb74078604",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/production_feature_gate.dart",
+      "sha256": "683e01602c2ef46b2bc5d70db8cffa5dea7f2f0aec6be7b804ba3a7e92fc95dc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/consent_registry.dart",
+      "sha256": "cce5c954a5852e80dabb85969ffae7f57292fda4ed23af21dcbc8291668d4dd2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/drift_consent_registry.dart",
+      "sha256": "7694777bf4fdbfc4339d0806078510a8455870e4646bb5961693dd13d663d83d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/entitlement_registry.dart",
+      "sha256": "e9978b7272b6121f2b0aa18ee883f9c31edad479eb6d27c17a8e124dc2ee852c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/experiment_registry.dart",
+      "sha256": "6d05ba6907898cb4380089829b753327a09c42664889198779e509f6c9ea36c1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/feature.dart",
+      "sha256": "706501fd824a84f754bad9d818ff981cf77deab34a34c47573fe3e91e7a4ccab",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "a3626ed61b80226f8a217e7ff6045db5df6a501528e89e779cd8db1fa439dafc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/resource_disposer_stack.dart",
+      "sha256": "f12a823073f48b89ce01725c778160a4ab7e61b775249cbfc2f0aa1a6b640749",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/runtime_feature_override_store.dart",
+      "sha256": "9997fc52d3956d8359dddc775a1e9d7f20da98f207395653cd4e244c69928a24",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/runtime_flag_namespaces.dart",
+      "sha256": "b84791d5d40ad5893faa0d68ff51aa7dbcb28711f3f4da1566bf79c596056b7d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/runtime/supabase_client_config.dart",
+      "sha256": "88cf084dc6e9e9af1096de5a67fb95412aee544c43c82b06741d974d58a45abc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/login_screen.dart",
+      "sha256": "2e4a7af099c5a5accec01a21aaf41bc462f1c5c7ff790480e4ec506422fc8d26",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV01-02"
+      ]
+    }
+  ],
+  "crossChecks": [
+    {
+      "area": "identity and lifecycle",
+      "evidence": [
+        "test/features/identity/drift_local_owner_repository_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/scenarios/guest_upgrade_restart_test.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "test/runtime/app_bootstrap_test.dart"
+      ],
+      "disposition": "Canonical production transition uses DriftOwnerUpgradeRepository and SQL lease fencing, retaining guest actor/history while rebasing custody. Physical owner-column inventory and scoped full-row/file-reopen oracles distinguish ordinary transfer from five untransferable research tables. Direct bindFirebaseUid heartbeat finally could replace an error or skip release, but full lib caller search finds definitions only; production uses canonical upgrade whose cleanup result behavior has dedicated oracles. Existing owner lookup LIMIT1 assumes valid database state; supported creation/transition serial transactions and Today read-only failure behavior reviewed, no demonstrated live duplicate owner path."
+    },
+    {
+      "area": "composition and disposal",
+      "evidence": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/resource_disposer_stack.dart",
+        "lib/runtime/app_dependencies.dart",
+        "test/runtime/app_bootstrap_test.dart",
+        "test/runtime/resource_disposer_stack_test.dart"
+      ],
+      "disposition": "Reverse/memoized teardown, optional Firebase timeout, typed offline storage failure, one authority graph and independent optional provider failures cross-checked. Offline reconciliation before disposer registration is actionable REV01-01; success-only fixture does not close it. Runtime flags/availability and dependency identities do not prove installed delivery/provider health."
+    },
+    {
+      "area": "feature override lifecycle",
+      "evidence": [
+        "lib/runtime/runtime_feature_override_store.dart",
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "disposition": "Generation and disposed checks prevent late snapshots mutating registry; accepted controls mutation queue is not drained by synchronous dispose. No live lib caller invokes clear/emergencyOff (declarations/bootstrap composition only); timer reload catches late failures. Preserve as dormant API lifecycle limitation, no demonstrated current user journey defect. Child-route vocabulary gate is separately recorded REV03-05 and is not dismissed by top-level feature tests."
+    },
+    {
+      "area": "navigation and guest entry",
+      "evidence": [
+        "lib/navigation/navigation_glossary.dart",
+        "test/navigation/navigation_glossary_test.dart",
+        "test/scenarios/production_feature_navigation_test.dart",
+        "lib/services/guest_session_service.dart",
+        "test/screens/login_guest_mode_test.dart"
+      ],
+      "disposition": "Stable identifiers, complete current glossary fixtures, named route fallback and top-level lazy gates reviewed. Guest service contains canonical provider errors, but consent awaits precede busy admission and UI lacks full containment: candidateREV01-02 remains for deterministic reproduction. Repeated tap existing test omits consent and does not refute it."
+    },
+    {
+      "area": "provider breaker and counters",
+      "evidence": [
+        "lib/runtime/circuit_breaker.dart",
+        "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+        "test/runtime/circuit_breaker_test.dart",
+        "test/runtime/download_counter_test.dart"
+      ],
+      "disposition": "Half-open single admission and source-specific bounded download markers reviewed. Provider breakers shared across factory gateway calls; older in-flight completion lacks generation fencing: candidateREV01-03 retained. Counters explicitly rolling-window bookkeeping, not actual cost/lifetime billing."
+    }
+  ],
+  "limitations": "Static review completed with recorded findings, not zero-defect certification. Findings reproduced/fixed in G8.3 after all zones complete; device/live/native/installed flags not established."
+}

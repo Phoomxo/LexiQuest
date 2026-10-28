@@ -1,0 +1,43 @@
+{
+  "tables": {
+    "study_plan_revisions": {
+      "rows": 4,
+      "exactRowsUnchangedSince093": true
+    },
+    "active_plan_pointers": {
+      "rows": 1,
+      "exactRowsUnchangedSince093": true
+    },
+    "personal_set_revisions": {
+      "rows": 1,
+      "exactRowsUnchangedSince093": true
+    },
+    "personal_set_members": {
+      "rows": 1,
+      "exactRowsUnchangedSince093": true
+    },
+    "answer_attempts": {
+      "rows": 108,
+      "exactRowsUnchangedSince093": true
+    },
+    "srs_states": {
+      "rows": 12,
+      "exactRowsUnchangedSince093": true
+    },
+    "points_ledger_entries": {
+      "rows": 46,
+      "exactRowsUnchangedSince093": true
+    },
+    "reading_progress_entries": {
+      "rows": 4,
+      "exactRowsUnchangedSince093": true
+    },
+    "reading_events": {
+      "rows": 39,
+      "exactRowsUnchangedSince093": true
+    }
+  },
+  "acceptedRevision": 4,
+  "rejectedRevision5Persisted": false,
+  "rawSnapshot": "ignored build/new-item-plan-native-094"
+}

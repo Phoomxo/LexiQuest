@@ -1,0 +1,34 @@
+{
+  "checkpoint": "075",
+  "status": "NATIVE_BASELINE_COMPLETION_PASS_PROGRESS_HOST_FIXED_NATIVE_RETEST_PENDING",
+  "nativeApk": "build/ari-assistance-074.apk",
+  "baseline": [
+    "Resumed active reading atStage3 after process restart",
+    "Valid bottle recall accepted after prior blank rejection",
+    "Keyword water container persisted",
+    "Typed context sentence exercised;ephemeral ungraded field only",
+    "Completed Stage6;reading progress isCompleted1/position6",
+    "Exact1associativeRecall independentRecall true;score100,wrong0"
+  ],
+  "defect": {
+    "id": "ASSOCIATIVE-PROGRESS-075",
+    "observed": "Shared header stayed0percent after committed recall while stage indicator advanced",
+    "red": "Shell-hint real-storage test expected committed2 but actual0",
+    "fix": "Reflect acknowledged native recall count after successful persistence;union restored and newlycommitted indices avoids double count",
+    "status": "HOST_FIXED_NATIVE_RETEST_REQUIRED"
+  },
+  "host": {
+    "tests": 26,
+    "analysis": "2files clean",
+    "recovery": "Initial named argument typo corrected to actual count parameter;fullsuite rerun passed"
+  },
+  "installedAfter": "build/ari-assistance-075.apk",
+  "apkSha256": "faab767e9e680f8c18471056c843e68a5436d655e5f694afb528683baf7f557a",
+  "remaining": [
+    "Native progress retest on075",
+    "Owner-bound stage-specific AI context and absent/connected/disconnected host coverage",
+    "Native live associative guidance/disconnect",
+    "Whole14workflow/14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

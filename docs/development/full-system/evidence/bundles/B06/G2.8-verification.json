@@ -1,0 +1,181 @@
+{
+  "packageId": "G2.8",
+  "bundleId": "B06",
+  "baseSha": "6dc51206611c3830535b722eae0cce859af8f74e",
+  "status": "accepted-local-automated",
+  "uniqueTestsPassed": 169,
+  "countDerivation": "106 baseline + 9 new boundary tests + 12 restart/offline + 39 accessibility + 3 production replay routes. Overlapping reruns not added.",
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-08242255840a2cf1b09dbd30a7792262d9999d53e8ea82c755b7e6825573250f.json",
+      "status": "Failed",
+      "fingerprint": "e339eae6f7440a1baafdc3027f00450da89d78f23284278a3b2a381d7552e8de",
+      "count": [
+        "0",
+        "2",
+        "Some tests failed."
+      ],
+      "changedInputsSinceRun": [
+        "lib/screens/ghost_shadow_duel_screen.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-1a569a7ad8fedbe3fc86289108c757ead6f2f7afd3989caefed100e64ef5e9d8.json",
+      "status": "Failed",
+      "fingerprint": "f6ce6cf5c73436fc8f73e9f1fb30962a47d3d076b6040a9ee12ed56b92188ff9",
+      "count": [
+        "1",
+        "3",
+        "Some tests failed."
+      ],
+      "changedInputsSinceRun": [
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-217c4155ab81d35e192def00fec2447a8d386c168bf425a58e6fa31259ac677b.json",
+      "status": "Passed",
+      "fingerprint": "84e3d87104ea5c630b1fc7024e4e652e2b19651fa81f1dbfaa9588c4b18b8806",
+      "count": [
+        "3",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-7fac7acee4475ca2d57cad45128789554febd5fa4ba636ca8f8e7dc10245d171.json",
+      "status": "Passed",
+      "fingerprint": "e339eae6f7440a1baafdc3027f00450da89d78f23284278a3b2a381d7552e8de",
+      "count": [
+        "12",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [
+        "lib/screens/ghost_shadow_duel_screen.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-830ddef694cb5d841e6f5d107cb33fbde9405d3152ef474998f6ba2ffac3e0d5.json",
+      "status": "Passed",
+      "fingerprint": "c632d33399a74d0410779f770fde1d7e8a858f509e4f564ce8bb3ef6fb36a000",
+      "count": [
+        "18",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-8ad426bb21647e8a059059d7a6e45541e96e2d9bbfd2f863e1860aa2c0643fb9.json",
+      "status": "Passed",
+      "fingerprint": "c632d33399a74d0410779f770fde1d7e8a858f509e4f564ce8bb3ef6fb36a000",
+      "count": [
+        "3",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-956f7bed85e80f2cb9f857c92f20d22d1613a500d1e4b0ce777e05a0204cad91.json",
+      "status": "Passed",
+      "fingerprint": "c632d33399a74d0410779f770fde1d7e8a858f509e4f564ce8bb3ef6fb36a000",
+      "count": [
+        "39",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-bdc3e6df041dd0ce3f84b4a9ff0e348aa8fc9b6419d9a61fce2efe02e7a9b0a8.json",
+      "status": "Failed",
+      "fingerprint": "c3193e19b86842fe32f604537cd3ff790504cf9b8265ee40d4807dcd0aa68866",
+      "count": [
+        "0",
+        "1",
+        "Some tests failed."
+      ],
+      "changedInputsSinceRun": [
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-c6d88014edc8b16b132081670546b829fe9fb9ab62e7d0b8526cdb4e3076ac80.json",
+      "status": "Passed",
+      "fingerprint": "84e3d87104ea5c630b1fc7024e4e652e2b19651fa81f1dbfaa9588c4b18b8806",
+      "count": [
+        "15",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [],
+      "rawLogsHashVerified": true
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.8-runs/targeted-learning-c8e39b39f1485dd5aa94c17535f0acdf3da1a5055ebcc7ab75b345de314f5f31.json",
+      "status": "Passed",
+      "fingerprint": "94ed76ac41dc25fc2bfa2d68df19464f381ee3a2c69405ae53ece76dc140a96b",
+      "count": [
+        "106",
+        "",
+        "All tests passed!"
+      ],
+      "changedInputsSinceRun": [
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+        "lib/screens/ghost_shadow_duel_screen.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "rawLogsHashVerified": true
+    }
+  ],
+  "reuse": {
+    "baseline": "Only Adventure mixed screen and Ghost screen/test changed. Their full affected test files passed later; other eight baseline files unchanged.",
+    "accessibilityAndRestart": "Last delta is Ghost screen/test only. Recursive local Dart import/export/part closure inspection confirms neither accessibility target nor the three restart targets imports Ghost screen. Broad verifier Learning closure includes unrelated Ghost files; reuse justified by unchanged reachable inputs.",
+    "adventure": "Full two-file rerun passed 18 before Ghost history admission fix; Adventure source/test unchanged afterwards. Ghost screen+engine full rerun passed15 with zero input delta.",
+    "priorModes": "G2.1/G2.2 B04 and G2.3/G2.4/G2.5 B05 accepted evidence retained; native adapter implementation unchanged. No unrelated accepted gate rerun."
+  },
+  "acceptance": {
+    "reading": "CEFR typed exposure adapter does not equate reading to Q&A. Association scene exposure and explicit typed recall remain separate canonical kinds; stage/retry/restart tests pass. Broader f28 assessment remains G3.6.",
+    "journeys": "Two separate records in G2.8-journeys.json; no enum or feature count expansion.",
+    "writers": "Existing LearningUseCases/current evidence adapters and Adventure canonical controller retained; no new durable writer/schema/engine formula.",
+    "availability": "Existing empty/content/registry paths retained. Ghost requires observed finite positive timing and evidence date before starting session; no fabricated3000ms/epoch history.",
+    "results": "Adventure result/next action/receipt and production history replay tests pass; restart scenarios preserve owner, frozen evidence and once-only closure."
+  },
+  "review": {
+    "method": "Single-writer diff, caller/production contract, evidence kind, lifecycle and raw test review",
+    "requiredOpenFindings": []
+  },
+  "externalGates": [
+    "Physical devices/manual screen readers/live speech NOT RUN",
+    "Actual binary edition flags NOT RUN",
+    "Full release verifier NOT RUN; reserved for frozen release SHA",
+    "Effective service tier unverified; no supported runtime inspector/control"
+  ],
+  "recovery": "schema2: diagnose/change method/fix/retest/continue; never bypass acceptance"
+}

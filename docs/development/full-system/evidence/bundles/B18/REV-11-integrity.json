@@ -1,0 +1,23 @@
+{
+  "checkpointInputSha": "428fd59440e72a79023826a5ee5f579eb06df742",
+  "verifiedAtUtc": "2026-09-19T12:42:11.252375+00:00",
+  "frozenInventory": 3610,
+  "policyAmendments": 3,
+  "unchangedHandoffEvidence": 31,
+  "priorFindingsPreserved": 61,
+  "priorDispositionsPreserved": 942,
+  "zoneFiles": 106,
+  "focusedOracles": 4,
+  "totalObservations": 1429,
+  "totalDispositions": 1052,
+  "pending": 377,
+  "openFindings": 69,
+  "staticConfirmed": 22,
+  "candidates": 47,
+  "applicationSourceChanged": false,
+  "runtimeTestsRun": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "validation": "Independent raw hash, structured identity/count/ownership/preservation checks; no application test execution.",
+  "externalReviewScriptSha256": "a3acacdb37c26196e40e278169d8b1e4570c304ca63ebd4b65d126438fa43c15"
+}

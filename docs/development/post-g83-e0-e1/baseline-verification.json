@@ -1,0 +1,47 @@
+{
+  "acceptedSha": "09a4d747903b1624e80fea8b1f9b605830858ebc",
+  "reviewedApplicationSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+  "actualTaskId": "01a0bb5d-3c67-7032-bd26-2b49715321e5",
+  "commonGit": "C:/Users/Phet/Documents/LexiQuest/.git",
+  "writerClaimRevision": 221,
+  "applicationSourceWritesAllowed": false,
+  "evidencePins": 99,
+  "approvedSourceDeltas": 202,
+  "frozenPaths": 3657,
+  "modifiedOriginal": 155,
+  "newSource": 47,
+  "policyAmendments": 3,
+  "allHashesMatch": true,
+  "eolOnlyRestored": 236,
+  "eolProof": "eol-restoration-proof.json",
+  "testExecution": "NOT RUN in reconciliation; inherited receipt only",
+  "inheritedVerification": {
+    "tests": 480,
+    "targets": 21,
+    "runs": 2,
+    "independentInputs": 3780,
+    "prePostEqual": true,
+    "inheritedManifests": 15,
+    "inheritedArtifacts": 3695
+  },
+  "knownClosed": 69,
+  "knownOpen": 0,
+  "inputs": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\02-engineering-spec.md",
+      "sha256": "e82caa458ed730e555a20856af42f3f789eb284ad6252ddaedf9804d91f510d8"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\15-reference-and-handoff.md",
+      "sha256": "5e973a5f4b92f1d9ea491c7f8057070b4936d4a3eacfc738c136b43d8c4f95b2"
+    }
+  ],
+  "limitations": [
+    "No independent reviewer.",
+    "No installed/physical/native-assistive/acoustic/provider-live/hostedCI/cloud/deployment/full-release proof from this acceptance.",
+    "Apple/Linux/web are not supported-release or offline PASS; platform prerequisites and Gradle provenance gate remain explicit.",
+    "No research activation/remote research synchronization/study assignment/statistics, seed execution, training/B11A/GPU or security workflow.",
+    "Historical generated structural review is not fresh regeneration; old test-plan schema identity retained.",
+    "Inherited F02 SAF cleanup/timeouts and F04 untagged completion limitations remain in their receipts."
+  ]
+}

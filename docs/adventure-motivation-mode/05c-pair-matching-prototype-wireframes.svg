@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1500" viewBox="0 0 1800 1500" role="img" aria-labelledby="title desc">
+  <title id="title">LexiQuest Pair Matching Prototype wireframes</title>
+  <desc id="desc">Version 1.2 low-fidelity screens for setup, regular board, repair, timeout, result, focused accessibility layout, history replay and Adventure presentation parity.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.panel{fill:#fff;stroke:#334155;stroke-width:2}.bar{fill:#e2e8f0}.card{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.selected{fill:#dbeafe;stroke:#1e88e5;stroke-width:3}.matched{fill:#dcfce7;stroke:#15803d;stroke-width:2}.warn{fill:#fff7ed;stroke:#c2410c;stroke-width:2}.primary{fill:#1e88e5;stroke:#1565c0;stroke-width:1.5}.secondary{fill:#fff;stroke:#1e88e5;stroke-width:2}.disabled{fill:#e5e7eb;stroke:#94a3b8;stroke-width:1.5}.t{font-family:'Noto Sans Thai','Noto Sans',sans-serif;fill:#0f172a;font-size:18px}.small{font-size:14px;fill:#475569}.h{font-size:24px;font-weight:700}.ph{font-size:20px;font-weight:700}.btn{font-size:16px;font-weight:700;text-anchor:middle}.white{fill:#fff}.center{text-anchor:middle}.note{fill:#fffbeb;stroke:#d97706;stroke-width:1.5}.dash{fill:none;stroke:#64748b;stroke-width:1.5;stroke-dasharray:7 5}
+    </style>
+  </defs>
+  <rect class="bg" width="1800" height="1500"/>
+  <text class="t h" x="60" y="45">LexiQuest — Pair Matching Prototype Standard (05C)</text>
+  <text class="t small" x="60" y="72">v1.2 · f10 refinement · no new menu · Standard/Adventure share plan, engine, evidence and outcome policy</text>
+
+  <!-- P01 Setup -->
+  <g transform="translate(60 105)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">← จับคู่คำ–ความหมาย</text>
+    <text class="t small" x="24" y="94">TODAY MISSION · 6 คำที่ถึงเวลาทบทวน</text>
+    <rect class="card" x="24" y="116" width="342" height="102" rx="16"/>
+    <text class="t" x="44" y="151">จำนวนคู่จากโปรไฟล์</text>
+    <text class="t h" x="44" y="191">6 คู่</text>
+    <text class="t small" x="279" y="190">เปลี่ยนได้ในการตั้งค่า</text>
+    <text class="t" x="24" y="258">ตัวจับเวลา</text>
+    <rect class="selected" x="24" y="276" width="158" height="52" rx="14"/>
+    <text class="t btn" x="103" y="309">ไม่จับเวลา</text>
+    <rect class="card" x="194" y="276" width="52" height="52" rx="14"/><text class="t btn" x="220" y="309">60</text>
+    <rect class="card" x="254" y="276" width="52" height="52" rx="14"/><text class="t btn" x="280" y="309">90</text>
+    <rect class="card" x="314" y="276" width="52" height="52" rx="14"/><text class="t btn" x="340" y="309">120</text>
+    <text class="t small" x="24" y="354">เวลาเป็นทางเลือก ไม่มีผลต่อดาวหรือรางวัล</text>
+    <rect class="card" x="24" y="384" width="342" height="72" rx="16"/>
+    <text class="t" x="44" y="416">ทิศทาง: อังกฤษ → ไทย</text>
+    <text class="t small" x="44" y="442">หนึ่งทิศทางต่อ Learning Session</text>
+    <rect class="primary" x="24" y="490" width="342" height="58" rx="16"/>
+    <text class="t btn white" x="195" y="526">เริ่มจับคู่</text>
+    <text class="t small center" x="195" y="579">ไว้ภายหลัง</text>
+    <text class="t small" x="12" y="635">UX-P01/P02 · Entry + Setup</text>
+  </g>
+
+  <!-- P03 Regular board -->
+  <g transform="translate(485 105)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">← จับคู่คำ–ความหมาย</text>
+    <text class="t small" x="279" y="42">2/6 · 01:12</text>
+    <text class="t small" x="24" y="93">แตะคำอังกฤษและความหมายไทยที่ตรงกัน</text>
+    <text class="t small" x="24" y="123">คำอังกฤษ</text><text class="t small" x="213" y="123">ความหมายไทย</text>
+    <rect class="matched" x="24" y="138" width="164" height="58" rx="14"/><text class="t" x="42" y="174">✓ apple</text>
+    <rect class="matched" x="202" y="138" width="164" height="58" rx="14"/><text class="t" x="220" y="174">✓ แอปเปิล</text>
+    <rect class="selected" x="24" y="208" width="164" height="58" rx="14"/><text class="t" x="42" y="244">house</text>
+    <rect class="card" x="202" y="208" width="164" height="58" rx="14"/><text class="t" x="220" y="244">น้ำ</text>
+    <rect class="card" x="24" y="278" width="164" height="58" rx="14"/><text class="t" x="42" y="314">water</text>
+    <rect class="card" x="202" y="278" width="164" height="58" rx="14"/><text class="t" x="220" y="314">บ้าน</text>
+    <rect class="card" x="24" y="348" width="164" height="58" rx="14"/><text class="t" x="42" y="384">cat</text>
+    <rect class="card" x="202" y="348" width="164" height="58" rx="14"/><text class="t" x="220" y="384">ภูเขา</text>
+    <rect class="card" x="24" y="418" width="164" height="58" rx="14"/><text class="t" x="42" y="454">mountain</text>
+    <rect class="card" x="202" y="418" width="164" height="58" rx="14"/><text class="t" x="220" y="454">แมว</text>
+    <rect class="secondary" x="24" y="512" width="164" height="52" rx="14"/><text class="t btn" x="106" y="545">🔊 ฟังคำ</text>
+    <rect class="secondary" x="202" y="512" width="164" height="52" rx="14"/><text class="t btn" x="284" y="545">คำใบ้</text>
+    <text class="t small" x="12" y="635">UX-P03 · Regular two-column board</text>
+  </g>
+
+  <!-- P05 Repair -->
+  <g transform="translate(910 105)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">จับคู่ต่อ</text><text class="t small" x="314" y="41">2/6</text>
+    <rect class="warn" x="24" y="92" width="342" height="156" rx="18"/>
+    <text class="t ph" x="44" y="128">ยังไม่ใช่คู่นี้</text>
+    <text class="t" x="44" y="164">ลองเก็บคำนี้ไว้ แล้วกลับมา</text>
+    <text class="t" x="44" y="194">หลังฝึกคำอื่นอีก 3 คู่</text>
+    <text class="t small" x="44" y="224">ความคืบหน้าเดิมไม่ถูกลด</text>
+    <rect class="card" x="24" y="276" width="342" height="90" rx="16"/>
+    <text class="t" x="44" y="309">house</text>
+    <text class="t small" x="44" y="340">🔊 ฟังเสียง · ดูตัวอย่างสั้น ๆ</text>
+    <path class="dash" d="M195 386 L195 466"/>
+    <text class="t small center" x="195" y="416">repair ticket</text>
+    <text class="t small center" x="195" y="440">due after 3 distinct pairs</text>
+    <rect class="primary" x="24" y="490" width="342" height="58" rx="16"/>
+    <text class="t btn white" x="195" y="526">ทำคู่ถัดไป</text>
+    <text class="t small" x="12" y="635">UX-P05 · Non-shaming delayed repair</text>
+  </g>
+
+  <!-- P06 Timeout -->
+  <g transform="translate(1335 105)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="250" rx="24"/>
+    <text class="t small" x="24" y="42">จับคู่สำเร็จ 4/6 คู่</text>
+    <rect x="0" y="220" width="390" height="390" fill="#fff" stroke="#334155" stroke-width="2" rx="24"/>
+    <text class="t h" x="28" y="274">ยังไม่ทันเป้าหมาย</text>
+    <text class="t h" x="28" y="306">แต่ทำต่อได้</text>
+    <text class="t small" x="28" y="338">คำตอบและความคืบหน้ายังอยู่ครบ</text>
+    <rect class="primary" x="28" y="370" width="334" height="58" rx="16"/>
+    <text class="t btn white" x="195" y="406">ทำต่อโดยไม่จับเวลา</text>
+    <rect class="secondary" x="28" y="442" width="334" height="58" rx="16"/>
+    <text class="t btn" x="195" y="478">เพิ่ม 30 วินาที · ใช้ได้ 1 ครั้ง</text>
+    <text class="t center" x="195" y="538">เริ่มรอบใหม่ด้วยคำชุดเดิม</text>
+    <text class="t small center" x="195" y="568">สลับตำแหน่งใหม่ · ประวัติยังอยู่</text>
+    <text class="t small" x="12" y="635">UX-P06 · Durable timeout decision</text>
+  </g>
+
+  <!-- P07 Result -->
+  <g transform="translate(60 790)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">จับคู่ครบแล้ว</text>
+    <text class="t h center" x="195" y="120">★ ★ ☆</text>
+    <text class="t small center" x="195" y="148">ผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง</text>
+    <rect class="card" x="24" y="174" width="342" height="136" rx="16"/>
+    <text class="t" x="44" y="210">จับคู่สำเร็จ          6/6</text>
+    <text class="t" x="44" y="244">ทำได้ด้วยตนเอง      5/6</text>
+    <text class="t" x="44" y="278">มีตัวช่วย             1</text>
+    <rect class="card" x="24" y="326" width="342" height="92" rx="16"/>
+    <text class="t" x="44" y="361">ทันเป้าหมาย 90 วินาที</text>
+    <text class="t small" x="44" y="392">ไม่มีรางวัลเพิ่มจากความเร็ว</text>
+    <text class="t small" x="24" y="452">เก็บไว้ทบทวนรอบถัดไป 1 คำ</text>
+    <rect class="primary" x="24" y="478" width="342" height="58" rx="16"/>
+    <text class="t btn white" x="195" y="514">ทำภารกิจต่อ</text>
+    <text class="t small center" x="195" y="568">ไปหน้าทบทวน · ฝึกชุดนี้ซ้ำ</text>
+    <text class="t small" x="12" y="635">UX-P07 · Stars separated from time/mastery</text>
+  </g>
+
+  <!-- P04 Focused -->
+  <g transform="translate(485 790)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">← เลือกความหมาย</text><text class="t small" x="318" y="41">1/4</text>
+    <text class="t small" x="24" y="94">คำอังกฤษที่เลือก</text>
+    <rect class="selected" x="24" y="110" width="342" height="74" rx="16"/>
+    <text class="t ph" x="44" y="155">house</text><text class="t" x="320" y="155">🔊</text>
+    <text class="t small" x="24" y="222">เลือกความหมายภาษาไทย</text>
+    <rect class="card" x="24" y="238" width="342" height="64" rx="16"/><text class="t" x="44" y="278">บ้าน</text>
+    <rect class="card" x="24" y="314" width="342" height="64" rx="16"/><text class="t" x="44" y="354">หนังสือ</text>
+    <rect class="card" x="24" y="390" width="342" height="64" rx="16"/><text class="t" x="44" y="430">น้ำ</text>
+    <rect class="secondary" x="24" y="478" width="342" height="58" rx="16"/>
+    <text class="t btn" x="195" y="514">กลับไปเลือกคำอังกฤษ</text>
+    <text class="t small center" x="195" y="566">TalkBack · Switch · text 200%</text>
+    <text class="t small" x="12" y="635">UX-P04 · Focused semantic parity</text>
+  </g>
+
+  <!-- P08 History -->
+  <g transform="translate(910 790)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect class="bar" width="390" height="64" rx="24"/>
+    <text class="t ph" x="24" y="41">← ประวัติการจับคู่</text>
+    <rect class="card" x="24" y="92" width="342" height="180" rx="16"/>
+    <text class="t" x="44" y="128">ภารกิจวันนี้ · 6 คู่</text>
+    <text class="t" x="44" y="164">ดีที่สุด ★★★</text>
+    <text class="t" x="44" y="198">ล่าสุด   ★★☆</text>
+    <text class="t small" x="44" y="232">เก็บไว้ทบทวน 1 คำ</text>
+    <rect class="note" x="24" y="292" width="342" height="120" rx="16"/>
+    <text class="t" x="44" y="328">Practice Replay</text>
+    <text class="t small" x="44" y="360">ฝึกชุดเดิม สลับตำแหน่งใหม่</text>
+    <text class="t small" x="44" y="388">ไม่เพิ่มรางวัลและไม่เลื่อน SRS</text>
+    <rect class="secondary" x="24" y="448" width="342" height="58" rx="16"/>
+    <text class="t btn" x="195" y="484">ฝึกชุดนี้ซ้ำ</text>
+    <text class="t small center" x="195" y="548">Replay result แสดงแยกจาก mission best</text>
+    <text class="t small" x="12" y="635">UX-P08 · Best/latest + replay isolation</text>
+  </g>
+
+  <!-- Adventure parity -->
+  <g transform="translate(1335 790)">
+    <rect class="panel" width="390" height="610" rx="24"/>
+    <rect x="0" y="0" width="390" height="110" fill="#e0e7ff" stroke="#334155" stroke-width="2" rx="24"/>
+    <text class="t ph" x="24" y="41">เส้นทางผจญภัย</text>
+    <text class="t small" x="24" y="72">เพื่อนร่วมทาง: “เริ่มเมื่อพร้อมนะ”</text>
+    <rect class="dash" x="24" y="136" width="342" height="300" rx="18"/>
+    <text class="t h center" x="195" y="210">PairBoardViewModel</text>
+    <text class="t center" x="195" y="258">คำ · ลำดับ · timer · repair</text>
+    <text class="t center" x="195" y="292">evidence · stars</text>
+    <text class="t center" x="195" y="340">เหมือน Standard ทุกประการ</text>
+    <text class="t small center" x="195" y="392">ต่างเฉพาะ renderer / narrative</text>
+    <rect class="primary" x="24" y="468" width="342" height="58" rx="16"/>
+    <text class="t btn white" x="195" y="504">เริ่มจับคู่</text>
+    <text class="t small center" x="195" y="562">Adventure off → Standard Pair</text>
+    <text class="t small" x="12" y="635">UX-P09 · Presentation-only parity</text>
+  </g>
+
+  <text class="t small" x="60" y="1460">Normative for hierarchy, states, action priority and accessibility annotations; final styling follows Material 3 tokens in 05-ui-ux-design-spec-wireframes.md v1.2.</text>
+</svg>

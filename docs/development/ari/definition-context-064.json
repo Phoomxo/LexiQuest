@@ -1,0 +1,17 @@
+{
+  "checkpoint": "064",
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "rootCauses": [
+    "Shared method context omitted current definition item skip/choice state",
+    "Wrong committed feedback said retry despite next/results-only continuation"
+  ],
+  "change": "Owner-bound readonly actual question index/phase/skip reason and English definition-to-English word response metadata; stable wrapper; no content/answer/mutation. Continuation label matches real next/results button.",
+  "red": "Absent test failed next label;connected/disconnected failed missing context. Initial fixture hang corrected by awaiting owner read via tester.runAsync; no assertions removed.",
+  "green": "10 full definition screen tests pass, including3 absence/connected/disconnected real-storage two-wrong-answer completions and unreviewed skip-to-question transition without answer evidence.",
+  "analysis": "Two changed files clean",
+  "remaining": [
+    "Build/install new source and native definition guidance/disconnect/skip acceptance",
+    "Other original14 workflow/mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

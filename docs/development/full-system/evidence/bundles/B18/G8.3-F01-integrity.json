@@ -1,0 +1,130 @@
+{
+  "status": "passed",
+  "inputCheckpointSha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+  "frozenInventory": 3610,
+  "unchangedFreezeEntriesIncludingPinnedAmendments": 3592,
+  "policyAmendments": 3,
+  "authorizedFrozenDeltas": [
+    {
+      "path": "lib/features/device_model/application/device_model_use_cases.dart",
+      "frozenSha256": "075140a688f98f4118e5854d290ead5f44967b47289b192d572f8e51b435a95f",
+      "currentSha256": "066f970617a68d5085fbfc7698ff496516ddef24055b94f95d605afa27f3ce9c"
+    },
+    {
+      "path": "lib/features/device_model/application/model_benchmark.dart",
+      "frozenSha256": "fe47aa6d36fbf95c1b6cc4d5f4dac0fe1bad81fe12589e7297aabd54af5ad7e0",
+      "currentSha256": "42cd24bd3ae291f5431e99efe0b63b0616da5155c202d7db3843216ef3d431a8"
+    },
+    {
+      "path": "lib/features/device_model/application/model_download_manager.dart",
+      "frozenSha256": "e6e9fee9f64c8dcd599d8f9bbff7f6cc60e1049da773875a67982fd9c9eedea7",
+      "currentSha256": "38d047f9fd3d810c2a2df7d0d3e85e173abe829992ed750f8a5e83b1b40f1874"
+    },
+    {
+      "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "frozenSha256": "6801ae47bccf70743013da469fbad6ddb22ce890f0a0ff1316806a2fd5814039",
+      "currentSha256": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5"
+    },
+    {
+      "path": "lib/features/preferences/application/display_preferences_controller.dart",
+      "frozenSha256": "78ef4236ff442c6b8aa7b85749e6eb4b82e95d7f9fb512899332f02bab02e626",
+      "currentSha256": "2f8c3878010ff17d2ecb220417f4e8cde08ac7fc2f005fb6ab7bcee0a0b1fb0f"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "frozenSha256": "fd3595506142b6d79a1a67fe626974c44739917b8cbc6ad869cd9669f9d57740",
+      "currentSha256": "41a0c0b922788ff249dc0e61f788b812ffe2a3c83578ba6188308479b4cb1649"
+    },
+    {
+      "path": "lib/runtime/circuit_breaker.dart",
+      "frozenSha256": "ace72a2fab9b0aac974de621297a819e8dbfba19a31d15d7b1ba145d463cb254",
+      "currentSha256": "4d8d457bd4c5bf2e6df194d3df37beafae91100ca57cbf5c653084b873cbaa6b"
+    },
+    {
+      "path": "lib/screens/login_screen.dart",
+      "frozenSha256": "2e4a7af099c5a5accec01a21aaf41bc462f1c5c7ff790480e4ec506422fc8d26",
+      "currentSha256": "7bca4bf30723016c0e2fa4778db6e48aed475d8216a018ea76f9d87f233d20c2"
+    },
+    {
+      "path": "test/features/device_model/device_model_use_cases_test.dart",
+      "frozenSha256": "2e7b1233825e7d7bb57f45a9122ffc49a1a7860190776190f3ddb54dc96c637e",
+      "currentSha256": "c3c192ebd475c0720295c84c5ba1c5397071c8f5bd92b6e2ee21a548fd95ef33"
+    },
+    {
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "frozenSha256": "7e8156942b1920adac45b8f7281a17bcdad076adc1a6ee27417f93996649a5da",
+      "currentSha256": "214ee2c9cefe124492008839ca901c55af4629be5e5b6ae77026d0f3a6b746e3"
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "frozenSha256": "6994d7ed63e10cf67e0f5c6aa6a8a4faed1db63f96020f91f2326935fc6d9ccb",
+      "currentSha256": "a3760833f4b3e4f6e35efc3eed612ac6ab54a823c0c333fcffe9fab86099f2bb"
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "frozenSha256": "be3bf4179d8e04a91524fac5f6a933a91dbbfb379e18ddc965100de31a4429ad",
+      "currentSha256": "f7caf36b47a2087386fc416dc9d2de62068965d5e6ac5eea2195997e7e7dcddf"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "frozenSha256": "6878e1745094330ac0bf9e98bf29c7e964a2b76151e76108b0f9fd88bdb66de3",
+      "currentSha256": "b5eb2531f3efba61f141c9a25d8dccd6a5aeadba0a43508f7d8d67e64cf66859"
+    },
+    {
+      "path": "test/runtime/circuit_breaker_test.dart",
+      "frozenSha256": "15755af3b004ca5171124b3970d6c3598d38d8409ae887bf4280b86ba5e49f23",
+      "currentSha256": "f4b263b6cf233c5584d037e27e1f7a1848f3b0d9fcd02373f9dec1cac2a7a61d"
+    },
+    {
+      "path": "test/screens/login_guest_mode_test.dart",
+      "frozenSha256": "c375301edb9acdf2cfb7214e641e798826e3def4d8d95e5ab28edd61cd90d499",
+      "currentSha256": "ca8f82157898c0847babfad868297b49b9644c81cbba4905a71c932b76e15325"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "frozenSha256": "02bbdd19a3178142f6486650338a5cfad08d0f7d3e792bee3e9e7945e95eb52c",
+      "currentSha256": "ead5ec4c3aeae5319d01221b811a6afb85d88ad9c5ae2aef743d89f6f872d603"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "frozenSha256": "dd185884c0b5301d400b58f12ebb36b1c8b326531597e531b40e44a6eeb0e943",
+      "currentSha256": "e31c2933e5170bf7ca5834a80ba7d873dff5e189d0aebf3fd52d50de7393a157"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "frozenSha256": "dc2ee94d43116f959a4abd42557f71d07acc631abbffe03b11489dbeed35bedb",
+      "currentSha256": "13c923ab06cbe06b00da198e69f5abe124a17e968f69743d8ee99d51cd7e95df"
+    }
+  ],
+  "newRegressionFiles": [
+    "tool/cli/tests/fixtures/windows-runner/flutter/dart_project.h",
+    "tool/cli/tests/fixtures/windows-runner/flutter/flutter_view_controller.h",
+    "tool/cli/tests/fixtures/windows-runner/flutter/plugin_registry.h",
+    "tool/cli/tests/fixtures/windows-runner/flutter_windows.h",
+    "tool/cli/tests/fixtures/windows-runner/query_failure.cpp",
+    "tool/cli/tests/fixtures/windows-runner/runner_test.cpp",
+    "tool/cli/tests/windows-runner-lifecycle.tests.ps1",
+    "tool/cli/tests/windows_runner_lifecycle.py"
+  ],
+  "handoffEntries": 47,
+  "unchangedHandoffEntries": 44,
+  "updatedCurrentStateOnly": [
+    "docs/development/full-system/evidence/bundles/B18/G8.3-owner-plan.json",
+    "docs/development/full-system/evidence/bundles/B18/defects.json",
+    "docs/development/full-system/evidence/bundles/B18/resume.json"
+  ],
+  "preservedOtherFindings": 60,
+  "allFindingIDs": 69,
+  "closedF01": 9,
+  "remainingOpen": 60,
+  "dispositions": 1429,
+  "REV12Paths": 564,
+  "historicalTestPlanSha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534",
+  "externalEvidenceManifest": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/B18-G83-F01/manifest.json",
+  "externalEvidenceManifestSha256": "279b127e9aa712187606e792580fb5c93c369f3e72a57945b427ba188cdac5fa",
+  "receiptSha256": "8e84f50e3141d4fcb113cbcf74901ffa84f8419892be5b69148ea4a8d7a3dd4b",
+  "sourcePinsMatchFinalRun": true,
+  "G83Accepted": false,
+  "B18Accepted": false
+}

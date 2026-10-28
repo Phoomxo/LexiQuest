@@ -1,0 +1,18 @@
+{
+  "receivedEntries": 415,
+  "unchangedCount": 408,
+  "changedWithReason": {
+    "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-runtime-cli-57ac9ed71d1223fb09ad0d8cd5939b9f94cbb0f2c8ed7c37b9054799f92a74e5.json": "Normal verifier scratch; original bytes in backup and inherited pinned gate",
+    "docs/design/check-s01-navigation.cjs": "Authorized U source or delivery-state update",
+    "docs/design/lexiquest-full-ux.js": "Authorized U source or delivery-state update",
+    "docs/development/ux-delivery/README.md": "Authorized U source or delivery-state update",
+    "docs/development/ux-delivery/S01.md": "Authorized U source or delivery-state update",
+    "docs/development/ux-delivery/ready-backlog.md": "Authorized U source or delivery-state update",
+    "docs/development/ux-delivery/state.json": "Authorized U source or delivery-state update"
+  },
+  "originalBytesBackup": "build/ux-delivery/S01-U/predecessor-changed-bytes.zip",
+  "backupSha256": "4969cdb95a3f003a036ba6477b721c50d6fba9536e97ea0d8d1fe74a27642cc3",
+  "allOriginalHashesVerified": true,
+  "priorTestsPreservedVerbatim": true,
+  "predecessorWritten": false
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "rubricRevision": 1,
+  "reviewer": "Codex writer 01a0bc95-ef50-7522-9d96-69cf11161f58",
+  "reviewKind": "Source/AI-assisted engineering self-review",
+  "independentHumanReview": false,
+  "scope": "Exact local reviewed response catalog, three original starter object senses. Not open-ended writing accuracy, general proficiency, CEFR or efficacy.",
+  "sourceRights": "Original project-authored starter object metadata; canonical assets unchanged. New prompt/response fixtures authored in this implementation.",
+  "admission": "F01 exact saved crosswalk and sense/hash plus live approved/published verified lexical content; target book, pencil or bottle with starter-object-v1 revision1 only.",
+  "calibration": {
+    "test": "test/features/learning/written_rubric_calibration_test.dart",
+    "assessedOracles": 15,
+    "uncertainOracles": 8,
+    "method": "Separate explicit input/expected dimension fixtures reviewed against prompt and noun sense. No inferred statistical generalization from exact lookup agreement.",
+    "heldOutHumanEstimate": false,
+    "normalization": "Outer whitespace, case and one final period only; missing initial capital/final period receives form1 on otherwise recognized responses. Negation, added clauses and instructions are not removed.",
+    "meaning": "2: specified object meaning demonstrated; 0: reviewed different sense or literal incompatibility with the specified object. Unknown interpretation is uncertain, never 0 by default.",
+    "use": "2: requested activity demonstrated; 0: reviewed sentence does not demonstrate that activity. Meaning can remain2 when use0.",
+    "form": "2: reviewed sentence pattern with ordinary initial capital/final period; 1: specific article/agreement/capital/punctuation repair. No averaged grade.",
+    "examples": [
+      {"response": "I read a book.", "scores": [2,2,2], "reason": "Noun object, reading activity and complete grammatical sentence."},
+      {"response": "She reads a book.", "scores": [2,2,2], "reason": "Alternate subject and correct third-person agreement."},
+      {"response": "She read a book every day.", "scores": [2,2,2], "reason": "Valid habitual past tense; do not assume present."},
+      {"response": "She reads book.", "scores": [2,2,1], "reason": "Singular count noun lacks a determiner."},
+      {"response": "I have a book.", "scores": [2,0,2], "reason": "Object meaning is clear, but no reading activity is expressed."},
+      {"response": "I book a room.", "scores": [0,0,2], "reason": "Grammatical verb booking, not the requested noun object."},
+      {"response": "I pencil in a date.", "scores": [0,0,2], "reason": "Grammatical scheduling verb, not a demonstrated writing-tool noun."},
+      {"response": "I bottle water.", "scores": [0,0,2], "reason": "Grammatical packaging verb, not drinking from a container noun."},
+      {"response": "I read a bottle.", "status": "uncertain", "reason": "May mean reading its label; insufficient basis for a confident semantic penalty."},
+      {"response": "I eat a pencil.", "status": "uncertain", "reason": "Unusual action does not by itself prove a different lexical meaning; no automatic penalty."}
+    ]
+  },
+  "compatibility": "WrittenRubricResult revision1 decoder replays exact policy and rejects modified scores/spans/provenance. Preserve revision1 implementation when introducing later policies. F05 must not apply written capitalization/punctuation to ASR transcripts.",
+  "designFixtureMapping": {"RUBRIC-VALID": "Two or more reviewed alternate answers per admitted original target; hypothetical editorial borrow remains outside admitted content.", "RUBRIC-UNCERTAIN": "Ambiguous/unreviewed valid responses receive no numeric dimensions; editorial effect is not falsely admitted.", "RESEARCH-OFF": "Supplemental table only; zero canonical attempts/SRS/reward/research/outbox effects."}
+}

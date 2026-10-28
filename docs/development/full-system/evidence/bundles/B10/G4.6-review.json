@@ -1,0 +1,61 @@
+{
+  "packageId": "G4.6",
+  "bundleId": "B10",
+  "requirements": [
+    "COV-f35",
+    "COV-f38",
+    "COV-f39",
+    "G4"
+  ],
+  "design": "Capture questionnaire loaded owner ID and generation. Optional expectedOwnerId preserves existing use-case callers; visible form passes it and a generation-aware mutation guard. Reload changed dependencies, ignore obsolete reads/callbacks/save outcomes. Existing owner-scoped display store and M3Theme remain the display authority.",
+  "defects": [
+    {
+      "id": "B10-G46-01",
+      "status": "resolved",
+      "cause": "Questionnaire save resolved active owner without checking owner whose values filled the form",
+      "actual": "Old owner choices were saved to new owner",
+      "red": "G4.6-ui-red/receipt.json",
+      "fix": "Pin loaded ownerId and reject mismatched active owner before read/write; preserve repository active-owner transaction check"
+    },
+    {
+      "id": "B10-G46-02",
+      "status": "resolved",
+      "cause": "didChangeDependencies only assigned the first Future and didUpdateWidget never reloaded",
+      "actual": "Old pending 20-minute read replaced new 45-minute preference view",
+      "red": "G4.6-ui-red/receipt.json",
+      "fix": "Bind use-case identity and generation; protect async read/save and captured action"
+    }
+  ],
+  "toolingRecovery": [
+    {
+      "cause": "Assumed a separate unified_lesson_shell_test.dart existed after empty glob result",
+      "fix": "Stopped assumed path; discovered test inventory and used actual unified_lesson_controller_test.dart covering shell/reduced-motion behavior"
+    }
+  ],
+  "verification": {
+    "initialTests": 29,
+    "initialFiles": 6,
+    "initialReceipt": "G4.6-green/receipt.json",
+    "affectedTests": 9,
+    "affectedFinalReceipt": "G4.6-final/receipt.json",
+    "analyzer": "G4.6-analyzer.log",
+    "phaseReceipt": "G4-phase-final/receipt.json",
+    "phaseTests": 747,
+    "phaseFiles": 47
+  },
+  "review": [
+    "Leaving pushed questionnaire via Back discards edits without any save; reopen loads durable values",
+    "Preferences unit tests prove restart/idempotent replay/owner isolation and retain questionnaire fields while display changes remain local",
+    "Saved fields describe goals/time/activity; no CEFR, validated placement, learning-style or personality scoring",
+    "Guest/authenticated launch resolves Home from durable entry choice; questionnaire is optional study-planning route, not a repeated startup gate",
+    "Theme light/dark/system follows DisplayPreferencesController; platform disableAnimations is ORed with user reduced-motion preference",
+    "Shell continuation remains accessible and operative with disableAnimations, light/dark, widths320/390/840 and text scale1/2; passive companion is not an answer dependency",
+    "No schema, cloud activation, study assignment, consent, speech evidence or historical formula changes"
+  ],
+  "requiredOpenDefects": [],
+  "phaseStatus": "G4 local automated acceptance passed",
+  "external": [
+    "Physical/manual screen-reader/live/no-audio device journey/full release NOT RUN",
+    "Effective service tier unverified"
+  ]
+}
