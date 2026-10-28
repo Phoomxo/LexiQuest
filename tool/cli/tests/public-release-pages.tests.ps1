@@ -23,9 +23,18 @@ function Invoke-Verifier {
     param([string[]]$ExtraArguments = @())
     $pwsh = (Get-Command pwsh -ErrorAction Stop).Source
     $arguments = @('-NoProfile', '-File', $verifierPath) + $ExtraArguments
-    $output = & $pwsh @arguments 2>&1
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # An expected child rejection is an exit code, including on Windows PowerShell.
+        $ErrorActionPreference = 'Continue'
+        $output = & $pwsh @arguments 2>&1
+        $verifierExitCode = [int]$LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     return [pscustomobject]@{
-        ExitCode = [int]$LASTEXITCODE
+        ExitCode = $verifierExitCode
         Output = ($output -join "`n")
     }
 }
