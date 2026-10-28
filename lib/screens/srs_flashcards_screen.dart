@@ -78,6 +78,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    _controller.duration = reducedMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 400);
+    if (reducedMotion && _controller.isAnimating) {
+      _controller.value = _isFlipped ? 1 : 0;
+    }
     if (_load != null) return;
     if (_isCompatibilityDeck) {
       _load = Future.value(_compatibilitySession(widget.wordList!));
@@ -148,7 +155,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   void _flipCard() {
     if (_saving || _saved || _attemptId != null) return;
-    if (_isFlipped) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = _isFlipped ? 0 : 1;
+    } else if (_isFlipped) {
       _controller.reverse();
     } else {
       _controller.forward();

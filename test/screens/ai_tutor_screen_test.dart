@@ -14,6 +14,45 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets(
+    'reduced-motion chat moves to the latest answer without animated scrolling',
+    (tester) async {
+      final tutor = _FakeGeminiTutor()
+        ..replyText = List.filled(80, 'Synthetic motion response').join('\n');
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: AiTutorScreen(
+            voice: VoiceUseCases(_FakeVoice()),
+            geminiTutor: tutor,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final input = find.byKey(const ValueKey('ai-tutor-input'));
+      await tester.enterText(input, 'First synthetic question');
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+      final position = tester
+          .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+          .controller!
+          .position;
+      expect(position.maxScrollExtent, greaterThan(0));
+      position.jumpTo(0);
+      await tester.pump();
+      await tester.enterText(input, 'Second synthetic question');
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      for (var frame = 0; frame < 3; frame++) {
+        await tester.pump();
+      }
+      expect(position.pixels, closeTo(position.maxScrollExtent, 0.01));
+      expect(position.isScrollingNotifier.value, isFalse);
+    },
+  );
+
   testWidgets('permanent microphone denial is announced and opens recovery', (
     tester,
   ) async {
@@ -1166,6 +1205,7 @@ final class _FakeGeminiTutor implements GeminiTutorController {
   final List<String> messages = [];
   final List<GeminiTutorMode> modes = [];
   GeminiException? replyFailure;
+  String replyText = 'Live Gemini reply';
   Completer<void>? replyGate;
   bool hasKey = true;
   bool providerConsent = true;
@@ -1208,7 +1248,7 @@ final class _FakeGeminiTutor implements GeminiTutorController {
     final failure = replyFailure;
     if (failure != null) throw failure;
     return GeminiTutorReply(
-      text: 'Live Gemini reply',
+      text: replyText,
       model: 'gemini-test',
       generatedAtUtc: DateTime.utc(2026, 7, 30),
     );

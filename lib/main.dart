@@ -82,6 +82,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeAccessibilityFeatures() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void didUpdateWidget(covariant MyApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.dependencies, widget.dependencies)) {
@@ -116,24 +121,51 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   ? snapshot.data ?? const RewardAppearance.empty()
                   : const RewardAppearance.empty();
               final equipped = appearance.equippedBySlot;
+              final system = WidgetsBinding
+                  .instance
+                  .platformDispatcher
+                  .accessibilityFeatures;
+              final reducedMotion =
+                  _appAppearance.reducedMotion ||
+                  (MediaQuery.maybeOf(context)?.disableAnimations ?? false) ||
+                  system.disableAnimations ||
+                  system.reduceMotion;
               return MaterialApp(
                 navigatorKey: _navigatorKey,
                 debugShowCheckedModeBanner: false,
                 title: 'LexiQuest - AI Vocab Learning',
-                builder: (context, child) => DisplayFeatureSubScreen(
-                  child: SizedBox.expand(
-                    key: const ValueKey<String>('adaptive-app-surface'),
-                    child: child,
+                builder: (context, child) {
+                  final media = MediaQuery.of(context);
+                  return MediaQuery(
+                    data: media.copyWith(
+                      disableAnimations:
+                          media.disableAnimations || reducedMotion,
+                    ),
+                    child: DisplayFeatureSubScreen(
+                      child: SizedBox.expand(
+                        key: const ValueKey<String>('adaptive-app-surface'),
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
+                theme: _motionTheme(
+                  M3Theme.lightThemeFor(
+                    themeId: equipped['theme'],
+                    wallpaperId: equipped['wallpaper'],
                   ),
+                  reducedMotion,
                 ),
-                theme: M3Theme.lightThemeFor(
-                  themeId: equipped['theme'],
-                  wallpaperId: equipped['wallpaper'],
+                darkTheme: _motionTheme(
+                  M3Theme.darkThemeFor(
+                    themeId: equipped['theme'],
+                    wallpaperId: equipped['wallpaper'],
+                  ),
+                  reducedMotion,
                 ),
-                darkTheme: M3Theme.darkThemeFor(
-                  themeId: equipped['theme'],
-                  wallpaperId: equipped['wallpaper'],
-                ),
+                themeAnimationDuration: reducedMotion
+                    ? Duration.zero
+                    : kThemeAnimationDuration,
                 themeMode: _appAppearance.themeMode,
                 initialRoute: _startupRoute.name,
                 onGenerateInitialRoutes: _platformRoute == '/'
@@ -186,4 +218,61 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(navigator.pushNamed<void>(routeInformation.uri.toString()));
     return true;
   }
+}
+
+ThemeData _motionTheme(ThemeData theme, bool reducedMotion) {
+  if (!reducedMotion) return theme;
+  const defaults = PageTransitionsTheme();
+  return theme.copyWith(
+    pageTransitionsTheme: PageTransitionsTheme(
+      builders: {
+        for (final platform in TargetPlatform.values)
+          platform: _ReducedMotionPageTransitionsBuilder(
+            theme.pageTransitionsTheme.builders[platform] ??
+                defaults.builders[platform] ??
+                const ZoomPageTransitionsBuilder(),
+          ),
+      },
+    ),
+  );
+}
+
+final class _ReducedMotionPageTransitionsBuilder
+    extends PageTransitionsBuilder {
+  const _ReducedMotionPageTransitionsBuilder(this._delegate);
+
+  final PageTransitionsBuilder _delegate;
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      _delegate.delegatedTransition;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => _delegate.buildTransitions(
+    route,
+    context,
+    animation,
+    secondaryAnimation,
+    child,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is _ReducedMotionPageTransitionsBuilder &&
+      other._delegate == _delegate;
+
+  @override
+  int get hashCode => _delegate.hashCode;
 }

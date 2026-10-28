@@ -123,10 +123,14 @@ AppDependencies _dependencies() => AppDependencies(
 
 final class _AppearancePreferences implements AppAppearancePreferences {
   @override
-  Future<AppAppearanceMode> load() async => AppAppearanceMode.light;
+  Future<AppAppearanceSettings> load() async =>
+      (mode: AppAppearanceMode.light, reducedMotion: false);
 
   @override
-  Future<bool> save(AppAppearanceMode mode) async => true;
+  Future<bool> save(
+    AppAppearanceMode mode, {
+    required bool reducedMotion,
+  }) async => true;
 }
 
 final class _GuestSession implements GuestSessionService {

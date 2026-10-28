@@ -102,7 +102,9 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                       },
                       builder: (context, candidateData, rejectedData) {
                         return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 300),
                           margin: const EdgeInsets.all(5),
                           width: 50,
                           height: 50,

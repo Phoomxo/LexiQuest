@@ -14,9 +14,12 @@ void main() {
       await SharedPreferences.getInstance(),
     );
 
-    expect(await preferences.load(), AppAppearanceMode.system);
-    expect(await preferences.save(AppAppearanceMode.dark), isTrue);
-    expect(await preferences.load(), AppAppearanceMode.dark);
+    expect((await preferences.load()).mode, AppAppearanceMode.system);
+    expect(
+      await preferences.save(AppAppearanceMode.dark, reducedMotion: false),
+      isTrue,
+    );
+    expect((await preferences.load()).mode, AppAppearanceMode.dark);
   });
 
   test(
@@ -54,10 +57,11 @@ final class _AppearancePreferences implements AppAppearancePreferences {
   final saveResult = Completer<bool>();
 
   @override
-  Future<AppAppearanceMode> load() async => AppAppearanceMode.system;
+  Future<AppAppearanceSettings> load() async =>
+      (mode: AppAppearanceMode.system, reducedMotion: false);
 
   @override
-  Future<bool> save(AppAppearanceMode mode) {
+  Future<bool> save(AppAppearanceMode mode, {required bool reducedMotion}) {
     final failure = this.failure;
     if (failure is Error) throw failure;
     if (failure is bool) return Future<bool>.value(failure);

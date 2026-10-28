@@ -306,6 +306,9 @@ class _ShopPageState extends State<ShopPage> {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : null,
       builder: (context) => _CatalogDetailSheet(
         item: item,
         owned: owned,

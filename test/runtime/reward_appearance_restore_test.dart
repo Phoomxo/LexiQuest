@@ -186,13 +186,19 @@ final class _AppearancePreferences implements AppAppearancePreferences {
   _AppearancePreferences(this.mode);
 
   AppAppearanceMode mode;
+  bool reducedMotion = false;
 
   @override
-  Future<AppAppearanceMode> load() async => mode;
+  Future<AppAppearanceSettings> load() async =>
+      (mode: mode, reducedMotion: reducedMotion);
 
   @override
-  Future<bool> save(AppAppearanceMode mode) async {
+  Future<bool> save(
+    AppAppearanceMode mode, {
+    required bool reducedMotion,
+  }) async {
     this.mode = mode;
+    this.reducedMotion = reducedMotion;
     return true;
   }
 }

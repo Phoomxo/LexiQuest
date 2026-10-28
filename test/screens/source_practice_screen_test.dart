@@ -156,6 +156,7 @@ void main() {
     bool withTutor = true,
     Size size = const Size(360, 800),
     double keyboardInset = 0,
+    bool reducedMotion = false,
     SpeechPracticeUseCases? speech,
   }) => AppDependenciesScope(
     dependencies: AppDependencies(
@@ -181,6 +182,7 @@ void main() {
           size: size,
           textScaler: TextScaler.linear(textScale),
           viewInsets: EdgeInsets.only(bottom: keyboardInset),
+          disableAnimations: reducedMotion,
         ),
         child: SourcePracticeScreen(
           categoryId: 'category-1',
@@ -2273,6 +2275,36 @@ void main() {
         await database.select(database.learningSessions).get(),
         hasLength(1),
       );
+    },
+  );
+
+  testWidgets(
+    'reduced-motion unknown-word sheet opens and closes without a timed transition',
+    (tester) async {
+      await tester.pumpWidget(screen(reducedMotion: true));
+      await tester.tap(find.byKey(const ValueKey('choose-source-file')));
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('source-text')));
+      final showUnknown = find.byKey(const ValueKey('show-all-unknown'));
+      await tester.scrollUntilVisible(
+        showUnknown,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(showUnknown);
+      await tester.pump();
+
+      final sheetContext = tester.element(find.byType(BottomSheet));
+      final route = ModalRoute.of(sheetContext)!;
+      expect(route.animation!.value, 1);
+      expect(route.transitionDuration, Duration.zero);
+      expect(route.reverseTransitionDuration, Duration.zero);
+      expect(find.text('quiet').hitTestable(), findsOneWidget);
+
+      Navigator.of(sheetContext).pop();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(showUnknown.hitTestable(), findsOneWidget);
     },
   );
 

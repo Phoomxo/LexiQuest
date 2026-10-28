@@ -237,6 +237,30 @@ void main() {
     );
   }
 
+  shopTestWidgets(
+    'reduced-motion reward preview opens and closes without a timed transition',
+    (tester) async {
+      await _pumpShop(tester, rewards, reducedMotion: true);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('reward-detail-theme_ocean')),
+      );
+      await tester.pump();
+
+      final sheetContext = tester.element(find.byType(BottomSheet));
+      final route = ModalRoute.of(sheetContext)!;
+      expect(route.animation!.value, 1);
+      expect(route.transitionDuration, Duration.zero);
+      expect(route.reverseTransitionDuration, Duration.zero);
+      expect(find.text('ตัวอย่างธีมมหาสมุทร').hitTestable(), findsOneWidget);
+
+      Navigator.of(sheetContext).pop();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('เหรียญคงเหลือ').hitTestable(), findsOneWidget);
+    },
+  );
+
   shopTestWidgets('detail preview and Back perform no reward writes', (
     tester,
   ) async {
@@ -1222,6 +1246,7 @@ Future<void> _pumpShop(
   Size size = const Size(393, 876),
   double textScale = 1,
   bool dark = false,
+  bool reducedMotion = false,
   String Function()? generateIntentId,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -1234,9 +1259,10 @@ Future<void> _pumpShop(
       darkTheme: M3Theme.darkTheme,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+          disableAnimations: reducedMotion,
+        ),
         child: child!,
       ),
       home: ShopPage(rewards: rewards, generateIntentId: generateIntentId),

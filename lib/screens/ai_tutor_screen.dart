@@ -328,6 +328,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   void _scrollToLatest() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        return;
+      }
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 200),

@@ -1025,6 +1025,9 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : null,
       builder: (context) => FractionallySizedBox(
         heightFactor: 0.75,
         child: SafeArea(
