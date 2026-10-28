@@ -365,9 +365,9 @@ repository hook with its focused tests. No repository writes overlap.
 **Status:** IMPLEMENTED LOCALLY. Executable schema is v15/34 tables. Populated
 migration/database 39, opportunity repository 43, populated lifecycle 99 and
 combined integration 1152 pass; final analysis reports no issues. Independent
-repository and storage/lifecycle reviews accepted the current source. Full
-regression/build follows. One local-only table is added; indexes do not change
-the table count.
+repository and storage/lifecycle reviews accepted source `1128b9e6`, which also
+passes full Flutter 2594, CLI 23 and the normal Android debug build. One local-only
+table is added; indexes do not change the table count.
 
 `measurement_opportunities` has 15 fields: `id`, `owner_id`, `local_revision`,
 `measurement_run_id`, `permit_id`, `entry_attempt_id`, `assigned_treatment`,
