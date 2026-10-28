@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F05",
+  "continuationId": "B18-G83-F05-C01",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T18:46:42.381265+00:00",
+  "threadId": "01a0baec-13ba-7580-a062-d7f6c1eb10ce",
+  "inputCheckpointSha": "ce1aee78e62d134181de5ba122593709c3b5cae7",
+  "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "acceptedF03Sha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "acceptedF04Sha": "ce1aee78e62d134181de5ba122593709c3b5cae7",
+  "findings": [
+    {
+      "findingId": "B18-REV09-04",
+      "status": "closed-regression-verified",
+      "redRun": "rev09-04-red-corrected",
+      "greenRun": "final-affected",
+      "outcome": "Actual Firebase gateway returns committed registration identity with verificationEmailPending when delivery fails. AccountUseCases binds the real local owner; UI explicitly retries only verification, then consent/navigation. Real Drift owner upgrade and SDK-shaped create/link tests cover repeated delivery failure then success and normal controls. Prior consent recovery and bind-failure compensation retained; no provider signout/deletion used as assumed email compensation."
+    },
+    {
+      "findingId": "B18-REV09-05",
+      "status": "closed-regression-verified",
+      "redRun": "rev09-05-red",
+      "greenRun": "final-affected",
+      "outcome": "Exporter receives bootstrap configured base registry including learning preview, and evaluates persisted runtime override/expiry in its existing Drift transaction. Preview/custom/field combinations cover expired/false overrides and active emergencyOff; archive schema, hashes and privacy contract unchanged."
+    },
+    {
+      "findingId": "B18-REV09-06",
+      "status": "closed-regression-verified",
+      "redRun": "rev09-06-red",
+      "greenRun": "final-affected",
+      "outcome": "Consent mutation acquires SQLite write lock with a no-op active-owner update and validates unique active intended owner before consent/withdrawal writes. Deferred accept and withdraw after owner A to B switch fail atomically with unchanged owner/consent/secondary snapshots; fresh B action and same-owner lifecycle controls pass. No remote research activity."
+    }
+  ],
+  "closedInThisCheckpoint": 3,
+  "closedF05": 3,
+  "remainingF05": [
+    "B18-REV09-01",
+    "B18-REV09-02",
+    "B18-REV09-03"
+  ],
+  "totalClosed": 53,
+  "remainingOpenFindings": 16,
+  "finalTestsPassed": 271,
+  "testTargetCount": 13,
+  "successfulFinalVerifierRuns": 1,
+  "analysis": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "preexistingInformationalDiagnostics": [
+      {
+        "path": "lib/runtime/app_bootstrap.dart",
+        "line": 1169,
+        "baselineLine": 1169,
+        "unchangedFiveLineContext": true
+      },
+      {
+        "path": "lib/runtime/app_bootstrap.dart",
+        "line": 1207,
+        "baselineLine": 1207,
+        "unchangedFiveLineContext": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "line": 4707,
+        "baselineLine": 4651,
+        "unchangedFiveLineContext": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "line": 4768,
+        "baselineLine": 4712,
+        "unchangedFiveLineContext": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "line": 4849,
+        "baselineLine": 4793,
+        "unchangedFiveLineContext": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "line": 4850,
+        "baselineLine": 4794,
+        "unchangedFiveLineContext": true
+      }
+    ]
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/account/data/firebase_account_gateway.dart",
+      "sha256": "c6ecc0df68a4be35eb23d01a36a3938870f55672111b1f71fc431f4f208a54f1"
+    },
+    {
+      "path": "lib/features/account/domain/account_contracts.dart",
+      "sha256": "7940b2622ab184c4b5ff219895b1494922a8d3f0cc8f95135d2d42f8def748fb"
+    },
+    {
+      "path": "lib/features/consent/data/drift_research_consent_repository.dart",
+      "sha256": "b30621e3adfc93cd077d4c527e9b012cb688d5040045cfb03857b880e86a376f"
+    },
+    {
+      "path": "lib/features/consent/domain/research_consent.dart",
+      "sha256": "a38da7f25e39ad195ca25e6d7b43830994c22185142fe0b2bf3d9d3c4e790334"
+    },
+    {
+      "path": "lib/features/export/application/owner_lifecycle_archive.dart",
+      "sha256": "18bfa943f1384469c813757ea2b19fee74b75ee16c31fcf2bc43f2a24bad2522"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "a303698b827c7ab5bb46c417958a5622f5783d405185dc4ce8bee27f90a6e8c5"
+    },
+    {
+      "path": "lib/screens/register_screen.dart",
+      "sha256": "93073820cae3989901c2be3e7519c51a201060fb47ef78fe8f60c806eb7410a9"
+    },
+    {
+      "path": "test/features/consent/research_consent_use_cases_test.dart",
+      "sha256": "13410c201b455cf02d30fac0f4e10677061661efe2b7f36accf51baa08b281de"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "sha256": "8d30503887e478f02a6e11d7fe5290197477f155d7c2d913a2b5578ad5664f7c"
+    },
+    {
+      "path": "test/screens/firebase_registration_recovery_test.dart",
+      "sha256": "27943c67f3928f2b0b18357872889875b9eb16c68c6df0bb8af3b45b3c931dde"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F05-C01",
+  "evidenceManifestSha256": "fee35f3305b25f526a9fff461f519f319300524ee64c5091676ce6c70e563507",
+  "review": {
+    "kind": "local-changed-code-review",
+    "independentReviewer": false,
+    "scope": [
+      "B18-REV09-04",
+      "B18-REV09-05",
+      "B18-REV09-06"
+    ],
+    "conclusions": [
+      "Registration catches delivery failure only after successful account creation/link, preserves identity and emailVerified=false, then existing AccountUseCases performs owner binding/entry clearing and its prior failure compensation. UI retains session, separates verification retry from consent retry, and never reruns create/link. Tests use real gateway/use cases/Drift upgrade/UI and SDK-shaped fakes; repeated send failure then success, positive controls and F03 consent recovery preserved.",
+      "Archive receives configured base registry including preview wrapper. Persisted emergency overrides still evaluated from the same Drift snapshot and UTC expiry. No exported field, manifest, schema or owner/global privacy changes. Four configuration combinations plus exact archive tests.",
+      "Consent no-op update takes SQLite writer lock, validates unique active owner, and commits decision/withdrawal work atomically. A switched owner causes rollback before any consent or secondary mutation. Same-owner and synthetic local lifecycle/withdrawal tests preserved."
+    ],
+    "actionableFindings": [],
+    "analysis": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "preexistingInformationalDiagnostics": [
+        {
+          "path": "lib/runtime/app_bootstrap.dart",
+          "line": 1169,
+          "baselineLine": 1169,
+          "unchangedFiveLineContext": true
+        },
+        {
+          "path": "lib/runtime/app_bootstrap.dart",
+          "line": 1207,
+          "baselineLine": 1207,
+          "unchangedFiveLineContext": true
+        },
+        {
+          "path": "test/runtime/app_bootstrap_test.dart",
+          "line": 4707,
+          "baselineLine": 4651,
+          "unchangedFiveLineContext": true
+        },
+        {
+          "path": "test/runtime/app_bootstrap_test.dart",
+          "line": 4768,
+          "baselineLine": 4712,
+          "unchangedFiveLineContext": true
+        },
+        {
+          "path": "test/runtime/app_bootstrap_test.dart",
+          "line": 4849,
+          "baselineLine": 4793,
+          "unchangedFiveLineContext": true
+        },
+        {
+          "path": "test/runtime/app_bootstrap_test.dart",
+          "line": 4850,
+          "baselineLine": 4794,
+          "unchangedFiveLineContext": true
+        }
+      ]
+    },
+    "limits": [
+      "No independent reviewer or subagent",
+      "No live Firebase, deployed rules, remote research, physical-device or release claim",
+      "Consent tests use same-connection deferred admission and real SQLite; no OS crash or dedicated two-connection race claim"
+    ],
+    "recoveries": [
+      "Corrected guessed read paths via rg discovery; no repeated failed read method continued.",
+      "First SDK UI RED included 2 pending heartbeat timer fixture failures; drained accepted owner-upgrade delay in widget clock. Corrected RED has 2 passing success controls and 2 genuine failure cases.",
+      "A replacement assertion stopped before any source edit due LF/CRLF mismatch. Corrected exact-match method preserved original EOL; introduced EOL drift removed only in three baseline-proven LF files."
+    ]
+  },
+  "F05Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "continuationReason": "Registration recovery, owner admission and configured archive snapshot unit verified. Remaining three findings require a distinct durable sync/gateway codec/rules and proof-frontier context. No failing regression or partial implementation is transferred; F05 remains genuinely unfinished.",
+  "limitations": [
+    "Synthetic SDK boundary, no live Firebase or device claims",
+    "No rules emulator/deployment in C01; REV09-03 remains open",
+    "No remote research, study assignment, reporting, model training or release run",
+    "Same-connection deferred consent race with real Drift, not OS-crash/two-connection race proof"
+  ]
+}

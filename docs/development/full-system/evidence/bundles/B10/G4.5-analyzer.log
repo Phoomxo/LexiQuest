@@ -1,0 +1,5 @@
+Analyzing achievements_screen.dart, achievement_share_card_use_cases.dart, file_selector_share_card_store.dart, achievements_screen_test.dart, achievement_share_card_use_cases_test.dart...
+
+   info - lib\screens\achievements_screen.dart:65:7 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+
+1 issue found.

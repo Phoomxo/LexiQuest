@@ -1,0 +1,20 @@
+{
+  "checkpoint": "073",
+  "status": "NATIVE_DEFINITION_SKIP_GUIDANCE_AND_DISCONNECTED_COMPLETION_PASS",
+  "installedApk": "build/ari-assistance-071.apk",
+  "sourceCommit": "8568c2f5",
+  "native": {
+    "liveSkip": "Provider identifies Definition Quiz1of3,English definition and English answer,skip has no answer to grade;instructs Continue manually",
+    "disconnect": "Explicit disconnect on skipped item leaves Continue enabled;manual advance retains session",
+    "completion": "Manually answered bag/book correctly after disconnect;100percent2correct0wrong",
+    "persistence": "Completed;exact2definitionChoice/recognition rows at2and3;no answer on skipped1"
+  },
+  "limitation": "Provider used English Continue rather than Thai UI label ดำเนินต่อ;guidance is semantically correct but exact-label localization not demonstrated",
+  "evidence": [
+    "evidence/definition-skip-live-073/observations.json",
+    "evidence/definition-skip-live-073/durable-summary.json",
+    "evidence/definition-skip-live-073/source-pins.json"
+  ],
+  "wholeGoalComplete": false,
+  "next": "Associative reading actual native baseline/connected/disconnected context and feedback"
+}

@@ -1,0 +1,103 @@
+{
+  "taskId": "01a0cfed-258d-7dd3-83f3-fb1a692ff704",
+  "sourceFingerprint": "6db9afc3bb93af8435c9683adf234c3e2fd2df5bc864ff917b53728b53498d40",
+  "sourceManifest": "source-manifest-r3-05-part09.json",
+  "apk": "build/ari-r3-05/ari-r3-05-part09.apk",
+  "apkSha256": "54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5",
+  "package": "com.lexiquest.app.ariTest",
+  "serial": "9582188822004C6",
+  "build": {
+    "status": "PASS",
+    "command": "flutter build apk --debug --target lib/main_ari_test.dart --dart-define=ARI_LOCAL_TEST=true --android-project-arg=ariLocalTest=true --target-platform android-arm64",
+    "log": "build/ari-r3-05/part09-android-build.log",
+    "sha256": "9fd07dba58784194c1c2ad95c653919a1d5f6c3c4fd024ca9d5c3504b87a9c52",
+    "warning": "Existing Kotlin Gradle warning"
+  },
+  "observed": [
+    "Fresh main/WAL/SHM backed up before isolated installation. aapt confirmed com.lexiquest.app.ariTest;installed APK hash matches local54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5.",
+    "Main learning screen shows baseline controls. Expand AI shows unpaired message;HOME/foreground retains baseline and unpaired state;collapse then vocabulary navigation works.",
+    "Open category dialog, enter exact R309Draft;expand AI,HOME/foreground,collapse retain exact draft. Cancel without saving.",
+    "Force-stop/relaunch then explicit AI expansion remains unpaired; no login/inference occurred.",
+    "All58tables compared by actual primary keys;category/word/import/importrows/outbox/owner/answer/session/AIusage unchanged. Cancelled draft absent.",
+    "One content timestamp and one runtime timestamp/expiry updated;quest_instances+1 andquest_objective_progress+1 separately recorded.",
+    "Fresh snapshot restored BYTEEXACT;isolated app force-stopped andpidof absent."
+  ],
+  "provider": "FRESH_NATIVE_UNPAIRED",
+  "backup": "build/ari-r3-05/part09-native/backup.json",
+  "restore": "build/ari-r3-05/part09-native/restore.json",
+  "storageComparison": {
+    "tablesCompared": 58,
+    "changes": {
+      "content_download_states": {
+        "beforeRows": 2,
+        "afterRows": 2,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": [
+          "updated_at_utc_ms"
+        ]
+      },
+      "quest_instances": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "instance_id"
+        ],
+        "changedColumns": []
+      },
+      "quest_objective_progress": {
+        "beforeRows": 3,
+        "afterRows": 4,
+        "added": 1,
+        "removed": 0,
+        "modified": 0,
+        "keyColumns": [
+          "id"
+        ],
+        "changedColumns": []
+      },
+      "runtime_flags": {
+        "beforeRows": 3,
+        "afterRows": 3,
+        "added": 0,
+        "removed": 0,
+        "modified": 1,
+        "keyColumns": [
+          "key"
+        ],
+        "changedColumns": [
+          "expires_at_utc_ms",
+          "updated_at_utc_ms"
+        ]
+      }
+    },
+    "invariantTables": [
+      "local_owners",
+      "answer_attempts",
+      "learning_sessions",
+      "ai_usage_events",
+      "vocabulary_categories",
+      "vocabulary_words",
+      "vocabulary_imports",
+      "vocabulary_import_rows",
+      "outbox_operations"
+    ],
+    "originalVocabularyAndOutboxRowsUnchanged": true,
+    "cancelledDraftNotPersisted": true,
+    "installedApkSha256": "54bfe8e6ef735e63b09ae3303a040b71c107c6f3ba6cb89617cafba72afa00d5",
+    "integrity": "ok before and after on disposable clones"
+  },
+  "limits": [
+    "Bridge responses and transport completions are controlled host fixtures; no provider authentication or native delayed-request injection was performed.",
+    "Route-cover tests apply to standalone ManagedTutorTestScreen. The embedded Ari shell intentionally keeps the AI panel across core route navigation; no claim that every main-route change disconnects embedded AI.",
+    "Native bridge is unpaired, so native baseline does not execute the changed login widget; changed behavior is proven by host tests and included in installed APK.",
+    "No new file-backed owner-lease/process-death acceptance or provider request-ID protocol; remaining criteria stay open."
+  ]
+}

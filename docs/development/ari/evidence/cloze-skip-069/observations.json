@@ -1,0 +1,546 @@
+[
+  {
+    "at": "2026-09-23T07:10:33.305323+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "1850",
+      "850",
+      "650",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "อารี · รุ่นทดสอบ",
+        "bounds": "[44,116][402,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กำลังเตรียมรุ่นทดสอบ",
+        "bounds": "[346,1229][734,1295]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T07:10:41.355460+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "1850",
+      "850",
+      "650",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เรียน",
+        "bounds": "[44,270][158,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดแบบทดสอบจากคลังคำศัพท์",
+        "bounds": "[44,385][524,575]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมนึกคำแล้วพิมพ์",
+        "bounds": "[557,385][1036,575]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมจับคู่คำศัพท์",
+        "bounds": "[44,608][524,1002]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเลือกคำจากคำอธิบาย",
+        "bounds": "[557,608][1036,1002]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดทบทวนคำศัพท์",
+        "bounds": "[44,1035][524,1486]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเรียงตัวอักษร",
+        "bounds": "[557,1035][1036,1486]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกระดานฝึกเขียน",
+        "bounds": "[44,1519][524,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T07:10:51.474221+00:00",
+    "action": [
+      "swipe",
+      "850",
+      "1850",
+      "850",
+      "650",
+      "450"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "เปิดเมนูเพิ่มเติม",
+        "bounds": "[22,88][154,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้อมูลในเครื่องพร้อมใช้",
+        "bounds": "[176,125][926,183]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "รายละเอียดสถานะระบบ",
+        "bounds": "[926,88][1058,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เรียน",
+        "bounds": "[44,270][158,347]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อ่านและประโยค",
+        "bounds": "[44,385][1036,395]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดอ่านเชื่อมโยงความจำ",
+        "bounds": "[44,428][524,879]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเติมคำในประโยค",
+        "bounds": "[557,428][1036,879]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดอ่านตามระดับภาษา CEFR",
+        "bounds": "[44,912][524,1363]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมเรียงประโยค",
+        "bounds": "[557,912][1036,1363]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ฟังและพูด",
+        "bounds": "[44,1429][1036,1495]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมฟังแล้วพิมพ์",
+        "bounds": "[44,1528][524,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดกิจกรรมฝึกออกเสียง",
+        "bounds": "[557,1528][1036,1940]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดหน้าเรียน\nแท็บที่ 1 จาก 5",
+        "bounds": "[0,1940][216,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "true"
+      },
+      {
+        "text": "เปิดคำศัพท์\nแท็บที่ 2 จาก 5",
+        "bounds": "[216,1940][432,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดภาพรวมความก้าวหน้า\nแท็บที่ 3 จาก 5",
+        "bounds": "[432,1940][648,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดรางวัล\nแท็บที่ 4 จาก 5",
+        "bounds": "[648,1940][864,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดโปรไฟล์\nแท็บที่ 5 จาก 5",
+        "bounds": "[864,1940][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T07:10:59.612471+00:00",
+    "action": [
+      "tap",
+      "780",
+      "650"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "ตั้งค่ากิจกรรมการเรียน",
+        "bounds": "[0,1181][1080,2160]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตั้งค่าก่อนเริ่มเรียน",
+        "bounds": "[44,1253][904,1330]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ปิดการตั้งค่าก่อนเริ่มเรียน",
+        "bounds": "[904,1225][1036,1357]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เนื้อหา: เนื้อหาที่เลือกสำหรับกิจกรรมนี้",
+        "bounds": "[44,1390][1036,1456]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จำนวน 1 ข้อ · เลือกได้ 1–20 ข้อ",
+        "bounds": "[44,1489][1036,1555]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับเวลา 10 นาที",
+        "bounds": "[44,1588][1036,1654]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "อ่านประโยคแล้วเติมคำในช่องว่าง",
+        "bounds": "[44,1687][1036,1753]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มเรียน",
+        "bounds": "[44,1819][1036,1951]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ปรับตัวเลือก",
+        "bounds": "[44,1984][1036,2116]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "Scrim",
+        "bounds": "[0,0][1080,1181]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T07:11:03.484491+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1880"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์",
+        "bounds": "[0,77][1080,88]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับเวลาเรียน พร้อมเริ่ม 0:00:00",
+        "bounds": "[0,88][1080,561]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "จับเวลาเรียน\n0:00:00\nพร้อมเริ่ม",
+        "bounds": "[0,88][1080,561]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เริ่มจับเวลา",
+        "bounds": "[66,385][419,517]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เพื่อนร่วมเรียน: ค่อย ๆ เรียนไปทีละขั้น",
+        "bounds": "[321,561][759,726]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "คำใบ้ระดับ 0 ดูวิธีคิด",
+        "bounds": "[0,726][1080,858]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดูวิธีคิด",
+        "bounds": "[0,726][1080,858]",
+        "enabled": "false",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "100, ข้อ 1 จาก 1",
+        "bounds": "[44,1056][1036,1067]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ข้ามข้อนี้ เนื่องจากตัวอย่างเติมคำยังไม่ผ่านการตรวจทาน",
+        "bounds": "[44,1133][1036,1287]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ดำเนินต่อ",
+        "bounds": "[44,1342][1036,1474]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับ",
+        "bounds": "[11,869][143,1001]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เติมคำในประโยค",
+        "bounds": "[198,897][563,974]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  },
+  {
+    "at": "2026-09-23T07:11:14.135275+00:00",
+    "action": [
+      "tap",
+      "500",
+      "1400"
+    ],
+    "package": "com.lexiquest.app.ariTest",
+    "observations": [
+      {
+        "text": "กลับ",
+        "bounds": "[11,88][143,220]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการเรียน",
+        "bounds": "[198,116][466,193]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ผลการเรียนรอบนี้\n0%\nยังไม่มีคำตอบในรอบนี้",
+        "bounds": "[44,275][1036,792]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "ตอบถูก\n0\nตอบผิด\n0\nจำนวนตัวอย่าง\n0",
+        "bounds": "[44,792][1036,1507]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "กลับไปเลือกกิจกรรม",
+        "bounds": "[44,1540][1036,1672]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      },
+      {
+        "text": "เปิดส่วนช่วยเหลือ AI",
+        "bounds": "[0,2160][1080,2226]",
+        "enabled": "true",
+        "checked": "false",
+        "selected": "false"
+      }
+    ]
+  }
+]

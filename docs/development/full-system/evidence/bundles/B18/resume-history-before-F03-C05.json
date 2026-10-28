@@ -1,0 +1,59 @@
+{
+  "bundleId": "B18",
+  "currentPackageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "threadId": "01a0ba71-1485-7e00-bda6-17738f2f336a",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\690c\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f03-c04",
+  "inputCheckpointSha": "c7f59e2c9e94ecab71a6ebef761a74ee447df983",
+  "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "G82Accepted": true,
+  "G83Started": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "writerReleased": false,
+  "completedSlice": null,
+  "findingsClosed": 34,
+  "remainingOpenFindings": 35,
+  "nextSlice": "B18-G83-F03",
+  "historyPath": "resume-history-before-F03-C04.json",
+  "evidence": [
+    "G8.3-F03-C04-checkpoint.json",
+    "G8.3-F03-C04-integrity.json",
+    "G8.3-owner-plan.json",
+    "defects.json"
+  ],
+  "nextWork": [
+    "Continue4 genuinely unfinished F03 findings: REV05-01/02/03 configured assessment authority/completion/timing; REV05-04 Legacy compatibility deck rating/dispose. Exact finding summaries read only; no reproduction/fix in C04.",
+    "Keep configured assessment synthetic/local; never activate research. Read exact contracts/callers/relevant REV12 attribution before RED.",
+    "Preserve all69 IDs/1429dispositions/564 REV12 paths/historical plan hash and accepted F01/F02/15 F03 outcomes. F04 gated until19/19 complete.",
+    "Post accepted G8.3 notify master exact SHA/receipt/releasedwriter for Engineering Spec v3 E0/E1; no direct B19 and retain G8.4-G8.9."
+  ],
+  "verification": "90scoped tests across6targets; analyzer0 across6changed Dart files;16pre/post pairs equal;1339inputs unchanged through source commit. Local review only. No whole-app/native/device/provider/full-release claim.",
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "continuationId": "B18-G83-F03-C04",
+  "remainingF02": [],
+  "F02Accepted": true,
+  "nextContinuation": "B18-G83-F03-C05",
+  "remainingF03": [
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04"
+  ],
+  "F03Accepted": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

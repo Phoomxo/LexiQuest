@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B16",
+  "defects": [
+    {
+      "id": "B16-POLICY-01",
+      "package": "G7.3",
+      "status": "closed-local-emulator",
+      "expected": "Missing/invalid provider claims cannot use registered-only legacy grants",
+      "actual": "Complete valid global-word create succeeded with missing claim",
+      "cause": "isRegisteredUser treated missing firebase/provider as registered",
+      "red": "G7.3-provider-red.stdout.log",
+      "fix": "Require explicit map, nonempty string provider, nonanonymous identity; field guest sync unchanged",
+      "retest": "G7.3-final-verifier.json"
+    },
+    {
+      "id": "B16-POLICY-02",
+      "package": "G7.3",
+      "status": "closed-local-emulator",
+      "expected": "Clients cannot grant legacy scores or purchases",
+      "actual": "Profile score update, state score create, exact-price atomic purchase succeeded",
+      "cause": "Bounded client score fields and atomic debit were mistaken for trusted earning authority",
+      "red": "G7.3-red-Firestore-rules-tests.stdout.log",
+      "fix": "Profile-only affected keys; wallpaper-only state mutations; client purchases denied. Preserve trusted score fields on profile edits.",
+      "retest": "G7.3-final-verifier.json"
+    },
+    {
+      "id": "B16-EXPORT-01",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Cancelled export leaves no new destination payload and preserves overwritten file",
+      "actual": "Previous store checked cancellation after publishing but cleaned only temporary file; Android had no discard channel",
+      "cause": "Destination lifecycle not included in cancellation cleanup",
+      "fix": "Unique staging, destination serialization and backup restore; Android tracks new export URI and requires discard acknowledgement; cleanupFailed UI cannot claim cancelled",
+      "red": "G7.4-red-verifier.json",
+      "retest": "G7.4-final-verifier.json",
+      "nativeCompile": "G7.4-native-verifier.json"
+    },
+    {
+      "id": "B16-EXPORT-02",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Rollback failure preserves original bytes for recovery",
+      "actual": "Initial new store deleted backup in finally after rollback failed",
+      "cause": "Unconditional staging deletion",
+      "red": "G7.4-rollback-red-verifier.json",
+      "fix": "Retain previous backup on rollback failure while deleting new export payload; explicit cleanup failure",
+      "retest": "G7.4-final-verifier.json",
+      "nativeCompile": "G7.4-native-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-01",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Native Kotlin change can be compiled within bounded verifier without full Android packaging",
+      "actual": "No selector for native compile",
+      "red": "G7.4-cli-red-verifier.json",
+      "fix": "AndroidCompileOnly Targeted/Integration; reject mixed/subsystem/release selectors; gradle launcher/local properties included in environment fingerprint",
+      "retest": "G7.4-cli-final-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-02",
+      "package": "G7.5",
+      "status": "closed-local",
+      "expected": "Selected preview can be compiled with exact safe flags through bounded verifier",
+      "actual": "Existing verifier had no profile selector; build flags existed only in B01 specification",
+      "red": "G7.5-cli-red-verifier.json",
+      "fix": "LocalLearningPreview selector and canonical two-flag profile; reject mixed/release use and modified flag profile. Compiled test confirms production factory binding.",
+      "retest": "G7.5-cli-initial-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-03",
+      "package": "G7.5",
+      "status": "closed-local",
+      "expected": "Flutter fingerprints include imported helper tool/feature_contract/generate_feature_map.dart",
+      "actual": "Legacy closure excludes tool paths outside tool/cli",
+      "cause": "Overly narrow tool directory regex",
+      "baseline": "G7.5-helper-baseline.json confirms source unchanged since G7.4; no actual previous test behavior failure",
+      "fix": "Conservatively include all tool/ inputs and recheck affected architecture tests; retain original receipts",
+      "red": "G7.5-closure-red-verifier.json",
+      "retest": [
+        "G7.5-cli-final-verifier.json",
+        "G7.5-architecture-verifier.json"
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "fixture-correction",
+      "detail": "First claim test lacked required word fields and passed for the wrong reason. Replaced with complete valid payload before second red run, which demonstrated missing-claim bypass. No acceptance reduction."
+    },
+    {
+      "kind": "path-discovery",
+      "detail": "Initial scoped reads included absent functions, test/security/package.json and test/cli paths. Switched to rg file inventory and actual root package.json/tool/cli/tests; functions exist only in frozen main donor. No user files modified or removed."
+    },
+    {
+      "kind": "SDK-fixture-correction",
+      "detail": "@firebase/util createMockUserToken inserts firebase.sign_in_provider=custom for empty options. First post-fix run179/180 exposed this test issue, not a rule bypass. Explicit firebase:undefined omits the JWT claim; final180/180 passed. Empty map, empty/nonstring/anonymous provider also denied."
+    },
+    {
+      "kind": "test-edit",
+      "detail": "Initial export regression compile also exposed misplaced dart:io import from patch insertion. Moved import to directives before implementation verification; missing API errors and later real rollback failure retained."
+    },
+    {
+      "kind": "evidence-packaging",
+      "detail": "Initial diff --check treats preserved CRLF as whitespace. Subsequent cr-at-eol source diff check passed; raw logs force-added as binary with B16 attributes. No test was skipped."
+    },
+    {
+      "kind": "artifact-audit-path-correction",
+      "detail": "Python314 __file__ is absolute; initial index carried absolute evidence paths and committed blob lookup failed before acceptance. Normalize artifact paths relative to repository, retain failed log and original commit91959fbf, regenerate index and verify every blob. No production input or test result changed."
+    }
+  ]
+}

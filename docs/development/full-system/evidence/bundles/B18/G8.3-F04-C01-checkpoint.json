@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F04",
+  "continuationId": "B18-G83-F04-C01",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T17:30:19.633298+00:00",
+  "threadId": "01a0baa8-03eb-7992-a80f-0358c16c0a2d",
+  "inputCheckpointSha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "acceptedF03Sha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "findings": [
+    {
+      "findingId": "B18-REV08-01",
+      "status": "closed-regression-verified",
+      "redRun": "ai-red",
+      "greenRun": "tutor-final;settings-final",
+      "outcome": "Revocation snapshots cancellation and reserves its serial transition before yielding. Replies submitted during drain fail missing-key/consent without a second provider call. Actual Drift owner gate, usage repository and credential-version index verify one terminal attempt for both remove/revoke and paid-success/cancelled provider outcomes; paid results retained."
+    },
+    {
+      "findingId": "B18-REV08-02",
+      "status": "closed-regression-verified",
+      "redRun": "ai-red",
+      "greenRun": "tutor-final;settings-final",
+      "outcome": "Real raw JSON overflow1e308 and saturating1e30 costs preserve paid reply with unknown cost. Finite positive/zero costs retained; negative/type-invalid ignored. Scaled microUSD is limited to exact cross-platform integer range. Real gateway plus AiTutorUseCases and fenced Drift records one success with totalTokens5 and unknown cost."
+    },
+    {
+      "findingId": "B18-REV06-07",
+      "status": "closed-regression-verified",
+      "redRun": "settings-red",
+      "greenRun": "tutor-final;settings-final",
+      "outcome": "Controller binding generation fences injected/inherited replacement across settings,usage,model/mutation/readback/finally and confirmation/leave dialogs. Reset clears old known flags, secret draft and saved provider/model/usage; initial null visibly unavailable. Deferred old results cannot restore retired state; failed replacement shows unknown. Old remove/clear confirmation performs zero mutations; stale consent failure does not read back old controller."
+    }
+  ],
+  "closedInThisCheckpoint": 3,
+  "closedF04": 3,
+  "remainingF04": [
+    "B18-REV08-03",
+    "B18-REV08-04",
+    "B18-REV08-05",
+    "B18-REV08-06",
+    "B18-REV08-07",
+    "B18-REV08-08",
+    "B18-REV08-09",
+    "B18-REV08-10",
+    "B18-REV08-11"
+  ],
+  "totalClosed": 41,
+  "remainingOpenFindings": 28,
+  "dartTestsPassed": 84,
+  "testTargetCount": 4,
+  "successfulVerifierRuns": 2,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 7,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "sha256": "b2cb3f3d240e2517b5421f17e0630b7b1bfb3295d1ba9c227ef66d5052f4cb44"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+      "sha256": "41fb71869b64807d86f5ed3483fd4d45eb9c3d1943977dd7a3e09e16919070cb"
+    },
+    {
+      "path": "lib/screens/ai_tutor_settings_screen.dart",
+      "sha256": "03cbc76730ae99da6c65d11396d94d3803602d6c7f1b6f580d8baa0d2ea30d69"
+    },
+    {
+      "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+      "sha256": "96c61d8c82122a11fcc5c0192276c0bbbbaffea9ed4c585d0f38363db2636775"
+    },
+    {
+      "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+      "sha256": "466fd5ce9a9cff2b76d7980b3c5a5cee100b4bc31979288dfc4fceea0bff45c6"
+    },
+    {
+      "path": "test/screens/ai_tutor_settings_screen_test.dart",
+      "sha256": "f6283f646878179518d73ca3ccf0b64ca3e806a7f2bb21f9ac7abcdd67bd4d63"
+    },
+    {
+      "path": "test/features/ai_tutor/f04_tutor_fenced_regression_test.dart",
+      "sha256": "44ab91890d1a736146cab16d04bbbf631048d5a09ec59610316b186aa4138c02"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F04",
+  "evidenceManifestSha256": "daf6a816e9c3af1875e026b1d663677920635563bcb6fdcb5fac7be34e356b5a",
+  "review": {
+    "kind": "local-changed-code-review",
+    "independentReviewer": false,
+    "reason": "User prohibits subagents",
+    "findingsClosed": [
+      "B18-REV08-01",
+      "B18-REV08-02",
+      "B18-REV06-07"
+    ],
+    "review": [
+      "Revocation captures cancellation snapshot before tracking own transition; synchronously reserves gate before first await; Future.wait observes both futures. Existing lease fences and paid-result marker unchanged.",
+      "Cost parser validates finite scaled values within cross-platform exact integer bound; normal positive/zero retained, negative/type-invalid/overflow become unknown independently of token counters. Real gateway plus Drift proves success terminal without second request.",
+      "Binding generation invalidates injected/inherited controller replacement including pending readback, model calls, confirmations, leave dialog and stale finally. Reset clears old secrets/draft/model/known/usage flags; initial null renders unavailable. Same-controller ordinary rebuild retains draft. No shared tutor disposal.",
+      "All7changed files inspected; accepted F01/F02/F03 application files are otherwise unchanged. No voice or LM outcomes inferred."
+    ],
+    "testCounts": {
+      "settings-final": 22,
+      "tutor-final": 62
+    },
+    "analysis": {
+      "files": 7,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "prePostPairsEqual": 9,
+    "inputCount": 1377,
+    "limitations": [
+      "Synthetic local HTTP/provider and widget boundaries; no live provider or native secure storage verification."
+    ]
+  },
+  "F04Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "continuationReason": "Tutor/settings unit complete; remaining9voice/scanner/LM findings require fresh context. No partial failure or unfinished edit transferred."
+}

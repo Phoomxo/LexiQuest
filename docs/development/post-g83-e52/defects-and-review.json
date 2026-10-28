@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "scope": "E5.2/F09 and dependent canonical Review/runtime paths",
+  "method": "Direct source review under user single-writer/no-subagent policy; red/green tests plus real SQLite and rendered widget checks",
+  "findings": [
+    {
+      "id": "D01",
+      "finding": "Canonical incorrect-review reader did not recognize new-context prompt identity",
+      "fix": "Read authenticated immutable probe checkpoint and exact authored item/core/lexical digest before adding canonical incorrect reason",
+      "status": "fixed; final frozen 12-target verifier passed"
+    },
+    {
+      "id": "D02",
+      "finding": "Returning from probe left Review screen using the pre-probe read snapshot",
+      "fix": "Refresh canonical queue after the probe route returns",
+      "status": "fixed; final frozen 12-target verifier passed"
+    },
+    {
+      "id": "D03",
+      "finding": "Recovery accepted altered elapsed-time metadata",
+      "fix": "Compare elapsed time to authenticated canonical attempt and origin timestamps; verify launch delay and result chronology",
+      "status": "fixed; final frozen 12-target verifier passed"
+    },
+    {
+      "id": "D04",
+      "finding": "Empty submit was retained as an uncertain answer and disabled editing",
+      "fix": "Reject blank input in editable UI before capturing retry identity",
+      "status": "fixed; final frozen 12-target verifier passed"
+    },
+    {
+      "id": "D05",
+      "finding": "Abandoned probe could reconstruct an actionable handle",
+      "fix": "Recovery accepts only active/completed sessions; exit remains a separate canonical idempotent operation",
+      "status": "fixed; final frozen 12-target verifier passed"
+    }
+  ],
+  "recoveries": [
+    "Fresh Flutter dependency setup changed generated registrant line endings; first run marked InputDrift, not PASS",
+    "Missing paths and wildcard guesses replaced with repository-root rg discovery and literal reads",
+    "Origin fixture left prior lesson active; canonical abandonment added before delayed launch, preserving the one-active-session gate",
+    "Typed missing-content exception assertion corrected to exact ContentQualityFailure; no acceptance weakening",
+    "Real SQLite actions and image encoding run outside widget fake async; hung screenshot test process was stopped by verified workspace PID, failure preserved, then method corrected",
+    "Background fixture now uses real inactive/hidden/paused and hidden/inactive/resumed transitions required by EditableText",
+    "Mechanical Review layout edit had parse errors; replaced with explicit source patch and analyzer verification",
+    "New-code unused imports and style infos removed; broader static analysis has only six inherited infos"
+  ],
+  "unresolvedRequiredImplementationDefects": [],
+  "limitations": [
+    "Effective service tier not exposed; Standard/default requested; local config does not prove current runtime enforcement",
+    "Only bounded personal starter-word context practice; no research, provider, deployment or cost activation",
+    "Physical device, assistive acceptance and whole-app freeze remain E6/E7"
+  ]
+}

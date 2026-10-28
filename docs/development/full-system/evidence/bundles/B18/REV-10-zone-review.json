@@ -1,0 +1,792 @@
+{
+  "zone": "REV-10",
+  "sliceId": "B18-G82-REV-10",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "de3b529975de0b517f8d69dc2c9e0b3ff4da7dc6",
+  "reviewCompletedAtUtc": "2026-09-19T12:25:28.258165+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV10-X01",
+      "key": "android-saf",
+      "title": "SAF commit, rollback, lifecycle and resource boundaries",
+      "evidence": [
+        "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+        "lib/features/export/data/file_selector_export_store.dart",
+        "lib/features/export/domain/export_contracts.dart",
+        "lib/features/export/application/export_use_cases.dart"
+      ],
+      "disposition": "write/flush/use-close all precede URI success. IOException/SecurityException attempt document deletion; failed deletion overrides with CLEANUP_FAILED, ENOSPC cause chain maps only after successful deletion. Dart checks cancellation after save and before finish; native removing unsettled URI is commit boundary. This does not promise cancellation after commit nor stable-media durability for arbitrary provider. REV10-01/02 retain lifecycle and responsiveness candidates. Single pending picker excludes overlap during picker, while URI set allows multiple unsettled completed writes. Suggested basename sanitization and active namespace bind are consistent. Legacy com.example activity is not the manifest target. No native provider execution."
+    },
+    {
+      "id": "REV10-X02",
+      "key": "android-config",
+      "title": "Android permissions, build and release configuration",
+      "evidence": [
+        "android/app/build.gradle.kts",
+        "android/app/src/main/AndroidManifest.xml",
+        "android/app/src/release/AndroidManifest.xml",
+        "android/app/proguard-rules.pro",
+        "android/settings.gradle.kts",
+        "tool/cli/package-field-release.ps1"
+      ],
+      "disposition": "API26/compile36/Java17/desugar/multidex, nonexported notification receivers, optional camera/mic hardware and explicit runtime permissions match source contract. Release requires configured signing file/properties plus shape-valid commit/build/model values. This validates input shape, not authentic signer/model/installed flags; packaging/fingerprint verifier belongs REV11. Debug network override is not inherited by release/profile. Google-services Android identity matches active application; no OAuth/live auth assertion. Gradle wrapper lacks distribution checksum; supply-chain policy/provenance disposition remains REV11, not a new unsupported runtime claim."
+    },
+    {
+      "id": "REV10-X03",
+      "key": "apple",
+      "title": "Apple scaffold versus supported release evidence",
+      "evidence": [
+        "ios/Runner.xcodeproj/project.pbxproj",
+        "ios/Runner/AppDelegate.swift",
+        "ios/Runner/Info.plist",
+        "macos/Runner.xcodeproj/project.pbxproj",
+        "macos/Runner/DebugProfile.entitlements",
+        "macos/Runner/Release.entitlements",
+        "macos/Runner/Info.plist",
+        "test/architecture/notification_platform_contract_test.dart",
+        "lib/features/reminders/data/platform_reminder_scheduler.dart",
+        "docs/field/2026-08-09-current-release-readiness.md"
+      ],
+      "disposition": "iOS project target13 versus framework metadata12 is not by itself an app deployment contradiction. CocoaPods files/includes and notification delegate assignment required by the explicitly release-excluded iOS oracle are absent. Reminder target selection includes iOS; this is an unverified integration boundary, not a passing delivery claim. macOS scaffold target10.14/sandbox lacks network-client/media/user-selected-file grants and media privacy strings. Android release evidence does not certify Apple; no active Apple artifact acceptance was found. Retain these prerequisites in G8.3 platform support disposition and B19 platform matrix: either explicit unsupported capability gates or native integration/regression before any support claim. Empty Apple tests prove no native behavior. No Apple production runtime defect is fabricated from scaffold alone."
+    },
+    {
+      "id": "REV10-X04",
+      "key": "windows",
+      "title": "Windows runner failure paths",
+      "evidence": [
+        "windows/runner/utils.cpp",
+        "windows/runner/main.cpp",
+        "windows/runner/flutter_window.cpp",
+        "windows/runner/win32_window.cpp"
+      ],
+      "disposition": "REV10-03 retains conversion allocation candidate and REV10-04 retains font-message lifetime candidate. GetMessage(-1) is treated as truthy, but the current unfiltered null-HWND call has no demonstrated invalid-handle/filter path; do not assert a live loop failure. Early Create failure returns without CoUninitialize but exits this process, so no persistent COM leak is demonstrated. freopen_s condition is inverted, yet reopening stdout/stderr itself handles normal redirection; no demonstrated user failure from redundant dup2 is promoted. CMake/resources/version fallback are scaffold, not signing or binary provenance proof."
+    },
+    {
+      "id": "REV10-X05",
+      "key": "linux-web",
+      "title": "Linux and web packaging scaffolds",
+      "evidence": [
+        "linux/CMakeLists.txt",
+        "linux/flutter/CMakeLists.txt",
+        "linux/my_application.cc",
+        "web/index.html",
+        "web/manifest.json"
+      ],
+      "disposition": "Linux copies assets/native libs and non-Debug AOT with relative rpath; nonunique GTK instance creates process isolation but does not prove application database multi-process correctness. Web base placeholder/bootstrap/PWA icons do not implement offline cache or prove browser compatibility of dart:io/native storage/plugin surfaces. Both remain unbuilt/uninstalled platform boundaries. No offline cold-start claim derives from a manifest or source-only CMake review."
+    },
+    {
+      "id": "REV10-X06",
+      "key": "offline",
+      "title": "Offline startup and preview evidence boundary",
+      "evidence": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/config/app_config.dart",
+        "tool/cli/lib/release-profile.ps1",
+        "docs/development/full-system/evidence/bundles/B18/G8.1-acceptance.json"
+      ],
+      "disposition": "Bootstrap availability catches initialization failure/2-second timeout and missing endpoint config becomes null; local owner/storage composition remains separate. Timeout does not cancel initializer; existing REV01 lifecycle ownership remains unchanged. Preview profile requires exact learning=true/cloud=false strings; source profile presence does not prove installed defines. G8.1 carries unsigned debug asset bundle with32asset/hash checks, not an APK/install/release runtime. Offline/device/plugin cold-start execution remains NOT RUN; final REV12 owns remaining bootstrap/shared oracles. No duplicate REV01/REV09 archive diagnostic finding."
+    },
+    {
+      "id": "REV10-X07",
+      "key": "oracles",
+      "title": "Five exact domain oracles",
+      "evidence": [
+        "test/architecture/notification_platform_contract_test.dart",
+        "test/config/android_network_security_test.dart",
+        "test/config/app_config_test.dart",
+        "test/config/flutter_dependency_surface_test.dart",
+        "test/runtime/app_build_info_test.dart"
+      ],
+      "disposition": "Notification YAML pins/Android strings are config regressions, not reboot delivery. Android XML string checks allow absent optional manifests and cannot replace merged-manifest/native-network checks. AppConfig parser tests positive/negative local-debug and HTTPS origins without endpoint/TLS proof; its allowlist does not constrain every native plugin. Dependency regex covers direct names only, not lock/platform compatibility. AppBuildInfo mixed widget suite verifies injected disposal/resume/media-query behavior but fake preferences omit owner mutation guards. REV10-05 adds fallback/oracle mismatch; explicit release packaging injection prevents inference of installed release mismatch. No tests run."
+    }
+  ],
+  "files": [
+    {
+      "path": "android/.gitignore",
+      "sha256": "08a2d9a5115a1aa2bab83148f820e95d2333b3a58db8ed528c6e8f6f006c1613",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "d80766eb065929d15e3077bbd85f551b7408c065996bc365ea24d0007d74d5ad",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/google-services.json",
+      "sha256": "4f33dec7ad719c635bbdf8cf7601c9417cf7afed735d6444626472f68dfd8e46",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/proguard-rules.pro",
+      "sha256": "cdfca890f6a28d7146362783cb9522e741a90a97fc69a0468ffeee80580d2087",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/debug/AndroidManifest.xml",
+      "sha256": "a26c6a09687b114fb22e4da825b0fb89d1a20882fe3c0b468e009d0a38497848",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/debug/res/xml/network_security_config.xml",
+      "sha256": "f00c217eef74467669a8a1107433b3daedb2353ac7559810429d7173741b6bc4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "sha256": "80c71b975d3beff60ea6f1687f3fbe0d7571f21af47210d3bf206d830a040e99",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/example/vocab_learning_app/MainActivity.kt",
+      "sha256": "1f5bdc1b585b6808cde53629cae363c7c753d36f73171a68201e2ea8b071547a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "sha256": "1e491361baa427361a3fc97fcef5bfd8b572abc1b6bdeea9eee86ee2dbe0b10e",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-01",
+        "B18-REV10-02"
+      ],
+      "crossCheck": "REV10-X01"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
+      "sha256": "7ca6d5cec2169c5a98661a119db23a6f3399c8fef2256ff04f3a642831282478",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_stat_lexiquest.xml",
+      "sha256": "e1100d7696efaf550fe769430e54b2b760e8826fa26f3e801200e682f8f9dfbd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/launch_background.xml",
+      "sha256": "94433756fe10005ddd6fc55cc5c0b1e9f3c10b66a08ceac795ece6713d34e28a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/res/raw/keep.xml",
+      "sha256": "2deafaefb811edbe32c0b25fa495e38836bb82d9219d62209daf1af36b8f6ef8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/res/values-night/styles.xml",
+      "sha256": "8c5bad5152f217e837519f9c15211d19f39bd45f5f67faf6dd81cb4b299e518f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/main/res/values/styles.xml",
+      "sha256": "937d7c82f539c72eb94fd3a3773f29b3d3fef1997213c92cb632298cedf4bda9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/profile/AndroidManifest.xml",
+      "sha256": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/app/src/release/AndroidManifest.xml",
+      "sha256": "e8f56c85d88718ad0ee7ea0e043c1f1b7be566bb4dbf8bfd2aaee9f379a204c0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "sha256": "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/gradle.properties",
+      "sha256": "44ce23ee2f3f5e04ed87dd9b924e47ca60d850422c04787a7870333d5b52b0d0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "d5af567ad117ba311cc4cf12639407dda372f4eb7fd06e3d1772eff65894e9eb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/key.properties.example",
+      "sha256": "f7419ca83d9c04aea8c3fd91c4a6955ed2e87ad836a754d7c8c4d6a735c1352a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "sha256": "df66eaf5f3e57448948f6aa2a698532575d0420041ebabb001904102c66340e9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X02"
+    },
+    {
+      "path": "ios/.gitignore",
+      "sha256": "37380775aeb2499662b7aca80f4ac4c95ae827c3ba2bfa179aa3e9af4812c623",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Flutter/AppFrameworkInfo.plist",
+      "sha256": "4844be22b72d16d6f6013ce5a2240728c730ef1fef9cf43a5c55198b18614802",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Flutter/Debug.xcconfig",
+      "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Flutter/Release.xcconfig",
+      "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.pbxproj",
+      "sha256": "912812e5854df3cae8c2d7024ecf9259c2908d1d78a9d8f3fcb7627946f7442d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "sha256": "7f3b00b5c3fdb45242d7b87e1e5c4e25d1fa8129a16c94295ecc4e8ea2235c5f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "sha256": "12477af7dbb2b8e35229e0ee4639839d94438cbf5f5a1ed2483e6de29e333a55",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/AppDelegate.swift",
+      "sha256": "9418c676adebac7e3f04daa80a7db62066e77f9766c804fd3e5e264124a31f80",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sha256": "3b1e214f466ffedff74baa5598ad5c4421130eea6bc8d57b8fe23435e8280ae4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "sha256": "ccc7950fd5f5b82067c85f667940a9d59189151460761ece8098ca78daa19469",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "sha256": "857e61203b3deafb05766d8fcda898b86a7cb6f3d5e385ecc9926c4d698215e9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Base.lproj/Main.storyboard",
+      "sha256": "fd367b6c43006d61b730f674970dd48b9f662c8f2264e52ffc1558102a2c9f2d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Info.plist",
+      "sha256": "71842eec448617dec56529001b1bc3a6957e757249c033c7974348bd1939475c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/Runner/Runner-Bridging-Header.h",
+      "sha256": "1a8d11d01d1cc92c650c9c9ed35299240052d4683a15a719a2315ef44185e074",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "ios/RunnerTests/RunnerTests.swift",
+      "sha256": "5e8f4908dacea6f29b2a790e4d38bf5fded69096063f9a27a2f21584d62b30c0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "linux/.gitignore",
+      "sha256": "5ded4f1a9d10d34bf6ee5beb0711d88ee2ef07b0f07ace9ed77935a246e8eb82",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "linux/CMakeLists.txt",
+      "sha256": "c7aceaecc837ebebd6853c334f7fd896c2f78cf4c3afa0c8f927edfb8711745d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "linux/flutter/CMakeLists.txt",
+      "sha256": "787189e2623313cfee590a0b553338eb9fc68b3af922ddd77c5d39c75f989aeb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "linux/main.cc",
+      "sha256": "ea23f7cdf74091d63bba29ef60486370b766157b848f0cfe62bd8b1c1695a0c1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "linux/my_application.cc",
+      "sha256": "8c8bac3e88f8659b1f978b14027bea9af59805d837f54bb5cfb185fa3d698e8f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "linux/my_application.h",
+      "sha256": "a044da4b485c93d0e1a79c62356b22c8856dd2bab537ffb6a9446fc905131316",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "macos/.gitignore",
+      "sha256": "ffec1a0bbd70547186b82ad4e49089bafab2de309b89de97c776d70debb179fa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Flutter/Flutter-Debug.xcconfig",
+      "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Flutter/Flutter-Release.xcconfig",
+      "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/project.pbxproj",
+      "sha256": "4c4fd7ce1e68d5b9db4777dc45b9dcbef1240e950603c8416ebb3e90c36cdbef",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "sha256": "71ccafbf389708a96ec90e0daebd291607898a0ae00a9116477429439a919d38",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner.xcworkspace/contents.xcworkspacedata",
+      "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/AppDelegate.swift",
+      "sha256": "148d5794d108a4f5b0acb1ec130fd203701d0fc3595021cd8900480604f94c35",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sha256": "bc6ba8105ca69651aeeb77358851590de295dca04681a1d58c0f449641c242f3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Base.lproj/MainMenu.xib",
+      "sha256": "be9e9ef8469d3262370e0f0b855ed163cbf9c8362c59e330b2ffe63b86fa42f4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Configs/AppInfo.xcconfig",
+      "sha256": "dbb55b12c0ad022db0e2cb7011ec7df64ea8737ddaa0e4eb361f33155362ad4d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Configs/Debug.xcconfig",
+      "sha256": "8067d533ef6593760baad9a9855a786a7a77470fcc3f0925ec04fe43bc1ac4b0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Configs/Release.xcconfig",
+      "sha256": "7a6a4b4d973a23052fa0a0388dd261e32d311d7b66ba1bfc3b914b361808ac61",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Configs/Warnings.xcconfig",
+      "sha256": "0e341a392b16ad302d12890aa3dac9257a6c10ece685437604259a85341645a3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/DebugProfile.entitlements",
+      "sha256": "ebaab2b9992173de422c33e1fbab7f6e31acaa2213956097ac8cefd894a91ac8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Info.plist",
+      "sha256": "f253e89c512b3a9a81bc5cdd7a14bf932470f835f261654a808ea4549cd94aad",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/MainFlutterWindow.swift",
+      "sha256": "65c9613c11bcedfa51416b16c975d8ba6ff12b405fc19d60db8755d92e86d9fe",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/Runner/Release.entitlements",
+      "sha256": "b746c74b201e6af4e0864fbd1f4f629f96156a7ec4b7208bc995d0a5089bb592",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "macos/RunnerTests/RunnerTests.swift",
+      "sha256": "6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X03"
+    },
+    {
+      "path": "web/index.html",
+      "sha256": "2961281de7ebb2250c80db154d27b4df1a85f21d419ebf0dce752c6ccbc79993",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "web/manifest.json",
+      "sha256": "ed9d7a8c7904273c67e724376c33582f5324f12a42497c989f90e7fb6017fca9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X05"
+    },
+    {
+      "path": "windows/.gitignore",
+      "sha256": "96345475f1a3c66bd32d28178fba151ab1506b35b1f7857b8f7651863093ea11",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/CMakeLists.txt",
+      "sha256": "a49a466a4d377dcb742fe9fcd4605f60f07e8ee6948802c2fa60b411abc41889",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/flutter/CMakeLists.txt",
+      "sha256": "1fe418971b6f41bb35ceb3d64113a835f3f6f171ecaa707bf232492b57a588d6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/CMakeLists.txt",
+      "sha256": "34119ec122e36940235ef4bc245fcfb43b6960ed443e28af1a8d833a81209b9e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/Runner.rc",
+      "sha256": "25474e745ff6ea4e0992e6e204315d1cff60f228649097d470ac48dbbdc74be4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "sha256": "dd185884c0b5301d400b58f12ebb36b1c8b326531597e531b40e44a6eeb0e943",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-04"
+      ],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/flutter_window.h",
+      "sha256": "38e0fcd3a0b83895852ec295cb70d90179c0dcd40d58f065eb5232a4ecd84898",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/main.cpp",
+      "sha256": "c8dbd99d2995adae157094d4effa3bc6c41ad94eaa9f3d2b2e3b2789d11d4f09",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/resource.h",
+      "sha256": "1fa98588b04561590ba1cf0521ab86a9db4a878312f21c9d5861d965ddd8d1ae",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/runner.exe.manifest",
+      "sha256": "825d243e9fa1542619909c1b72d09b3ed7c1f3b225bb8367c125835e5dc3f8aa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "sha256": "dc2ee94d43116f959a4abd42557f71d07acc631abbffe03b11489dbeed35bedb",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-03"
+      ],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/utils.h",
+      "sha256": "95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-03"
+      ],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/win32_window.cpp",
+      "sha256": "9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-04"
+      ],
+      "crossCheck": "REV10-X04"
+    },
+    {
+      "path": "windows/runner/win32_window.h",
+      "sha256": "7dd03746b19dcf3542829b2f6e8ed40a2714ce5f2cb3b0e23f0118a2fcf62d62",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X04"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "test/architecture/notification_platform_contract_test.dart",
+      "sha256": "20660bced507145f40e750bd64342caa3f7a1773b6c15aa8d7a24dff78be0631",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X07",
+      "zone": "REV-12",
+      "disposition": "Full115 lines read. YAML exact dependency pins plus Android regex setup/scheduler mode, no physical reboot/delivery. iOS test explicitly release-excluded references absent Podfile/lock and Podincludes/delegate assignment missing in source; correctly not evidence iOS integration works. Source review only no nativebuild. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-10",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/config/android_network_security_test.dart",
+      "sha256": "12922374d112ed3cb77e3859bb0ea91e85db209e168936fb4f45efd6f5daa0b2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X07",
+      "zone": "REV-12",
+      "disposition": "Full149 lines read. Source XML string checks main/profile/release no cleartext true, debug config permits via network policy and no duplicate activity/permissions. Missingoptionalsets yield empty and pass, no XML/mergedmanifest parser or native HTTP proving Dartallowlist coversplugins. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-10",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/config/app_config_test.dart",
+      "sha256": "18147f2c7c71540b96fd798824b662b7665f8696d484418306cf2b17bb52b398",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X07",
+      "zone": "REV-12",
+      "disposition": "Full file read. Pure parser origin positive/negative matrix release versus debug loopback/privateIPv4, credentials/query/path/malformed hosts, fixed error labels and sentinels; AI default and distinct origin mirror HTTP matrix. No real endpoint/TLS/network or installed dart-defines assertion. No B18 execution. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-10",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/config/flutter_dependency_surface_test.dart",
+      "sha256": "35b72368b1838617f3376ad25f52d7523f7590e6b87aed4146ab3e171b31574c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV10-X07",
+      "zone": "REV-12",
+      "disposition": "Full94 lines read. Root-resolving raw pubspec regex absent9/retained18 dependency names. No YAML sections/versions/transitive/plugin-platform viability or actual importreachability oracle. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-10",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/runtime/app_build_info_test.dart",
+      "sha256": "75bb3324257f2c70586f408c11eba22a46360879dd1f9dc94350c5faf253e52a",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV10-05"
+      ],
+      "crossCheck": "REV10-X07",
+      "zone": "REV-12",
+      "disposition": "Full363 lines. Actual MyApp disposal exactlyonce/embedding ownership/async cleanup failures on replacement/unmount, initial/resume sync callbacks and platformbrightness/reducedmotion. Display repository fakeignores mutationguard; no ownerreplacement profile stale-load case. Version test claims pubspec default but expects1.0.0+1 versus actualmanifest1.0.0+14; explicit builddefine path separate. No installed identity/runtime execution. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
+      "reviewOwner": "B18-G82-REV-10",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV10-01",
+    "B18-REV10-02",
+    "B18-REV10-03",
+    "B18-REV10-04",
+    "B18-REV10-05"
+  ],
+  "supplementalCallers": [
+    "lib/features/export/data/file_selector_export_store.dart",
+    "lib/runtime/app_build_info.dart",
+    "lib/runtime/app_bootstrap.dart",
+    "lib/config/app_config.dart",
+    "tool/cli/package-field-release.ps1",
+    "tool/cli/lib/release-profile.ps1"
+  ],
+  "supplementalAttribution": {
+    "lib/runtime/app_build_info.dart": [
+      "B18-REV10-05"
+    ]
+  },
+  "limitations": [
+    "Static disposition only; no G8.2 acceptance or finding closure.",
+    "Prior853 disposition entries and REV01-09 receipts retained unchanged; finalREV12 must reconcile supplemental attribution.",
+    "Apple/Linux/web scaffolds do not establish supported installed releases; platform prerequisites recorded in REV10-X03/X05.",
+    "Native/provider/device/build/research/deployment NOT RUN."
+  ]
+}

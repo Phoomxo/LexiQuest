@@ -1,0 +1,6 @@
+{
+  "lib/features/ai_tutor/application/menu_action_registry.dart": "b1d0d30a384d500f509c871a1081428e9afd831efdccd9c9d8b3223a0e4f83a7",
+  "lib/features/ai_tutor/presentation/menu_action_binding.dart": "b1063a75fcde3c88672a65dd741f61ee0fde0f1e1e44d11e000853517c546a6c",
+  "lib/main_ari_test.dart": "eab05c707b2ff3f24f98f94342018b8b3490f956c39dd13b30225da87038ff19",
+  "test/features/ai_tutor/managed/menu_action_binding_test.dart": "17ec94e9df53d78ce2a8e7e4b3c8bd56d86f26d65e5a01dd3a2f041a9bf5734a"
+}

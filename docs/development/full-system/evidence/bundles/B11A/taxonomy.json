@@ -1,0 +1,186 @@
+{
+  "schema": "lexiquest-web-taxonomy-v1",
+  "version": "2026-09-14.1",
+  "labels": [
+    {
+      "index": 0,
+      "label": "book",
+      "vocabulary": {
+        "en": "book",
+        "th": "หนังสือ"
+      },
+      "sourceClasses": [
+        "Book"
+      ]
+    },
+    {
+      "index": 1,
+      "label": "bottle",
+      "vocabulary": {
+        "en": "bottle",
+        "th": "ขวด"
+      },
+      "sourceClasses": [
+        "Bottle"
+      ]
+    },
+    {
+      "index": 2,
+      "label": "chair",
+      "vocabulary": {
+        "en": "chair",
+        "th": "เก้าอี้"
+      },
+      "sourceClasses": [
+        "Chair"
+      ]
+    },
+    {
+      "index": 3,
+      "label": "cup",
+      "vocabulary": {
+        "en": "cup",
+        "th": "ถ้วย"
+      },
+      "sourceClasses": [
+        "Coffee cup",
+        "Mug"
+      ]
+    },
+    {
+      "index": 4,
+      "label": "apple",
+      "vocabulary": {
+        "en": "apple",
+        "th": "แอปเปิล"
+      },
+      "sourceClasses": [
+        "Apple"
+      ]
+    },
+    {
+      "index": 5,
+      "label": "bread",
+      "vocabulary": {
+        "en": "bread",
+        "th": "ขนมปัง"
+      },
+      "sourceClasses": [
+        "Bread"
+      ]
+    },
+    {
+      "index": 6,
+      "label": "tomato",
+      "vocabulary": {
+        "en": "tomato",
+        "th": "มะเขือเทศ"
+      },
+      "sourceClasses": [
+        "Tomato"
+      ]
+    },
+    {
+      "index": 7,
+      "label": "bowl",
+      "vocabulary": {
+        "en": "bowl",
+        "th": "ชาม"
+      },
+      "sourceClasses": [
+        "Bowl"
+      ]
+    },
+    {
+      "index": 8,
+      "label": "spoon",
+      "vocabulary": {
+        "en": "spoon",
+        "th": "ช้อน"
+      },
+      "sourceClasses": [
+        "Spoon"
+      ]
+    },
+    {
+      "index": 9,
+      "label": "fork",
+      "vocabulary": {
+        "en": "fork",
+        "th": "ส้อม"
+      },
+      "sourceClasses": [
+        "Fork"
+      ]
+    },
+    {
+      "index": 10,
+      "label": "knife",
+      "vocabulary": {
+        "en": "knife",
+        "th": "มีด"
+      },
+      "sourceClasses": [
+        "Knife"
+      ]
+    },
+    {
+      "index": 11,
+      "label": "door",
+      "vocabulary": {
+        "en": "door",
+        "th": "ประตู"
+      },
+      "sourceClasses": [
+        "Door"
+      ]
+    },
+    {
+      "index": 12,
+      "label": "ladder",
+      "vocabulary": {
+        "en": "ladder",
+        "th": "บันได"
+      },
+      "sourceClasses": [
+        "Ladder"
+      ]
+    },
+    {
+      "index": 13,
+      "label": "light bulb",
+      "vocabulary": {
+        "en": "light bulb",
+        "th": "หลอดไฟ"
+      },
+      "sourceClasses": [
+        "Light bulb"
+      ]
+    },
+    {
+      "index": 14,
+      "label": "tool",
+      "vocabulary": {
+        "en": "tool",
+        "th": "เครื่องมือ"
+      },
+      "sourceClasses": [
+        "Tool"
+      ]
+    },
+    {
+      "index": 15,
+      "label": "tap",
+      "vocabulary": {
+        "en": "tap",
+        "th": "ก๊อกน้ำ"
+      },
+      "sourceClasses": [
+        "Tap"
+      ]
+    }
+  ],
+  "backgroundClassIndex": null,
+  "unknownPolicy": "No trained unknown output; later independent camera/unknown evaluation required; confidence is not calibrated probability of correctness.",
+  "identityPolicy": "Object category only; never infer SKU, brand, material or product safety. Tool is deliberately generic."
+}

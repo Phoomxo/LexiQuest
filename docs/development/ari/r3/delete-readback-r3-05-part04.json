@@ -1,0 +1,45 @@
+{
+  "id": "R3-05-DELETE-READBACK-001",
+  "taskId": "01a0cf8e-bc26-74e1-879e-0f3a6879e3a3",
+  "status": "FIXED_HOST_VERIFIED_NATIVE_BASELINE_VERIFIED",
+  "sourceFingerprint": "e8cf7cecb5386634168d1798f434e5cff05b6e06adae18bbffc0e10713885e12",
+  "rootCause": "One try/catch reported failed for both failed mutation and failed post-commit verification. Dialog allowed a new confirmation to call delete again despite a completed write.",
+  "red": {
+    "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/00481f768737-14640b0fdc63-05de1685/Explicit-Flutter-tests.stdout.log",
+    "expected": "outcome_unknown",
+    "actual": "failed",
+    "beforeFailureAssertions": "Real file-backed SQLite tombstone exists; survivor intact; exactly one delete outbox row",
+    "sha256": "26317d2167d42cd524378e00c73f0e53d5b6d7c2abb97bf1b6d8369a648dc1af"
+  },
+  "fix": "Track completed mutation per exact-target dialog; read failure returns outcome_unknown; subsequent confirmation reconciles by reading only. Manual delete disabled after commit; close label avoids implying rollback. Existing precommit failed/retry semantics retained.",
+  "verified": [
+    "Two file-backed cases: reconcile before restart and restart while still unknown",
+    "New request after disconnect/foreign-owner suppression/reconnect never performs second delete",
+    "After read fault removed, confirmation returns deleted without mutation",
+    "Reopen SQLite preserves all word rows and entire outbox exactly",
+    "Native current APK manual cancel/delete/restart baseline; no injected native readback-fault or actual provider claim"
+  ],
+  "limits": [
+    "Only word deletion post-success readback boundary repaired. Exceptions thrown inside mutation or post-mutation notifier are not certified by this test.",
+    "No durable provider request receipt across process death; persisted domain effects and restart data checked.",
+    "Create/edit/category/import readback/outcome handling still needs bounded audit."
+  ],
+  "recovery": [
+    {
+      "method": "Initial fixture IO directly under widget fake clock",
+      "result": "Hung before assertion; interrupted owned process tree; changed Directory.createTemp to tester.runAsync; no product RED claimed"
+    },
+    {
+      "method": "Direct screen with feature registry only",
+      "result": "Feature gate refused missing composed dependencies; supplied AppDependenciesScope with inert research and real vocabulary; no product defect claimed"
+    },
+    {
+      "method": "Guessed main_local_learning.dart read",
+      "result": "Missing path; discovered actual lib/main_ari_test.dart and documented build command; no retry of missing path"
+    },
+    {
+      "method": "Native noun text entry during focus/keyboard transition",
+      "result": "Fresh dump showed oun; corrected exact field after settling and verified noun before save"
+    }
+  ]
+}

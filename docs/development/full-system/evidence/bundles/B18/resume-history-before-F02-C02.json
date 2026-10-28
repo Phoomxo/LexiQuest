@@ -1,0 +1,53 @@
+{
+  "bundleId": "B18",
+  "currentPackageId": "G8.3",
+  "sliceId": "B18-G83-F02",
+  "threadId": "01a0b9e0-ab0c-76e2-9665-f0206a17089e",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\5698\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f02",
+  "inputCheckpointSha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "G82Accepted": true,
+  "G83Started": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "writerReleased": false,
+  "completedSlice": "F01",
+  "findingsClosed": 17,
+  "remainingOpenFindings": 52,
+  "nextSlice": "B18-G83-F02",
+  "historyPath": "resume-history-before-F02-C01.json",
+  "evidence": [
+    "G8.3-F02-C01-checkpoint.json",
+    "G8.3-F02-C01-integrity.json",
+    "G8.3-owner-plan.json",
+    "defects.json"
+  ],
+  "nextWork": [
+    "Claim exact partial F02 checkpoint and exclusive writer using external continuation handoff; do not restore accepted F01/F02 deltas to freeze.",
+    "Reproduce then fix native Android export lifecycle/cleanup and bounded asynchronous SAF I/O for REV10-01/02. Preserve Dart export acknowledgment contract; controlled native dispatch proof and explicit installed-app NOT RUN limits.",
+    "Reuse unchanged537-test fingerprint. No F03 until all ten F02 outcomes and slice acceptance."
+  ],
+  "verification": "537 scoped Dart tests pass at pinned source. Analyzer exit1:24 unchanged diagnostic sites; no new sites. Native export remains pending.",
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "continuationId": "B18-G83-F02-C01",
+  "nextContinuation": "B18-G83-F02-C02",
+  "remainingF02": [
+    "B18-REV10-01",
+    "B18-REV10-02"
+  ],
+  "F02Accepted": false
+}

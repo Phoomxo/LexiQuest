@@ -1,0 +1,19 @@
+{
+  "checkpoint": "067",
+  "source": "80cac176",
+  "status": "NATIVE_PROGRESS_RETEST_AND_LIVE_CHOICE_PASS",
+  "apkSha256": "ca712c90b4bbc2abe7e468d916df1fbf954ce4ed9134304a29a16ded2dcf7b08",
+  "verified": [
+    "No-provider first unreviewed item skipped; first answer committed moves header to33percent",
+    "Attach provider on third item retains session;live Thai method guidance correctly identifies definition quiz3of3,English definition/English choice,not skipped",
+    "Explicit disconnect retains third item and manual answer works;header67percent after2 acknowledged answers of3 configured items",
+    "Completed100percent accuracy;exact2 recognition attempts at indices2and3;skip has no answer"
+  ],
+  "defect": "DEFINITION-PROGRESS-065 native retest passed",
+  "remaining": [
+    "Native live skip-state guidance not yet observed",
+    "Cloze/associative and original workflow gaps",
+    "Shared displayed progress before completion excludes skips;no claim skipped items are answers"
+  ],
+  "wholeGoalComplete": false
+}

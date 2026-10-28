@@ -1,0 +1,15 @@
+{
+  "package": "G3.3",
+  "design": [
+    "Share a bookmark presentation control between answer feedback and lexical card; single-flight pending/error/local success; idempotent unsave through removal use case and existing repository.",
+    "Report success means local persistence only: explicit local receipt text without remote-delivery claim; pending/error stay accessible.",
+    "Reuse canonical selected-distractor/version and hint provenance contracts; verify expand/collapse and artifact fallback boundaries.",
+    "Preserve existing owner-scoped repositories, tombstones, outbox and no reward/mastery side effects. No storage schema change; full lifecycle remains G7.4."
+  ],
+  "steps": [
+    "Behavior regressions",
+    "Shared UI/removal usecase/report local receipt",
+    "Sequential targeted gates including durable side effects",
+    "Review and bundle receipt/handoff"
+  ]
+}

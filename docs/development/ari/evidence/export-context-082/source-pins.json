@@ -1,0 +1,12 @@
+{
+  "headBefore": "65897602c7ee992693f06fb7ea09b4410ef04343",
+  "sha256": {
+    "lib/screens/export_center_screen.dart": "015b4f658c4905d35d5ebd944cec4f58d9c24262dac5a03b8315d15e0e4ac995",
+    "test/screens/export_center_flow_test.dart": "f1890574430e2db5e481b6bbea5b7a8b52608a68fcce24b64d4cfb1c7f4e52ca",
+    "test/screens/export_center_screen_test.dart": "05126b1c7d92b02330575beb24aad00032003f1aca396fb19c819adbef99b267"
+  },
+  "apk": {
+    "path": "build/ari-assistance-082.apk",
+    "sha256": "673c9e0578a806cc78e32eb95b7fd536dd24ede206d78ab9d68e5676764fa980"
+  }
+}

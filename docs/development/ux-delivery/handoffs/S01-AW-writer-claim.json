@@ -1,0 +1,11 @@
+{
+  "status": "HELD",
+  "holderThreadId": "01a0d50a-273c-71b1-a13e-e4fd5649b4b4",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\0610\\LexiQuest",
+  "branch": "feature/ux-s01-aw-0610",
+  "claimedAtUtc": "2026-09-24T20:11:47.754707+00:00",
+  "currentItem": "S01-AW-explicit-category-action-recovery",
+  "dispatchId": "ux-s01-aw-20260925-4635",
+  "stateRevision": 96,
+  "sourceReceipt": "docs/development/ux-delivery/handoffs/S01-AW-source-receipt.json"
+}

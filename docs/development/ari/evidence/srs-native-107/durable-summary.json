@@ -1,0 +1,54 @@
+{
+  "answer_attempts": {
+    "before": 113,
+    "after": 115,
+    "added": 2,
+    "removed": 0,
+    "newEvidence": [
+      {
+        "word_id": "word:starter-plate",
+        "prompt_mode": "flashcardExposure",
+        "is_correct": 0,
+        "evidence_class": "exposure"
+      },
+      {
+        "word_id": "word:starter-chair",
+        "prompt_mode": "srsRecall",
+        "is_correct": 1,
+        "evidence_class": "independentRecall"
+      }
+    ]
+  },
+  "srs_states": {
+    "before": 12,
+    "after": 12,
+    "added": 1,
+    "removed": 1,
+    "changes": [
+      {
+        "word_id": "word:starter-chair",
+        "repetitions": 1,
+        "lapses": 1,
+        "interval_days": 1
+      }
+    ]
+  },
+  "points_ledger_entries": {
+    "before": 48,
+    "after": 49,
+    "added": 1,
+    "removed": 0
+  },
+  "reading_progress_entries": {
+    "before": 4,
+    "after": 4,
+    "added": 0,
+    "removed": 0
+  },
+  "reading_events": {
+    "before": 39,
+    "after": 39,
+    "added": 0,
+    "removed": 0
+  }
+}

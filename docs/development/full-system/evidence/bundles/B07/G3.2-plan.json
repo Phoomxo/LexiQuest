@@ -1,0 +1,14 @@
+{
+  "package": "G3.2",
+  "design": [
+    "Retain repository checksum/publication authority; card only exposes rich fields with matching verified revision and artifact checksum, approved published packaged core.",
+    "Show English definition and existing IPA/example/synonym/antonym without invented missing fields.",
+    "Show source and review status; CEFR caption describes lexical approximation, not learner certification. Audio callback requires verified metadata and displays asset identity/language. No image source exists, so no generated substitute.",
+    "Card expansion resets for changed content identity and never writes learning/mastery."
+  ],
+  "verification": [
+    "Rich card field/provenance/unreviewed/rejected/mismatched pin regression",
+    "Vocabulary repository artifact rejection and CEFR editorial evidence",
+    "Bounded affected detail regression; reuse unchanged content quality gate from G3.1"
+  ]
+}

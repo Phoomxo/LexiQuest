@@ -1,0 +1,32 @@
+[
+  {
+    "activity": "associativeReading",
+    "state": "abandoned",
+    "correct": 0,
+    "wrong": 0,
+    "effortMicros": 60000000,
+    "timing": {
+      "kind": "timed",
+      "seconds": 60
+    },
+    "attempts": []
+  },
+  {
+    "activity": "associativeReading",
+    "state": "completed",
+    "correct": 1,
+    "wrong": 0,
+    "effortMicros": 513649371,
+    "timing": {
+      "kind": "timed",
+      "seconds": 600
+    },
+    "attempts": [
+      [
+        "associativeRecall",
+        "independentRecall",
+        1
+      ]
+    ]
+  }
+]

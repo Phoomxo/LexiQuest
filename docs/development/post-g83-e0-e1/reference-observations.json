@@ -1,0 +1,234 @@
+[
+  {
+    "referenceId": "R5-02",
+    "feature": "F01",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\R5-02.png",
+    "sha256": "7aaef4cecffd373d7ac2e9f924b8dafc70a1fed60a40f97dd5ea3b78c1109822",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\capture-manifest.json",
+    "manifestSha256": "07a561266e1f0f59de68c46a25e6d685675d2c2a183249c58854fc20e320e8e6",
+    "sourceUrl": "https://www.instagram.com/reel/DdWLuWOvv8k/",
+    "videoTiming": [
+      {
+        "duration": 44.7434,
+        "paused": false,
+        "time": 27.745193
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Numbered topic cards, source counts, edit icons and create CTA.",
+    "intendedAdaptation": "Set membership preview/edit; no upload.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "R4-03",
+    "feature": "F02",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\R4-03.png",
+    "sha256": "a3d86e9816d635987e865bdabba4f15121d5136138202d9aa4314343462b2d7e",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\capture-manifest.json",
+    "manifestSha256": "07a561266e1f0f59de68c46a25e6d685675d2c2a183249c58854fc20e320e8e6",
+    "sourceUrl": "https://www.instagram.com/reel/DdRhXNbPA-B/",
+    "videoTiming": [
+      {
+        "duration": 48.966666,
+        "paused": false,
+        "time": 38.227984
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Path with progress and lock icon; unlock interaction unobserved.",
+    "intendedAdaptation": "Due/new work order with rationale; no inferred locks.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "S01",
+    "feature": "F02",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\S01.png",
+    "sha256": "7ac8e712765e996d5f34278c17a31e5925f9a952420b13d6c4483a4fb984cf6d",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://play.google.com/store/apps/details?id=co.astra_ai.app.twa",
+    "videoTiming": [],
+    "openedWithImageTool": true,
+    "observed": "Marketing readiness percentage, target, date and completed lessons.",
+    "intendedAdaptation": "Deadline and observed workload; no pass probability.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "S05",
+    "feature": "F02",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\S05.png",
+    "sha256": "f15deecbe50e7f548474db73898e21eb9b150d6b872f8b119ea101dc5a0e4300",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://play.google.com/store/apps/details?id=co.astra_ai.app.twa",
+    "videoTiming": [],
+    "openedWithImageTool": true,
+    "observed": "Gap total and three severity groups.",
+    "intendedAdaptation": "Explain due/weakness sources; no imported formula.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "S11",
+    "feature": "F02",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\S11.png",
+    "sha256": "1d6503f93421ffc0daff84659d44e5bef07a184394d498794b6c7cbb7069bf35",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://play.google.com/store/apps/details?id=co.astra_ai.app.twa",
+    "videoTiming": [],
+    "openedWithImageTool": true,
+    "observed": "Step path and next lesson cue.",
+    "intendedAdaptation": "Accepted plan and next activity; no exam content.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "A01",
+    "feature": "F03",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\A01.png",
+    "sha256": "07c328f395fc9c29f35b0e64d9473b90bbb624c8d9bb0188adc9904afc26ad4e",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://www.instagram.com/astra_ai_th/reel/DdDjWidRoJy/",
+    "videoTiming": [
+      {
+        "duration": 39.77433,
+        "time": 26.478964
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Tutor text mentions sentence completion/context clues.",
+    "intendedAdaptation": "Sense-bound help; no claim of internal reasoning algorithm.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "A07",
+    "feature": "F03",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\A07.png",
+    "sha256": "7c0380494721507741f1094b8c4a86379cbd6bb2481d6dd1292eb4f28275ab51",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://www.instagram.com/reel/DdMN0iwS-gr/",
+    "videoTiming": [
+      {
+        "duration": 46.999999,
+        "time": 34.561882
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Explanation above MCQ, 4/7 progress indicator.",
+    "intendedAdaptation": "Reviewed explanation then assisted retry; exclude medical claims.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "A04",
+    "feature": "F04",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\A04.png",
+    "sha256": "8359ef72c4457657ef18c484047b0a72f583cffd8b0b59d3b369c313b18ae3fd",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://astra-ai.co/th/",
+    "videoTiming": [],
+    "openedWithImageTool": true,
+    "observed": "Written/oral selector and written-response example.",
+    "intendedAdaptation": "Lexical writing area; no rubric validity inferred.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "R1-02",
+    "feature": "F05",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\R1-02.png",
+    "sha256": "ac0fe3f161911f5613af543abf79e08cf5ec47cb27a9fda549a160936fe0eae7",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\capture-manifest.json",
+    "manifestSha256": "07a561266e1f0f59de68c46a25e6d685675d2c2a183249c58854fc20e320e8e6",
+    "sourceUrl": "https://www.instagram.com/reel/DcgGckiyjwu/",
+    "videoTiming": [
+      {
+        "duration": 42.566666,
+        "paused": false,
+        "time": 6.306333
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Readiness card with example three questions/seven minutes and ready button.",
+    "intendedAdaptation": "Mic/readiness; configurable limits, no hardcoded advertisement values.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "S06",
+    "feature": "F05",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\S06.png",
+    "sha256": "cdd7e3068d9eaa5f511dbeb354abe85313c60773751602a161fb20c44365c666",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\audit\\manifest.json",
+    "manifestSha256": "837c4af38770d0200502b9c869da629783e2836d47a91423bad5bd35154d7211",
+    "sourceUrl": "https://play.google.com/store/apps/details?id=co.astra_ai.app.twa",
+    "videoTiming": [],
+    "openedWithImageTool": true,
+    "observed": "Written/oral marketing with timer and progress imagery.",
+    "intendedAdaptation": "Separate practice/assessment and honest result states.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "R7-01",
+    "feature": "F08",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\R7-01.png",
+    "sha256": "fe1ec874c87d20087498faf2a0d920b1505aa09433182fea2093326968f45d8e",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\capture-manifest.json",
+    "manifestSha256": "07a561266e1f0f59de68c46a25e6d685675d2c2a183249c58854fc20e320e8e6",
+    "sourceUrl": "https://www.instagram.com/reel/DdL7NrQv8if/",
+    "videoTiming": [
+      {
+        "duration": 23.682901,
+        "paused": false,
+        "time": 18.010257
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Podcast format list with approximate duration labels.",
+    "intendedAdaptation": "Reviewed vocabulary audio format choice; sound untested.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  },
+  {
+    "referenceId": "R7-02",
+    "feature": "F08",
+    "imagePath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\R7-02.png",
+    "sha256": "a80af47e3e7f0b0ff74e9d4046bd62191aacf34e7d7ed9ee35209f77a083a2c7",
+    "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\14\\01a09d79-4b81-70c2-b4f8-069f62bf6e7f\\post-g89\\evidence\\2026-09-19\\capture-manifest.json",
+    "manifestSha256": "07a561266e1f0f59de68c46a25e6d685675d2c2a183249c58854fc20e320e8e6",
+    "sourceUrl": "https://www.instagram.com/reel/DdL7NrQv8if/",
+    "videoTiming": [
+      {
+        "duration": 23.682901,
+        "paused": false,
+        "time": 7.600795
+      }
+    ],
+    "openedWithImageTool": true,
+    "observed": "Structured practical-case explanation.",
+    "intendedAdaptation": "Reviewed transcript/examples; no alignment inferred.",
+    "excluded": "Branding, external upload, unobserved runtime/scoring/unlock/voice claims",
+    "reviewer": "current task; visual source inspection",
+    "verdict": "reference inspected; implementation comparison pending"
+  }
+]

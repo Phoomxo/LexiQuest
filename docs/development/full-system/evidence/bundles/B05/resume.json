@@ -1,0 +1,8 @@
+{
+  "authority": "Master user-authorized recovery-policy.json",
+  "writerVerified": true,
+  "dirtyHashesVerified": true,
+  "fixedMethod": "rg --files -g G0.7* B01 directory resolved2 explicit files",
+  "fixtureFix": "Focus from slot Text inside InkWell focus subtree, not InkWell outer element",
+  "priorCheckpointPreserved": true
+}
