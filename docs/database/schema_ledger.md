@@ -185,9 +185,10 @@ claimed.
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
 | v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
-| v16+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Reserved 2026-10-29; runtime still v15 |
+| v17+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13, v14 or v15. Reserve the next available version, starting at v16,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15 or v16. Reserve the next available version, starting at v17,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -409,6 +410,51 @@ pre-upgrade backup or an explicitly tested downgrade.
 
 ---
 
+### v16 — Accepted meaning-quiz plan and exact session recovery
+
+**Reserved:** 2026-10-29  
+**Branch:** `codex/remaining-system-readiness`  
+**Owner:** Root owns schema/generated source, historical fixture, populated
+migration, export/deletion and integration. Separate workers own bounded
+domain, repository/use-case and caller/test files.  
+**Status:** RESERVED. Executable schema remains v15/34 until implementation.
+
+Add only four columns to existing `learning_sessions`: nullable TEXT
+`accepted_plan_id`, nullable TEXT `accepted_plan_json`, INTEGER NOT NULL DEFAULT
+0 `checkpoint_revision`, and nullable TEXT `checkpoint_json`. No new table,
+cloud collection or outbox type. Legacy and synced-evidence rows retain
+`(null, null, 0, null)` and cannot invent a resumable deck.
+
+The versioned ownerless canonical plan hashes exact accepted question order,
+content IDs/revisions/checksums, one-to-four actual options, correct option,
+current supported configuration, builder and evidence/contract pins. Ownership
+comes only from the canonical session. Save session, plan and first checkpoint
+atomically before the accepted observer. Matching launch replay returns the
+first saved plan; changed request/global identity conflicts reject.
+
+Checkpoint variants retain the first hint receipt, exact pending answer and
+original terminal time. Monotonic revision CAS prevents rewind or competing
+overwrite. Canonical answer/finish and their checkpoint acknowledgement share
+one transaction; no second score, reward or sync authority. Resume the exact
+owner/session and reject corrupt, unsupported, drifted or remapped content.
+Preserve ordinary owner rehome only when original pinned content still resolves;
+never rewrite immutable plans or replay old-owner pending commands.
+
+Migrate actual quiz, weaknessPractice and sourcePractice callers together. Use
+the real same-database owner/deletion coordinator. Research denial cannot block
+ordinary recovery, learning or rewards. Frozen EvidenceContext/EventEnvelopeV2
+and attempt v1/v2 wire keysets stay unchanged; plan text is not uploaded.
+
+Acceptance includes a genuine populated-v15 fixture retaining every prior
+column/row in all 34 tables and pending deletion intent; fresh schema defaults;
+exact replay, crash/ACK recovery, CAS races, assistance persistence, stale owner,
+content drift, export/deletion and unchanged sync contracts. Re-run affected
+historical migration assertions against their original column sets while
+checking the new columns separately. Downgrade requires a pre-upgrade backup
+or a separately tested downgrade. This reservation does not enable research.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -428,6 +474,7 @@ pre-upgrade backup or an explicitly tested downgrade.
 | 2026-10-29 | Reserved current-lineage v13 for one cached signed participation table; use must reauthorize against independent current authority and preserve signed owner pins. Runtime remains v12 until implementation. | Root integration |
 | 2026-10-29 | Attested v13 and reserved v14 for two local-only supplied-instrument measurement tables with immutable responses and fresh receipts; canonical session linkage remains a separate prerequisite for UI composition. | Root integration |
 | 2026-10-29 | Attested v14 at source 90a81306 and reserved v15 for one local-only exposure/index linkage table with canonical learning savepoints and frozen event precision. Runtime remains v14 until implementation. | Root integration |
+| 2026-10-29 | Reserved v16 for four columns on existing learning sessions, storing the exact accepted quiz and CAS checkpoint with canonical learning transactions. Runtime remains v15 until implementation; table count stays 34. | Root integration |
 
 ---
 
