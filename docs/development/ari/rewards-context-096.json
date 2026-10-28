@@ -1,0 +1,33 @@
+{
+  "checkpoint": "096",
+  "workflow": "W10",
+  "status": "NATIVE_DEFECT_REPRODUCED_SOURCE_FIXED_HOST_PASS_NATIVE_RETEST_PENDING",
+  "defect": "REWARDS-CONTEXT-096",
+  "native091": [
+    "AI reported only defaulttheme, omitting owned/equipped focuswallpaper outside viewport",
+    "AI knew preview active but could not identify IPAhat"
+  ],
+  "rootCause": "Per-item context bound inside lazy ListView tiles; account summary omitted preview item identity",
+  "fix": "Mount finite catalog context wrappers outside lazy list; account declares complete-current-catalog and previewItemId; preserve owner guards and manual mutations",
+  "verification": {
+    "red": "Missing previewItemId expected headgear_ipa actual null",
+    "intermediate": "Combined catalog JSON exceeded1000char limit; changed to separately bound item contexts; removed leftover combined block after second failure",
+    "final": "7 avatar screen tests PASS; twofile Dart analysis clean",
+    "coverage": "Preview identity and ownership/equipment distinction, offscreen metadata, foreign-owner hiding, cancelreset plus existing durablepurchase/equip/reconciliation cases"
+  },
+  "evidence": "evidence/rewards-context-096",
+  "apk": {
+    "path": "build/ari-assistance-096.apk",
+    "sha256": "be08ca1adc5ddb277e887c370b8834758391012389372833dd0770b4355e542a",
+    "installed": true
+  },
+  "nativeRetest": "NOT_RUN on096",
+  "cleanup": "Bridge17024 stopped;reverse/configremoved;isolated096started;original app/accounts preserved",
+  "remaining": [
+    "Actualprovider completeownership andIPApreview identity retest",
+    "Disconnect andcancelpreview/reopen",
+    "W08personalset dedicated assistance missing",
+    "Full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

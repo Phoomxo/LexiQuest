@@ -1,0 +1,1015 @@
+{
+  "zone": "REV-05",
+  "sliceId": "B18-G82-REV-05",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "43c2743c2c417c9bb90ffa9f846f59efbff3b981",
+  "reviewCompletedAtUtc": "2026-09-19T11:26:18.635833+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV05-X01",
+      "key": "assessment",
+      "area": "Assessment pins, current-owner boundary and terminal recovery",
+      "evidence": [
+        "lib/features/assessment/application/assessment_use_cases.dart",
+        "lib/features/assessment/data/drift_assessment_repository.dart",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/screens/main_navigation_screen.dart",
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "disposition": "Exact assignment/consent/form and canonical response transactions retained. Direct zero-answer repository completion is intentionally lower-level and comparison rejects incomplete forms; not a scoring defect. Catalog one-option/presentation two-option mismatch has no packaged approved form demonstrated. Bootstrap supplies assessmentOverride only, so activated installed assessment is NOT proven. REV05-01/02/03 preserve owner-transition, terminal lost-ACK and background response-clock hypotheses for bounded G8.3 reproduction. Delimiter-hash ambiguity alone is not promoted: actual launch passes persisted run identity and no admitted collision pair was demonstrated."
+    },
+    {
+      "id": "REV05-X02",
+      "key": "srs",
+      "area": "Canonical SRS and operation identity",
+      "evidence": [
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/learning/domain/srs_operation_identity.dart",
+        "lib/features/learning/data/drift_learning_repository.dart",
+        "lib/features/sync/data/drift_sync_store.dart"
+      ],
+      "disposition": "FORM-03 remains binary v2 1/3/7/14 then saturated doubling, wrong resets repetitions and increases lapses, UTC due dates. Canonical learning writer supplies persisted state and monotonic revision. tryParseRevision can throw on an oversized decimal, but caller consumes local outbox IDs generated from integer revisions; no supported ingress of oversized revision identified. No malformed-input runtime success asserted. NUL ambiguity in raw helper alone does not establish a canonical accepted collision."
+    },
+    {
+      "id": "REV05-X03",
+      "key": "progress",
+      "area": "First-answer, calendar and descriptive profile",
+      "evidence": [
+        "lib/features/learning/domain/first_answer_accuracy.dart",
+        "lib/features/progress/data/drift_progress_queries.dart",
+        "lib/features/progress/data/drift_learning_calendar_reader.dart",
+        "lib/features/progress/data/drift_personal_learning_profile_reader.dart"
+      ],
+      "disposition": "FORM-01 historical aggregate description is superseded in current source by shared first eligible selection per owner/session/word/mode/content/skill; excludes hinted/guided/exposure/assessment/recreation and separates repairs. Calendar selects before weekly bucketing; effort uses stored monotonic duration distributed by IANA day, not wall end-start. 5/6 versus repair oracle is meaningful. Multi-query reads are not snapshot transactions; concurrent consistency and arbitrary scale limits are not promised or proven failures. Calendar trusts admitted ownership references; no accepted cross-owner corruption path established. Profile remains six descriptive axes, not mastery certification; no arbitrary history cap proposed."
+    },
+    {
+      "id": "REV05-X04",
+      "key": "recommendation",
+      "area": "Advisory policies and Today merge",
+      "evidence": [
+        "lib/features/recommendation/application/recommendation_use_cases.dart",
+        "lib/features/recommendation/data/drift_recommendation_reader.dart",
+        "lib/features/recommendation/domain/active_recall_ladder.dart",
+        "lib/features/today_hub/data/drift_today_hub_reader.dart"
+      ],
+      "disposition": "f14 is versioned read-only advisory with confidence and 30-day bounds; learner override obeys live mode/protocol constraints. Live availability recomputed after await. RecallLadderUseCases has no production caller/authority implementation; fake seven-step tests prove pure policy only. Suspected stale merge suppression is not reachable from Today loadForRequest without override: stale/corrupt neutral factories produce null contentId, hence merged identity null and explanation retained. Today checks owner before/after composition and launches revalidate; no transaction snapshot or ABA-proof claim."
+    },
+    {
+      "id": "REV05-X05",
+      "key": "time",
+      "area": "Monotonic effort and focus lifecycle",
+      "evidence": [
+        "lib/features/time_tracking/application/active_learning_time_controller.dart",
+        "lib/features/time_tracking/application/focus_timer_controller.dart",
+        "lib/features/time_tracking/data/drift_learning_time_repository.dart"
+      ],
+      "disposition": "FORM-06 preserves five-minute idle cap, immutable failed segment retry, contiguous offsets and source transitions. Same-source delayed-idle branch is not independently promoted: only library caller is focus controller; start/resume/finish state guards and source handoffs constrain entry. No demonstrated normal UI same-source idle-extension trace. SQLite append validates active owner and atomic segment/outbox; final capture can follow session terminal bookkeeping intentionally, so lack of session active predicate is not itself a defect. Fake controller recreation is not process persistence; focus display is transient, stored effort authority separate."
+    },
+    {
+      "id": "REV05-X06",
+      "key": "today",
+      "area": "Today contracts and degraded states",
+      "evidence": [
+        "lib/features/today_hub/application/today_hub_use_cases.dart",
+        "lib/features/today_hub/data/drift_today_hub_reader.dart",
+        "lib/features/today_hub/domain/today_hub_models.dart",
+        "lib/screens/today_hub_screen.dart"
+      ],
+      "disposition": "Typed owner-pinned request and before/after owner check, per-dependency degraded states and exact assessment lineage preserve read-only composition. Ambiguous review identity is corrupt and blocks UI even with retained items. Current loader generation suppresses replaced futures; it is not a live transactional subscription. Canonical launch/physical interaction not run. Stale merge hypothesis resolved in recommendation cross-check."
+    },
+    {
+      "id": "REV05-X07",
+      "key": "screens",
+      "area": "Dashboard, calendar, clinic and SRS callers",
+      "evidence": [
+        "lib/screens/mastery_dashboard_screen.dart",
+        "lib/screens/learning_calendar_screen.dart",
+        "lib/screens/weakness_clinic_screen.dart",
+        "lib/screens/srs_flashcards_screen.dart",
+        "lib/screens/learning_goals_screen.dart"
+      ],
+      "disposition": "Dashboard six axes/no-evidence and exact calendar snapshot route are deliberate. Goals child checks studyPlanning availability, so dashboard direct route is not a proven feature bypass. Clinic revalidates configuration and launches gated canonical host; stale view alone cannot authorize writes. Canonical SRS retries preserve pending evidence and terminal state; compatibility differs and has real CEFR/import entry callers. REV05-04 retains animation concurrency hypothesis with no durable learning corruption claim. Voice/fake widget results are not acoustic or native proof."
+    },
+    {
+      "id": "REV05-X08",
+      "key": "legacy",
+      "area": "Dormant compatibility services and DTOs",
+      "evidence": [
+        "lib/progress/local_progress_repository.dart",
+        "lib/progress/progress_repository.dart",
+        "lib/models/srs_item.dart",
+        "lib/services/adaptive_decay_scheduler.dart",
+        "lib/services/interleaved_srs_scheduler.dart",
+        "lib/services/srs_service.dart",
+        "lib/services/weakness_clinic_service.dart"
+      ],
+      "disposition": "Exact symbol search found no production construction of legacy local progress, SRS service, decay/interleave or weakness helper. Legacy SrsItem is consumed by dormant helpers, not canonical SRS writer. Exponential decay is e-folding heuristic, not trained HLR; box scheduling is not category interleaving. Global preferences/malformed fallback limitations remain documented, not installed canonical-owner defects. Empty remote-writer placeholders have no executable behavior. Mock preference cache reconstruction does not prove disk/process reopen."
+    },
+    {
+      "id": "REV05-X09",
+      "key": "widgets",
+      "area": "Read-only helper widgets and timing utility",
+      "evidence": [
+        "lib/utils/response_time_tracker.dart",
+        "lib/widgets/learning_summary_card.dart",
+        "lib/widgets/study_heatmap_widget.dart",
+        "lib/widgets/study_time_picker.dart"
+      ],
+      "disposition": "Stopwatch helper and study heatmap have no lib construction; heuristic threshold/duplicate local-day caveats are not canonical metrics. Summary card displays caller facts only. Responsive study picker validates hour/minute with explicit confirm/cancel; numerical/date DTO assertions are not standalone untrusted ingress validation. No new runtime layout claim."
+    }
+  ],
+  "files": [
+    {
+      "path": "lib/features/assessment/application/assessment_comparison.dart",
+      "sha256": "9e0c919c7623e99e11b03a9f21be7600bbaca70ff75e38b249de9602e80dc585",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/assessment/application/assessment_use_cases.dart",
+      "sha256": "9df6395bcacd5d26789bfec3d23c43822198bb40880c8c026e1b3f80e2cf1d47",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/assessment/data/drift_assessment_repository.dart",
+      "sha256": "42a5856167de6b758b0231f8cd5bf256ffa6779d9a21a9295ff22fbff3acb20c",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV05-01"
+      ],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/assessment/domain/assessment_instrument_catalog.dart",
+      "sha256": "325cc34e1a93e17ceff52427704838b85c0827d9728e8cbee332f3b39c4cdd11",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/assessment/domain/assessment_models.dart",
+      "sha256": "5d6169c42516521746f17ca4a2f39afd3e134742f2379dab284569da648f0151",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/assessment/domain/assessment_repository.dart",
+      "sha256": "5677c9f6297804645febdf2729d87c2ffb656612553a8dfc32ad855834062662",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV05-02"
+      ],
+      "crossCheck": "REV05-X01"
+    },
+    {
+      "path": "lib/features/learning/domain/srs_operation_identity.dart",
+      "sha256": "8bcd3698401244bbe8514e751eebf8a88af9bd26e0b9dc37c48fe0ec9fb0157e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X02"
+    },
+    {
+      "path": "lib/features/learning/domain/srs_policy.dart",
+      "sha256": "2e97f27682947ab5863e6aefb9cf054866d3880f6f68b857647794749da4c453",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X02"
+    },
+    {
+      "path": "lib/features/progress/application/learning_calendar_use_cases.dart",
+      "sha256": "330525038d9bb9787ba95274c76c58cff009bfcb6d82973ce8d1762554892696",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/application/progress_use_cases.dart",
+      "sha256": "911fed32a4cb8dcf871c72dae9350793ab64221babb0eb8894049bf2703fefd8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/data/drift_learning_calendar_reader.dart",
+      "sha256": "e2b5b879ca10d9c4b94b84a07035ff15f4052da5ee24bc768fd98441e127cbda",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/data/drift_personal_learning_profile_reader.dart",
+      "sha256": "81ee67d01493512ce8a20e146f6fe478b277cbad513ed2144135634f41b2e1bc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/data/drift_progress_queries.dart",
+      "sha256": "6cd278329d36b4132e25c96956e21b8c8640417f1bd3d486026a561e83eb5f7c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/domain/achievement_policy.dart",
+      "sha256": "629801d664aec07c7e2a4942a71fcc473134608b83218fa845ca7765834728ac",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/domain/learning_calendar.dart",
+      "sha256": "402aa68855a48fb1298cc20cedd1e4f5a210ce7cdac42a5f5dc79689082f79df",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/domain/personal_learning_profile.dart",
+      "sha256": "7d3aaeff6d6ddff3bd69ec850c6b892cff712fa2d750f7dc6a2b1e5ed0f4b433",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/progress/domain/progress_models.dart",
+      "sha256": "a3fb2c77454f50dbbec3dd23cd9a1598b2722b86ecc5da89c9fbd974d591c63a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X03"
+    },
+    {
+      "path": "lib/features/recommendation/application/recall_ladder_use_cases.dart",
+      "sha256": "9e724e29325010fdab2c7af8d4e41dcdde1d1d87632410e8814ba4c38a8c7b09",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/recommendation/application/recommendation_use_cases.dart",
+      "sha256": "1a201ecc4a893cd0e4c522c1f0e2a645ec158a10b947091b30fb8bcefe155d9f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/recommendation/data/drift_recommendation_reader.dart",
+      "sha256": "f78ea3411b4974958d1ac06a20c7b24707aaa4edfa974aa187660fdce97c381f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/recommendation/domain/active_recall_ladder.dart",
+      "sha256": "fef3d11971c300c98ab7dc0bddfd481eea11d3df9cb8d7f5f94a1e771a6022f8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/recommendation/domain/recommendation_models.dart",
+      "sha256": "0031ba6ad2cba31fce7a7fbee9d62d29af12202a57bcb63a8de65a176edc50bf",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/recommendation/domain/recommendation_policy.dart",
+      "sha256": "036d8c78873722ff9d2375cb5a8b5bfa349a406b5bb44b9c286c9ebbf9cb241b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X04"
+    },
+    {
+      "path": "lib/features/time_tracking/application/active_learning_time_controller.dart",
+      "sha256": "dbc4679e5cac3ad823abb6ccdfe507b78824826ac7261d1d2249bb2dfa260258",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/application/focus_timer_controller.dart",
+      "sha256": "d53f054930613e252231a4af8b037f42ada9fee18fa69cf781426341e8f49acc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/application/focus_timer_rollout.dart",
+      "sha256": "6bb03e00a55c840e6ece8a56e0b1fa396e079019bccc6288db2d5a88d16ad5ab",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/application/learning_time_capture_rollout.dart",
+      "sha256": "71a4d89b0ecdeb5253dd92fcf47f1b558953b1eb2e745af101dad018e0ee4c42",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/data/drift_learning_time_repository.dart",
+      "sha256": "310dfad434c6c23418f7ecf027896c4a0861a88c4261b8a5bda5722a238b6197",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/domain/focus_timer.dart",
+      "sha256": "26cb253db49fae2c0b3122774eb2e8a7834729e0fa28e218e5a36f1870ad449f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/domain/learning_time_repository.dart",
+      "sha256": "ba497a8993adea741ec8a90b58c950535b34b17be2788803a0f35d861375e7da",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/domain/learning_time_segment.dart",
+      "sha256": "4e28a0922d0a611db5bc3c84fb1645c14cb53090724215b54df46173eab79cf0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/time_tracking/presentation/focus_timer_widget.dart",
+      "sha256": "11d12f90b3ee8489b42eea99ecdc5eff7af76e3bd278cb5d08dff861fd542bb0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X05"
+    },
+    {
+      "path": "lib/features/today_hub/application/today_hub_use_cases.dart",
+      "sha256": "c9c8674d97fd3316d017f70f8ffb24ca2ed4dc30445a5928c53075ff959fd552",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X06"
+    },
+    {
+      "path": "lib/features/today_hub/data/drift_today_hub_reader.dart",
+      "sha256": "a025a12d0b3f8dc24692ea45b1d2577c959268bd038b1cee63db361d3427bb08",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X06"
+    },
+    {
+      "path": "lib/features/today_hub/domain/today_hub_models.dart",
+      "sha256": "c488bd641bb0f07720fcbaca8651a314c0d8c878293b724b257b1585a4b13b2e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X06"
+    },
+    {
+      "path": "lib/models/srs_item.dart",
+      "sha256": "ed50f4b2b75c9952f528f6f5d41f9261133b6fd6a54f9f1ea268d9f3575cfc00",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/firebase_progress_remote_writer.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/firebase_purchase_remote_writer.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/local_progress_repository.dart",
+      "sha256": "822dad9d2f199b5cfbff4d82e76d892cc6c1e81a465291d6d9a0d176b200bde5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/progress_remote_writer.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/progress_repository.dart",
+      "sha256": "4198d0c9aa7824dd7ce5092820b309a326df2b777a429a386a81c2fe57214f9d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/progress_sync_service.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/progress/purchase_remote_writer.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/screens/learning_calendar_screen.dart",
+      "sha256": "16258b189e1b31f73c74ad7c79ae8aa337cbd1197ae1aa707e23b59d9a94bf6a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X07"
+    },
+    {
+      "path": "lib/screens/mastery_dashboard_screen.dart",
+      "sha256": "219f07573e6f8154336d0cfb8d4a3936b8e1d45e4bb93ab2ee2d49e64a39be23",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X07"
+    },
+    {
+      "path": "lib/screens/srs_flashcards_screen.dart",
+      "sha256": "69625bc9bc632298fff0d30d1a154f5ab46c97685ba26d05d9cc7e53bc823121",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV05-04"
+      ],
+      "crossCheck": "REV05-X07"
+    },
+    {
+      "path": "lib/screens/weakness_clinic_screen.dart",
+      "sha256": "749beb3d7939c9646e233921c89081a2169cd6b7c05e83314daefd7eb142b890",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X07"
+    },
+    {
+      "path": "lib/services/adaptive_decay_scheduler.dart",
+      "sha256": "af3da440d510bc1d1041aadde8d7b10622b24d01cb4c536fcdc46effafa9b163",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/services/interleaved_srs_scheduler.dart",
+      "sha256": "7ad7a2376790b9ee70fd3159e5ab1ab589316cf47a9cec45f162cdb4cf2ed427",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/services/srs_service.dart",
+      "sha256": "8ac7ce32fb73cb16f01a73ec2ae5979dba4f2820aee8595c7caa813aeac97225",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/services/weakness_clinic_service.dart",
+      "sha256": "22918a5e4adc64e1534e0c84dd3c6d4ef8cb76c6400aa0ab2ee246fb01618a4a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X08"
+    },
+    {
+      "path": "lib/utils/response_time_tracker.dart",
+      "sha256": "810b1c64d47743999a62b5e511a82fc9a8089f795dd50d6aa2cd423282b8c78f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X09"
+    },
+    {
+      "path": "lib/widgets/learning_summary_card.dart",
+      "sha256": "ec245d068842d82be0a6e96ff70cff6322251eff47c25d3c2fe485b72aa0200d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X09"
+    },
+    {
+      "path": "lib/widgets/study_heatmap_widget.dart",
+      "sha256": "db764698276d6386b4a4d61355321312f59ad83e200acafc358a1796f4d183ef",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X09"
+    },
+    {
+      "path": "lib/widgets/study_time_picker.dart",
+      "sha256": "7a313cb258293be0ff84e2c8ae172b5aee96261322eb2e2a4744a67dd8d3e4f6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV05-X09"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "test/features/assessment/assessment_comparison_test.dart",
+      "sha256": "9b09f7d2eaeaebc4cb193415319e477757470a9fa88d1ea4e70c5e7f1d155feb",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full961 lines read. Actual canonical Drift evidence with synthetic form/manifests/authority and fixed owner. Tests one-item pre/post outcome/delta, exact temporal boundaries, field-by-field corruption, full forms with mixed scoring versions reject, missing/nonterminal pair, foreign same-cycle filtering, withdrawal/assignment drift, duplicates/incomplete and chronology reject. Direct recordResponse intentionally creates same-item duplicate IDs and complete allows incomplete forms; comparison rejects both. No changing active owner during asynchronous comparison or score certification; no B18 execution/statistical run. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/assessment/assessment_isolation_test.dart",
+      "sha256": "6f906366492268a04b99bb7714fc39e3d0d0998b446a46c3b1af5a70635602d1",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full797 lines read. Real Drift seeded11nonempty SRS/points/reward/equip/achievement/quest/streak/day tables compared as sorted full JSON snapshots before/after canonical assessment write; event payload identity asserted and separate score/response tables absent. Controlled wrapper blocks actual recordAnswer inside assessment transaction, complete/abandon wait then preserve singular event; response after abandonment denied. Fixed owner and synthetic approved form, not owner-switch/live research proof. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/assessment/assessment_use_cases_test.dart",
+      "sha256": "134ddc7ceb3bafaf6cc74cbbb680a960f3349b2be021569f2e914cb5160099a0",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full2955 lines read. Real Drift/canonical learning plus synthetic pinned approved content. Tests frozen immutable catalog, exact start/file-reopen/terminal replay,25s active time excluding1h pause, withdrawal before prompt/resume/response/completion and after authorization with compensated time, rollout cancellation terminal guard, response failure frozen payload and actual postcommit lost-ACK immediate/deferred/recreated-presentation reconciliation, corrupted durable response rejected and opposite terminal race does not reopen time. Existing owner test only expects one changing fake-owner read at start, not actual active-owner switch. No terminal commit-then-StateError widget recovery or delimiter identity oracle. Direct empty complete deliberately accepted by tests; completePresentation requires all items. Source text architectural denylist is textual not transitive proof. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/assessment/drift_assessment_repository_test.dart",
+      "sha256": "728c8edcd6663f61b076bc4af70195d9ed612de70daed52a7db7bad3362914be",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full905 lines read. Real Drift exact30field snapshot and actual file reopen prove pinned historical schema15 roundtrip, duplicate immutable start, terminal timestamp idempotency, invalid terminal/reopen/owner-reference/assignment/UTC/input boundaries. Direct repository complete with zero answers intentionally succeeds at this layer. Seed owners do not set is_active and all authority fixtures synthetic; does not prove current-owner transition fencing, completion guard race, or live schema15 transport support. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/learning/srs_policy_test.dart",
+      "sha256": "31dc36aeeea2d3d8e943fdd7d0eb9027e75a5f1fa2a8b8c0dba0cb3bbb9a407a",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full145 lines read. Pure initial/correct sequence/reset and27plus saturation, oversized1<<62priorinterval beforemultiply, UTCnegative. No malformed prior reps/nonfinite or extremeDateTime boundary. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/progress/achievement_policy_test.dart",
+      "sha256": "751b0d5ad283139b10bcc7968b4d87846d0f8304f9ac7a9a83bc2abb2a61cf3e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Pure-policy duplicate source exactly once, version durable suppression, denied evidence, reverse input canonical milestone identity, conflicting payload and corrupt durable ID rejection. Eligibility supplied booleans, no repository event authenticity or invalid session completion-time case. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/progress/learning_calendar_reader_test.dart",
+      "sha256": "ca644a6597b7971e776478d56f3dfe1e0e075588cd8fcea6e1fcd13ef64d87c6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read in ranges1-340 and341-end. Real memory Drift validates first5/6 separate repair/exposure, Monday Bangkok boundary, exact remainder cross-week, spring/fall DST and repeated hour, immutable empty null accuracy, assessment effort-only, deterministic skill ordering and UTC facade. Segments deliberately end after1second despite longer active duration proving stored-duration authority. No foreign session/word reference corruption or concurrent snapshot oracle. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/progress/personal_learning_profile_test.dart",
+      "sha256": "351472fca9c4a83040373536e3c436d634cc0c5a2871ba406d0b3588ace07b9f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read1-500 and501-end. Real Drift read-only total_changes, six axes/provenance,5/6 and79active seconds vs10min wall, weekly/Bangkok/UTC boundaries preserve lifetime mastery/XP, foreign owner isolation, seeded quest noEvidence vs actual objective IDs, file close/reopen. Synthetic quest/reward projections directly seeded, does not verify grant path/event resolution or concurrent reads. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/progress/progress_projector_test.dart",
+      "sha256": "139b7604382d225f2fd7140d514b5212a9f6c933a9cc17866d74edc368c70dea",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read1-420 and421-end. Real Drift canonical adapters commit speaking transcript and typed recall; actionable due queue agrees with live quality/starter filters while retaining8SRS rows; dedicated streak vs repeated item dedup, learning evidence accuracy, purchase leaves lifetime XP/level, durable achievement versions collapse, unknown/negative points excluded, assessment/recreation omitted from practice. Synthetic transcript is not acoustic proof; direct seeded projection rows bypass authority validation. No migrated pack/concurrent snapshot or large history oracle. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/recommendation/active_recall_ladder_test.dart",
+      "sha256": "0fd6bedad8726cd439d756539311322cd4d12b7c213ad94fe0a41446cc8a08a6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Fake canonical authority exercises seven-step progression, mastery with SRS reference, failed/guided nonpromotion, immutable protocol sets, missing/failed/versioned authority, exact reference outcome/version/time bindings, duplicate/corrupt/cross-owner/stale,197-rune source limit, deterministic chronology/ties/gaps, live/protocol/accessibility alternatives, no-loop and immutable advisory refs. Request-toString assertion does not prove absent API override. No production authority implementation, real evidence ingestion, or live flags changing during await. Tests read, not run. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/recommendation/recommendation_policy_test.dart",
+      "sha256": "f0a51df0ba37b56a976a0a64ca1ee4cc236d33f96acdb2e17a2333dad3b76720",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Pure boundary oracles cover confidence0.69/0.7, unseen/mastered evidence reference, owner/version/future/stale/nonfinite values and inclusive30days. Real memory Drift fixtures test frozen legacy evidence ingress, timestamps and malformed evidence JSON; compare selected five tables unchanged by advisory recommendation. Synthetic assignment fixtures are not production activation or migration verification. Tests read, not run. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/recommendation/recommendation_use_cases_test.dart",
+      "sha256": "a17baafcb203e48a2b0d8c79aa2e694636234a19f24f001f549b6f6ceb1558a0",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real Drift reader with frozen legacy attempt fixtures verifies weak/stale/corrupt/no evidence, preference ordering, read-only total_changes, explicit reversible override/protocol denial, owner/session/word isolation and deterministic file reopen order. Mutable availability authority triggers off between initial sampling and asynchronous read, including corrupt path and all-off. Empty database remains empty. No real active owner switch mid-read or canonical new-mode ingress coverage. Tests read, not run. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/time_tracking/active_learning_time_controller_test.dart",
+      "sha256": "701b0666e6eab9431b41310d19209a4bcfc435fdab6ca7acca574a6249899dc0",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full480 lines read. Memory fake clock and controllable idle callback prove wall rollback separate, delayed idle gap excluded,13minute effort chunks, stale callback inert, disposed blockedstart denied and queuedpause freezes before slowappend. Frozen same-object failed segment replay and controller recreation over same memoryrepository, not file restart. Same-source monotonicrollback negative but no delayed-idle same-source transition, multi-chunk partial commit failure or actual SQLite. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/time_tracking/focus_timer_controller_test.dart",
+      "sha256": "dbea5991c3540849c77f4295ede60156bc39ba173caffb584891e79880783208",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full371 lines read. Actual controllers over memory fake repository,60second explicit break contributes0, real interaction reopens automatic source, monotonic wall rollback, background/manual source boundaries, idle cap, exact frozen failedpause retry and sameFuture duplicatefinish. Recreation drops unknown open time and retains prior segments, not physical reopen. No cross-authority observed no-op, disposal duringappend or failed-entry supersession here. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/time_tracking/focus_timer_widget_test.dart",
+      "sha256": "4eb55136a9ffcf2cb5a68576ce77952c6d00e3145cb14550ec3c8b2b733d62ca",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full151 lines read. Held callbacks verify replacement rejects capturedold action/error and preserves new pending guard.240px2x inside MaterialApp MediaQuery nooverflow and actual starttap accepted; callback is fake so timer remainsnotStarted deliberately. No real screenreader, tickingrunninglayout or actual persistence. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/time_tracking/learning_time_repository_test.dart",
+      "sha256": "66715ca549992673d730e3f3fb7e1d3e717e547d7f0d3e954ea304968b221bc6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full243 lines read. Actual memoryDrift exact replay/semantic mismatch, contiguous overlap/remote gap recovery, historical IANA mismatch and active-owner SQLswitch denied. Atomic title asserts final pairedrows but no outbox fault injection; projection tables initially empty. Restart title does not recreate repository or database. Wall rollback explicitly accepted as audit context. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/today_hub/today_hub_reader_test.dart",
+      "sha256": "45a8f80f9696dec9058bb3a42b8cdc62af58462411203f7517b2afb89c64b8f8",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1133 lines read contiguous1-370/371-760/761-1133. Actual memoryDrift canonical learningrecord+adapters and synthetic privatecontent, deterministic composition across insertion order, merged current recommendation retainsprovenance, ambiguity retainsitemsbutcorrupt, stale notauthoritative and fixedrequest overridesdependencyclock. Actual SQLowner switch midcompose removesallwork; exact assessment lineage and replayexclusion, readonly fullstable rows inclblobs acrossalltables (strongerthan counts). No multi-owner ABA/sharedsnapshot mutation, unboundedpopulation or stale recommendation matchingcurrentreview scenario. Synthetic assignedresearch only, no activation/execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/progress/local_progress_repository_test.dart",
+      "sha256": "c5d03f41028e73038c53b47e85fd2b027ec8e21f759916505bc9b5f79e3b78a6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. MockSharedPreferences tests aggregation, mismatched-payload sameID no-op, trimming, invalid count no mutation, negative/empty persisted entries failclosed and20 concurrent sameinstance writes. Freshrepository reuses exact mockprefscache despite processrestart comment; no disk/process durability, crossinstance writes, failedsetString or snapshot-versus-pending totals inconsistency coverage. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/learning_calendar_screen_test.dart",
+      "sha256": "d98b49d1633739baa145220de05b04733f13a7f9147f7a0bfc28c752b679b638",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full104 lines read. Fixedtyped fixtures separate fouraxes/semantics,75seconds/onecorrect, emptyaccuracy null while effort0. No actualloadererror/retry/replacement, dailyrouteintegration or large-texttest. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/mastery_dashboard_screen_test.dart",
+      "sha256": "5a69a08d258040d3f984c7d96de0f677c35ca9eebd774a2c3f75f35d5898bc75",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full496 lines read. Fakeprofile realroutes opensgoals and exactcalendar, sixaxes/weekly5of6rounded83/79seconds/noEvidence/singleanswer limits; Tickerreactivation exactlyone load and heldsecond/third replacement hidesold+ignoresstalecompletion. Actualfonts3902x partialsurfacecapture optional,200percent calendaractionhit-test; no actualDBowner transition or childfeature-off route oracle. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/srs_flashcards_screen_test.dart",
+      "sha256": "648db87b288b75e07042cf5ed916bc30a948e32ad358ac2c98595ff0dfa2d362",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1300 lines read contiguous1-375/376-845/846-1300. Realwidgets legacygate/voicefake, semantic siblingtraversal/keyboard/highcontrast/reducedmotionforwardreverse, backgroundstop. Fakecanonicalrepo frozenanswertruefalse andterminalexactretry/backlock/stalerate/audio lock. ActualmemoryDrift exposure persists withoutSRSchange, recreationuses sameDB notfile. Deferredbackgroundfake implementsduequery but notstartSession, so noaudio canalsofollowstart failure; doesnotalone prove successfulbackgroundloadedvoice suppression. Owner-closepin test fake acceptsoldowner no actualleasefence.320th/en2x reveal; no rapidlegacyrating/disposemidanimation. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [
+        "B18-REV05-04"
+      ],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/today_hub_screen_test.dart",
+      "sha256": "251b129e81565a6359f3e883b39015f904ff85a4fe8cc7e332d98e03e49b0483",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1294 lines read contiguous1-390/391-890/891-1294. Fake loaders/actions exercise keyboardorder, computed theme contrast4.5, realfonts320/390/840x1/2lightdark scrollreachability/inset, corrupt/stale actions blocked/manualpractice accessible, ownerreplacement capturedplanning denied and livefeature-off.120reviewitems retainsallbehind3preview; provenance and honestmissingstates/Thai glossary semantics; samekind singleflight while resume+recommendation may coexist. Visualcapture optional helper notdevice/humanpass; no real canonical launch persistence or loaderreplacement pending result test here. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/weakness_clinic_screen_test.dart",
+      "sha256": "868ad97e96d3a66e1c01a0ad0ea286011d58876d5213162117530ef1bc7c4841",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full226 lines read. Fixedwrongrate/due distinction, no-sample empty, missingfeatureauthority failclosed. ActualDriftinertdependencies configsheet beforecontroller construction anditemcount3 passed tohost; no seededduedatabaseword or actualanswer. No feature-off midmodal/ownerreplacement/narrowlayout or persistedfailure tests. No B18 execution. Focused REV05 oracle disposition complete: preserves original scope/limitations; missing proposed regressions tracked separately, no test execution or test defect inferred.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-05",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "formulas": [
+    {
+      "formulaId": "FORM-01",
+      "disposition": "Current first-answer-accuracy-v1 selector now fixes the historical aggregate description; evidence denominators and repairs stay separate. B01 registry is historical and remains unchanged. Read current selector/progress/calendar plus recorded 5/6 oracles; no new runtime acceptance.",
+      "finalDomainOwner": "REV-05",
+      "authorityPaths": [
+        "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart",
+        "lib/features/progress/data/drift_progress_queries.dart",
+        "lib/features/learning/domain/evidence_eligibility_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/progress/progress_projector_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-02",
+      "disposition": "Reuse completed REV03 Pair star policy/history disposition: terminal acknowledgement, perfect first/no support=3, independent 3/4 boundary=2, else1. Descriptive only; never XP/reward authority.",
+      "finalDomainOwner": "REV-03",
+      "authorityPaths": [
+        "lib/features/learning/pair_matching/domain/pair_star_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-03",
+      "disposition": "Binary v2 source and oracle agree on 1/3/7/14 then doubling with 36500 cap, wrong reset/lapse/difficulty and UTC. Not full SM2 or learned HLR; malformed prior state/exotic DateTime not proven admissible.",
+      "finalDomainOwner": "REV-05",
+      "authorityPaths": [
+        "lib/features/learning/domain/srs_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/learning/srs_policy_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-04",
+      "disposition": "Recorded current p1 floor(XP/20)+1 and exact permanent receipt compatibility match registry. Final reward caller/owner/outbox disposition belongs to REV06; unkeyed receipt digest alone is not authenticated XP.",
+      "finalDomainOwner": "REV-06",
+      "authorityPaths": [
+        "lib/features/rewards/domain/avatar_progression_policy.dart",
+        "lib/features/rewards/data/drift_reward_repository.dart"
+      ],
+      "oraclePaths": [
+        "test/features/rewards/avatar_progression_policy_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-05",
+      "disposition": "Recorded current streak uses calendar-label days, same-day no-op, missed-day freeze preserves count, cap3 grants/historical surplus. Final motivation caller and timezone oracles belong to REV06; no streak re-execution.",
+      "finalDomainOwner": "REV-06",
+      "authorityPaths": [
+        "lib/features/motivation/domain/streak_policy.dart",
+        "lib/features/motivation/domain/timezone_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-06",
+      "disposition": "Monotonic captured effort, floor ms, five-minute idle and segment cap, immutable retry/contiguous offset checked with caller transitions. Wall rollback is audit context; fake recreation not disk restart. No runtime execution.",
+      "finalDomainOwner": "REV-05",
+      "authorityPaths": [
+        "lib/features/time_tracking/application/active_learning_time_controller.dart",
+        "lib/features/time_tracking/data/drift_learning_time_repository.dart"
+      ],
+      "oraclePaths": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-07",
+      "disposition": "Calendar Monday/IANA DST and null no-evidence accuracy checked with shared first-answer selector; stored duration allocated by day. Goal signed date countdown final caller disposition stays REV06, no need to mutate B01 historical formula record.",
+      "finalDomainOwner": "REV-05/REV-06",
+      "authorityPaths": [
+        "lib/features/progress/data/drift_learning_calendar_reader.dart",
+        "lib/features/goals/application/learning_goal_use_cases.dart",
+        "lib/features/motivation/domain/timezone_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/goals/learning_goal_use_cases_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-08",
+      "disposition": "Complete unique pinned pre/post forms and matching authority/scoring/content/chronology required; c/n and post-pre delta only then. Direct empty terminal intentionally fails comparison. No statistical reporting or research activation; assessment lifecycle candidates separate from arithmetic.",
+      "finalDomainOwner": "REV-05",
+      "authorityPaths": [
+        "lib/features/assessment/application/assessment_comparison.dart"
+      ],
+      "oraclePaths": [
+        "test/features/assessment/assessment_comparison_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-09",
+      "disposition": "Reuse recorded camera source observations and accepted B11A pins; n=0 remains null, Wilson is descriptive and thresholds never establish physical quality. Camera domain final acceptance attribution REV07, tools/camera_accuracy.py remains historical REV11 tooling zone. No recomputation/training/statistical report.",
+      "finalDomainOwner": "REV-07/REV-11",
+      "authorityPaths": [
+        "tools/camera_accuracy.py",
+        "tools/camera_accuracy.py"
+      ],
+      "oraclePaths": [
+        "tools/test_camera_accuracy.py"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-10",
+      "disposition": "Recorded current transcript pipeline rejects empty final as no-evidence, unlike historical helper wording; normalized rune similarity remains text-only. REV03 shadowing route reviewed, REV08 owns final callback/cancellation/native evidence checks; no pronunciation certification.",
+      "finalDomainOwner": "REV-08",
+      "authorityPaths": [
+        "lib/features/media_practice/application/speech_practice_use_cases.dart",
+        "lib/features/media_practice/domain/speech_evidence_use_cases.dart",
+        "lib/screens/shadowing_challenge_screen.dart"
+      ],
+      "oraclePaths": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-11",
+      "disposition": "Reuse completed native adapter/word/sentence construction dispositions: exact word, whitespace-normalized sentence with case/punctuation retained; occurrence identity preserves repeats and construction stays recreational. Existing REV03 findings remain open.",
+      "finalDomainOwner": "REV-03",
+      "authorityPaths": [
+        "lib/features/learning/application/native_mode_adapters.dart",
+        "lib/features/learning/application/native_mode_adapters.dart",
+        "lib/screens/word_scramble_screen.dart",
+        "lib/screens/sentence_scramble_screen.dart"
+      ],
+      "oraclePaths": [
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    },
+    {
+      "formulaId": "FORM-12",
+      "disposition": "Recorded usage pending-to-terminal CAS, partial known token sum versus nullable complete totals and required central unknown cost semantics retained. REV08 owns final caller disposition and existing REV08-02 overflow candidate; no price lookup/billing/live run.",
+      "finalDomainOwner": "REV-08",
+      "authorityPaths": [
+        "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "lib/runtime/central_cost_policy.dart"
+      ],
+      "oraclePaths": [
+        "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
+        "test/runtime/central_cost_policy_test.dart"
+      ],
+      "runtimeStatus": "NOT RUN",
+      "historicalRegistryUnchanged": true
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04"
+  ],
+  "crossZoneLedgerLinks": [
+    {
+      "path": "lib/screens/pre_post_assessment_screen.dart",
+      "findingIDs": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "priorReceiptPreserved": true
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "findingIDs": [
+        "B18-REV05-01"
+      ],
+      "priorReceiptPreserved": true
+    },
+    {
+      "path": "lib/screens/cefr_selection_screen.dart",
+      "findingIDs": [
+        "B18-REV05-04"
+      ],
+      "priorReceiptPreserved": true
+    },
+    {
+      "path": "lib/screens/wordbook_import_screen.dart",
+      "findingIDs": [
+        "B18-REV05-04"
+      ],
+      "priorReceiptPreserved": true
+    }
+  ],
+  "limitations": "55 production dispositions and 23 focused REV12 oracle dispositions only. Domain formula attribution outside this slice remains explicit. No G8.2/G8.3/B18 acceptance; no runtime/device/provider/research/deployment proof."
+}

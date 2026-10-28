@@ -1,0 +1,17 @@
+{
+  "checkpoint": "107",
+  "workflow": "W07",
+  "status": "REPRESENTATIVE_NATIVE_GUIDANCE_RETEST_PASS",
+  "sourceCommit": "ae04ee7f",
+  "installedApk": "build/ari-assistance-106.apk",
+  "verification": {
+    "build": "Debug arm64 isolated APK built; adb install Success",
+    "provider": "Before reveal permits current self-rating; after reveal rejects retrospective rating and SRS improvement, directs Continue",
+    "disconnect": "Explicit disconnect followed by Continue and simulated manual Good on chair; returned to home",
+    "durable": "113 to115 attempts; plate exposure and chair correct independentRecall. Only chair SRS changed; points ledger48 to49; reading unchanged",
+    "screenStayAwake": "USB setting2 retained"
+  },
+  "limitation": "QA simulated self-ratings are not measurements of human proficiency; actual provider still uses development USB bridge; all14 workflow/mode acceptance remains open",
+  "evidence": "evidence/srs-native-107",
+  "wholeGoalComplete": false
+}

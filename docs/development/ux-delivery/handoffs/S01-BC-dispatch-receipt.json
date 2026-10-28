@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-26T14:17:28.222043+00:00",
+  "dispatchId": "ux-s01-bc-20260926-0684",
+  "status": "DISPATCHED",
+  "successorThreadId": "01a0de13-8083-7fd0-9fdc-ba59ebdb4944",
+  "hostId": "local",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "predecessorWriterReleased": true,
+  "predecessorStateRevision": 113,
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\0684\\LexiQuest",
+  "sourceManifest": "docs/development/ux-delivery/handoffs/S01-BC-source-manifest.json",
+  "manifestSha256": "6c8940bb472ea4fc3529490300fe5d323a7fbe5f674860b384d40f1a2cfe6699",
+  "archiveSha256": "90ddfdbd9252c03ab4782c2ed2f545f53ef69ad76deec0349fde37c62039e481",
+  "archiveBytes": 815711202,
+  "fileCount": 3002,
+  "inheritedArchives": 233,
+  "isolationInstruction": "Successor must obtain native managed isolated worktree before import; primary saved-project checkout must remain untouched.",
+  "immutableSnapshotUnchanged": true,
+  "routing": "Inherited current model deterministic fallback; not Jev-selected; Standard/default requested/runtime tier unexposed"
+}

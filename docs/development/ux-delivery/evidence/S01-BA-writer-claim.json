@@ -1,0 +1,13 @@
+{
+  "revision": 108,
+  "status": "ACTIVE",
+  "holderThreadId": "01a0d5a9-a389-7e42-b745-b72f9352264a",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\f7d4\\LexiQuest",
+  "branch": "feature/ux-s01-ba-f7d4",
+  "claimedAtUtc": "2026-09-24T23:06:07.810934+00:00",
+  "currentItem": "S01-BA-display-preferences-recovery",
+  "dispatchId": "ux-s01-ba-20260925-ebf7",
+  "sourceReceipt": "docs/development/ux-delivery/evidence/S01-BA-source-receipt.json",
+  "predecessorReleased": true,
+  "routing": "Astra/medium deterministic fallback; not Jev-selected; Standard/default requested; runtime tier unexposed"
+}

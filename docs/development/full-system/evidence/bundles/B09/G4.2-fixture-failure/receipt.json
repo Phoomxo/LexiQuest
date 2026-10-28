@@ -1,0 +1,16 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.2-fixture-failure/targeted-learning-2ff173ecef4e49105f3d6f296f2c11d4a1d4ae2c71fc78980178dc41b8d30079.json",
+  "status": "Failed",
+  "fingerprint": "8a3f91a2e7dbeba8b5f88581804bbdc9301a5302b136cabf0d2b2244554b7247",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-fixture-failure/c718d867d2be-8a3f91a2e7db/Explicit-Flutter-tests.stdout.log",
+      "sha256": "c4d626b19d5a7da4705e099a83b6bd036095dcf3b8f7e2bf3fbd4d79885f6a63"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-fixture-failure/c718d867d2be-8a3f91a2e7db/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

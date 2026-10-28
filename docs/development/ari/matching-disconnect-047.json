@@ -1,0 +1,35 @@
+{
+  "status": "LEGACY_MATCHING_HOST_MCP_PARITY_PASS_CANONICAL_PAIR_NATIVE_PENDING",
+  "sourceChanges": "Tests only; installed production APK045 unchanged",
+  "tests": {
+    "new": 6,
+    "fullMatchingFile": 13,
+    "analysis": "No issues found"
+  },
+  "execution": "Actual compatibility MatchingModeScreen -> LegacyMatchingModeScreen under UnifiedLessonModeHost, production LearningUseCases and Drift in-memory. Registry connection variants; not authenticated provider or physical device execution.",
+  "variants": [
+    "No registry scope",
+    "Connected registry",
+    "Disconnect after word selection before meaning selection; reconnect after commit"
+  ],
+  "answers": [
+    "correct airport meaning",
+    "incorrect station meaning for airport"
+  ],
+  "assertions": [
+    "Exactly one persisted matchingPair recognition answer with correct isCorrect",
+    "Same native screen State instance survives disconnect and answer",
+    "No committed-answer context before answering",
+    "Visible committed feedback accurately projected after reconnect",
+    "Different owner cannot read context",
+    "No AI write actions advertised"
+  ],
+  "recovery": "Initial run hung awaiting owner read inside fake widget clock; interrupted. First text replacement missed its indentation, detected and interrupted before accepting results. Moved owner identity capture to existing asynchronous database setup; corrected six-case and full-file runs passed. No assertions removed.",
+  "device": "ADB serial9582188822004C6 online; no physical matching actions in047",
+  "remaining": [
+    "Canonical Pair experience active/result MCP coverage and native acceptance",
+    "CEFR connected/disconnected session with retained AriCEFR045 fixture",
+    "Native dictation/audio and remaining14workflow/mode acceptance",
+    "Whole-project SDLC/Agile review after MCP acceptance"
+  ]
+}

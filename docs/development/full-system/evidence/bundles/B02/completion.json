@@ -1,0 +1,37 @@
+{
+  "bundleId": "B02",
+  "status": "accepted-local-automated",
+  "acceptedRequirementIds": [
+    "G1.1",
+    "G1.2",
+    "G1.3"
+  ],
+  "verifiedEvidenceFiles": [
+    "docs/development/full-system/evidence/bundles/B02/G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-learning-56ba599e6aa2b434d7f1e9fc328a4ce54739b5576b6c33a39ead9d277931461d.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-learning-7468d325e15bb4c0b0a24808265fa32acf873751e204bd7432a3d229fcd40d81.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-runtime-0ce440e3c008766ef990c8b410ded585be9591093a57a68c47b9a6d143e1e138.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-04a542c2f7b0252b141cd46194b6b8eb24efd8413eb95eecc03ae99582c75cba.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-31c97e256c658ebd283072222aafc613f21973f0a8ce91cee240f2758b292b86.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-6d12b9b42b16236bfa146f4263a7d1e5fb68ff33a3b7988b60d80bf57d5d7b40.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-8b7ef6f6bc98cf34bdd330b3746cdba5bc72a6519e2efe79646abe749a9768dc.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.2-runs/4dedaef0bde2af716d1c6feb9a9d60889a13b8f0-targeted-learning-a147110da85f8837114a7b68e828c23eef6250b0ab0f5c454d15130af3350cb1.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.3-runs/2f8a8bde45d84e9a18425a72d851a9fcda0f3f17-targeted-learning-119472d59c20a72496783bb7f6d7251fd778b26b1cf267e3b6ec7a4abb976976.json",
+    "docs/development/full-system/evidence/bundles/B02/G1.3-runs/2f8a8bde45d84e9a18425a72d851a9fcda0f3f17-targeted-learning-65a99da3499778f4d7f61ca179e47335e78a6f844a72b57aaf476b88aeddaea7.json"
+  ],
+  "sourceReview": "Single writer self-review; no independent reviewer or full release claim",
+  "gitCheck": "Clean; generated outputs have identical Git blob hashes. Updating index after exact-byte restore cleared stat-only dirty entries without staged changes. Initial clean assertion failure recorded here.",
+  "reuse": "Passed test evidence reused after EOL-only restoration and report/receipt packaging; no production change after final G1.3 gate",
+  "requiredGates": {
+    "G1.1": "Core+Today/launcher+Firebase-down journey PASS",
+    "G1.2": "Required70 PASS; cross-reader/Pair cases48 PASS and corrected profile+identity17 PASS",
+    "G1.3": "Required56 PASS"
+  },
+  "externalGates": [
+    "G1 phase gate remains B03 G1.4-G1.7",
+    "Physical build/install and preview defines NOT RUN",
+    "G3.5 broader reader regression required",
+    "B01-FORM-02 open G6.4/G6.5",
+    "Economy/Integration missing automation inherited G0.4, no invented PASS"
+  ],
+  "reporting": "Keep chat and one bundle MD concise: results, checks, open items, links. Detailed logs/defects/retests structured; forward this preference."
+}

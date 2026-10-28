@@ -1,0 +1,38 @@
+{
+  "status": "HOST_PASS_NEW_NATIVE_BUILD_PENDING",
+  "baseCommit": "136a11bff85234d893d7251b49358547eab68ff4",
+  "finding": "Installed isolated preview could not reach study-planning: field defaults hide it and learning-preview only opens Today",
+  "fix": "Explicit Ari-only registry enables studyPlanning/offlineContent; production factory accepts registry with unchanged field default; outer runtime overrides remain authoritative",
+  "verification": {
+    "red": "New preview registry test failed before implementation",
+    "green": "Preview registry plus four optional AI baseline cases passed",
+    "analysis": "No issues found",
+    "receipt": "evidence/preview-admission-017/host-verification.json"
+  },
+  "nativeBeforeFix": {
+    "apk": "build/ari-progress-016.apk",
+    "sha256": "64c04cea64366b06b256155dd602c58ea74f40f384b3416d34b016bb1bbeb313",
+    "build": "PASS",
+    "install": "PASS",
+    "noProvider": [
+      "App starts and existing dashboard displays27/41",
+      "AI pane states unpaired while baseline remains usable",
+      "Today opens and history loads existing sessions"
+    ],
+    "planning": "NOT_ACCESSIBLE_BEFORE_FIX",
+    "connected": "NOT_RUN_THIS_BUILD",
+    "observations": "device-observations.jsonl"
+  },
+  "preserved": [
+    "Original app and accounts",
+    "USB stay-awake2",
+    "Production defaults",
+    "Research hidden"
+  ],
+  "open": [
+    "Build/install preview admission fix",
+    "Native planning and offline entry",
+    "Live-provider and disconnected verification011-017",
+    "All14 workflow/mode acceptance"
+  ]
+}

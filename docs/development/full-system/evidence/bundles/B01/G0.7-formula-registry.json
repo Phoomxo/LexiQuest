@@ -1,0 +1,1499 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B01",
+  "packageId": "G0.7",
+  "sourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+  "scope": "Formula source inspection and downstream fixture specification; no production calculator or runtime PASS.",
+  "records": [
+    {
+      "formulaId": "FORM-01",
+      "title": "First answers versus repair and practice aggregate",
+      "policyVersion": "Pair checkpoint/plan-pinned; EvidenceEligibilityPolicySet policy-set-v1",
+      "authorities": [
+        {
+          "path": "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart",
+          "symbol": "_answerCounts(",
+          "line": 10,
+          "sha256": "d99741f1a9a843b7f89e5f7895b5f96c0b991109ca1d35e26d8780f7843988c3",
+          "gitBlob": "b6feeb88ad0c13aa14e3731f2beeb0fb8c5516c6"
+        },
+        {
+          "path": "lib/features/progress/data/drift_progress_queries.dart",
+          "symbol": "_isPracticeAttempt(",
+          "line": 538,
+          "sha256": "520a1962590349cd2332cff131a340352a3bf2c09885039f43afe98f76ccf6ca",
+          "gitBlob": "c24c425917688c0f94d4763cb7946fac195e3949"
+        },
+        {
+          "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+          "symbol": "policy-set-v1",
+          "line": 34,
+          "sha256": "03a93168b9abecd74528a26a6891234dd30f87dbe43eb4ad98e87aee6ef8b5b3",
+          "gitBlob": "ad5a067e50d5cc049908cc36b912c4fc7ad44970"
+        }
+      ],
+      "writers": [
+        "lib/features/learning/data/drift_learning_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_progress_queries.dart",
+        "lib/features/progress/data/drift_learning_calendar_reader.dart"
+      ],
+      "inputs": [
+        "owner/session/item identity",
+        "ordered canonical attempts",
+        "correctness",
+        "evidence context/eligibility",
+        "checkpoint plan/content revision"
+      ],
+      "denominator": "Target: first eligible answer per item/session; repairs separate. Current aggregate counts all non-assessment/non-recreational attempts.",
+      "missingBehavior": "Empty aggregate accuracy=null; no first eligible evidence must remain noEvidence. Exposure/self-report are not independent first-answer skill.",
+      "sourceFormula": "Pair first seen promptWordId enters first count; subsequent answers enter repair count. Progress currently c/allPracticeN (B01-FORM-01).",
+      "ownerPackages": [
+        "G1.2",
+        "G1.3",
+        "G3.5"
+      ],
+      "plannedTestTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/progress/progress_projector_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-01-01",
+          "input": {
+            "firstCorrect": 5,
+            "firstN": 6,
+            "repairCorrect": 1,
+            "repairN": 1
+          },
+          "expected": {
+            "firstAccuracyFraction": "5/6",
+            "repairAccuracyFraction": "1/1",
+            "currentAggregateFraction": "6/7"
+          },
+          "basis": "Master target versus source-inspected aggregate defect; do not promote aggregate to first-answer accuracy",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-01-02",
+          "input": {
+            "firstN": 0
+          },
+          "expected": {
+            "accuracy": null,
+            "availability": "noEvidence"
+          },
+          "basis": "No denominator, not zero skill",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-01-03",
+          "input": {
+            "acknowledgeSameAttemptTwice": true
+          },
+          "expected": {
+            "newAnswers": 1
+          },
+          "basis": "Durable command identity, not count of callback deliveries",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-01-04",
+          "input": {
+            "onlyExposureOrSelfReport": true
+          },
+          "expected": {
+            "eligibleFirstN": 0
+          },
+          "basis": "Master first-eligible denominator; downstream projection gap",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [
+        "B01-FORM-01"
+      ],
+      "inspectionStatus": "registered-with-downstream-defect",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-02",
+      "title": "Pair descriptive stars",
+      "policyVersion": "PairStarPolicy v1 (plan.starPolicyVersion)",
+      "authorities": [
+        {
+          "path": "lib/features/learning/pair_matching/domain/pair_star_policy.dart",
+          "symbol": "static PairStarResult project",
+          "line": 17,
+          "sha256": "1fd6e9218cf2c2266a2d70d9ac2157da1996b8d1aa1709bf13721acfff8f60eb",
+          "gitBlob": "73bbdd88f426b1718e06a1d5b78f2fd189506e1d"
+        }
+      ],
+      "writers": [
+        "lib/features/learning/data/drift_learning_repository.dart"
+      ],
+      "readers": [
+        "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart"
+      ],
+      "inputs": [
+        "terminal acknowledgement",
+        "complete/pending",
+        "ordered first attempts",
+        "matched/independent/supported word IDs"
+      ],
+      "denominator": "matched words; integer comparison independent*4 >= matched*3",
+      "missingBehavior": "Incomplete or pending or unacknowledged -> stars=null; unsupported version throws",
+      "sourceFormula": "Complete perfect first/no support ->3; otherwise independent*4>=matched*3 ->2; otherwise1. Projection never grants rewards.",
+      "ownerPackages": [
+        "G2.2"
+      ],
+      "plannedTestTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-02-01",
+          "input": {
+            "complete": true,
+            "pending": true,
+            "ack": false
+          },
+          "expected": {
+            "stars": null
+          },
+          "basis": "Terminal guard",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-02-02",
+          "input": {
+            "complete": true,
+            "ack": true,
+            "pending": false,
+            "perfect": true,
+            "independent": 4,
+            "matched": 4
+          },
+          "expected": {
+            "stars": 3
+          },
+          "basis": "Perfect first answers",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-02-03",
+          "input": {
+            "complete": true,
+            "ack": true,
+            "pending": false,
+            "perfect": false,
+            "independent": 3,
+            "matched": 4
+          },
+          "expected": {
+            "stars": 2
+          },
+          "basis": "12>=12 boundary",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-02-04",
+          "input": {
+            "complete": true,
+            "ack": true,
+            "pending": false,
+            "perfect": false,
+            "independent": 2,
+            "matched": 4
+          },
+          "expected": {
+            "stars": 1
+          },
+          "basis": "8<12",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-02-05",
+          "input": {
+            "firstWrongThenRepair": true,
+            "independent": 4,
+            "matched": 4
+          },
+          "expected": {
+            "perfect": false,
+            "maximumStars": 2
+          },
+          "basis": "Repair cannot replace first answer",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-03",
+      "title": "Binary SRS",
+      "policyVersion": "BinarySm2SrsPolicy v2",
+      "authorities": [
+        {
+          "path": "lib/features/learning/domain/srs_policy.dart",
+          "symbol": "static const int version = 2",
+          "line": 20,
+          "sha256": "2e97f27682947ab5863e6aefb9cf054866d3880f6f68b857647794749da4c453",
+          "gitBlob": "2932fce59261fe3f4b25074b1a83791beca29028"
+        }
+      ],
+      "writers": [
+        "lib/features/learning/data/drift_learning_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_progress_queries.dart"
+      ],
+      "inputs": [
+        "previous SrsSnapshot or null",
+        "isCorrect",
+        "UTC now"
+      ],
+      "denominator": "None; deterministic interval/difficulty state transition",
+      "missingBehavior": "No prior -> repetitions0/lapses0/difficulty0.3; non-UTC rejected",
+      "sourceFormula": "Correct repetitions+1; intervals1,3,7,14 then double(clamp prior1..36500) cap36500; difficulty max(0.1,prior-0.03). Wrong repetitions0,interval1,lapses+1,difficulty min(1,prior+0.12); due=nowUTC+days.",
+      "ownerPackages": [
+        "G1.5"
+      ],
+      "plannedTestTargets": [
+        "test/features/learning/srs_policy_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-03-01",
+          "input": {
+            "correctSequenceCount": 5,
+            "previous": null
+          },
+          "expected": {
+            "intervalDays": [
+              1,
+              3,
+              7,
+              14,
+              28
+            ],
+            "difficulty": 0.15
+          },
+          "basis": "Five increments and five decrements of0.03",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-03-02",
+          "input": {
+            "previousRepetitions": 5,
+            "previousInterval": 28,
+            "previousLapses": 2,
+            "previousDifficulty": 0.9,
+            "correct": false
+          },
+          "expected": {
+            "repetitions": 0,
+            "intervalDays": 1,
+            "lapses": 3,
+            "difficulty": 1.0
+          },
+          "basis": "Wrong reset/cap",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-03-03",
+          "input": {
+            "repetitions": 10,
+            "priorInterval": 50000,
+            "correct": true
+          },
+          "expected": {
+            "intervalDays": 36500
+          },
+          "basis": "Clamp before multiply",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-03-04",
+          "input": {
+            "priorDifficulty": 0.11,
+            "correct": true
+          },
+          "expected": {
+            "difficulty": 0.1
+          },
+          "basis": "Floor",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-03-05",
+          "input": {
+            "nowUtc": "2026-09-13T00:00:00Z",
+            "intervalDays": 28
+          },
+          "expected": {
+            "dueAtUtc": "2026-10-11T00:00:00Z"
+          },
+          "basis": "UTC date arithmetic",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-03-06",
+          "input": {
+            "nowIsUtc": false
+          },
+          "expected": {
+            "error": "ArgumentError"
+          },
+          "basis": "No implicit device timezone",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-04",
+      "title": "Lifetime XP and receipt identity",
+      "policyVersion": "AvatarProgressionPolicyV1 v1; eligibility receipt v1 permanently p1",
+      "authorities": [
+        {
+          "path": "lib/features/rewards/domain/avatar_progression_policy.dart",
+          "symbol": "final class AvatarProgressionPolicyV1",
+          "line": 52,
+          "sha256": "bc7a976df0af896b5b93bbf3c7991fb60fe0f03147f4107e5e6197e1c2c3f5cf",
+          "gitBlob": "9abf6b03bed3373275d5efdaea043ab887a10d2a"
+        },
+        {
+          "path": "lib/features/rewards/data/drift_reward_repository.dart",
+          "symbol": "class DriftRewardRepository",
+          "line": 15,
+          "sha256": "5e51abc30af68be8c4c87aab008cc0ea95514e1f69c21fb91567b88e7cea92fc",
+          "gitBlob": "b6d1f4b9cc1b727576f9336c626cfd65233b5ad6"
+        }
+      ],
+      "writers": [
+        "lib/features/rewards/data/drift_reward_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_progress_queries.dart"
+      ],
+      "inputs": [
+        "nonnegative canonical lifetimeXP",
+        "catalog version/required level",
+        "owner/idempotency key/event/purchase receipt"
+      ],
+      "denominator": "20 lifetime XP per level; coins are not denominator or XP input",
+      "missingBehavior": "Negative XP/invalid catalog throws; unreported event is not a grant",
+      "sourceFormula": "level=XP~/20+1; into=XP%20; next=level*20; until=next-XP; item minimum=(requiredLevel-1)*20. Historical p1 eligibility stays bound to v1.",
+      "ownerPackages": [
+        "G1.2",
+        "G4.4",
+        "G4.5"
+      ],
+      "plannedTestTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-04-01",
+          "input": {
+            "lifetimeXp": [
+              0,
+              19,
+              20,
+              39,
+              40
+            ]
+          },
+          "expected": {
+            "level": [
+              1,
+              1,
+              2,
+              2,
+              3
+            ],
+            "xpIntoLevel": [
+              0,
+              19,
+              0,
+              19,
+              0
+            ],
+            "nextLevelAt": [
+              20,
+              20,
+              40,
+              40,
+              60
+            ]
+          },
+          "basis": "Integer boundaries",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-04-02",
+          "input": {
+            "lifetimeXp": 40,
+            "coinsSpent": 20
+          },
+          "expected": {
+            "level": 3,
+            "lifetimeXp": 40
+          },
+          "basis": "Spending coins does not subtract lifetimeXP",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-04-03",
+          "input": {
+            "requiredLevel": 3,
+            "xpBefore": 39,
+            "xpAfter": 40
+          },
+          "expected": {
+            "unlockedBefore": false,
+            "unlockedAfter": true
+          },
+          "basis": "Exact cosmetic threshold",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-04-04",
+          "input": {
+            "sameGrantOrPurchaseKeyDeliveredTwice": true
+          },
+          "expected": {
+            "durableTransactions": 1
+          },
+          "basis": "Owner/idempotent writer acceptance; not verified by pure level arithmetic",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-05",
+      "title": "Eligible local-day streak",
+      "policyVersion": "StreakPolicy v2; TimezonePolicy v1",
+      "authorities": [
+        {
+          "path": "lib/features/motivation/domain/streak_policy.dart",
+          "symbol": "static const int version = 2",
+          "line": 5,
+          "sha256": "f9a17d7e51259f58e566c5bf85933d577a06c8acb835ac0fea27e19b996cf24b",
+          "gitBlob": "3a193a6c1fd762cc86db4ef09b16a93220c2086a"
+        },
+        {
+          "path": "lib/features/motivation/domain/timezone_policy.dart",
+          "symbol": "static const int version = 1",
+          "line": 18,
+          "sha256": "2f25d789b4bf18c8d743972d4ead951874390b1e4504e2f5bcf669e966876cbb",
+          "gitBlob": "af83287daa574a6fe4b92d46cadf9f2c2d425ed7"
+        }
+      ],
+      "writers": [
+        "lib/features/motivation/data/drift_streak_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_progress_queries.dart"
+      ],
+      "inputs": [
+        "current/longest streak",
+        "freeze inventory",
+        "last UTC instant",
+        "current UTC instant",
+        "IANA timezone"
+      ],
+      "denominator": "Calendar day difference after converting both instants to selected timezone",
+      "missingBehavior": "No prior learning -> current1/longest1; invalid state/non-UTC/clock rollback rejected",
+      "sourceFormula": "dayDiff0 no-op;1 increments and updates longest;2 with freeze consumes1 and holds current streak (does not increment); otherwise recovery current1, longest preserved. New freeze inventory cap3; historical surplus retained.",
+      "ownerPackages": [
+        "G4.4"
+      ],
+      "plannedTestTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-05-01",
+          "input": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 1,
+            "dayDiff": 0
+          },
+          "expected": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 1
+          },
+          "basis": "Same day",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-05-02",
+          "input": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 1,
+            "dayDiff": 1
+          },
+          "expected": {
+            "current": 6,
+            "longest": 8,
+            "freeze": 1
+          },
+          "basis": "Consecutive",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-05-03",
+          "input": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 1,
+            "dayDiff": 2
+          },
+          "expected": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 0
+          },
+          "basis": "Freeze holds streak; no phantom sixth day",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-05-04",
+          "input": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 0,
+            "dayDiff": 2
+          },
+          "expected": {
+            "current": 1,
+            "longest": 8,
+            "freeze": 0
+          },
+          "basis": "Recovery",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-05-05",
+          "input": {
+            "current": 5,
+            "longest": 8,
+            "freeze": 1,
+            "dayDiff": 3
+          },
+          "expected": {
+            "current": 1,
+            "longest": 8,
+            "freeze": 1
+          },
+          "basis": "Cannot bridge more than one missed day",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-05-06",
+          "input": {
+            "nowBeforeLastInstant": true
+          },
+          "expected": {
+            "error": "StateError",
+            "writes": 0
+          },
+          "basis": "Rollback rejection",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-06",
+      "title": "Monotonic active effort",
+      "policyVersion": "LearningTimeSegment persisted contract; controller has no independent formula version",
+      "authorities": [
+        {
+          "path": "lib/features/time_tracking/application/active_learning_time_controller.dart",
+          "symbol": "totalDurationMs: (trustworthyEnd",
+          "line": 456,
+          "sha256": "b7736bcbfb6bdf0b4c4a148acf8c996a8ca7387a2a8ddc1dfa40e1414349f92d",
+          "gitBlob": "0e2f80469bb89a40db69d82b987f9f90e0fb7cec"
+        },
+        {
+          "path": "lib/features/time_tracking/data/drift_learning_time_repository.dart",
+          "symbol": "class DriftLearningTimeRepository",
+          "line": 10,
+          "sha256": "027106bd719f627b692540ee9fe2533717d7980cae1812cc59cb60b6a3a1aee8",
+          "gitBlob": "59092303d0187afaddf9256376cc3c9efb533dd5"
+        }
+      ],
+      "writers": [
+        "lib/features/time_tracking/data/drift_learning_time_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_learning_calendar_reader.dart"
+      ],
+      "inputs": [
+        "session/owner",
+        "monotonic microseconds",
+        "UTC anchor",
+        "interaction/pause/background/idle",
+        "canonical offset and segment identity"
+      ],
+      "denominator": "1000 microseconds per persisted millisecond; sum unique contiguous active segments",
+      "missingBehavior": "Inactive/paused/idle time not counted; negative/backward monotonic rejected; start reloads durable offset",
+      "sourceFormula": "Clamp trustworthy active end to idle boundary (default5min), split into max5min segments, floor microseconds/1000. Repository guards same-segment retry and active-offset continuity.",
+      "ownerPackages": [
+        "G1.6",
+        "G4.3"
+      ],
+      "plannedTestTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-06-01",
+          "input": {
+            "activeSeconds": [
+              30,
+              30
+            ],
+            "pausedSeconds": 60
+          },
+          "expected": {
+            "activeMs": 60000
+          },
+          "basis": "30000+30000; exclude pause",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-06-02",
+          "input": {
+            "idleAfterSeconds": 300,
+            "wallSecondsWithoutInteraction": 420
+          },
+          "expected": {
+            "activeMs": 300000
+          },
+          "basis": "Idle clamp",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-06-03",
+          "input": {
+            "duplicateSegmentMs": 30000,
+            "deliveries": 2
+          },
+          "expected": {
+            "activeMs": 30000
+          },
+          "basis": "Idempotent segment identity",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-06-04",
+          "input": {
+            "durableOffsetMs": 30000,
+            "incomingStartOffsetMs": 20000
+          },
+          "expected": {
+            "result": "reject",
+            "activeMs": 30000
+          },
+          "basis": "Overlap cannot inflate sum",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-06-05",
+          "input": {
+            "monotonicDeltaMicros": -1
+          },
+          "expected": {
+            "result": "reject"
+          },
+          "basis": "Clock rollback is not negative effort",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-07",
+      "title": "Calendar, goals and countdown",
+      "policyVersion": "TimezonePolicy v1; source-pinned calendar/goal readers",
+      "authorities": [
+        {
+          "path": "lib/features/progress/data/drift_learning_calendar_reader.dart",
+          "symbol": "Future<LearningCalendarSnapshot> loadWeek",
+          "line": 19,
+          "sha256": "4e5dffb4ac668d0d8dadc3ca0bf887f0cd0d4eec9aab30f3a327a351b3190cb4",
+          "gitBlob": "70bf5e82c117bc948ba8f3eae9edf8ede3958edf"
+        },
+        {
+          "path": "lib/features/goals/application/learning_goal_use_cases.dart",
+          "symbol": "LearningGoalCountdown countdown",
+          "line": 119,
+          "sha256": "4ec7b1b9f1881a02fd26f97509836489edcb651fe15d489929a3695fe7bbca9e",
+          "gitBlob": "d8c26e17e2b8cbb8c50b2ad61193c6869728c821"
+        },
+        {
+          "path": "lib/features/motivation/domain/timezone_policy.dart",
+          "symbol": "static DateTime getLearningDay",
+          "line": 31,
+          "sha256": "2f25d789b4bf18c8d743972d4ead951874390b1e4504e2f5bcf669e966876cbb",
+          "gitBlob": "af83287daa574a6fe4b92d46cadf9f2c2d425ed7"
+        }
+      ],
+      "writers": [
+        "lib/features/time_tracking/data/drift_learning_time_repository.dart",
+        "lib/features/goals/data/drift_learning_goal_repository.dart"
+      ],
+      "readers": [
+        "lib/features/progress/data/drift_personal_learning_profile_reader.dart"
+      ],
+      "inputs": [
+        "owner",
+        "UTC event/reference",
+        "IANA timezone",
+        "goal deadline timezone",
+        "canonical effort segments and evidence"
+      ],
+      "denominator": "Accuracy c/n; effort milliseconds; countdown calendar date ordinals, not elapsed24h",
+      "missingBehavior": "Empty week effort0 and accuracy=null; no goal remains absent, not countdown0; corrupt evidence rejected",
+      "sourceFormula": "Local week starts Monday. Countdown signed day difference becomes past/today/future plus abs(days). Weekly accuracy currently shares aggregate practice-denominator gap FORM-01.",
+      "ownerPackages": [
+        "G3.5",
+        "G4.2"
+      ],
+      "plannedTestTargets": [
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/goals/learning_goal_use_cases_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-07-01",
+          "input": {
+            "utc": [
+              "2026-09-13T16:59:00Z",
+              "2026-09-13T17:01:00Z"
+            ],
+            "timezone": "Asia/Bangkok"
+          },
+          "expected": {
+            "dates": [
+              "2026-09-13",
+              "2026-09-14"
+            ],
+            "weekStarts": [
+              "2026-09-07",
+              "2026-09-14"
+            ]
+          },
+          "basis": "Sunday23:59 to Monday00:01",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-07-02",
+          "input": {
+            "deadlineDayDifference": [
+              -1,
+              0,
+              1
+            ]
+          },
+          "expected": {
+            "states": [
+              "past",
+              "today",
+              "future"
+            ],
+            "days": [
+              1,
+              0,
+              1
+            ]
+          },
+          "basis": "Ordinal boundary",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-07-03",
+          "input": {
+            "sameUtcInstant": "2026-09-13T17:01:00Z",
+            "timezones": [
+              "UTC",
+              "Asia/Bangkok"
+            ]
+          },
+          "expected": {
+            "dates": [
+              "2026-09-13",
+              "2026-09-14"
+            ]
+          },
+          "basis": "Reproject timezone without rewriting evidence",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-07-04",
+          "input": {
+            "weekAttempts": 0,
+            "segments": 0
+          },
+          "expected": {
+            "accuracy": null,
+            "effortMs": 0
+          },
+          "basis": "Missing evidence differs from measured wrong answer",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [
+        "B01-FORM-01"
+      ],
+      "inspectionStatus": "registered-with-downstream-defect",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-08",
+      "title": "Compatible assessment pair",
+      "policyVersion": "Instrument/form/content/evidence/build versions from canonical run; no new policy",
+      "authorities": [
+        {
+          "path": "lib/features/assessment/application/assessment_comparison.dart",
+          "symbol": "Future<AssessmentComparisonResult> compare",
+          "line": 67,
+          "sha256": "67d3df62921b05e1e54fa8077ccce241d4101740b9b4947341d33481eb0b9f20",
+          "gitBlob": "e29d262d4c96784748a8cc5ab6ef12dda8cc2aaf"
+        }
+      ],
+      "writers": [
+        "lib/features/learning/data/drift_learning_repository.dart"
+      ],
+      "readers": [
+        "lib/features/assessment/application/assessment_comparison.dart"
+      ],
+      "inputs": [
+        "owner/studyCycle/protocol/assignment/consent",
+        "instrument/form hashes/versions",
+        "content/policy/build/schema/catalog",
+        "unique canonical items",
+        "chronology"
+      ],
+      "denominator": "Each compatible complete form own item count; accuracy fraction0..1; UI percentage points=100*(post-pre)",
+      "missingBehavior": "Missing/duplicate phase -> MissingPair; incompatible/empty/duplicate item -> IncompatibleMetadata; no delta",
+      "sourceFormula": "correct/n per run; correctCountDelta=postC-preC; accuracyDelta=postFraction-preFraction; research gate remains intact.",
+      "ownerPackages": [
+        "G3.6"
+      ],
+      "plannedTestTargets": [
+        "test/features/assessment/assessment_comparison_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-08-01",
+          "input": {
+            "syntheticCompatibleFormItems": 6,
+            "preCorrect": 5,
+            "postCorrect": 6
+          },
+          "expected": {
+            "preFraction": "5/6",
+            "postFraction": "1/1",
+            "deltaFraction": "1/6",
+            "deltaPercentagePoints": "50/3",
+            "correctDelta": 1
+          },
+          "basis": "Arithmetic oracle; fixture requires matching synthetic instrument metadata, not arbitrary production6-item form",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-08-02",
+          "input": {
+            "postRun": null
+          },
+          "expected": {
+            "result": "MissingPair",
+            "delta": null
+          },
+          "basis": "No invented post score",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-08-03",
+          "input": {
+            "duplicateItemId": true
+          },
+          "expected": {
+            "result": "IncompatibleMetadata",
+            "delta": null
+          },
+          "basis": "Unique canonical item set",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-08-04",
+          "input": {
+            "buildOrContentOrOwnerMismatch": true
+          },
+          "expected": {
+            "result": "IncompatibleMetadata",
+            "delta": null
+          },
+          "basis": "Compatibility gate",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-09",
+      "title": "Camera evaluation rates and uncertainty",
+      "policyVersion": "camera_accuracy.py frozen config/dataset/predictions hashes; Wilson z=1.959963984540054",
+      "authorities": [
+        {
+          "path": "tools/camera_accuracy.py",
+          "symbol": "def _metrics",
+          "line": 103,
+          "sha256": "8e79da10b2b0062d3f07ec16b5fc010b42c5f15e542a43efc52faa5fd2429286",
+          "gitBlob": "daf2c096833de17ec49244e704a3a465563dc853"
+        },
+        {
+          "path": "tools/camera_accuracy.py",
+          "symbol": "def evaluate_frozen",
+          "line": 199,
+          "sha256": "8e79da10b2b0062d3f07ec16b5fc010b42c5f15e542a43efc52faa5fd2429286",
+          "gitBlob": "daf2c096833de17ec49244e704a3a465563dc853"
+        }
+      ],
+      "writers": [
+        "tools/camera_accuracy.py"
+      ],
+      "readers": [
+        "tools/camera_accuracy.py"
+      ],
+      "inputs": [
+        "fresh natural full-frame paired unique IDs/groups/SHA",
+        "known/unknown truth",
+        "raw baseline label map",
+        "explicit baseline_accepted bool",
+        "candidate/confidence/threshold",
+        "frozen split config"
+      ],
+      "denominator": "Known n for accepted-and-correct, unknown n for false accept, per-class truth n for recall. Wilson n is same selected cohort.",
+      "missingBehavior": "n0 rate=null/wilson95=null; unmapped raw label, bool/nonfinite threshold/confidence or missing accepted bool -> input error",
+      "sourceFormula": "p=k/n; d=1+z²/n; center=(p+z²/(2n))/d; margin=z*sqrt(p*(1-p)/n+z²/(4n²))/d. Candidate gate known>=.85, unknown<=.05, every class>=.75; even pass retains baseline pending physical/resources.",
+      "ownerPackages": [
+        "G5.2",
+        "G5.4",
+        "G5.5"
+      ],
+      "plannedTestTargets": [
+        "tools/test_camera_accuracy.py"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-09-01",
+          "input": {
+            "knownCorrectAccepted": 3,
+            "knownN": 4
+          },
+          "expected": {
+            "rate": 0.75,
+            "wilson95Approx": [
+              0.300641842582402,
+              0.9544127391903
+            ]
+          },
+          "basis": "Wilson95 with pinned z",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-09-02",
+          "input": {
+            "unknownAccepted": 1,
+            "unknownN": 20
+          },
+          "expected": {
+            "falseAcceptRate": 0.05
+          },
+          "basis": "Inclusive quality threshold; accepted baseline unknown counts even when mapped unknown",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-09-03",
+          "input": {
+            "n": 0
+          },
+          "expected": {
+            "rate": null,
+            "wilson95": null
+          },
+          "basis": "No sample means unavailable",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-09-04",
+          "input": {
+            "baselineRawLabel": "unmapped"
+          },
+          "expected": {
+            "result": "ValueError"
+          },
+          "basis": "No guessed mapping",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-09-05",
+          "input": {
+            "threshold": "NaN or bool"
+          },
+          "expected": {
+            "result": "ValueError"
+          },
+          "basis": "Finite numeric validation",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-09-06",
+          "input": {
+            "knownRate": 0.85,
+            "unknownRate": 0.05,
+            "minimumClassRate": 0.75
+          },
+          "expected": {
+            "numericQualityGate": true,
+            "rolloutAuthorized": false
+          },
+          "basis": "All thresholds inclusive; no tuning on fresh test",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-10",
+      "title": "Recognized-text similarity and speech state",
+      "policyVersion": "transcript-edit-distance-v1; durable speech evidence identity separate",
+      "authorities": [
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "symbol": "TranscriptPronunciationAssessment assess",
+          "line": 208,
+          "sha256": "ed4f0c3ee57c02283a9d70621b5b886d2510ae40c0b73d3d04bd57389a6fc5ce",
+          "gitBlob": "b630c9603f462f332361913576772c8c21aae3f3"
+        },
+        {
+          "path": "lib/features/media_practice/domain/speech_evidence_use_cases.dart",
+          "symbol": "similarityAlgorithm",
+          "line": 15,
+          "sha256": "a1b91a83cb896a7cd78b45bc368ac458e5d60d1b6cb55a7e98dbebcf82bbc85d",
+          "gitBlob": "3aa44e7788e078bf44922411278ddc3af410b8e5"
+        },
+        {
+          "path": "lib/screens/shadowing_challenge_screen.dart",
+          "symbol": "final assessment = speech.assess",
+          "line": 266,
+          "sha256": "e2c3759b8cbce38bf3c18d6bf8694c04af76e744e09f728faca5924f699d6348",
+          "gitBlob": "6d48e50fb2f25ffda008fa280a3b0eec8e8dfe37"
+        }
+      ],
+      "writers": [
+        "lib/features/media_practice/domain/speech_evidence_use_cases.dart"
+      ],
+      "readers": [
+        "lib/screens/shadowing_challenge_screen.dart"
+      ],
+      "inputs": [
+        "target/transcript",
+        "session/attempt/final epoch",
+        "engine/locale/UTC timestamp",
+        "failure/cancel state"
+      ],
+      "denominator": "max(normalized target rune count, normalized transcript rune count)",
+      "missingBehavior": "assess currently returns0 and false if either canonical text empty; failure/cancel callbacks must not create skill score. Empty final callback needs downstream no-evidence remediation.",
+      "sourceFormula": "Trim/lower/collapse whitespace; round(clamp(100*(1-Levenshtein/maxRuneLength),0,100)); exact normalized equality separately. This is text matching, not acoustic pronunciation.",
+      "ownerPackages": [
+        "G6.4",
+        "G6.5"
+      ],
+      "plannedTestTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-10-01",
+          "input": {
+            "target": " Apple ",
+            "transcript": "apple"
+          },
+          "expected": {
+            "similarityPercent": 100,
+            "exact": true
+          },
+          "basis": "Case/trim normalization",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-10-02",
+          "input": {
+            "target": "cat",
+            "transcript": "cut"
+          },
+          "expected": {
+            "distance": 1,
+            "denominator": 3,
+            "similarityPercent": 67,
+            "exact": false
+          },
+          "basis": "Nearest integer",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-10-03",
+          "input": {
+            "target": "cat",
+            "transcript": ""
+          },
+          "expected": {
+            "sourceHelperPercent": 0,
+            "desiredSkillScore": null,
+            "desiredDisposition": "noEvidence"
+          },
+          "basis": "B01-FORM-02 separates observed helper behavior from desired consumer gate",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-10-04",
+          "input": {
+            "cancelThenLateFinal": true
+          },
+          "expected": {
+            "durableNewAnswers": 0
+          },
+          "basis": "Attempt retirement",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-10-05",
+          "input": {
+            "deviceFailure": true
+          },
+          "expected": {
+            "skillPercent": null
+          },
+          "basis": "Unavailable device is not zero skill",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [
+        "B01-FORM-02"
+      ],
+      "inspectionStatus": "registered-with-downstream-defect",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-11",
+      "title": "Word and sentence construction",
+      "policyVersion": "native-word-scramble:v1 / native-sentence-scramble:v1; recreational evidence",
+      "authorities": [
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "symbol": "final class WordScrambleModeAdapter",
+          "line": 444,
+          "sha256": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "gitBlob": "ab36d49e43894028b8f9706a8bae997bdfa14990"
+        },
+        {
+          "path": "lib/features/learning/application/native_mode_adapters.dart",
+          "symbol": "final class SentenceScrambleModeAdapter",
+          "line": 386,
+          "sha256": "98c56f4b280d350c8341bc7288e07571dedd971dee7d701a8a5140cc05773b53",
+          "gitBlob": "ab36d49e43894028b8f9706a8bae997bdfa14990"
+        },
+        {
+          "path": "lib/screens/word_scramble_screen.dart",
+          "symbol": "slotLetterIndexes",
+          "line": 61,
+          "sha256": "4f47950d34dc49703f8320a518bc28ecad08b0fa9815930a7599b28ac6f3b92c",
+          "gitBlob": "f79de5da87ed3972e4a00aba0494ad47ef2b3c1e"
+        },
+        {
+          "path": "lib/screens/sentence_scramble_screen.dart",
+          "symbol": "void _selectWord",
+          "line": 114,
+          "sha256": "ff2ffdaeab1ba12d7607f3751e325c67b7070f82133acbf81aa322377d879277",
+          "gitBlob": "fbb8dbac7d069ab6785091957e4cafd93dc77c3c"
+        }
+      ],
+      "writers": [
+        "lib/features/learning/data/drift_learning_repository.dart"
+      ],
+      "readers": [
+        "lib/screens/word_scramble_screen.dart",
+        "lib/screens/sentence_scramble_screen.dart"
+      ],
+      "inputs": [
+        "validated target/response",
+        "occurrence-index tile/token selection",
+        "attempt/owner/session",
+        "evidence profile"
+      ],
+      "denominator": "None; exact correctness boolean, not partial-match percentage",
+      "missingBehavior": "Empty response allowed and incorrect for nonempty target; empty target rejected. Missing route/content unavailable.",
+      "sourceFormula": "Word case-sensitive exact string; Sentence trim/collapse spacing then case/punctuation-sensitive equality. Banks provide construction support and remain recreational, not independent recall.",
+      "ownerPackages": [
+        "G2.5"
+      ],
+      "plannedTestTargets": [
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-11-01",
+          "input": {
+            "wordTarget": "letter",
+            "response": "letter"
+          },
+          "expected": {
+            "correct": true,
+            "evidenceClass": "recreational"
+          },
+          "basis": "Repeated t/e retained by occurrence indexes",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-11-02",
+          "input": {
+            "wordTarget": "letter",
+            "response": "Letter"
+          },
+          "expected": {
+            "correct": false
+          },
+          "basis": "Case sensitive",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-11-03",
+          "input": {
+            "sentenceTarget": "I can can.",
+            "response": " I  can can. "
+          },
+          "expected": {
+            "correct": true
+          },
+          "basis": "Spacing normalization preserves duplicate token",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-11-04",
+          "input": {
+            "sentenceTarget": "I can can.",
+            "response": "I can can"
+          },
+          "expected": {
+            "correct": false
+          },
+          "basis": "Punctuation not stripped",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-11-05",
+          "input": {
+            "returnTileOccurrence": 2,
+            "sameLetterOtherOccurrence": 3
+          },
+          "expected": {
+            "returned": [
+              2
+            ],
+            "otherRemainsPlaced": true
+          },
+          "basis": "Identity fixture for G2.5 widget verification",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    },
+    {
+      "formulaId": "FORM-12",
+      "title": "AI attempts, usage and central cost",
+      "policyVersion": "AiUsage schema1; source-pinned CentralCostBaseline policy (no live price)",
+      "authorities": [
+        {
+          "path": "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+          "symbol": "Future<AiUsageFinalizeResult> finalizeForOwner",
+          "line": 56,
+          "sha256": "e403f06e7f2c5ec67c3951d4ba5aef9361d2f200caa4dd9b9bcb8abadbbaf36f",
+          "gitBlob": "6fa6607c72afc9cfdd1f549b6f8941e6b3a6d740"
+        },
+        {
+          "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+          "symbol": "final class AiUsageSummary",
+          "line": 282,
+          "sha256": "5a83add3829487b09a0943011e736a1805925d49f3ea5b7ff74e201e5f9d1648",
+          "gitBlob": "e9f2c7aac1db3effe965e2d144c7cd16f298e67a"
+        },
+        {
+          "path": "lib/runtime/central_cost_policy.dart",
+          "symbol": "CentralCostAssessment assess",
+          "line": 97,
+          "sha256": "68f71868eda8181bbdda4cead339d2df7e6b2dd998529c94a122cd5a096a2582",
+          "gitBlob": "008229bb69828167a1eea0d75183b26ce7af3dd8"
+        }
+      ],
+      "writers": [
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/features/ai_tutor/data/drift_ai_usage_repository.dart"
+      ],
+      "readers": [
+        "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+        "lib/runtime/central_cost_policy.dart"
+      ],
+      "inputs": [
+        "owner/event/provider/model/attempt outcome",
+        "reported token counts/cost microsUSD",
+        "latency",
+        "required central component monthlyTHB"
+      ],
+      "denominator": "Per terminal request; sums grouped by provider/model; central budget is sum of required central monthlyTHB only",
+      "missingBehavior": "Unreported tokens/cost stay null; knownTokens is partial sum; required unknown central price -> unknown; no guessed conversion or current provider price",
+      "sourceFormula": "pending→terminal once; identical finalize alreadyFinalized; contradictory terminal throws. TotalTokens/cost present only if all terminal rows reported; knownTokens separate. Central total<=100THB withinBudget, >100 outOfBudget.",
+      "ownerPackages": [
+        "G6.1",
+        "G6.3",
+        "G6.6"
+      ],
+      "plannedTestTargets": [
+        "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
+        "test/runtime/central_cost_policy_test.dart"
+      ],
+      "fixtures": [
+        {
+          "caseId": "FORM-12-01",
+          "input": {
+            "sameFinalizationDeliveredTwice": true
+          },
+          "expected": {
+            "terminalRequests": 1,
+            "secondResult": "alreadyFinalized"
+          },
+          "basis": "Owner/event pending update guard",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-12-02",
+          "input": {
+            "reportedTokens": [
+              10,
+              null
+            ],
+            "reportedCostMicrosUsd": [
+              5,
+              null
+            ]
+          },
+          "expected": {
+            "knownTokens": 10,
+            "totalTokens": null,
+            "reportedCount": 1,
+            "requestCount": 2,
+            "totalCostMicrosUsd": null
+          },
+          "basis": "Partial reporting is not zero",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-12-03",
+          "input": {
+            "reportedTokens": [
+              0
+            ],
+            "reportedCostMicrosUsd": [
+              0
+            ]
+          },
+          "expected": {
+            "totalTokens": 0,
+            "totalCostMicrosUsd": 0
+          },
+          "basis": "Explicit reported zero preserved",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-12-04",
+          "input": {
+            "requiredCentralMonthlyThb": [
+              40,
+              60
+            ]
+          },
+          "expected": {
+            "total": 100,
+            "state": "withinBudget"
+          },
+          "basis": "Inclusive budget bound",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-12-05",
+          "input": {
+            "requiredCentralMonthlyThb": [
+              40,
+              61
+            ]
+          },
+          "expected": {
+            "total": 101,
+            "state": "outOfBudget"
+          },
+          "basis": "Over budget",
+          "runtimeStatus": "NOT RUN in B01"
+        },
+        {
+          "caseId": "FORM-12-06",
+          "input": {
+            "requiredCentralMonthlyThb": [
+              null
+            ]
+          },
+          "expected": {
+            "total": null,
+            "state": "unknown"
+          },
+          "basis": "No free-tier assumption",
+          "runtimeStatus": "NOT RUN in B01"
+        }
+      ],
+      "defects": [],
+      "inspectionStatus": "registered",
+      "compatibility": "No production formula change. Persisted policy/receipt/content meanings remain pinned; a behavior change requires versioned compatibility/adapter and owner-package regression."
+    }
+  ]
+}

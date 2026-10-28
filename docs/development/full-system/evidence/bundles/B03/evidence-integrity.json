@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "archivedStreamsVerified": 44,
+  "checks": "All archived verifier stdout/stderr copies exist and match recorded SHA256; accepted predecessor/subresult commit objects resolve",
+  "runtimeRerun": false
+}

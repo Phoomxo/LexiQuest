@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "dispatchId": "ux-s01-ac-20260924-f436",
+  "atUtc": "2026-09-24T12:18:51.789023+00:00",
+  "sourceRoot": "C:\\Users\\Phet\\.codex\\worktrees\\f436\\LexiQuest",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "sourceBranch": "feature/ux-s01-ab-f436",
+  "manifest": "docs/development/ux-delivery/handoffs/S01-AC-source-manifest.json",
+  "archive": "build/ux-delivery/S01-AC-transfer/source-overlay.zip",
+  "nextItem": "S01-AC-offline-catalog-recovery",
+  "acceptanceCard": "docs/development/ux-delivery/S01-AC-acceptance.md",
+  "completedHostTests": 128,
+  "prototypeReusedTests": 115,
+  "prototypeCompatibilityChecks": 3,
+  "nativeAcceptance": "PENDING",
+  "sprintAccepted": false,
+  "writerReleased": true,
+  "controllerThreadId": "01a0ce9e-23a6-7931-88e6-6390da748f39",
+  "recoveryPolicy": "Stop failed method, diagnose/correct/retest. Repeated failures never authorize abandonment or writer release; no hidden RED. Continue approved useful work automatically; stop only explicit pause or indispensable external prerequisite with no independent work.",
+  "instructions": "Verify all exact overlay bytes and explicit deletions before claim. Preserve pre-edit archives/ignored media/evidence; no predecessor write/reset/clean. Exact base feature branch if clean default checkout differs. Single writer, no subagents. Do not rerun unchanged passed gates. No instructional expansion without qualified content/trial gates; no browser bypass/live Jev freshness bypass."
+}

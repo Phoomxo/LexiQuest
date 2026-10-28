@@ -1,0 +1,14 @@
+{
+  "sourceBase": "ae790eb8325c1b2465a8af8f539016b68442dd00",
+  "files": {
+    "lib/screens/word_scramble_screen.dart": "f46355be955216be8178c2175a9e1d2cda2b31ab575d939338601232409c29c2",
+    "lib/screens/sentence_scramble_screen.dart": "e9b37a1a2ce2dd4eb2ea07aa095fc0683b79a8681dc7a9060ef04eeb81067ca7",
+    "lib/screens/choose_mode_screen.dart": "65ff7438c5159811e622bc2037d253fb319084ff3d9adf71ee9ded9c423e8df8",
+    "test/features/learning/unified_lesson_controller_test.dart": "d50d348d92ef8187ec7d8f7eed66fab8772cdb212ea50d265c85e9980d0479fe"
+  },
+  "apk": {
+    "path": "build/ari-assistance-039.apk",
+    "sha256": "28448464d4890dd2ce30c9580ac5f50d5230d5fc5217594401c4bc03bef754e9"
+  },
+  "postTestChange": "Replaced if(feedback!=null) feedback with equivalent Dart null-aware element ?feedback to satisfy analyzer. Final analysis/build/native retests passed."
+}

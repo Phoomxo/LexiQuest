@@ -1,0 +1,5 @@
+{
+  "lib/features/learning/application/cloze_mode_adapter.dart": "434662f29be99825daecc32c06db1a6d475c681fb64eeb5a40985a6cfe2a3c51",
+  "lib/screens/fill_in_the_blanks_screen.dart": "f093717fc9a7a1d6a5e6ebcae63f0407ac437f1a65729fe915888b8019a3aeb1",
+  "test/screens/fill_in_the_blanks_screen_test.dart": "9200665a1dda62fd913dafb836fb8dab430b00baf361d32f2a9df2861c3c1254"
+}

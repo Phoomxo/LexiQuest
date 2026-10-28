@@ -1,0 +1,13 @@
+{
+  "head": "9efc69dca93b888c81acbdb03ec699362c48cb05",
+  "sha256": {
+    "lib/screens/study_plan_screen.dart": "b3bf808fbeb2f4333e839c3f07bd3ede0aad885f1a90c22b7c562caaf51e13bd",
+    "lib/features/goals/application/study_plan_use_cases.dart": "3a70bc5823743b7aa7d04157d860ebc6bf9a502b8da3808d9bdfed411434e7ba",
+    "lib/features/goals/domain/study_plan.dart": "a88f8ed4e43b17e64fe3604fae63ca4920ff2480979887ec27824c9e511091c2",
+    "lib/screens/export_center_screen.dart": "d51f2dc93e21ec3885757bf35dc550e39467e6bd3875d9e3ba8d905309ff1cb8",
+    "tool/experiments/ari_app_server/chat_bridge.py": "c30689387e9df3a56a020ea897667634399a682afd38e8d043dce66c112fcb07"
+  },
+  "apk": "build/ari-assistance-084.apk",
+  "apkSha256": "400d904c5300bfada004ac82ebc6e9129b17a3232a71cf5b8f2fcd070782af7f",
+  "sourceChangedThisCheckpoint": false
+}

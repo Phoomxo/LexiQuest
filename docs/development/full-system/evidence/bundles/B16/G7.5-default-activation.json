@@ -1,0 +1,1069 @@
+{
+  "edition": "source-default",
+  "compiledTestFlags": {
+    "LEXIQUEST_LEARNING_PREVIEW": false,
+    "LEXIQUEST_CLOUD_SYNC_ENABLED": true
+  },
+  "productionFactoryFlagsMatch": true,
+  "researchEnabled": false,
+  "capabilities": [
+    {
+      "id": "f01",
+      "name": "Curriculum & Learning Pack Catalog",
+      "routes": [
+        "home/vocabulary",
+        "home/study-planning"
+      ],
+      "catalogDependencies": [],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "vocabulary",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "VocabularyUseCases",
+          "deliveryRoute": "home/vocabulary",
+          "durableContract": true
+        },
+        {
+          "feature": "studyPlanning",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "StudyPlanningUseCases",
+          "deliveryRoute": "home/study-planning",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f02",
+      "name": "Learning Pack Detail",
+      "routes": [
+        "home/vocabulary"
+      ],
+      "catalogDependencies": [
+        "f01"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "vocabulary",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "VocabularyUseCases",
+          "deliveryRoute": "home/vocabulary",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f03",
+      "name": "Rich Lexical Card",
+      "routes": [
+        "home/vocabulary"
+      ],
+      "catalogDependencies": [
+        "f01"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "vocabulary",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "VocabularyUseCases",
+          "deliveryRoute": "home/vocabulary",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f04",
+      "name": "Content Version & Quality Control",
+      "routes": [],
+      "catalogDependencies": [
+        "f01"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f05",
+      "name": "Unified Lesson Shell",
+      "routes": [],
+      "catalogDependencies": [
+        "f04"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f06",
+      "name": "Flashcard Mode",
+      "routes": [
+        "home/learn/srs"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "srs",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/srs",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f07",
+      "name": "Meaning Quiz",
+      "routes": [
+        "home/learn/quiz"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "quiz",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/quiz",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f08",
+      "name": "Definition Quiz",
+      "routes": [
+        "home/learn/quiz"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "quiz",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/quiz",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f09",
+      "name": "Cloze Test",
+      "routes": [
+        "home/learn/quiz"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "quiz",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/quiz",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f10",
+      "name": "Matching Mode",
+      "routes": [],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f11",
+      "name": "Typed Recall / Writing",
+      "routes": [
+        "home/learn/quiz"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "quiz",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/quiz",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f12",
+      "name": "Handwriting Scratchpad",
+      "routes": [],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f13",
+      "name": "LexiQuest Native Modes Integration",
+      "routes": [
+        "home/learn/associative-reading",
+        "drawer/learning/ghost-duel",
+        "drawer/practice/object-scanner",
+        "drawer/practice/shadowing"
+      ],
+      "catalogDependencies": [
+        "f03",
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "reading",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "VocabularyUseCases+LearningUseCases+AssociativeLearningPort",
+          "deliveryRoute": "home/learn/associative-reading",
+          "durableContract": true
+        },
+        {
+          "feature": "ghostDuel",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "drawer/learning/ghost-duel",
+          "durableContract": true
+        },
+        {
+          "feature": "objectScanner",
+          "state": "limited",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "ObjectScannerController",
+          "deliveryRoute": "drawer/practice/object-scanner",
+          "durableContract": true
+        },
+        {
+          "feature": "speechPractice",
+          "state": "limited",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "SpeechPracticeUseCases",
+          "deliveryRoute": "drawer/practice/shadowing",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f14",
+      "name": "Flashcard-First Recommendation",
+      "routes": [
+        "home/learn/srs"
+      ],
+      "catalogDependencies": [
+        "f06"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "srs",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/srs",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f15",
+      "name": "Active-Recall Ladder",
+      "routes": [],
+      "catalogDependencies": [
+        "f06",
+        "f07",
+        "f08",
+        "f09",
+        "f10",
+        "f11",
+        "f13",
+        "f14"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f16",
+      "name": "Session Configuration",
+      "routes": [],
+      "catalogDependencies": [
+        "f05"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f17",
+      "name": "Immediate Answer Feedback",
+      "routes": [],
+      "catalogDependencies": [
+        "f05"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f18",
+      "name": "Contrastive Distractor Explanation",
+      "routes": [
+        "home/learn/quiz"
+      ],
+      "catalogDependencies": [
+        "f04",
+        "f17"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "quiz",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/quiz",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f19",
+      "name": "Hint, Strategy & Context",
+      "routes": [
+        "drawer/ai-tutor/chat"
+      ],
+      "catalogDependencies": [
+        "f17"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "aiTutor",
+          "state": "limited",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "AiTutorController",
+          "deliveryRoute": "drawer/ai-tutor/chat",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f20",
+      "name": "Bookmark / Save",
+      "routes": [],
+      "catalogDependencies": [
+        "f03"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f21",
+      "name": "Flag / Report Content",
+      "routes": [],
+      "catalogDependencies": [
+        "f04"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f22",
+      "name": "Review Center",
+      "routes": [
+        "home/learn/srs",
+        "home/today"
+      ],
+      "catalogDependencies": [
+        "f06",
+        "f20",
+        "f21"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "srs",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "LearningUseCases",
+          "deliveryRoute": "home/learn/srs",
+          "durableContract": true
+        },
+        {
+          "feature": "dailyContinuity",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "TodayHubUseCases",
+          "deliveryRoute": "home/today",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f23",
+      "name": "Focus Timer",
+      "routes": [],
+      "catalogDependencies": [
+        "f24"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f24",
+      "name": "Automatic Learning-Time Capture",
+      "routes": [],
+      "catalogDependencies": [
+        "f05",
+        "f17",
+        "f19",
+        "f20",
+        "f21"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f25",
+      "name": "Learning Calendar & Weekly Analytics",
+      "routes": [],
+      "catalogDependencies": [
+        "f24"
+      ],
+      "activationProfile": "activation.read-model-only",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f26",
+      "name": "Goal / Test Countdown",
+      "routes": [
+        "home/study-planning"
+      ],
+      "catalogDependencies": [],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "studyPlanning",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "StudyPlanningUseCases",
+          "deliveryRoute": "home/study-planning",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f27",
+      "name": "Opt-in Study Reminder",
+      "routes": [
+        "home/study-planning"
+      ],
+      "catalogDependencies": [
+        "f22",
+        "f26"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "studyPlanning",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "StudyPlanningUseCases",
+          "deliveryRoute": "home/study-planning",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f28",
+      "name": "Learning Assessment & Progress Comparison",
+      "routes": [
+        "research/assessment"
+      ],
+      "catalogDependencies": [
+        "f04",
+        "f05"
+      ],
+      "activationProfile": "activation.protocol-assigned",
+      "runtime": [
+        {
+          "feature": "researchAssessment",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": false,
+          "dependencyId": "AssessmentUseCases",
+          "deliveryRoute": "research/assessment",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f29",
+      "name": "Evidence-Based Quest",
+      "routes": [
+        "drawer/rewards/quests"
+      ],
+      "catalogDependencies": [
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "shadowRewardV2",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": false,
+          "dependencyId": "",
+          "deliveryRoute": "",
+          "durableContract": false
+        },
+        {
+          "feature": "questV2",
+          "state": "limited",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "QuestUseCases",
+          "deliveryRoute": "drawer/rewards/quests",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f30",
+      "name": "Gentle Streak",
+      "routes": [
+        "home/today"
+      ],
+      "catalogDependencies": [
+        "f24"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "dailyContinuity",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "TodayHubUseCases",
+          "deliveryRoute": "home/today",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f31",
+      "name": "Achievement & Milestone",
+      "routes": [
+        "home/achievements"
+      ],
+      "catalogDependencies": [
+        "f29",
+        "f30"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "achievements",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "ProgressUseCases",
+          "deliveryRoute": "home/achievements",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f32",
+      "name": "Avatar Level-Up & Cosmetic Unlock",
+      "routes": [
+        "drawer/rewards/shop"
+      ],
+      "catalogDependencies": [
+        "f31"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "shop",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "RewardUseCases",
+          "deliveryRoute": "drawer/rewards/shop",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f33",
+      "name": "Contextual Companion",
+      "routes": [
+        "drawer/ai-tutor/chat"
+      ],
+      "catalogDependencies": [
+        "f05"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "aiTutor",
+          "state": "limited",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "AiTutorController",
+          "deliveryRoute": "drawer/ai-tutor/chat",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f34",
+      "name": "Achievement Share Card",
+      "routes": [],
+      "catalogDependencies": [
+        "f31"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f35",
+      "name": "Learning Preference & Goal Quiz",
+      "routes": [],
+      "catalogDependencies": [],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f36",
+      "name": "Personal Learning Profile",
+      "routes": [
+        "home/mastery",
+        "home/weakness"
+      ],
+      "catalogDependencies": [
+        "f06",
+        "f24",
+        "f25"
+      ],
+      "activationProfile": "activation.read-model-only",
+      "runtime": [
+        {
+          "feature": "mastery",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "ProgressUseCases",
+          "deliveryRoute": "home/mastery",
+          "durableContract": true
+        },
+        {
+          "feature": "weakness",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "ProgressUseCases",
+          "deliveryRoute": "home/weakness",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f37",
+      "name": "Recommendation Panel",
+      "routes": [
+        "home/today"
+      ],
+      "catalogDependencies": [
+        "f15",
+        "f36"
+      ],
+      "activationProfile": "activation.read-model-only",
+      "runtime": [
+        {
+          "feature": "dailyContinuity",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "TodayHubUseCases",
+          "deliveryRoute": "home/today",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f38",
+      "name": "Accessibility",
+      "routes": [],
+      "catalogDependencies": [
+        "f05"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f39",
+      "name": "Motion & Theme Controls",
+      "routes": [],
+      "catalogDependencies": [
+        "f38"
+      ],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f40",
+      "name": "Local-First Operation",
+      "routes": [
+        "drawer/export/center"
+      ],
+      "catalogDependencies": [
+        "f04"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "export",
+          "state": "enabled",
+          "visible": true,
+          "enabled": true,
+          "composedDependency": true,
+          "dependencyId": "ExportUseCases",
+          "deliveryRoute": "drawer/export/center",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f41",
+      "name": "Feature Flag & Controlled Rollout",
+      "routes": [],
+      "catalogDependencies": [],
+      "activationProfile": "activation.always-on-foundation",
+      "runtime": [],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f42",
+      "name": "Today Hub",
+      "routes": [
+        "home/today"
+      ],
+      "catalogDependencies": [
+        "f22",
+        "f37"
+      ],
+      "activationProfile": "activation.read-model-only",
+      "runtime": [
+        {
+          "feature": "dailyContinuity",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "TodayHubUseCases",
+          "deliveryRoute": "home/today",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f43",
+      "name": "Learning History",
+      "routes": [
+        "home/today"
+      ],
+      "catalogDependencies": [
+        "f40"
+      ],
+      "activationProfile": "activation.read-model-only",
+      "runtime": [
+        {
+          "feature": "dailyContinuity",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "TodayHubUseCases",
+          "deliveryRoute": "home/today",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    },
+    {
+      "id": "f44",
+      "name": "Offline Content Manager",
+      "routes": [
+        "settings/offline-content"
+      ],
+      "catalogDependencies": [
+        "f04",
+        "f40"
+      ],
+      "activationProfile": "activation.runtime-flagged",
+      "runtime": [
+        {
+          "feature": "offlineContent",
+          "state": "hidden",
+          "visible": false,
+          "enabled": false,
+          "composedDependency": true,
+          "dependencyId": "OfflineContentManager",
+          "deliveryRoute": "settings/offline-content",
+          "durableContract": true
+        }
+      ],
+      "limitation": "Composition is not content eligibility, physical/provider or whole-feature runtime acceptance."
+    }
+  ],
+  "lessonModes": [
+    {
+      "mode": "associativeReading",
+      "route": "learning/associative-reading",
+      "feature": "reading",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "meaningQuiz",
+      "route": "learning/quiz",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "definitionQuiz",
+      "route": "learning/definition-quiz",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "cloze",
+      "route": "learning/cloze",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "matching",
+      "route": "learning/matching",
+      "feature": "quiz",
+      "deliveryState": "implementedOff",
+      "featureEnabled": true
+    },
+    {
+      "mode": "flashcard",
+      "route": "learning/srs",
+      "feature": "srs",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "route": "learning/handwriting-scratchpad",
+      "feature": "quiz",
+      "deliveryState": "implementedOff",
+      "featureEnabled": true
+    },
+    {
+      "mode": "dictation",
+      "route": "game/dictation",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "speaking",
+      "route": "practice/speaking",
+      "feature": "speechPractice",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "shadowing",
+      "route": "practice/shadowing",
+      "feature": "speechPractice",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "cefrReading",
+      "route": "learning/cefr-reading",
+      "feature": "reading",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "sentenceScramble",
+      "route": "game/sentence-scramble",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "wordScramble",
+      "route": "game/word-scramble",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    },
+    {
+      "mode": "typedRecall",
+      "route": "learning/typed-recall",
+      "feature": "quiz",
+      "deliveryState": "enabled",
+      "featureEnabled": true
+    }
+  ],
+  "focusTimer": "implementedOff",
+  "activeTimeCapture": false,
+  "emergencyOff": {
+    "vocabulary": true,
+    "quiz": true,
+    "srs": true,
+    "reading": true,
+    "mastery": true,
+    "weakness": true,
+    "ghostDuel": true,
+    "achievements": true,
+    "shop": true,
+    "objectScanner": true,
+    "speechPractice": true,
+    "aiTutor": true,
+    "export": true,
+    "shadowRewardV2": true,
+    "questV2": true,
+    "studyPlanning": true,
+    "researchAssessment": true,
+    "dailyContinuity": true,
+    "offlineContent": true,
+    "adventureMotivation": true
+  },
+  "binaryInstalledFlags": "NOT RUN; this is compiled Flutter test runtime with synthetic platform adapters"
+}

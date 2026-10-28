@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Firebase Storage is not used by the current app. Keep the provisioned
+// bucket closed until a feature adds a narrowly scoped, tested access policy.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

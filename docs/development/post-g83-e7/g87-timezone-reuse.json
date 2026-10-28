@@ -1,0 +1,77 @@
+{
+  "target": "test/features/motivation/timezone_policy_test.dart",
+  "status": "retained-individual-target-evidence",
+  "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\targeted-learning-fd7fca1d6f4ecb2a9743e6b97b9739202f2fc0b4976abdcd93613475324b08d9-3e14468d0c79.json",
+  "receiptSha256": "3e14468d0c795c034467776087d43c13497a9406d766b7899165b771f00b2d05",
+  "historicalBatchStatus": "Failed",
+  "batchNotReclassified": true,
+  "log": {
+    "kind": "Stdout",
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\evidence\\2a20b35ae918296d-Explicit-Flutter-tests.stdout.log",
+    "sha256": "2a20b35ae918296d802e0422fcc64dfa1f0d9f226263a5dc89da845c959afff5"
+  },
+  "observedTargetLines": [
+    "00:00 +0: loading C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart",
+    "00:01 +0: loading C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart",
+    "00:02 +0: loading C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart",
+    "00:02 +0: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: (setUpAll)",
+    "00:02 +0: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay 23:59 Bangkok maps to Aug 4",
+    "00:02 +1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay 23:59 Bangkok maps to Aug 4",
+    "00:02 +1: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay 00:01 Bangkok maps to Aug 5",
+    "00:02 +2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay 00:01 Bangkok maps to Aug 5",
+    "00:02 +2: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay midnight UTC is Aug 4 in Bangkok (UTC+7)",
+    "00:02 +3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay midnight UTC is Aug 4 in Bangkok (UTC+7)",
+    "00:02 +3: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay New York 23:59 EDT (UTC-4) maps correctly",
+    "00:02 +4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getLearningDay New York 23:59 EDT (UTC-4) maps correctly",
+    "00:02 +4: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: ... learning day boundary is midnight in learner timezone \u0e42\u20ac\u201d Golden Journey #11",
+    "00:02 +5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: ... learning day boundary is midnight in learner timezone \u0e42\u20ac\u201d Golden Journey #11",
+    "00:02 +5: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay two UTC times mapping to same Bangkok day are same learning day",
+    "00:02 +6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay two UTC times mapping to same Bangkok day are same learning day",
+    "00:02 +6: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay streak survives timezone change \u0e42\u20ac\u201d Golden Journey #11",
+    "00:02 +7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay streak survives timezone change \u0e42\u20ac\u201d Golden Journey #11",
+    "00:02 +7: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay same moment is same learning day",
+    "00:02 +8: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: isSameLearningDay same moment is same learning day",
+    "00:02 +8: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary next boundary from Bangkok 23:59 is 17:00 UTC",
+    "00:02 +9: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary next boundary from Bangkok 23:59 is 17:00 UTC",
+    "00:02 +9: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary next boundary from Bangkok midnight is exactly 24 h later",
+    "00:02 +10: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary next boundary from Bangkok midnight is exactly 24 h later",
+    "00:02 +10: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary returned boundary is in UTC",
+    "00:02 +11: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary returned boundary is in UTC",
+    "00:02 +11: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary spring-forward day ends at its timezone-specific next midnight",
+    "00:02 +12: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary spring-forward day ends at its timezone-specific next midnight",
+    "00:02 +12: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary fall-back day boundary is strictly after the repeated local hour",
+    "00:02 +13: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary fall-back day boundary is strictly after the repeated local hour",
+    "00:02 +13: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary does not derive tomorrow from device-local calendar arithmetic",
+    "00:02 +14: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: getNextDayBoundary does not derive tomorrow from device-local calendar arithmetic",
+    "00:02 +14: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: (tearDownAll)",
+    "00:03 +14: C:/Users/Phet/.codex/worktrees/daea/LexiQuest/test/features/motivation/timezone_policy_test.dart: (tearDownAll)"
+  ],
+  "unchangedImportClosure": [
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "b63207cf529949ec4727b68c23dbb38ce255b6f6f4ae1effcb5c1dcf2852d238",
+      "receiptSha256": "b63207cf529949ec4727b68c23dbb38ce255b6f6f4ae1effcb5c1dcf2852d238"
+    },
+    {
+      "path": "lib/features/motivation/domain/timezone_policy.dart",
+      "sha256": "2f25d789b4bf18c8d743972d4ead951874390b1e4504e2f5bcf669e966876cbb",
+      "receiptSha256": "2f25d789b4bf18c8d743972d4ead951874390b1e4504e2f5bcf669e966876cbb"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "47745c547efa5cb964b424607cb6356f6e5a2c791b0e78c182a30c0fe2718ca3",
+      "receiptSha256": "47745c547efa5cb964b424607cb6356f6e5a2c791b0e78c182a30c0fe2718ca3"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "129dd40a68e19db2751ec10f3e8fa1f8d5f82d83248efd0caf7840035e1f37b0",
+      "receiptSha256": "129dd40a68e19db2751ec10f3e8fa1f8d5f82d83248efd0caf7840035e1f37b0"
+    },
+    {
+      "path": "test/features/motivation/timezone_policy_test.dart",
+      "sha256": "334c717fa1c4aed7be6fb5d617333023935f94fa0537200dfb918b008e5de654",
+      "receiptSha256": "334c717fa1c4aed7be6fb5d617333023935f94fa0537200dfb918b008e5de654"
+    }
+  ],
+  "method": "All target lines retain no failure marker; historical failed batch is not called passed. Exact recursive local Dart imports and dependency/config files match recorded closure; no repeat execution."
+}

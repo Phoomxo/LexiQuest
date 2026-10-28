@@ -1,0 +1,89 @@
+{
+  "taskId": "01a0cfd7-68db-7b63-bde0-f60a6014008a",
+  "atUtc": "2026-09-23T20:18:02.288782+00:00",
+  "sourceFingerprint": "33fcf94b6b902063347e71728f61b602fa02b8dd24822f3db7113ce71b412202",
+  "sourceManifest": "source-manifest-r3-05-part08.json",
+  "finalGate": {
+    "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-127f28a3943dfee7d169a2bbb61e44c2d140ec798ca2fabafde9da835c760e17.json",
+    "sha256": "73950dad58ef8eed6dea957d4fb229bcf63bb5c25809b3f7be3793c76432eb5a",
+    "tests": 95,
+    "files": 11,
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/screens/vocabulary_verification_lifecycle_test.dart",
+          "test/screens/vocabulary_other_verification_lifecycle_test.dart",
+          "test/screens/offline_vocabulary_journey_test.dart",
+          "test/screens/vocabulary_route_withdrawal_test.dart",
+          "test/screens/vocab_list_screen_test.dart",
+          "test/screens/category_save_reconciliation_test.dart",
+          "test/screens/import_save_reconciliation_test.dart",
+          "test/screens/vocabulary_delete_reconciliation_test.dart",
+          "test/screens/vocabulary_save_reconciliation_test.dart",
+          "test/features/ai_tutor/managed/menu_action_registry_test.dart",
+          "test/features/ai_tutor/managed/menu_form_registry_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "AI",
+        "commandKey": "5adbe283142fa2a25eedaac77c55450128b9a607db8acf7f7d62eddcb72301ad"
+      }
+    ],
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "5adbe283142fa2a25eedaac77c55450128b9a607db8acf7f7d62eddcb72301ad",
+        "fingerprint": "3b9e114b7e8390b05f385a6e0e1d2efc7d6ad9b89b4d407e955e83f098673832",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-23T20:06:54.9623229+00:00",
+        "FinishedAt": "2026-09-23T20:08:11.0553604+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\5adbe283142f-3b9e114b7e83-b3cc8ea5\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\5adbe283142f-3b9e114b7e83-b3cc8ea5\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "3b9e114b7e8390b05f385a6e0e1d2efc7d6ad9b89b4d407e955e83f098673832",
+        "StdoutHash": "AC7DFD97C849ABCF11B76AAE028418B07389D750778DED9EE1918707822A6B79",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ],
+    "inputClosurePinsReverified": 1531
+  },
+  "newCases": {
+    "postCommitLifecycle": 30,
+    "registrySessionGeneration": 1
+  },
+  "counts": "95 final unique tests; earlier word and other-route gates are included, not additive. No unchanged gate rerun after final source.",
+  "red": [
+    {
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/7c9a0bd69282-09143f4f14b9-4dfc6419/Explicit-Flutter-tests.stdout.log",
+      "sha256": "bebd50bbe514dcda1027f57911350b4b096bbd077363717bff06d76411a322f6",
+      "failures": 4
+    },
+    {
+      "log": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/491343e2e8f7-1eb80c15f441-2af48ddf/Explicit-Flutter-tests.stdout.log",
+      "sha256": "4ef7280fbf435f911c221575e7eb3c52a673c934bf9298ae8291cf48472a4a37",
+      "failures": 5
+    }
+  ],
+  "analysis": {
+    "log": "build/ari-r3-05/part08-analysis-final.log",
+    "sha256": "0fc47c892fe1353c9e655707937524122f12e668b61f8387c5a26e1decb7f89e",
+    "files": 8,
+    "result": "No issues found"
+  },
+  "limits": [
+    "Controlled real SQLite read delay on host; no live provider or native injected latency claim.",
+    "The30cases cover post-commit verification for create/edit/category/import/delete across cover, same-owner session invalidation, disconnect, foreign AI owner, disposal and feature withdrawal. They do not prove every pre-admission/in-transaction boundary.",
+    "Word cases compare all words/outbox after reopen; other3routes compare full5table snapshots. Database reopen is not durable provider request-ID/process-death reconciliation.",
+    "Native ordinary manual baseline only; actual foreign-owner native/provider lifecycle remains unproven. No whole W03/R3-05 acceptance."
+  ],
+  "recoveries": [
+    "Initial fixture pumpAndSettle timed out on intentionally pending spinner; replaced with bounded pumps before valid product RED4.",
+    "Initial analysis found2brace lint infos; fixed test syntax before final95.",
+    "Initial diff comparison included CRLF noise and registry absent from dirty ZIP; normalized line endings and read unchanged registry base via git show after membership check.",
+    "Native input command with unquoted double comma failed PowerShell parse before execution; corrected quoted arguments and verified exact3row draft.",
+    "One guessed build-log read failed; discovered actual part07-android-build.log. No repeated blind command or weakened assertion."
+  ]
+}

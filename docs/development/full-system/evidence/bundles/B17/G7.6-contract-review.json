@@ -1,0 +1,27 @@
+{
+  "edition": "local-learning-preview; learning=true/cloud=false, no backend URLs in selected profile",
+  "criteria": {
+    "requestSchema": "AI/Voice forbid extras; schema text ceiling2000 and settings500; actual request body100000B guarded including chunked and dishonest length; locally tested",
+    "errorsAndSecrets": "App exceptions map stable detail.code and exception type only; sentinel tests verify no secret in response/log; synthetic auth and provider only",
+    "selectedAi": "Production AiTutorGatewayFactory BYOK adapters use abortable HTTP absolute20s,256KiB cap, pre-cancel noHTTP, Gemini<=3attempts within total budget; inherited B13 ownership/usage/circuitbreaker contracts retained",
+    "selectedLocalFallback": "Missing config and unavailable AI/voice leave local learning; local TTS/installed pack when available, typed unavailable where no local capability; targeted journey execution passed",
+    "cost": "Unknown central costs remain null/unknown; no price, free-tier, billing or provider quota guarantee. Reuse cost-policy own-source test with verified EOL-only delta",
+    "aiApi": "Optional legacy content endpoint, unconfigured in profile.1MiB response cap fixed; per-provider socket timeout1..120s,RPM bounded,cache entries bounded. Socket timeout is not absolute chain deadline; configured chain length and backend client-disconnect cancellation not accepted as production bounded service",
+    "voiceApi": "Optional OmniVoice rollback; production default remote adapter is VoxCPM, profile remote absent. Unit/fake engine74; serialized generation,input/step bounds. GPU inference interrupt/load deadline and server admission/resource proof NOT RUN; cannot enable from these tests",
+    "lm": "Optional unconfigured model server/training tools; CPU/GPU/train excluded. Request/token caps and nonblocking generation lock inspected;94 local tests, not actual model serving/performance proof",
+    "functions": "No functions directory in accepted source; predecessor Firestore emulator evidence unchanged; no deployed policy claims"
+  },
+  "coverage": [
+    "A-AI",
+    "A-SYS",
+    "COV-f40",
+    "G7"
+  ],
+  "sourcePins": "B16 accepted SHA39876818cab140cbc8263a5aa9347a03791fcce0; candidate/baseline/dataset unchanged, inherit exact B16 handoff",
+  "limitations": [
+    "No optional backend activated/deployed",
+    "No live provider/spending/GPU/native/device tests",
+    "No cancellation/billing guarantee inferred from logical usage",
+    "G7.7 installed artifact flags pending"
+  ]
+}

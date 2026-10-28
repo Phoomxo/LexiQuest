@@ -1,0 +1,12 @@
+{
+  "stage": "form-refocused",
+  "numericFields": [
+    {
+      "minutes": 40,
+      "focused": "true"
+    }
+  ],
+  "inputShown": [
+    "true"
+  ]
+}

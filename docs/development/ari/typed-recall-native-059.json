@@ -1,0 +1,30 @@
+{
+  "checkpoint": "059",
+  "sourceCommit": "c8d55f7d",
+  "apkPins": "evidence/flashcard-progress-058/source-pins.json",
+  "status": "NATIVE_BASELINE_PASS_FEEDBACK_ACTION_DEFECT_OPEN",
+  "observed": [
+    "Typed-recall route configured2 questions includes recognition and typed response legs",
+    "Recognition a answered correctly without AI",
+    "Second Thai prompt bag: blank submit disabled; wrong typed and committed",
+    "Final result50%,correct1,wrong1,count2",
+    "Durable completed quiz: meaningChoice recognition correct plus typedRecall independentRecall incorrect"
+  ],
+  "evidence": [
+    "evidence/typed-recall-native-059/observations.json",
+    "evidence/typed-recall-native-059/durable-summary.json"
+  ],
+  "defects": [
+    {
+      "id": "TYPED-FEEDBACK-ACTION-059",
+      "status": "OPEN",
+      "observed": "Final wrong typed response feedback says try again but field is disabled and only results action is available",
+      "next": "Trace feedback nextAction construction; fix and test to describe actual manual continuation without adding duplicate submissions"
+    }
+  ],
+  "limitations": [
+    "Native live-provider and explicit disconnect during partial typed input still pending",
+    "Reverse-direction configuration not separately verified"
+  ],
+  "wholeGoalComplete": false
+}

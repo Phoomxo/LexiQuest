@@ -1,0 +1,209 @@
+{
+  "taskId": "01a0cffe-6e5b-7e42-b135-1dad3feabff7",
+  "atUtc": "2026-09-23T20:51:57.413180+00:00",
+  "sourceFingerprint": "a2a3f7203d535439dd00e002effa418a7a90030aa66f24f486ed36ab72906a20",
+  "sourceManifest": "source-manifest-r3-05-part10.json",
+  "gates": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-c53bfe6de8ab17d63466cc0bb6a959ced8bc901a922868563d5c0f16c8cef970.json",
+      "sha256": "64eee7cf853a55f9c50dab3775466b8d7822fb0d8b15ea479176ed26edac3afe",
+      "receiptStatus": "Passed",
+      "acceptedPassingCases": 6,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/managed_tutor_durable_lifecycle_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "346500064f621a66489b5a42dd33d4a56f3bb82d324706998dd3fb8042cb311e"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "346500064f621a66489b5a42dd33d4a56f3bb82d324706998dd3fb8042cb311e",
+          "fingerprint": "e284d147321e089517194925e428ed6a768f4e955ecec904e43cc3b235bc988b",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T20:42:44.8300595+00:00",
+          "FinishedAt": "2026-09-23T20:42:55.3466242+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\346500064f62-e284d147321e-8dd3765e\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\346500064f62-e284d147321e-8dd3765e\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "e284d147321e089517194925e428ed6a768f4e955ecec904e43cc3b235bc988b",
+          "StdoutHash": "C9416E9AB1D89486558EE219CE130D84A18CE360C23790C40B8095A7E7C651EB",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePins": 1534,
+      "mismatches": [],
+      "acceptanceNote": "All selected cases passed"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-fe51ae038705ce76c7b616e7f9d937d791895ec84571b985ceaec33a7857c906.json",
+      "sha256": "0fd25da764c394629b0726d26a47b88bb16e2935644c16ee8c2459d85230718a",
+      "receiptStatus": "Passed",
+      "acceptedPassingCases": 1,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/optional_ai_w02_lifecycle_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "W02 composed navigation and questionnaire survive background"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "7f811702b984c43a2a913dd87a76a7256068784de278e657b0e9a02b209eb0b5"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "7f811702b984c43a2a913dd87a76a7256068784de278e657b0e9a02b209eb0b5",
+          "fingerprint": "d476229b2d4f3370e2a9b4a3acee7bdef69433bc02adc4bee7fd334e95762849",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T20:46:57.8823404+00:00",
+          "FinishedAt": "2026-09-23T20:47:14.6297007+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\7f811702b984-d476229b2d4f-6c4b27e2\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\7f811702b984-d476229b2d4f-6c4b27e2\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "d476229b2d4f3370e2a9b4a3acee7bdef69433bc02adc4bee7fd334e95762849",
+          "StdoutHash": "395D64E76B89E3D5C36D5ABE4D32F0685325E1817780EB803B02DAF3CFF29485",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePins": 1535,
+      "mismatches": [],
+      "acceptanceNote": "All selected cases passed"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-df750f912fded3aa470dfeda9bc4a6cf805dac4c5498fefaf97aff0cc97981e0.json",
+      "sha256": "a15ea9849cc52414f8e68ae6d71e1cab91ab29c5b1700b2af45b195a965e1c8a",
+      "receiptStatus": "Passed",
+      "acceptedPassingCases": 3,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/optional_ai_account_applicability_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "77308f723a90f99e8e9d2864969b055c8965143ab02ae158d0192a576ecafdc8"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "77308f723a90f99e8e9d2864969b055c8965143ab02ae158d0192a576ecafdc8",
+          "fingerprint": "c749f7af3c7e8a5f36c3af34a34f54b2f82d4158775646d0ff061f7380cc31a2",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T20:48:23.5048213+00:00",
+          "FinishedAt": "2026-09-23T20:48:32.4754344+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\77308f723a90-c749f7af3c7e-d7d1d786\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\77308f723a90-c749f7af3c7e-d7d1d786\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "c749f7af3c7e8a5f36c3af34a34f54b2f82d4158775646d0ff061f7380cc31a2",
+          "StdoutHash": "D9CA7EE1BA385BDDC6EAF1F9F86FCB29C51056E432CD0F27E00FBE8BEE731227",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePins": 1536,
+      "mismatches": [],
+      "acceptanceNote": "All selected cases passed"
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-f4449444be523acbef4ddab22ffd66462419acf96622a8e7cbbfa50e29e3478e.json",
+      "sha256": "6e95c7bcfb88a6da6ffb06bdc14e5763d0c237597488d3402588f64b8bf2e03b",
+      "receiptStatus": "Failed",
+      "acceptedPassingCases": 1,
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/ai_tutor/managed/optional_ai_w02_lifecycle_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "AI",
+          "commandKey": "3251b2fe3ecf1c1da130a57fcb8dbcd00b49e77913c499af3520ea7a366786be"
+        }
+      ],
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "3251b2fe3ecf1c1da130a57fcb8dbcd00b49e77913c499af3520ea7a366786be",
+          "fingerprint": "abcc95c3f4fbd366e99b2cc7ef5db8b74963b267693c2ade6434bc94be533aeb",
+          "Status": "Failed",
+          "ExitCode": 1,
+          "StartedAt": "2026-09-23T20:45:35.4367353+00:00",
+          "FinishedAt": "2026-09-23T20:45:56.6312904+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3251b2fe3ecf-abcc95c3f4fb-1d971e5d\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\3251b2fe3ecf-abcc95c3f4fb-1d971e5d\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "abcc95c3f4fbd366e99b2cc7ef5db8b74963b267693c2ade6434bc94be533aeb",
+          "StdoutHash": "0F3F428A2FA0CDD2FE3F82478B109AEA3FCF334101F97A91F417D5456F06241C",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ],
+      "inputClosurePins": 1535,
+      "mismatches": [
+        "test/features/ai_tutor/managed/optional_ai_w02_lifecycle_test.dart"
+      ],
+      "acceptanceNote": "Only disconnect case passed; background fixture error retained and corrected by separate filtered gate"
+    }
+  ],
+  "uniquePassingCases": 11,
+  "newTestFiles": [
+    "test/features/ai_tutor/managed/managed_tutor_durable_lifecycle_test.dart",
+    "test/features/ai_tutor/managed/optional_ai_w02_lifecycle_test.dart",
+    "test/features/ai_tutor/managed/optional_ai_account_applicability_test.dart"
+  ],
+  "counts": "6durable+1disconnect+1correctedbackground+3account=11 unique; initial disconnect per-test PASS reused, failed initial background not counted; no unchanged prior tests rerun.",
+  "initialDisconnectReuse": {
+    "initialSource": "build/ari-r3-05/part10-w02-initial.dart",
+    "sha256": "56fe226a22d03da8ecca37ced050d35936b965df606a48ce73909356d88fd4db",
+    "reconstructedAgainstReceiptHash": true,
+    "currentDifferenceOnlyInBackgroundBranch": true,
+    "diff": "build/ari-r3-05/part10-w02-fixture.diff",
+    "diffSha256": "6dbd2731719a7824944bd3b09aa46f75267e0e9aa2ec1ac311eb017bbc9c047f"
+  },
+  "analysis": {
+    "files": 3,
+    "log": "build/ari-r3-05/part10-analysis.log",
+    "sha256": "79fdb884f9134e477c752020dead74d1e7bcbcead4c606c90f4442cf825bcdcc",
+    "result": "No issues found"
+  },
+  "recoveries": [
+    {
+      "issue": "W02 fixture paused->resumed skipped Flutter lifecycle states",
+      "evidence": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-f4449444be523acbef4ddab22ffd66462419acf96622a8e7cbbfa50e29e3478e.json",
+      "diagnosis": "Installed SDK AppLifecycleListener requires hidden/inactive intermediate states; initial disconnect passed",
+      "correction": "Full inactive/hidden/paused then hidden/inactive/resumed sequence; filtered background gate PASS; no product edit or weakened assertion"
+    },
+    {
+      "issue": "rg wildcard literal in Windows directory argument",
+      "correction": "Actual lib/data/local/tables directory with -g pattern succeeds"
+    }
+  ],
+  "limits": [
+    "Only test source added; no reproduced product defect and no product fix/RED claim.",
+    "W01 uses real file-backed SQLite/gate/generation and controlled transport. Reopen is host database reopen, not abrupt native process death, provider request-ID persistence, live auth or live quota.",
+    "W01 all-table snapshots preserve fixture rows across reopen; most learner tables are empty. This is not a seeded full learner-data integrity matrix.",
+    "W02 composed AriTestApp uses actual bootstrap and file-backed DB with controlled HTTP. Navigation/route reentry, preferences save47 and lifecycle are host evidence; no database reopen or native execution in those two cases.",
+    "Account applicability uses absent/anonymous/authenticated synthetic app sessions and AI-owner attachment transitions. It proves visibility, manual-only logout, stale-action rejection and password-dialog cancel with zero gateway calls, not successful password change/logout/native account acceptance.",
+    "Native APK/source/baseline part09 unchanged and retained; no new device cycle, build or provider/Jev call. Whole W01/W02/R3-05 remains open."
+  ]
+}

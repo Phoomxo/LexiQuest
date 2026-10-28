@@ -1,0 +1,61 @@
+{
+  "review": [
+    "DriftTodayHubReader validates exact active owner before and after composition",
+    "TodayHubView guards captured snapshot callbacks and prioritizes canonical sections",
+    "Main navigation rechecks owner and mode; delegates normal practice through canonical learning destination without fake session creation",
+    "Host has loading/error/unavailable escape plus refresh and stale-owner suppression",
+    "B07 accepted exact pack/revision/readiness remains inherited"
+  ],
+  "bundleId": "B09",
+  "alternatives": [
+    "Chosen: repair passive panel guards without adding writer or calculator",
+    "Rejected: hide every action for stale data, which would remove manual practice"
+  ],
+  "defects": [
+    {
+      "status": "resolved",
+      "red": "G4.1-panel-red",
+      "expected": "No authoritative start; manual alternatives remain",
+      "cause": "Panel displayed recommendedMode without checking evidence freshness",
+      "actual": "FilledButton still rendered",
+      "id": "B09-G41-01"
+    },
+    {
+      "status": "resolved",
+      "red": "G4.1-panel-red",
+      "expected": "Old-owner callback invokes nothing",
+      "cause": "Captured callback read current widget action without binding its original result",
+      "actual": "One action invoked after replacement",
+      "id": "B09-G41-02"
+    }
+  ],
+  "design": "Use canonical Today order/readers and guarded launchers; passive recommendation panel accepts only current recommendations and snapshot-bound callbacks; manual alternatives remain usable.",
+  "external": [
+    "Physical/manual screen reader NOT RUN",
+    "Research remains hidden; no live data or remote delivery",
+    "Effective service tier unverified"
+  ],
+  "packageId": "G4.1",
+  "requirements": [
+    "COV-f01",
+    "COV-f02",
+    "COV-f14",
+    "COV-f37",
+    "COV-f42",
+    "G4"
+  ],
+  "baseSha": "d8f3b1547f1c0376b324465618eadcdd5682b139",
+  "verification": {
+    "finalPanelTests": 10,
+    "inputCount": 1306,
+    "inputDifferences": [
+      ".gitattributes"
+    ],
+    "analyzer": "G4.1-analyzer.log",
+    "final": "G4.1-final/receipt.json",
+    "overlap": "Panel counts overlap core; not additive unique total",
+    "coreTests": 135,
+    "core": "G4.1-core-green/receipt.json",
+    "reuseRationale": "Core consumer source unchanged; only passive panel and its tests changed, rechecked in final. Evidence-only .gitattributes addition does not change application execution."
+  }
+}

@@ -1,0 +1,466 @@
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import '../../learning_packs/domain/content_manifest.dart';
+import 'packaged_starter_identity.dart';
+
+/// Optional, verified presentation metadata for a pinned vocabulary revision.
+///
+/// This is deliberately separate from the vocabulary table. It may only be
+/// constructed from a verified f04 lexical-metadata artifact.
+final class RichLexicalMetadata {
+  static const int maxJsonStructuralDepth = 4;
+
+  RichLexicalMetadata({
+    this.englishDefinition,
+    this.verifiedContentRevision,
+    this.verifiedArtifactChecksumSha256,
+    this.ipa,
+    Iterable<String> examples = const <String>[],
+    Iterable<String> synonyms = const <String>[],
+    Iterable<String> antonyms = const <String>[],
+    Iterable<String> acceptedSpellingVariants = const <String>[],
+    Map<String, LexicalContrastiveRationale> contrastiveFeedback =
+        const <String, LexicalContrastiveRationale>{},
+    this.audio,
+  }) : examples = UnmodifiableListView<String>(
+         examples.toList(growable: false),
+       ),
+       synonyms = UnmodifiableListView<String>(
+         synonyms.toList(growable: false),
+       ),
+       antonyms = UnmodifiableListView<String>(
+         antonyms.toList(growable: false),
+       ),
+       acceptedSpellingVariants = UnmodifiableListView<String>(
+         acceptedSpellingVariants.toList(growable: false),
+       ),
+       contrastiveFeedback =
+           Map<String, LexicalContrastiveRationale>.unmodifiable(
+             contrastiveFeedback,
+           );
+
+  final String? englishDefinition;
+
+  /// Revision of the verified lexical-metadata artifact. Evidence-producing
+  /// callers must pair this with [verifiedArtifactChecksumSha256].
+  final int? verifiedContentRevision;
+
+  /// SHA-256 of the verified lexical-metadata artifact these fields came
+  /// from. Presentation-only callers may omit it; evidence-producing modes
+  /// must fail closed when it is absent or malformed.
+  final String? verifiedArtifactChecksumSha256;
+  final String? ipa;
+  final List<String> examples;
+  final List<String> synonyms;
+  final List<String> antonyms;
+  final List<String> acceptedSpellingVariants;
+  final Map<String, LexicalContrastiveRationale> contrastiveFeedback;
+  final LexicalAudioMetadata? audio;
+
+  /// Strictly decodes the bounded canonical f04 lexical-metadata JSON shape.
+  /// The caller must already have obtained [bytes] through `requireVerified`.
+  factory RichLexicalMetadata.fromVerifiedArtifact({
+    required Uint8List bytes,
+    required String wordId,
+    required int contentRevision,
+    String? verifiedArtifactChecksumSha256,
+  }) {
+    _preflightArtifact(bytes);
+    Object? decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(bytes, allowMalformed: false));
+    } on FormatException {
+      rethrow;
+    } on Object {
+      throw const FormatException('lexical metadata must be UTF-8 JSON');
+    }
+    if (decoded is! Map<Object?, Object?> ||
+        decoded.keys.any((key) => key is! String)) {
+      throw const FormatException('invalid lexical metadata shape');
+    }
+    final schemaVersion = decoded['schemaVersion'];
+    final expectedKeys = switch (schemaVersion) {
+      1 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'audio',
+      },
+      2 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'audio',
+      },
+      3 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'acceptedSpellingVariants',
+        'audio',
+      },
+      4 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'acceptedSpellingVariants',
+        'audio',
+        'contrastiveFeedback',
+      },
+      _ => const <String>{},
+    };
+    if (expectedKeys.isEmpty ||
+        decoded.length != expectedKeys.length ||
+        decoded.keys.toSet().difference(expectedKeys).isNotEmpty) {
+      throw const FormatException('invalid lexical metadata shape');
+    }
+    if (decoded['wordId'] != wordId ||
+        decoded['contentRevision'] != contentRevision) {
+      throw const FormatException('lexical metadata identity mismatch');
+    }
+    final ipa = _optionalText(decoded['ipa'], 'ipa', maxLength: 160);
+    return RichLexicalMetadata(
+      englishDefinition:
+          schemaVersion == 2 || schemaVersion == 3 || schemaVersion == 4
+          ? _optionalText(
+              decoded['englishDefinition'],
+              'englishDefinition',
+              maxLength: 600,
+            )
+          : null,
+      verifiedContentRevision: contentRevision,
+      verifiedArtifactChecksumSha256: verifiedArtifactChecksumSha256,
+      ipa: ipa,
+      examples: _textList(decoded['examples'], 'examples'),
+      synonyms: _textList(decoded['synonyms'], 'synonyms'),
+      antonyms: _textList(decoded['antonyms'], 'antonyms'),
+      acceptedSpellingVariants: schemaVersion == 3 || schemaVersion == 4
+          ? _acceptedSpellingVariants(decoded['acceptedSpellingVariants'])
+          : const <String>[],
+      contrastiveFeedback: schemaVersion == 4
+          ? _contrastiveFeedback(decoded['contrastiveFeedback'])
+          : const <String, LexicalContrastiveRationale>{},
+      audio: _audio(decoded['audio']),
+    );
+  }
+
+  static String? _optionalText(
+    Object? value,
+    String field, {
+    required int maxLength,
+  }) {
+    if (value == null) return null;
+    if (value is! String || !_canonicalText(value, maxLength: maxLength)) {
+      throw FormatException('invalid lexical metadata $field');
+    }
+    return value;
+  }
+
+  static void _preflightArtifact(Uint8List bytes) {
+    if (bytes.length > maxLexicalMetadataArtifactBytes) {
+      throw const FormatException('lexical metadata exceeds the byte limit');
+    }
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    for (final byte in bytes) {
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (byte == 0x5c) {
+          escaped = true;
+        } else if (byte == 0x22) {
+          inString = false;
+        }
+        continue;
+      }
+      if (byte == 0x22) {
+        inString = true;
+      } else if (byte == 0x7b || byte == 0x5b) {
+        depth += 1;
+        if (depth > maxJsonStructuralDepth) {
+          throw const FormatException('lexical metadata is nested too deeply');
+        }
+      } else if (byte == 0x7d || byte == 0x5d) {
+        depth -= 1;
+        if (depth < 0) {
+          throw const FormatException('lexical metadata has unbalanced JSON');
+        }
+      }
+    }
+    if (inString || depth != 0) {
+      throw const FormatException('lexical metadata has unbalanced JSON');
+    }
+  }
+
+  static List<String> _textList(Object? value, String field) {
+    if (value is! List<Object?> || value.length > 8) {
+      throw FormatException('invalid lexical metadata $field');
+    }
+    final values = <String>[];
+    final seen = <String>{};
+    for (final entry in value) {
+      if (entry is! String ||
+          !_canonicalText(entry, maxLength: 400) ||
+          !seen.add(entry)) {
+        throw FormatException('invalid lexical metadata $field');
+      }
+      values.add(entry);
+    }
+    return values;
+  }
+
+  static List<String> _acceptedSpellingVariants(Object? value) {
+    if (value is! List<Object?> || value.length > 8) {
+      throw const FormatException(
+        'invalid lexical metadata acceptedSpellingVariants',
+      );
+    }
+    final values = <String>[];
+    final seen = <String>{};
+    for (final entry in value) {
+      if (entry is! String ||
+          !_canonicalText(entry, maxLength: 120) ||
+          !seen.add(entry)) {
+        throw const FormatException(
+          'invalid lexical metadata acceptedSpellingVariants',
+        );
+      }
+      values.add(entry);
+    }
+    return values;
+  }
+
+  static LexicalAudioMetadata? _audio(Object? value) {
+    if (value == null) return null;
+    if (value is! Map<Object?, Object?> ||
+        value.length != 2 ||
+        value.keys.toSet().length != 2 ||
+        value['language'] is! String ||
+        value['assetId'] is! String) {
+      throw const FormatException('invalid lexical metadata audio');
+    }
+    final language = value['language']! as String;
+    final assetId = value['assetId']! as String;
+    if ((language != 'en' && language != 'th') ||
+        !_canonicalText(assetId, maxLength: 256)) {
+      throw const FormatException('invalid lexical metadata audio');
+    }
+    return LexicalAudioMetadata(language: language, assetId: assetId);
+  }
+
+  static Map<String, LexicalContrastiveRationale> _contrastiveFeedback(
+    Object? value,
+  ) {
+    if (value is! Map<Object?, Object?> || value.length > 5) {
+      throw const FormatException(
+        'invalid lexical metadata contrastiveFeedback',
+      );
+    }
+    const supportedModes = <String>{
+      'meaningChoice',
+      'wordChoice',
+      'definitionChoice',
+      'clozeSelected',
+      'matchingPair',
+    };
+    final result = <String, LexicalContrastiveRationale>{};
+    for (final entry in value.entries) {
+      final promptMode = entry.key;
+      final encoded = entry.value;
+      if (promptMode is! String ||
+          !supportedModes.contains(promptMode) ||
+          encoded is! Map<Object?, Object?> ||
+          encoded.length != 3 ||
+          encoded.keys.toSet().difference(const <String>{
+            'correctOptionId',
+            'correctRationale',
+            'distractorRationales',
+          }).isNotEmpty) {
+        throw const FormatException(
+          'invalid lexical metadata contrastiveFeedback',
+        );
+      }
+      final correctOptionId = encoded['correctOptionId'];
+      final correctRationale = encoded['correctRationale'];
+      final encodedDistractors = encoded['distractorRationales'];
+      if (correctOptionId is! String ||
+          !_canonicalText(correctOptionId, maxLength: 256) ||
+          correctRationale is! String ||
+          !_canonicalText(correctRationale, maxLength: 4000) ||
+          encodedDistractors is! Map<Object?, Object?> ||
+          encodedDistractors.isEmpty ||
+          encodedDistractors.length > 32) {
+        throw const FormatException(
+          'invalid lexical metadata contrastiveFeedback',
+        );
+      }
+      final distractors = <String, String>{};
+      for (final distractor in encodedDistractors.entries) {
+        final id = distractor.key;
+        final rationale = distractor.value;
+        if (id is! String ||
+            id == correctOptionId ||
+            !_canonicalText(id, maxLength: 256) ||
+            rationale is! String ||
+            !_canonicalText(rationale, maxLength: 4000) ||
+            distractors.containsKey(id)) {
+          throw const FormatException(
+            'invalid lexical metadata contrastiveFeedback',
+          );
+        }
+        distractors[id] = rationale;
+      }
+      result[promptMode] = LexicalContrastiveRationale(
+        correctOptionId: correctOptionId,
+        correctRationale: correctRationale,
+        distractorRationales: distractors,
+      );
+    }
+    return result;
+  }
+
+  static bool _canonicalText(String value, {required int maxLength}) =>
+      value.isNotEmpty &&
+      value == value.trim() &&
+      value.runes.length <= maxLength;
+}
+
+final class LexicalContrastiveRationale {
+  LexicalContrastiveRationale({
+    required this.correctOptionId,
+    required this.correctRationale,
+    required Map<String, String> distractorRationales,
+  }) : distractorRationales = Map<String, String>.unmodifiable(
+         distractorRationales,
+       );
+
+  final String correctOptionId;
+  final String correctRationale;
+  final Map<String, String> distractorRationales;
+}
+
+final class LexicalAudioMetadata {
+  const LexicalAudioMetadata({required this.language, required this.assetId});
+
+  final String language;
+  final String assetId;
+}
+
+final class VocabularyWord {
+  bool get isReadOnly =>
+      PackagedStarterIdentity.isReadOnly(ownerId: ownerId, contentId: id);
+  const VocabularyWord({
+    required this.id,
+    required this.ownerId,
+    required this.categoryId,
+    required this.spelling,
+    required this.normalizedSpelling,
+    required this.meaning,
+    required this.normalizedMeaning,
+    required this.partOfSpeech,
+    required this.source,
+    required this.isGlobal,
+    required this.localRevision,
+    required this.isDeleted,
+    required this.createdAtUtc,
+    required this.updatedAtUtc,
+    this.cefrLevel,
+    this.contentRevision = 1,
+    this.contentChecksumSha256,
+    this.contentProvenance = ContentProvenance.userAuthored,
+    this.contentReviewState = ContentReviewState.unreviewed,
+    this.contentPublicationState = ContentPublicationState.private,
+    this.richMetadata,
+  });
+
+  final String id;
+  final String ownerId;
+  final String categoryId;
+  final String spelling;
+  final String normalizedSpelling;
+  final String meaning;
+  final String normalizedMeaning;
+  final String partOfSpeech;
+  final String? cefrLevel;
+  final String source;
+  final bool isGlobal;
+  final int localRevision;
+  final bool isDeleted;
+  final DateTime createdAtUtc;
+  final DateTime updatedAtUtc;
+  final int contentRevision;
+  final String? contentChecksumSha256;
+  final ContentProvenance contentProvenance;
+  final ContentReviewState contentReviewState;
+  final ContentPublicationState contentPublicationState;
+  final RichLexicalMetadata? richMetadata;
+
+  VocabularyWord copyWith({
+    String? categoryId,
+    String? spelling,
+    String? normalizedSpelling,
+    String? meaning,
+    String? normalizedMeaning,
+    String? partOfSpeech,
+    String? cefrLevel,
+    String? source,
+    bool? isGlobal,
+    int? localRevision,
+    bool? isDeleted,
+    DateTime? updatedAtUtc,
+    int? contentRevision,
+    String? contentChecksumSha256,
+    ContentProvenance? contentProvenance,
+    ContentReviewState? contentReviewState,
+    ContentPublicationState? contentPublicationState,
+    RichLexicalMetadata? richMetadata,
+  }) {
+    return VocabularyWord(
+      id: id,
+      ownerId: ownerId,
+      categoryId: categoryId ?? this.categoryId,
+      spelling: spelling ?? this.spelling,
+      normalizedSpelling: normalizedSpelling ?? this.normalizedSpelling,
+      meaning: meaning ?? this.meaning,
+      normalizedMeaning: normalizedMeaning ?? this.normalizedMeaning,
+      partOfSpeech: partOfSpeech ?? this.partOfSpeech,
+      cefrLevel: cefrLevel ?? this.cefrLevel,
+      source: source ?? this.source,
+      isGlobal: isGlobal ?? this.isGlobal,
+      localRevision: localRevision ?? this.localRevision,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAtUtc: createdAtUtc,
+      updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+      contentRevision: contentRevision ?? this.contentRevision,
+      contentChecksumSha256:
+          contentChecksumSha256 ?? this.contentChecksumSha256,
+      contentProvenance: contentProvenance ?? this.contentProvenance,
+      contentReviewState: contentReviewState ?? this.contentReviewState,
+      contentPublicationState:
+          contentPublicationState ?? this.contentPublicationState,
+      richMetadata: richMetadata ?? this.richMetadata,
+    );
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "dispatchId": "ux-s01-au-20260925-5581",
+  "threadId": "01a0d4d2-8d05-7483-bc94-102feed8a18d",
+  "atUtc": "2026-09-24T19:11:13.556438+00:00",
+  "sourceRoot": "C:/Users/Phet/.codex/worktrees/5581/LexiQuest",
+  "destinationRoot": "C:\\Users\\Phet\\.codex\\worktrees\\57de\\LexiQuest",
+  "baseSha": "2ea4d407e7d5b1d41af65a533691b8aafe019ac5",
+  "manifestSha256": "7de331b9d1e10c914070230414f8ad0dbf3ffbb32e1fdb5758f5f01a06891de6",
+  "archiveSha256": "12fbd952979fa8930c48c3ad4f5dac27f7836ba85d472f47a379acbca525990c",
+  "overlayFingerprintSha256": "d9261225ba4483d777b3d83edebdc69bc44656710825789e6ee7030e27e3009a",
+  "entries": 2066,
+  "validation": "PASS: raw paths, Windows reserved names, containment, casefold uniqueness, exact ZIP membership/CRC, every byte size/hash/deletion; manifest separately copied; all inherited archives preserved"
+}

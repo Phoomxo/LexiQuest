@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "packageId": "G7.5",
+  "bundleId": "B16",
+  "status": "accepted-local",
+  "requiredIds": [
+    "COV-f12",
+    "COV-f23",
+    "COV-f28",
+    "COV-f41",
+    "G7"
+  ],
+  "checks": [
+    {
+      "receipt": "G7.5-default-verifier.json",
+      "tests": 148
+    },
+    {
+      "receipts": [
+        "G7.5-preview-verifier.json",
+        "G7.5-preview-journeys-verifier.json",
+        "G7.5-cefr-preview-verifier.json"
+      ],
+      "testExecutions": 4
+    },
+    {
+      "receipt": "G7.5-architecture-verifier.json",
+      "tests": 40,
+      "scope": "Supplemental imported tool helper fingerprint regression; overlaps prior architecture checks"
+    },
+    {
+      "receipt": "G7.5-cli-final-verifier.json",
+      "scripts": 2
+    }
+  ],
+  "review": "Sole-writer source/activation/profile/CLI review. Matrix joins all44 catalog entries to route, dependencies, content and edition; compiled factory flags match. All20 emergency overrides exercised. Conservative tool fingerprint fix with preserved red evidence.",
+  "profile": "tool/cli/profiles/local-learning-preview.json",
+  "flags": {
+    "LEXIQUEST_LEARNING_PREVIEW": true,
+    "LEXIQUEST_CLOUD_SYNC_ENABLED": false
+  },
+  "boundaries": {
+    "f12": "local preview ephemeral handwriting, no OCR/evidence",
+    "f23": "internal preview timer/capture",
+    "f28": "hidden/unavailable; research off",
+    "f44": "composed but hidden; not promoted"
+  },
+  "openRequiredLocalDefects": [],
+  "external": [
+    "installed APK flags NOT RUN",
+    "physical camera/accessibility/permission/live provider NOT RUN",
+    "all44 end-to-end feature acceptance not claimed",
+    "G7/full-release gate NOT RUN"
+  ],
+  "rollback": "No schema migration; remove profile/selector/test-only matrix with schema27 compatible source."
+}

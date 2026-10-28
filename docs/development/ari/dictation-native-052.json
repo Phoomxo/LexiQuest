@@ -1,0 +1,15 @@
+{
+  "status": "NATIVE_DICTATION_WRONG_LIVEAI_DISCONNECTED_CORRECTION_DURABLE_PASS_AUDIO_QUALITY_UNVERIFIED",
+  "source": "APK048 unchanged; reused host046 tests",
+  "baseline": "Actual home Dictation -> one item prestart. Blank answer disabled. Normal and slow audio controls accepted without visible unavailable error. Typed wrong, submitted, feedback incorrect with canonical a.",
+  "connected": "Private existing account login; target-free prompt; liveAI identified dictation, incorrect last saved answer, canonical a; list_menu_actions available.",
+  "disconnected": "Explicitly disconnected; same exercise retained prior feedback; replaced wrong with a; manually submitted; correct feedback and lesson completed.",
+  "durability": "Force-stop isolated app; read-only SQLite/WAL copy confirms exactly2same-session rows:attempt1 incorrect,attempt2 correct;bothguidedPractice due slow playback support;completed session. No overwrite/duplicate.",
+  "audioLimit": "No captured waveform or listening confirmation; controls and readiness path exercised, not proof of intelligible pronunciation, speed accuracy or acoustic quality. Corrected a came from displayed feedback.",
+  "cleanup": "Bridge46835terminal1;ownedreverse/privateconfigremoved;apprestarted;originalapp/accounts preserved;USB2 unchanged",
+  "remaining": [
+    "Cross-mode/workflow evidence audit and remaining concrete acceptance gaps",
+    "Physical successful speech/audio quality and camera/sync",
+    "Whole-project review after full MCP acceptance"
+  ]
+}

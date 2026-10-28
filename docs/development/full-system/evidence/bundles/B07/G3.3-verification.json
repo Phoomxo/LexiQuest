@@ -1,0 +1,35 @@
+{
+  "packageId": "G3.3",
+  "bundleId": "B07",
+  "status": "accepted-local-automated",
+  "baseSha": "7a7c6e21337da3dddb543a9e04ffc57710131a4b",
+  "uniqueTestsPassed": 91,
+  "verificationManifest": "docs/development/full-system/evidence/bundles/B07/G3.3-final/targeted-learning-5a736a4d36565fbff18ae8bcf38589928f0cf4e12afdf45f1c1522981c6b4519.json",
+  "fingerprint": "a320398190cc6bd8b579a1c399008ca120a5c904ad59056022f0d4e95e91b531",
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requirements": [
+    "COV-f18",
+    "COV-f19",
+    "COV-f20",
+    "COV-f21",
+    "G3"
+  ],
+  "outcomes": [
+    "Shared bookmark control is single-flight with local pending/error/retry/success; late completions fenced by content generation",
+    "Unsave uses existing owner-scoped tombstone repository through removal use case; two removes produce one delete outbox operation and preserve points/weakness",
+    "Report local receipt explicitly does not confirm remote delivery; failures retain comment/retry; repository replay stays idempotent",
+    "Reviewed explanations remain tied to committed selected distractor and exact checksum/revision; missing/unreviewed artifacts have no AI fallback",
+    "Expansion preserves outer scroll; hint classification/provenance and committed evidence remain canonical"
+  ],
+  "review": {
+    "analyzer": "All9 changed/new Dart files clean",
+    "method": "Single-writer diff/callers/requirements; no schema migration; existing sync/lifecycle G7.4 preserved"
+  },
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "device/manual screen reader/live speech/full release NOT RUN",
+    "remote delivery not exercised",
+    "effective tier unverified"
+  ]
+}

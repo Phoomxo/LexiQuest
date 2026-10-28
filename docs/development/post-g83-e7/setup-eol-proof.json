@@ -1,0 +1,44 @@
+[
+  {
+    "path": "linux/flutter/generated_plugin_registrant.cc",
+    "acceptedBlobSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "regeneratedSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.h",
+    "acceptedBlobSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "regeneratedSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "linux/flutter/generated_plugins.cmake",
+    "acceptedBlobSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "regeneratedSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "acceptedBlobSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "regeneratedSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.cc",
+    "acceptedBlobSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "regeneratedSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.h",
+    "acceptedBlobSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "regeneratedSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "normalizedEquivalent": true
+  },
+  {
+    "path": "windows/flutter/generated_plugins.cmake",
+    "acceptedBlobSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "regeneratedSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "normalizedEquivalent": true
+  }
+]
