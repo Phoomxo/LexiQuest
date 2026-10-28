@@ -1,0 +1,9 @@
+# Immutable historical fingerprints for the removed legacy public Supabase anon
+# JWT. New JWTs are not allowlisted and remain detectable.
+be4c1e6bac80c8926efad80ba9f61ce9a35986ef:lib/runtime/app_bootstrap.dart:jwt:22
+ed92dfc20e28b46a0fa7f8d17678480759824737:lib/main.dart:jwt:21
+a458aac08354a7b5f3c5a553e4a53ff53070df57:lib/main.dart:jwt:21
+90ab067a2bb5e57437ea356a482ca14b4cfbe473:lib/main.dart:jwt:20
+886953b4afe413640ac7abeacc39b9154982892c:lib/main.dart:jwt:20
+c75b0187d765211a666084e3f099c984b4a148b8:lib/main.dart:jwt:20
+001c467f89975e1c678c5934d353445c692d0a76:lib/main.dart:jwt:20

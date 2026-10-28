@@ -1,0 +1,1462 @@
+# Review package: f66d0316daff57c83ed972a11f6425cb326f482a..212764410714e590b296aa1f8d63e28a77bb4af2
+
+## Commits
+2127644 fix: render persisted score aggregates
+61eed47 fix: handle unavailable score persistence
+b5404ea feat: gate remote economy and localize progress
+
+## Files changed
+ lib/config/remote_economy_policy.dart              |  13 +
+ lib/runtime/app_bootstrap.dart                     |   6 +
+ lib/runtime/app_dependencies.dart                  |   6 +
+ lib/screens/achievements_screen.dart               |  46 +--
+ lib/screens/main_navigation_screen.dart            |  14 +-
+ lib/screens/quiz_screen.dart                       |  46 +--
+ lib/screens/score_screen.dart                      | 310 +++++++++------------
+ lib/screens/setting_screen.dart                    |  45 +--
+ lib/screens/shop_page.dart                         |  43 ++-
+ test/runtime/app_bootstrap_test.dart               |   7 +
+ test/screens/achievements_screen_test.dart         |   1 +
+ test/screens/production_shell_navigation_test.dart |  14 +-
+ .../quiz_score_persistence_regression_test.dart    |  22 ++
+ test/screens/score_screen_test.dart                | 197 +++++++++++++
+ test/screens/setting_screen_test.dart              |  18 ++
+ test/screens/shop_page_test.dart                   |  21 ++
+ 16 files changed, 550 insertions(+), 259 deletions(-)
+
+## Diff
+diff --git a/lib/config/remote_economy_policy.dart b/lib/config/remote_economy_policy.dart
+new file mode 100644
+index 0000000..fe5db15
+--- /dev/null
++++ b/lib/config/remote_economy_policy.dart
+@@ -0,0 +1,13 @@
++/// Controls client visibility of remote, spendable economy features.
++///
++/// This is deliberately closed by default. Runtime service readiness and public
++/// Dart defines must not enable spending or ranking functionality.
++final class RemoteEconomyPolicy {
++  const RemoteEconomyPolicy({
++    this.shopAndPurchasesEnabled = false,
++    this.leaderboardEnabled = false,
++  });
++
++  final bool shopAndPurchasesEnabled;
++  final bool leaderboardEnabled;
++}
+diff --git a/lib/runtime/app_bootstrap.dart b/lib/runtime/app_bootstrap.dart
+index 4febb55..cb8a72d 100644
+--- a/lib/runtime/app_bootstrap.dart
++++ b/lib/runtime/app_bootstrap.dart
+@@ -1,15 +1,17 @@
+ import 'package:firebase_core/firebase_core.dart';
+ import 'package:supabase_flutter/supabase_flutter.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import '../config/app_config.dart';
+ import '../firebase_options.dart';
++import '../progress/local_progress_repository.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_dependencies.dart';
+ import 'app_runtime_status.dart';
+ import 'supabase_client_config.dart';
+ 
+ typedef RuntimeInitializer = Future<void> Function();
+ typedef AppConfigLoader = AppConfig Function();
+ 
+ // Public client identifiers, not server credentials. The Supabase URL keeps a
+@@ -63,32 +65,36 @@ final class AppBootstrap {
+ 
+   final RuntimeInitializer initializeFirebase;
+   final RuntimeInitializer initializeSupabase;
+   final AppConfigLoader loadConfig;
+   final GuestSessionService guestSessionService;
+ 
+   Future<AppDependencies> initialize() async {
+     final firebase = await _availability(initializeFirebase);
+     final supabase = await _availability(initializeSupabase);
+     final config = _loadConfig();
++    final progressRepository = LocalProgressRepository(
++      await SharedPreferences.getInstance(),
++    );
+ 
+     return AppDependencies(
+       runtimeStatus: AppRuntimeStatus(
+         firebase: firebase,
+         supabase: supabase,
+         backends: config == null
+             ? RuntimeAvailability.unavailable
+             : RuntimeAvailability.ready,
+       ),
+       config: config,
+       guestSessionService: guestSessionService,
+       buildInfo: const AppBuildInfo.fromEnvironment(),
++      progressRepository: progressRepository,
+     );
+   }
+ 
+   Future<RuntimeAvailability> _availability(
+     RuntimeInitializer initializer,
+   ) async {
+     try {
+       await initializer();
+       return RuntimeAvailability.ready;
+     } catch (_) {
+diff --git a/lib/runtime/app_dependencies.dart b/lib/runtime/app_dependencies.dart
+index 21c6cac..3e7b0c3 100644
+--- a/lib/runtime/app_dependencies.dart
++++ b/lib/runtime/app_dependencies.dart
+@@ -1,29 +1,35 @@
+ import 'package:flutter/widgets.dart';
+ 
+ import '../config/app_config.dart';
++import '../config/remote_economy_policy.dart';
++import '../progress/progress_repository.dart';
+ import '../services/guest_session_service.dart';
+ import 'app_build_info.dart';
+ import 'app_runtime_status.dart';
+ 
+ final class AppDependencies {
+   const AppDependencies({
+     required this.runtimeStatus,
+     required this.config,
+     required this.guestSessionService,
+     this.buildInfo = const AppBuildInfo.fromEnvironment(),
++    this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
++    this.progressRepository,
+   });
+ 
+   final AppRuntimeStatus runtimeStatus;
+   final AppConfig? config;
+   final GuestSessionService guestSessionService;
+   final AppBuildInfo buildInfo;
++  final RemoteEconomyPolicy remoteEconomyPolicy;
++  final ProgressRepository? progressRepository;
+ 
+   @override
+   String toString() => 'AppDependencies';
+ }
+ 
+ final class AppDependenciesScope extends InheritedWidget {
+   const AppDependenciesScope({
+     super.key,
+     required this.dependencies,
+     required super.child,
+diff --git a/lib/screens/achievements_screen.dart b/lib/screens/achievements_screen.dart
+index ae67d84..7743349 100644
+--- a/lib/screens/achievements_screen.dart
++++ b/lib/screens/achievements_screen.dart
+@@ -1,21 +1,34 @@
+ import 'package:flutter/material.dart';
+ import '../models/achievement_badge.dart';
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
+ 
+ class AchievementsScreen extends StatelessWidget {
+   final List<AchievementBadge>? badges;
+   final int coins;
+ 
+-  const AchievementsScreen({super.key, this.badges, this.coins = 250});
++  const AchievementsScreen({
++    super.key,
++    this.badges,
++    this.coins = 250,
++    this.remoteEconomyPolicy,
++  });
++
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   Widget build(BuildContext context) {
++    final remoteEconomyEnabled =
++        remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
+     final displayBadges =
+         badges ??
+         [
+           const AchievementBadge(
+             id: 'streak_3',
+             title: 'นักเรียนต่อเนื่อง 3 วัน',
+             description: 'ทบทวนคำศัพท์ติดต่อกัน 3 วัน',
+             isUnlocked: true,
+             coinReward: 50,
+           ),
+@@ -70,37 +83,38 @@ class AchievementsScreen extends StatelessWidget {
+                         Text(
+                           '$coins เหรียญสะสม',
+                           style: TextStyle(
+                             fontSize: 20,
+                             fontWeight: FontWeight.bold,
+                             color: Colors.amber.shade900,
+                           ),
+                         ),
+                       ],
+                     ),
+-                    ElevatedButton.icon(
+-                      onPressed: () {
+-                        ScaffoldMessenger.of(context).showSnackBar(
+-                          const SnackBar(
+-                            content: Text(
+-                              'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
++                    if (remoteEconomyEnabled.shopAndPurchasesEnabled)
++                      ElevatedButton.icon(
++                        onPressed: () {
++                          ScaffoldMessenger.of(context).showSnackBar(
++                            const SnackBar(
++                              content: Text(
++                                'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
++                              ),
+                             ),
+-                          ),
+-                        );
+-                      },
+-                      icon: const Icon(Icons.shopping_bag),
+-                      label: const Text('ร้านค้า'),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.amber.shade900,
+-                        foregroundColor: Colors.white,
++                          );
++                        },
++                        icon: const Icon(Icons.shopping_bag),
++                        label: const Text('ร้านค้า'),
++                        style: ElevatedButton.styleFrom(
++                          backgroundColor: Colors.amber.shade900,
++                          foregroundColor: Colors.white,
++                        ),
+                       ),
+-                    ),
+                   ],
+                 ),
+               ),
+             ),
+             const SizedBox(height: 16),
+             Expanded(
+               child: GridView.builder(
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                   crossAxisSpacing: 12,
+diff --git a/lib/screens/main_navigation_screen.dart b/lib/screens/main_navigation_screen.dart
+index c745a95..ce69d57 100644
+--- a/lib/screens/main_navigation_screen.dart
++++ b/lib/screens/main_navigation_screen.dart
+@@ -89,25 +89,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
+                 child: Text(
+                   'LexiQuest',
+                   style: TextStyle(color: Colors.white, fontSize: 22),
+                 ),
+               ),
+               ListTile(
+                 leading: const Icon(Icons.menu_book),
+                 title: const Text('คลังหมวดหมู่'),
+                 onTap: () => _pushLegacyDestination(CategoriesPage()),
+               ),
+-              ListTile(
+-                leading: const Icon(Icons.shopping_bag),
+-                title: const Text('ร้านค้า'),
+-                onTap: () => _pushLegacyDestination(const ShopPage()),
+-              ),
++              if (AppDependenciesScope.maybeOf(
++                    context,
++                  )?.remoteEconomyPolicy.shopAndPurchasesEnabled ??
++                  false)
++                ListTile(
++                  leading: const Icon(Icons.shopping_bag),
++                  title: const Text('ร้านค้า'),
++                  onTap: () => _pushLegacyDestination(const ShopPage()),
++                ),
+               ListTile(
+                 leading: const Icon(Icons.settings),
+                 title: const Text('ตั้งค่าเดิม'),
+                 onTap: () => _pushLegacyDestination(const SettingScreen()),
+               ),
+               const Divider(),
+               Padding(
+                 padding: const EdgeInsets.symmetric(
+                   horizontal: 16,
+                   vertical: 12,
+diff --git a/lib/screens/quiz_screen.dart b/lib/screens/quiz_screen.dart
+index c335aba..01a86d5 100644
+--- a/lib/screens/quiz_screen.dart
++++ b/lib/screens/quiz_screen.dart
+@@ -1,16 +1,19 @@
++import 'dart:math';
++
+ import 'package:flutter/material.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:flutter/services.dart';
+ import 'score_screen.dart';
+ import 'speak_to_text_screen.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
++import '../runtime/app_dependencies.dart';
+ 
+ class QuizScreen extends StatefulWidget {
+   final List<Map<String, dynamic>> vocabList;
+   final String? selectedCategoryId;
+ 
+   const QuizScreen({
+     super.key,
+     required this.vocabList,
+     this.selectedCategoryId,
+   });
+@@ -18,28 +21,29 @@ class QuizScreen extends StatefulWidget {
+   @override
+   State<QuizScreen> createState() => _QuizScreenState();
+ }
+ 
+ class _QuizScreenState extends State<QuizScreen> {
+   int currentQuestionIndex = 0;
+   int correctAnswers = 0;
+   bool isAnswered = false;
+   bool isCorrect = false;
+   List<String> shuffledOptions = [];
+-  int userPoints = 0;
+   String? backgroundUrl;
++  late final String _sessionId;
+ 
+   final FirebaseAuth _auth = FirebaseAuth.instance;
+ 
+   @override
+   void initState() {
+     super.initState();
++    _sessionId = _newSessionId();
+     _initializeOptions();
+     _loadBackground();
+   }
+ 
+   Future<void> _loadBackground() async {
+     final user = _auth.currentUser;
+     if (user != null) {
+       final doc = await FirebaseFirestore.instance
+           .collection('state')
+           .doc(user.uid)
+@@ -72,62 +76,58 @@ class _QuizScreenState extends State<QuizScreen> {
+   }
+ 
+   void _checkAnswer(String selectedAnswer) {
+     final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
+ 
+     setState(() {
+       isAnswered = true;
+       if (selectedAnswer == correctAnswer) {
+         isCorrect = true;
+         correctAnswers++;
+-        userPoints++;
+         HapticFeedback.lightImpact();
+       } else {
+         isCorrect = false;
+         HapticFeedback.vibrate();
+       }
+     });
+   }
+ 
+   void _nextQuestion() {
+     if (currentQuestionIndex < widget.vocabList.length - 1) {
+       setState(() {
+         currentQuestionIndex++;
+         isAnswered = false;
+         isCorrect = false;
+         _initializeOptions();
+       });
+     } else {
+-      _savePointsToFirestore().then((_) {
+-        if (mounted) {
+-          Navigator.pushReplacement(
+-            context,
+-            MaterialPageRoute(
+-              builder: (context) => ScoreScreen(
+-                correctAnswers: correctAnswers,
+-                wrongAnswers: widget.vocabList.length - correctAnswers,
+-              ),
+-            ),
+-          );
+-        }
+-      });
++      Navigator.pushReplacement(
++        context,
++        MaterialPageRoute(
++          builder: (context) => ScoreScreen(
++            sessionId: _sessionId,
++            correctAnswers: correctAnswers,
++            wrongAnswers: widget.vocabList.length - correctAnswers,
++            repository: AppDependenciesScope.maybeOf(
++              context,
++            )?.progressRepository,
++          ),
++        ),
++      );
+     }
+   }
+ 
+-  Future<void> _savePointsToFirestore() async {
+-    final userRef = FirebaseFirestore.instance
+-        .collection('users')
+-        .doc(_auth.currentUser!.uid);
+-    await userRef.set({
+-      'totalPoints': FieldValue.increment(userPoints),
+-      'gamesPlayed': FieldValue.increment(1),
+-    }, SetOptions(merge: true));
++  String _newSessionId() {
++    final random = Random.secure();
++    return 'quiz-${DateTime.now().microsecondsSinceEpoch}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}';
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
+     final currentQuestion = widget.vocabList[currentQuestionIndex];
+     final word = currentQuestion['word'];
+     final partOfSpeech = currentQuestion['part_of_speech'];
+     final correctAnswer = currentQuestion['meaning'];
+ 
+     return Scaffold(
+diff --git a/lib/screens/score_screen.dart b/lib/screens/score_screen.dart
+index 66946a9..0f4abaf 100644
+--- a/lib/screens/score_screen.dart
++++ b/lib/screens/score_screen.dart
+@@ -1,259 +1,203 @@
+-import 'package:cloud_firestore/cloud_firestore.dart';
+-import 'package:firebase_auth/firebase_auth.dart';
++import 'dart:math';
++
+ import 'package:flutter/material.dart';
++
++import '../progress/progress_repository.dart';
++import '../runtime/app_dependencies.dart';
+ import 'choose_mode_screen.dart';
+ import 'main_navigation_screen.dart';
+ 
+-class ScoreScreen extends StatelessWidget {
+-  final int correctAnswers;
+-  final int wrongAnswers;
+-  final bool isFromFirestore;
+-  final String? selectedCategoryId;
+-
++class ScoreScreen extends StatefulWidget {
+   const ScoreScreen({
+     super.key,
+     required this.correctAnswers,
+     required this.wrongAnswers,
++    this.sessionId,
++    this.repository,
+     this.isFromFirestore = true,
+     this.selectedCategoryId,
+   });
+ 
++  final int correctAnswers;
++  final int wrongAnswers;
++  final String? sessionId;
++  final ProgressRepository? repository;
++  final bool isFromFirestore;
++  final String? selectedCategoryId;
++
+   @override
+-  Widget build(BuildContext context) {
+-    final user = FirebaseAuth.instance.currentUser;
+-    if (user == null) {
+-      return const Scaffold(body: Center(child: Text('กรุณาเข้าสู่ระบบ')));
+-    }
++  State<ScoreScreen> createState() => _ScoreScreenState();
++}
+ 
+-    // ✅ อัปเดตข้อมูลผู้ใช้ใน Firestore
+-    _updateUserStats(user.uid, correctAnswers, wrongAnswers);
++class _ScoreScreenState extends State<ScoreScreen> {
++  late final String _sessionId;
++  Future<_PersistenceResult>? _persistenceFuture;
+ 
+-    return FutureBuilder<DocumentSnapshot>(
+-      future: FirebaseFirestore.instance
+-          .collection('state')
+-          .doc(user.uid)
+-          .get(),
+-      builder: (context, snapshot) {
+-        if (snapshot.connectionState == ConnectionState.waiting) {
+-          return const Center(child: CircularProgressIndicator());
+-        }
++  @override
++  void initState() {
++    super.initState();
++    _sessionId = widget.sessionId ?? _newLegacySessionId();
++  }
+ 
+-        if (snapshot.hasError) {
+-          return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดคะแนน!'));
+-        }
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    if (_persistenceFuture != null) return;
++    final repository =
++        widget.repository ??
++        AppDependenciesScope.maybeOf(context)?.progressRepository;
++    _persistenceFuture = repository == null
++        ? Future.value(const _PersistenceResult.unavailable())
++        : _recordAndRead(repository);
++  }
+ 
+-        if (!snapshot.hasData ||
+-            snapshot.data == null ||
+-            !snapshot.data!.exists) {
+-          return const Center(child: Text('ไม่พบข้อมูลคะแนน!'));
+-        }
++  Future<_PersistenceResult> _recordAndRead(
++    ProgressRepository repository,
++  ) async {
++    try {
++      await repository.recordSession(
++        ProgressSession(
++          sessionId: _sessionId,
++          correctAnswers: widget.correctAnswers,
++          wrongAnswers: widget.wrongAnswers,
++        ),
++      );
++      return _PersistenceResult.saved(await repository.readSnapshot());
++    } catch (_) {
++      return const _PersistenceResult.unavailable();
++    }
++  }
++
++  String _newLegacySessionId() {
++    final random = Random.secure();
++    return 'legacy-score-${DateTime.now().microsecondsSinceEpoch}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}-'
++        '${random.nextInt(1 << 32).toRadixString(16)}';
++  }
+ 
+-        final userData = snapshot.data!.data() as Map<String, dynamic>;
+-        final totalPoints = userData['totalPoints'] ?? 0;
+-        final totalCorrectAnswers = userData['totalCorrectAnswers'] ?? 0;
+-        final totalWrongAnswers = userData['totalWrongAnswers'] ?? 0;
+-        final gamesPlayed = userData['gamesPlayed'] ?? 0;
++  @override
++  Widget build(BuildContext context) {
++    final persistenceFuture = _persistenceFuture;
++    if (persistenceFuture == null) {
++      return const Scaffold(body: Center(child: CircularProgressIndicator()));
++    }
++    return FutureBuilder<_PersistenceResult>(
++      future: persistenceFuture,
++      builder: (context, snapshot) {
++        if (snapshot.connectionState != ConnectionState.done) {
++          return const Scaffold(
++            body: Center(child: CircularProgressIndicator()),
++          );
++        }
+ 
++        final persistence =
++            snapshot.data ?? const _PersistenceResult.unavailable();
+         return Scaffold(
+           appBar: AppBar(
+-            title: const Text(
+-              'ผลลัพธ์ของคุณ',
+-              style: TextStyle(
+-                fontWeight: FontWeight.bold,
+-                color: Colors.white,
+-              ),
+-            ),
++            title: const Text('Quiz results'),
+             centerTitle: true,
+-            backgroundColor: Colors.transparent,
+-            elevation: 0,
+-            flexibleSpace: Container(
+-              decoration: const BoxDecoration(
+-                gradient: LinearGradient(
+-                  colors: [Colors.deepPurple, Colors.indigo],
+-                  begin: Alignment.topLeft,
+-                  end: Alignment.bottomRight,
+-                ),
+-              ),
+-            ),
++            backgroundColor: Colors.deepPurple,
+           ),
+-
+           body: Padding(
+-            padding: const EdgeInsets.all(16.0),
++            padding: const EdgeInsets.all(16),
+             child: Column(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+-                // 🏆 แสดงคะแนนรวม
+-                Card(
+-                  shape: RoundedRectangleBorder(
+-                    borderRadius: BorderRadius.circular(15),
++                Text(
++                  'This session: ${widget.correctAnswers} correct, '
++                  '${widget.wrongAnswers} wrong',
++                  style: const TextStyle(fontSize: 18),
++                ),
++                const SizedBox(height: 16),
++                if (!persistence.isSaved)
++                  const Text('Local progress totals are unavailable.')
++                else ...[
++                  _buildStatCard(
++                    'Total points',
++                    persistence.snapshot!.totalPoints.toString(),
++                    Icons.stars,
++                    Colors.amber.shade800,
+                   ),
+-                  elevation: 5,
+-                  child: Padding(
+-                    padding: const EdgeInsets.all(20.0),
+-                    child: Column(
+-                      children: [
+-                        const Text(
+-                          'แต้มสะสมทั้งหมด',
+-                          style: TextStyle(
+-                            fontSize: 22,
+-                            fontWeight: FontWeight.bold,
+-                          ),
+-                        ),
+-                        const SizedBox(height: 10),
+-                        Text(
+-                          '$totalPoints',
+-                          style: TextStyle(
+-                            fontSize: 40,
+-                            fontWeight: FontWeight.bold,
+-                            color: totalPoints > 50
+-                                ? Colors.green
+-                                : Colors.redAccent,
+-                          ),
+-                        ),
+-                      ],
+-                    ),
++                  _buildStatCard(
++                    'Games played',
++                    persistence.snapshot!.gamesPlayed.toString(),
++                    Icons.history,
++                    Colors.deepPurple,
+                   ),
+-                ),
+-
+-                const SizedBox(height: 20),
+-
+-                // 📊 แสดงสถิติการเล่น
+-                _buildStatCard(
+-                  'จำนวนครั้งที่เล่น',
+-                  gamesPlayed.toString(),
+-                  Icons.history,
+-                  Colors.deepPurple,
+-                ),
+-                _buildStatCard(
+-                  'ตอบถูกทั้งหมด',
+-                  totalCorrectAnswers.toString(),
+-                  Icons.check_circle,
+-                  Colors.green,
+-                ),
+-                _buildStatCard(
+-                  'ตอบผิดทั้งหมด',
+-                  totalWrongAnswers.toString(),
+-                  Icons.cancel,
+-                  Colors.red,
+-                ),
+-
++                  _buildStatCard(
++                    'Correct answers',
++                    persistence.snapshot!.totalCorrectAnswers.toString(),
++                    Icons.check_circle,
++                    Colors.green,
++                  ),
++                  _buildStatCard(
++                    'Wrong answers',
++                    persistence.snapshot!.totalWrongAnswers.toString(),
++                    Icons.cancel,
++                    Colors.red,
++                  ),
++                ],
+                 const SizedBox(height: 30),
+-
+-                // 🎮 ปุ่มเล่นใหม่ และกลับหน้าหลัก
+                 Row(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: [
+-                    // ปุ่มเล่นใหม่ → กลับไปที่ ChooseModeScreen
+                     ElevatedButton.icon(
+                       onPressed: () {
+                         Navigator.pushReplacement(
+                           context,
+                           MaterialPageRoute(
+                             builder: (context) => const ChooseModeScreen(),
+                           ),
+                         );
+                       },
+-                      icon: const Icon(Icons.replay, color: Colors.white),
+-                      label: const Text(
+-                        'เล่นใหม่',
+-                        style: TextStyle(color: Colors.white),
+-                      ),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.deepPurple,
+-                        padding: const EdgeInsets.symmetric(
+-                          horizontal: 30,
+-                          vertical: 15,
+-                        ),
+-                        shape: RoundedRectangleBorder(
+-                          borderRadius: BorderRadius.circular(12),
+-                        ),
+-                      ),
++                      icon: const Icon(Icons.replay),
++                      label: const Text('Play again'),
+                     ),
+                     const SizedBox(width: 20),
+-                    // ปุ่มกลับหน้าหลัก → ไปที่ MainNavigation และล้าง Stack
+                     ElevatedButton.icon(
+                       onPressed: () {
+                         Navigator.pushAndRemoveUntil(
+                           context,
+                           MaterialPageRoute(
+                             builder: (context) => const MainNavigationScreen(),
+                           ),
+-                          (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
++                          (route) => false,
+                         );
+                       },
+-                      icon: const Icon(Icons.home, color: Colors.white),
+-                      label: const Text(
+-                        'กลับหน้าหลัก',
+-                        style: TextStyle(color: Colors.white),
+-                      ),
+-                      style: ElevatedButton.styleFrom(
+-                        backgroundColor: Colors.red,
+-                        padding: const EdgeInsets.symmetric(
+-                          horizontal: 30,
+-                          vertical: 15,
+-                        ),
+-                        shape: RoundedRectangleBorder(
+-                          borderRadius: BorderRadius.circular(12),
+-                        ),
+-                      ),
++                      icon: const Icon(Icons.home),
++                      label: const Text('Home'),
+                     ),
+                   ],
+                 ),
+               ],
+             ),
+           ),
+         );
+       },
+     );
+   }
+ 
+-  /// ✅ ฟังก์ชันอัปเดตข้อมูลใน Firestore
+-  Future<void> _updateUserStats(
+-    String userId,
+-    int correctAnswers,
+-    int wrongAnswers,
+-  ) async {
+-    final userRef = FirebaseFirestore.instance.collection('state').doc(userId);
+-
+-    try {
+-      await userRef.set({
+-        'totalPoints': FieldValue.increment(correctAnswers), // ✅ เพิ่มแต้มสะสม
+-        'totalCorrectAnswers': FieldValue.increment(
+-          correctAnswers,
+-        ), // ✅ บันทึกคำตอบที่ถูก
+-        'totalWrongAnswers': FieldValue.increment(
+-          wrongAnswers,
+-        ), // ✅ บันทึกคำตอบที่ผิด
+-        'gamesPlayed': FieldValue.increment(1), // ✅ เพิ่มจำนวนครั้งที่เล่น
+-      }, SetOptions(merge: true));
+-
+-      debugPrint("✅ อัปเดตคะแนนสำเร็จ");
+-    } catch (e) {
+-      debugPrint("❌ เกิดข้อผิดพลาดในการอัปเดตคะแนน: $e");
+-    }
+-  }
+-
+-  /// 📌 ฟังก์ชันสร้างการ์ดแสดงสถิติ
+   Widget _buildStatCard(
+     String title,
+     String value,
+     IconData icon,
+     Color color,
+   ) {
+     return Card(
+-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+-      elevation: 4,
+       child: ListTile(
+-        leading: Icon(icon, color: color, size: 30),
+-        title: Text(
+-          title,
+-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+-        ),
+-        trailing: Text(
+-          value,
+-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+-        ),
++        leading: Icon(icon, color: color),
++        title: Text(title),
++        trailing: Text(value),
+       ),
+     );
+   }
+ }
++
++class _PersistenceResult {
++  const _PersistenceResult.saved(this.snapshot) : isSaved = true;
++
++  const _PersistenceResult.unavailable() : snapshot = null, isSaved = false;
++
++  final ProgressSnapshot? snapshot;
++  final bool isSaved;
++}
+diff --git a/lib/screens/setting_screen.dart b/lib/screens/setting_screen.dart
+index 5915e89..965a706 100644
+--- a/lib/screens/setting_screen.dart
++++ b/lib/screens/setting_screen.dart
+@@ -1,40 +1,46 @@
+ import 'package:flutter/material.dart';
+ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import '../services/local_user_progress_store.dart';
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
+ import 'achievements_screen.dart';
+ import 'avatar_equipment_screen.dart';
+ import 'export_center_screen.dart';
+ import 'select_wallpaper_screen.dart';
+ 
+ class SettingScreen extends StatefulWidget {
+-  const SettingScreen({super.key});
++  const SettingScreen({super.key, this.profileData, this.remoteEconomyPolicy});
++
++  final Map<String, dynamic>? profileData;
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
+ 
+   @override
+   State<SettingScreen> createState() => _SettingScreenState();
+ }
+ 
+ class _SettingScreenState extends State<SettingScreen> {
+   firebase_auth.FirebaseAuth? _auth;
+   FirebaseFirestore? _firestore;
+   Map<String, dynamic>? _profileData;
+   IconData _selectedIcon = Icons.account_circle;
+ 
+   firebase_auth.User? get _currentUser => _auth?.currentUser;
+ 
+   @override
+   void initState() {
+     super.initState();
+     _auth = _resolveAuth();
+     _firestore = _resolveFirestore();
+-    if (_currentUser != null) {
++    _profileData = widget.profileData;
++    if (_profileData == null && _currentUser != null) {
+       _fetchUserProfile();
+     }
+   }
+ 
+   firebase_auth.FirebaseAuth? _resolveAuth() {
+     try {
+       return firebase_auth.FirebaseAuth.instance;
+     } catch (_) {
+       return null;
+     }
+@@ -161,20 +167,24 @@ class _SettingScreenState extends State<SettingScreen> {
+           title,
+           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+         ),
+         trailing: Text(value, style: const TextStyle(fontSize: 16)),
+       ),
+     );
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
++    final remoteEconomyEnabled =
++        widget.remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'Settings',
+           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+         ),
+         backgroundColor: Colors.deepPurpleAccent,
+         actions: [
+           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+         ],
+@@ -207,36 +217,37 @@ class _SettingScreenState extends State<SettingScreen> {
+                   _buildProfileItem(
+                     'Age',
+                     _profileData?['age']?.toString() ?? '',
+                   ),
+                   const SizedBox(height: 16),
+                   Wrap(
+                     spacing: 8,
+                     runSpacing: 8,
+                     alignment: WrapAlignment.center,
+                     children: [
+-                      ElevatedButton.icon(
+-                        onPressed: () {
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => SelectWallpaperScreen(),
+-                            ),
+-                          );
+-                        },
+-                        icon: const Icon(Icons.wallpaper, size: 18),
+-                        label: const Text('เปลี่ยนวอลเปเปอร์'),
+-                        style: ElevatedButton.styleFrom(
+-                          backgroundColor: Colors.deepPurpleAccent,
+-                          foregroundColor: Colors.white,
++                      if (remoteEconomyEnabled.shopAndPurchasesEnabled)
++                        ElevatedButton.icon(
++                          onPressed: () {
++                            Navigator.push(
++                              context,
++                              MaterialPageRoute(
++                                builder: (context) => SelectWallpaperScreen(),
++                              ),
++                            );
++                          },
++                          icon: const Icon(Icons.wallpaper, size: 18),
++                          label: const Text('เปลี่ยนวอลเปเปอร์'),
++                          style: ElevatedButton.styleFrom(
++                            backgroundColor: Colors.deepPurpleAccent,
++                            foregroundColor: Colors.white,
++                          ),
+                         ),
+-                      ),
+                       ElevatedButton.icon(
+                         onPressed: () {
+                           Navigator.push(
+                             context,
+                             MaterialPageRoute(
+                               builder: (context) =>
+                                   const AvatarEquipmentScreen(),
+                             ),
+                           );
+                         },
+diff --git a/lib/screens/shop_page.dart b/lib/screens/shop_page.dart
+index e04acac..cbeb205 100644
+--- a/lib/screens/shop_page.dart
++++ b/lib/screens/shop_page.dart
+@@ -1,39 +1,73 @@
+ import 'package:flutter/material.dart';
+ import 'package:supabase_flutter/supabase_flutter.dart';
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+ 
++import '../config/remote_economy_policy.dart';
++import '../runtime/app_dependencies.dart';
++
+ class ShopPage extends StatefulWidget {
+-  const ShopPage({super.key});
++  const ShopPage({super.key, this.remoteEconomyPolicy, this.onLoadData});
++
++  final RemoteEconomyPolicy? remoteEconomyPolicy;
++
++  @visibleForTesting
++  final Future<void> Function()? onLoadData;
+ 
+   @override
+   State<ShopPage> createState() => _ShopPageState();
+ }
+ 
+ class _ShopPageState extends State<ShopPage> {
+   SupabaseClient? get _supabase {
+     try {
+       return Supabase.instance.client;
+     } catch (_) {
+       return null;
+     }
+   }
+ 
+   int userPoints = 0;
+   List<Map<String, dynamic>> products = [];
+   bool _isLoading = true;
++  bool _hasStartedLoading = false;
+ 
+   @override
+   void initState() {
+     super.initState();
+-    _loadData();
++  }
++
++  @override
++  void didChangeDependencies() {
++    super.didChangeDependencies();
++    if (_hasStartedLoading || !_policyFor(context).shopAndPurchasesEnabled) {
++      return;
++    }
++    _hasStartedLoading = true;
++    _startLoading();
++  }
++
++  RemoteEconomyPolicy _policyFor(BuildContext context) {
++    return widget.remoteEconomyPolicy ??
++        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
++        const RemoteEconomyPolicy();
++  }
++
++  Future<void> _startLoading() async {
++    final onLoadData = widget.onLoadData;
++    if (onLoadData != null) {
++      await onLoadData();
++      if (mounted) setState(() => _isLoading = false);
++      return;
++    }
++    await _loadData();
+   }
+ 
+   Future<void> _loadData() async {
+     setState(() => _isLoading = true);
+     await Future.wait([_fetchUserPoints(), _fetchProducts()]);
+     if (mounted) setState(() => _isLoading = false);
+   }
+ 
+   Future<void> _fetchUserPoints() async {
+     try {
+@@ -269,20 +303,25 @@ class _ShopPageState extends State<ShopPage> {
+       fit: BoxFit.cover,
+       width: double.infinity,
+       errorBuilder: (context, error, stackTrace) {
+         return const Icon(Icons.broken_image, size: 50, color: Colors.red);
+       },
+     );
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
++    if (!_policyFor(context).shopAndPurchasesEnabled) {
++      return const Scaffold(
++        body: Center(child: Text('Shop is currently unavailable.')),
++      );
++    }
+     return Scaffold(
+       appBar: AppBar(
+         title: const Text(
+           'ร้านค้า',
+           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+         ),
+         centerTitle: true,
+         actions: [
+           IconButton(
+             icon: const Icon(Icons.restore, color: Colors.white),
+diff --git a/test/runtime/app_bootstrap_test.dart b/test/runtime/app_bootstrap_test.dart
+index 327c85b..7477624 100644
+--- a/test/runtime/app_bootstrap_test.dart
++++ b/test/runtime/app_bootstrap_test.dart
+@@ -1,30 +1,37 @@
+ import 'package:flutter_test/flutter_test.dart';
++import 'package:shared_preferences/shared_preferences.dart';
+ import 'package:vocab_learning_app/config/app_config.dart';
+ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _StubGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionFailed(GuestSessionFailure.unknown);
+   }
+ }
+ 
+ AppConfig _validConfig() => AppConfig.fromValues(
+   voiceApiUrl: 'https://voice.example.com',
+   aiApiUrl: 'https://ai.example.com',
+   isDebug: false,
+ );
+ 
+ void main() {
++  TestWidgetsFlutterBinding.ensureInitialized();
++
++  setUp(() {
++    SharedPreferences.setMockInitialValues({});
++  });
++
+   group('AppBootstrap.initialize', () {
+     test('marks all components ready and retains the exact config', () async {
+       final expectedConfig = _validConfig();
+       final bootstrap = AppBootstrap(
+         initializeFirebase: () async {},
+         initializeSupabase: () async {},
+         loadConfig: () => expectedConfig,
+         guestSessionService: _StubGuestSessionService(),
+       );
+ 
+diff --git a/test/screens/achievements_screen_test.dart b/test/screens/achievements_screen_test.dart
+index 00f66c3..9874bd5 100644
+--- a/test/screens/achievements_screen_test.dart
++++ b/test/screens/achievements_screen_test.dart
+@@ -7,12 +7,13 @@ void main() {
+     WidgetTester tester,
+   ) async {
+     await tester.pumpWidget(
+       const MaterialApp(home: AchievementsScreen(coins: 300)),
+     );
+     await tester.pumpAndSettle();
+ 
+     expect(find.text('ตราความสำเร็จ & รางวัล (Achievements)'), findsOneWidget);
+     expect(find.text('300 เหรียญสะสม'), findsOneWidget);
+     expect(find.text('นักเรียนต่อเนื่อง 3 วัน'), findsOneWidget);
++    expect(find.byIcon(Icons.shopping_bag), findsNothing);
+   });
+ }
+diff --git a/test/screens/production_shell_navigation_test.dart b/test/screens/production_shell_navigation_test.dart
+index bee8d34..50a0095 100644
+--- a/test/screens/production_shell_navigation_test.dart
++++ b/test/screens/production_shell_navigation_test.dart
+@@ -1,20 +1,19 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import 'package:vocab_learning_app/main.dart';
+ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+ import 'package:vocab_learning_app/screens/categories_page.dart';
+ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+ import 'package:vocab_learning_app/screens/setting_screen.dart';
+-import 'package:vocab_learning_app/screens/shop_page.dart';
+ import 'package:vocab_learning_app/services/guest_session_service.dart';
+ 
+ class _FakeGuestSessionService implements GuestSessionService {
+   @override
+   Future<GuestSessionResult> start() async {
+     return const GuestSessionStarted(uid: 'guest-shell-test');
+   }
+ }
+ 
+ const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+@@ -105,51 +104,40 @@ void main() {
+     }
+   });
+ 
+   testWidgets('drawer lists legacy destinations and safe runtime status', (
+     tester,
+   ) async {
+     await _pumpHome(tester, ready: false);
+     await _openDrawer(tester);
+ 
+     expect(find.text('คลังหมวดหมู่'), findsOneWidget);
+-    expect(find.text('ร้านค้า'), findsOneWidget);
++    expect(find.text('ร้านค้า'), findsNothing);
+     expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+ 
+     final status = tester.widget<Text>(
+       find.byKey(const ValueKey<String>('runtime-status-summary')),
+     );
+     expect(status.data, contains('ไม่พร้อม'));
+   });
+ 
+   testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('คลังหมวดหมู่'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(CategoriesPage), findsOneWidget);
+   });
+ 
+-  testWidgets('drawer shop item reaches ShopPage', (tester) async {
+-    await _pumpHome(tester);
+-    await _openDrawer(tester);
+-
+-    await tester.tap(find.text('ร้านค้า'));
+-    await tester.pump();
+-    await tester.pump(const Duration(milliseconds: 350));
+-
+-    expect(find.byType(ShopPage), findsOneWidget);
+-  });
+-
+   testWidgets('drawer settings item reaches SettingScreen', (tester) async {
+     await _pumpHome(tester);
+     await _openDrawer(tester);
+ 
+     await tester.tap(find.text('ตั้งค่าเดิม'));
+     await tester.pump();
+     await tester.pump(const Duration(milliseconds: 350));
+ 
+     expect(find.byType(SettingScreen), findsOneWidget);
+   });
+diff --git a/test/screens/quiz_score_persistence_regression_test.dart b/test/screens/quiz_score_persistence_regression_test.dart
+new file mode 100644
+index 0000000..a09ba1c
+--- /dev/null
++++ b/test/screens/quiz_score_persistence_regression_test.dart
+@@ -0,0 +1,22 @@
++import 'dart:io';
++
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test(
++    'score rendering and quiz completion contain no Firestore counter mutation',
++    () {
++      final scoreSource = File(
++        'lib/screens/score_screen.dart',
++      ).readAsStringSync();
++      final quizSource = File(
++        'lib/screens/quiz_screen.dart',
++      ).readAsStringSync();
++
++      expect(scoreSource, isNot(contains('FirebaseFirestore')));
++      expect(scoreSource, isNot(contains('FieldValue.increment')));
++      expect(quizSource, isNot(contains('_savePointsToFirestore')));
++      expect(quizSource, isNot(contains('FieldValue.increment')));
++    },
++  );
++}
+diff --git a/test/screens/score_screen_test.dart b/test/screens/score_screen_test.dart
+new file mode 100644
+index 0000000..cf5af32
+--- /dev/null
++++ b/test/screens/score_screen_test.dart
+@@ -0,0 +1,197 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/progress/progress_repository.dart';
++import 'package:vocab_learning_app/screens/score_screen.dart';
++
++class _RecordingRepository implements ProgressRepository {
++  final List<ProgressSession> recorded = [];
++  final Set<String> _sessionIds = {};
++  ProgressSnapshot _snapshot = const ProgressSnapshot(
++    totalPoints: 0,
++    totalCorrectAnswers: 0,
++    totalWrongAnswers: 0,
++    gamesPlayed: 0,
++  );
++
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => recorded;
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async => _snapshot;
++
++  @override
++  Future<void> recordSession(ProgressSession session) async {
++    recorded.add(session);
++    if (!_sessionIds.add(session.sessionId)) return;
++    _snapshot = ProgressSnapshot(
++      totalPoints: _snapshot.totalPoints + session.correctAnswers,
++      totalCorrectAnswers:
++          _snapshot.totalCorrectAnswers + session.correctAnswers,
++      totalWrongAnswers: _snapshot.totalWrongAnswers + session.wrongAnswers,
++      gamesPlayed: _snapshot.gamesPlayed + 1,
++    );
++  }
++}
++
++class _FailingRepository implements ProgressRepository {
++  const _FailingRepository({required this.failRecord});
++
++  final bool failRecord;
++
++  @override
++  Future<List<ProgressSession>> pendingSessions() async => const [];
++
++  @override
++  Future<ProgressSnapshot> readSnapshot() async {
++    throw StateError('read failed');
++  }
++
++  @override
++  Future<void> recordSession(ProgressSession session) async {
++    if (failRecord) throw StateError('record failed');
++  }
++}
++
++void main() {
++  testWidgets('records the injected session once across rebuilds', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    final score = ScoreScreen(
++      sessionId: 'quiz-session-123',
++      correctAnswers: 4,
++      wrongAnswers: 2,
++      repository: repository,
++    );
++
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++
++    expect(repository.recorded, hasLength(1));
++    expect(repository.recorded.single.sessionId, 'quiz-session-123');
++    expect(repository.recorded.single.correctAnswers, 4);
++    expect(repository.recorded.single.wrongAnswers, 2);
++  });
++
++  testWidgets('replaying a session id leaves injected totals unchanged', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    final score = ScoreScreen(
++      sessionId: 'quiz-session-456',
++      correctAnswers: 3,
++      wrongAnswers: 1,
++      repository: repository,
++    );
++
++    await tester.pumpWidget(MaterialApp(home: score));
++    await tester.pump();
++    final before = await repository.readSnapshot();
++    await repository.recordSession(
++      const ProgressSession(
++        sessionId: 'quiz-session-456',
++        correctAnswers: 999,
++        wrongAnswers: 999,
++      ),
++    );
++    final after = await repository.readSnapshot();
++
++    expect(after.totalPoints, before.totalPoints);
++    expect(after.totalCorrectAnswers, before.totalCorrectAnswers);
++    expect(after.totalWrongAnswers, before.totalWrongAnswers);
++    expect(after.gamesPlayed, before.gamesPlayed);
++  });
++
++  testWidgets('successful persistence renders aggregate answer totals', (
++    tester,
++  ) async {
++    final repository = _RecordingRepository();
++    await repository.recordSession(
++      const ProgressSession(
++        sessionId: 'existing-session',
++        correctAnswers: 10,
++        wrongAnswers: 6,
++      ),
++    );
++
++    await tester.pumpWidget(
++      MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'aggregate-session',
++          correctAnswers: 4,
++          wrongAnswers: 2,
++          repository: repository,
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(find.text('Correct answers'), findsOneWidget);
++    expect(find.text('14'), findsWidgets);
++    expect(find.text('Wrong answers'), findsOneWidget);
++    expect(find.text('8'), findsWidgets);
++  });
++
++  testWidgets('record failure shows session results without invented totals', (
++    tester,
++  ) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'record-failure',
++          correctAnswers: 4,
++          wrongAnswers: 2,
++          repository: _FailingRepository(failRecord: true),
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
++    expect(find.text('This session: 4 correct, 2 wrong'), findsOneWidget);
++    expect(find.text('Total points'), findsNothing);
++    expect(find.text('Games played'), findsNothing);
++  });
++
++  testWidgets('snapshot read failure shows session results without totals', (
++    tester,
++  ) async {
++    await tester.pumpWidget(
++      const MaterialApp(
++        home: ScoreScreen(
++          sessionId: 'read-failure',
++          correctAnswers: 3,
++          wrongAnswers: 1,
++          repository: _FailingRepository(failRecord: false),
++        ),
++      ),
++    );
++    await tester.pumpAndSettle();
++
++    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
++    expect(find.text('This session: 3 correct, 1 wrong'), findsOneWidget);
++    expect(find.text('Total points'), findsNothing);
++    expect(find.text('Games played'), findsNothing);
++  });
++
++  testWidgets('no repository settles without rebuilding a new loading future', (
++    tester,
++  ) async {
++    const score = ScoreScreen(
++      sessionId: 'no-repository',
++      correctAnswers: 2,
++      wrongAnswers: 1,
++    );
++
++    await tester.pumpWidget(const MaterialApp(home: score));
++    await tester.pumpAndSettle();
++    await tester.pumpWidget(const MaterialApp(home: score));
++    await tester.pumpAndSettle();
++
++    expect(find.byType(CircularProgressIndicator), findsNothing);
++    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
++    expect(find.text('This session: 2 correct, 1 wrong'), findsOneWidget);
++  });
++}
+diff --git a/test/screens/setting_screen_test.dart b/test/screens/setting_screen_test.dart
+new file mode 100644
+index 0000000..d978200
+--- /dev/null
++++ b/test/screens/setting_screen_test.dart
+@@ -0,0 +1,18 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/screens/setting_screen.dart';
++
++void main() {
++  testWidgets(
++    'settings hides wallpaper selection while remote economy is disabled',
++    (tester) async {
++      await tester.pumpWidget(
++        const MaterialApp(
++          home: SettingScreen(profileData: {'first_name': 'Phet'}),
++        ),
++      );
++
++      expect(find.byIcon(Icons.wallpaper), findsNothing);
++    },
++  );
++}
+diff --git a/test/screens/shop_page_test.dart b/test/screens/shop_page_test.dart
+new file mode 100644
+index 0000000..a95417c
+--- /dev/null
++++ b/test/screens/shop_page_test.dart
+@@ -0,0 +1,21 @@
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:vocab_learning_app/screens/shop_page.dart';
++
++void main() {
++  testWidgets(
++    'disabled shop does not load products or expose purchase controls',
++    (tester) async {
++      var loadCalls = 0;
++
++      await tester.pumpWidget(
++        MaterialApp(home: ShopPage(onLoadData: () async => loadCalls++)),
++      );
++      await tester.pump();
++
++      expect(loadCalls, 0);
++      expect(find.text('Shop is currently unavailable.'), findsOneWidget);
++      expect(find.byType(ElevatedButton), findsNothing);
++    },
++  );
++}
