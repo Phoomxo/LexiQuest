@@ -1,0 +1,22 @@
+test_cross_split_owner_is_rejected_even_with_different_groups (test_camera_web_dataset.WebDatasetTests.test_cross_split_owner_is_rejected_even_with_different_groups) ... ok
+test_curation_rejects_exact_and_crop_near_duplicates (test_camera_web_dataset.WebDatasetTests.test_curation_rejects_exact_and_crop_near_duplicates) ... ok
+test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset) ... ok
+test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input) ... ok
+test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo) ... ok
+test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split) ... ok
+test_split_hash_is_independent_from_acquisition_order (test_camera_web_dataset.WebDatasetTests.test_split_hash_is_independent_from_acquisition_order) ... FAIL
+test_validation_rejects_tampering_and_unrelated_rights (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_unrelated_rights) ... ok
+
+======================================================================
+FAIL: test_split_hash_is_independent_from_acquisition_order (test_camera_web_dataset.WebDatasetTests.test_split_hash_is_independent_from_acquisition_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 49, in test_split_hash_is_independent_from_acquisition_order
+    self.assertEqual({r['split'] for r in result}, {'train', 'validation'})
+AssertionError: Items in the second set but not the first:
+'train'
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.199s
+
+FAILED (failures=1)

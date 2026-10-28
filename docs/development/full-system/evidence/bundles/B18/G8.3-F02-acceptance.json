@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F02",
+  "continuationId": "B18-G83-F02-C02",
+  "status": "accepted-slice",
+  "recordedAtUtc": "2026-09-19T14:47:26.440024+00:00",
+  "threadId": "01a0ba0a-9774-70a2-9702-a227f9751032",
+  "inputCheckpointSha": "f9a85751d8299a5fc89ed38f71c4cfe1ba7024fe",
+  "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+  "implementationSha": "06974a104d25bef8e220300253da21430aef41b1",
+  "priorF02FixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "findings": [
+    {
+      "findingId": "B18-REV02-01",
+      "status": "closed-regression-verified",
+      "redRun": "budget-fold-red",
+      "greenRun": "final3",
+      "outcome": "Legacy WAL payload exceeds budget before any Dart SELECT-star transfer; read-only snapshot, main bytes and WAL length preserved. Conservative SQL row/JSON byte preflight. No native SQLite memory or actual OOM claim."
+    },
+    {
+      "findingId": "B18-REV02-02",
+      "status": "closed-regression-verified",
+      "redRun": "session-red-corrected",
+      "greenRun": "final3",
+      "outcome": "Backward finish/abandon rejected before canonical writes; equal-time terminal remains valid, history/reward/outbox preserved."
+    },
+    {
+      "findingId": "B18-REV02-03",
+      "status": "closed-regression-verified",
+      "redRun": "session-red-corrected",
+      "greenRun": "final3",
+      "outcome": "Real Drift generic admission rechecks unique active owner and exact session replay identity in the insertion transaction; delayed owner replacement rejects with no session."
+    },
+    {
+      "findingId": "B18-REV06-01",
+      "status": "closed-regression-verified",
+      "redRun": "reward-red",
+      "greenRun": "final3",
+      "outcome": "Purchase/equip active owner and widget generation guarded in canonical transaction including final awaited account read; stale owner/replaced dependency rolls back, fresh command and exact replay remain valid."
+    },
+    {
+      "findingId": "B18-REV06-02",
+      "status": "closed-regression-verified",
+      "redRun": "prefs-erasure-red",
+      "greenRun": "final3",
+      "outcome": "Exact durable erasure lease fenced before/after native awaits and before authoritative operation. Superseded lease cannot start later cancels or erase; committed result retained on failed cleanup; fresh lease survives. Already dispatched platform cancel cannot be revoked."
+    },
+    {
+      "findingId": "B18-REV06-03",
+      "status": "closed-regression-verified",
+      "redRun": "budget-fold-red",
+      "greenRun": "final3",
+      "outcome": "Both DST folds and day/overnight quiet intervals preserve lower bound, requested instant and an exact outside-quiet native endpoint. Original spring-forward cases preserved."
+    },
+    {
+      "findingId": "B18-REV06-04",
+      "status": "closed-regression-verified",
+      "redRun": "prefs-erasure-red",
+      "greenRun": "final3",
+      "outcome": "Field-scoped learning/home merge uses latest row inside transaction; both stale-read directions preserve independent edits/display and monotonic timestamps. One pending plus superseded prior intent. Same-field last transaction commit wins."
+    },
+    {
+      "findingId": "B18-REV06-09",
+      "status": "closed-regression-verified",
+      "redRun": "collision-red",
+      "greenRun": "final3",
+      "outcome": "Actual valid UUID hash collision 1806778660 rejected before second durable admission; historical collision repair/cancel fails truthfully without touching foreign native identity and preserves pending intent. Disabling historical duplicate is still admissible."
+    },
+    {
+      "findingId": "B18-REV10-01",
+      "status": "closed-regression-verified",
+      "redRun": "native-red-invocation",
+      "greenRun": "native-normalized",
+      "outcome": "Destruction settles retained result; process singleton keeps cancellation/cleanup authority across Activity instances; durable picker/URI journal reconciles uncommitted documents after restart. Late callbacks and startup-recovery race handled; duplicate after commit ignored; denied cleanup remains visible and journaled. Existing achievement client now waits for finish acknowledgement."
+    },
+    {
+      "findingId": "B18-REV10-02",
+      "status": "closed-regression-verified",
+      "redRun": "native-red-invocation; dart-red",
+      "greenRun": "native-normalized; dart-pinned",
+      "outcome": "16MiB Dart/native admission, single off-main provider worker, 64KiB writes, operation-scoped cancellation,30s unresolved-cleanup timeout without releasing blocked slot. No success before flush/close; close error and deletion failure typed. Exact limit/chunks/foreign cancellation/blocked write-flush-close tested."
+    }
+  ],
+  "newlyClosed": 2,
+  "closedF02": 10,
+  "totalClosed": 19,
+  "remainingOpenFindings": 50,
+  "nativeScenariosPassed": 21,
+  "nativeSetupProcessesIncluded": 2,
+  "dartTestsPassed": 43,
+  "dartTestTargets": 3,
+  "analysis": {
+    "newScopeExitCode": 0,
+    "newScopeIssues": 0,
+    "inheritedC01ExitCode": 1,
+    "inheritedC01UnchangedSites": 24,
+    "scopeNote": "New four-file scope clean. C01 baseline remains historical24 diagnostics, not whole-app analyzer PASS."
+  },
+  "reuse": {
+    "receipt": "G8.3-F02-C01-checkpoint.json",
+    "dartTests": 537,
+    "authorizedSourceDeltaHashesUnchanged": 53,
+    "meaning": "Prior eight closure outcomes retained at exact53 source pins, not rerun. New native/export/share-card clients verified by targeted gates."
+  },
+  "changedSource": [
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "sha256": "c4edda8a274e68a6d4e7f0cc1f877e1d492ecfc974eb726bbcb9c960da926a97"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/NativeExportSession.kt",
+      "sha256": "b8149d1c481f5dfd27ab0d6ca3ca8fa9ddd944c2d66fceb2f68f1ea94f857cf3"
+    },
+    {
+      "path": "lib/features/achievements/data/file_selector_share_card_store.dart",
+      "sha256": "f78602773895634bf1f6c58c39c53c9dee31518e52a097305a2c85497abb2ed0"
+    },
+    {
+      "path": "lib/features/export/data/file_selector_export_store.dart",
+      "sha256": "aca4b5db47469c54bddadd0497b85b63fdf6e3ae4cbda62f509b0b5ac84fc2b5"
+    },
+    {
+      "path": "test/features/achievements/achievement_share_card_use_cases_test.dart",
+      "sha256": "9e5c3a2721dfaeb0053ffbbdc83e11bad9250f90e0bdf73f10f586d09e909d48"
+    },
+    {
+      "path": "test/features/export/file_selector_export_store_test.dart",
+      "sha256": "fb6918efd701dfe024e2ab6f9d21607ffaad979fc66ac8357698e8c703a28f97"
+    },
+    {
+      "path": "tool/cli/tests/android-export-lifecycle.tests.ps1",
+      "sha256": "070ace8e2d8d271b7ceb0767b2a5c78887068e8c49d783a1cecba879b969c99c"
+    },
+    {
+      "path": "tool/cli/tests/android_export_lifecycle.py",
+      "sha256": "0073888d47b51fd959890cdd3e8e4c8f3184a3e984d7924c91c9e179dea10d4f"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Android.kt",
+      "sha256": "7f2f01f02570782971955a5d2f9094786b49c6dde656e626f4f29ccca85c06a4"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Channel.kt",
+      "sha256": "8bc9f0209105ab71b17ea3665dc67582f07101c986e403b222139c9990027f6d"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Content.kt",
+      "sha256": "998b60f68ec366469714b67590ada9187944045e883028857e21ddea1b864ab8"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Documents.kt",
+      "sha256": "6ea366f914e799fe7b9cd592733f274badb358f3071875cb3388eae350244a13"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/ExportHarness.kt",
+      "sha256": "188bf47508e0a4dcbfcaf17a428e19a0b1a2a71238748163d6d32f1ebe4e19ce"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/FlutterActivity.kt",
+      "sha256": "eb3fd2151a6c9c4f608691ae5520c5abe8e690e2065e6848fccc9caf8946273c"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/FlutterEngine.kt",
+      "sha256": "631ecf6b45a3691a67f39fcc56dca87fba7006cdd48dbbd1539568ab4fd11951"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Os.kt",
+      "sha256": "3451c6e0e31aa7bd0d87575192654e7c2c2e970c74139f4767b24122c4d6f3c7"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/System.kt",
+      "sha256": "f3a8c90213ecfe273814814b8b0d59e403334b1566e6d0fee6b84e2f5fdada3e"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Uri.kt",
+      "sha256": "c76e35cee6486e8c832d9ca9c823ee7e2d9356a3b620eaabf8f0ed9dee93ba2a"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F02-C02",
+  "evidenceManifestSha256": "d2a8c65f7f563111d944349846de5c059066c7dc7b754831acdee862fea26070",
+  "verificationRuns": [
+    {
+      "label": "analyze",
+      "command": "& flutter analyze --no-pub 'lib/features/export/data/file_selector_export_store.dart' 'lib/features/achievements/data/file_selector_share_card_store.dart' 'test/features/export/file_selector_export_store_test.dart' 'test/features/achievements/achievement_share_card_use_cases_test.dart'",
+      "started": "2026-09-19T14:40:18.706088+00:00",
+      "finished": "2026-09-19T14:40:25.607175+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "analyze-pinned",
+      "command": "& flutter analyze --no-pub 'lib/features/export/data/file_selector_export_store.dart' 'lib/features/achievements/data/file_selector_share_card_store.dart' 'test/features/export/file_selector_export_store_test.dart' 'test/features/achievements/achievement_share_card_use_cases_test.dart'",
+      "started": "2026-09-19T14:42:45.988431+00:00",
+      "finished": "2026-09-19T14:42:51.442763+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-affected",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart','test/features/export/export_use_cases_test.dart','test/features/achievements/achievement_share_card_use_cases_test.dart')",
+      "started": "2026-09-19T14:37:16.766210+00:00",
+      "finished": "2026-09-19T14:37:38.041144+00:00",
+      "exitCode": 0,
+      "inputDrift": [
+        "tool/cli/tests/android_export_lifecycle.py"
+      ],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-final",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart','test/features/export/export_use_cases_test.dart','test/features/achievements/achievement_share_card_use_cases_test.dart')",
+      "started": "2026-09-19T14:39:44.338776+00:00",
+      "finished": "2026-09-19T14:40:00.595342+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart')",
+      "started": "2026-09-19T14:32:45.372004+00:00",
+      "finished": "2026-09-19T14:32:58.374882+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-pinned",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart','test/features/export/export_use_cases_test.dart','test/features/achievements/achievement_share_card_use_cases_test.dart')",
+      "started": "2026-09-19T14:42:07.318029+00:00",
+      "finished": "2026-09-19T14:42:27.114185+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart')",
+      "started": "2026-09-19T14:27:58.528847+00:00",
+      "finished": "2026-09-19T14:28:23.309453+00:00",
+      "exitCode": 1,
+      "inputDrift": [
+        ".dart_tool/package_graph.json",
+        ".dart_tool/package_config.json"
+      ],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "dart-style-final",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/export/file_selector_export_store_test.dart')",
+      "started": "2026-09-19T14:40:40.720163+00:00",
+      "finished": "2026-09-19T14:40:54.561198+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-api-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:37:34.944227+00:00",
+      "finished": "2026-09-19T14:38:06.793250+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-expanded",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:34:05.633121+00:00",
+      "finished": "2026-09-19T14:34:29.538139+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-final",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:39:03.344535+00:00",
+      "finished": "2026-09-19T14:39:37.998823+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:31:50.597165+00:00",
+      "finished": "2026-09-19T14:32:06.041865+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-normalized",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:43:50.974014+00:00",
+      "finished": "2026-09-19T14:44:23.601159+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-pinned",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:41:32.885669+00:00",
+      "finished": "2026-09-19T14:42:06.045456+00:00",
+      "exitCode": 0,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-recovery-green",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:36:18.030312+00:00",
+      "finished": "2026-09-19T14:36:40.975306+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('tool/cli/tests/android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:26:24.221020+00:00",
+      "finished": "2026-09-19T14:26:25.699709+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "native-red-invocation",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('android-export-lifecycle.tests.ps1')",
+      "started": "2026-09-19T14:26:37.967750+00:00",
+      "finished": "2026-09-19T14:26:52.672338+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "share-red",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/achievements/achievement_share_card_use_cases_test.dart') -TestName 'Android share card waits'",
+      "started": "2026-09-19T14:35:20.508047+00:00",
+      "finished": "2026-09-19T14:35:33.711171+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    },
+    {
+      "label": "share-red-utf8",
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/achievements/achievement_share_card_use_cases_test.dart') -TestName 'Android share card waits'",
+      "started": "2026-09-19T14:35:43.361650+00:00",
+      "finished": "2026-09-19T14:35:56.436516+00:00",
+      "exitCode": 1,
+      "inputDrift": [],
+      "environmentDigest": "6008d80029ab7b68bc33d16276b33f4650fa99b2e5d06b527ad66e7f7dc1f829",
+      "noResume": true
+    }
+  ],
+  "review": "Single-writer self review per user no-subagent constraint: MainActivity dispatch/storage preservation, lifecycle owner token, process journal, worker admission, close/error/cancel boundaries, both Dart export clients, duplicate/orphan callback behavior, frozen deltas and final exact inputs. No independent reviewer claimed.",
+  "recovery": [
+    "Initial git show long-path failure corrected by ls-tree object-ID reads; only normalized-equal checkout bytes restored. Repeated stat refresh noise corrected by exact-blob comparison and core.autocrlf=false index refresh.",
+    "Initial CLI path selector rejected; corrected basename before behavioral RED.",
+    "First Dart run generated local package config/graph; recorded input drift and used later zero-drift gates.",
+    "New edge tests caught duplicate callback deletion and startup-recovery callback loss; corrected only after failing evidence.",
+    "Wrong guessed share-card test filename corrected using rg discovery; Python locale decode failure corrected with explicit UTF8. Initial name-filter attempt after failed insertion had no matching tests and is not behavioral evidence.",
+    "Real API classpath initially omitted lifecycle-common2.7.0; added cached API dependency without downloads.",
+    "One intermediate Dart run passed but global pins included unrelated harness edit; not final evidence.",
+    "New analyzer brace issue corrected. Initial CRLF-sensitive replacement was a no-op; later exact LF match corrected it. Mixed EOL/new-fixture whitespace corrected with actual byte pin reruns; final source gates zero drift."
+  ],
+  "limitations": [
+    "JVM harness compiles and executes real MainActivity channel/lifecycle dispatch and NativeExportSession with Android/Flutter boundary fixtures; not Android framework scheduling or installed-app/device/provider proof. Separate production compile uses installed Android36 SDK and Flutter embedding APIs; no Gradle/APK build.",
+    "Fresh JVM process reloads a file-backed preferences fixture to prove journal recovery. Real Android process-death timing and persisted SAF permission behavior remain NOT RUN; process death destroys Dart, so no surviving Dart Future is claimed.",
+    "16 MiB admission limits Dart channel transfer and retained native export bytes; it does not bound upstream artifact generation, method-codec allocation for untrusted native callers, provider internal memory, or establish OOM safety. Exports over limit fail without truncation.",
+    "One worker, one occupied export slot and 64 KiB chunks. Cancellation is cooperative between provider operations. At30s blocked write/flush/close/settlement reports CLEANUP_FAILED, keeps slot and journal, and never claims provider interruption. A provider that never returns can block further exports until process restart/reconciliation.",
+    "Picker tombstone survives restart. If Android never returns its result, export admission remains unavailable; no guessing away an unknown created document. A crash before callback URI is durably recorded cannot prove recovery of a URI the app never received/persisted.",
+    "Manifest handles ordinary orientation/configuration changes; tests deliberately call destruction, not claim rotation recreates Activity. Finish request admission is the commit boundary; later cancellation does not revoke that commit.",
+    "No installed app, physical device, real SAF provider, measured ANR/OOM, full Flutter/backend/release, Android build, GPU, cloud/deployment, research activation/sync/study/statistical reporting, training/B11A or security workflow run."
+  ],
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTier": "Standard/default only, never Fast/priority",
+    "effectiveTier": "unverified; no Fast observed, create_thread has no serviceTier field",
+    "singleWriter": true,
+    "subagents": false,
+    "branch": "lexiquest/ only",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json",
+    "speedPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\speed-policy.json",
+    "branchPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\branch-naming-policy.json"
+  },
+  "F02Accepted": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "nextSlice": "B18-G83-F03"
+}

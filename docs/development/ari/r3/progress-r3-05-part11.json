@@ -1,0 +1,45 @@
+{
+  "taskId": "01a0d00c-89c3-72c0-8ba1-b198c5aeaaaa",
+  "status": "COMPLETE_PART_ONLY_APPLICATION_RELEASED",
+  "atUtc": "2026-09-23T21:06:21.867629+00:00",
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "writer": "SOLE_WRITER_R3_05_PART11 revision42",
+  "audit": "historical-audit-r3-05-part11.json",
+  "newCoverage": "Two file-backed CEFR cases pass: disconnect during blocked prewrite/retry-before-write; all fixture tables equal after reopen and accepted command replay has inserted=false and no table delta. Seven preexisting CEFR cases revalidated. Fixture had prior seed session; actual production-loader session separately verified completed.",
+  "remaining": "Sequential bounded mode assistance revalidation running. No product changes/native/provider calls.",
+  "recoveries": [
+    {
+      "method": "Guessed production loader test/source filename",
+      "diagnosis": "Paths do not exist",
+      "corrected": "Receipt points to unified_lesson_controller_test.dart; rg class finds choose_mode_screen.dart; no repeated guessed-path method allowed."
+    },
+    {
+      "method": "Receipt schema scan assumes dictionary",
+      "diagnosis": "Evidence folder also contains JSON arrays",
+      "corrected": "Check isinstance(dict) before accessing schema;18receipts audited with logs valid."
+    },
+    {
+      "method": "File-backed widget pumpAndSettle",
+      "diagnosis": "Fake clock does not allow actual filesystem IO to finish at initial loader",
+      "corrected": "Bounded pump/runAsync waits and IO queries; terminated only owned stuck flutter_tester7116;failed gate retained."
+    },
+    {
+      "method": "New assertion used fixture initial session",
+      "diagnosis": "NativeVocabularyLessonModeLoader._loadSession starts a separate canonical session",
+      "corrected": "Assert rendered screen session id, completed state;original seed session remains active;reopen/replay assertions unchanged."
+    },
+    {
+      "method": "ZIP entry verification used Windows backslash log paths",
+      "diagnosis": "zipfile canonicalizes archive entry separators to forward slash;read lookup did not",
+      "corrected": "Normalize all archive names with Path.as_posix;preserve original two ZIPs and produce new -verified ZIPs;entry hashes verified before handoff"
+    }
+  ],
+  "ownedJobs": [],
+  "receipt": "receipt-r3-05-part11.json",
+  "next": [
+    "Continue W05 remaining real gaps: standalone meaning-quiz route directions/input continuity (mixed typed leg does not prove it); flashcard self-rating/retry and file-backed restart; pair active-board/wrong-repair native applicability. Audit latest relevant receipts before any rerun. Do not repeat passed58cases for unchanged source.",
+    "Inspect speaking/shadowing independent host evidence041/042 and concrete physical prerequisites; then W07-W14 source/assertion/dependency audit. All14mode map remains open; entry navigation is not lesson acceptance. W06 configured-session eligibility/reopen and seeded learner-data matrix remain distinct from A29.",
+    "W01/W02 boundedA26-A28 done but native/provider/realaccount/abrupt-process-death open. W03 boundary-map part09 authoritative; delayed preadmission cases require real repository boundary. Do not repeat A20/A22 or part09/10 passed gates.",
+    "Keep215matrix rows/4passed/211remaining exact IDs. NoR3-06 until actualR3-05 exit. Provider last UNPAIRED; native no actions inpart11. Future native cycle requires fresh transport and backup before every cycle; preserve all old backups/APKs."
+  ]
+}

@@ -1,0 +1,29 @@
+LexiQuest curated meanings and bilingual examples — A1–C2 editorial revision 2
+Created 2026-09-12 by AI-assisted editorial work for LexiQuest.
+
+Coverage: one primary sense and one original English example with a Thai
+translation for each of the 5,500 headwords in the current inventory:
+5,000 A1–C1 core words and a separate 500-word C2 supplement.
+Examples were individually authored, reread and independently cross-reviewed
+by AI. They were not copied from dictionary examples. This is not human approval,
+CEFR certification, validation of each sense's level, or evidence of learning efficacy.
+
+The original CEFR-J headwords/levels and LEXiTRON translations remain unchanged
+in the base catalog. Their attribution and full applicable licenses remain in
+cefr_starter/NOTICE.txt, LICENSE.txt and LICENSE-th.txt. The editorial glosses
+clarify/select equivalent source senses or supply independently authored senses
+where the original glossary is unsuitable; sourceMeaningIndex records equivalence.
+An optional explicit POS override applies only to the curated example, never to
+the original catalog or previously saved user vocabulary.
+
+The inherited headword labels are approximate and do not mean every specialized
+sense is independently rated at that level. All 10,793 original glossary senses
+have an AI editorial inclusion/exclusion decision with reasons for exclusions.
+Excluded original glosses remain in the immutable source catalog, but are not
+offered as new import choices. Existing saved words retain their original data.
+No human reviewer or external certification is claimed. Example content is
+presentation-only, not verified exercise evidence.
+
+ตรวจด้วย AI สำหรับความหมายหลักและตัวอย่างครบ 5,500 คำ และคัดกรองความหมายต้นฉบับครบ 10,793 รายการ
+ระดับภาษาเป็นค่าโดยประมาณ ไม่ใช่หลักสูตรหรือผลวัดระดับที่ได้รับการรับรอง
+ประโยคตัวอย่างเป็นบริบทสมมุติเพื่ออธิบายภาษา ไม่ใช่คำแนะนำเฉพาะบุคคลหรือข้อเท็จจริงเกี่ยวกับผู้ใช้

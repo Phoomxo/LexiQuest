@@ -1,0 +1,238 @@
+{
+  "status": "passed",
+  "indexedCommit": "035e42d5d09e84559fa648ebf19fedf324c1850d",
+  "artifacts": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-acceptance.json",
+      "sha256": "9970c9b4fab80c0f67d631a37c9279b0db6fe8276c6abe7dc0dabbbf55a07256",
+      "bytes": 1934,
+      "checkoutSha256": "9970c9b4fab80c0f67d631a37c9279b0db6fe8276c6abe7dc0dabbbf55a07256",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-cli-green.log",
+      "sha256": "a5c72acc0244c28a0dbb986d5b90f717779a6e39dcc8834d9e60cb350fb9fde5",
+      "bytes": 907,
+      "checkoutSha256": "a5c72acc0244c28a0dbb986d5b90f717779a6e39dcc8834d9e60cb350fb9fde5",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-cli-red.log",
+      "sha256": "fca45121278f75ff96a80851605fcd3403928dc95ebea7a88d96ecdc1b652442",
+      "bytes": 1851,
+      "checkoutSha256": "fca45121278f75ff96a80851605fcd3403928dc95ebea7a88d96ecdc1b652442",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-config.json",
+      "sha256": "fd79ccaa951fb48c31067f2ef0ea093d4b411d6f7fc9dafb357474f81f77225e",
+      "bytes": 2087,
+      "checkoutSha256": "fd79ccaa951fb48c31067f2ef0ea093d4b411d6f7fc9dafb357474f81f77225e",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-freeze.json",
+      "sha256": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+      "bytes": 78993,
+      "checkoutSha256": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-freeze.log",
+      "sha256": "cdf613f781d83c292c7f5310eea928250ae610328cae45101cc2f69cc3f3dd42",
+      "bytes": 81,
+      "checkoutSha256": "cdf613f781d83c292c7f5310eea928250ae610328cae45101cc2f69cc3f3dd42",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-green.log",
+      "sha256": "89b6bcf75d3a512234fb7a9242489e1cc32873bd1a4febc6ce6363a2af65b898",
+      "bytes": 721,
+      "checkoutSha256": "89b6bcf75d3a512234fb7a9242489e1cc32873bd1a4febc6ce6363a2af65b898",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-recompute.log",
+      "sha256": "2f25c16bd1c8dac6dff6ed4f9a9dec3f72b4fee52c3cf66330b566a2ab62c3c4",
+      "bytes": 71,
+      "checkoutSha256": "2f25c16bd1c8dac6dff6ed4f9a9dec3f72b4fee52c3cf66330b566a2ab62c3c4",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-recomputed.json",
+      "sha256": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+      "bytes": 78993,
+      "checkoutSha256": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.4-red.log",
+      "sha256": "fce36cc0d1f7e95fdfab5bfba1fd9c39bcd378b47e6fea57daef54c6ed2e4c0d",
+      "bytes": 1250,
+      "checkoutSha256": "fce36cc0d1f7e95fdfab5bfba1fd9c39bcd378b47e6fea57daef54c6ed2e4c0d",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-acceptance.json",
+      "sha256": "a1203bc9187acfa80f0109aab84f265c516ed831bcde789c7e381bb2c10ba447",
+      "bytes": 2980,
+      "checkoutSha256": "a1203bc9187acfa80f0109aab84f265c516ed831bcde789c7e381bb2c10ba447",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-green.log",
+      "sha256": "1ac58263ad7d132526150e7d6c831174c924bb1f30d90447d5ab34551de62108",
+      "bytes": 1529,
+      "checkoutSha256": "1ac58263ad7d132526150e7d6c831174c924bb1f30d90447d5ab34551de62108",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-1.json",
+      "sha256": "b83bfeeec059c4d33881da173c38452a94d4bdaf3c16249e928b057ad3183534",
+      "bytes": 3237,
+      "checkoutSha256": "b83bfeeec059c4d33881da173c38452a94d4bdaf3c16249e928b057ad3183534",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-1.log",
+      "sha256": "579e8cbb554e501d95fc25f43f90140f81c3548a4c8a0297c6cc7d458418e3d8",
+      "bytes": 537,
+      "checkoutSha256": "579e8cbb554e501d95fc25f43f90140f81c3548a4c8a0297c6cc7d458418e3d8",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-2.json",
+      "sha256": "a4af8050324df7ce9d8049b0877a6b0cbb44525bca13509e0c7ae1b6bb36785c",
+      "bytes": 2786,
+      "checkoutSha256": "a4af8050324df7ce9d8049b0877a6b0cbb44525bca13509e0c7ae1b6bb36785c",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-2.log",
+      "sha256": "7a6418d0919e62d27c32ac36e324b7835435f5ba04246d91615cb51d24ab218a",
+      "bytes": 538,
+      "checkoutSha256": "7a6418d0919e62d27c32ac36e324b7835435f5ba04246d91615cb51d24ab218a",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-3.json",
+      "sha256": "2d78c95d651b0e3fca0d1658be82d615e6329ec7bf1a0c716a090ed6642a8089",
+      "bytes": 2784,
+      "checkoutSha256": "2d78c95d651b0e3fca0d1658be82d615e6329ec7bf1a0c716a090ed6642a8089",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-3.log",
+      "sha256": "69ef2714f1c0deff0e727cff994d5c52957890dac2bf8a11ff17e214e782dbb6",
+      "bytes": 538,
+      "checkoutSha256": "69ef2714f1c0deff0e727cff994d5c52957890dac2bf8a11ff17e214e782dbb6",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-4.json",
+      "sha256": "3379c418d73603930f997fe4d5df19f113e44e1bc5a75c1c15156742deca2f39",
+      "bytes": 2784,
+      "checkoutSha256": "3379c418d73603930f997fe4d5df19f113e44e1bc5a75c1c15156742deca2f39",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-host-4.log",
+      "sha256": "673853c713185a7de6ea0eb73bf5a96124424144bb9ccfa70c74d08245ed4a89",
+      "bytes": 538,
+      "checkoutSha256": "673853c713185a7de6ea0eb73bf5a96124424144bb9ccfa70c74d08245ed4a89",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-manifest-gate/6a51923adcf9-5a8468cfdb21/Explicit-Flutter-tests.stderr.log",
+      "sha256": "184275c2a3fedef36df9af95750adbcdc136be2eed62b320e9fd55b4c62c50d2",
+      "bytes": 397,
+      "checkoutSha256": "184275c2a3fedef36df9af95750adbcdc136be2eed62b320e9fd55b4c62c50d2",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-manifest-gate/6a51923adcf9-5a8468cfdb21/Explicit-Flutter-tests.stdout.log",
+      "sha256": "c43d82038cf39d83c9612da27d81ac484599c874276c4786d3fbcac997314b41",
+      "bytes": 15036,
+      "checkoutSha256": "c43d82038cf39d83c9612da27d81ac484599c874276c4786d3fbcac997314b41",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-manifest-gate/targeted-learning-15dac528b3d91f789c8e00978d7fed19ba33032447b3a2d0ef57636c04f3a632.json",
+      "sha256": "13f9d8728f0606a58f2087440633b621f58f9e6ee7cea282595b547230e836cf",
+      "bytes": 405096,
+      "checkoutSha256": "13f9d8728f0606a58f2087440633b621f58f9e6ee7cea282595b547230e836cf",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-manifest.log",
+      "sha256": "b3ad98d6eb762c6da6597c5aa783611fdf8bc400f906fa7199c6b639c6304704",
+      "bytes": 301,
+      "checkoutSha256": "b3ad98d6eb762c6da6597c5aa783611fdf8bc400f906fa7199c6b639c6304704",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-metrics.json",
+      "sha256": "dfa6988ae273f14f79d31981fee323fbcca0a5955e96662e7e0a273d0f2e3274",
+      "bytes": 6817,
+      "checkoutSha256": "dfa6988ae273f14f79d31981fee323fbcca0a5955e96662e7e0a273d0f2e3274",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.5-red.log",
+      "sha256": "274fd419d65010156122eda2bd03616c9870df5c0b42092a059dcfee1fc6b44a",
+      "bytes": 4424,
+      "checkoutSha256": "274fd419d65010156122eda2bd03616c9870df5c0b42092a059dcfee1fc6b44a",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.6-acceptance.json",
+      "sha256": "441fe6e0fe752462488711556c4e033a679ff3038c9c798bf9c59abfeff350b0",
+      "bytes": 4058,
+      "checkoutSha256": "441fe6e0fe752462488711556c4e033a679ff3038c9c798bf9c59abfeff350b0",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.6-input-audit-corrected.log",
+      "sha256": "b10f647edf4de2c4ff0ac3458075e60698b70f609860da6f5d35e99ba95bda89",
+      "bytes": 2280,
+      "checkoutSha256": "b10f647edf4de2c4ff0ac3458075e60698b70f609860da6f5d35e99ba95bda89",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.6-input-audit.json",
+      "sha256": "5d18d3c85e429010de22cfa24b353dab46a2b4dec409764787020d384efe6289",
+      "bytes": 2549,
+      "checkoutSha256": "5d18d3c85e429010de22cfa24b353dab46a2b4dec409764787020d384efe6289",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/G5.6-input-audit.log",
+      "sha256": "80f172239318fc78a2eb63590316bdec24ae7bec86da1f6b0efb24fea6d4e68f",
+      "bytes": 260,
+      "checkoutSha256": "80f172239318fc78a2eb63590316bdec24ae7bec86da1f6b0efb24fea6d4e68f",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/audit_inputs.py",
+      "sha256": "a0de14bfe1eb24ef95b4f1f5803b7c942e959ca9a407dc67a83938383b384b84",
+      "bytes": 4953,
+      "checkoutSha256": "a0de14bfe1eb24ef95b4f1f5803b7c942e959ca9a407dc67a83938383b384b84",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/implementation-plan.json",
+      "sha256": "30a85094b5d94286a46aab5e938343f32058aac8b888cce7a90fcb50df518cf6",
+      "bytes": 3455,
+      "checkoutSha256": "30a85094b5d94286a46aab5e938343f32058aac8b888cce7a90fcb50df518cf6",
+      "identity": "raw"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B12/measure_host.py",
+      "sha256": "22122b6cf7a569f5a1ebb9f04370171f672fc89fdbd63b39de1647c2ec4fed14",
+      "bytes": 4018,
+      "checkoutSha256": "22122b6cf7a569f5a1ebb9f04370171f672fc89fdbd63b39de1647c2ec4fed14",
+      "identity": "raw"
+    }
+  ],
+  "packagingRecovery": "Initial shell-quoted Python one-liner failed syntax before writes; replaced with this script; no failed artifact or source commit was created"
+}

@@ -1,0 +1,72 @@
+{
+  "checkpoint": 116,
+  "status": "HOST_PASS_NATIVE_EMPTY_BASELINE_PASS_DETAIL_PROVIDER_PENDING",
+  "implementation": "PackProgressSnapshot carries canonical query owner; detail binding reads bounded title, pinned revision, displayed word and practice counts. Unknown provenance suppressed; ordinary controls preserved.",
+  "red": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/938a48f4fafb-0fa86814ef8b-89b64d29/Explicit-Flutter-tests.stdout.log",
+  "detailTests": 24,
+  "catalogProgressTests": 35,
+  "analysis": "6 affected Dart files:No issues found",
+  "device": "Vivo9582188822004C6 connected and awake; final screen catalog, AI collapsed; original application untouched.",
+  "wholeGoalComplete": false,
+  "apk": "build/ari-assistance-116.apk",
+  "apkSha256": "9ccf005d67cd465ce0eced711b0a32e48c049de55329daf009e45f4a26473ad2",
+  "nativeObserved": [
+    "Isolated APK116 package verified before install; install-r succeeded",
+    "Home to planning to catalog opened without AI login",
+    "Empty catalog displayed truthfully; no verified packs in current isolated fixture",
+    "Opening unpaired AI displayed unavailable message while catalog stayed usable",
+    "Collapsed AI returned full catalog; no account or vocabulary mutation"
+  ],
+  "nativePending": [
+    "Nonempty filtering and pack detail require an explicitly isolated verified content fixture",
+    "Actual provider context/replies not tested in116"
+  ],
+  "verification": [
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-d3de12429004f27076b17dda53b6e6855314b328030155f6f79322a75e4868a6.json",
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "009f352a7d1d89cdd17b17453d316a651618ec09419c4417b9ee10d31a50668f",
+          "fingerprint": "76144dbad1f1b35bff653eb30c25de931d64a1d01e1ff320a7bd9dfa159d4c0e",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T14:32:22.8687027+00:00",
+          "FinishedAt": "2026-09-23T14:32:33.2529052+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\009f352a7d1d-76144dbad1f1-aeb83e2d\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\009f352a7d1d-76144dbad1f1-aeb83e2d\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "76144dbad1f1b35bff653eb30c25de931d64a1d01e1ff320a7bd9dfa159d4c0e",
+          "StdoutHash": "2E8441736248CA1662A08735A36F67BF552A1CDB016210E643FFC656CFA43205",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ]
+    },
+    {
+      "receipt": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-learning-989c2c6702ffe6781fc55d26eeb2d21fcc7c60ea23f4ba180d953cc47db223ee.json",
+      "commands": [
+        {
+          "Name": "Explicit Flutter tests",
+          "commandKey": "2c244355353bd356ba8251b01dbaa6a0a902c8bd5f530209745351fc3c365fa4",
+          "fingerprint": "76144dbad1f1b35bff653eb30c25de931d64a1d01e1ff320a7bd9dfa159d4c0e",
+          "Status": "Passed",
+          "ExitCode": 0,
+          "StartedAt": "2026-09-23T14:33:09.3255983+00:00",
+          "FinishedAt": "2026-09-23T14:33:21.7939831+00:00",
+          "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\2c244355353b-76144dbad1f1-2b506894\\Explicit-Flutter-tests.stdout.log",
+          "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest\\build\\verification\\2ea4d407e7d5b1d41af65a533691b8aafe019ac5\\2c244355353b-76144dbad1f1-2b506894\\Explicit-Flutter-tests.stderr.log",
+          "postFingerprint": "76144dbad1f1b35bff653eb30c25de931d64a1d01e1ff320a7bd9dfa159d4c0e",
+          "StdoutHash": "A905F1F0DCCC1512383C987B3AECEBBA744A59EC1F7C12AC62FE6030983D8470",
+          "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+        }
+      ]
+    }
+  ],
+  "sourcePins": {
+    "lib/screens/learning_pack_catalog_screen.dart": "49b1ec8dac5823d047dd19c606b4a6ed5d336dcf349aeb6c63cf55b80acefd18",
+    "lib/screens/learning_pack_detail_screen.dart": "c05d561a51ca7f1e0540cfbee13e6c8b56df8bf044b24a8923282130988b022d",
+    "lib/features/progress/domain/progress_models.dart": "38865920022ac1d26f2b6a40db170f618215396918dde86a23af579422873cb5",
+    "lib/features/progress/data/drift_progress_queries.dart": "d4ce500977d6b93da383d93546e3d7b148ab1462e5de6e3b3685c2439bc83cc2",
+    "test/screens/learning_pack_catalog_screen_test.dart": "2fa4a48a4229fd175ccf3066603e2e9e9987c72f8709301cd814cc8e0752f24d",
+    "test/screens/learning_pack_detail_screen_test.dart": "9fa8d8e8cc254547b357d4ba6a1a0012ae1afc6b189bdd19f008c5b3cc4e206d"
+  }
+}

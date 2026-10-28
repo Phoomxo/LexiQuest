@@ -1,0 +1,14 @@
+{
+  "sourceBase": "8516af14607100fbe99b5c1d2717be0554e10891",
+  "files": {
+    "lib/features/review/presentation/transfer_probe_screen.dart": "b652c78b7767b6bd874bdbbc80b97bfa20d15ae9ff3f1ea74832fcda5fc56787",
+    "test/features/review/transfer_probe_use_cases_test.dart": "d6886f3613ad3b3f6ac7904b0075bdc670dcc6ea24e96539d758c13b2a187014",
+    "lib/features/review/domain/transfer_probe.dart": "2990c0711c5a8328f876b5cf0bcb877a7a7af61b34e4c4ec3f7c0523551234fb",
+    "lib/features/review/application/transfer_probe_use_cases.dart": "2d84b9932989aed20652b053483651c29d8a089f6848b72354d68e6ec00aa153"
+  },
+  "apk": {
+    "path": "build/ari-assistance-038.apk",
+    "sha256": "75d8180ec3030ef612d7a97cd076f5d781aab340d3532fbb47231e3fb1c4e125"
+  },
+  "postVerificationChange": "Test file line endings restored to predecessor LF only; Dart tokens unchanged."
+}

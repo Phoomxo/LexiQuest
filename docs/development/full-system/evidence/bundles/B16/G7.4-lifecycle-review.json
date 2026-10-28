@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 27,
+  "tables": 50,
+  "authority": "owner_lifecycle_manifest.dart; runtime inventory checks in complete_owner_export_delete_test.dart",
+  "surfaces": [
+    {
+      "feature": "save/report",
+      "authority": "owner-scoped repositories + immutable redacted report payload + transactional outbox",
+      "tests": [
+        "test/features/review/content_quality_report_repository_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ]
+    },
+    {
+      "feature": "preferences/share",
+      "authority": "owner manifest archive allowlists; provider credentials, raw research identity, URLs and opaque payloads excluded; schema27 legacy history is owner-scoped",
+      "tests": [
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/export/export_use_cases_test.dart",
+        "test/features/export/research_lifecycle_export_test.dart"
+      ]
+    },
+    {
+      "feature": "reminders",
+      "authority": "coordinateReminderErasure retains cancellation intent until native reconcile; owner-operation fence covers secrets and SQLite",
+      "tests": [
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/reminders/study_reminder_use_cases_test.dart"
+      ]
+    },
+    {
+      "feature": "offline content",
+      "authority": "cleanupForDiskPressure uses removeBytes under removal/pin lease; skips contentInUse, preserves manifest/history and pinned old revision after reopen",
+      "tests": [
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ]
+    },
+    {
+      "feature": "owner deletion",
+      "authority": "child-before-parent inventory incl outbox and legacy records; current custodian transfers on upgrade; global packaged data preserved",
+      "tests": [
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/features/account/local_data_deletion_test.dart"
+      ]
+    }
+  ],
+  "limitations": [
+    "Legacy source backup remains after current-database deletion; not backup erasure",
+    "Android physical document-provider cleanup pending device testing; failures are explicit cleanupFailed",
+    "Unrecoverable destination restore retains previous backup in private staging and reports failure; no cancellation success claim",
+    "No remote data erasure/enrollment/research upload"
+  ]
+}

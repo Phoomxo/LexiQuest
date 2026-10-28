@@ -1,0 +1,5 @@
+RUN: release-profile.tests.ps1
+RUN: package-field-release.tests.ps1
+RUN: verify-scope.tests.ps1
+PASS: Targeted/Runtime at 29ffbe5e332501883e2ab61419490ccfe9f07e18
+Result: C:\Users\Phet\.codex\worktrees\9f44\LexiQuest\build\verification\29ffbe5e332501883e2ab61419490ccfe9f07e18\targeted-runtime-cli-3e43dfb5603387eadf8ecaad51cf5ed76a19a467bafda89db7fbf97b4b8c9cf3.json

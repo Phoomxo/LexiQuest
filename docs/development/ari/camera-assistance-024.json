@@ -1,0 +1,31 @@
+{
+  "status": "HOST_PASS_NATIVE_PENDING",
+  "workflow": "W12 object scanner",
+  "baseCommit": "b48930c5f93ccb509087cf7b3d1db08132a08413",
+  "scope": "Optional current scan text/state guidance; no image bytes or path",
+  "implementation": [
+    "Readiness/capture/save/model state",
+    "Matched or primary classification confidence remains model suggestion",
+    "Mapped English/Thai vocabulary distinct from unmapped labels",
+    "Saved flag comes from existing accepted result",
+    "Text capped30codepoints with truncation flag",
+    "No new camera/accept/save tools"
+  ],
+  "defect": {
+    "found": "Background invalidation cleared internal result without rebuilding AI context",
+    "fix": "Lifecycle state change schedules rebuild with invalidation",
+    "retest": "Mapped and unmapped tests verify background context no longer contains vocabulary"
+  },
+  "verification": {
+    "red": "Initial context absent; first implementation reproduced stale mapped result on background",
+    "green": "Full scanner suite, then2focused cases after label cap correction",
+    "analysis": "No issues found before numeric-only cap correction",
+    "fixture": "Fake scanner/voice; no new camera accuracy evidence"
+  },
+  "open": [
+    "Physical scan with connected/disconnected AI",
+    "Fully paused frame and in-flight provider lifecycle audit",
+    "Actual camera quality/unknown-object acceptance",
+    "Full W12/all14 acceptance"
+  ]
+}

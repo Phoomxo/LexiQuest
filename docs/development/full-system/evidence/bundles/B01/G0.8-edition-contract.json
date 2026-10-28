@@ -1,0 +1,2593 @@
+{
+  "schemaVersion": 1,
+  "packageId": "G0.8",
+  "bundleId": "B01",
+  "editionId": "local-learning-preview-b01-v1",
+  "sourceSha": "593046e41494a16de09e34935933c113f6c861f1",
+  "decisionStatus": "selected-for-sequential-development",
+  "runtimeStatus": "NOT RUN; no binary built or installed in B01",
+  "scope": "Local guest learning preview with canonical owner/history, no research activation, no optional remote service requirement. This is not a44-capability runtime completion claim.",
+  "target": {
+    "primary": "Android13/API33 ARM64 phone profile; vivo V2041 family recorded in historical device evidence",
+    "secondary": "Android emulator API33+ for local synthetic journeys; narrow/large-text/reduced-motion checks in owner packages",
+    "selectionBasis": "Existing Android baseline and prior device evidence, not a fresh device inventory",
+    "deviceObservedInB01": false,
+    "installedBuild": null,
+    "sourceMinSdk": 26,
+    "deviceAcceptanceOwners": [
+      "G5.6",
+      "G8.6",
+      "G8.7"
+    ],
+    "otherPlatforms": "No iOS/desktop/web delivery acceptance claim"
+  },
+  "buildProfile": {
+    "dartDefines": {
+      "LEXIQUEST_LEARNING_PREVIEW": "true",
+      "LEXIQUEST_CLOUD_SYNC_ENABLED": "false"
+    },
+    "entry": "AppBootstrap.production -> accepted AppDatabase schema26 and single composition root",
+    "baselineCloudDefault": true,
+    "selectedCloudSync": false,
+    "configVerification": "Source flag binding and composition reviewed; compiled artifact/actual deployed config not observed. G1.7 must prove offline/non-completing optional initialization; G7.5/G7.7 must bind final artifact flags.",
+    "profileApplication": "Specification only; this package did not change host environment, runtime overrides, defaults, signing, cloud configuration or deployment."
+  },
+  "deliveryDecisions": [
+    {
+      "id": "COV-f12",
+      "decision": "Include local ephemeral scratchpad in intended preview edition after G2.6 route/cleanup/no-evidence acceptance; keep current implementedOff until then",
+      "decisionStatus": "closed",
+      "sourceState": "implementedOff even with learning preview; bootstrap omits handwritingDeliveryState override",
+      "route": "learning/handwriting-scratchpad",
+      "content": "ephemeral-unscored; no OCR/autograde/reward or durable learner response",
+      "owners": [
+        "G2.6",
+        "G7.5"
+      ],
+      "requiredAcceptance": [
+        "route reachable only in selected edition",
+        "exit/restart/controller replacement clears strokes only",
+        "owner switch clears ephemeral state",
+        "no evidence/XP/coins/SRS from self-check",
+        "canonical vocabulary/history untouched",
+        "stale route/emergencyOff fails closed"
+      ],
+      "runtimeStatus": "NOT RUN; not activated"
+    },
+    {
+      "id": "COV-f23",
+      "decision": "Retain existing preview internal focus timer and active-time capture; do not implement a second timer",
+      "decisionStatus": "closed",
+      "sourceState": "AppDependencies default off; AppBootstrap learningPreviewEnabled promotes both internal while preserving emergencyOff",
+      "route": "embedded focus widget through existing learning/Today consumers",
+      "owners": [
+        "G1.6",
+        "G4.3",
+        "G7.5"
+      ],
+      "requiredAcceptance": [
+        "route/controller dependency available",
+        "monotonic active effort",
+        "pause/background/idle/retry",
+        "timer emergencyOff respected",
+        "no timer-derived skill score"
+      ],
+      "runtimeStatus": "source composition inspected; runtime NOT RUN"
+    },
+    {
+      "id": "COV-f28",
+      "decision": "Research assessment remains hidden/fail-closed. Do not select personal assessment runtime in this edition; G3.6 validates synthetic existing contract and any later personal design needs separate versioned authority.",
+      "decisionStatus": "closed",
+      "sourceState": "researchAssessment hidden in field defaults and unchanged by LearningPreviewFeatureRegistry",
+      "route": "research/assessment",
+      "owners": [
+        "G3.6",
+        "G7.5"
+      ],
+      "requiredAcceptance": [
+        "missing consent/assignment/instrument/config denied",
+        "synthetic comparison metadata isolation",
+        "no enrollment/study assignment/synchronization",
+        "disclose capability absent from personal runtime"
+      ],
+      "runtimeStatus": "NOT RUN; research rollout not authorized"
+    },
+    {
+      "id": "COV-f41",
+      "decision": "Use existing build→preview→runtime/emergency override→production dependency/delivery gates; no direct-route bypass",
+      "decisionStatus": "closed",
+      "sourceState": "RuntimeFeatureRegistry emergencyOff wins; ProductionFeatureGate rejects missing registry/dependency/incompatible rollout",
+      "route": null,
+      "owners": [
+        "G1.7",
+        "G7.5"
+      ],
+      "requiredAcceptance": [
+        "hidden/disabled/emergencyOff unavailable",
+        "missing dependency unavailable",
+        "owner change/stale routes cannot resurrect feature",
+        "runtime override expiry/restart",
+        "actual artifact flags match profile"
+      ],
+      "runtimeStatus": "source inspected; runtime NOT RUN"
+    }
+  ],
+  "integrations": {
+    "camera": "Retain shipped baseline, no candidate promotion. Real camera/model/resource/physical validation remains G5; no fake detection fallback.",
+    "aiVoice": "Optional; no key/device/provider unavailable path required. No paid requests, live quality, acoustic pronunciation or free-tier claims from local fixture evidence.",
+    "cloud": "Disabled for selected preview profile; current default true is not changed. No trusted remote economy acceptance until D04/G7.3 rules and G7.5 actual activation checks.",
+    "research": "ResearchMeasurementSyncRollout.off, AdventureResearchRuntimeConfig.off; leave canonical legacy evidence config untouched. No study/issuer/consent/participant provisioning.",
+    "storage": "No optional Supabase/storage dependency selected; D09 forward-policy work remains mandatory before any storage-enabled edition.",
+    "cost": "No spending authority; CentralCostBaseline production unknown prices are not evidence of free operation."
+  },
+  "content": {
+    "catalogRevision": "1.3.0",
+    "catalogSemanticHash": "41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4",
+    "profiles": {
+      "canonical-content": {
+        "readiness": "source-inspected-per-pack-runtime-readiness-not-run",
+        "version": "cefr-starter-3000-r1",
+        "starterQuality": "source-joined-not-independently-reviewed",
+        "starterCount": 3000,
+        "editorialVersion": "content-addressed assets in source-manifest; schemaVersion 1",
+        "contract": "Canonical pack/word revision and checksum; reviewed publication/provenance required. Starter inventory and editorial files do not certify every mode prompt. Pack detail gates definition/cloze/matching with pinned vocabulary; other registrations still require owner acceptance.",
+        "paths": [
+          "assets/content/cefr_starter/catalog.json",
+          "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+          "lib/features/learning_packs/domain/content_quality_policy.dart",
+          "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart"
+        ]
+      },
+      "owner-derived-or-foundation": {
+        "readiness": "runtime-not-run",
+        "version": "AppDatabase schema26 / accepted source e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "No independent content pack. Consumes owner-scoped preferences, canonical evidence/time/progress or shared UI/activation policy; session/content identities are inherited where relevant."
+      },
+      "ephemeral-unscored": {
+        "readiness": "implemented-off",
+        "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "Local ephemeral scratchpad; no OCR, durable response or correctness/reward inference."
+      },
+      "media-dependent": {
+        "readiness": "external-pending-for-physical-audio; local fallback not run",
+        "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "Canonical prompt and provider/model/voice identity required at session time; availability, permission and device checks remain P6.4/P6.5."
+      },
+      "journey-session-identity": {
+        "readiness": "runtime-not-run",
+        "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "Adventure mixed review pins canonical session/prompt catalog; Ghost requires compatible recorded ghost identity/time. No fabricated live ghost/content revision."
+      },
+      "assessment-question-set": {
+        "readiness": "needs-verification; research assessment hidden in field defaults",
+        "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "Authored question/answer/explanation set revision required; exposure-only reading does not satisfy MG-10. No research activation or enrollment authorized."
+      },
+      "inherit-related-records": {
+        "readiness": "runtime-not-run",
+        "version": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+        "contract": "Resolve every related record; apply MG-specific acceptance in addition to shared mode/config/content. MG-03 selected and MG-04 typed remain distinct."
+      }
+    },
+    "sourceManifest": "docs/development/full-system/evidence/G0.5/source-manifest.json",
+    "availabilityRule": "Installed canonical revision/checksum plus mode-specific readiness controls launch. Starter3000 inventory does not establish every definition/cloze/matching/speech prompt usable; unavailable stays unavailable.",
+    "offlineRule": "Use packaged/previously verified installed content; no remote download or new provider content needed for G0. Content publications/rollouts need owner acceptance."
+  },
+  "acceptanceNotices": [
+    "44 catalog identities and74 coverage records are preserved; edition runtime coverage is incomplete.",
+    "f12 is a closed intended-delivery decision with activation pending tests; f28 personal assessment is not selected.",
+    "Formula gaps B01-FORM-01 and B01-FORM-02 remain owned implementation obligations, not fixed by registry acceptance.",
+    "No new Flutter/backend/emulator/device/human/live/GPU/full-release PASS is asserted."
+  ],
+  "rollback": "No runtime mutation to undo. Revert only B01 docs commits if changing this decision, retain receipts/evidence; never reset user data or predecessor worktrees.",
+  "activationMatrix": [
+    {
+      "recordId": "COV-f01",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.1",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/vocabulary",
+        "home/study-planning"
+      ],
+      "sourceDefaultFeatureStates": {
+        "studyPlanning": "hidden",
+        "vocabulary": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "studyPlanning": "hidden",
+        "vocabulary": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f02",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.1",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/vocabulary"
+      ],
+      "sourceDefaultFeatureStates": {
+        "vocabulary": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "vocabulary": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f03",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.2"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/vocabulary"
+      ],
+      "sourceDefaultFeatureStates": {
+        "vocabulary": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "vocabulary": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f04",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.1",
+        "P3.2",
+        "P3.7",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Pack detail and offline imports consume version/checksum/provenance and reviewed publication policy; no independent menu.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart",
+        "test/screens/offline_content_settings_entry_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f05",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.1",
+        "P2.1",
+        "P2.7"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Lesson screens consume shared shell/controller feedback and canonical evidence adapter; shell is not a new writer.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f06",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.5",
+        "P2.6",
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/srs"
+      ],
+      "sourceDefaultFeatureStates": {
+        "srs": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "srs": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f07",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/quiz"
+      ],
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f08",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/quiz"
+      ],
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f09",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/quiz"
+      ],
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f10",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.2"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Matching is composed through quiz authority and learning/matching; production matching is implemented-off unless learning preview is enabled.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f11",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.5",
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/quiz"
+      ],
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f12",
+      "kind": "capability",
+      "ownerPackages": [
+        "P0.8",
+        "P2.6",
+        "P7.5"
+      ],
+      "baselineStatus": "delivery-decision-pending",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Scratchpad registration is implemented-off; pack detail omits it. Ephemeral self-check has no OCR or scored evidence.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "ephemeral-unscored",
+      "contentReadiness": "implemented-off",
+      "decisionId": "COV-f12",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f13",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.5",
+        "P2.8",
+        "P5.1",
+        "P5.2",
+        "P5.3",
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/associative-reading",
+        "drawer/learning/ghost-duel",
+        "drawer/practice/object-scanner",
+        "drawer/practice/shadowing"
+      ],
+      "sourceDefaultFeatureStates": {
+        "ghostDuel": "enabled",
+        "objectScanner": "limited",
+        "reading": "enabled",
+        "speechPractice": "limited"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "ghostDuel": "enabled",
+        "objectScanner": "limited",
+        "reading": "enabled",
+        "speechPractice": "limited"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart",
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/features/device_model/model_manifest_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart"
+      ],
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "recordId": "COV-f14",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.4",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/srs"
+      ],
+      "sourceDefaultFeatureStates": {
+        "srs": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "srs": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f15",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.5",
+        "P2.8",
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Recommendation readers consume canonical mastery/availability into the recall ladder; no separate route or mastery writer.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f16",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.7"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Session configuration sheet/policy supplies activity launch configuration; no independent product entry.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f17",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.2",
+        "P2.1",
+        "P2.2",
+        "P2.3",
+        "P2.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Lesson answer feedback panel consumes evaluated feedback; UI cannot independently award correctness or rewards.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/features/learning/cloze_mode_adapter_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f18",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/quiz"
+      ],
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f19",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.7",
+        "P3.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "drawer/ai-tutor/chat"
+      ],
+      "sourceDefaultFeatureStates": {
+        "aiTutor": "limited"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "aiTutor": "limited"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart",
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f20",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.3",
+        "P5.3",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Review/bookmark use cases persist learner intent through owner-scoped repository; no standalone entry in catalog.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f21",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.3",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Content report sheet submits reports through review use cases; reports are not automatic published content corrections.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f22",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/learn/srs",
+        "home/today"
+      ],
+      "sourceDefaultFeatureStates": {
+        "dailyContinuity": "hidden",
+        "srs": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "dailyContinuity": "enabled",
+        "srs": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f23",
+      "kind": "capability",
+      "ownerPackages": [
+        "P0.8",
+        "P4.3",
+        "P7.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Embedded focus widget consumes controller under FocusTimerRollout; implemented-off by default, preview internal only.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "COV-f23",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f24",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.2",
+        "P1.6",
+        "P4.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Bootstrap composes active learning time for trustworthy educational activity consumers; durable time authority remains canonical.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f25",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.6",
+        "P3.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Calendar screen reads canonical learning-time/progress projections; no second analytics writer.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f26",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.2"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/study-planning"
+      ],
+      "sourceDefaultFeatureStates": {
+        "studyPlanning": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "studyPlanning": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f27",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.2",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/study-planning"
+      ],
+      "sourceDefaultFeatureStates": {
+        "studyPlanning": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "studyPlanning": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f28",
+      "kind": "capability",
+      "ownerPackages": [
+        "P0.8",
+        "P3.6",
+        "P7.3",
+        "P7.5"
+      ],
+      "baselineStatus": "delivery-decision-pending",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "research/assessment"
+      ],
+      "sourceDefaultFeatureStates": {
+        "researchAssessment": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "researchAssessment": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "assessment-question-set",
+      "contentReadiness": "needs-verification; research assessment hidden in field defaults",
+      "decisionId": "COV-f28",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/assessment/assessment_comparison_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/pre_post_assessment_screen_test.dart",
+        "test/security/firestore-rules.test.cjs",
+        "test/features/research/research_runtime_sync_integration_test.dart",
+        "test/features/sync/research_withdrawal_reopen_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "externalDependency": "research authority remains external; synthetic contract cases local only"
+    },
+    {
+      "recordId": "COV-f29",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "drawer/rewards/quests"
+      ],
+      "sourceDefaultFeatureStates": {
+        "questV2": "limited",
+        "shadowRewardV2": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "questV2": "limited",
+        "shadowRewardV2": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart",
+        "test/widgets/gentle_streak_card_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f30",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/today"
+      ],
+      "sourceDefaultFeatureStates": {
+        "dailyContinuity": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "dailyContinuity": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart",
+        "test/widgets/gentle_streak_card_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f31",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/achievements"
+      ],
+      "sourceDefaultFeatureStates": {
+        "achievements": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "achievements": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f32",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "drawer/rewards/shop"
+      ],
+      "sourceDefaultFeatureStates": {
+        "shop": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "shop": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f33",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "drawer/ai-tutor/chat"
+      ],
+      "sourceDefaultFeatureStates": {
+        "aiTutor": "limited"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "aiTutor": "limited"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f34",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.5",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Achievement card renders projection snapshot for sharing; not a new achievement authority or route.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f35",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.6",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Onboarding/settings consumers store learner preferences through owner-scoped use cases; no separate catalog menu.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f36",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.6",
+        "P3.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/mastery",
+        "home/weakness"
+      ],
+      "sourceDefaultFeatureStates": {
+        "mastery": "enabled",
+        "weakness": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "mastery": "enabled",
+        "weakness": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f37",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.5",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/today"
+      ],
+      "sourceDefaultFeatureStates": {
+        "dailyContinuity": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "dailyContinuity": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f38",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.1",
+        "P2.7",
+        "P4.6",
+        "P8.7"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Shared accessibility scope supplies semantics/scaling/motion policy to lesson shell and UI consumers.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart",
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "recordId": "COV-f39",
+      "kind": "capability",
+      "ownerPackages": [
+        "P2.1",
+        "P4.6"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Display preferences and lesson UI consume theme/motion choices; independent runtime accessibility acceptance remains required.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f40",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.1",
+        "P1.4",
+        "P1.7",
+        "P7.1",
+        "P7.2",
+        "P7.4",
+        "P8.6"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "drawer/export/center"
+      ],
+      "sourceDefaultFeatureStates": {
+        "export": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "export": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/sync/cloud_sync_policy_test.dart",
+        "test/features/sync/srs_state_sync_test.dart",
+        "test/features/sync/reward_transaction_sync_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "recordId": "COV-f41",
+      "kind": "capability",
+      "ownerPackages": [
+        "P0.8",
+        "P1.7",
+        "P7.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "Build/runtime registries and production gate govern existing feature consumers; hidden/disabled/emergency-off must fail closed, no standalone route.",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "COV-f41",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart"
+      ],
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "recordId": "COV-f42",
+      "kind": "capability",
+      "ownerPackages": [
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/today"
+      ],
+      "sourceDefaultFeatureStates": {
+        "dailyContinuity": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "dailyContinuity": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f43",
+      "kind": "capability",
+      "ownerPackages": [
+        "P1.3",
+        "P1.4",
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "home/today"
+      ],
+      "sourceDefaultFeatureStates": {
+        "dailyContinuity": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "dailyContinuity": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "owner-derived-or-foundation",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/learning_history_screen_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "COV-f44",
+      "kind": "capability",
+      "ownerPackages": [
+        "P3.7",
+        "P7.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": [
+        "settings/offline-content"
+      ],
+      "sourceDefaultFeatureStates": {
+        "offlineContent": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "offlineContent": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart",
+        "test/screens/offline_content_settings_entry_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-associativeReading",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.8"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/associative-reading",
+      "sourceDefaultFeatureStates": {
+        "reading": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "reading": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-meaningQuiz",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/quiz",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-typedRecall",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/typed-recall",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-definitionQuiz",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/definition-quiz",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-cloze",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/cloze",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-matching",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.2"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/matching",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-internal-pair",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-flashcard",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.6",
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/srs",
+      "sourceDefaultFeatureStates": {
+        "srs": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "srs": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-handwritingScratchpad",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P0.8",
+        "P2.6",
+        "P7.5"
+      ],
+      "baselineStatus": "delivery-decision-pending",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/handwriting-scratchpad",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "implementedOff",
+      "contentProfile": "ephemeral-unscored",
+      "contentReadiness": "implemented-off",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-dictation",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "game/dictation",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "media-dependent",
+      "contentReadiness": "external-pending-for-physical-audio; local fallback not run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "recordId": "MODE-speaking",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "practice/speaking",
+      "sourceDefaultFeatureStates": {
+        "speechPractice": "limited"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "speechPractice": "limited"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "media-dependent",
+      "contentReadiness": "external-pending-for-physical-audio; local fallback not run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "recordId": "MODE-shadowing",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "practice/shadowing",
+      "sourceDefaultFeatureStates": {
+        "speechPractice": "limited"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "speechPractice": "limited"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "media-dependent",
+      "contentReadiness": "external-pending-for-physical-audio; local fallback not run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "recordId": "MODE-cefrReading",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.8"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "learning/cefr-reading",
+      "sourceDefaultFeatureStates": {
+        "reading": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "reading": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-sentenceScramble",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "game/sentence-scramble",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-wordScramble",
+      "kind": "lesson-mode",
+      "ownerPackages": [
+        "P2.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "game/word-scramble",
+      "sourceDefaultFeatureStates": {
+        "quiz": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "quiz": "enabled"
+      },
+      "previewModeDelivery": "enabled-subject-to-feature-and-content-gates",
+      "contentProfile": "canonical-content",
+      "contentReadiness": "source-inspected-per-pack-runtime-readiness-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-adventure-journey",
+      "kind": "journey",
+      "ownerPackages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {
+        "adventureMotivation": "hidden"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "adventureMotivation": "hidden"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "journey-session-identity",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MODE-ghost-duel",
+      "kind": "journey",
+      "ownerPackages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {
+        "ghostDuel": "enabled"
+      },
+      "previewFeatureStatesBeforeRuntimeGates": {
+        "ghostDuel": "enabled"
+      },
+      "previewModeDelivery": null,
+      "contentProfile": "journey-session-identity",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-01",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-02",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-03",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-04",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-05",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.2"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-06",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-07",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.3"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-08",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-09",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "recordId": "MG-10",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.8",
+        "P3.2",
+        "P3.6"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "assessment-question-set",
+      "contentReadiness": "needs-verification; research assessment hidden in field defaults",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart",
+        "test/features/assessment/assessment_comparison_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/pre_post_assessment_screen_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-11",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.6",
+        "P3.4"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-12",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "recordId": "MG-13",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "recordId": "MG-14",
+      "kind": "interaction-group",
+      "ownerPackages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "baselineStatus": "needs-verification",
+      "runtimeStatus": "NOT RUN in B01",
+      "routeOrBoundary": "inherit related coverage records",
+      "sourceDefaultFeatureStates": {},
+      "previewFeatureStatesBeforeRuntimeGates": {},
+      "previewModeDelivery": null,
+      "contentProfile": "inherit-related-records",
+      "contentReadiness": "runtime-not-run",
+      "decisionId": "preserve-current-contract-and-owning-package-acceptance",
+      "availability": "Feature state alone is insufficient; canonical content, delivery, owner/runtime overrides and dependencies must all admit.",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "externalDependency": "none for local synthetic acceptance"
+    }
+  ],
+  "acceptedAuthorityObligations": [
+    {
+      "id": "D01",
+      "title": "One composition root; local startup before optional cloud",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "aef9033aefff4f626e420aa6df010e7a8e6915a568982ad2a8d94af262d202fc",
+      "ownerPackageMentions": [
+        "P1.7"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D02",
+      "title": "AppDatabase schema 26 is the sole active local store",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "30d5841cc754e4cf6eba6d95ee8f41f73e5f3b46d546ac8c9b6fca6f612af998",
+      "ownerPackageMentions": [
+        "P0.6",
+        "P1.4",
+        "P1.7",
+        "P7.2"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D03",
+      "title": "Canonical evidence, transactions and scheduling",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "4f2173bbed1f040c13701e04cdf1cd0260de5e65e379f34bc603fcf8caf94866",
+      "ownerPackageMentions": [
+        "P0.7",
+        "P1.2",
+        "P1.5"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D04",
+      "title": "Local rewards and trusted remote writes are different contracts",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "4a736e41462caf6d6f9c8fd2907e0effc4d16d0cc41002938f891410db0a920d",
+      "ownerPackageMentions": [
+        "G0.8",
+        "P1.2",
+        "P4.5",
+        "P7.1",
+        "P7.2",
+        "P7.3",
+        "P7.5"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D05",
+      "title": "Reading and enrichment retain canonical session ownership",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "33331219f0fc4636ceb9ff32160d2e0b24753bab5a241f233739e0eb12225d2d",
+      "ownerPackageMentions": [
+        "P2.8",
+        "P3.1",
+        "P3.7",
+        "P6.1",
+        "P6.4"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D06",
+      "title": "Android identity",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "da64ee71ad01b09db8d1cda5005b85142ac4f48716e2dda926ad844d848cc60a",
+      "ownerPackageMentions": [
+        "G8.6",
+        "P7.7"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D07",
+      "title": "Dependency and reviewed exception differences",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "100a577fa1c6dcebe1169413290af08838a704bf6bddca3000fd5b0a3dad87ce",
+      "ownerPackageMentions": [
+        "P7.6",
+        "P7.7"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D08",
+      "title": "Verification and release tooling",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "fd03da2025f8932615403d77123d5eef2e92d3c0f30f83b9539bd1d3ef653664",
+      "ownerPackageMentions": [
+        "P0.4",
+        "P7.7"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D09",
+      "title": "Optional storage and forward policy compatibility",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "f6dba898d4b7c2717bc273db5143bb425cf045eb137be036c8933f1243ef9b27",
+      "ownerPackageMentions": [
+        "P7.3",
+        "P7.5"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D10",
+      "title": "Scanner honesty",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "78fbe3eeb0c45c3a9048c08bd123b623eb8e701dff99af71c2834de0ab68068a",
+      "ownerPackageMentions": [
+        "P5.1",
+        "P5.3",
+        "P5.4",
+        "P5.6"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D11",
+      "title": "Research/data/export integrity",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "bb503c0e35ff835ff1f8b9ac1c98590d82c1e3b633ec8a8c585270f2dee96757",
+      "ownerPackageMentions": [
+        "P3.5",
+        "P3.6",
+        "P4.5",
+        "P7.3",
+        "P7.4"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    },
+    {
+      "id": "D12",
+      "title": "R15 cumulative baseline and historical cleanup",
+      "source": "docs/development/full-system/G0.3-authority.md",
+      "sectionSha256": "bf2fa1700529862afdb7718972addb837c1d184acd45ca1cf0c69c19af3d377d",
+      "ownerPackageMentions": [
+        "G0.2",
+        "G0.3",
+        "P0.5",
+        "P0.6"
+      ],
+      "disposition": "Adopt accepted authority choice and all stated implementation/release obligations verbatim; source ownership closed, runtime work not promoted to PASS."
+    }
+  ],
+  "verificationObligations": [
+    {
+      "level": "Targeted",
+      "area": "Economy",
+      "command": "Trusted writer tests",
+      "missingPath": "functions/package.json",
+      "status": "Unavailable / NOT RUN",
+      "owner": "P7.3"
+    },
+    {
+      "level": "Targeted",
+      "area": "Integration",
+      "command": "Android integration static analysis",
+      "missingPath": "integration_test\\production_learning_flow_test.dart",
+      "status": "Unavailable / NOT RUN",
+      "owner": "P7.7/P8.4"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Economy",
+      "command": "Trusted writer tests",
+      "missingPath": "functions/package.json",
+      "status": "Unavailable / NOT RUN",
+      "owner": "P7.3"
+    },
+    {
+      "level": "Subsystem",
+      "area": "Integration",
+      "command": "Android device end-to-end tests",
+      "missingPath": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-android-e2e.ps1",
+      "status": "Unavailable / NOT RUN",
+      "owner": "P7.7/P8.4"
+    }
+  ],
+  "externalGates": [
+    {
+      "id": "REMOTE-ECONOMY",
+      "status": "NOT RUN/open-required-for-remote-edition",
+      "owners": [
+        "G7.3",
+        "G7.5"
+      ],
+      "reason": "D04 trusted remote rules not closed; selected preview disables cloud"
+    },
+    {
+      "id": "STORAGE-POLICY",
+      "status": "NOT RUN/not-selected-local-edition",
+      "owners": [
+        "G7.3",
+        "G7.5"
+      ],
+      "reason": "D09 forward storage policy validation before enabling storage"
+    },
+    {
+      "id": "DEVICE-CAMERA",
+      "status": "NOT RUN/external-pending",
+      "owners": [
+        "G5.6",
+        "G8.6",
+        "G8.7"
+      ],
+      "reason": "Physical permission/lifecycle/model/resource/quality evidence required"
+    },
+    {
+      "id": "LIVE-AI-VOICE",
+      "status": "NOT RUN/external-pending",
+      "owners": [
+        "G6.6",
+        "G8.6"
+      ],
+      "reason": "Live provider/audio/human quality not established by local tests"
+    },
+    {
+      "id": "BUILD-IDENTITY",
+      "status": "NOT RUN/required-later",
+      "owners": [
+        "G7.7",
+        "G8.6"
+      ],
+      "reason": "Actual APK/AAB identity/signature/config/release provenance not inspected here"
+    },
+    {
+      "id": "FULL-RELEASE",
+      "status": "NOT RUN/required-after-freeze",
+      "owners": [
+        "G8.4",
+        "G8.5",
+        "G8.9"
+      ],
+      "reason": "B18 review/fixes before B19 System Test Plan/execution; no early full gate"
+    }
+  ]
+}

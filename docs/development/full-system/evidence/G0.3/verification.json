@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "gate": "G0.3-source-inspection",
+  "result": "PASS",
+  "timestampUtc": "2026-09-13T03:56:54.574987+00:00",
+  "command": "python -B docs/development/full-system/evidence/G0.3/verify_inspection.py",
+  "exitCode": 0,
+  "durationMs": 687.893,
+  "sourceFingerprint": {
+    "acceptedInput": "e1b3fcb17fbdbdab158780142383f3ee15d8da0a",
+    "main": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+    "r15": "f4eebb895836349fbf8e9960312a78bad524d462",
+    "acceptedTree": "43440fc6656691556eef9d646e6480d9a59ca676"
+  },
+  "environment": {
+    "python": "3.14.5",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "git": "git version 2.54.0.windows.1"
+  },
+  "counts": {
+    "nonMerge": 430,
+    "mergeExcluded": 10,
+    "changeRows": 4886,
+    "uniquePaths": 1603,
+    "unassigned": 0
+  },
+  "repairPinsUnchanged": {
+    "lib/screens/ai_tutor_screen.dart": {
+      "blob": "d5a3d7389d1c28b43c197e8dae338646e462bfb8",
+      "bytes": 33094
+    },
+    "test/screens/ai_tutor_screen_test.dart": {
+      "blob": "9e29a47e76d3f6263709814b8798632ed2f13fed",
+      "bytes": 38437
+    },
+    "tool/cli/tests/r15-scope.tests.ps1": {
+      "blob": "02c655b4c33e841bd85fb820681368d09562a92d",
+      "bytes": 4319
+    },
+    "tool/cli/verify-scope.ps1": {
+      "blob": "22cab015f65db634556b03342ab2decb64ebd938",
+      "bytes": 22272
+    },
+    "tools/camera_accuracy.py": {
+      "blob": "daf2c096833de17ec49244e704a3a465563dc853",
+      "bytes": 16611
+    },
+    "tools/test_camera_accuracy.py": {
+      "blob": "bcbf9c635d4fdabb15777121ee6907cff86014dd",
+      "bytes": 16640
+    }
+  },
+  "dependencyConfigPins": {
+    "pubspec.yaml": {
+      "blob": "c6c02e308d83dac3e58bc8e68b5010e0b2677539",
+      "bytes": 3042
+    },
+    "pubspec.lock": {
+      "blob": "10d367b940bfce750da09f29fff512dafe50d690",
+      "bytes": 54864
+    },
+    "package.json": {
+      "blob": "59f51001838e0488379af649cdbd262f494b1b2a",
+      "bytes": 680
+    },
+    "package-lock.json": {
+      "blob": "dec6ee63ae36595c9d831129dd6133a63826936b",
+      "bytes": 124050
+    },
+    "android/app/build.gradle.kts": {
+      "blob": "09304b681fa6b1f2f54b466882376c271ddfe009",
+      "bytes": 4763
+    },
+    "backend/voice_api/pyproject.toml": {
+      "blob": "4515a15d64e1e7fb14cf8ccd3bda26379e1695f8",
+      "bytes": 1213
+    },
+    "backend/voice_api/uv.lock": {
+      "blob": "fd9ebe0ea696eac077dc0873f4e59dc2a201c71e",
+      "bytes": 222583
+    },
+    "firestore.rules": {
+      "blob": "c4ea401ee445b8372e8977203a233d1c4f287127",
+      "bytes": 117635
+    },
+    "firebase.json": {
+      "blob": "41c9a7a9cb6074ea78d7f6921e50eda1d729a7b6",
+      "bytes": 799
+    }
+  },
+  "dependencyConfigFingerprint": "38f64333f690ae79cf08fb4cccd4b63cdc9d2445852dc74800c3d994fdb17cfd",
+  "artifactHashes": {
+    "docs/development/full-system/G0.3-authority.md": "f5a0cda463d653b47101e74afff417f8485e472f89353b1dcee2f5df81a00cea",
+    "docs/development/full-system/checkpoints/G0.3.md": "c495a47981242a2e7464d98d1debda2bb8173b70b28b999f2127ee62707327ca",
+    "docs/development/2026-09-13-full-system-work-ledger.json": "9f2e63071bd01f70ed6ec3f2eec0e820c37238d323e72d6e10d48b09e293bae5",
+    "docs/development/full-system/evidence/G0.3/semantic-ledger.json": "657e36301e593c65acaaab85f0f6b988fc10087a6ea45c1ded37bb060c847737",
+    "docs/development/full-system/evidence/G0.3/census.json": "1797d3cda47f18054eccfc9931554937b554a39d44227a98abbcc4dd22fcc9c4",
+    "docs/development/full-system/evidence/G0.3/inspect_git.py": "2b54af77da8e70c43c8d9a3b1879921ff3539aec9510fb4f9890288cf8490e9f",
+    "docs/development/full-system/evidence/G0.3/verify_inspection.py": "d717aff74176bb54147b27c4a788910d3ec925a7162180e03d34be7080c1b2ad"
+  },
+  "commands": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "--git-common-dir"
+      ],
+      "exitCode": 0,
+      "durationMs": 32.037
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exitCode": 0,
+      "durationMs": 32.6
+    },
+    {
+      "command": [
+        "git",
+        "branch",
+        "--show-current"
+      ],
+      "exitCode": 0,
+      "durationMs": 32.311
+    },
+    {
+      "command": [
+        "git",
+        "ls-tree",
+        "-rl",
+        "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b"
+      ],
+      "exitCode": 0,
+      "durationMs": 41.686
+    },
+    {
+      "command": [
+        "git",
+        "ls-tree",
+        "-rl",
+        "f4eebb895836349fbf8e9960312a78bad524d462"
+      ],
+      "exitCode": 0,
+      "durationMs": 56.099
+    },
+    {
+      "command": [
+        "git",
+        "ls-tree",
+        "-rl",
+        "e1b3fcb17fbdbdab158780142383f3ee15d8da0a"
+      ],
+      "exitCode": 0,
+      "durationMs": 67.455
+    },
+    {
+      "command": [
+        "git",
+        "log",
+        "--no-merges",
+        "--no-renames",
+        "--format=COMMIT:%H",
+        "--name-only",
+        "f4eebb895836349fbf8e9960312a78bad524d462..7b8ac6cc029c0df43f9d4e7d161da3502e6f557b"
+      ],
+      "exitCode": 0,
+      "durationMs": 45.626
+    },
+    {
+      "command": [
+        "git",
+        "log",
+        "--no-merges",
+        "--no-renames",
+        "--format=COMMIT:%H",
+        "--name-only",
+        "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b..f4eebb895836349fbf8e9960312a78bad524d462"
+      ],
+      "exitCode": 0,
+      "durationMs": 78.892
+    },
+    {
+      "command": [
+        "git",
+        "show",
+        "e1b3fcb17fbdbdab158780142383f3ee15d8da0a:docs/development/2026-09-13-full-system-work-ledger.json"
+      ],
+      "exitCode": 0,
+      "durationMs": 40.663
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--name-only",
+        "e1b3fcb17fbdbdab158780142383f3ee15d8da0a"
+      ],
+      "exitCode": 0,
+      "durationMs": 55.29
+    },
+    {
+      "command": [
+        "git",
+        "ls-files",
+        "--others",
+        "--exclude-standard"
+      ],
+      "exitCode": 0,
+      "durationMs": 70.802
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "durationMs": 54.661
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "e1b3fcb17fbdbdab158780142383f3ee15d8da0a^{tree}"
+      ],
+      "exitCode": 0,
+      "durationMs": 41.708
+    },
+    {
+      "command": [
+        "git",
+        "--version"
+      ],
+      "exitCode": 0,
+      "durationMs": 28.232
+    }
+  ],
+  "evidenceReuse": "G0.2 runtime evidence retained as prior accepted evidence; no runtime gate claimed or rerun. No tracked application input changed.",
+  "notRun": [
+    "Flutter",
+    "backend",
+    "Android",
+    "GPU",
+    "full release",
+    "physical/live/human"
+  ],
+  "limitations": "Git/JSON/path/hash completeness validates the source-disposition record; manual authority review is in G0.3-authority.md. No intermediate R15 commit runtime tested."
+}

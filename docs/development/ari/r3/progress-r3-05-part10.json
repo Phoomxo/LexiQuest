@@ -1,0 +1,30 @@
+{
+  "taskId": "01a0cffe-6e5b-7e42-b135-1dad3feabff7",
+  "atUtc": "2026-09-23T20:46:15.651007+00:00",
+  "status": "COMPLETE_PART_ONLY_APPLICATION_RELEASED",
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "sourceAck": "All1792pins/ZIP174+48/Jev matches; predecessor release execution revision39",
+  "done": [
+    "W01 six file-backed durable gate/runtime lifecycle tests PASS; product unchanged"
+  ],
+  "current": "W02 composed main/drawer/questionnaire disconnected/background tests running",
+  "verification": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-ai-c53bfe6de8ab17d63466cc0bb6a959ced8bc901a922868563d5c0f16c8cef970.json",
+  "ownedJobs": [],
+  "remainingIdsPreserved": 211,
+  "noNativeWrites": true,
+  "noLiveProviderOrJev": true,
+  "recovery": [
+    {
+      "issue": "Windows wildcard literal in rg tables path",
+      "correction": "Use actual lib/data/local/tables directory and -g pattern; corrected query succeeded",
+      "productImpact": "none"
+    }
+  ],
+  "receipt": "receipt-r3-05-part10.json",
+  "next": [
+    "Move to W05-W14 and all14nested modes: start W05 learning exercises/games and W06 reading source/assertion/dependency audit using exact historical receipts. Reuse unchanged associative080 and representative mode evidence only when actual closure matches; entry navigation is not lesson acceptance.",
+    "W01 durable gate/runtime/reopen and W02 composed main/drawer/questionnaire/account applicability now bounded-proven A26-A28. Do not rerun unchanged11tests or part09 27tests. Native provider/account transitions, abrupt process death and full owner/learner data still pending; do not close entire workflows.",
+    "W03 exact boundary-map-r3-05-part09 remains authoritative. Delayed pre-admission owner-query/route combinations can be tested using existing repository boundaries; A20 notifier/A22 postcommit readback already proven, do not loop unchanged tests.",
+    "Keep215rows/4passed/211remaining exact IDs; noR3-06 until realR3-05 exit. Continue independent host/native despite unpaired provider/Jev pending. Fresh backup before every native cycle; preserve all backups/APKs/native originals."
+  ]
+}

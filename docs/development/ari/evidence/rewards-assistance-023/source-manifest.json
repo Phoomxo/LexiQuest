@@ -1,0 +1,9 @@
+{
+  "files": {
+    "lib/features/rewards/domain/avatar_progression_policy.dart": "49dd15ba4e8f3abc085d64acc39030005f1297d2ac9845bd7a327857627b933c",
+    "lib/features/rewards/application/reward_use_cases.dart": "a65425d60faba9a0283ec0148a24005a9e5c1d9cff22f0dd31bffad9fad411d7",
+    "lib/screens/avatar_equipment_screen.dart": "b86bfe0e904080384819e1b094b892181ff92837eb4e67ba740fd559391de73c",
+    "test/screens/avatar_equipment_screen_test.dart": "b38c234db6de48b946203d5cf65d08589f7ddab7c34a49390469ed34e56b1d8a"
+  },
+  "normalization": "Original line endings restored post verification; tokens unchanged"
+}

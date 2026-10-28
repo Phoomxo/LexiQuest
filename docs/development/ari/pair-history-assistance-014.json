@@ -1,0 +1,35 @@
+{
+  "status": "HOST_VERIFIED_NATIVE_PENDING",
+  "workflow": "W09 Pair history",
+  "baseCommit": "20f1ef568065c86a4aab6be9abed47f99b94b81d",
+  "scope": "Read-only owner-bound canonical Pair result; missing/corrupt projection exposes unavailable, never unverified scores",
+  "fields": [
+    "purpose",
+    "first and repair answers",
+    "matched",
+    "independent",
+    "assisted",
+    "nullable stars",
+    "nullable full interactive duration",
+    "replay does not add progress/rewards"
+  ],
+  "verification": {
+    "red": "Two added tests failed missing context before implementation",
+    "green": "Full history screen test file passed",
+    "analysis": "No issues found",
+    "cases": [
+      "Verified projection agrees with canonical fixture",
+      "Failed purpose reader suppresses stars and matched counts",
+      "Different owner hides context",
+      "No new write actions"
+    ],
+    "fixture": "Canonical Pair fixture constructed with real PairHarness; screen purpose reader fixture/failure injection"
+  },
+  "open": [
+    "Live provider/native coverage",
+    "Replay-specific AI context test",
+    "Assessment-specific context acceptance",
+    "Full14 workflow/mode acceptance"
+  ],
+  "recovery": "Initial Python read failed due to Windows default encoding; corrected explicit UTF-8. Accidental filtered run before test insertion matched no tests; not counted as red evidence."
+}

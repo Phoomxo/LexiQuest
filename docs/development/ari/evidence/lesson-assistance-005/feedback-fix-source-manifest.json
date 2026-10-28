@@ -1,0 +1,9 @@
+{
+  "lib/features/ai_tutor/presentation/lesson_assistance_context.dart": "9da114184b4741253886f29ff951b78da807552512644809b774a9634c8bd52f",
+  "lib/features/learning/application/unified_lesson_controller.dart": "7c064e922a5665fea8ba6763f43d406576417d42270f251f0999961e13e7c4f3",
+  "lib/features/learning/presentation/unified_lesson_shell.dart": "ebf614a9c7cd2b3e2c4666e9425f15cd4c99d013e3692febd7d18826ca834bed",
+  "lib/features/learning/presentation/answer_feedback_panel.dart": "faa1859adab2477ffb5182e22ba9ec9e58ea073e93c8b08e3c20f7d0fbf7349c",
+  "test/features/learning/unified_lesson_controller_test.dart": "ee5b5292d123963e2089311a6e8fe13536ceab611847f27ba1ce97327fad8e7f",
+  "test/features/ai_tutor/managed/lesson_assistance_test.dart": "f9a80fd60de67f490ff7338e46c5b41572ac2f9b633ae5c80b1a33a59b902793",
+  "tool/experiments/ari_app_server/chat_bridge.py": "31c8736f284cbaa5dd6659d400861296b8917895d85544d806a368d12ede944e"
+}

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
+  "phase": "application-foundation",
+  "status": "implemented-simulated-tested-live-not-run",
+  "sourceSha": "80b227813483b630128c78edd4f8b31554f4f1c0",
+  "implementationCommit": "adcda70cc79b71ad468fd7ab6e965f11d60d9680",
+  "branch": "feature/ari-managed-session-foundation",
+  "worktree": "C:/Users/Phet/.codex/worktrees/bb3c/LexiQuest",
+  "report": "application-foundation.md",
+  "evidence": "application-foundation-evidence.json",
+  "writerReleased": true,
+  "implementationPushed": true,
+  "implemented": [
+    "ManagedTutorTransport uses existing AiCancellation/AiGatewayReply without BYOK key",
+    "ManagedTutorController uses existing OwnerOperationCoordinator and owner/account/generation isolation",
+    "Reusable Thai panel supports pending/cancel/expired/offline/quota/disconnect and injected replies"
+  ],
+  "simulatedTested": {
+    "status": "PASS",
+    "total": 63,
+    "newController": 23,
+    "newWidgetIntegration": 3,
+    "existingByokAndOwnerGate": 37,
+    "analyze": "PASS_NO_ISSUES",
+    "deviceE2E": "NOT_RUN"
+  },
+  "live": {
+    "login": "NOT_RUN",
+    "inference": "NOT_RUN",
+    "mobile": "NOT_RUN",
+    "freeThailand": "NOT_RUN",
+    "providerRevoke": "NOT_RUN",
+    "pilot": "NOT_RUN",
+    "v2": "NOT_RUN",
+    "e7": "UNCHANGED_NOT_CLOSED"
+  },
+  "deviceAcceptance": "deferred-until-implementation-complete",
+  "v2Gate": {
+    "decision": "NOT_MET",
+    "pending": [
+      "supported hosted distribution and infrastructure ownership",
+      "Free Thailand entitlement for intended native app",
+      "provider-enforced quota-only billing without paid fallback",
+      "provider revoke and credential deletion lifecycle",
+      "device-code security-setting compatibility with no Developer mode requirement"
+    ]
+  },
+  "constraints": [
+    "No production composition, API, schema, OAuth or provider requests added",
+    "No mock transport in lib, no login button, no paid fallback",
+    "Local disconnect does not revoke provider access",
+    "Host must synchronously report owner/account changes and own transport disposal",
+    "UI cancellation is bounded; coordinator cleanup continues when pending local dependencies resolve"
+  ],
+  "successor": {
+    "taskId": null,
+    "dispatched": false,
+    "topic": "application host lifecycle integration",
+    "dependsOn": "this pushed implementation, not device acceptance",
+    "scope": [
+      "Bind real app owner/account notifications, network state and route disposal into managed controller in a disabled composition harness",
+      "Test navigation, background/dispose, owner switch and stale callbacks with simulated transport while preserving BYOK entry points",
+      "Keep production enablement and provider adapter gated; define exact adapter lifecycle/revoke obligations from existing seam"
+    ],
+    "afterThis": "Implement supported provider adapter only after route/distribution/entitlement/quota/revoke gate is confirmed; then authorized live/mobile acceptance and pilot",
+    "doNot": "No repeated document-research task, no device setup request, no E7 closure, no inferred paid route"
+  },
+  "policy": {
+    "subagents": false,
+    "writerCount": 1,
+    "modelRequested": "gpt-6-astra",
+    "thinkingRequested": "medium",
+    "speed": "Standard/default requested; effective service tier not observable"
+  }
+}
