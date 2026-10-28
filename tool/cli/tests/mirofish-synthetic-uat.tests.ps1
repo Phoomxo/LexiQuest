@@ -169,6 +169,43 @@ try {
     Assert-True ($valid.Output.Contains('REPORT_ONLY')) `
         'valid report is explicitly advisory'
 
+    $numericCommit = '2695259614361b82da12d0a0f568f05e2181dd1a'
+    $numericCommitManifestPath = Join-Path $tempRoot 'numeric-commit-manifest.json'
+    $numericCommitManifest = Get-Content -LiteralPath $manifestPath -Raw `
+        -Encoding utf8 | ConvertFrom-Json
+    $numericCommitManifest.sourceCommit = $numericCommit
+    $numericCommitManifest | ConvertTo-Json -Depth 8 | Set-Content `
+        -LiteralPath $numericCommitManifestPath -Encoding utf8
+    $numericCommitReport = Invoke-Cli -ScriptPath $validatorPath -Arguments @(
+        '-ReportPath', $validReportPath,
+        '-ManifestPath', $numericCommitManifestPath,
+        '-SeedPath', $seedPath,
+        '-SimulationRequestPath', $requestPath
+    )
+    Assert-True ($numericCommitReport.ExitCode -eq 0) `
+        'a Git fingerprint with a 13-digit prefix is valid metadata'
+
+    foreach ($findingText in @(
+        '1101700203451',
+        $numericCommit,
+        ('{"sourceCommit":"' + $numericCommit + '"}')
+    )) {
+        $numericFindingPath = Join-Path $tempRoot 'numeric-finding-report.json'
+        $numericFinding = Get-Content -LiteralPath $validReportPath -Raw `
+            -Encoding utf8 | ConvertFrom-Json
+        $numericFinding.findings[0].observation = $findingText
+        $numericFinding | ConvertTo-Json -Depth 8 | Set-Content `
+            -LiteralPath $numericFindingPath -Encoding utf8
+        $numericFindingResult = Invoke-Cli -ScriptPath $validatorPath -Arguments @(
+            '-ReportPath', $numericFindingPath,
+            '-ManifestPath', $manifestPath,
+            '-SeedPath', $seedPath,
+            '-SimulationRequestPath', $requestPath
+        )
+        Assert-True ($numericFindingResult.ExitCode -ne 0) `
+            'a 13-digit identifier remains rejected in finding text'
+    }
+
     $invalidPiiPath = Join-Path $tempRoot 'invalid-pii-report.json'
     (Get-Content -LiteralPath $validReportPath -Raw -Encoding utf8).Replace(
         'ผู้ใช้สังเคราะห์ลังเลก่อนเข้าแบบไม่ใช้บัญชี',

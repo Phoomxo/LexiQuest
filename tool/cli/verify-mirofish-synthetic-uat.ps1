@@ -50,6 +50,13 @@ try {
 }
 $decodedReportText = $report | ConvertTo-Json -Depth 20 -Compress
 $decodedManifestText = $manifest | ConvertTo-Json -Depth 20 -Compress
+# Fingerprint formats, pins and provenance are checked on the original objects.
+$gitFingerprint = '("(?:sourceCommit|commit)":)"[A-Fa-f0-9]{40}"'
+$sha256Fingerprint = '("(?:seedSha256|simulationRequestSha256)":)"[A-Fa-f0-9]{64}"'
+$reportContentText = $decodedReportText -replace $gitFingerprint, '$1""' `
+    -replace $sha256Fingerprint, '$1""'
+$manifestContentText = $decodedManifestText -replace $gitFingerprint, '$1""' `
+    -replace $sha256Fingerprint, '$1""'
 $actualSeedSha256 = (Get-FileHash -LiteralPath $SeedPath -Algorithm SHA256).Hash
 $actualRequestSha256 = (
     Get-FileHash -LiteralPath $SimulationRequestPath -Algorithm SHA256
@@ -58,7 +65,7 @@ $actualRequestSha256 = (
 $errors = @(
     Test-LexiQuestSyntheticText -Text $rawSeed
     Test-LexiQuestSyntheticText -Text $rawSimulationRequest
-    Test-LexiQuestSyntheticText -Text $decodedManifestText
+    Test-LexiQuestSyntheticText -Text $manifestContentText
     Test-LexiQuestMiroFishManifestTypes -Manifest $manifestTree
     Test-LexiQuestMiroFishReportTypes -Report $reportTree
     Test-LexiQuestMiroFishManifest `
@@ -68,7 +75,7 @@ $errors = @(
     Test-LexiQuestMiroFishReport `
         -Report $report `
         -Manifest $manifest `
-        -RawText $decodedReportText
+        -RawText $reportContentText
 )
 if ($errors.Count -gt 0) {
     foreach ($validationError in $errors) {
