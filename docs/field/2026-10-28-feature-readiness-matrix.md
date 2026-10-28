@@ -1,6 +1,7 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `1128b9e6`, on 2026-10-29.
+Source: `codex/remaining-system-readiness`, through the verified v16 recovery
+source, on 2026-10-29. Full Flutter 2728, analysis 0 and CLI 23 pass.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -26,9 +27,9 @@ capability still needs the applicable acceptance and release checks.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f05 | Unified Lesson Shell | Partial | Several screens save through `LearningUseCases`. Shared progress/checkpoint/finish shell is absent. |
+| f05 | Unified Lesson Shell | Partial | Meaning Quiz has a durable accepted plan/checkpoint and canonical finish. Other modes still use their separate screens; a common lesson shell is absent. |
 | f06 | Flashcard Mode | Connected | Learn, Weakness and Source open `SrsFlashcardsScreen`; reveal/rating/save/finish persist learning. |
-| f07 | Meaning Quiz | Connected | `QuizScreen` saves choices and feedback, retries the same answer and finishes a recorded session. |
+| f07 | Meaning Quiz | Connected | `QuizScreen` persists exact questions/options, sticky assistance, pending answer and original finish. History resumes the same owner/session without duplicate answers or rewards; drift/legacy data has an explicit unavailable path. |
 | f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
 | f09 | Cloze Test | Partial | `FillInTheBlanksScreen` remains a legacy flow without canonical learning persistence. |
 | f10 | Matching Mode | Missing | No current route. Follow the approved Research completion sequence before this unit. |
@@ -42,7 +43,7 @@ capability still needs the applicable acceptance and release checks.
 | --- | --- | --- | --- |
 | f14 | Flashcard-First Recommendation | Connected | `ChooseModeScreen` uses actual due counts and explains its SRS recommendation. |
 | f15 | Active-Recall Ladder | Partial | Associative reading has stages and recommendations use due/weakness facts. A common ladder policy is absent. |
-| f16 | Session Configuration | Partial | Category and targeted-word selection work. Combined count/time/mode/audio/accessibility configuration is absent. |
+| f16 | Session Configuration | Partial | Supported category/targeted meaning-quiz configuration and exact accepted deck are immutable and recoverable. Combined user-facing count/time/mode/audio/accessibility configuration remains absent. |
 | f17 | Immediate Answer Feedback | Connected | Quiz waits for save acknowledgement, supports retry and shows selected/correct answers; SRS acknowledges saves. |
 | f18 | Contrastive Distractor Explanation | Missing | Selected/correct answers appear, but no explanation distinguishes a distractor. |
 | f19 | Hint, Strategy & Context | Partial | Quiz hints/reveals, reading associations and AI context exist. No shared hint/strategy contract. |
@@ -59,7 +60,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | Supplied instruments, signed participation, structured baseline/post storage and v15 canonical first-session linkage are verified with synthetic authority and owner/export/deletion coverage. Actual visible capture, exact quiz recovery, both presentations, learning-outcome assessment and collection/upload authority remain incomplete. |
+| f28 | Learning Assessment & Progress Comparison | Partial | Supplied instruments, signed participation, structured baseline/post storage, first-session linkage, a coded form component and exact quiz recovery are verified locally. The visible study host, both presentations, remaining neutral events, learning-outcome assessment and collection/upload authority remain incomplete. |
 
 ## Motivation
 
@@ -95,7 +96,7 @@ capability still needs the applicable acceptance and release checks.
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f42 | Today Hub | Partial | Choose Mode is a Learn landing with due/weakness recommendations. Assigned/resume/quest aggregation is incomplete. |
-| f43 | Learning History | Connected | Mastery opens `LearningHistoryScreen`, through `ProgressUseCases.loadHistory` to owner-scoped Drift pages of 50 recorded sessions, seven local-date answer counts and refresh/retry. |
+| f43 | Learning History | Connected | Mastery opens owner-scoped pages of 50 sessions and seven local-date answer counts. Active stored meaning quizzes have an exact owner/session resume action; refresh, pagination and owner-change hiding remain. |
 
 ## Current engineering boundaries
 

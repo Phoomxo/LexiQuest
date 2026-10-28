@@ -86,7 +86,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     try {
-      final session = await learning.startQuiz(limit: 1);
+      final session = await learning.startShadowing(limit: 1);
       if (!mounted) return;
       if (session.isEmpty) {
         setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');

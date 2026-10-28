@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v15** with 34 tables, matching `AppDatabase.schemaVersion`. The former
+**v16** with 34 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -185,7 +185,7 @@ claimed.
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
 | v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
-| v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Reserved 2026-10-29; runtime still v15 |
+| v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
 | v17+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13, v14, v15 or v16. Reserve the next available version, starting at v17,
@@ -412,12 +412,16 @@ pre-upgrade backup or an explicitly tested downgrade.
 
 ### v16 — Accepted meaning-quiz plan and exact session recovery
 
-**Reserved:** 2026-10-29  
-**Branch:** `codex/remaining-system-readiness`  
+**Reserved:** 2026-10-29
+**Branch:** `codex/remaining-system-readiness`
 **Owner:** Root owns schema/generated source, historical fixture, populated
 migration, export/deletion and integration. Separate workers own bounded
-domain, repository/use-case and caller/test files.  
-**Status:** RESERVED. Executable schema remains v15/34 until implementation.
+domain, repository/use-case and caller/test files.
+**Status:** IMPLEMENTED LOCALLY. Executable schema is v16/34. Database/migration
+42, domain/repository/use-case 86, storage/lifecycle 47, UI integration 65,
+other modes/bootstrap 191 and corrected owner fixtures 23 pass. Full Flutter
+2728, analysis zero issues and CLI 23 pass. Independent storage/domain/core/UI
+reviews accepted. A normal Android debug build is the remaining artifact check.
 
 Add only four columns to existing `learning_sessions`: nullable TEXT
 `accepted_plan_id`, nullable TEXT `accepted_plan_json`, INTEGER NOT NULL DEFAULT

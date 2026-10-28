@@ -8219,6 +8219,50 @@ class $LearningSessionsTable extends LearningSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _acceptedPlanIdMeta = const VerificationMeta(
+    'acceptedPlanId',
+  );
+  @override
+  late final GeneratedColumn<String> acceptedPlanId = GeneratedColumn<String>(
+    'accepted_plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _acceptedPlanJsonMeta = const VerificationMeta(
+    'acceptedPlanJson',
+  );
+  @override
+  late final GeneratedColumn<String> acceptedPlanJson = GeneratedColumn<String>(
+    'accepted_plan_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _checkpointRevisionMeta =
+      const VerificationMeta('checkpointRevision');
+  @override
+  late final GeneratedColumn<int> checkpointRevision = GeneratedColumn<int>(
+    'checkpoint_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _checkpointJsonMeta = const VerificationMeta(
+    'checkpointJson',
+  );
+  @override
+  late final GeneratedColumn<String> checkpointJson = GeneratedColumn<String>(
+    'checkpoint_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8232,6 +8276,10 @@ class $LearningSessionsTable extends LearningSessions
     score,
     appVersion,
     buildId,
+    acceptedPlanId,
+    acceptedPlanJson,
+    checkpointRevision,
+    checkpointJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8334,6 +8382,42 @@ class $LearningSessionsTable extends LearningSessions
     } else if (isInserting) {
       context.missing(_buildIdMeta);
     }
+    if (data.containsKey('accepted_plan_id')) {
+      context.handle(
+        _acceptedPlanIdMeta,
+        acceptedPlanId.isAcceptableOrUnknown(
+          data['accepted_plan_id']!,
+          _acceptedPlanIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('accepted_plan_json')) {
+      context.handle(
+        _acceptedPlanJsonMeta,
+        acceptedPlanJson.isAcceptableOrUnknown(
+          data['accepted_plan_json']!,
+          _acceptedPlanJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('checkpoint_revision')) {
+      context.handle(
+        _checkpointRevisionMeta,
+        checkpointRevision.isAcceptableOrUnknown(
+          data['checkpoint_revision']!,
+          _checkpointRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('checkpoint_json')) {
+      context.handle(
+        _checkpointJsonMeta,
+        checkpointJson.isAcceptableOrUnknown(
+          data['checkpoint_json']!,
+          _checkpointJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -8387,6 +8471,22 @@ class $LearningSessionsTable extends LearningSessions
         DriftSqlType.string,
         data['${effectivePrefix}build_id'],
       )!,
+      acceptedPlanId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}accepted_plan_id'],
+      ),
+      acceptedPlanJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}accepted_plan_json'],
+      ),
+      checkpointRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}checkpoint_revision'],
+      )!,
+      checkpointJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}checkpoint_json'],
+      ),
     );
   }
 
@@ -8408,6 +8508,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
   final int? score;
   final String appVersion;
   final String buildId;
+  final String? acceptedPlanId;
+  final String? acceptedPlanJson;
+  final int checkpointRevision;
+  final String? checkpointJson;
   const LearningSession({
     required this.id,
     required this.ownerId,
@@ -8420,6 +8524,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     this.score,
     required this.appVersion,
     required this.buildId,
+    this.acceptedPlanId,
+    this.acceptedPlanJson,
+    required this.checkpointRevision,
+    this.checkpointJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8439,6 +8547,16 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     }
     map['app_version'] = Variable<String>(appVersion);
     map['build_id'] = Variable<String>(buildId);
+    if (!nullToAbsent || acceptedPlanId != null) {
+      map['accepted_plan_id'] = Variable<String>(acceptedPlanId);
+    }
+    if (!nullToAbsent || acceptedPlanJson != null) {
+      map['accepted_plan_json'] = Variable<String>(acceptedPlanJson);
+    }
+    map['checkpoint_revision'] = Variable<int>(checkpointRevision);
+    if (!nullToAbsent || checkpointJson != null) {
+      map['checkpoint_json'] = Variable<String>(checkpointJson);
+    }
     return map;
   }
 
@@ -8459,6 +8577,16 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           : Value(score),
       appVersion: Value(appVersion),
       buildId: Value(buildId),
+      acceptedPlanId: acceptedPlanId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acceptedPlanId),
+      acceptedPlanJson: acceptedPlanJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(acceptedPlanJson),
+      checkpointRevision: Value(checkpointRevision),
+      checkpointJson: checkpointJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(checkpointJson),
     );
   }
 
@@ -8479,6 +8607,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       score: serializer.fromJson<int?>(json['score']),
       appVersion: serializer.fromJson<String>(json['appVersion']),
       buildId: serializer.fromJson<String>(json['buildId']),
+      acceptedPlanId: serializer.fromJson<String?>(json['acceptedPlanId']),
+      acceptedPlanJson: serializer.fromJson<String?>(json['acceptedPlanJson']),
+      checkpointRevision: serializer.fromJson<int>(json['checkpointRevision']),
+      checkpointJson: serializer.fromJson<String?>(json['checkpointJson']),
     );
   }
   @override
@@ -8496,6 +8628,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       'score': serializer.toJson<int?>(score),
       'appVersion': serializer.toJson<String>(appVersion),
       'buildId': serializer.toJson<String>(buildId),
+      'acceptedPlanId': serializer.toJson<String?>(acceptedPlanId),
+      'acceptedPlanJson': serializer.toJson<String?>(acceptedPlanJson),
+      'checkpointRevision': serializer.toJson<int>(checkpointRevision),
+      'checkpointJson': serializer.toJson<String?>(checkpointJson),
     };
   }
 
@@ -8511,6 +8647,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     Value<int?> score = const Value.absent(),
     String? appVersion,
     String? buildId,
+    Value<String?> acceptedPlanId = const Value.absent(),
+    Value<String?> acceptedPlanJson = const Value.absent(),
+    int? checkpointRevision,
+    Value<String?> checkpointJson = const Value.absent(),
   }) => LearningSession(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -8523,6 +8663,16 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score: score.present ? score.value : this.score,
     appVersion: appVersion ?? this.appVersion,
     buildId: buildId ?? this.buildId,
+    acceptedPlanId: acceptedPlanId.present
+        ? acceptedPlanId.value
+        : this.acceptedPlanId,
+    acceptedPlanJson: acceptedPlanJson.present
+        ? acceptedPlanJson.value
+        : this.acceptedPlanJson,
+    checkpointRevision: checkpointRevision ?? this.checkpointRevision,
+    checkpointJson: checkpointJson.present
+        ? checkpointJson.value
+        : this.checkpointJson,
   );
   LearningSession copyWithCompanion(LearningSessionsCompanion data) {
     return LearningSession(
@@ -8549,6 +8699,18 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ? data.appVersion.value
           : this.appVersion,
       buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      acceptedPlanId: data.acceptedPlanId.present
+          ? data.acceptedPlanId.value
+          : this.acceptedPlanId,
+      acceptedPlanJson: data.acceptedPlanJson.present
+          ? data.acceptedPlanJson.value
+          : this.acceptedPlanJson,
+      checkpointRevision: data.checkpointRevision.present
+          ? data.checkpointRevision.value
+          : this.checkpointRevision,
+      checkpointJson: data.checkpointJson.present
+          ? data.checkpointJson.value
+          : this.checkpointJson,
     );
   }
 
@@ -8565,7 +8727,11 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ..write('wrongCount: $wrongCount, ')
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
-          ..write('buildId: $buildId')
+          ..write('buildId: $buildId, ')
+          ..write('acceptedPlanId: $acceptedPlanId, ')
+          ..write('acceptedPlanJson: $acceptedPlanJson, ')
+          ..write('checkpointRevision: $checkpointRevision, ')
+          ..write('checkpointJson: $checkpointJson')
           ..write(')'))
         .toString();
   }
@@ -8583,6 +8749,10 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score,
     appVersion,
     buildId,
+    acceptedPlanId,
+    acceptedPlanJson,
+    checkpointRevision,
+    checkpointJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -8598,7 +8768,11 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           other.wrongCount == this.wrongCount &&
           other.score == this.score &&
           other.appVersion == this.appVersion &&
-          other.buildId == this.buildId);
+          other.buildId == this.buildId &&
+          other.acceptedPlanId == this.acceptedPlanId &&
+          other.acceptedPlanJson == this.acceptedPlanJson &&
+          other.checkpointRevision == this.checkpointRevision &&
+          other.checkpointJson == this.checkpointJson);
 }
 
 class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
@@ -8613,6 +8787,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
   final Value<int?> score;
   final Value<String> appVersion;
   final Value<String> buildId;
+  final Value<String?> acceptedPlanId;
+  final Value<String?> acceptedPlanJson;
+  final Value<int> checkpointRevision;
+  final Value<String?> checkpointJson;
   final Value<int> rowid;
   const LearningSessionsCompanion({
     this.id = const Value.absent(),
@@ -8626,6 +8804,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     this.appVersion = const Value.absent(),
     this.buildId = const Value.absent(),
+    this.acceptedPlanId = const Value.absent(),
+    this.acceptedPlanJson = const Value.absent(),
+    this.checkpointRevision = const Value.absent(),
+    this.checkpointJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningSessionsCompanion.insert({
@@ -8640,6 +8822,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     required String appVersion,
     required String buildId,
+    this.acceptedPlanId = const Value.absent(),
+    this.acceptedPlanJson = const Value.absent(),
+    this.checkpointRevision = const Value.absent(),
+    this.checkpointJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -8660,6 +8846,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Expression<int>? score,
     Expression<String>? appVersion,
     Expression<String>? buildId,
+    Expression<String>? acceptedPlanId,
+    Expression<String>? acceptedPlanJson,
+    Expression<int>? checkpointRevision,
+    Expression<String>? checkpointJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8674,6 +8864,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       if (score != null) 'score': score,
       if (appVersion != null) 'app_version': appVersion,
       if (buildId != null) 'build_id': buildId,
+      if (acceptedPlanId != null) 'accepted_plan_id': acceptedPlanId,
+      if (acceptedPlanJson != null) 'accepted_plan_json': acceptedPlanJson,
+      if (checkpointRevision != null) 'checkpoint_revision': checkpointRevision,
+      if (checkpointJson != null) 'checkpoint_json': checkpointJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8690,6 +8884,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Value<int?>? score,
     Value<String>? appVersion,
     Value<String>? buildId,
+    Value<String?>? acceptedPlanId,
+    Value<String?>? acceptedPlanJson,
+    Value<int>? checkpointRevision,
+    Value<String?>? checkpointJson,
     Value<int>? rowid,
   }) {
     return LearningSessionsCompanion(
@@ -8704,6 +8902,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       score: score ?? this.score,
       appVersion: appVersion ?? this.appVersion,
       buildId: buildId ?? this.buildId,
+      acceptedPlanId: acceptedPlanId ?? this.acceptedPlanId,
+      acceptedPlanJson: acceptedPlanJson ?? this.acceptedPlanJson,
+      checkpointRevision: checkpointRevision ?? this.checkpointRevision,
+      checkpointJson: checkpointJson ?? this.checkpointJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8744,6 +8946,18 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     if (buildId.present) {
       map['build_id'] = Variable<String>(buildId.value);
     }
+    if (acceptedPlanId.present) {
+      map['accepted_plan_id'] = Variable<String>(acceptedPlanId.value);
+    }
+    if (acceptedPlanJson.present) {
+      map['accepted_plan_json'] = Variable<String>(acceptedPlanJson.value);
+    }
+    if (checkpointRevision.present) {
+      map['checkpoint_revision'] = Variable<int>(checkpointRevision.value);
+    }
+    if (checkpointJson.present) {
+      map['checkpoint_json'] = Variable<String>(checkpointJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8764,6 +8978,10 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
           ..write('buildId: $buildId, ')
+          ..write('acceptedPlanId: $acceptedPlanId, ')
+          ..write('acceptedPlanJson: $acceptedPlanJson, ')
+          ..write('checkpointRevision: $checkpointRevision, ')
+          ..write('checkpointJson: $checkpointJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -31975,6 +32193,10 @@ typedef $$LearningSessionsTableCreateCompanionBuilder =
       Value<int?> score,
       required String appVersion,
       required String buildId,
+      Value<String?> acceptedPlanId,
+      Value<String?> acceptedPlanJson,
+      Value<int> checkpointRevision,
+      Value<String?> checkpointJson,
       Value<int> rowid,
     });
 typedef $$LearningSessionsTableUpdateCompanionBuilder =
@@ -31990,6 +32212,10 @@ typedef $$LearningSessionsTableUpdateCompanionBuilder =
       Value<int?> score,
       Value<String> appVersion,
       Value<String> buildId,
+      Value<String?> acceptedPlanId,
+      Value<String?> acceptedPlanJson,
+      Value<int> checkpointRevision,
+      Value<String?> checkpointJson,
       Value<int> rowid,
     });
 
@@ -32124,6 +32350,26 @@ class $$LearningSessionsTableFilterComposer
 
   ColumnFilters<String> get buildId => $composableBuilder(
     column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get acceptedPlanId => $composableBuilder(
+    column: $table.acceptedPlanId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get acceptedPlanJson => $composableBuilder(
+    column: $table.acceptedPlanJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get checkpointRevision => $composableBuilder(
+    column: $table.checkpointRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get checkpointJson => $composableBuilder(
+    column: $table.checkpointJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -32262,6 +32508,26 @@ class $$LearningSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get acceptedPlanId => $composableBuilder(
+    column: $table.acceptedPlanId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get acceptedPlanJson => $composableBuilder(
+    column: $table.acceptedPlanJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get checkpointRevision => $composableBuilder(
+    column: $table.checkpointRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checkpointJson => $composableBuilder(
+    column: $table.checkpointJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -32336,6 +32602,26 @@ class $$LearningSessionsTableAnnotationComposer
 
   GeneratedColumn<String> get buildId =>
       $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<String> get acceptedPlanId => $composableBuilder(
+    column: $table.acceptedPlanId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get acceptedPlanJson => $composableBuilder(
+    column: $table.acceptedPlanJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get checkpointRevision => $composableBuilder(
+    column: $table.checkpointRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get checkpointJson => $composableBuilder(
+    column: $table.checkpointJson,
+    builder: (column) => column,
+  );
 
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
@@ -32458,6 +32744,10 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 Value<String> appVersion = const Value.absent(),
                 Value<String> buildId = const Value.absent(),
+                Value<String?> acceptedPlanId = const Value.absent(),
+                Value<String?> acceptedPlanJson = const Value.absent(),
+                Value<int> checkpointRevision = const Value.absent(),
+                Value<String?> checkpointJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion(
                 id: id,
@@ -32471,6 +32761,10 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                acceptedPlanId: acceptedPlanId,
+                acceptedPlanJson: acceptedPlanJson,
+                checkpointRevision: checkpointRevision,
+                checkpointJson: checkpointJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -32486,6 +32780,10 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 required String appVersion,
                 required String buildId,
+                Value<String?> acceptedPlanId = const Value.absent(),
+                Value<String?> acceptedPlanJson = const Value.absent(),
+                Value<int> checkpointRevision = const Value.absent(),
+                Value<String?> checkpointJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion.insert(
                 id: id,
@@ -32499,6 +32797,10 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                acceptedPlanId: acceptedPlanId,
+                acceptedPlanJson: acceptedPlanJson,
+                checkpointRevision: checkpointRevision,
+                checkpointJson: checkpointJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

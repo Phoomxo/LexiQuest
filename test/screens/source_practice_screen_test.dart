@@ -529,7 +529,7 @@ void main() {
     expect(page.wordId, 'word-station');
     final sessions = await database.select(database.learningSessions).get();
     expect(sessions, hasLength(1));
-    expect(sessions.single.activityType, 'sourcePractice');
+    expect(sessions.single.activityType, 'pronunciation');
     expect(page.sessionId, sessions.single.id);
     expect(await database.select(database.answerAttempts).get(), isEmpty);
     expect(await database.select(database.pointsLedgerEntries).get(), isEmpty);
@@ -1806,7 +1806,7 @@ void main() {
       final session = await database
           .select(database.learningSessions)
           .getSingle();
-      expect(session.activityType, 'sourcePractice');
+      expect(session.activityType, 'srsReview');
       await tester.ensureVisible(find.text('ดูคำแปล'));
       await tester.tap(find.text('ดูคำแปล'));
       await tester.pumpAndSettle();

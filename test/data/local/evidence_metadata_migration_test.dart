@@ -67,7 +67,7 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final version = await database
         .customSelect('PRAGMA user_version')
         .getSingle();
-    expect(version.read<int>('user_version'), 15);
+    expect(version.read<int>('user_version'), 16);
     expect(before, hasLength(29));
     expect(database.allTables, hasLength(34));
     expect(
@@ -83,7 +83,11 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
           for (final row in rows)
             Map<String, Object?>.from(row.data)
               ..remove('evidence_class')
-              ..remove('evidence_context_json'),
+              ..remove('evidence_context_json')
+              ..remove('accepted_plan_id')
+              ..remove('accepted_plan_json')
+              ..remove('checkpoint_revision')
+              ..remove('checkpoint_json'),
         ],
         entry.value,
         reason: 'Migration must preserve ${entry.key} facts.',
@@ -128,7 +132,7 @@ VALUES ('attempt:answer-a:1', 'owner-a', 'attempt', 'answer-a', 'append', 4)
     final columns = await database
         .customSelect('PRAGMA table_info(answer_attempts)')
         .get();
-    expect(database.schemaVersion, 15);
+    expect(database.schemaVersion, 16);
     expect(database.allTables, hasLength(34));
     expect(
       columns.map((row) => row.read<String>('name')),

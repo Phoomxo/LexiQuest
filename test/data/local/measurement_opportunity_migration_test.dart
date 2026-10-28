@@ -230,7 +230,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      15,
+      16,
     );
     expect(before, hasLength(33));
     expect(database.allTables, hasLength(34));
@@ -245,7 +245,15 @@ void main() {
           .customSelect('SELECT * FROM "${table.key}" ORDER BY rowid')
           .get();
       expect(
-        after.map((row) => row.data).toList(),
+        after
+            .map(
+              (row) => Map<String, Object?>.from(row.data)
+                ..remove('accepted_plan_id')
+                ..remove('accepted_plan_json')
+                ..remove('checkpoint_revision')
+                ..remove('checkpoint_json'),
+            )
+            .toList(),
         table.value,
         reason: table.key,
       );

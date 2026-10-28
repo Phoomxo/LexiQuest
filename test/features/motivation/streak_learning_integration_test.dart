@@ -5,6 +5,8 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
@@ -51,6 +53,23 @@ void main() {
       "'สวัสดี', 'สวัสดี', 'interjection', 'manual', 0, 1, 0, 0, 10, 10)",
     );
 
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          db.VocabularyWordsCompanion.insert(
+            id: 'word-2',
+            ownerId: owner.id,
+            categoryId: 'cat-1',
+            spelling: 'goodbye',
+            normalizedSpelling: 'goodbye',
+            meaning: 'ลาก่อน',
+            normalizedMeaning: 'ลาก่อน',
+            partOfSpeech: 'interjection',
+            createdAtUtcMs: 10,
+            updatedAtUtcMs: 10,
+          ),
+        );
+
     streakUseCases = StreakUseCases(
       repository: DriftStreakRepository(database),
       owners: _FakeOwners(owner),
@@ -75,13 +94,11 @@ void main() {
       final session = await learningUseCases.startQuiz(limit: 10);
       expect(session.questions, isNotEmpty);
 
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: true,
         responseTimeMs: 300,
-        attemptNumber: 1,
       );
 
       final state = await streakUseCases.getCurrentStreak();
@@ -103,13 +120,11 @@ void main() {
       );
       final session = await noStreakUseCases.startQuiz(limit: 10);
       await expectLater(
-        noStreakUseCases.recordAnswer(
-          sessionId: session.id,
-          wordId: 'word-1',
-          promptMode: 'meaningChoice',
-          isCorrect: true,
+        _answerQuiz(
+          noStreakUseCases,
+          session,
+          correct: true,
           responseTimeMs: 300,
-          attemptNumber: 1,
         ),
         completes,
       );
@@ -117,13 +132,11 @@ void main() {
 
     test('learning day log records entry on first answer', () async {
       final session = await learningUseCases.startQuiz(limit: 10);
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: false,
         responseTimeMs: 500,
-        attemptNumber: 1,
       );
 
       final days = await DriftStreakRepository(
@@ -140,22 +153,18 @@ void main() {
     test('streak outcome is sameDay on second answer same session', () async {
       final session = await learningUseCases.startQuiz(limit: 10);
       // First answer — starts streak.
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: true,
         responseTimeMs: 300,
-        attemptNumber: 1,
       );
       // Second answer same UTC day — must be idempotent.
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: false,
         responseTimeMs: 400,
-        attemptNumber: 2,
       );
 
       final state = await streakUseCases.getCurrentStreak();
@@ -166,4 +175,39 @@ void main() {
       );
     });
   });
+}
+
+Future<void> _answerQuiz(
+  LearningUseCases learning,
+  QuizSession session, {
+  required bool correct,
+  required int responseTimeMs,
+}) async {
+  var state = await learning.resumeQuiz(
+    sessionId: session.id,
+    expectedOwnerId: session.configured!.ownerId,
+  );
+  if (state.checkpoint is AnsweredQuizQuestion) {
+    state = await learning.advanceQuiz(
+      sessionId: state.sessionId,
+      expectedOwnerId: state.ownerId,
+      expectedRevision: state.checkpointRevision,
+    );
+  }
+  final question = state.plan.questions[state.checkpoint.questionOrdinal];
+  final ordinal = question.options.indexWhere(
+    (option) => (option == question.correctAnswer) == correct,
+  );
+  final pending = await learning.prepareQuizAnswer(
+    sessionId: state.sessionId,
+    expectedOwnerId: state.ownerId,
+    expectedRevision: state.checkpointRevision,
+    selectedOptionOrdinal: ordinal,
+    responseTimeMs: responseTimeMs,
+  );
+  await learning.commitQuizAnswer(
+    sessionId: state.sessionId,
+    expectedOwnerId: state.ownerId,
+    expectedRevision: pending.checkpointRevision,
+  );
 }

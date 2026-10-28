@@ -733,7 +733,7 @@ class _SourcePracticeScreenState extends State<SourcePracticeScreen> {
         });
         return;
       }
-      final session = await learning.startSourcePracticeForWords(
+      final session = await learning.startSourcePronunciationForWords(
         wordIds: [target.id],
         limit: 1,
       );

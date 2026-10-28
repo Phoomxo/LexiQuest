@@ -6,6 +6,8 @@ import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
@@ -85,6 +87,23 @@ void main() {
       "'สวัสดี', 'สวัสดี', 'interjection', 'manual', 0, 1, 0, 0, 10, 10)",
     );
 
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          db.VocabularyWordsCompanion.insert(
+            id: 'word-2',
+            ownerId: owner.id,
+            categoryId: 'cat-1',
+            spelling: 'goodbye',
+            normalizedSpelling: 'goodbye',
+            meaning: 'ลาก่อน',
+            normalizedMeaning: 'ลาก่อน',
+            partOfSpeech: 'interjection',
+            createdAtUtcMs: 10,
+            updatedAtUtcMs: 10,
+          ),
+        );
+
     questRepo = DriftQuestRepository(database);
     questUseCases = QuestUseCases(
       repository: questRepo,
@@ -122,13 +141,11 @@ void main() {
       final session = await learningUseCases.startQuiz(limit: 10);
       expect(session.questions, isNotEmpty);
 
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: true,
         responseTimeMs: 300,
-        attemptNumber: 1,
       );
 
       // Quest still active; counter advanced to 1/2.
@@ -145,13 +162,11 @@ void main() {
       await questUseCases.startQuest(_quizDef());
       final session = await learningUseCases.startQuiz(limit: 10);
 
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: false,
         responseTimeMs: 500,
-        attemptNumber: 1,
       );
 
       final active = await questUseCases.getActiveInstances();
@@ -167,13 +182,11 @@ void main() {
       await questUseCases.startQuest(_quizDef(targetCount: 1));
       final session = await learningUseCases.startQuiz(limit: 10);
 
-      await learningUseCases.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
+      await _answerQuiz(
+        learningUseCases,
+        session,
+        correct: true,
         responseTimeMs: 300,
-        attemptNumber: 1,
       );
 
       final active = await questUseCases.getActiveInstances();
@@ -193,16 +206,49 @@ void main() {
       final session = await useCasesNoQuest.startQuiz(limit: 10);
       // Must not throw even without questEventSink (feature flag off).
       await expectLater(
-        useCasesNoQuest.recordAnswer(
-          sessionId: session.id,
-          wordId: 'word-1',
-          promptMode: 'meaningChoice',
-          isCorrect: true,
+        _answerQuiz(
+          useCasesNoQuest,
+          session,
+          correct: true,
           responseTimeMs: 300,
-          attemptNumber: 1,
         ),
         completes,
       );
     });
   });
+}
+
+Future<void> _answerQuiz(
+  LearningUseCases learning,
+  QuizSession session, {
+  required bool correct,
+  required int responseTimeMs,
+}) async {
+  var state = await learning.resumeQuiz(
+    sessionId: session.id,
+    expectedOwnerId: session.configured!.ownerId,
+  );
+  if (state.checkpoint is AnsweredQuizQuestion) {
+    state = await learning.advanceQuiz(
+      sessionId: state.sessionId,
+      expectedOwnerId: state.ownerId,
+      expectedRevision: state.checkpointRevision,
+    );
+  }
+  final question = state.plan.questions[state.checkpoint.questionOrdinal];
+  final ordinal = question.options.indexWhere(
+    (option) => (option == question.correctAnswer) == correct,
+  );
+  final pending = await learning.prepareQuizAnswer(
+    sessionId: state.sessionId,
+    expectedOwnerId: state.ownerId,
+    expectedRevision: state.checkpointRevision,
+    selectedOptionOrdinal: ordinal,
+    responseTimeMs: responseTimeMs,
+  );
+  await learning.commitQuizAnswer(
+    sessionId: state.sessionId,
+    expectedOwnerId: state.ownerId,
+    expectedRevision: pending.checkpointRevision,
+  );
 }

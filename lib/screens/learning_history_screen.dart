@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/domain/learning_history_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../widgets/adaptive_content_pane.dart';
+import 'quiz_screen.dart';
 
 typedef LearningHistoryLoader =
     Future<LearningHistorySnapshot> Function({LearningHistoryCursor? before});
@@ -36,6 +38,7 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
   bool _loadingMore = false;
   bool _moreFailed = false;
   int _generation = 0;
+  bool _resuming = false;
 
   @override
   void initState() {
@@ -176,6 +179,36 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
     }
   }
 
+  Future<void> _resume(LearningHistoryEntry entry, String ownerId) async {
+    if (_resuming ||
+        _history?.ownerId != ownerId ||
+        (_ownerKnown && _observedOwner != ownerId)) {
+      return;
+    }
+    final generation = _generation;
+    final learning = AppDependenciesScope.maybeOf(context)?.learning;
+    setState(() => _resuming = true);
+    try {
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/resume-quiz',
+          builder: (_) => QuizScreen(
+            resumeSessionId: entry.sessionId,
+            expectedOwnerId: ownerId,
+            learning: learning,
+            ownerChanges: widget.ownerChanges,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _resuming = false);
+        if (generation == _generation) await _reload();
+      }
+    }
+  }
+
   @override
   void dispose() {
     _generation++;
@@ -258,7 +291,21 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
         ),
         const SizedBox(height: 4),
         for (final entry in history.entries) ...[
-          _HistoryRound(entry),
+          _HistoryRound(
+            entry,
+            onResume:
+                entry.hasAcceptedQuiz &&
+                    entry.state == 'active' &&
+                    const {
+                      'quiz',
+                      'weaknessPractice',
+                      'sourcePractice',
+                    }.contains(entry.activityType)
+                ? _resuming
+                      ? null
+                      : () => unawaited(_resume(entry, history.ownerId))
+                : null,
+          ),
           const Divider(height: 1),
         ],
         if (_moreFailed) ...[
@@ -282,8 +329,9 @@ class _LearningHistoryScreenState extends State<LearningHistoryScreen>
 }
 
 class _HistoryRound extends StatelessWidget {
-  const _HistoryRound(this.entry);
+  const _HistoryRound(this.entry, {this.onResume});
   final LearningHistoryEntry entry;
+  final VoidCallback? onResume;
 
   @override
   Widget build(BuildContext context) {
@@ -314,6 +362,15 @@ class _HistoryRound extends StatelessWidget {
                 : 'ถูก ${entry.correctCount} จาก ${entry.answerCount} คำตอบ',
             style: textTheme.bodyLarge,
           ),
+          if (onResume != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onResume,
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('เล่นต่อ'),
+              style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+            ),
+          ],
         ],
       ),
     );

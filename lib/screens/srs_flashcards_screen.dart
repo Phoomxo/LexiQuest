@@ -97,7 +97,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               StateError('local learning dependency unavailable'),
             )
           : _isSourcePractice
-          ? learning.startSourcePracticeForWords(wordIds: widget.sourceWordIds!)
+          ? learning.startSourceReviewForWords(wordIds: widget.sourceWordIds!)
           : learning.startDueReview();
     }
     _load!.then((session) {

@@ -15,6 +15,11 @@ class LearningSessions extends Table {
   IntColumn get score => integer().nullable()();
   TextColumn get appVersion => text()();
   TextColumn get buildId => text()();
+  TextColumn get acceptedPlanId => text().nullable()();
+  TextColumn get acceptedPlanJson => text().nullable()();
+  IntColumn get checkpointRevision =>
+      integer().withDefault(const Constant(0))();
+  TextColumn get checkpointJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

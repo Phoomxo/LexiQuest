@@ -38,13 +38,13 @@ void main() {
       },
     );
 
-    test('fresh database reports current schema version 15', () async {
+    test('fresh database reports current schema version 16', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 15);
+      expect(version, 16);
     });
 
     test('can insert and retrieve an association_records row', () async {

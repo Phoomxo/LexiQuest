@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/progress/domain/learning_history_mod
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
 
 void main() {
   setUpAll(() async {
@@ -270,6 +271,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(MasteryDashboardScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'resume opens the exact stored owner and session, then refreshes history',
+    (tester) async {
+      var reads = 0;
+      final activeQuiz = LearningHistoryEntry(
+        sessionId: 'synthetic-saved-quiz',
+        activityType: 'sourcePractice',
+        state: 'active',
+        startedAtUtc: _active.startedAtUtc,
+        endedAtUtc: null,
+        answerCount: 1,
+        correctCount: 1,
+        hasAcceptedQuiz: true,
+      );
+      await tester.pumpWidget(
+        _app(
+          LearningHistoryScreen(
+            loader: ({before}) async {
+              reads++;
+              return _history(entries: [activeQuiz, _completed, _active]);
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('เล่นต่อ'), findsOneWidget);
+      await tester.ensureVisible(find.text('เล่นต่อ'));
+      await tester.tap(find.text('เล่นต่อ'));
+      await tester.pumpAndSettle();
+      expect(find.byType(QuizScreen), findsOneWidget);
+      final route = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(route.resumeSessionId, 'synthetic-saved-quiz');
+      expect(route.expectedOwnerId, 'private-owner-a');
+      expect(reads, 1);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(reads, 2);
+      expect(find.text('เล่นต่อ'), findsOneWidget);
+    },
+  );
 }
 
 Widget _app(Widget home) => MaterialApp(theme: M3Theme.lightTheme, home: home);

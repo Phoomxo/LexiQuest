@@ -69,7 +69,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -203,6 +203,21 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 15) {
         await _createMissingTables(migrator);
+      }
+      if (from < 16) {
+        for (final column in <GeneratedColumn<Object>>[
+          learningSessions.acceptedPlanId,
+          learningSessions.acceptedPlanJson,
+          learningSessions.checkpointRevision,
+          learningSessions.checkpointJson,
+        ]) {
+          await _addColumnIfMissing(
+            migrator,
+            'learning_sessions',
+            learningSessions,
+            column,
+          );
+        }
       }
     },
     beforeOpen: (details) async {

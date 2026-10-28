@@ -23,6 +23,7 @@ final class LearningHistoryEntry {
     required this.endedAtUtc,
     required this.answerCount,
     required this.correctCount,
+    this.hasAcceptedQuiz = false,
   });
 
   final String sessionId;
@@ -32,6 +33,7 @@ final class LearningHistoryEntry {
   final DateTime? endedAtUtc;
   final int answerCount;
   final int correctCount;
+  final bool hasAcceptedQuiz;
 }
 
 final class LearningHistoryDay {

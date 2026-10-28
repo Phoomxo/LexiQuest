@@ -170,6 +170,47 @@ void main() {
   );
 
   test(
+    'history identifies stored quiz recovery without creating a plan for legacy rows',
+    () async {
+      for (final mode in ['quiz', 'weaknessPractice', 'sourcePractice']) {
+        await session(mode, state: 'active', mode: mode);
+        await database.customStatement(
+          'UPDATE learning_sessions SET accepted_plan_id = ?, accepted_plan_json = ?, '
+          'checkpoint_revision = 3, checkpoint_json = ? WHERE id = ?',
+          [
+            'synthetic-plan-$mode',
+            'synthetic-plan-body-$mode',
+            'synthetic-checkpoint-$mode',
+            mode,
+          ],
+        );
+      }
+      await session('legacy', state: 'active');
+      await session('partial', state: 'active');
+      await database.customStatement(
+        "UPDATE learning_sessions SET accepted_plan_id = 'synthetic-partial' WHERE id = 'partial'",
+      );
+      final before = await _snapshot(database);
+      final result = await history.load(ownerId: 'a', nowUtc: now);
+      expect(
+        result.entries
+            .where((entry) => entry.hasAcceptedQuiz)
+            .map((entry) => entry.sessionId)
+            .toSet(),
+        {'quiz', 'weaknessPractice', 'sourcePractice'},
+      );
+      expect(
+        result.entries
+            .where((entry) => !entry.hasAcceptedQuiz)
+            .map((entry) => entry.sessionId)
+            .toSet(),
+        {'legacy', 'partial'},
+      );
+      expect(await _snapshot(database), before);
+    },
+  );
+
+  test(
     'daily answer frequency follows seven local civil dates across midnight',
     () async {
       await session('round');

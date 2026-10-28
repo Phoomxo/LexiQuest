@@ -281,17 +281,18 @@ void main() {
         expect(dbContent.contains('from < 13'), isTrue);
         expect(dbContent.contains('from < 14'), isTrue);
         expect(dbContent.contains('from < 15'), isTrue);
-        expect(dbContent.contains('from < 16'), isFalse);
+        expect(dbContent.contains('from < 16'), isTrue);
+        expect(dbContent.contains('from < 17'), isFalse);
       },
     );
 
-    test('current schemaVersion in code is 15', () {
+    test('current schemaVersion in code is 16', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 15'),
+        dbContent.contains('schemaVersion => 16'),
         isTrue,
         reason:
-            'schema v13 retains signed participation with immutable owner pins',
+            'schema v16 retains accepted quiz plans and recovery checkpoints',
       );
     });
   });

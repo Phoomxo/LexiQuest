@@ -1,3 +1,4 @@
+import 'accepted_quiz_plan.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 
@@ -33,11 +34,13 @@ final class QuizSession {
     required this.id,
     required this.questions,
     required this.startedAtUtc,
+    this.configured,
   });
 
   final String id;
   final List<QuizQuestion> questions;
   final DateTime? startedAtUtc;
+  final ConfiguredQuizState? configured;
 
   bool get isEmpty => questions.isEmpty;
 }
@@ -211,4 +214,103 @@ final class ReadingProgressSnapshot {
     isCompleted,
     updatedAtUtc,
   );
+}
+
+final class ConfiguredQuizLaunch {
+  const ConfiguredQuizLaunch({
+    required this.session,
+    required this.configuration,
+  });
+
+  final LearningSessionDraft session;
+  final QuizConfiguration configuration;
+}
+
+enum ConfiguredQuizUnavailableReason {
+  emptySelection,
+  notFound,
+  legacy,
+  syncedEvidence,
+  corrupt,
+  ownerChanged,
+  contentChanged,
+  unsupportedPolicy,
+}
+
+final class ConfiguredQuizUnavailable implements Exception {
+  const ConfiguredQuizUnavailable(this.reason);
+  final ConfiguredQuizUnavailableReason reason;
+
+  @override
+  String toString() => 'Configured quiz unavailable: ${reason.name}';
+}
+
+final class ConfiguredQuizState {
+  ConfiguredQuizState({
+    required this.sessionId,
+    required this.ownerId,
+    required this.activityType,
+    required this.startedAtUtc,
+    required this.appVersion,
+    required this.buildId,
+    required this.state,
+    required this.endedAtUtc,
+    required this.plan,
+    required this.checkpointRevision,
+    required this.checkpoint,
+    Iterable<QuizWord> mistakeWords = const [],
+    this.restored = false,
+  }) : mistakeWords = List.unmodifiable(mistakeWords);
+
+  final String sessionId;
+  final String ownerId;
+  final String activityType;
+  final DateTime startedAtUtc;
+  final String appVersion;
+  final String buildId;
+  final String state;
+  final DateTime? endedAtUtc;
+  final AcceptedQuizPlan plan;
+  final int checkpointRevision;
+  final QuizCheckpoint checkpoint;
+  final List<QuizWord> mistakeWords;
+  final bool restored;
+
+  QuizSession get asQuizSession => QuizSession(
+    id: sessionId,
+    questions: plan.questions,
+    startedAtUtc: startedAtUtc,
+    configured: this,
+  );
+
+  ConfiguredQuizState asRestored() => ConfiguredQuizState(
+    sessionId: sessionId,
+    ownerId: ownerId,
+    activityType: activityType,
+    startedAtUtc: startedAtUtc,
+    appVersion: appVersion,
+    buildId: buildId,
+    state: state,
+    endedAtUtc: endedAtUtc,
+    plan: plan,
+    checkpointRevision: checkpointRevision,
+    checkpoint: checkpoint,
+    mistakeWords: mistakeWords,
+    restored: true,
+  );
+}
+
+final class ConfiguredQuizAnswerResult {
+  const ConfiguredQuizAnswerResult({required this.state, required this.record});
+  final ConfiguredQuizState state;
+  final AnswerRecordResult record;
+}
+
+final class ConfiguredQuizFinishResult {
+  const ConfiguredQuizFinishResult({
+    required this.state,
+    required this.summary,
+  });
+  final ConfiguredQuizState state;
+  final LearningSessionSummary summary;
 }

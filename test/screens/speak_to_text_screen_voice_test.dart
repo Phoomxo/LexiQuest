@@ -285,7 +285,7 @@ void main() {
                 updatedAtUtcMs: 1,
               ),
             );
-        session = await learning.startSourcePracticeForWords(
+        session = await learning.startSourcePronunciationForWords(
           wordIds: ['word-cat'],
           limit: 1,
         );

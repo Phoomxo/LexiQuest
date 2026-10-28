@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
@@ -102,18 +103,33 @@ void main() {
   test(
     'records answers and finishes a session from durable evidence',
     () async {
-      final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 2);
+      final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
       now = now.add(const Duration(seconds: 2));
-      await useCases.recordAnswer(
+      final configured = quiz.configured!;
+      final question = quiz.questions.single;
+      final pending = await useCases.prepareQuizAnswer(
         sessionId: quiz.id,
-        wordId: quiz.questions.first.word.id,
-        promptMode: 'meaningChoice',
-        isCorrect: true,
+        expectedOwnerId: configured.ownerId,
+        expectedRevision: configured.checkpointRevision,
+        selectedOptionOrdinal: question.options.indexOf(question.correctAnswer),
         responseTimeMs: 2000,
-        attemptNumber: 1,
+      );
+      final answer = await useCases.commitQuizAnswer(
+        sessionId: quiz.id,
+        expectedOwnerId: configured.ownerId,
+        expectedRevision: pending.checkpointRevision,
       );
       now = now.add(const Duration(seconds: 1));
-      final summary = await useCases.finishSession(quiz.id);
+      final closing = await useCases.prepareQuizFinish(
+        sessionId: quiz.id,
+        expectedOwnerId: configured.ownerId,
+        expectedRevision: answer.state.checkpointRevision,
+      );
+      final summary = (await useCases.finishConfiguredQuiz(
+        sessionId: quiz.id,
+        expectedOwnerId: configured.ownerId,
+        expectedRevision: closing.checkpointRevision,
+      )).summary;
 
       expect(summary.correctCount, 1);
       expect(summary.wrongCount, 0);
@@ -126,10 +142,20 @@ void main() {
   );
 
   test(
-    'answer capture keeps the revision shown before a vocabulary edit',
+    'legacy answer capture keeps the revision shown before a vocabulary edit',
     () async {
-      final quiz = await useCases.startQuiz(limit: 1);
-      final word = quiz.questions.single.word;
+      final word = (await useCases.prepareReading(limit: 1)).single;
+      final owner = await useCases.owners.getOrCreateActiveOwner();
+      await useCases.repository.startSession(
+        LearningSessionDraft(
+          id: 'legacy-quiz',
+          ownerId: owner.id,
+          activityType: 'quiz',
+          startedAtUtc: now,
+          appVersion: 'legacy-test',
+          buildId: 'legacy-test',
+        ),
+      );
       final context = captureCurrentActivityEvidence(
         promptMode: 'meaningChoice',
         contentRevision: word.contentRevision,
@@ -138,7 +164,7 @@ void main() {
         "UPDATE vocabulary_words SET local_revision = 2 WHERE id = '${word.id}'",
       );
       await useCases.recordAnswer(
-        sessionId: quiz.id,
+        sessionId: 'legacy-quiz',
         wordId: word.id,
         promptMode: 'meaningChoice',
         isCorrect: true,
@@ -249,20 +275,29 @@ void main() {
     () async {
       final session = await useCases.startQuiz(limit: 1);
       final submittedAt = now;
+      final state = session.configured!;
+      final question = session.questions.single;
+      final pending = await useCases.prepareQuizAnswer(
+        sessionId: session.id,
+        expectedOwnerId: state.ownerId,
+        expectedRevision: state.checkpointRevision,
+        selectedOptionOrdinal: question.options.indexOf(question.correctAnswer),
+        responseTimeMs: 42,
+      );
       Future<void> submit() async {
-        await useCases.recordAnswer(
+        await useCases.commitQuizAnswer(
           sessionId: session.id,
-          wordId: 'word-1',
-          promptMode: 'meaningChoice',
-          isCorrect: true,
-          responseTimeMs: 42,
-          attemptNumber: 1,
-          attemptId: 'attempt:synthetic-retry',
-          occurredAtUtc: submittedAt,
+          expectedOwnerId: state.ownerId,
+          expectedRevision: pending.checkpointRevision,
         );
       }
 
       await submit();
+      final recorded = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      expect(recorded.id, pending.checkpoint.answer!.attemptId);
+      expect(recorded.occurredAtUtcMs, submittedAt.millisecondsSinceEpoch);
       now = now.add(const Duration(minutes: 1));
       await submit();
       expect(

@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
@@ -357,15 +358,28 @@ void main() {
   ) async {
     final progress = (await tester.runAsync(() async {
       final session = await learning.startQuiz(limit: 1);
-      await learning.recordAnswer(
-        sessionId: session.id,
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
-        responseTimeMs: 500,
-        attemptNumber: 1,
+      var quiz = session.configured!;
+      quiz = await learning.prepareQuizAnswer(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+        expectedRevision: quiz.checkpointRevision,
+        revealed: true,
       );
-      await learning.finishSession(session.id);
+      quiz = (await learning.commitQuizAnswer(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+        expectedRevision: quiz.checkpointRevision,
+      )).state;
+      quiz = await learning.prepareQuizFinish(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+        expectedRevision: quiz.checkpointRevision,
+      );
+      await learning.finishConfiguredQuiz(
+        sessionId: quiz.sessionId,
+        expectedOwnerId: quiz.ownerId,
+        expectedRevision: quiz.checkpointRevision,
+      );
       final owner = await database.select(database.localOwners).getSingle();
       return DriftProgressQueries(
         database,
@@ -543,10 +557,10 @@ void main() {
     expect(find.text('noun'), findsNothing);
     for (var i = 0; i < 2; i++) {
       await tester.tap(find.text('ดูคำใบ้'));
-      await tester.pump();
+      await _pumpUntilFound(tester, find.text('noun'));
       expect(find.text('noun'), findsOneWidget);
       await tester.tap(find.text('ซ่อนคำใบ้'));
-      await tester.pump();
+      await _pumpUntilFound(tester, find.text('ดูคำใบ้'));
     }
     expect(await database.select(database.answerAttempts).get(), isEmpty);
     expect(await database.select(database.pointsLedgerEntries).get(), isEmpty);
@@ -565,9 +579,9 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
     await _pumpUntilFound(tester, find.text('station'));
     await tester.tap(find.text('ดูคำใบ้'));
-    await tester.pump();
+    await _pumpUntilFound(tester, find.text('noun'));
     await tester.tap(find.text('ซ่อนคำใบ้'));
-    await tester.pump();
+    await _pumpUntilFound(tester, find.text('ดูคำใบ้'));
     expect(find.text('noun'), findsNothing);
     await tester.tap(find.text('สถานี'));
     await _pumpUntilFound(tester, find.text('ถูกต้อง'));
@@ -615,7 +629,10 @@ void main() {
       await _pumpUntilFound(tester, find.text('station'));
       await tester.ensureVisible(find.text('ดูคำใบ้'));
       await tester.tap(find.text('ดูคำใบ้'));
-      await tester.pump();
+      await _pumpUntilFound(
+        tester,
+        find.text('ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว'),
+      );
       expect(
         find.text('ชนิดคำสังเคราะห์สำหรับใช้ทดสอบคำใบ้ที่มีข้อความยาว'),
         findsOneWidget,
@@ -776,7 +793,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final message = find.text(
-      'เปิดแบบทดสอบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
+      'เปิดแบบทดสอบไม่สำเร็จ กรุณาลองอีกครั้งหรือกลับไปเลือกกิจกรรม',
     );
     expect(message, findsOneWidget);
     expect(
@@ -831,7 +848,7 @@ void main() {
       expect(find.text('ยังไม่ถูก ลองดูคำแปลอีกครั้ง'), findsOneWidget);
       expect(find.text('station — สถานี'), findsOneWidget);
       await tester.tap(find.text('คำถามถัดไป'));
-      await tester.pump();
+      await _pumpUntilFound(tester, find.text('คำถาม 2 จาก 2'));
       await tester.tap(find.text('ตั๋ว'));
       await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
       await tester.tap(find.text('ดูผลการเรียน'));
@@ -870,6 +887,316 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'start retry keeps one accepted identity after lost acknowledgement',
+    (tester) async {
+      final repository = _FailOnceRepository(
+        learning.repository,
+        false,
+        failOnCall: 0,
+        failStartAfterCommit: true,
+      );
+      final failing = LearningUseCases(
+        owners: learning.owners,
+        repository: repository,
+        generateId: () => (++id).toString(),
+        nowUtc: learning.nowUtc,
+        buildInfo: learning.buildInfo,
+      );
+      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: failing)));
+      await _pumpUntilFound(
+        tester,
+        find.textContaining('เปิดแบบทดสอบไม่สำเร็จ'),
+      );
+      final before = (await tester.runAsync(
+        () => database.select(database.learningSessions).getSingle(),
+      ))!;
+      expect(find.text('station'), findsNothing);
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await _pumpUntilFound(tester, find.text('station'));
+      final sessions = (await tester.runAsync(
+        () => database.select(database.learningSessions).get(),
+      ))!;
+      expect(sessions, hasLength(1));
+      expect(sessions.single.toJson(), before.toJson());
+      expect(id, 1);
+    },
+  );
+
+  testWidgets(
+    'failed durable hint remains hidden until exact retry acknowledges',
+    (tester) async {
+      final repository = _FailOnceRepository(
+        learning.repository,
+        true,
+        failOnCall: 0,
+        failCheckpointPhase: 'awaitingAnswer',
+      );
+      final failing = LearningUseCases(
+        owners: learning.owners,
+        repository: repository,
+        generateId: () => (++id).toString(),
+        nowUtc: learning.nowUtc,
+        buildInfo: learning.buildInfo,
+      );
+      await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: failing)));
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('ดูคำใบ้'));
+      await _pumpUntilFound(
+        tester,
+        find.text('บันทึกคำใบ้ไม่สำเร็จ กรุณาลองอีกครั้ง'),
+      );
+      expect(find.text('noun'), findsNothing);
+      final saved = (await tester.runAsync(
+        () => database.select(database.learningSessions).getSingle(),
+      ))!;
+      final checkpoint = jsonDecode(saved.checkpointJson!) as Map;
+      expect((checkpoint['assistance'] as Map)['hintVisible'], isTrue);
+      await tester.tap(find.text('ลองบันทึกอีกครั้ง'));
+      await _pumpUntilFound(tester, find.text('noun'));
+      final retried = (await tester.runAsync(
+        () => database.select(database.learningSessions).getSingle(),
+      ))!;
+      expect(retried.checkpointRevision, saved.checkpointRevision);
+      expect(retried.checkpointJson, saved.checkpointJson);
+      expect(
+        await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ),
+        isEmpty,
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.outboxOperations).get(),
+        ),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'owner switch hides private items and ignores late answer acknowledgement',
+    (tester) async {
+      final acknowledgement = Completer<void>();
+      final owners = StreamController<String?>.broadcast();
+      addTearDown(() async {
+        if (!acknowledgement.isCompleted) acknowledgement.complete();
+        await owners.close();
+      });
+      final repository = _FailOnceRepository(
+        learning.repository,
+        false,
+        failOnCall: 0,
+        acknowledgement: acknowledgement.future,
+      );
+      final pending = LearningUseCases(
+        owners: learning.owners,
+        repository: repository,
+        generateId: () => (++id).toString(),
+        nowUtc: learning.nowUtc,
+        buildInfo: learning.buildInfo,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(learning: pending, ownerChanges: owners.stream),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('สถานี'));
+      for (var i = 0; i < 60 && repository.commands.isEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(repository.commands, hasLength(1));
+      owners.add('synthetic-different-owner');
+      await _pumpUntilFound(
+        tester,
+        find.text('บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม'),
+      );
+      expect(find.text('station', skipOffstage: false), findsNothing);
+      acknowledgement.complete();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+      expect(find.text('ถูกต้อง'), findsNothing);
+      expect(find.byType(ScoreScreen), findsNothing);
+      final attempts = (await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ))!;
+      expect(attempts, hasLength(1));
+      expect(attempts.single.ownerId, repository.commands.single.ownerId);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'covered route clears private items and reloads committed answer on return',
+    (tester) async {
+      final acknowledgement = Completer<void>();
+      addTearDown(() {
+        if (!acknowledgement.isCompleted) acknowledgement.complete();
+      });
+      final repository = _FailOnceRepository(
+        learning.repository,
+        false,
+        failOnCall: 0,
+        acknowledgement: acknowledgement.future,
+      );
+      final pending = LearningUseCases(
+        owners: learning.owners,
+        repository: repository,
+        generateId: () => (++id).toString(),
+        nowUtc: learning.nowUtc,
+        buildInfo: learning.buildInfo,
+      );
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          home: QuizScreen(learning: pending),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('สถานี'));
+      for (var i = 0; i < 60 && repository.commands.isEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(repository.commands, hasLength(1));
+      unawaited(
+        navigator.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Synthetic cover')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('station', skipOffstage: false), findsNothing);
+      acknowledgement.complete();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+      expect(find.text('ถูกต้อง', skipOffstage: false), findsNothing);
+      navigator.currentState!.pop();
+      await _pumpUntilFound(tester, find.text('ถูกต้อง'));
+      expect(repository.commands, hasLength(1));
+      expect(
+        await tester.runAsync(
+          () => database.select(database.learningSessions).get(),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets('disposed quiz ignores late answer acknowledgement', (
+    tester,
+  ) async {
+    final acknowledgement = Completer<void>();
+    addTearDown(() {
+      if (!acknowledgement.isCompleted) acknowledgement.complete();
+    });
+    final repository = _FailOnceRepository(
+      learning.repository,
+      false,
+      failOnCall: 0,
+      acknowledgement: acknowledgement.future,
+    );
+    final pending = LearningUseCases(
+      owners: learning.owners,
+      repository: repository,
+      generateId: () => (++id).toString(),
+      nowUtc: learning.nowUtc,
+      buildInfo: learning.buildInfo,
+    );
+    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: pending)));
+    await _pumpUntilFound(tester, find.text('station'));
+    await tester.tap(find.text('สถานี'));
+    for (var i = 0; i < 60 && repository.commands.isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(repository.commands, hasLength(1));
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: Text('Different screen'))),
+    );
+    acknowledgement.complete();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+    expect(find.text('ถูกต้อง'), findsNothing);
+    expect(find.byType(ScoreScreen), findsNothing);
+    expect(find.text('Different screen'), findsOneWidget);
+    expect(
+      await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ),
+      hasLength(1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('slow optional haptics cannot hold a committed answer or score', (
+    tester,
+  ) async {
+    final feedback = Completer<Object?>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'HapticFeedback.vibrate') return feedback.future;
+          return null;
+        });
+    addTearDown(() {
+      if (!feedback.isCompleted) feedback.complete();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+    await tester.pumpWidget(MaterialApp(home: QuizScreen(learning: learning)));
+    await _pumpUntilFound(tester, find.text('station'));
+    await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('ถูกต้อง'));
+    expect(feedback.isCompleted, isFalse);
+    final next = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'ดูผลการเรียน'),
+    );
+    expect(next.onPressed, isNotNull);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is LinearProgressIndicator &&
+            widget.semanticsLabel == 'กำลังบันทึกคำตอบ',
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.text('ดูผลการเรียน'));
+    await _pumpUntilFound(tester, find.byType(ScoreScreen));
+    expect(feedback.isCompleted, isFalse);
+    expect(
+      await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      ),
+      hasLength(1),
+    );
+    final session = (await tester.runAsync(
+      () => database.select(database.learningSessions).getSingle(),
+    ))!;
+    expect(session.state, 'completed');
+  });
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
@@ -883,34 +1210,138 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   fail('Timed out waiting for $finder');
 }
 
-class _FailOnceRepository implements LearningRepository {
+class _FailOnceRepository
+    implements LearningRepository, ConfiguredQuizRepository {
   _FailOnceRepository(
     this.delegate,
     this.afterCommit, {
     this.failOnCall = 1,
     this.acknowledgement,
+    this.failStartAfterCommit = false,
+    this.failCheckpointPhase,
   });
   final LearningRepository delegate;
   final bool afterCommit;
   final int failOnCall;
   final Future<void>? acknowledgement;
+  final bool failStartAfterCommit;
+  final String? failCheckpointPhase;
+  var _startFailed = false;
+  var _checkpointFailed = false;
   bool first = true;
   var calls = 0;
   final commands = <RecordAnswerCommand>[];
 
   @override
-  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
+      _intercept(command, () => delegate.recordAnswer(command));
+
+  Future<T> _intercept<T>(
+    RecordAnswerCommand command,
+    Future<T> Function() write,
+  ) async {
     commands.add(command);
     calls++;
     if (first && calls == failOnCall) {
       first = false;
-      if (afterCommit) await delegate.recordAnswer(command);
+      if (afterCommit) await write();
       throw StateError('synthetic storage/acknowledgement failure');
     }
-    final result = await delegate.recordAnswer(command);
+    final result = await write();
     await acknowledgement;
     return result;
   }
+
+  ConfiguredQuizRepository get _configured =>
+      delegate as ConfiguredQuizRepository;
+
+  @override
+  Future<ConfiguredQuizState?> findConfiguredQuizStart(
+    ConfiguredQuizLaunch launch,
+  ) => _configured.findConfiguredQuizStart(launch);
+
+  @override
+  Future<ConfiguredQuizState> startConfiguredQuiz({
+    required LearningSessionDraft session,
+    required AcceptedQuizPlan plan,
+  }) async {
+    final saved = await _configured.startConfiguredQuiz(
+      session: session,
+      plan: plan,
+    );
+    if (failStartAfterCommit && !_startFailed) {
+      _startFailed = true;
+      throw StateError('synthetic lost start acknowledgement');
+    }
+    return saved;
+  }
+
+  @override
+  Future<ConfiguredQuizState> resumeQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+  }) => _configured.resumeQuiz(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+  );
+
+  @override
+  Future<ConfiguredQuizState> saveQuizCheckpoint({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+    required QuizCheckpoint checkpoint,
+  }) async {
+    if (!_checkpointFailed && checkpoint.phase == failCheckpointPhase) {
+      _checkpointFailed = true;
+      if (afterCommit) {
+        await _configured.saveQuizCheckpoint(
+          sessionId: sessionId,
+          expectedOwnerId: expectedOwnerId,
+          expectedRevision: expectedRevision,
+          checkpoint: checkpoint,
+        );
+      }
+      throw StateError('synthetic checkpoint failure');
+    }
+    return _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: checkpoint,
+    );
+  }
+
+  @override
+  Future<ConfiguredQuizAnswerResult> commitQuizAnswer({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    return _intercept(
+      saved.checkpoint.answer!.toCommand(sessionId: sessionId),
+      () => _configured.commitQuizAnswer(
+        sessionId: sessionId,
+        expectedOwnerId: expectedOwnerId,
+        expectedRevision: expectedRevision,
+      ),
+    );
+  }
+
+  @override
+  Future<ConfiguredQuizFinishResult> finishConfiguredQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) => _configured.finishConfiguredQuiz(
+    sessionId: sessionId,
+    expectedOwnerId: expectedOwnerId,
+    expectedRevision: expectedRevision,
+  );
 
   @override
   Future<List<QuizWord>> listQuizWords({

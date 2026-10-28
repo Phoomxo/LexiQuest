@@ -91,7 +91,7 @@ void main() {
       final session = await tester.runAsync(
         () => db.select(db.learningSessions).getSingle(),
       );
-      expect(session!.activityType, 'sourcePractice');
+      expect(session!.activityType, 'srsReview');
       await tester.ensureVisible(find.text('ดูคำแปล'));
       await tester.tap(find.text('ดูคำแปล'));
       await tester.pumpAndSettle();

@@ -3,6 +3,7 @@ import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
+import '../domain/accepted_quiz_plan.dart';
 import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
@@ -68,10 +69,28 @@ final class LearningUseCases {
   final StreakEventSink? streakEventSink;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) =>
-      _startVocabularySession(categoryId, limit, 'quiz');
+      _startConfigured(
+        QuizConfiguration.category(
+          categoryId: _optionalId(categoryId, 'categoryId'),
+          limit: limit,
+        ),
+      );
 
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
+
+  Future<QuizSession> startShadowing({int limit = 1}) =>
+      _startVocabularySession(null, limit, 'shadowing');
+
+  Future<QuizSession> startSourceReviewForWords({
+    required Iterable<String> wordIds,
+    int limit = 20,
+  }) => _startWordPractice(wordIds, limit, 'srsReview');
+
+  Future<QuizSession> startSourcePronunciationForWords({
+    required Iterable<String> wordIds,
+    int limit = 1,
+  }) => _startWordPractice(wordIds, limit, 'pronunciation');
 
   Future<List<QuizWord>> prepareReading({int limit = 2}) async {
     final owner = await owners.getOrCreateActiveOwner();
@@ -148,7 +167,17 @@ final class LearningUseCases {
   Future<QuizSession> startWeaknessPractice({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'weaknessPractice');
+  }) {
+    final requested = wordIds.map((id) => _requiredId(id, 'wordId')).toList();
+    if (requested.isEmpty) {
+      return Future.value(
+        const QuizSession(id: '', questions: [], startedAtUtc: null),
+      );
+    }
+    return _startConfigured(
+      QuizConfiguration.weaknessPractice(wordIds: requested, limit: limit),
+    );
+  }
 
   Future<QuizSession> startGhostDuel({
     required Iterable<String> wordIds,
@@ -158,7 +187,17 @@ final class LearningUseCases {
   Future<QuizSession> startSourcePracticeForWords({
     required Iterable<String> wordIds,
     int limit = 20,
-  }) => _startWordPractice(wordIds, limit, 'sourcePractice');
+  }) {
+    final requested = wordIds.map((id) => _requiredId(id, 'wordId')).toList();
+    if (requested.isEmpty) {
+      return Future.value(
+        const QuizSession(id: '', questions: [], startedAtUtc: null),
+      );
+    }
+    return _startConfigured(
+      QuizConfiguration.sourcePractice(wordIds: requested, limit: limit),
+    );
+  }
 
   Future<QuizSession> _startWordPractice(
     Iterable<String> wordIds,
@@ -224,23 +263,31 @@ final class LearningUseCases {
     final recordedAt = occurredAtUtc ?? _now();
     if (!recordedAt.isUtc) throw ArgumentError('occurredAtUtc must be UTC');
     final owner = await owners.getOrCreateActiveOwner();
-    final result = await repository.recordAnswer(
-      RecordAnswerCommand(
-        id: attemptId == null
-            ? 'attempt:${_nextId()}'
-            : _requiredId(attemptId, 'attemptId'),
-        ownerId: owner.id,
-        sessionId: _requiredId(sessionId, 'sessionId'),
-        wordId: _requiredId(wordId, 'wordId'),
-        promptMode: _requiredId(promptMode, 'promptMode'),
-        isCorrect: isCorrect,
-        responseTimeMs: responseTimeMs,
-        attemptNumber: attemptNumber,
-        occurredAtUtc: recordedAt,
-        providerProvenance: providerProvenance,
-        evidenceContext: evidenceContext,
-      ),
+    final command = RecordAnswerCommand(
+      id: attemptId == null
+          ? 'attempt:${_nextId()}'
+          : _requiredId(attemptId, 'attemptId'),
+      ownerId: owner.id,
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      wordId: _requiredId(wordId, 'wordId'),
+      promptMode: _requiredId(promptMode, 'promptMode'),
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: recordedAt,
+      providerProvenance: providerProvenance,
+      evidenceContext: evidenceContext,
     );
+    final result = await repository.recordAnswer(command);
+    await _afterRecordedAnswer(command, result);
+    return result;
+  }
+
+  Future<void> _afterRecordedAnswer(
+    RecordAnswerCommand command,
+    AnswerRecordResult result,
+  ) async {
+    if (!result.inserted) return;
     onLocalMutation?.call();
 
     // Shadow V2 reward pipeline — runs after production succeeds.
@@ -250,15 +297,15 @@ final class LearningUseCases {
     if (shadow != null && adapter != null) {
       try {
         final v2Event = adapter.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: recordedAt,
-          providerProvenance: providerProvenance,
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+          wordId: command.wordId,
+          promptMode: command.promptMode,
+          isCorrect: command.isCorrect,
+          responseTimeMs: command.responseTimeMs,
+          attemptNumber: command.attemptNumber,
+          occurredAtUtc: command.occurredAtUtc,
+          providerProvenance: command.providerProvenance,
           appVersion: buildInfo.version,
           buildId: buildInfo.buildId,
         );
@@ -275,15 +322,15 @@ final class LearningUseCases {
     if (questSink != null) {
       try {
         final questEvent = adapter?.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: recordedAt,
-          providerProvenance: providerProvenance,
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+          wordId: command.wordId,
+          promptMode: command.promptMode,
+          isCorrect: command.isCorrect,
+          responseTimeMs: command.responseTimeMs,
+          attemptNumber: command.attemptNumber,
+          occurredAtUtc: command.occurredAtUtc,
+          providerProvenance: command.providerProvenance,
           appVersion: buildInfo.version,
           buildId: buildInfo.buildId,
         );
@@ -300,8 +347,6 @@ final class LearningUseCases {
     try {
       await streakEventSink?.call();
     } catch (_) {}
-
-    return result;
   }
 
   Future<LearningSessionSummary> finishSession(String sessionId) async {
@@ -352,6 +397,354 @@ final class LearningUseCases {
     );
     onLocalMutation?.call();
     return result;
+  }
+
+  final _freshQuizQuestions =
+      <({String ownerId, String sessionId, int ordinal})>{};
+
+  ConfiguredQuizRepository get _configured => switch (repository) {
+    ConfiguredQuizRepository capability => capability,
+    _ => throw StateError('configured quiz repository capability unavailable'),
+  };
+
+  Future<ConfiguredQuizLaunch> prepareConfiguredQuiz({
+    required QuizConfiguration configuration,
+    String? expectedOwnerId,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.ownerChanged,
+      );
+    }
+    return ConfiguredQuizLaunch(
+      session: LearningSessionDraft(
+        id: 'session:${_nextId()}',
+        ownerId: owner.id,
+        activityType: configuration.activityType,
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      configuration: configuration,
+    );
+  }
+
+  Future<ConfiguredQuizState> startConfiguredQuiz(
+    ConfiguredQuizLaunch launch,
+  ) async {
+    if (launch.session.activityType != launch.configuration.activityType) {
+      throw ArgumentError('quiz launch and configuration activity differ');
+    }
+    final existing = await _configured.findConfiguredQuizStart(launch);
+    if (existing != null) {
+      _forgetQuizQuestion(existing);
+      return existing.asRestored();
+    }
+    final configuration = launch.configuration;
+    final words = await repository.listQuizWords(
+      ownerId: launch.session.ownerId,
+      categoryId: configuration.categoryId,
+      wordIds: configuration.selectionKind == QuizSelectionKind.category
+          ? null
+          : configuration.wordIds,
+      limit: configuration.requestedItemCount,
+    );
+    if (words.isEmpty) {
+      throw const ConfiguredQuizUnavailable(
+        ConfiguredQuizUnavailableReason.emptySelection,
+      );
+    }
+    final optionWords =
+        configuration.selectionKind == QuizSelectionKind.category
+        ? const <QuizWord>[]
+        : await repository.listQuizWords(
+            ownerId: launch.session.ownerId,
+            limit: 100,
+          );
+    final plan = AcceptedQuizPlan.create(
+      configuration: configuration,
+      questions: _questions(words, optionWords: optionWords),
+    );
+    final saved = await _configured.startConfiguredQuiz(
+      session: launch.session,
+      plan: plan,
+    );
+    if (!saved.restored &&
+        saved.checkpointRevision == 1 &&
+        saved.checkpoint is AwaitingQuizAnswer) {
+      _markFreshQuizQuestion(saved);
+    }
+    onLocalMutation?.call();
+    return saved;
+  }
+
+  Future<ConfiguredQuizState> resumeQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      expectedOwnerId: _requiredId(expectedOwnerId, 'expectedOwnerId'),
+    );
+    _forgetQuizQuestion(saved);
+    return saved.asRestored();
+  }
+
+  Future<ConfiguredQuizState> setQuizHint({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+    required bool visible,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    final checkpoint = saved.checkpoint;
+    if (checkpoint is! AwaitingQuizAnswer) {
+      throw StateError('quiz question is not awaiting input');
+    }
+    if (checkpoint.assistance.hintVisible == visible &&
+        expectedRevision >= 1 &&
+        expectedRevision >= saved.checkpointRevision - 1 &&
+        expectedRevision <= saved.checkpointRevision) {
+      return saved;
+    }
+    return _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: AwaitingQuizAnswer(
+        planId: saved.plan.id,
+        questionOrdinal: checkpoint.questionOrdinal,
+        assistance: visible
+            ? checkpoint.assistance.showHint(_now().millisecondsSinceEpoch)
+            : checkpoint.assistance.hideHint(),
+      ),
+    );
+  }
+
+  Future<ConfiguredQuizState> prepareQuizAnswer({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+    int? selectedOptionOrdinal,
+    bool revealed = false,
+    int? responseTimeMs,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    final checkpoint = saved.checkpoint;
+    final existing = checkpoint.answer;
+    if (existing != null) {
+      if ((checkpoint is PendingQuizAnswer ||
+              checkpoint is AnsweredQuizQuestion) &&
+          existing.selectedOptionOrdinal == selectedOptionOrdinal &&
+          existing.revealed == revealed &&
+          (expectedRevision == saved.checkpointRevision ||
+              expectedRevision ==
+                  saved.checkpointRevision -
+                      (checkpoint is PendingQuizAnswer ? 1 : 2))) {
+        return saved;
+      }
+      throw StateError('pending quiz selection changed');
+    }
+    if (checkpoint is! AwaitingQuizAnswer ||
+        expectedRevision != saved.checkpointRevision) {
+      throw StateError('quiz checkpoint changed');
+    }
+    final occurredAt = _now().millisecondsSinceEpoch;
+    final assistance = revealed
+        ? checkpoint.assistance.withReveal(occurredAt)
+        : checkpoint.assistance;
+    final fresh = _freshQuizQuestions.contains((
+      ownerId: saved.ownerId,
+      sessionId: saved.sessionId,
+      ordinal: checkpoint.questionOrdinal,
+    ));
+    final answer = QuizAnswerReceipt.capture(
+      plan: saved.plan,
+      ownerId: expectedOwnerId,
+      attemptId: 'attempt:${_nextId()}',
+      questionOrdinal: checkpoint.questionOrdinal,
+      selectedOptionOrdinal: selectedOptionOrdinal,
+      revealed: revealed,
+      assistance: assistance,
+      occurredAtUtcMs: occurredAt,
+      responseTimeMs: fresh ? responseTimeMs : null,
+    );
+    final pending = await _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: PendingQuizAnswer(
+        planId: saved.plan.id,
+        questionOrdinal: checkpoint.questionOrdinal,
+        assistance: assistance,
+        answer: answer,
+      ),
+    );
+    _forgetQuizQuestion(saved);
+    return pending;
+  }
+
+  Future<ConfiguredQuizAnswerResult> commitQuizAnswer({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final result = await _configured.commitQuizAnswer(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+    );
+    final receipt = result.state.checkpoint.answer!;
+    await _afterRecordedAnswer(
+      receipt.toCommand(sessionId: sessionId),
+      result.record,
+    );
+    return result;
+  }
+
+  Future<ConfiguredQuizState> advanceQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    final previous = saved.checkpoint;
+    if (previous is AwaitingQuizAnswer &&
+        expectedRevision >= 1 &&
+        expectedRevision == saved.checkpointRevision - 1) {
+      return saved;
+    }
+    if (previous is! AnsweredQuizQuestion ||
+        previous.questionOrdinal + 1 >= saved.plan.questions.length) {
+      throw StateError('quiz cannot advance from this checkpoint');
+    }
+    final next = await _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: AwaitingQuizAnswer(
+        planId: saved.plan.id,
+        questionOrdinal: previous.questionOrdinal + 1,
+        assistance: QuizAssistance(),
+      ),
+    );
+    _markFreshQuizQuestion(next);
+    return next;
+  }
+
+  Future<ConfiguredQuizState> prepareQuizFinish({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    final previous = saved.checkpoint;
+    if ((previous is ClosingQuizSession || previous is CompletedQuizSession) &&
+        (expectedRevision == saved.checkpointRevision ||
+            expectedRevision ==
+                saved.checkpointRevision -
+                    (previous is ClosingQuizSession ? 1 : 2))) {
+      return saved;
+    }
+    if (previous is! AnsweredQuizQuestion ||
+        previous.questionOrdinal != saved.plan.questions.length - 1) {
+      throw StateError('quiz has unanswered questions');
+    }
+    return _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: ClosingQuizSession(
+        planId: saved.plan.id,
+        questionOrdinal: previous.questionOrdinal,
+        assistance: previous.assistance,
+        close: QuizCloseReceipt(
+          capturedOwnerId: expectedOwnerId,
+          endedAtUtcMs: _now().millisecondsSinceEpoch,
+        ),
+      ),
+    );
+  }
+
+  Future<ConfiguredQuizFinishResult> finishConfiguredQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final result = await _configured.finishConfiguredQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+    );
+    onLocalMutation?.call();
+    return result;
+  }
+
+  Future<ConfiguredQuizState> abandonQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  }) async {
+    final saved = await _configured.resumeQuiz(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+    );
+    if (saved.checkpoint is AbandonedQuizSession) return saved;
+    final abandoned = await _configured.saveQuizCheckpoint(
+      sessionId: sessionId,
+      expectedOwnerId: expectedOwnerId,
+      expectedRevision: expectedRevision,
+      checkpoint: AbandonedQuizSession(
+        planId: saved.plan.id,
+        questionOrdinal: saved.checkpoint.questionOrdinal,
+        assistance: saved.checkpoint.assistance,
+        close: QuizCloseReceipt(
+          capturedOwnerId: expectedOwnerId,
+          endedAtUtcMs: _now().millisecondsSinceEpoch,
+        ),
+      ),
+    );
+    _forgetQuizQuestion(saved);
+    onLocalMutation?.call();
+    return abandoned;
+  }
+
+  void _markFreshQuizQuestion(ConfiguredQuizState saved) =>
+      _freshQuizQuestions.add((
+        ownerId: saved.ownerId,
+        sessionId: saved.sessionId,
+        ordinal: saved.checkpoint.questionOrdinal,
+      ));
+
+  void _forgetQuizQuestion(ConfiguredQuizState saved) =>
+      _freshQuizQuestions.removeWhere(
+        (key) =>
+            key.ownerId == saved.ownerId && key.sessionId == saved.sessionId,
+      );
+
+  Future<QuizSession> _startConfigured(QuizConfiguration configuration) async {
+    final launch = await prepareConfiguredQuiz(configuration: configuration);
+    try {
+      return (await startConfiguredQuiz(launch)).asQuizSession;
+    } on ConfiguredQuizUnavailable catch (error) {
+      if (error.reason != ConfiguredQuizUnavailableReason.emptySelection) {
+        rethrow;
+      }
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
   }
 
   List<QuizQuestion> _questions(

@@ -1,3 +1,4 @@
+import 'accepted_quiz_plan.dart';
 import 'learning_models.dart';
 
 abstract interface class LearningRepository {
@@ -33,4 +34,39 @@ abstract interface class LearningRepository {
   Future<ReadingProgressSnapshot> saveReadingProgress(
     ReadingProgressCommand command,
   );
+}
+
+abstract interface class ConfiguredQuizRepository {
+  Future<ConfiguredQuizState?> findConfiguredQuizStart(
+    ConfiguredQuizLaunch launch,
+  );
+
+  Future<ConfiguredQuizState> startConfiguredQuiz({
+    required LearningSessionDraft session,
+    required AcceptedQuizPlan plan,
+  });
+
+  Future<ConfiguredQuizState> resumeQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+  });
+
+  Future<ConfiguredQuizState> saveQuizCheckpoint({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+    required QuizCheckpoint checkpoint,
+  });
+
+  Future<ConfiguredQuizAnswerResult> commitQuizAnswer({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  });
+
+  Future<ConfiguredQuizFinishResult> finishConfiguredQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+    required int expectedRevision,
+  });
 }

@@ -97,6 +97,12 @@ void main() {
         await tester.tap(button);
         await _until(tester, () => repository.successfulFinishes == 1);
         final attempts = await database.select(database.answerAttempts).get();
+        final session = await database
+            .select(database.learningSessions)
+            .getSingle();
+        expect(session.activityType, 'shadowing');
+        expect(session.acceptedPlanId, isNull);
+        expect(session.checkpointRevision, 0);
         final points = await database
             .select(database.pointsLedgerEntries)
             .get();

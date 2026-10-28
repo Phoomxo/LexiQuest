@@ -28,7 +28,9 @@ final class DriftLearningHistoryQueries {
           .customSelect(
             '''
 WITH page AS (
-  SELECT id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms
+  SELECT id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms,
+         (accepted_plan_id IS NOT NULL AND accepted_plan_json IS NOT NULL
+          AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_quiz
   FROM learning_sessions
   WHERE owner_id = ?
   ${before == null ? '' : 'AND (started_at_utc_ms < ? OR (started_at_utc_ms = ? AND id < ?))'}
@@ -43,6 +45,7 @@ WITH page AS (
   GROUP BY a.owner_id, a.session_id
 )
 SELECT s.id, s.activity_type, s.state, s.started_at_utc_ms, s.ended_at_utc_ms,
+       s.has_accepted_quiz,
        COALESCE(a.answer_count, 0) AS answer_count,
        COALESCE(a.correct_count, 0) AS correct_count
 FROM page s
@@ -81,6 +84,7 @@ ORDER BY s.started_at_utc_ms DESC, s.id DESC
                     ),
               answerCount: row.read<int>('answer_count'),
               correctCount: row.read<int>('correct_count'),
+              hasAcceptedQuiz: row.read<int>('has_accepted_quiz') == 1,
             ),
           )
           .toList(growable: false);

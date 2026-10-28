@@ -198,7 +198,7 @@ Future<void> _seedA(AppDatabase database) async {
     "INSERT INTO vocabulary_words (id, owner_id, category_id, spelling, normalized_spelling, meaning, normalized_meaning, part_of_speech, source, is_global, local_revision, cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms, last_acknowledged_at_utc_ms, server_updated_at_utc_ms) VALUES ('word-a', 'owner-a', 'category-a', 'station', 'station', 'สถานี', 'สถานี', 'noun', 'manual', 0, 1, 4, 0, 1, 1, 40, 40)",
   );
   await database.customStatement(
-    "INSERT INTO learning_sessions VALUES ('session-a', 'owner-a', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, app_version, build_id) VALUES ('session-a', 'owner-a', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customStatement(
     "INSERT INTO answer_attempts "
