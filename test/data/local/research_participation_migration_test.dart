@@ -120,10 +120,10 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      13,
+      14,
     );
     expect(before, hasLength(30));
-    expect(database.allTables, hasLength(31));
+    expect(database.allTables, hasLength(33));
     expect(
       await database
           .customSelect('SELECT * FROM research_participation_permits')

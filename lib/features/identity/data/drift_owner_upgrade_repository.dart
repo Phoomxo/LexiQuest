@@ -559,16 +559,22 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   Future<void> _requireTransferableResearchOwner(String sourceId) async {
-    final signed = await _database
-        .customSelect(
-          'SELECT 1 FROM research_participation_permits WHERE owner_id = ? LIMIT 1',
-          variables: [Variable<String>(sourceId)],
-        )
-        .getSingleOrNull();
-    if (signed != null) {
-      throw StateError(
-        'Changing a signed research owner requires re-enrollment',
-      );
+    for (final table in [
+      'research_participation_permits',
+      'motivation_measurement_runs',
+      'motivation_responses',
+    ]) {
+      final signed = await _database
+          .customSelect(
+            'SELECT 1 FROM $table WHERE owner_id = ? LIMIT 1',
+            variables: [Variable<String>(sourceId)],
+          )
+          .getSingleOrNull();
+      if (signed != null) {
+        throw StateError(
+          'Changing a signed research owner requires re-enrollment',
+        );
+      }
     }
   }
 
@@ -665,7 +671,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
       if (table == 'experiment_assignments' ||
-          table == 'research_participation_permits') {
+          table == 'research_participation_permits' ||
+          table == 'motivation_measurement_runs' ||
+          table == 'motivation_responses') {
         continue;
       }
       await _updateOwner(table, sourceId, targetId);

@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
 void main() {
@@ -95,6 +96,18 @@ void main() {
 
   test('moves relocatable rows and keeps target signed facts', () async {
     await _seedEveryOwnerScopedTable(database);
+    final measurementsBefore = <String, List<Map<String, Object?>>>{};
+    for (final table in [
+      'motivation_measurement_runs',
+      'motivation_responses',
+    ]) {
+      measurementsBefore[table] =
+          (await database
+                  .customSelect('SELECT * FROM $table ORDER BY id')
+                  .get())
+              .map((row) => row.data)
+              .toList();
+    }
     final signedBefore = await database
         .customSelect(
           'SELECT * FROM research_participation_permits WHERE owner_id = ?',
@@ -124,6 +137,16 @@ void main() {
       signedAfter.map((row) => row.data).toList(),
       signedBefore.map((row) => row.data).toList(),
     );
+    for (final entry in measurementsBefore.entries) {
+      final after = await database
+          .customSelect('SELECT * FROM ${entry.key} ORDER BY id')
+          .get();
+      expect(
+        after.map((row) => row.data).toList(),
+        entry.value,
+        reason: '${entry.key} preserves target facts through merge and replay',
+      );
+    }
     for (final table in ownerUpgradeInventory) {
       expect(
         await _ownerCount(database, table, 'guest-owner'),
@@ -468,11 +491,12 @@ Future<void> _seedOwners(AppDatabase database) async {
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await seedOwnerAssignment(database, 'guest-owner');
   final targetAssignment = await seedOwnerAssignment(database, 'account-owner');
-  await insertOwnerParticipation(
+  final targetPermit = await insertOwnerParticipation(
     database,
     'account-owner',
     assignmentId: targetAssignment,
   );
+  await insertOwnerMotivationMeasurement(database, targetPermit);
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",

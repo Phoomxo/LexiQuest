@@ -17,6 +17,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
 void main() {
@@ -34,6 +35,21 @@ void main() {
   test(
     'deletes only the cloud-confirmed owner and creates a local guest',
     () async {
+      final retained = <String, List<Map<String, Object?>>>{};
+      for (final table in [
+        'motivation_measurement_runs',
+        'motivation_responses',
+      ]) {
+        retained[table] =
+            (await database
+                    .customSelect(
+                      'SELECT * FROM $table WHERE owner_id = ? ORDER BY id',
+                      variables: const [Variable<String>('owner-b')],
+                    )
+                    .get())
+                .map((row) => row.data)
+                .toList();
+      }
       final purgedScopes = <(String, String)>[];
       final gateway = DriftLocalAccountDeletionGateway(
         database,
@@ -83,6 +99,8 @@ void main() {
         'research_consents',
         'experiment_assignments',
         'research_participation_permits',
+        'motivation_measurement_runs',
+        'motivation_responses',
         'events_v2',
         'outbox_operations',
       ]) {
@@ -91,6 +109,15 @@ void main() {
           1,
           reason: '$table keeps owner B research evidence',
         );
+      }
+      for (final entry in retained.entries) {
+        final after = await database
+            .customSelect(
+              'SELECT * FROM ${entry.key} WHERE owner_id = ? ORDER BY id',
+              variables: const [Variable<String>('owner-b')],
+            )
+            .get();
+        expect(after.map((row) => row.data).toList(), entry.value);
       }
     },
   );
@@ -489,16 +516,18 @@ Future<void> _seed(AppDatabase database) async {
   );
   final assignmentA = await seedOwnerAssignment(database, 'owner-a');
   final assignmentB = await seedOwnerAssignment(database, 'owner-b');
-  await insertOwnerParticipation(
+  final permitA = await insertOwnerParticipation(
     database,
     'owner-a',
     assignmentId: assignmentA,
   );
-  await insertOwnerParticipation(
+  final permitB = await insertOwnerParticipation(
     database,
     'owner-b',
     assignmentId: assignmentB,
   );
+  await insertOwnerMotivationMeasurement(database, permitA);
+  await insertOwnerMotivationMeasurement(database, permitB);
   await database.customStatement('''
     INSERT INTO events_v2 (
       event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,

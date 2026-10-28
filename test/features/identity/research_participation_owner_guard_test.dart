@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
 import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
 
+import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_admission_signing.dart';
 
 const _guest = 'synthetic-signed-owner-guest';
@@ -328,6 +329,7 @@ Future<ResearchParticipationPermit> _seedPermit(
     'VALUES (${List.filled(fields.length, '?').join(', ')})',
     fields.values.toList(),
   );
+  await insertOwnerMotivationMeasurement(database, signed);
   return signed;
 }
 

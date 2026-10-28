@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/account_deletion/domain/owner_write_
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
 final _now = DateTime.utc(2026, 10, 28, 12);
@@ -337,6 +338,47 @@ void main() {
         expect(await coordinator.inspect(), isNull);
       },
     );
+
+    for (final table in [
+      'motivation_measurement_runs',
+      'motivation_responses',
+    ]) {
+      test('purge proof rejects a residual $table fact', () async {
+        await _insertResearchArtifacts(database);
+        final retained =
+            (await database.customSelect('SELECT * FROM $table').getSingle())
+                .data;
+        final token = await _begin(coordinator);
+        await coordinator.markPending(token);
+        final cloud = _cloud().durableMarker();
+        await coordinator.markCloud(token, cloud);
+        final local = await _purge(database, cloud);
+
+        // Reproduce a legacy corrupt orphan after an otherwise complete purge.
+        await database.customStatement('PRAGMA foreign_keys = OFF');
+        await database.customStatement(
+          'INSERT INTO $table (${retained.keys.join(', ')}) '
+          'VALUES (${List.filled(retained.length, '?').join(', ')})',
+          retained.values.toList(),
+        );
+        await database.customStatement('PRAGMA foreign_keys = ON');
+
+        await expectLater(
+          coordinator.markLocal(token, cloud, local),
+          _failure(),
+        );
+        expect(
+          (await coordinator.inspect())?.phase,
+          DeletionIntentPhase.cloudConfirmed,
+        );
+        await expectLater(coordinator.clearCompleted(token), _failure());
+
+        await database.customStatement('DELETE FROM $table');
+        await coordinator.markLocal(token, cloud, local);
+        await coordinator.clearCompleted(token);
+        expect(await coordinator.inspect(), isNull);
+      });
+    }
 
     test('a stale completion cannot clear a later owner operation', () async {
       final stale = await _begin(coordinator);
@@ -910,13 +952,18 @@ Future<void> _seedOwners(AppDatabase database) async {
 
 Future<void> _insertResearchArtifacts(AppDatabase database) async {
   final assignment = await seedOwnerAssignment(database, _owner);
-  await insertOwnerParticipation(database, _owner, assignmentId: assignment);
+  final permit = await insertOwnerParticipation(
+    database,
+    _owner,
+    assignmentId: assignment,
+  );
   await database.customStatement(
     'INSERT INTO research_consents '
     '(id, owner_id, consent_version, consent_state, decided_at_utc_ms) '
     "VALUES ('synthetic-consent', ?, 1, 'accepted', 1)",
     [_owner],
   );
+  await insertOwnerMotivationMeasurement(database, permit);
   await database.customStatement(
     'INSERT INTO events_v2 '
     '(event_id, event_type, event_version, occurred_at_utc, recorded_at_utc, '
@@ -940,6 +987,8 @@ Future<void> _expectResearchCounts(AppDatabase database, int count) async {
     'research_consents',
     'experiment_assignments',
     'research_participation_permits',
+    'motivation_measurement_runs',
+    'motivation_responses',
     'events_v2',
     'outbox_operations',
   ]) {

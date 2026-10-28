@@ -35,6 +35,8 @@ const Set<String> ownerUpgradeInventory = <String>{
   'research_consents',
   'experiment_assignments',
   'research_participation_permits',
+  'motivation_measurement_runs',
+  'motivation_responses',
   'vocabulary_categories',
   'vocabulary_words',
   'vocabulary_imports',

@@ -279,14 +279,15 @@ void main() {
         expect(dbContent.contains('from < 11'), isTrue);
         expect(dbContent.contains('from < 12'), isTrue);
         expect(dbContent.contains('from < 13'), isTrue);
-        expect(dbContent.contains('from < 14'), isFalse);
+        expect(dbContent.contains('from < 14'), isTrue);
+        expect(dbContent.contains('from < 15'), isFalse);
       },
     );
 
-    test('current schemaVersion in code is 13', () {
+    test('current schemaVersion in code is 14', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 13'),
+        dbContent.contains('schemaVersion => 14'),
         isTrue,
         reason:
             'schema v13 retains signed participation with immutable owner pins',

@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports current schema version 13', () async {
+    test('fresh database reports current schema version 14', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,7 +68,7 @@ void main() {
           .getSingle();
       expect(
         version,
-        13,
+        14,
         reason:
             'current schema retains quest and evidence tables with assignments',
       );

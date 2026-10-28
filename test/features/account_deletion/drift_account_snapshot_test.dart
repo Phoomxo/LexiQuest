@@ -8,10 +8,12 @@ import 'package:vocab_learning_app/features/account_deletion/data/drift_account_
 import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 
 import '../../support/experiment_assignment_fixture.dart';
+import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
 
 void main() {
   late AppDatabase database;
+  late SeededMotivationMeasurement measurementA;
   final now = DateTime.utc(2026, 10, 24, 12);
 
   setUp(() async {
@@ -37,16 +39,18 @@ void main() {
     );
     final assignmentA = await seedOwnerAssignment(database, 'owner-a');
     final assignmentB = await seedOwnerAssignment(database, 'owner-b');
-    await insertOwnerParticipation(
+    final permitA = await insertOwnerParticipation(
       database,
       'owner-a',
       assignmentId: assignmentA,
     );
-    await insertOwnerParticipation(
+    final permitB = await insertOwnerParticipation(
       database,
       'owner-b',
       assignmentId: assignmentB,
     );
+    measurementA = await insertOwnerMotivationMeasurement(database, permitA);
+    await insertOwnerMotivationMeasurement(database, permitB);
     await database.customStatement('''
       INSERT INTO events_v2 (
         event_id, event_type, event_version, occurred_at_utc, recorded_at_utc,
@@ -87,7 +91,7 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 13);
+      expect(json['schemaVersion'], 14);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -107,6 +111,16 @@ void main() {
       expect(permit['local_revision'], 1);
       expect(permit['cloud_revision'], 1);
       expect(permit['signature'], isNotEmpty);
+      final run = (data['motivation_measurement_runs'] as List).single as Map;
+      final response = (data['motivation_responses'] as List).single as Map;
+      expect(run, hasLength(30));
+      expect(response, hasLength(9));
+      expect(run, measurementA.run);
+      expect(response, measurementA.response);
+      expect(run['permit_id'], permit['id']);
+      expect(run['permit_payload_sha256'], permit['payload_sha256']);
+      expect(response['run_id'], run['id']);
+      expect(response['ordinal_value'], 100);
       expect(
         (data['research_consents'] as List).single['id'],
         'consent-research-a',

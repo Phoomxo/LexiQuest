@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v13** with 31 tables, matching `AppDatabase.schemaVersion`. The former
+**v14** with 33 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -183,7 +183,7 @@ claimed.
 | v11 | Remaining-system integration | Immutable answer evidence metadata; two columns, no new tables. | Implemented locally 2026-10-28 |
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
-| v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Reserved 2026-10-29 |
+| v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
 | v15+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13 or v14. Reserve the next available version, starting at v15,
@@ -244,7 +244,7 @@ downgrade; no automatic rollback is claimed.
 **Owner:** Root integration owns schema/generated source/inventory; separate
 workers own the participation repository and signed-owner merge checks.
 
-**Status:** IMPLEMENTED LOCALLY. Executable schema is v13/31 tables. Source
+**Status:** IMPLEMENTED LOCALLY in source `6a49e8e7` at v13/31 tables. Source
 `6a49e8e7` has identical app inputs at `6f88bdc5`: integration 715, full Flutter
 2445, analysis 0, CLI 23 and the normal debug APK pass after the late-operation
 expiry correction. Enrollment, upload and deployment stay disabled.
@@ -289,13 +289,17 @@ backup or an explicitly tested downgrade.
 
 **Branch:** codex/remaining-system-readiness
 
-**Owner:** Root owns schema, generation, migration, owner inventory and populated
-lifecycle fixtures. A separate worker owns the measurement domain/repository and
-`test/support/motivation_measurement_harness.dart`. Root owns the distinct
-`test/support/motivation_measurement_fixture.dart` seed helper.
+**Owner:** Root owns schema, generation, migration and owner inventory. A separate
+worker owns the measurement domain/repository and
+`test/support/motivation_measurement_harness.dart`. The identity worker owns the
+distinct `test/support/motivation_measurement_fixture.dart` seed helper and its
+seven assigned lifecycle test files; root integrates and verifies all changes.
 
-**Status:** RESERVED. Current executable schema remains v13/31 tables. This adds
-two local-only tables, yielding 33 tables. No new cloud collection, outbox type,
+**Status:** IMPLEMENTED LOCALLY. Executable schema is v14/33 tables. Populated
+migration/database 38, repository 46, populated lifecycle 77 and combined
+integration 794 pass; analysis reports no issues. Independent storage, lifecycle
+and repository reviews accepted the final source. Full regression/build follows.
+This adds two local-only tables. No new cloud collection, outbox type,
 Research JSON export allowlist or runtime enrollment composition is authorized.
 
 `motivation_measurement_runs` has 30 fields: `id`, `owner_id`, `local_revision`,
