@@ -184,9 +184,10 @@ claimed.
 | v12 | Remaining-system integration | Owner-scoped immutable experiment assignments; one new table. | Implemented locally 2026-10-29 |
 | v13 | Remaining-system integration | Cached signed participation permits with fresh authorization at use. | Implemented locally 2026-10-29 |
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
-| v15+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Reserved 2026-10-29 |
+| v16+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13 or v14. Reserve the next available version, starting at v15,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14 or v15. Reserve the next available version, starting at v16,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -298,7 +299,8 @@ seven assigned lifecycle test files; root integrates and verifies all changes.
 **Status:** IMPLEMENTED LOCALLY. Executable schema is v14/33 tables. Populated
 migration/database 38, repository 46, populated lifecycle 77 and combined
 integration 794 pass; analysis reports no issues. Independent storage, lifecycle
-and repository reviews accepted the final source. Full regression/build follows.
+and repository reviews accepted source `90a81306`, which also passes full Flutter
+2507, CLI 23 and the normal Android debug build.
 This adds two local-only tables. No new cloud collection, outbox type,
 Research JSON export allowlist or runtime enrollment composition is authorized.
 
@@ -347,6 +349,62 @@ Downgrade requires a pre-upgrade backup or an explicitly tested downgrade.
 
 ---
 
+### v15 — Durable exposure and first canonical-session linkage
+
+**Reserved:** 2026-10-29
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root owns schema/generated source, migration, indexes, inventory and
+populated export/deletion coverage. The research worker owns opportunity domain,
+repository, raw timing reader, the archived research event identity helper, the
+R3A active-run write boundary and distinctly named opportunity test/harness files.
+The identity worker separately owns the learning data observer and canonical
+repository hook with its focused tests. No repository writes overlap.
+
+**Status:** RESERVED. Current executable schema remains v14/33 tables. Add one
+local-only table for a total of 34; indexes do not change the table count.
+
+`measurement_opportunities` has 15 fields: `id`, `owner_id`, `local_revision`,
+`measurement_run_id`, `permit_id`, `entry_attempt_id`, `assigned_treatment`,
+`effective_presentation`, `opened_at_utc_ms`, `presented_event_id`,
+`presented_at_utc_ms`, `learning_session_id`,
+`learning_session_started_at_utc_ms`, `is_index_session`, `closed_at_utc_ms`.
+Require owner, run, permit, event and session FKs; the owned run FK cascades.
+Enforce valid presentation values, UTC ordering, positive revisions, paired
+nullable event/time and session/start fields, and a session for an index row.
+Require unique owner/run/permit/entry and owner/nonnull-session attachment, plus
+a partial unique index on `(owner_id, measurement_run_id)` for index rows.
+Canonical opportunity ID is `opportunity:` plus SHA-256 of UTF-8 JSON
+`[ownerId, measurementRunId, permitId, entryAttemptId]`; entry is UUID v4.
+
+The Presented event retains its approved exact four-field payload and frozen
+22-field envelope. Its deterministic UUID v7 encodes the exact occurrence
+millisecond, which must agree with `presented_at_utc_ms` and the existing
+EventsV2 epoch-seconds mapping. Do not change that global mapping, invent
+Mission plan/mode fields, feed learning/reward projections or add an outbox type.
+
+Bind only a newly inserted canonical learning session after exact persisted
+tuple readback, through an optional same-database observer in a required-new
+savepoint. Denied/unavailable research rolls back its sidecar while ordinary
+learning commits. A start replay cannot backfill a previously denied first
+session. Completion retries retain the canonical original end and rewards.
+The first active or abandoned index cannot be replaced by later success.
+Imported placeholders and ambiguous/unlinked/rehomed guest candidates must not
+be treated as qualifying participant starts; unavailable evidence fails closed.
+
+Append this table after its referenced owner tables in the inventory so reverse
+purge removes it before events/sessions/runs/permits/assignments. Include source
+research owner guards and populated export, purge proof and deletion isolation.
+Acceptance covers populated-v14 migration retaining all 33 tables and deletion
+intent, callback atomicity/replay, signatures, consent/expiry/owner/fence races,
+event precision, gap/tie handling and zero research writes for denied participants.
+Capture UI, both-treatment delivery, the other three neutral events, assessment,
+upload and production authority remain separate work. Downgrade requires a
+pre-upgrade backup or an explicitly tested downgrade.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -365,6 +423,7 @@ Downgrade requires a pre-upgrade backup or an explicitly tested downgrade.
 | 2026-10-29 | Reserved current-lineage v12 for one immutable assignment table with strict admission and populated migration/owner lifecycle checks. Runtime remains v11 until implementation; no research rollout permission added. | Root integration |
 | 2026-10-29 | Reserved current-lineage v13 for one cached signed participation table; use must reauthorize against independent current authority and preserve signed owner pins. Runtime remains v12 until implementation. | Root integration |
 | 2026-10-29 | Attested v13 and reserved v14 for two local-only supplied-instrument measurement tables with immutable responses and fresh receipts; canonical session linkage remains a separate prerequisite for UI composition. | Root integration |
+| 2026-10-29 | Attested v14 at source 90a81306 and reserved v15 for one local-only exposure/index linkage table with canonical learning savepoints and frozen event precision. Runtime remains v14 until implementation. | Root integration |
 
 ---
 
