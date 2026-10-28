@@ -42,6 +42,243 @@ void main() {
     );
   });
 
+  group('verified operation receipt', () {
+    test(
+      'returns the checked immutable permit and final verification time',
+      () async {
+        final signature = <int>[1, 2, 3, 4];
+        final permit = _permit(signature: signature);
+        final verifier = _SignatureVerifier();
+        final finalNow = now.add(const Duration(seconds: 2, microseconds: 17));
+        var clockReads = 0;
+        final authorizer = SignedPermitResearchOperationAuthorizer(
+          permits: _PermitSource(permit),
+          states: _PermitStateSource(_activeState),
+          verifier: verifier,
+          requirements: _requirements(),
+          nowUtc: () => ++clockReads == 1 ? now : finalNow,
+        );
+
+        final receipt = await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        );
+
+        expect(receipt, isNotNull);
+        expect(receipt!.permit, same(permit));
+        expect(receipt.verifiedAtUtc, finalNow);
+        expect(clockReads, 2);
+        expect(verifier.messages.single, permit.signedPayload());
+        signature[0] = 99;
+        final exposed = receipt.permit.signature;
+        exposed[1] = 99;
+        expect(receipt.permit.signature, [1, 2, 3, 4]);
+      },
+    );
+
+    test(
+      'retains the verified permit when its source changes after verification',
+      () async {
+        final checked = _permit();
+        final source = _PermitSource(checked);
+        final states = _PermitStateSource(_activeState)
+          ..onRead = () {
+            source.permit = _permit(
+              permitId: 'replacement-permit',
+              ownerId: 'owner-b',
+              signature: [9],
+            );
+          };
+        final verifier = _SignatureVerifier();
+        final authorizer = SignedPermitResearchOperationAuthorizer(
+          permits: source,
+          states: states,
+          verifier: verifier,
+          requirements: _requirements(),
+          nowUtc: () => now,
+        );
+
+        final receipt = await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        );
+
+        expect(receipt, isNotNull);
+        expect(receipt!.permit, same(checked));
+        expect(receipt.permit.ownerId, 'owner-a');
+        expect(receipt.permit.signature, [1, 2, 3, 4]);
+        expect(source.calls, 1);
+        expect(states.permitIds, [checked.permitId]);
+        expect(verifier.messages.single, checked.signedPayload());
+        expect(source.permit!.ownerId, 'owner-b');
+      },
+    );
+
+    test(
+      'records the final fresh trusted time after the state lookup',
+      () async {
+        final finalReading = _freshTime(now.add(const Duration(seconds: 3)));
+        final clock = _TrustedTimeSource(_freshTime(now));
+        final states = _PermitStateSource(_activeState)
+          ..onRead = () => clock.value = finalReading;
+        final authorizer = _authorizer(
+          permit: _permit(),
+          stateSource: states,
+          trustedTime: clock,
+        );
+
+        final receipt = await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        );
+
+        expect(receipt, isNotNull);
+        expect(clock.calls, 2);
+        expect(receipt!.verifiedAtUtc, finalReading.effectiveNowUtc);
+        expect(receipt.verifiedAtUtc.isUtc, isTrue);
+      },
+    );
+
+    test(
+      'a previous receipt does not cache authority for later calls',
+      () async {
+        var current = now;
+        final permit = _permit();
+        final source = _PermitSource(permit);
+        final states = _PermitStateSource(_activeState);
+        final authorizer = SignedPermitResearchOperationAuthorizer(
+          permits: source,
+          states: states,
+          verifier: _SignatureVerifier(),
+          requirements: _requirements(),
+          nowUtc: () => current,
+        );
+        final receipt = await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        );
+        expect(receipt, isNotNull);
+
+        states.state = const ResearchPermitState(
+          currentRevision: 2,
+          revoked: true,
+        );
+        current = now.add(const Duration(seconds: 1));
+        expect(
+          await authorizer.authorizeWithReceipt(
+            ownerId: 'owner-a',
+            operation: ResearchOperation.export,
+          ),
+          isNull,
+        );
+        expect(
+          await authorizer.authorize(
+            ownerId: 'owner-a',
+            operation: ResearchOperation.export,
+          ),
+          isFalse,
+        );
+        expect(source.calls, 3);
+        expect(states.calls, 3);
+        expect(receipt!.permit, same(permit));
+        expect(receipt.verifiedAtUtc, now);
+      },
+    );
+
+    test(
+      'both APIs deny expiry reached during the live state lookup',
+      () async {
+        final expiry = now.add(const Duration(seconds: 1));
+        var current = now;
+        final states = _PermitStateSource(_activeState)
+          ..onRead = () => current = expiry;
+        final authorizer = SignedPermitResearchOperationAuthorizer(
+          permits: _PermitSource(_permit(expiresAtUtc: expiry)),
+          states: states,
+          verifier: _SignatureVerifier(),
+          requirements: _requirements(),
+          nowUtc: () => current,
+        );
+
+        expect(
+          await authorizer.authorizeWithReceipt(
+            ownerId: 'owner-a',
+            operation: ResearchOperation.export,
+          ),
+          isNull,
+        );
+        current = now;
+        expect(
+          await authorizer.authorize(
+            ownerId: 'owner-a',
+            operation: ResearchOperation.export,
+          ),
+          isFalse,
+        );
+        expect(states.calls, 2);
+      },
+    );
+
+    for (final finalClock in ['unavailable', 'expired', 'throws']) {
+      test(
+        'receipt fails closed when final trusted time $finalClock',
+        () async {
+          final clock = _TrustedTimeSource(_freshTime(now));
+          final states = _PermitStateSource(_activeState)
+            ..onRead = () {
+              if (finalClock == 'throws') {
+                clock.failure = StateError(
+                  'synthetic trusted time unavailable',
+                );
+              } else {
+                clock.value = finalClock == 'unavailable'
+                    ? null
+                    : ResearchTrustedTime(
+                        anchorUtc: now,
+                        validUntilUtc: now,
+                        age: Duration.zero,
+                        maximumAge: const Duration(minutes: 1),
+                      );
+              }
+            };
+          final authorizer = _authorizer(
+            permit: _permit(),
+            stateSource: states,
+            trustedTime: clock,
+          );
+
+          expect(
+            await authorizer.authorizeWithReceipt(
+              ownerId: 'owner-a',
+              operation: ResearchOperation.export,
+            ),
+            isNull,
+          );
+          expect(clock.calls, 2);
+          expect(states.calls, 1);
+        },
+      );
+    }
+
+    test(
+      'retains legacy nowUtc conversion without rounding the verified time',
+      () async {
+        final localNow = now.add(const Duration(microseconds: 123)).toLocal();
+        final authorizer = _authorizer(permit: _permit(), now: localNow);
+
+        final receipt = await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        );
+
+        expect(receipt, isNotNull);
+        expect(receipt!.verifiedAtUtc, localNow.toUtc());
+        expect(receipt.verifiedAtUtc.microsecond, 123);
+        expect(receipt.verifiedAtUtc.isUtc, isTrue);
+      },
+    );
+  });
+
   group('canonical permit JSON', () {
     const codec = ResearchPermitJsonCodec();
 
@@ -454,6 +691,14 @@ void main() {
         isFalse,
       );
       expect(verifier.calls, 0);
+      expect(
+        await authorizer.authorizeWithReceipt(
+          ownerId: value.ownerId,
+          operation: value.operation,
+        ),
+        isNull,
+      );
+      expect(verifier.calls, 0);
     });
   }
 
@@ -482,6 +727,13 @@ void main() {
         ),
         isFalse,
       );
+      expect(
+        await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        ),
+        isNull,
+      );
     });
   }
 
@@ -506,6 +758,15 @@ void main() {
     );
     expect(stateSource.calls, 0);
     expect(verifier.calls, 0);
+    expect(
+      await authorizer.authorizeWithReceipt(
+        ownerId: 'owner-a',
+        operation: ResearchOperation.export,
+      ),
+      isNull,
+    );
+    expect(stateSource.calls, 0);
+    expect(verifier.calls, 0);
   });
 
   test('denies an invalid signature before consulting live state', () async {
@@ -523,6 +784,14 @@ void main() {
         operation: ResearchOperation.export,
       ),
       isFalse,
+    );
+    expect(stateSource.calls, 0);
+    expect(
+      await authorizer.authorizeWithReceipt(
+        ownerId: 'owner-a',
+        operation: ResearchOperation.export,
+      ),
+      isNull,
     );
     expect(stateSource.calls, 0);
   });
@@ -554,6 +823,14 @@ void main() {
           operation: ResearchOperation.export,
         ),
         isFalse,
+        reason: failurePoint,
+      );
+      expect(
+        await authorizer.authorizeWithReceipt(
+          ownerId: 'owner-a',
+          operation: ResearchOperation.export,
+        ),
+        isNull,
         reason: failurePoint,
       );
     }
@@ -633,11 +910,24 @@ SignedPermitResearchOperationAuthorizer _authorizer({
 final class _TrustedTimeSource implements ResearchTrustedTimeSource {
   _TrustedTimeSource(this.value);
 
-  final ResearchTrustedTime? value;
+  ResearchTrustedTime? value;
+  Object? failure;
+  int calls = 0;
 
   @override
-  Future<ResearchTrustedTime?> read() async => value;
+  Future<ResearchTrustedTime?> read() async {
+    calls++;
+    if (failure case final error?) throw error;
+    return value;
+  }
 }
+
+ResearchTrustedTime _freshTime(DateTime now) => ResearchTrustedTime(
+  anchorUtc: now,
+  validUntilUtc: now.add(const Duration(minutes: 1)),
+  age: Duration.zero,
+  maximumAge: const Duration(minutes: 1),
+);
 
 final class _PermitSource implements ResearchPermitSource {
   _PermitSource(this.permit);
@@ -663,11 +953,15 @@ final class _PermitStateSource implements ResearchPermitStateSource {
   ResearchPermitState? state;
   Object? failure;
   int calls = 0;
+  void Function()? onRead;
+  final permitIds = <String>[];
 
   @override
   Future<ResearchPermitState?> loadState({required String permitId}) async {
     calls++;
+    permitIds.add(permitId);
     if (failure case final error?) throw error;
+    onRead?.call();
     return state;
   }
 }

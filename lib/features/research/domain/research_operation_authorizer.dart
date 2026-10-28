@@ -98,6 +98,17 @@ final class ResearchPermit {
   );
 }
 
+/// A completed check's snapshot, not continuing authority for a later write.
+final class AuthorizedResearchOperation {
+  const AuthorizedResearchOperation._({
+    required this.permit,
+    required this.verifiedAtUtc,
+  });
+
+  final ResearchPermit permit;
+  final DateTime verifiedAtUtc;
+}
+
 final class ResearchPermitRequirements {
   const ResearchPermitRequirements({
     required this.supportedFormatVersion,
@@ -180,16 +191,23 @@ final class SignedPermitResearchOperationAuthorizer
   Future<bool> authorize({
     required String ownerId,
     required ResearchOperation operation,
+  }) async =>
+      (await authorizeWithReceipt(ownerId: ownerId, operation: operation)) !=
+      null;
+
+  Future<AuthorizedResearchOperation?> authorizeWithReceipt({
+    required String ownerId,
+    required ResearchOperation operation,
   }) async {
     try {
       final now = await _trustedNowUtc();
-      if (now == null) return false;
+      if (now == null) return null;
       final permit = await permits.loadPermit(
         ownerId: ownerId,
         operation: operation,
       );
       if (permit == null || !_matches(permit, ownerId, operation, now)) {
-        return false;
+        return null;
       }
       if (!await verifier.verify(
         algorithm: permit.signatureAlgorithm,
@@ -197,18 +215,24 @@ final class SignedPermitResearchOperationAuthorizer
         message: permit.signedPayload(),
         signature: permit.signature,
       )) {
-        return false;
+        return null;
       }
       final state = await states.loadState(permitId: permit.permitId);
       final finalNow = await _trustedNowUtc();
-      return state != null &&
-          finalNow != null &&
-          _matches(permit, ownerId, operation, finalNow) &&
-          !state.revoked &&
-          state.currentRevision > 0 &&
-          state.currentRevision == permit.revision;
+      if (state == null ||
+          finalNow == null ||
+          !_matches(permit, ownerId, operation, finalNow) ||
+          state.revoked ||
+          state.currentRevision <= 0 ||
+          state.currentRevision != permit.revision) {
+        return null;
+      }
+      return AuthorizedResearchOperation._(
+        permit: permit,
+        verifiedAtUtc: finalNow,
+      );
     } catch (_) {
-      return false;
+      return null;
     }
   }
 
