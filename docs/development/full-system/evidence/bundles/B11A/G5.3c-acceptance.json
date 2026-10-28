@@ -1,0 +1,462 @@
+{
+  "status": "accepted",
+  "package": "G5.3c",
+  "training": {
+    "status": "training-completed",
+    "modelVersion": "lexiquest-web-mobilenet16-2026-09-14.1",
+    "datasetVersion": "2026-09-14.1",
+    "manifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+    "configSha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+    "selectedEpoch": 30,
+    "epochs": 30,
+    "selection": "minimum development validation loss; fixed epochs, no threshold tuning",
+    "method": "frozen pretrained MobileNet backbone; newly trained 16-way softmax head",
+    "trainableParameters": 16400,
+    "backboneParameters": 3228864,
+    "initialToSelectedHeadWeightL2": 4.2822136878967285,
+    "metrics": {
+      "train": {
+        "samples": 357,
+        "correct": 357,
+        "accuracy": 1.0,
+        "loss": 0.012173544615507126,
+        "perClass": {
+          "book": {
+            "n": 23,
+            "correct": 23
+          },
+          "bottle": {
+            "n": 24,
+            "correct": 24
+          },
+          "chair": {
+            "n": 27,
+            "correct": 27
+          },
+          "cup": {
+            "n": 27,
+            "correct": 27
+          },
+          "apple": {
+            "n": 20,
+            "correct": 20
+          },
+          "bread": {
+            "n": 20,
+            "correct": 20
+          },
+          "tomato": {
+            "n": 27,
+            "correct": 27
+          },
+          "bowl": {
+            "n": 21,
+            "correct": 21
+          },
+          "spoon": {
+            "n": 26,
+            "correct": 26
+          },
+          "fork": {
+            "n": 15,
+            "correct": 15
+          },
+          "knife": {
+            "n": 23,
+            "correct": 23
+          },
+          "door": {
+            "n": 25,
+            "correct": 25
+          },
+          "ladder": {
+            "n": 26,
+            "correct": 26
+          },
+          "light bulb": {
+            "n": 16,
+            "correct": 16
+          },
+          "tool": {
+            "n": 14,
+            "correct": 14
+          },
+          "tap": {
+            "n": 23,
+            "correct": 23
+          }
+        }
+      },
+      "validation": {
+        "samples": 120,
+        "correct": 109,
+        "accuracy": 0.9083333333333333,
+        "loss": 0.4593333601951599,
+        "perClass": {
+          "book": {
+            "n": 5,
+            "correct": 5
+          },
+          "bottle": {
+            "n": 10,
+            "correct": 9
+          },
+          "chair": {
+            "n": 8,
+            "correct": 8
+          },
+          "cup": {
+            "n": 10,
+            "correct": 10
+          },
+          "apple": {
+            "n": 7,
+            "correct": 7
+          },
+          "bread": {
+            "n": 9,
+            "correct": 9
+          },
+          "tomato": {
+            "n": 7,
+            "correct": 6
+          },
+          "bowl": {
+            "n": 10,
+            "correct": 9
+          },
+          "spoon": {
+            "n": 5,
+            "correct": 4
+          },
+          "fork": {
+            "n": 6,
+            "correct": 5
+          },
+          "knife": {
+            "n": 16,
+            "correct": 13
+          },
+          "door": {
+            "n": 8,
+            "correct": 8
+          },
+          "ladder": {
+            "n": 5,
+            "correct": 5
+          },
+          "light bulb": {
+            "n": 3,
+            "correct": 1
+          },
+          "tool": {
+            "n": 7,
+            "correct": 6
+          },
+          "tap": {
+            "n": 4,
+            "correct": 4
+          }
+        }
+      }
+    },
+    "seconds": 26.48400000000038,
+    "candidateSha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9",
+    "checkpointSha256": "3b11556c2a498c809b3c70cb97d94d7493eb11e1fdcfd4ae959bf487fc6b944c",
+    "rawEpochLogSha256": "682d2af20fcfdc2be8e4a98a775aff1d22de7c51d776848b0e752184d42e92a4",
+    "physicalCamera": "NOT RUN",
+    "unknownEvaluation": "NOT RUN",
+    "rolloutEnabled": false
+  },
+  "export": {
+    "schema": "lexiquest-local-camera-candidate-v1",
+    "id": "lexiquest-web-mobilenet16",
+    "version": "2026-09-14.1",
+    "minimumAppVersion": "1.0.0",
+    "localArtifactPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\candidate.tflite",
+    "distributionUri": null,
+    "expectedSha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+    "expectedBytes": 12871389,
+    "inputShape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "inputType": "uint8",
+    "outputShape": [
+      1,
+      16
+    ],
+    "outputType": "float32",
+    "backgroundClassIndex": null,
+    "inputEncoding": "rawUint8Rgb",
+    "labelAssetName": "labels.txt",
+    "labels": [
+      "book",
+      "bottle",
+      "chair",
+      "cup",
+      "apple",
+      "bread",
+      "tomato",
+      "bowl",
+      "spoon",
+      "fork",
+      "knife",
+      "door",
+      "ladder",
+      "light bulb",
+      "tool",
+      "tap"
+    ],
+    "supportedDelegates": [
+      "cpu"
+    ],
+    "trainingManifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+    "kerasCheckpointSha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9",
+    "validationSamples": 120,
+    "matchingTop1": 120,
+    "maximumProbabilityError": 4.589557647705078e-06,
+    "parityPassed": true,
+    "probe": [
+      {
+        "id": "00a36f96e31731c4",
+        "split": "validation",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-0.rgb",
+        "sha256": "707b6ba660faba014ab2437787eba351202e2f1f60fb96ea0811bcc8dff3333e",
+        "scores": [
+          0.0001321767776971683,
+          0.9689749479293823,
+          0.0038111465983092785,
+          5.843777216796298e-06,
+          6.44832180114463e-05,
+          2.834182453170797e-07,
+          5.12554615852423e-05,
+          1.0350244110668427e-06,
+          6.39023128314875e-05,
+          0.000388509186450392,
+          0.0004938975325785577,
+          0.013740476220846176,
+          0.00022367983183357865,
+          0.0006828784826211631,
+          0.0075116888619959354,
+          0.003853817470371723
+        ]
+      },
+      {
+        "id": "01b9021aa05e6e46",
+        "split": "validation",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-1.rgb",
+        "sha256": "e6deaed09b28ff23662569d19e475759a25885280cd55f9319704c22fd2bb09a",
+        "scores": [
+          1.259765758732101e-05,
+          2.983721969940234e-05,
+          3.065363489440642e-05,
+          7.8359693134189e-07,
+          2.8455822302930756e-06,
+          9.778075764188543e-06,
+          3.138221291010268e-05,
+          9.940510608430486e-06,
+          0.0009859862038865685,
+          7.8929791925475e-05,
+          0.9983439445495605,
+          2.938088437076658e-05,
+          3.802930166330043e-07,
+          2.617915470182197e-06,
+          0.0004295154067222029,
+          1.333950535808981e-06
+        ]
+      },
+      {
+        "id": "0344cade36bbd4f4",
+        "split": "validation",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-2.rgb",
+        "sha256": "d0f4d214eafc727192d24b7ee358fd33c67de3dac6b487f4054fd65cc8afd734",
+        "scores": [
+          0.0002122560836141929,
+          6.0861824749736115e-05,
+          2.6482450266485102e-05,
+          0.00011085543519584462,
+          7.65619824960595e-06,
+          1.8203760191681795e-05,
+          0.00014340299821924418,
+          0.0019670622423291206,
+          0.9961289167404175,
+          0.0007140164962038398,
+          0.0001360393944196403,
+          1.9972921094790763e-08,
+          1.463279204472201e-06,
+          0.00029505990096367896,
+          9.637061339162756e-06,
+          0.00016817603318486363
+        ]
+      },
+      {
+        "id": "0623368731dd66aa",
+        "split": "validation",
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-3.rgb",
+        "sha256": "c48648b415e3ae8095a258216116910d2788e67769923b1c24375c18130c67ae",
+        "scores": [
+          0.012688827700912952,
+          0.013369157910346985,
+          0.011498181149363518,
+          9.72043999354355e-05,
+          8.775098103797063e-05,
+          8.374040044145659e-05,
+          3.8482819945784286e-05,
+          1.8715272744884714e-05,
+          3.653594831121154e-05,
+          1.0461477359058335e-05,
+          8.61364333104575e-06,
+          2.2606769562116824e-05,
+          0.004114892799407244,
+          0.0023504600394517183,
+          0.949833869934082,
+          0.005740489345043898
+        ]
+      }
+    ],
+    "releaseEnabled": false,
+    "modelRights": "Local development candidate; pretrained and image attribution retained in B11A evidence; not published",
+    "rollback": {
+      "id": "mobilenet-v1-imagenet",
+      "sha256": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b",
+      "action": "Production manifest remains unchanged; remove local candidate selection to use pinned baseline"
+    },
+    "limitations": [
+      "16 object categories; cannot silently replace broad1001-output baseline",
+      "Object-crop web development metrics only; camera/unknown/device/resources pending"
+    ]
+  },
+  "runtime": {
+    "exitCode": 0,
+    "tests": 1,
+    "probes": 4,
+    "assertions": "Real LiteRtImageClassifier open/shape/types/embedded labels, all16 scores vs Python TFLite within0.001 including class0 and topK10",
+    "evidence": "G5.3c-runtime-passed/targeted-learning-ddd1f276286e72516347640c05367e7a9d5b501bad183bc303624799149e93b0.json",
+    "probeSource": "candidate_runtime_test.dart",
+    "probeSha256": "c68e3742844e04fa21c5aa49106ab0e31b24b1db2cc2150f6e1733e45a73ded1",
+    "physicalDevice": false
+  },
+  "trainingUnitTests": {
+    "passed": 3,
+    "exitCode": 0,
+    "log": "G5.3c-green.log"
+  },
+  "sourceFingerprints": {
+    "tools\\train_camera_web.py": "ef62eb28b48282e74c133851ddbcb26486952d3775661a54bab29fb7d539742e",
+    "tools\\export_camera_web.py": "fb0ddc6ef0c74dc315f225b5fa1c1ddcf94012367b298a1ae8935e7e82a92f03",
+    "tools\\test_camera_web_training.py": "719eaa194f9aa065b20cbcaa58025fe78769514a58335d410a1ae8ea1ab26e84",
+    "tools\\camera_web_dataset.py": "648caa09fb9924f6e3be6a2d0aaebffc7f1c51928ea9e75b5baded16e5d84846",
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\training-config.json": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\candidate_runtime_test.dart": "c68e3742844e04fa21c5aa49106ab0e31b24b1db2cc2150f6e1733e45a73ded1"
+  },
+  "artifacts": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\best-head.weights.h5",
+      "sha256": "3b11556c2a498c809b3c70cb97d94d7493eb11e1fdcfd4ae959bf487fc6b944c",
+      "bytes": 212456
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\candidate.keras",
+      "sha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9",
+      "bytes": 13444392
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\candidate.tflite",
+      "sha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+      "bytes": 12871389
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\config.json",
+      "sha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+      "bytes": 1212
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\environment.json",
+      "sha256": "334752547ce483eb450b9eff42c3ea5b34ca2b3f3d4ca7f9688cc8f6488138d5",
+      "bytes": 689
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\epochs.jsonl",
+      "sha256": "682d2af20fcfdc2be8e4a98a775aff1d22de7c51d776848b0e752184d42e92a4",
+      "bytes": 4426
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\export.json",
+      "sha256": "7d1e956556866323a764cbe9d7253e23301ad2f0ceef99345469e93937377c9e",
+      "bytes": 5184
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\features.npy",
+      "sha256": "f214ef4d1cf4f7e5eabd0db0e2f143d0edc79d2e9d08b3ad01cc5a645f71d53f",
+      "bytes": 1953920
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\initial-head.npz",
+      "sha256": "0ed392bc549508dfd3e9b1ea948c9f15d5ba7a45786693d7274cfedf1590c964",
+      "bytes": 66106
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\predictions.json",
+      "sha256": "eb27d05b0abc2b4871f987209202b7bfa6ca646214a3e74b79879e9b4d2970ac",
+      "bytes": 286790
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-0.rgb",
+      "sha256": "707b6ba660faba014ab2437787eba351202e2f1f60fb96ea0811bcc8dff3333e",
+      "bytes": 150528
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-1.rgb",
+      "sha256": "e6deaed09b28ff23662569d19e475759a25885280cd55f9319704c22fd2bb09a",
+      "bytes": 150528
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-2.rgb",
+      "sha256": "d0f4d214eafc727192d24b7ee358fd33c67de3dac6b487f4054fd65cc8afd734",
+      "bytes": 150528
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-3.rgb",
+      "sha256": "c48648b415e3ae8095a258216116910d2788e67769923b1c24375c18130c67ae",
+      "bytes": 150528
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\tflite-validation-predictions.json",
+      "sha256": "915626d734c001affa42b35405b3257db635fab6c95aeac0596724831c970455",
+      "bytes": 68843
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\training.json",
+      "sha256": "8013f0c2de8e6b805f3c4b5e250633fface39e35a93f70f5e7c103a389e88cff",
+      "bytes": 3685
+    }
+  ],
+  "replay": {
+    "python": "C:/Users/Phet/.cache/lq12-20260911/Scripts/python.exe",
+    "training": "tools/train_camera_web.py <training-config.json> <new-exclusive-run-directory>",
+    "export": "tools/export_camera_web.py <completed-run-directory>",
+    "dataset": "Reuse exact pinned dataset/acceptance/backbone paths or create an explicitly repinned config after verified relocation; never overwrite run-001",
+    "determinism": "Fixed seed, deterministic CPU ops and pinned dependencies; no independent replay rerun claimed; model container metadata may differ on re-export"
+  },
+  "review": {
+    "method": "Sequential manual code/artifact review; no subagents per bundle policy",
+    "checks": [
+      "Only pinned accepted web train/validation enter adapter; fresh/unknown inputs rejected",
+      "Only train indices enter gradient batches; validation chooses checkpoint loss",
+      "Frozen backbone plus actual changed trainable head, real raw epoch logs and model/checkpoint bytes",
+      "Raw uint8 normalization enclosed in exported graph; output float32 index0 is book",
+      "Native runtime score parity demonstrated using real held-out-development pixels",
+      "Candidate stays local, does not silently replace1001-class baseline; no threshold changes"
+    ],
+    "requiredOpenDefects": []
+  },
+  "limits": [
+    "Development crop accuracy90.83% is not real camera/generalization acceptance",
+    "Per-class validation tiny3-16; light bulb1/3, knife13/16; camera distribution/unknowns/resources remain for later evaluation",
+    "ImageNet pretraining overlap unknown; not an unbiased benchmark",
+    "No model publication, paid compute, full release or physical device test performed"
+  ]
+}

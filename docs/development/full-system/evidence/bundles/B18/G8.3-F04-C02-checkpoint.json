@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F04",
+  "continuationId": "B18-G83-F04-C02",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T17:48:36.966261+00:00",
+  "threadId": "01a0baba-e5e9-7ca3-8b59-f4ac0163a660",
+  "inputCheckpointSha": "27c4e8af56974f4624b348250e7885e1ddafb5fe",
+  "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "acceptedF03Sha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "findings": [
+    {
+      "findingId": "B18-REV08-03",
+      "status": "closed-regression-verified",
+      "redRun": "provenance-red",
+      "greenRun": "provenance-final;scanner-final",
+      "outcome": "Both clients validate explicit engine identity before enum normalization. Reject wrong engine/unknown/suffix; retain backend omnivoice and established omnivoice-prod alias, and voxcpm2. Actual factory/handler/native/telemetry/cache composition proves no wrongly attributed audio is played or cached; matching response and subsequent cache hit retained for both configurations. Existing rollback fixtures corrected without weakening assertions."
+    },
+    {
+      "findingId": "B18-REV08-07",
+      "status": "closed-regression-verified",
+      "redRun": "stop-red",
+      "greenRun": "stop-final;scanner-final",
+      "outcome": "Generation cancellation exits retired pre-speak/explicit stop chains before any subsequent handler; before/after awaited stop checks also fence delayed failing stops. Actual VoiceUseCases+orchestrator proves newer audio remains active with unchanged stop count. Existing genuine cleanup failure tests still exhaust every handler and preserve failure."
+    },
+    {
+      "findingId": "B18-REV08-11",
+      "status": "closed-regression-verified",
+      "redRun": "scanner-red",
+      "greenRun": "scanner-final",
+      "outcome": "Scanner suppresses cancellation/stale error using current session, speech epoch and capture epoch. Actual widget/facade/route mixin proves replacement/background/cover/newscan cannot show retired error; current failure remains visible. No device/acoustic claim."
+    }
+  ],
+  "closedInThisCheckpoint": 3,
+  "closedF04": 6,
+  "remainingF04": [
+    "B18-REV08-04",
+    "B18-REV08-05",
+    "B18-REV08-06",
+    "B18-REV08-08",
+    "B18-REV08-09",
+    "B18-REV08-10"
+  ],
+  "totalClosed": 44,
+  "remainingOpenFindings": 25,
+  "testExecutions": 180,
+  "testExecutionNote": "Includes factory rerun after orchestrator delta. Final target suites63+57+60;7distinct test files. No claim of180distinct cases.",
+  "testTargetCount": 7,
+  "successfulVerifierRuns": 3,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 9,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/screens/object_scanner_screen.dart",
+      "sha256": "979ff1ca1b9a793a7728f4d5dee24ff217abd6846a766de8f7a628e5ebe45195"
+    },
+    {
+      "path": "lib/voice/omni_voice_provider.dart",
+      "sha256": "7411c05663c1e242769361f8b1923532c0042debb873121e39ba7323de0e4a21"
+    },
+    {
+      "path": "lib/voice/voice_orchestrator.dart",
+      "sha256": "8e4d78b1e8ab28eb9e5c4db43a957b330f7dfefe89eee58f05e5ee7439d3002b"
+    },
+    {
+      "path": "lib/voice/vox_cpm_standard_provider.dart",
+      "sha256": "80c6f86b1ad3d6964990568458f2406dad64ba2bc41239a43ced00efc324d5f8"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "sha256": "e569d09c96d8f98409ea43b2e2898d3c5efea7edc1ad19b60455aef30b1c4322"
+    },
+    {
+      "path": "test/voice/omni_voice_provider_test.dart",
+      "sha256": "18e3f978973ba1dfb8b0e6f306c66981b5fef1716a444fcfe1262c9b6f0e10f8"
+    },
+    {
+      "path": "test/voice/voice_orchestrator_cancellation_test.dart",
+      "sha256": "0bcbb2822f8e58bb8125c75d4dd322ec82c96eef9a5ec5b950371bb12c7e415f"
+    },
+    {
+      "path": "test/voice/voice_service_factory_test.dart",
+      "sha256": "da7d3fc8feb317bdfcb880c36ed1569781d5cb77eaab73ce96492adae1a9f127"
+    },
+    {
+      "path": "test/voice/vox_cpm_standard_provider_test.dart",
+      "sha256": "642bbff512605c43cc7572029f8b64078cc59b40f2ec3161c425adf518813382"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F04-C02",
+  "evidenceManifestSha256": "c778b14651da4d6c1b6eccdb5b1dd7bb41db40df1bd5cf91efca381cbfd5da07",
+  "review": {
+    "kind": "local-changed-code-review",
+    "reviewer": "current serial writer; no independent subagent review claimed",
+    "baseSha": "27c4e8af56974f4624b348250e7885e1ddafb5fe",
+    "findings": [],
+    "checks": [
+      "Backend emits omnivoice; existing omnivoice-prod alias retained explicitly, arbitrary suffix/other engine rejected. VoxCPM accepts only voxcpm2. Factory verifies no cache/playback/false telemetry on mismatched bytes and matching/cache behavior afterward.",
+      "Cancelled pre-speak and explicit stop chains exit before subsequent handlers, even if awaited stop threw; existing genuine failure cleanup exhaustiveness retained. SDK-internal stop operation identity is not claimed fixed by this finding.",
+      "Scanner captures speech and scan generations, current session and mounted state; ignores cancelled errors, preserves genuine current error. Route/lifecycle/newscan/overlapping speech widgets exercise actual facade and route mixin.",
+      "Accepted F01/F02/F03 ancestry retained; no provider/native/device/training/research activation. Six remaining F04 findings remain open."
+    ],
+    "verification": {
+      "successfulVerifierRuns": 3,
+      "testExecutions": 180,
+      "testTargets": 7,
+      "analysisIssues": 0,
+      "changedDartFiles": 9,
+      "prePostPairs": 8,
+      "sourceInputs": 1377
+    },
+    "evidenceReuse": "Provider63run precedes orchestrator delta. Factory23cases rerun in scanner60run after orchestrator change. Other57orchestrator/facade cases unchanged after stop-final; only scanner files subsequently changed. Source maps and scope relationship retained."
+  },
+  "F04Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "continuationReason": "Provenance/control-chain/scanner unit verified. Remaining6 findings need streaming/playback lifecycle and separate dormant LM contexts; no failing test or unfinished source edit transferred."
+}

@@ -1,0 +1,50 @@
+{
+  "originalPackageCount": 67,
+  "originalCoverageRecords": 74,
+  "formulaGroups": 12,
+  "testFamilies": 16,
+  "gates": [
+    {
+      "id": "G8.4",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.4.md",
+      "sha256": "38f4fb2830fc9b21c576ef036f4544296af8b099ebf8756dbde17ed2af5e9915",
+      "originalScopeAndAcceptance": "ใช้ reviewedsource และ currentgenerator สร้าง executableplanrevision: TestCaseID→COV/MODE/MG/FORM→preconditions/data/steps/expected→command/device/evidence; กรอบ 16testfamilies และ faultmatrix ใน MasterPlan เป็น input ไม่ใช่ผลทดสอบ\n\n**Requirements:** G8, TEST-PLAN\n\n**Owner paths เริ่มต้น:** `tool/final_test_plan/generate_final_test_plan.dart`, `docs/generated/alltcas-8-44-final-test-plan.json`, `docs/development`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** planpin ตรง freezeSHA และ inputhash; เคสครบ 74coveragerecords และ 12formulagroups โดยไม่ duplicatecommand; มี entry/exitcriteria, reusepolicy, incidentdatafields, expectednegativecases และ NOT RUN ledger",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    },
+    {
+      "id": "G8.5",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.5.md",
+      "sha256": "0533b2a9f0d466a6c37fbf7aa9b423b12a63e8c5c8a0ec11c4c5ef714b9ed960",
+      "originalScopeAndAcceptance": "รัน targeted/subsystem ตาม dependency แบบ serial; reusepassed เฉพาะ fingerprint ตรง; fullreleaseverifier เฉพาะ frozenPR/releaseSHA. เก็บ stdout/stderr/exit/duration/command/input/outputartifact และ firstfailure\n\n**Requirements:** G8, TEST-EXECUTION\n\n**Owner paths เริ่มต้น:** `tool/cli/verify-scope.ps1`, `test`, `backend`, `functions`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** ผล PASS/FAIL/BLOCKED/NOT RUN แยก; ไม่มี suite ที่รันซ้ำเพราะเปลี่ยนเอกสารอย่างเดียว; failure ที่เกิดจริงเปิด defectrecord หรือระบุ expectednegativecase",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    },
+    {
+      "id": "G8.6",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.6.md",
+      "sha256": "0039660f1f3cadec13b8de5480f5342156f5575ea5b64cf451af24dd641e6fbb",
+      "originalScopeAndAcceptance": "สร้าง artifact ครั้งเดียวต่อ relevantfrozeninput; ตรวจ APK/source/model/contentSHA; ติดตั้ง emulator ที่ระบุด้วย syntheticdata และตรวจ coldstart/firstlesson/allavailablemodes/history/replay/offline/restart; physicaldevice เฉพาะที่ authorized\n\n**Requirements:** G8, TEST-DEVICE\n\n**Owner paths เริ่มต้น:** `android`, `tool/cli/run-android-smoke.ps1`, `tool/cli/verify-apk-model-runtime.ps1`, `integration_test`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** มี screenshot/video/log ตาม testcase และผล durableafterreopen; ไม่มี uninstall/clear-app-data ที่ทำข้อมูลผู้ใช้หาย; actualAPK ตรง source ที่ reviewed และทดสอบ",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    },
+    {
+      "id": "G8.7",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.7.md",
+      "sha256": "54759a6df4ebd374a27a3931e748abeb29af1377a1a76c43cdc0a71b2b75a22e",
+      "originalScopeAndAcceptance": "ทำ faultmatrix permission/network/timeout/disk/contenthash/owner/session/restart/timezone/locale/textscale/reducedmotion; สำรวจ latency/memory/overflow/focus ตาม device และ measurementmethod ที่ TestPlan กำหนด\n\n**Requirements:** G8, TEST-FAULT, COV-f38, COV-f40\n\n**Owner paths เริ่มต้น:** `integration_test`, `test`, `tool/cli`, `lib/features/accessibility`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** allcriticalflows มี recoverableexit และ no-data-corruption; UIvisual ผ่านไม่ใช้แทน humanTalkBack/audio; latency/performance ที่ยังไม่วัดเป็น NOT RUN ไม่ใส่ค่าคาดเดา",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    },
+    {
+      "id": "G8.8",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.8.md",
+      "sha256": "6621f62d7ae3b4f3acd7a5211f87dbac8b56e4083c6e09deb70bd86b15690368",
+      "originalScopeAndAcceptance": "เก็บทุก unexpectedfailure ด้วย DefectID, testcase, source/device/config, steps, expected/actual, evidence, severity, rootcause, ownerpackage, fixSHA, retest และ impactedregression; แก้แล้วกลับ reviewdelta/freeze และ regenerate เฉพาะ planpins ที่กระทบ\n\n**Requirements:** G8, DEFECT-LEDGER\n\n**Owner paths เริ่มต้น:** `docs/development`, `test`, `lib`, `backend`, `tools`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** close ได้เมื่อ originalrepro ไม่เกิดบน fixSHA และ regression ที่เกี่ยวข้องผ่าน; ถ้าคำสั่งเดิมล้มซ้ำ/filesystemerror ซ้ำ/no-progress10min ให้หยุดงานส่วนนั้นและ report ไม่ retryblindly",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    },
+    {
+      "id": "G8.9",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.9.md",
+      "sha256": "6ec7ef1d705f407fdfa83a96c5e761cb3fa20422c62e047f892e6020658574b7",
+      "originalScopeAndAcceptance": "สรุป engineeringcompletion, local/emulator/device/human/liveacceptance แยก พร้อม coverageallrecords, reviewfilecoverage, testpass/fail/notrun, cleanupmanifest, artifacthash, knownlimitations และ nextauthorizedaction\n\n**Requirements:** G8, MASTER-COMPLETION\n\n**Owner paths เริ่มต้น:** `docs/development`, `docs/generated`, `tool/cli`. ขยายไฟล์ที่จำเป็นได้พร้อมเหตุผล/consumer/compatibility; ไม่ใช้ write set เก่าเป็นข้อห้ามงาน Master\n\n**Acceptance:** ประกาศครบได้เฉพาะ scope ที่หลักฐานครบ; externalrequired ที่ยังไม่ผ่านไม่ใช่ releasePASS; ไม่มี deployment/signing/publishing/researchrollout จากการปิด localgate",
+      "disposition": "retain in full; add F01-F09 coverage; no execution/acceptance in this task"
+    }
+  ]
+}

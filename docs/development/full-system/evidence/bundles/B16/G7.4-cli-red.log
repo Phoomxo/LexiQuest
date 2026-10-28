@@ -1,0 +1,3 @@
+RUN: r15-scope.tests.ps1
+RUN: verify-scope.tests.ps1
+FAIL: verify-scope.tests.ps1 (Failed); see C:\Users\Phet\.codex\worktrees\ecfd\LexiQuest\build\verification\d47e205056b8ab78e6b3872162d7d27e8ad675d3\94b9bf2d5947-6f8062ed4601\verify-scope.tests.ps1.stdout.log and C:\Users\Phet\.codex\worktrees\ecfd\LexiQuest\build\verification\d47e205056b8ab78e6b3872162d7d27e8ad675d3\94b9bf2d5947-6f8062ed4601\verify-scope.tests.ps1.stderr.log

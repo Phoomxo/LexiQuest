@@ -1,0 +1,23 @@
+{
+  "checkpoint": "103",
+  "workflow": "W07",
+  "status": "BASELINE_SRS_RATING_AND_EXPOSURE_VERIFIED",
+  "device": "Isolated Vivo ariTest098; provider disconnected",
+  "journey": [
+    "Home learning -> SRS review ->2item setup -> start",
+    "spoon: manually simulate Good before reveal",
+    "plate: reveal translation then Continue"
+  ],
+  "interpretation": "Authorized simulated QA inputs in isolated app; not a measurement of human proficiency. Stored classification independentRecall describes application evidence policy, not verified human recall.",
+  "verified": [
+    "Two new attempts: spoon srsRecall independentRecall; plate flashcardExposure exposure",
+    "Only spoon SRS changes; plate schedule remains exact",
+    "One points entry; reading tables unchanged"
+  ],
+  "evidence": "evidence/srs-native-103",
+  "remaining": [
+    "Actual provider connected/disconnected SRS context journey",
+    "Final W07/full14workflow14mode acceptance"
+  ],
+  "wholeGoalComplete": false
+}

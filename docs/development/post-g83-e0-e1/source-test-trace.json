@@ -1,0 +1,1279 @@
+{
+  "sourceSha": "09a4d747903b1624e80fea8b1f9b605830858ebc",
+  "features": [
+    {
+      "feature": "F01",
+      "slug": "personal_sets",
+      "symbols": [
+        {
+          "path": "lib/features/learning_packs/domain/learning_pack.dart",
+          "symbol": "LearningPackFilter",
+          "line": 7,
+          "sha256": "8f10ce091ffe845d13d415a20b56f0ebf1c960a843f72e8e0d3d7b777879ab8e"
+        },
+        {
+          "path": "lib/features/learning_packs/application/learning_pack_use_cases.dart",
+          "symbol": "StudyPlanningUseCases",
+          "line": 9,
+          "sha256": "ec8437ec3cd935643ca8986de383804b4c3f1b42ef4125074ceaaf148e7dbd7d"
+        },
+        {
+          "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+          "symbol": "LearningPackDetailUseCases",
+          "line": 23,
+          "sha256": "ba4c576fbf5e3e06e035c4d79fd9f2a2d2f3aab2ce75c94c978f4c80c0da4f88"
+        },
+        {
+          "path": "lib/features/vocabulary/domain/vocabulary_word.dart",
+          "symbol": "VocabularyWord",
+          "line": 371,
+          "sha256": "bfed7b1da50e579d39025df791703031b9a7da0bca338d648a713aca0e8e9632"
+        },
+        {
+          "path": "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
+          "symbol": "CefrEditorialCatalog",
+          "line": 5,
+          "sha256": "90fa341747bb8a73193a821ced0ef35bec0b683a2d034ac9537fe060ab633d80"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/learning_packs/learning_pack_catalog_test.dart",
+          "sha256": "2c792696751e8c8cf46e6509d6f52b398f10786dfccd5f1e46eab6d1acc72b73",
+          "examples": [
+            {
+              "name": "matches every multi-value catalog filter and orders pinned revisions",
+              "line": 27
+            },
+            {
+              "name": "fails closed for an unknown canonical vocabulary id",
+              "line": 95
+            },
+            {
+              "name": "reads the verified catalog without inserting or duplicating words",
+              "line": 124
+            },
+            {
+              "name": "does not expose a pack revision that is not verified and published",
+              "line": 147
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/learning_packs/learning_pack_detail_test.dart",
+          "sha256": "ea89bec43b2571db78abe7ae9df7b27c1ef3dc2fa384e39dd1f1beb4ced93e8d",
+          "examples": [
+            {
+              "name": "B07 pack projection excludes unattributed history and rejects tampered pins",
+              "line": 43
+            },
+            {
+              "name": "reads only the requested verified pinned pack revision",
+              "line": 118
+            },
+            {
+              "name": "fails closed when the requested revision is unpublished or corrupt",
+              "line": 151
+            },
+            {
+              "name": "derives detail progress from canonical sessions without pack writes",
+              "line": 195
+            },
+            {
+              "name": "lists registered activities deterministically and marks missing modes unavailable",
+              "line": 248
+            },
+            {
+              "name": "implemented-off modes are omitted from pack detail",
+              "line": 309
+            },
+            {
+              "name": "enabled matching requires two ambiguity-safe pinned choices",
+              "line": 341
+            },
+            {
+              "name": "definition quiz is unavailable when pinned vocabulary is not composed",
+              "line": 397
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/vocabulary/cefr_editorial_catalog_test.dart",
+          "sha256": "6510110abbbd1188e217fc087e6c454beed4f618d7bd21dfddec1888805268b4",
+          "examples": [
+            {
+              "name": "packaged editorial covers all 5500 words and partitions all original senses",
+              "line": 10
+            },
+            {
+              "name": "corrupt sense-review asset drops the entire optional overlay",
+              "line": 53
+            },
+            {
+              "name": "unavailable editorial overlay leaves the complete base catalog usable",
+              "line": 65
+            },
+            {
+              "name": "overlay preserves original indices and rejects a mismatched example",
+              "line": 89
+            },
+            {
+              "name": "editorial POS correction is explicit and does not mutate the source word",
+              "line": 124
+            },
+            {
+              "name": "editorial parser retains explicit source mapping and bilingual example",
+              "line": 159
+            },
+            {
+              "name": "rejects duplicate identities and invalid source mappings or review status",
+              "line": 183
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F02",
+      "slug": "study_plan",
+      "symbols": [
+        {
+          "path": "lib/features/goals/application/learning_goal_use_cases.dart",
+          "symbol": "LearningGoalUseCases",
+          "line": 29,
+          "sha256": "15a48732b6885c34b6f993452de11dba3fc3282e4c59ace17b80435535167626"
+        },
+        {
+          "path": "lib/screens/study_planning_hub_screen.dart",
+          "symbol": "StudyPlanningHubScreen",
+          "line": 14,
+          "sha256": "e3da84a2c39d216ee2b5ccf9ed9c3cdbba191c067957f0fe22c6275392300377"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/goals/learning_goal_use_cases_test.dart",
+          "sha256": "cdb32e585314a40427e671b7f56f7f2ca741acd07d913a9cd02951b2942db759",
+          "examples": [
+            {
+              "name": "G4.2 local midnight counts yesterday today tomorrow as calendar days",
+              "line": 48
+            },
+            {
+              "name": "G4.2 edit and tombstone preserve identity and cancel linked reminder atomically",
+              "line": 82
+            },
+            {
+              "name": "prepared owner A command cannot retry into active owner B",
+              "line": 193
+            },
+            {
+              "name": "owner change after repository preflight is rejected inside transaction",
+              "line": 253
+            },
+            {
+              "name": "future and past countdowns use the pinned timezone",
+              "line": 309
+            },
+            {
+              "name": "calendar countdown treats DST-adjacent local dates as one day",
+              "line": 338
+            },
+            {
+              "name": "calendar countdown preserves reverse date order across DST",
+              "line": 385
+            },
+            {
+              "name": "identical create and update replays persist exactly once",
+              "line": 418
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/screens/study_planning_hub_screen_test.dart",
+          "sha256": "21e9f7de70facb6e0c162c359311d655ade4516ea41aa7b49e2b77b9f173f93b",
+          "examples": [
+            {
+              "name": "Thai glossary planning actions expose one semantic action",
+              "line": 39
+            },
+            {
+              "name": "the composed parent owns one canonical study-planning entry",
+              "line": 65
+            },
+            {
+              "name": "the hub is the only parent that opens the catalog",
+              "line": 93
+            },
+            {
+              "name": "the hub opens goals as a child without another main entry",
+              "line": 147
+            },
+            {
+              "name": "f35 hub owns the typed preference quiz child action",
+              "line": 190
+            },
+            {
+              "name": "f35 hub hides preference quiz when dependency is absent",
+              "line": 241
+            },
+            {
+              "name": "f35 open preference quiz follows the live parent kill switch",
+              "line": 263
+            },
+            {
+              "name": "an open catalog child follows the live parent kill switch",
+              "line": 296
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F03",
+      "slug": "guided_repair",
+      "symbols": [
+        {
+          "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+          "symbol": "ContrastiveFeedbackUseCases",
+          "line": 28,
+          "sha256": "f66a246c20011a40d3eaad33ab202697986347bcfd0c961735a723ec226611dd"
+        },
+        {
+          "path": "lib/features/learning/domain/hint_policy.dart",
+          "symbol": "HintPolicy",
+          "line": 82,
+          "sha256": "cbd27c6fbdcbc88704c0521aaab60bafaaa1e8402f29e51d05a8cc2d6793d7b2"
+        },
+        {
+          "path": "lib/features/learning/application/unified_lesson_controller.dart",
+          "symbol": "UnifiedLessonController",
+          "line": 56,
+          "sha256": "18a9f8754954f98ee749ba1c9830f0dd0b031d9ded539ca21bd4cb1fb804e5b3"
+        },
+        {
+          "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+          "symbol": "AiTutorUseCases",
+          "line": 19,
+          "sha256": "b2cb3f3d240e2517b5421f17e0630b7b1bfb3295d1ba9c227ef66d5052f4cb44"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/learning/contrastive_feedback_test.dart",
+          "sha256": "2ccbbdd767560c8a68d392de4bd0b9fe52561513fc400a36daf1506706ddc153",
+          "examples": [
+            {
+              "name": "B07 explanation expansion preserves outer reading position",
+              "line": 32
+            },
+            {
+              "name": "requests only the revision pinned by the committed attempt",
+              "line": 65
+            },
+            {
+              "name": "missing or wrong distractor rationale fails closed",
+              "line": 87
+            },
+            {
+              "name": "A feedback cannot resolve B or any cross-owner/content identity",
+              "line": 119
+            },
+            {
+              "name": "lost-ack replay resolves once and remains guided feedback only",
+              "line": 163
+            },
+            {
+              "name": "real Drift f04 lexical artifact verifies exact bytes and checksum",
+              "line": 188
+            },
+            {
+              "name": "verified parser accepts two 4000-rune four-byte rationales",
+              "line": 239
+            },
+            {
+              "name": "real meaning review publishes exact token only after canonical commit",
+              "line": 266
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/learning/hint_policy_test.dart",
+          "sha256": "dae2405e2cdc7618526d93893ceba25581bbce9eedb309545910b3767a726617",
+          "examples": [
+            {
+              "name": "reveals strategy then context under one deterministic budget",
+              "line": 8
+            },
+            {
+              "name": "an unavailable hint leaves the attempt state unchanged",
+              "line": 37
+            },
+            {
+              "name": "panel exposes staged support and disables itself when budget is exhausted",
+              "line": 49
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/learning/unified_lesson_controller_test.dart",
+          "sha256": "7ed6172a218ec760c0b3c3b42db19a618c2a903f55cfbe46f2e1a8877c7316dd",
+          "examples": [
+            {
+              "name": "lesson progress semantics describe lifecycle in Thai",
+              "line": 80
+            },
+            {
+              "name": "presentation-only skip notifies without creating evidence",
+              "line": 142
+            },
+            {
+              "name": "f16 start revalidates one bound immutable configuration and retry preserves it",
+              "line": 159
+            },
+            {
+              "name": "f16 command cannot replace the configuration bound by the shell",
+              "line": 202
+            },
+            {
+              "name": "f16 item-count drift records a typed reset before start",
+              "line": 233
+            },
+            {
+              "name": "route can delegate the exact start command through a typed bridge",
+              "line": 265
+            },
+            {
+              "name": "preaccepted recovery preserves its durable session when attachment fails",
+              "line": 290
+            },
+            {
+              "name": "f16 finite timing stops accepting active lesson operations",
+              "line": 320
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "sha256": "466fd5ce9a9cff2b76d7980b3c5a5cee100b4bc31979288dfc4fceea0bff45c6",
+          "examples": [
+            {
+              "name": "F04 revoke reserves order during drain remove=$remove",
+              "line": 65
+            },
+            {
+              "name": "B13 missing key does not begin usage or invoke gateway",
+              "line": 110
+            },
+            {
+              "name": "B13 context-free request retires the previous conversation",
+              "line": 122
+            },
+            {
+              "name": "B13 summary uses pinned owner and explicit aggregate provenance",
+              "line": 149
+            },
+            {
+              "name": "R15 owner and credential scope fences reject stale history before HTTP",
+              "line": 190
+            },
+            {
+              "name": "R15 scenario new session and unbound caller cannot reuse old pairs",
+              "line": 266
+            },
+            {
+              "name": "R15 contextual failure accounting preserves ${code.name}",
+              "line": 322
+            },
+            {
+              "name": "durable pending insert completes before the provider starts",
+              "line": 344
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F04",
+      "slug": "lexical_rubric",
+      "symbols": [
+        {
+          "path": "lib/features/learning/presentation/sentence_practice_panel.dart",
+          "symbol": "SentencePracticePanel",
+          "line": 16,
+          "sha256": "29bcaa1025ead807f317e7ad08d8efa0babc9a44b65c34d2dc2b4e97f8a0d364"
+        },
+        {
+          "path": "lib/features/learning/application/learning_use_cases.dart",
+          "symbol": "LearningUseCases",
+          "line": 338,
+          "sha256": "f035d8aaa004724637013352102fa89b5c16cccfd77e14a74167b960423c38fd"
+        },
+        {
+          "path": "lib/features/learning/domain/srs_policy.dart",
+          "symbol": "BinarySm2SrsPolicy",
+          "line": 17,
+          "sha256": "2e97f27682947ab5863e6aefb9cf054866d3880f6f68b857647794749da4c453"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/learning/sentence_practice_panel_test.dart",
+          "sha256": "30ad9b638c9341e0b74fdca39bd3b80088914227bbc72bc184763935fbb2c979",
+          "examples": [
+            {
+              "name": "listen waits for natural completion and can be stopped",
+              "line": 97
+            },
+            {
+              "name": "microphone stops playback and replay cancels microphone",
+              "line": 117
+            },
+            {
+              "name": "only first final is displayed as unscored ephemeral transcript",
+              "line": 134
+            },
+            {
+              "name": "$ending leaves readable retry and skip available",
+              "line": 156
+            },
+            {
+              "name": "stop discards late final and offers retry",
+              "line": 180
+            },
+            {
+              "name": "skip clears transcript and cancels active resources",
+              "line": 193
+            },
+            {
+              "name": "item replacement fences old final and completion",
+              "line": 210
+            },
+            {
+              "name": "route cover cancels and fences callbacks then permits explicit retry",
+              "line": 230
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/learning/learning_use_cases_test.dart",
+          "sha256": "4d2fd29c9a70ffd6d7a6ac2e1b449bd828636fe71a0b90c3e89c071ea291fc04",
+          "examples": [
+            {
+              "name": "$kind awaits exactly one refresh before final session time",
+              "line": 214
+            },
+            {
+              "name": "$kind rejects owner drift across refresh before admission",
+              "line": 253
+            },
+            {
+              "name": "authority failure from refresh is not swallowed by learning",
+              "line": 269
+            },
+            {
+              "name": "empty content does not invoke a refresh or admit a session",
+              "line": 281
+            },
+            {
+              "name": "$kind revalidates owner after awaited initial state",
+              "line": 293
+            },
+            {
+              "name": "review distractor read returns empty without an alternative",
+              "line": 314
+            },
+            {
+              "name": "review distractor read rejects owner drift",
+              "line": 323
+            },
+            {
+              "name": "starts quiz from local words with deterministic unique options",
+              "line": 344
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/learning/srs_policy_test.dart",
+          "sha256": "31dc36aeeea2d3d8e943fdd7d0eb9027e75a5f1fa2a8b8c0dba0cb3bbb9a407a",
+          "examples": [
+            {
+              "name": "first correct review schedules one day and records repetition",
+              "line": 9
+            },
+            {
+              "name": "correct sequence is deterministic and grows after fourteen days",
+              "line": 19
+            },
+            {
+              "name": "long correct sequence saturates at the numerical safety ceiling",
+              "line": 29
+            },
+            {
+              "name": "oversized historical interval saturates before multiplication",
+              "line": 50
+            },
+            {
+              "name": "correct and incorrect sequence resets then regrows deterministically",
+              "line": 75
+            },
+            {
+              "name": "incorrect review resets interval and increments lapses",
+              "line": 109
+            },
+            {
+              "name": "rejects a non-UTC clock value",
+              "line": 134
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F05",
+      "slug": "speaking_scenario",
+      "symbols": [
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "symbol": "SpeechPracticeUseCases",
+          "line": 6,
+          "sha256": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        },
+        {
+          "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+          "symbol": "SpeechPracticeSession",
+          "line": 267,
+          "sha256": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+          "sha256": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca",
+          "examples": [
+            {
+              "name": "engine failure retires callbacks and permits a fresh attempt",
+              "line": 8
+            },
+            {
+              "name": "failed start retires retained callback and reports a speech failure",
+              "line": 36
+            },
+            {
+              "name": "starts only after microphone permission and preserves provenance",
+              "line": 61
+            },
+            {
+              "name": "permission denial prevents recognizer initialization",
+              "line": 88
+            },
+            {
+              "name": "empty or unmatched transcript never invents an acoustic score",
+              "line": 112
+            },
+            {
+              "name": "unscorable transcript ${values.toString()} has no assessment",
+              "line": 137
+            },
+            {
+              "name": "sessions serialize takeover and stale consumers cannot cancel the owner",
+              "line": 152
+            },
+            {
+              "name": "a failed session operation does not poison the next session",
+              "line": 202
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F06",
+      "slug": "context_practice",
+      "symbols": [
+        {
+          "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+          "symbol": "ContrastiveFeedbackUseCases",
+          "line": 28,
+          "sha256": "f66a246c20011a40d3eaad33ab202697986347bcfd0c961735a723ec226611dd"
+        },
+        {
+          "path": "lib/features/review/application/review_center_use_cases.dart",
+          "symbol": "ReviewCenterUseCases",
+          "line": 122,
+          "sha256": "fc422a5acf8db0ed5a7f42d5097163d2aaae3393d7f59c1c8f3cd6667aed4efb"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/learning/contrastive_feedback_test.dart",
+          "sha256": "2ccbbdd767560c8a68d392de4bd0b9fe52561513fc400a36daf1506706ddc153",
+          "examples": [
+            {
+              "name": "B07 explanation expansion preserves outer reading position",
+              "line": 32
+            },
+            {
+              "name": "requests only the revision pinned by the committed attempt",
+              "line": 65
+            },
+            {
+              "name": "missing or wrong distractor rationale fails closed",
+              "line": 87
+            },
+            {
+              "name": "A feedback cannot resolve B or any cross-owner/content identity",
+              "line": 119
+            },
+            {
+              "name": "lost-ack replay resolves once and remains guided feedback only",
+              "line": 163
+            },
+            {
+              "name": "real Drift f04 lexical artifact verifies exact bytes and checksum",
+              "line": 188
+            },
+            {
+              "name": "verified parser accepts two 4000-rune four-byte rationales",
+              "line": 239
+            },
+            {
+              "name": "real meaning review publishes exact token only after canonical commit",
+              "line": 266
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/review/review_center_reader_test.dart",
+          "sha256": "433e023cbedf72628282364b7b3ffb201f4a6f1a963f2efc27e1bec322ddbc98",
+          "examples": [
+            {
+              "name": "R15 due review crosses Bangkok midnight without shifting on restart",
+              "line": 62
+            },
+            {
+              "name": "merges saved incorrect reported and due sources with exact provenance",
+              "line": 101
+            },
+            {
+              "name": "orders by typed priority, source time, spelling, id, and revision",
+              "line": 149
+            },
+            {
+              "name": "includes the exact due boundary and excludes one millisecond later",
+              "line": 208
+            },
+            {
+              "name": "isolates owners across content and every source authority",
+              "line": 232
+            },
+            {
+              "name": "fails closed for deleted tombstoned unavailable and stale revisions",
+              "line": 274
+            },
+            {
+              "name": "fails closed for corrupt or unknown source identity metadata",
+              "line": 323
+            },
+            {
+              "name": "incorrect requires a canonical correlated event and exact lexical revision",
+              "line": 352
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F07",
+      "slug": "dialogue_mission",
+      "symbols": [
+        {
+          "path": "lib/features/adventure/application/adventure_session_composer.dart",
+          "symbol": "CanonicalAdventureSessionComposer",
+          "line": 23,
+          "sha256": "658427af57862a84607e92737aba1987fc774296b2a1c40e1380ac4ec3e8bbb5"
+        },
+        {
+          "path": "lib/features/adventure/domain/adventure_world_catalog.dart",
+          "symbol": "AdventureNodeDefinition",
+          "line": 28,
+          "sha256": "432085d0f31aaf7dabdd5e978dadfc112f030a2c2f0e6758d1d81480e64ea6b6"
+        },
+        {
+          "path": "lib/features/adventure/data/adventure_world_catalog_validator.dart",
+          "symbol": "AdventureWorldCatalogValidator",
+          "line": 47,
+          "sha256": "013b391c897482dd38d0801c4a5bbdfbea422ad754f386cec80a781ef62fc117"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/adventure/application/adventure_session_composer_test.dart",
+          "sha256": "4bdca569e2491d6cbc8fae2d6c3a336755b3157aa7e3c36dca7fd6a1f2f732f5",
+          "examples": [
+            {
+              "name": "FR-034 composer uses only canonical Today work",
+              "line": 20
+            },
+            {
+              "name": "FR-035 due work order remains ahead of new work",
+              "line": 42
+            },
+            {
+              "name": "FR-036/037 reason and learner override semantics are preserved",
+              "line": 55
+            },
+            {
+              "name": "FR-038 keeps the policy-validated duration configuration exact",
+              "line": 76
+            },
+            {
+              "name": "FR-039 pins owner, source, content, policy, catalog and treatment",
+              "line": 96
+            },
+            {
+              "name": "mixed owner",
+              "line": 124
+            },
+            {
+              "name": "stale source instant",
+              "line": 143
+            },
+            {
+              "name": "unresolved content",
+              "line": 164
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/adventure/data/adventure_world_catalog_validator_test.dart",
+          "sha256": "11ea73a9ac4b6db19c1b87b91686739f0ee7746206d8ad4389ccfccdd419f54c",
+          "examples": [
+            {
+              "name": "packaged Thai and English three-node catalogs are valid",
+              "line": 12
+            },
+            {
+              "name": "catalog codec is exact and rejects unknown enum or object keys",
+              "line": 32
+            },
+            {
+              "name": "catalog collections are deep immutable",
+              "line": 53
+            },
+            {
+              "name": "rejects duplicate stable IDs",
+              "line": 69
+            },
+            {
+              "name": "rejects unresolved prerequisites and cycles",
+              "line": 80
+            },
+            {
+              "name": "rejects missing locale and accessibility labels",
+              "line": 94
+            },
+            {
+              "name": "rejects path traversal and remote executable content",
+              "line": 106
+            },
+            {
+              "name": "rejects checksum, size, type and revision mismatches",
+              "line": 118
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/scenarios/adventure_learning_restart_test.dart",
+          "sha256": "755a4026b4f664e385973a1845344ba00bff9c94d7f13dd87ff04c0bc8ec3b5b",
+          "examples": [
+            {
+              "name": "file-backed mixedReview replays one canonical answer after a lost acknowledgement",
+              "line": 26
+            },
+            {
+              "name": "file-backed mixedReview writes frozen evidence after a pre-write failure",
+              "line": 31
+            },
+            {
+              "name": "file-backed committed close is discovered while emergency-off and replays once",
+              "line": 36
+            },
+            {
+              "name": "file-backed owner switch rejects close without a terminal checkpoint",
+              "line": 41
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/architecture/adventure_authority_boundary_test.dart",
+          "sha256": "a35e209fa3faa0a6e5d564b795b6cfe7b23f693f3ea6a5e09cd6a98e1dac4132",
+          "examples": [
+            {
+              "name": "every Adventure file stays behind read-only authority ports",
+              "line": 6
+            },
+            {
+              "name": "Adventure cannot invoke Quest Streak Achievement or Reward mutation",
+              "line": 63
+            },
+            {
+              "name": "motivation reader contains no persistence or receipt synthesis calls",
+              "line": 88
+            },
+            {
+              "name": "Adventure integration waits passively and exposes no grant callback",
+              "line": 117
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F08",
+      "slug": "audio_lesson",
+      "symbols": [
+        {
+          "path": "lib/features/voice/application/voice_use_cases.dart",
+          "symbol": "VoiceUseCases",
+          "line": 15,
+          "sha256": "2f918d3f7de7c54cb770894dd1349ceadb2566be90b964de799008e766aa1eff"
+        },
+        {
+          "path": "lib/features/voice/application/voice_use_cases.dart",
+          "symbol": "VoiceSession",
+          "line": 488,
+          "sha256": "2f918d3f7de7c54cb770894dd1349ceadb2566be90b964de799008e766aa1eff"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/voice/voice_use_cases_test.dart",
+          "sha256": "12460de066282e3e6f811a9f17241595fb42499d729445cadff2cbca034af489",
+          "examples": [
+            {
+              "name": "provider failure retains cleanup until stop acknowledges",
+              "line": 10
+            },
+            {
+              "name": "ordinary speak still acknowledges start without awaiting end",
+              "line": 39
+            },
+            {
+              "name": "start acknowledgement is separate from natural playback end",
+              "line": 57
+            },
+            {
+              "name": "takeover waits for confirmed stop and ignores stale end",
+              "line": 82
+            },
+            {
+              "name": "missing completion proof waits for stop then reports unavailable",
+              "line": 125
+            },
+            {
+              "name": "failed stop reports uncertain cleanup rather than cancellation",
+              "line": 152
+            },
+            {
+              "name": "playback deadline waits for stop before reporting timeout",
+              "line": 180
+            },
+            {
+              "name": "disposal does not release completion wait before managed cleanup",
+              "line": 208
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/voice/voice_response_lifecycle_test.dart",
+          "sha256": "b3256474f2bae0eaa3a2ea81701e8651e5eb380701f02dbf9ba613ef72e811f0",
+          "examples": [
+            {
+              "name": "$vox accepts the exact WAV byte limit across chunks",
+              "line": 44
+            },
+            {
+              "name": "$vox rejects oversized declared length without waiting for body",
+              "line": 61
+            },
+            {
+              "name": "$vox rejects oversized $status body and cancels stream",
+              "line": 94
+            },
+            {
+              "name": "$vox stalled body timeout cancels subscription and aborts request",
+              "line": 117
+            },
+            {
+              "name": "$vox late response is discarded and its stream cancelled",
+              "line": 147
+            },
+            {
+              "name": "$vox late token never starts a retired request",
+              "line": 169
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    },
+    {
+      "feature": "F09",
+      "slug": "transfer_probe",
+      "symbols": [
+        {
+          "path": "lib/features/review/application/review_center_use_cases.dart",
+          "symbol": "ReviewCenterUseCases",
+          "line": 122,
+          "sha256": "fc422a5acf8db0ed5a7f42d5097163d2aaae3393d7f59c1c8f3cd6667aed4efb"
+        },
+        {
+          "path": "lib/features/learning/domain/evidence_eligibility_policy.dart",
+          "symbol": "EvidenceEligibilityPolicySet",
+          "line": 30,
+          "sha256": "c86aa2266b27831b48c799cf55b73016c93ee63ed264d6a7e80522632f662411"
+        }
+      ],
+      "existingTests": [
+        {
+          "path": "test/features/learning/evidence_eligibility_policy_test.dart",
+          "sha256": "e4e38dae30d1ebc97f929cf50ce5f3c13ad2f09d3d4a216b16715ce751b225b7",
+          "examples": [
+            {
+              "name": "defines and resolves the exact exhaustive 7 by 11 matrix",
+              "line": 7
+            },
+            {
+              "name": "keeps the matrix immutable",
+              "line": 31
+            },
+            {
+              "name": "recreational evidence keeps history but denies active effort",
+              "line": 41
+            },
+            {
+              "name": "v1 rejects a valid context owned by the legacy policy",
+              "line": 57
+            },
+            {
+              "name": "is the exact exhaustive compatibility row",
+              "line": 69
+            },
+            {
+              "name": "is available only to legacy-inferred evidence",
+              "line": 77
+            },
+            {
+              "name": "unknown serialized policy is rejected before policy lookup",
+              "line": 98
+            },
+            {
+              "name": "resolves every Enforced and Shadow cell from frozen policies",
+              "line": 107
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        },
+        {
+          "path": "test/features/review/review_center_reader_test.dart",
+          "sha256": "433e023cbedf72628282364b7b3ffb201f4a6f1a963f2efc27e1bec322ddbc98",
+          "examples": [
+            {
+              "name": "R15 due review crosses Bangkok midnight without shifting on restart",
+              "line": 62
+            },
+            {
+              "name": "merges saved incorrect reported and due sources with exact provenance",
+              "line": 101
+            },
+            {
+              "name": "orders by typed priority, source time, spelling, id, and revision",
+              "line": 149
+            },
+            {
+              "name": "includes the exact due boundary and excludes one millisecond later",
+              "line": 208
+            },
+            {
+              "name": "isolates owners across content and every source authority",
+              "line": 232
+            },
+            {
+              "name": "fails closed for deleted tombstoned unavailable and stale revisions",
+              "line": 274
+            },
+            {
+              "name": "fails closed for corrupt or unknown source identity metadata",
+              "line": 323
+            },
+            {
+              "name": "incorrect requires a canonical correlated event and exact lexical revision",
+              "line": 352
+            }
+          ],
+          "testSourceInspected": true,
+          "execution": {
+            "status": "SOURCE ONLY for this reconciliation; no fresh execution claimed"
+          }
+        }
+      ]
+    }
+  ],
+  "inheritedF07Targets": {
+    "test/runtime/app_bootstrap_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/scenarios/current_activity_evidence_bootstrap_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/scenarios/complete_owner_export_delete_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/learning/drift_learning_repository_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/learning/pair_matching/pair_matching_owner_upgrade_auth_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/identity/research_owner_upgrade_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/sync/drift_sync_store_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/sync/learner_preferences_sync_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/research/research_runtime_sync_integration_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/account/account_use_cases_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/quest/quest_learning_integration_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/motivation/streak_learning_integration_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-system\\3692901cd7da.json",
+      "sha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/features/preferences/display_preferences_controller_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/object_scanner_screen_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/learning_goals_screen_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/pre_post_assessment_screen_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/media_dependency_composition_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/firebase_registration_recovery_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/screens/registration_consent_recovery_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/voice/voice_playback_cleanup_composition_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    },
+    "test/voice/voice_service_factory_test.dart": {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\cross-ui-voice\\442d46688d7e.json",
+      "sha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+      "status": "Passed",
+      "sourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+      "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+      "qualification": "inherited F07 execution; not rerun"
+    }
+  }
+}

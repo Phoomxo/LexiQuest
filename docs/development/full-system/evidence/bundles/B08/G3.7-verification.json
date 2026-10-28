@@ -1,0 +1,41 @@
+{
+  "packageId": "G3.7",
+  "bundleId": "B08",
+  "status": "accepted-local-automated",
+  "baseSha": "7a75a03bfc55f671c931c18a6506cb629278b024",
+  "verification": [
+    {
+      "logs": {
+        "Stderr": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.7-final/8cd26062bceb-3a8f2aa9bb71/Explicit-Flutter-tests.stderr.log",
+          "sha256": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
+        },
+        "Stdout": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.7-final/8cd26062bceb-3a8f2aa9bb71/Explicit-Flutter-tests.stdout.log",
+          "sha256": "2FDF60315EB41F965D652F5E8A43E5EEC411F9C5F578F102F43EF2BCD8A38386"
+        }
+      },
+      "fingerprint": "3a8f2aa9bb715384d6dbb14d43348cce1ac03f849cc3b22dbda6af9d26772b4c",
+      "testsPassed": 577,
+      "manifest": "docs/development/full-system/evidence/bundles/B08/G3.7-final/targeted-learning-be83d192c34d8be421ede306633dc8542a6a3431802e03eb3554dbe0878eb5da.json",
+      "inputCount": 1306
+    }
+  ],
+  "requirements": [
+    "COV-f04",
+    "COV-f44",
+    "G3"
+  ],
+  "outcomes": [
+    "Offline cancellation, minimum manifest bytes, synthetic disk-full repair and same-id revision preservation",
+    "Full G3 targeted phase gate: actual final target union for all7 packages,47 Dart test files",
+    "Catalog/detail exact revision readiness; rich-card/explanation/bookmark/report source consistency; canonical review/history/progress/assessment constraints"
+  ],
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "Device/manual/live/full release NOT RUN",
+    "Effective tier unverified"
+  ]
+}

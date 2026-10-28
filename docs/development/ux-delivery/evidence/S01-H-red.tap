@@ -1,0 +1,71 @@
+✔ UX-D01 new entry offers both independent teaching routes without quiz or login (8.2319ms)
+✔ pilot pause/resume preserves each track step and support, never fabricates answers (3.7388ms)
+✔ pilot missing audio is explicit, skip/finish allow other track without microphone (3.692ms)
+✔ UX-D02 reading selector changes passage and question content through mode entry (3.5919ms)
+✔ UX-D03 typing draft survives leaving before review and re-entering writing (2.5702ms)
+✔ UX-D04 feedback retains scroll while navigating to another screen resets it (2.0845ms)
+✔ pilot content is a pinned teaching subset with assessment answers excluded (3.2714ms)
+✔ pilot repeat returns only the selected track to demonstration without wiping other progress (2.2161ms)
+✔ keyboard focus remains on help toggle after render and moves to heading on navigation (2.1587ms)
+✔ feedback after a hint does not invent independent learner evidence (2.1492ms)
+✔ S01-F changing demo owner isolates drafts, words and resume; returning restores only that owner (2.7198ms)
+✔ S01-F leaving or changing a same-route activity cancels draft speech (2.4554ms)
+✔ S01-F explicit stop, background and page exit cancel audio; late errors do not attach to next owner (2.3685ms)
+✔ S01-F changing exam task stops speech even without a route change (2.8376ms)
+✔ exam draft captures typing before review and keeps exact text across tasks, tracks and owners (4.2532ms)
+✔ review preserves exact draft and editing clears stale review feedback (2.2144ms)
+✔ discard needs explicit confirmation, cancels safely and cannot cross draft or owner boundary (2.7617ms)
+✖ story Thai support toggles independently, labels reading modality and survives pause (2.6122ms)
+✖ content revision resets stale support and position with notice and preserves other track (2.52ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 17
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 149.9564
+
+✖ failing tests:
+
+test at docs\design\check-s01-navigation.cjs:195:1
+✖ story Thai support toggles independently, labels reading modality and survives pause (2.6122ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /data-action="pilot-thai"/. Input:
+  
+  '<section class="screen" data-view="pilot"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">ฟังหรืออ่านเรื่องในร้าน</div><h1 class="title" tabindex="-1">น้ำหนึ่งแก้ว</h1><p class="sub">ต้นแบบการใช้ปุ่ม · เนื้อหายังไม่ผ่านผู้ตรวจ</p><p class="smalltag">ขั้น 2 จาก 5 · s01-content-r1</p><div class="card"><p>มะลิไปที่ร้าน เธอขอน้ำ พนักงานถามว่าเย็นไหม มะลิบอกว่าเย็น พนักงานยื่นน้ำให้ มะลิขอบคุณ</p><p lang="en">Mali is at a cafe. ‘Water, please,’ she says. ‘Cold water?’ asks the server. ‘Yes, please.’ The server gives Mali water. ‘Thank you,’ she says.</p></div><div class="info" role="status">สื่อยังไม่พร้อมสำหรับการทดลองเรียน</div><button class="button secondary full" data-action="pilot-audio">ตรวจความพร้อมเสียง</button><button class="disclosure" data-action="pilot-help" aria-expanded="false">ขอคำช่วย</button><div class="button-row"><button class="button" data-action="pilot-next">ดูขั้นถัดไป</button><button class="button secondary" data-action="pilot-skip">ข้ามขั้นนี้</button></div><button class="button secondary full" data-pilot-track="phonics">เปลี่ยนไปเริ่มอ่านคำสั้น</button><button class="button secondary full" data-action="pilot-pause">พักไว้ แล้วกลับหน้าวันนี้</button><p class="sample-note">ไม่บันทึกคะแนน XP เสียง หรือข้อมูลผู้เรียนจริง ปิดหรือโหลดหน้าใหม่จะล้างตำแหน่งต้นแบบ</p></section>'
+  
+      at TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\897e\LexiQuest\docs\design\check-s01-navigation.cjs:197:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<section class="screen" data-view="pilot"><button class="back" data-action="back">← ย้อนกลับ</button><div class="kicker">ฟังหรืออ่านเรื่องในร้าน</div><h1 class="title" tabindex="-1">น้ำหนึ่งแก้ว</h1><p class="sub">ต้นแบบการใช้ปุ่ม · เนื้อหายังไม่ผ่านผู้ตรวจ</p><p class="smalltag">ขั้น 2 จาก 5 · s01-content-r1</p><div class="card"><p>มะลิไปที่ร้าน เธอขอน้ำ พนักงานถามว่าเย็นไหม มะลิบอกว่าเย็น พนักงานยื่นน้ำให้ มะลิขอบคุณ</p><p lang="en">Mali is at a cafe. ‘Water, please,’ she says. ‘Cold water?’ asks the server. ‘Yes, please.’ The server gives Mali water. ‘Thank you,’ she says.</p></div><div class="info" role="status">สื่อยังไม่พร้อมสำหรับการทดลองเรียน</div><button class="button secondary full" data-action="pilot-audio">ตรวจความพร้อมเสียง</button><button class="disclosure" data-action="pilot-help" aria-expanded="false">ขอคำช่วย</button><div class="button-row"><button class="button" data-action="pilot-next">ดูขั้นถัดไป</button><button class="button secondary" data-action="pilot-skip">ข้ามขั้นนี้</button></div><button class="button secondary full" data-pilot-track="phonics">เปลี่ยนไปเริ่มอ่านคำสั้น</button><button class="button secondary full" data-action="pilot-pause">พักไว้ แล้วกลับหน้าวันนี้</button><p class="sample-note">ไม่บันทึกคะแนน XP เสียง หรือข้อมูลผู้เรียนจริง ปิดหรือโหลดหน้าใหม่จะล้างตำแหน่งต้นแบบ</p></section>',
+    expected: /data-action="pilot-thai"/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at docs\design\check-s01-navigation.cjs:205:1
+✖ content revision resets stale support and position with notice and preserves other track (2.52ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\Phet\.codex\worktrees\897e\LexiQuest\docs\design\check-s01-navigation.cjs:209:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

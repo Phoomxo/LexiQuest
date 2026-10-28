@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "result": "HOST_PASS",
+  "atUtc": "2026-09-24T07:04:53.803661+00:00",
+  "gateResultPath": "docs/development/ux-delivery/evidence/S01-G-gate.json",
+  "tests": 17,
+  "compatibilityChecks": 3,
+  "inputPins": {
+    "docs/design/lexiquest-full-ux.js": "37393469d182f7bb0176f3a9ddbd950d222602fa2b4853fe08972e8d56949e95",
+    "docs/design/check-s01-navigation.cjs": "25175a62531ce5d0b566e1c11e8cc54a1ea280e19114c348641f18bcce41a743",
+    "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9"
+  },
+  "notTested": [
+    "browser/visual",
+    "real keyboard/screen reader",
+    "native persistence",
+    "learning"
+  ],
+  "red": [
+    "S01-G-red.tap",
+    "S01-G-compatibility-red.log"
+  ],
+  "gateFingerprint": "4ab85787ea4f0c6ffcd9c60295bd41da1437266bb9a628e805e51d7c583f4b82"
+}

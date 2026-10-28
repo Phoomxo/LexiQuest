@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "schemaVersion": 2,
+  "originalFieldsByteStringsPreserved": true,
+  "originalRows": 2,
+  "backup": "LOCALAPPDATA/LexiQuestDevSecrets/jev-review-ledger.before-r3-03.sqlite",
+  "backupSha256": "7f209c8025f31861f19ed12c624d5583ad88fb2bbf2a409d3c4e544b88d63952",
+  "ledgerSha256": "d5482406ebf1128987b5c46467d6316aae2cd035093d509f207a19f8187c7eb5",
+  "statusAfter": {
+    "tranche": "authorized-USD5-2026-09-23",
+    "expires": 1790294400.0,
+    "paused": null,
+    "pending": 0,
+    "calls": 2,
+    "spent_usd": "0"
+  },
+  "classification": [
+    [
+      "2064dd3e302f1c2e847665750cd6c902d288a338ce118b9f287f56f009972ad0",
+      "review",
+      "review-v1",
+      "2064dd3e302f1c2e847665750cd6c902d288a338ce118b9f287f56f009972ad0"
+    ],
+    [
+      "bdbd8cf4271a3a0145db829e3e0d2689a4056b6cb2fce5b49e11e0b91c307346",
+      "synthetic",
+      "synthetic-v1",
+      "bdbd8cf4271a3a0145db829e3e0d2689a4056b6cb2fce5b49e11e0b91c307346"
+    ]
+  ],
+  "classificationEvidence": "jev-review-115.json; synthetic-owner.json and catalog-review.json hashes",
+  "liveCallsThisTask": 0
+}

@@ -1,0 +1,22 @@
+{
+  "dispatchId": "ux-s01-ba-20260925-ebf7",
+  "atUtc": "2026-09-24T23:04:28.418686+00:00",
+  "status": "DISPATCHED",
+  "clientThreadId": "client-new-thread:c7e5b3a7-b190-4ff7-8ab3-5ae1338ab63b",
+  "successorThreadId": "01a0d5a9-a389-7e42-b745-b72f9352264a",
+  "projectId": "e0d28f74-0d26-40bc-b126-4cfebe4ff7a0",
+  "sourceThreadId": "01a0d588-44b1-76a0-8e7a-52c0dab47181",
+  "sourceStateRevision": 107,
+  "writerReleased": true,
+  "sourceSnapshotImmutable": true,
+  "duplicateDispatchAllowed": false,
+  "manifestSha256": "0834937982e6fad292be00b51c7bb6e37bf88920dde538d9872cd64dc50c4592",
+  "archiveSha256": "e6ae08e73889e46000a068967d26f8090e40f1fd853801eba11f298d43ac5378",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "routing": "deterministic fallback, NOT Jev-selected; Standard/default requested/runtime tier unexposed",
+  "recoveryAndCurrentImplementationAuthorizationIncluded": true,
+  "successorWorktree": "C:/Users/Phet/.codex/worktrees/f7d4/LexiQuest",
+  "resolvedAtUtc": "2026-09-24T23:05:52.922938+00:00",
+  "identityEvidence": "Native git worktree feature/ux-s01-ba-f7d4 and read-only local threads table exact cwd; list_threads did not expose this project task"
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "atUtc": "2026-09-24T06:51:06.580Z",
+  "resultPath": "build/verification/2ea4d407e7d5b1d41af65a533691b8aafe019ac5/targeted-runtime-cli-fc43268dd65e33d9315933fcf92edb3a3711cf3d5fabbef968ce231f571db329.json",
+  "fingerprint": "50a9021d10812a861e3aeab821bb46566f464e38462b191415299e8e485dbf57",
+  "offline": "PASS",
+  "live": "EXTERNAL_PENDING",
+  "routeStatus": "DETERMINISTIC_FALLBACK",
+  "model": "gpt-6-astra",
+  "effort": "medium",
+  "reason": "No fresh account free-credit/shared-spending and executor quota observation for live Choice; keep current coordinator setting",
+  "runtimeTier": "UNVERIFIED; Standard/default required; no setting changed",
+  "networkInferenceCalls": 0,
+  "liveLedgerModified": false,
+  "paidSpend": 0,
+  "qualityControllerRequired": true,
+  "nextAppScope": "S01-G exam/writing draft lifecycle then next ready backlog work",
+  "sourcePins": {
+    "AGENTS.md": "77e5d418773e47b6dcc2688fa0038ffa949040b78e68600e9022443f7455c326",
+    "docs/design/worksheet-to-play-blueprint.md": "d4484283da9997786c851ce53d963c0cb86f95f3a29b97f49da364b8940b7ed8",
+    "docs/design/lexiquest-full-ux.js": "fffcf9c95d0040dd1dcaae2bf163cf32d489a19871078a9487ad5682a039498f",
+    "docs/design/check-s01-navigation.cjs": "634a844077ddd815c7c0b873d2532f7c1c3075f56615b7a18989e333d8c36bc2",
+    "docs/development/ux-delivery/ready-backlog.md": "c377e8e6408f9c2ab7818c3d99feb1c1d01482c328ae0c14aed25f7e6fb2dffe"
+  },
+  "sourceFingerprint": "047bd49926eedf63dd4bdc89a45069f526f052214cc2a49b5f2c7317ce5d2f7c",
+  "executorSchemaSource": "create_thread tool schema observed this task: Astra/Sol low..ultra; Luna low..max; check again in destination"
+}

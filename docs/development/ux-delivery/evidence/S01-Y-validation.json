@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "result": "HOST_PASS",
+  "atUtc": "2026-09-24T08:41:05.429346+00:00",
+  "tests": 115,
+  "compatibilityChecks": 3,
+  "inputPins": {
+    "docs/design/lexiquest-full-ux.js": "a002ce0b606d82552b22f198eaabcc716ce6fa8e4de4214d7aad37da79597906",
+    "docs/design/check-s01-navigation.cjs": "d54c812c25bb4eceafe95e769ebace00df524e1245482fde006863081db7e4fb",
+    "tool/cli/tests/ux-s01.tests.ps1": "1e6cf1653373add39e94fce555b616403d2be3b4499d8a3ebe0f5f9f8eec34a9",
+    "docs/design/check-full-ux.cjs": "0b9876425f53fe3cb0e83e4e66b535d9b95e1c62facbb06ad1d74467013af44b",
+    "docs/design/check-worksheet-lab.cjs": "003709dced1f830dfdf34e3c57f1c69aea8642513ee22582518d1d6acd130fe1",
+    "docs/design/check-exam-ux.cjs": "c2c9139bc495db2bcd44a411d1f0b8844bda84449f9eaf20759db36e5a4fe8bf",
+    "docs/design/lexiquest-full-ux-prototype.html": "11156bfe9d18d9d8cfb18ad08e64953288f2d4042f90c12487f42346d4f1824b",
+    "docs/development/ux-delivery/pilot-content-r1.json": "25aef93c6fe527b5662be7bbf6e77b42fe638f68b332052b2a67ff0f6b3de9cd"
+  },
+  "notTested": [
+    "browser/visual",
+    "real keyboard/screen reader",
+    "native drawing/persistence",
+    "learning"
+  ],
+  "red": [
+    "build/ux-delivery/S01-Y/red.stdout.log",
+    "build/ux-delivery/S01-Y/red-expanded.stdout.log"
+  ],
+  "remainingRed": [],
+  "gateResultPath": "docs/development/ux-delivery/evidence/S01-Y-gate.json",
+  "gateFingerprint": "35170f8d8b5cd6e569bc3292c0bc453748e9fceb64926147f3d15e5958d58d0a",
+  "selfReview": "Self-review only. Shared render fallback focuses the existing heading with preventScroll when a focused in-screen control disappears or becomes disabled. Validated displayed start controls for every mode, mission next/retry, both draft confirmation flows, matching retry, audio stop/end/error and camera sample steps. Retained buttons and typed field restoration preserved; no focus stealing when focus is outside app-screen. No content/scoring changes; actual keyboard, assistive tech and visual behavior NOT_TESTED.",
+  "recoveryNotes": [
+    "Expanded RED suite before production edit to include displayed camera-stage transitions sharing the same render focus failure. No unchanged passed gate rerun."
+  ],
+  "confirmedRedCount": 7,
+  "newTests": 8,
+  "stderrReview": "115 host + 3 compatibility PASS; zero failed/skipped; gate stdout/stderr hashes verified; stderr only PowerShell module initialization progress."
+}

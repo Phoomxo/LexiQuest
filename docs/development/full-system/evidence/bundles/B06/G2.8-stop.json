@@ -1,0 +1,14 @@
+{
+  "bundleId": "B06",
+  "packageId": "G2.8",
+  "status": "stopped-repeated-command-failure",
+  "acceptedHead": "6dc51206611c3830535b722eae0cce859af8f74e",
+  "test": "B06 Ghost reachable response and result at width 320.0",
+  "failure": "Bad state: No element at ensureVisible(field), test line 35; button scroll change did not address failing field lookup.",
+  "latestResult": "17 passed, 1 failed",
+  "phaseGate": "not run",
+  "nextBundleDispatched": false,
+  "sourceChanges": "Uncommitted; not accepted",
+  "evidence": "G2.8-layout-repeat/f0c1847f6814-b92228ea047f/Explicit-Flutter-tests.stdout.log",
+  "nextDiagnosis": "Inspect lazy ListView child materialization for TextField before ensureVisible; do not treat this hypothesis as confirmed."
+}

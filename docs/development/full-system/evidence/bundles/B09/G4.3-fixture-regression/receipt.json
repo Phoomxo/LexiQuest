@@ -1,0 +1,16 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.3-fixture-regression/targeted-learning-77ec3a7e725e08fe16dbd7e89224530d8aed373e7a947a15e2e1d5a0a51a37b8.json",
+  "status": "Failed",
+  "fingerprint": "0092e04200d8c5e05d41813ad75e91a8a3f44f8cf51a661b1dc855b633a951f1",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.3-fixture-regression/c13fa16c8f26-0092e04200d8/Explicit-Flutter-tests.stdout.log",
+      "sha256": "a685b68563b88a879f7e303959c293b6fbadfe7d778434fa363dadd3c46a2bd6"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.3-fixture-regression/c13fa16c8f26-0092e04200d8/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "answer_attempts": {
+    "before": 115,
+    "after": 117,
+    "added": 2,
+    "removed": 0,
+    "newEvidence": [
+      {
+        "word_id": "word:starter-plate",
+        "prompt_mode": "meaningChoice",
+        "is_correct": 0,
+        "evidence_class": "recognition"
+      },
+      {
+        "word_id": "word:starter-cup",
+        "prompt_mode": "meaningChoice",
+        "is_correct": 1,
+        "evidence_class": "recognition"
+      }
+    ]
+  },
+  "srs_states": {
+    "before": 12,
+    "after": 12,
+    "added": 0,
+    "removed": 0,
+    "changes": []
+  },
+  "points_ledger_entries": {
+    "before": 49,
+    "after": 50,
+    "added": 1,
+    "removed": 0
+  },
+  "reading_progress_entries": {
+    "before": 4,
+    "after": 4,
+    "added": 0,
+    "removed": 0
+  },
+  "reading_events": {
+    "before": 39,
+    "after": 39,
+    "added": 0,
+    "removed": 0
+  }
+}

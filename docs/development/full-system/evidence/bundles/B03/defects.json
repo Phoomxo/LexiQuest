@@ -1,0 +1,115 @@
+{
+  "items": [
+    {
+      "id": "B03-OPS-01",
+      "status": "resolved",
+      "actual": "claim32 rejected because parent advanced revision33",
+      "cause": "concurrent receipt resolution",
+      "fix": "reread revision33/task ID under lock; claim34 succeeded"
+    },
+    {
+      "id": "B03-OPS-02",
+      "status": "resolved",
+      "actual": "rg literal wildcard rejected os123",
+      "fix": "rg --files then exact path; no repeat"
+    },
+    {
+      "id": "B03-OPS-03",
+      "status": "resolved",
+      "actual": "diff --check flags CR",
+      "cause": "preserved mixed baseline EOL",
+      "fix": "core.whitespace=cr-at-eol check; unchanged bytes preserved"
+    },
+    {
+      "id": "B03-OPS-04",
+      "status": "resolved",
+      "actual": "UTF-8 log read failed at BOM FF FE; shell continued and made evidence-only commit652a5f37",
+      "cause": "PowerShell logs UTF-16; missing command failure guards",
+      "fix": "BOM-aware decoder; complete artifacts in subsequent commit before acceptance; use explicit exit guards thereafter",
+      "retest": "all three manifests/logs archived and counts decoded"
+    },
+    {
+      "id": "B03-SRS-01",
+      "status": "fixed",
+      "expected": "Invalid scheduling state rejected before computation",
+      "actual": "10 tests failed before fix: malformed snapshots accepted or nonfinite rounding error",
+      "cause": "Missing computation-boundary validation in v1.0.0 scheduler",
+      "fix": "Validation revision1; valid formula and stored state unchanged",
+      "retest": "22 scheduler/adapter tests PASS; raw red and green logs retained"
+    },
+    {
+      "id": "B03-OPS-05",
+      "status": "resolved",
+      "actual": "Read-only rg used nonexistent guessed paths os2",
+      "fix": "Full lib/test search confirmed actual consumers; use discovered paths only"
+    },
+    {
+      "id": "B03-DISPLAY-01",
+      "status": "fixed",
+      "expected": "Calendar correct numerator and total denominator visible",
+      "actual": "Widget expectation failed: only percentage and denominator shown",
+      "cause": "formatAccuracy omitted correctCount",
+      "fix": "Caption now matches explicit count convention",
+      "retest": "Calendar2 tests PASS; failed logs1016bfe29818-c74abce56590 preserved (verifier overwrote same-selection manifest)"
+    },
+    {
+      "id": "B03-OPS-06",
+      "status": "resolved",
+      "actual": "Nonexistent progress screen path read repeated os2",
+      "fix": "Stopped guessed-path reads, reported to user; rg --files found mastery_dashboard_screen and learning_calendar_screen"
+    },
+    {
+      "id": "B03-RUNTIME-01",
+      "status": "closed-accepted-local",
+      "actual": "Non-completing initializer caused5s regression timeout",
+      "cause": "Unbounded await optional initializer",
+      "fix": "2s deadline per optional service; freeze unavailable result",
+      "retest": "Named regression and118 bootstrap/readiness tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-01",
+      "status": "closed-accepted-local",
+      "actual": "Five initial production safe-open tests failed",
+      "cause": "No preflight/version guard/WAL/timeout",
+      "fix": "Read-only preflight and typed readiness; future/corrupt/unversioned/legacy preserved; same canonical path",
+      "retest": "5 safe-open tests then123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-02",
+      "status": "closed-accepted-local",
+      "actual": "After first fix four rejection tests failed with repeated async errors",
+      "cause": "drift_flutter delayed connection opens eagerly and close rethrows preflight future",
+      "fix": "Lazy preflight before constructing connection; close suppresses only already-reported typed preflight error",
+      "retest": "Malformed file preservation and dependency failure tests PASS"
+    },
+    {
+      "id": "B03-FIXTURE-01",
+      "status": "resolved",
+      "actual": "raw25 owner assertion Too many elements",
+      "cause": "Frozen fixture already includes owner",
+      "fix": "Compare entire owner snapshot before/after migration",
+      "retest": "123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-03",
+      "status": "closed-accepted-local",
+      "actual": "Missing path-provider surfaced untyped PlatformException",
+      "cause": "Directory lookup outside typed error boundary",
+      "fix": "Wrap directory/preflight failures into unavailable storage status",
+      "retest": "123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-OPS-07",
+      "status": "resolved-after-stop-and-report",
+      "actual": "Repeated os123 wildcard lookup and os2 guessed edition file read after earlier invalid paths",
+      "paths": [
+        "lib/app*",
+        "docs/development/full-system/evidence/bundles/B01/G0.8-edition.json"
+      ],
+      "cause": "Agent used unverified file paths",
+      "action": "Stopped implementation and dispatch; preserved completed verification and checkpoint. Resume only with rg --files inventory and exact discovered paths",
+      "resumeAuthority": "Master follow-up authorized same-task resume after diagnosis",
+      "fix": "Use rg --files inventory then exact discovered G0.8-edition-contract.json; lookup succeeded. No runtime source changed on resume."
+    }
+  ]
+}

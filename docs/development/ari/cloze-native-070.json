@@ -1,0 +1,25 @@
+{
+  "checkpoint": "070",
+  "status": "NATIVE_CLOZE_BASELINE_PASS",
+  "installedSource": "evidence/cloze-skip-069/source-pins.json",
+  "native": {
+    "provider": "disconnected throughout journey",
+    "configuredItems": 3,
+    "typed": "Empty submission disabled;bag submitted correct and locked",
+    "selected": "Choice required;bag selected for book prompt;incorrect and locked",
+    "progress": "0 -> 33 -> 67 percent for two committed answers across three configured items",
+    "optionalSpeech": "Next/results available without performing unscored optional speech",
+    "result": "50 percent;1 correct,1 incorrect;2 graded responses",
+    "persistence": "exact two attempts at indices2/3;typed independentRecall true,selected recognition false;skip no answer row"
+  },
+  "evidence": [
+    "evidence/cloze-native-070/observations.json",
+    "evidence/cloze-native-070/durable-summary.json"
+  ],
+  "remaining": [
+    "Native cloze live guidance and disconnect draft continuity",
+    "Physical speech recognition not exercised",
+    "Definition live skip context and other original workflow/mode gaps"
+  ],
+  "wholeGoalComplete": false
+}

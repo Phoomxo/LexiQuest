@@ -1,0 +1,68 @@
+{
+  "status": "LIVE_PROVIDER_SCRAMBLE_CONTEXT_AND_NATIVE_DISCONNECT_PASS_FULL_SCOPE_OPEN",
+  "sourceBase": "9a2f7ca6",
+  "applicationChanges": "None; reuse039source/APK and host receipts",
+  "apk": {
+    "path": "build/ari-assistance-039.apk",
+    "sha256": "28448464d4890dd2ce30c9580ac5f50d5230d5fc5217594401c4bc03bef754e9"
+  },
+  "native": {
+    "device": "Vivo V2041",
+    "package": "com.lexiquest.app.ariTest",
+    "connection": "Existing sole browser account authorized private device challenge; provider connection completed; no secret logged",
+    "scenarios": [
+      {
+        "name": "Sentence guidance before answer",
+        "prompt": "Read the current lesson context. Explain the method in Thai without giving the answer or submitting anything.",
+        "observed": "Live Thai subject/verb/object strategy, unrelated example She reads books every day; no target answer supplied; list_menu_actions receipt visible; lesson still0%"
+      },
+      {
+        "name": "Sentence committed feedback",
+        "manualAnswer": "I carry my clothes in a bag.",
+        "prompt": "Read the latest committed result from the current screen tools. In Thai state the mode, result and correct answer. Do not submit or navigate.",
+        "observed": "Native correct/completed100%; live AI identified sentence scramble, correct, exact target sentence. Prompt did not contain target."
+      },
+      {
+        "name": "Word result after route changed",
+        "manualAnswer": "bag",
+        "prompt": "The screen changed. Read current tools again and report only the current mode and latest committed feedback in Thai. Do not submit answers.",
+        "observed": "Native correct/completed100%, selected b,a,g preserved. Same provider conversation correctly switched from previous sentence to word scramble and correct bag result; no target in prompt."
+      },
+      {
+        "name": "Explicit disconnect during unfinished sentence",
+        "steps": [
+          "Start new sentence while connected",
+          "Manually select I,carry,my",
+          "Open AI section and tap Disconnect; UI becomes not connected",
+          "Collapse AI and select only clothes,in,a,bag.",
+          "Check sentence using native control"
+        ],
+        "observed": "Earlier selections retained; native correct/completed100%. This is explicit disconnect, not a simulated network timeout or process-death test."
+      }
+    ],
+    "testData": "Three recreational native submissions retained in isolated history this turn: connected sentence, connected word, disconnected sentence. No original account/app data changed.",
+    "dashboard": {
+      "correct": 28,
+      "responses": 42,
+      "activeSeconds": 1853,
+      "due": 0,
+      "interpretation": "Unchanged mastery dashboard consistent with recreational scramble evidence; not proof that game attempts were absent."
+    }
+  },
+  "cleanup": {
+    "appDisconnect": "Explicit in-app disconnect verified before final sentence completion",
+    "bridgeHandle": 22745,
+    "terminal": "CtrlC exit1; no listener8765",
+    "adbReverse": "Owned8765 removed;reverse list empty",
+    "privatePairing": "Removed exact isolated files/ari-bridge.json",
+    "usbStayAwake": 2,
+    "endScreen": "Dashboard;AIcollapsed"
+  },
+  "evidence": "evidence/scramble-native-040/native-observations.json",
+  "remaining": [
+    "Whole14workflow/mode acceptance OPEN",
+    "Other native direct evidence paths require mode-specific interpretation; speaking/CEFR must not mislabel transcript matching or reading exposure as proficiency",
+    "Native successful-camera/speech and remaining sync/mode acceptance",
+    "Whole-project review after current MCP acceptance"
+  ]
+}

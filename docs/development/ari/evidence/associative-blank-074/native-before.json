@@ -1,0 +1,15 @@
+{
+  "state": "abandoned",
+  "activity_type": "associativeReading",
+  "correct_count": 0,
+  "wrong_count": 1,
+  "score": null,
+  "attempts": [
+    {
+      "prompt_mode": "associativeRecall",
+      "evidence_class": "independentRecall",
+      "is_correct": 0,
+      "attempt_number": 1
+    }
+  ]
+}

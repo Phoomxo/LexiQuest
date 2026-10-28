@@ -1,0 +1,65 @@
+{
+  "sourceCommit": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508",
+  "status": "available-local-and-emulator-checks-complete-external-acceptance-pending",
+  "faultMatrix": [
+    {
+      "fault": "permission/network/restart",
+      "evidence": [
+        "g86-checkpoint.json",
+        "g86-mode-journeys.json"
+      ],
+      "boundary": "native offline/restart and permission-denial/fallback controls"
+    },
+    {
+      "fault": "disk/content-hash/interruption",
+      "evidence": [
+        "g87-fault-fresh.json",
+        "g87-fault-target-inventory.json"
+      ],
+      "boundary": "isolated local file/repository fixture; not native full-disk"
+    },
+    {
+      "fault": "owner/session/timeout/retry/audio-cache",
+      "evidence": [
+        "g87-fault-reuse.json"
+      ],
+      "boundary": "unchanged-source local fault injection"
+    },
+    {
+      "fault": "locale/timezone/textscale/reduced-motion/keyboard/low-memory",
+      "evidence": [
+        "g87-layout-timezone-proof.json",
+        "g87-timezone-reuse.json"
+      ],
+      "boundary": "native layout/control; human TalkBack pending; English OS locale does not imply English product translation"
+    },
+    {
+      "fault": "latency/memory",
+      "evidence": [
+        "g87-resource-native.json"
+      ],
+      "boundary": "30 debug-emulator transitions; not physical release/raster performance"
+    },
+    {
+      "fault": "focus-timer pause/background/exit",
+      "evidence": [
+        "g87-focus-native.json",
+        "g87-fault-fresh.json"
+      ],
+      "boundary": "native elapsed timer and local controller faults"
+    }
+  ],
+  "pending": [
+    "Physical camera/device and endurance",
+    "Human TalkBack/audio/rubric acceptance",
+    "Live-provider boundary",
+    "Disabled extension on-path and native owner-switch journey"
+  ],
+  "noGlobalAcceptanceClaim": true,
+  "nativeEvidenceFilesArchived": 153,
+  "finalSyntheticCounts": {
+    "learning_sessions": 28,
+    "answer_attempts": 60,
+    "reward_transactions": 44
+  }
+}

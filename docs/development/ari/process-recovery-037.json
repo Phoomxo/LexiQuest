@@ -1,0 +1,55 @@
+{
+  "status": "EXPLICIT_REAUTH_RECOVERY_VERIFIED_AUTOMATIC_RESTORE_NOT_CLAIMED",
+  "sourceBase": "c16f7ff13bc2526dd75ccbff74a33a1c567b67fc",
+  "installedApk": "build/ari-assistance-036.apk",
+  "changes": "Test coverage only; no application behavior changed",
+  "native": {
+    "scenario": "Authorize login in browser; while browser confirmed sign-in kill isolated application process; relaunch,open AI,check old session,then explicitly reconnect and authorize new challenge",
+    "oldPid": 11345,
+    "newPid": 15762,
+    "observed": "Baseline app restarted with data; pairing remained available but old provider session was cleared on startup. Open chat correctly requested new login. Explicit new login, browser success,return/check and provider reply to read current menu succeeded. list_menu_actions receipt visible.",
+    "afterDisconnect": {
+      "correct": 28,
+      "responses": 42,
+      "weeklyActiveSeconds": 1853,
+      "due": 0
+    },
+    "interpretation": "Recovery through explicit reauthentication works. Seamless authenticated-session restoration after process death is not implemented/claimed."
+  },
+  "host": {
+    "passedTests": 11,
+    "scope": [
+      "optional app5cases including fresh-app provider acknowledgement",
+      "managed runtime2cases",
+      "test screen4cases"
+    ],
+    "newCoverage": "Real Drift canonical-owner runtime plus mocked provider; initial explicit connection; durable owner-generation mutation must call disconnect,old auth cannot reconnect; explicit new auth reconnects exactly once; answerAttempts unchanged and no reply sent; baseline tab persists.",
+    "evidenceLevel": "Provider acknowledgement simulated; native result above separate",
+    "analysis": "No issues"
+  },
+  "testCorrections": [
+    {
+      "cause": "Initial assumption that bootstrap always invokes disconnect was false when owner query finishes before panel mount",
+      "correction": "Exercise deterministic durable owner-generation change and require disconnect there; retain no automatic requests before explicit connection and add reconnect assertions."
+    },
+    {
+      "cause": "ensureVisible without settled layout attempted offscreen tap at rootbottom600",
+      "correction": "Scroll to center,pump layout,then tap; no warnIfMissed suppression."
+    },
+    {
+      "cause": "Ready text offscreen in lazy list was absent despite successful request",
+      "correction": "Assert actual ManagedTutorController ready state and exact connect counts; retain native visible reply as separate UI evidence."
+    }
+  ],
+  "limits": [
+    "No native account switch or owner migration performed",
+    "Automatic process-death restoration remains a documented limitation, not a PASS",
+    "All14workflow/mode acceptance stillOPEN"
+  ],
+  "cleanup": "Explicitdisconnect,bridge63137 terminal,ownedreverse8765/privateconfig removed,no listener. AIcollapsed,dashboardforeground; original app/accounts preserved; USBstayawake2.",
+  "next": [
+    "Complete remaining mode-specific baseline/connected/disconnected persistence checks",
+    "Transfer-probe/sync and mapped camera/speech successful-result acceptance",
+    "Whole-project review after current MCP acceptance"
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "status": "training-completed",
+  "modelVersion": "lexiquest-web-mobilenet16-2026-09-14.1",
+  "datasetVersion": "2026-09-14.1",
+  "manifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+  "configSha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+  "selectedEpoch": 30,
+  "epochs": 30,
+  "selection": "minimum development validation loss; fixed epochs, no threshold tuning",
+  "method": "frozen pretrained MobileNet backbone; newly trained 16-way softmax head",
+  "trainableParameters": 16400,
+  "backboneParameters": 3228864,
+  "initialToSelectedHeadWeightL2": 4.2822136878967285,
+  "metrics": {
+    "train": {
+      "samples": 357,
+      "correct": 357,
+      "accuracy": 1.0,
+      "loss": 0.012173544615507126,
+      "perClass": {
+        "book": {
+          "n": 23,
+          "correct": 23
+        },
+        "bottle": {
+          "n": 24,
+          "correct": 24
+        },
+        "chair": {
+          "n": 27,
+          "correct": 27
+        },
+        "cup": {
+          "n": 27,
+          "correct": 27
+        },
+        "apple": {
+          "n": 20,
+          "correct": 20
+        },
+        "bread": {
+          "n": 20,
+          "correct": 20
+        },
+        "tomato": {
+          "n": 27,
+          "correct": 27
+        },
+        "bowl": {
+          "n": 21,
+          "correct": 21
+        },
+        "spoon": {
+          "n": 26,
+          "correct": 26
+        },
+        "fork": {
+          "n": 15,
+          "correct": 15
+        },
+        "knife": {
+          "n": 23,
+          "correct": 23
+        },
+        "door": {
+          "n": 25,
+          "correct": 25
+        },
+        "ladder": {
+          "n": 26,
+          "correct": 26
+        },
+        "light bulb": {
+          "n": 16,
+          "correct": 16
+        },
+        "tool": {
+          "n": 14,
+          "correct": 14
+        },
+        "tap": {
+          "n": 23,
+          "correct": 23
+        }
+      }
+    },
+    "validation": {
+      "samples": 120,
+      "correct": 109,
+      "accuracy": 0.9083333333333333,
+      "loss": 0.4593333601951599,
+      "perClass": {
+        "book": {
+          "n": 5,
+          "correct": 5
+        },
+        "bottle": {
+          "n": 10,
+          "correct": 9
+        },
+        "chair": {
+          "n": 8,
+          "correct": 8
+        },
+        "cup": {
+          "n": 10,
+          "correct": 10
+        },
+        "apple": {
+          "n": 7,
+          "correct": 7
+        },
+        "bread": {
+          "n": 9,
+          "correct": 9
+        },
+        "tomato": {
+          "n": 7,
+          "correct": 6
+        },
+        "bowl": {
+          "n": 10,
+          "correct": 9
+        },
+        "spoon": {
+          "n": 5,
+          "correct": 4
+        },
+        "fork": {
+          "n": 6,
+          "correct": 5
+        },
+        "knife": {
+          "n": 16,
+          "correct": 13
+        },
+        "door": {
+          "n": 8,
+          "correct": 8
+        },
+        "ladder": {
+          "n": 5,
+          "correct": 5
+        },
+        "light bulb": {
+          "n": 3,
+          "correct": 1
+        },
+        "tool": {
+          "n": 7,
+          "correct": 6
+        },
+        "tap": {
+          "n": 4,
+          "correct": 4
+        }
+      }
+    }
+  },
+  "seconds": 26.48400000000038,
+  "candidateSha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9",
+  "checkpointSha256": "3b11556c2a498c809b3c70cb97d94d7493eb11e1fdcfd4ae959bf487fc6b944c",
+  "rawEpochLogSha256": "682d2af20fcfdc2be8e4a98a775aff1d22de7c51d776848b0e752184d42e92a4",
+  "physicalCamera": "NOT RUN",
+  "unknownEvaluation": "NOT RUN",
+  "rolloutEnabled": false
+}
