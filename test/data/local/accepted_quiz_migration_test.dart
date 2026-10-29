@@ -295,7 +295,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      16,
+      17,
     );
     expect(before, hasLength(34));
     expect(database.allTables, hasLength(34));
@@ -316,7 +316,11 @@ void main() {
                 ..remove('accepted_plan_id')
                 ..remove('accepted_plan_json')
                 ..remove('checkpoint_revision')
-                ..remove('checkpoint_json'),
+                ..remove('checkpoint_json')
+                ..remove('last_switch_ordinal')
+                ..remove('suppressed_switch_count')
+                ..remove('started_effective_presentation')
+                ..remove('pending_presentation_change_json'),
             )
             .toList(),
         table.value,

@@ -14,6 +14,7 @@ class StudyPresentations extends StatefulWidget {
     this.index,
     this.busy = false,
     this.languageCode = 'th',
+    this.onSwitch,
   });
 
   final StudyPresentationCatalog catalog;
@@ -23,6 +24,7 @@ class StudyPresentations extends StatefulWidget {
   final bool busy;
   final Future<void> Function() onStart;
   final String languageCode;
+  final Future<void> Function()? onSwitch;
 
   @override
   State<StudyPresentations> createState() => _StudyPresentationsState();
@@ -102,10 +104,26 @@ class _StudyPresentationsState extends State<StudyPresentations> {
       constraints: const BoxConstraints(maxWidth: 560),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: switch (widget.presentation) {
-          TodayExperiencePresentation.standard => _standard(context),
-          TodayExperiencePresentation.adventure => _adventure(context),
-        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.onSwitch != null) ...[
+              OutlinedButton(
+                key: const ValueKey('study-presentation-switch'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: widget.busy ? null : widget.onSwitch,
+                child: Text(_text('สลับมุมมองกิจกรรม', 'Switch activity view')),
+              ),
+              const SizedBox(height: 16),
+            ],
+            switch (widget.presentation) {
+              TodayExperiencePresentation.standard => _standard(context),
+              TodayExperiencePresentation.adventure => _adventure(context),
+            },
+          ],
+        ),
       ),
     ),
   );

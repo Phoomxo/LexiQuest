@@ -106,7 +106,7 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 16);
+      expect(json['schemaVersion'], 17);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
@@ -138,7 +138,11 @@ void main() {
       expect(response['ordinal_value'], 100);
       final opportunity =
           (data['measurement_opportunities'] as List).single as Map;
-      expect(opportunity, hasLength(15));
+      expect(opportunity, hasLength(19));
+      expect(opportunity['last_switch_ordinal'], 0);
+      expect(opportunity['suppressed_switch_count'], 0);
+      expect(opportunity['started_effective_presentation'], isNull);
+      expect(opportunity['pending_presentation_change_json'], isNull);
       expect(opportunity, opportunityA.opportunity);
       expect(opportunity['measurement_run_id'], run['id']);
       expect(opportunity['learning_session_id'], isNull);

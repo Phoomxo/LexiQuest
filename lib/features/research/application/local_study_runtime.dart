@@ -98,6 +98,7 @@ final class LocalStudyRuntime implements StudyRuntime {
   final _owners = <String, _OwnerStudy>{};
   final _launches = <String, Future<ConfiguredQuizLaunch>>{};
   final _openings = <(String, String), _StudyOpening>{};
+  final _changes = <(String, String), _StudyPresentationChange>{};
 
   @override
   LearningUseCases get learning {
@@ -715,6 +716,241 @@ final class LocalStudyRuntime implements StudyRuntime {
   }
 
   @override
+  Future<StudyView> preparePresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+    required int expectedRevision,
+    required TodayExperiencePresentation target,
+    required bool Function() stillCurrent,
+  }) async {
+    requireMeasurementEntryId(attemptId);
+    _StudyPresentationChange? attempted;
+    final result = await _write(ownerId, () async {
+      var change = _changes[(ownerId, opportunityId)];
+      if (change != null && change.attemptId == attemptId) {
+        if (change.expectedRevision != expectedRevision ||
+            change.target != target ||
+            change.invalidated ||
+            !_changePreframe(change)) {
+          _deny(ResearchCaptureReason.identityConflict);
+        }
+      } else {
+        if (change != null && change.phase != _OpeningPhase.committed) {
+          _deny(ResearchCaptureReason.timingUnavailable);
+        }
+        final base = await _inspect(ownerId);
+        final opportunity = base.opportunity;
+        if ((base.phase != StudyPhase.ready &&
+                base.phase != StudyPhase.activeIndex) ||
+            opportunity?.id != opportunityId ||
+            opportunity?.presentation == null ||
+            opportunity!.localRevision != expectedRevision ||
+            opportunity.currentPresentation == target ||
+            !authorities.supportedPresentations.contains(target)) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+        change = _StudyPresentationChange(
+          ownerId,
+          opportunityId,
+          attemptId,
+          expectedRevision,
+          target,
+          base,
+        );
+        _changes[(ownerId, opportunityId)] = change;
+      }
+      attempted = change;
+      final currentChange = change;
+      bool current() =>
+          identical(_changes[(ownerId, opportunityId)], currentChange) &&
+          !currentChange.invalidated &&
+          _changePreframe(currentChange) &&
+          stillCurrent();
+      await _requireChangeLease(currentChange);
+      if (!current()) _deny(ResearchCaptureReason.sessionUnavailable);
+      final prepared = await _forOwner(ownerId).opportunities
+          .preparePresentationChange(
+            ownerId,
+            opportunityId,
+            attemptId: attemptId,
+            expectedRevision: expectedRevision,
+            target: target,
+            stillCurrent: current,
+          );
+      final receipt = prepared.pendingPresentationChange;
+      if (receipt == null ||
+          receipt.attemptId != attemptId ||
+          receipt.to != target ||
+          receipt.baseRevision != expectedRevision ||
+          (currentChange.receipt != null &&
+              currentChange.receipt!.canonicalJson != receipt.canonicalJson)) {
+        _deny(ResearchCaptureReason.identityConflict);
+      }
+      currentChange.receipt ??= receipt;
+      currentChange.prepared = prepared;
+      await _requireChangeLease(currentChange);
+      if (!current()) _deny(ResearchCaptureReason.sessionUnavailable);
+      return _preparedChangeView(currentChange);
+    });
+    final change = attempted!;
+    if (!identical(_changes[(ownerId, opportunityId)], change) ||
+        change.invalidated ||
+        !_changePreframe(change) ||
+        !stillCurrent()) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+    change.phase = _OpeningPhase.prepared;
+    return result;
+  }
+
+  @override
+  void markPresentationChangeMayRender(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+  }) {
+    final change = _requireChange(ownerId, opportunityId, attemptId);
+    if (change.phase != _OpeningPhase.prepared ||
+        change.receipt == null ||
+        change.prepared?.pendingPresentationChange?.canonicalJson !=
+            change.receipt!.canonicalJson) {
+      _deny(ResearchCaptureReason.timingUnavailable);
+    }
+    change.phase = _OpeningPhase.potentialRender;
+  }
+
+  @override
+  void invalidatePresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+  }) {
+    final change = _changes[(ownerId, opportunityId)];
+    if (change != null &&
+        change.attemptId == attemptId &&
+        change.phase != _OpeningPhase.committed) {
+      change.invalidated = true;
+      change.phase = _OpeningPhase.uncertain;
+    }
+  }
+
+  @override
+  Future<StudyView> recordPresentationChanged(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+    required bool Function() stillVisible,
+  }) async {
+    _StudyPresentationChange? attempted;
+    try {
+      final result = await _write(ownerId, () async {
+        final change = _requireChange(ownerId, opportunityId, attemptId);
+        attempted = change;
+        final receipt = change.receipt;
+        if (receipt == null) _deny(ResearchCaptureReason.timingUnavailable);
+        final newCapture = change.phase == _OpeningPhase.potentialRender;
+        if (change.phase == _OpeningPhase.committed ||
+            change.phase == _OpeningPhase.uncertain) {
+          final stored = await _forOwner(
+            ownerId,
+          ).opportunities.load(ownerId, opportunityId);
+          if (stored == null ||
+              stored.pendingPresentationChange != null ||
+              stored.localRevision != receipt.baseRevision + 2 ||
+              stored.totalSwitches != receipt.position ||
+              stored.currentPresentation != receipt.to) {
+            _deny(ResearchCaptureReason.timingUnavailable);
+          }
+        } else {
+          if (change.phase != _OpeningPhase.potentialRender) {
+            _deny(ResearchCaptureReason.timingUnavailable);
+          }
+          await _requireChangeLease(change);
+          change.phase = _OpeningPhase.capturing;
+          await _forOwner(ownerId).opportunities.commitPresentationChange(
+            ownerId,
+            opportunityId,
+            receipt: receipt,
+            stillVisible: () =>
+                !change.invalidated &&
+                change.phase == _OpeningPhase.capturing &&
+                stillVisible(),
+          );
+        }
+        final after = await _inspect(ownerId);
+        if (newCapture) await _requireChangeLease(change);
+        if (after.opportunity?.id != opportunityId ||
+            change.invalidated ||
+            after.phase == StudyPhase.unavailable ||
+            !stillVisible()) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+        return after;
+      });
+      final change = attempted!;
+      if (!identical(_changes[(ownerId, opportunityId)], change) ||
+          change.invalidated ||
+          !stillVisible()) {
+        _deny(ResearchCaptureReason.sessionUnavailable);
+      }
+      change.phase = _OpeningPhase.committed;
+      return result;
+    } on Object {
+      final change = attempted ?? _changes[(ownerId, opportunityId)];
+      if (change?.attemptId == attemptId &&
+          change!.phase != _OpeningPhase.committed) {
+        change.phase = _OpeningPhase.uncertain;
+      }
+      rethrow;
+    }
+  }
+
+  _StudyPresentationChange _requireChange(
+    String ownerId,
+    String opportunityId,
+    String attemptId,
+  ) {
+    final change = _changes[(ownerId, opportunityId)];
+    if (change == null ||
+        change.ownerId != ownerId ||
+        change.opportunityId != opportunityId ||
+        change.attemptId != attemptId ||
+        change.invalidated) {
+      _deny(ResearchCaptureReason.timingUnavailable);
+    }
+    return change;
+  }
+
+  static bool _changePreframe(_StudyPresentationChange change) =>
+      change.phase == _OpeningPhase.preparing ||
+      change.phase == _OpeningPhase.prepared;
+
+  Future<void> _requireChangeLease(_StudyPresentationChange change) async {
+    final evaluated = change.base.evaluatedAtUtc;
+    final expires = change.base.promptExpiresAtUtc;
+    final now = await _now();
+    if (evaluated == null ||
+        expires == null ||
+        now.isBefore(evaluated) ||
+        !now.isBefore(expires)) {
+      _deny(ResearchCaptureReason.outsideWindow);
+    }
+  }
+
+  StudyView _preparedChangeView(_StudyPresentationChange change) => StudyView(
+    ownerId: change.base.ownerId,
+    catalog: change.base.catalog,
+    phase: change.base.phase,
+    reason: change.base.reason,
+    run: change.base.run,
+    opportunity: change.prepared,
+    index: change.base.index,
+    evaluatedAtUtc: change.base.evaluatedAtUtc,
+    promptExpiresAtUtc: change.base.promptExpiresAtUtc,
+  );
+
+  @override
   Future<ConfiguredQuizState> startIndex(
     String ownerId,
     String opportunityId, {
@@ -927,6 +1163,27 @@ final class _StudyOpening {
   final String ownerId;
   final String entryAttemptId;
   MeasurementOpportunity? prepared;
+  _OpeningPhase phase = _OpeningPhase.preparing;
+}
+
+final class _StudyPresentationChange {
+  _StudyPresentationChange(
+    this.ownerId,
+    this.opportunityId,
+    this.attemptId,
+    this.expectedRevision,
+    this.target,
+    this.base,
+  );
+  final String ownerId;
+  final String opportunityId;
+  final String attemptId;
+  final int expectedRevision;
+  final TodayExperiencePresentation target;
+  final StudyView base;
+  PendingPresentationChange? receipt;
+  MeasurementOpportunity? prepared;
+  bool invalidated = false;
   _OpeningPhase phase = _OpeningPhase.preparing;
 }
 

@@ -78,7 +78,7 @@ void main() {
                     )
                     .getSingle())
                 .data;
-        expect(opportunity, hasLength(15));
+        expect(opportunity, hasLength(19));
         expect(event, hasLength(22));
         expect(opportunity, bundle.opportunity.opportunity);
         expect(event, bundle.opportunity.event);

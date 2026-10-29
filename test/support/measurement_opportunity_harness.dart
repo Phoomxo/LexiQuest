@@ -496,7 +496,7 @@ final class OpportunityFixture {
     final unsupported = await database
         .customSelect(
           "SELECT COUNT(*) AS n FROM events_v2 WHERE event_type NOT IN "
-          "('TodayExperiencePresented', 'TodayExperienceMissionStarted', 'TodayExperienceMissionCompleted')",
+          "('TodayExperiencePresented', 'TodayExperiencePresentationChanged', 'TodayExperienceMissionStarted', 'TodayExperienceMissionCompleted')",
         )
         .getSingle();
     if (unsupported.read<int>('n') != 0) {

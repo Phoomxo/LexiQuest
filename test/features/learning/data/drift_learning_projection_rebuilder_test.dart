@@ -107,7 +107,7 @@ void main() {
         wordId: 'word-rebuild',
       );
 
-      expect(snapshot.intervalDays, greaterThanOrEqualTo(1));
+      expect(snapshot!.intervalDays, greaterThanOrEqualTo(1));
 
       final srsRows = await (db.select(
         db.srsStates,

@@ -39,6 +39,293 @@ final class DriftMeasurementOpportunityRepository
   Future<MeasurementOpportunity?> load(String ownerId, String opportunityId) =>
       timing.loadOpportunity(ownerId, opportunityId);
 
+  Future<MeasurementOpportunity> preparePresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+    required int expectedRevision,
+    required TodayExperiencePresentation target,
+    required bool Function() stillCurrent,
+  }) async {
+    requireMeasurementEntryId(attemptId);
+    final initial = await _required(ownerId, opportunityId);
+    return measurements.writeForActiveRun(
+      ownerId: ownerId,
+      runId: initial.measurementRunId,
+      write: (run) async {
+        final current = await _required(ownerId, opportunityId);
+        _binding(current, run);
+        final now = _milliseconds(await _now());
+        await _requireChangeable(current, run, now);
+        final existing = current.pendingPresentationChange;
+        if (existing != null) {
+          if (existing.attemptId != attemptId ||
+              existing.baseRevision != expectedRevision ||
+              existing.to != target) {
+            _deny(ResearchCaptureReason.identityConflict);
+          }
+          return current;
+        }
+        if (current.localRevision != expectedRevision) {
+          _deny(ResearchCaptureReason.identityConflict);
+        }
+        if (current.currentPresentation == target) {
+          return current;
+        }
+        final receipt = PendingPresentationChange(
+          attemptId: attemptId,
+          ownerId: ownerId,
+          opportunityId: current.id,
+          entryAttemptId: current.entryAttemptId,
+          from: current.currentPresentation,
+          to: target,
+          baseRevision: current.localRevision,
+          baseOrdinal: current.lastSwitchOrdinal,
+          baseSuppressed: current.suppressedSwitchCount,
+          preparedAtUtc: now,
+        );
+        await _update(current, {
+          'pending_presentation_change_json': receipt.canonicalJson,
+        });
+        return _required(ownerId, opportunityId);
+      },
+      inspectFinal: _inspectFinalChangeState,
+      validate: (current, now) {
+        _times(current, now);
+        if (!stillCurrent()) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+      },
+    );
+  }
+
+  Future<MeasurementOpportunity> commitPresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required PendingPresentationChange receipt,
+    required bool Function() stillVisible,
+  }) async {
+    final initial = await _required(ownerId, opportunityId);
+    DateTime? committedAt;
+    return measurements.writeForActiveRun(
+      ownerId: ownerId,
+      runId: initial.measurementRunId,
+      write: (run) async {
+        final current = await _required(ownerId, opportunityId);
+        _binding(current, run);
+        if (receipt.ownerId != ownerId ||
+            receipt.opportunityId != opportunityId ||
+            receipt.entryAttemptId != current.entryAttemptId) {
+          _deny(ResearchCaptureReason.identityConflict);
+        }
+        final now = _milliseconds(await _now());
+        if (receipt.preparedAtUtc.isAfter(now)) {
+          _deny(ResearchCaptureReason.outsideWindow);
+        }
+        await _requireChangeable(current, run, now);
+        if (current.pendingPresentationChange == null) {
+          if (current.totalSwitches != receipt.position ||
+              current.localRevision != receipt.baseRevision + 2 ||
+              current.currentPresentation != receipt.to) {
+            _deny(ResearchCaptureReason.identityConflict);
+          }
+          await _facts(run);
+          return current;
+        }
+        if (current.pendingPresentationChange!.canonicalJson !=
+                receipt.canonicalJson ||
+            current.localRevision != receipt.baseRevision + 1 ||
+            now.isBefore(receipt.preparedAtUtc)) {
+          _deny(ResearchCaptureReason.identityConflict);
+        }
+        if (receipt.position <= 10) {
+          final identity = measurementPresentationChangedIdentity(
+            current.id,
+            receipt.position,
+          );
+          final payload = <String, Object?>{
+            'assignedTreatment': current.assignedTreatment.wireName,
+            'effectivePresentation': receipt.to.wireName,
+            'fromPresentation': receipt.from.wireName,
+            'switchOrdinal': receipt.position,
+          };
+          validateMeasurementPresentationChangedPayload(payload);
+          await _insertMission(
+            EventEnvelopeV2(
+              eventId: researchEventId(identity, now),
+              eventType: measurementPresentationChangedEventType,
+              eventVersion: measurementPresentationChangedEventVersion,
+              occurredAtUtc: now,
+              recordedAtUtc: now,
+              actorIdentity: ownerId,
+              ownerIdentity: ownerId,
+              aggregateType: 'MeasurementOpportunity',
+              aggregateId: current.id,
+              correlationId: current.id,
+              idempotencyKey: identity,
+              consentContext: ConsentContext(
+                researchConsentVersion: run.consentVersion,
+                aiConsentGranted: false,
+                voiceConsentGranted: false,
+                socialConsentGranted: false,
+              ),
+              experimentContext: ExperimentContext(
+                experimentId: run.study.experimentId,
+                variantId: run.treatment,
+                assignedAtUtc: await _assignedAt(run),
+              ),
+              contentRevision: run.study.contentRevision,
+              policyVersion: run.study.evidencePolicyVersion,
+              appVersion: run.study.appVersion,
+              buildId: run.study.buildId,
+              privacyClassification: PrivacyClassification.ownerOnly,
+              payload: Map<String, dynamic>.from(payload),
+            ),
+          );
+        }
+        await _update(current, {
+          'last_switch_ordinal': receipt.position <= 10 ? receipt.position : 10,
+          'suppressed_switch_count': receipt.position <= 10
+              ? 0
+              : receipt.baseSuppressed + 1,
+          'pending_presentation_change_json': null,
+        });
+        committedAt = now;
+        await _facts(run);
+        return _required(ownerId, opportunityId);
+      },
+      inspectFinal: _inspectFinalChangeState,
+      validate: (current, now) {
+        _times(current, now);
+        if (committedAt?.isAfter(now) == true ||
+            receipt.preparedAtUtc.isAfter(now)) {
+          _deny(ResearchCaptureReason.outsideWindow);
+        }
+        if (!stillVisible()) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+      },
+    );
+  }
+
+  Future<void> _inspectFinalChangeState(MeasurementOpportunity current) async {
+    final saved = await _required(current.ownerId, current.id);
+    if (saved.localRevision != current.localRevision ||
+        saved.indexLink?.sessionId != current.indexLink?.sessionId ||
+        saved.indexLink?.startedAtUtc != current.indexLink?.startedAtUtc ||
+        saved.pendingPresentationChange?.canonicalJson !=
+            current.pendingPresentationChange?.canonicalJson) {
+      _deny(ResearchCaptureReason.identityConflict);
+    }
+    final link = saved.indexLink;
+    if (link != null) {
+      final row = await database
+          .customSelect(
+            'SELECT state, started_at_utc_ms, ended_at_utc_ms FROM learning_sessions '
+            'WHERE id = ? AND owner_id = ?',
+            variables: [
+              Variable<String>(link.sessionId),
+              Variable<String>(current.ownerId),
+            ],
+          )
+          .getSingleOrNull();
+      if (row == null ||
+          row.read<String>('state') != 'active' ||
+          row.read<int>('started_at_utc_ms') !=
+              link.startedAtUtc.millisecondsSinceEpoch ||
+          row.readNullable<int>('ended_at_utc_ms') != null) {
+        _deny(ResearchCaptureReason.sessionUnavailable);
+      }
+      return;
+    }
+    final candidates = await database
+        .customSelect(
+          'SELECT id FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
+          "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence') LIMIT 1",
+          variables: [
+            Variable<String>(current.ownerId),
+            Variable<int>(
+              current.presentation!.occurredAtUtc.millisecondsSinceEpoch,
+            ),
+          ],
+        )
+        .get();
+    if (candidates.isNotEmpty) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+  }
+
+  Future<void> _requireChangeable(
+    MeasurementOpportunity current,
+    MotivationMeasurementRun run,
+    DateTime now,
+  ) async {
+    if (current.presentation == null ||
+        current.closedAtUtc != null ||
+        !await timing.validatePresentationHistory(current, notAfter: now)) {
+      _deny(ResearchCaptureReason.timingUnavailable);
+    }
+    if (current.pendingPresentationChange == null) {
+      final facts = await _facts(run);
+      if (facts is! MotivationAfterExposure ||
+          facts.firstExposureEventId != current.presentation!.eventId) {
+        _deny(ResearchCaptureReason.identityConflict);
+      }
+    }
+    final opportunities = await database
+        .customSelect(
+          'SELECT id FROM measurement_opportunities WHERE owner_id = ? AND measurement_run_id = ?',
+          variables: [
+            Variable<String>(current.ownerId),
+            Variable<String>(run.id),
+          ],
+        )
+        .get();
+    if (opportunities.length != 1 ||
+        opportunities.single.read<String>('id') != current.id) {
+      _deny(ResearchCaptureReason.identityConflict);
+    }
+    final link = current.indexLink;
+    final candidates = await database
+        .customSelect(
+          'SELECT id FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
+          "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence') "
+          'AND (? IS NULL OR started_at_utc_ms <= ?)',
+          variables: [
+            Variable<String>(current.ownerId),
+            Variable<int>(
+              current.presentation!.occurredAtUtc.millisecondsSinceEpoch,
+            ),
+            Variable<int>(link?.startedAtUtc.millisecondsSinceEpoch),
+            Variable<int>(link?.startedAtUtc.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
+    if (candidates.any((row) => row.read<String>('id') != link?.sessionId)) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+    if (link != null) {
+      final proof =
+          await DriftLearningRepository(
+            database,
+            ownerWrites: measurements.participation.assignments.ownerWrites,
+          ).inspectConfiguredQuiz(
+            sessionId: link.sessionId,
+            expectedOwnerId: current.ownerId,
+          );
+      if (proof.state != 'active' || proof.startedAtUtc != link.startedAtUtc) {
+        _deny(ResearchCaptureReason.sessionUnavailable);
+      }
+      await _requireMissionFact(
+        current,
+        run,
+        proof,
+        measurementMissionStartedEventType,
+        now,
+      );
+    }
+  }
+
   Future<MeasurementOpportunity> open({
     required String ownerId,
     required String measurementRunId,
@@ -265,10 +552,11 @@ final class DriftMeasurementOpportunityRepository
             'learning_session_id': session.id,
             'learning_session_started_at_utc_ms': session.startedAtUtcMs,
             'is_index_session': 1,
+            'started_effective_presentation': o.currentPresentation.wireName,
           });
           await _facts(run);
           await _requireMissionFact(
-            o,
+            await _required(run.ownerId, o.id),
             run,
             proof,
             measurementMissionStartedEventType,
@@ -491,7 +779,12 @@ final class DriftMeasurementOpportunityRepository
   ) {
     final payload = <String, Object?>{
       'assignedTreatment': opportunity.assignedTreatment.wireName,
-      'effectivePresentation': opportunity.effectivePresentation.wireName,
+      'effectivePresentation':
+          (type == measurementMissionStartedEventType
+                  ? opportunity.startedEffectivePresentation ??
+                        opportunity.currentPresentation
+                  : opportunity.currentPresentation)
+              .wireName,
       'opportunityId': opportunity.id,
       'planId': proof.plan.id,
       if (type == measurementMissionStartedEventType)
@@ -783,7 +1076,8 @@ final class DriftMeasurementOpportunityRepository
     if (o.openedAtUtc.isAfter(now) ||
         o.presentation?.occurredAtUtc.isAfter(now) == true ||
         o.indexLink?.startedAtUtc.isAfter(now) == true ||
-        o.closedAtUtc?.isAfter(now) == true) {
+        o.closedAtUtc?.isAfter(now) == true ||
+        o.pendingPresentationChange?.preparedAtUtc.isAfter(now) == true) {
       _deny(ResearchCaptureReason.outsideWindow);
     }
   }

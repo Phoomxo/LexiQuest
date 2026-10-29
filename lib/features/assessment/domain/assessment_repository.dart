@@ -20,8 +20,17 @@ final class AssessmentOutcomeEvidence {
     required String persistedEvidenceClass,
     required EvidenceContext evidenceContext,
   }) {
+    AssessmentRun.validateCanonicalText(sourceEvidenceId, 'sourceEvidenceId');
+    AssessmentRun.validateCanonicalText(ownerId, 'ownerId');
+    AssessmentRun.validateCanonicalText(learningSessionId, 'learningSessionId');
     AssessmentRun.validateCanonicalText(wordId, 'wordId');
     AssessmentRun.validateCanonicalText(promptMode, 'promptMode');
+    if (!LearningEvidenceContract.strictAssessmentShape(
+      persistedEvidenceClass: persistedEvidenceClass,
+      context: evidenceContext,
+    )) {
+      throw ArgumentError('invalid stored Assessment evidence shape');
+    }
     if (responseTimeMs < 0 ||
         responseTimeMs > LearningEvidenceContract.maxResponseTimeMs) {
       throw ArgumentError.value(

@@ -230,7 +230,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      16,
+      17,
     );
     expect(before, hasLength(33));
     expect(database.allTables, hasLength(34));
@@ -261,7 +261,7 @@ void main() {
     final columns = await database
         .customSelect('PRAGMA table_info(measurement_opportunities)')
         .get();
-    expect(columns, hasLength(15));
+    expect(columns, hasLength(19));
     final foreignKeys = await database
         .customSelect('PRAGMA foreign_key_list(measurement_opportunities)')
         .get();

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -15,36 +16,58 @@ final class DriftProgressQueries {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
-    final attempts =
+    final stored =
         await (database.select(database.answerAttempts)
               ..where((row) => row.ownerId.equals(ownerId))
               ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]))
             .get();
+    final assessmentSessions =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.activityType.equals('assessment'),
+            ))
+            .get();
+    final excludedSessions = assessmentSessions.map((row) => row.id).toSet();
+    final excludedSources = {...excludedSessions};
+    final attempts = <AnswerAttempt>[];
+    for (final row in stored) {
+      if (excludedSessions.contains(row.sessionId) ||
+          !LearningEvidenceContract.validEvidenceMetadata(
+            evidenceClass: row.evidenceClass,
+            evidenceContextJson: row.evidenceContextJson,
+          )) {
+        excludedSources.add(row.id);
+      } else {
+        attempts.add(row);
+      }
+    }
     final correctCount = attempts.where((row) => row.isCorrect).length;
     final wrongCount = attempts.length - correctCount;
     final responseTimes = attempts
         .map((row) => row.responseTimeMs)
         .whereType<int>()
         .toList(growable: false);
-    final pointsExpression = database.pointsLedgerEntries.amount.sum();
     // Legacy purchase debits still fund the shop, but never spend learning XP.
-    final pointsRow =
-        await (database.selectOnly(database.pointsLedgerEntries)
-              ..addColumns([pointsExpression])
-              ..where(
-                database.pointsLedgerEntries.ownerId.equals(ownerId) &
-                    database.pointsLedgerEntries.entryType
-                        .equals('rewardPurchase')
-                        .not(),
-              ))
-            .getSingle();
-    final totalXp = pointsRow.read(pointsExpression) ?? 0;
+    final pointsRows =
+        await (database.select(database.pointsLedgerEntries)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entryType.equals('rewardPurchase').not(),
+            ))
+            .get();
+    final totalXp = pointsRows
+        .where((row) => !excludedSources.contains(row.sourceEventId))
+        .fold<int>(0, (sum, row) => sum + row.amount);
     final completedCount = database.learningSessions.id.count();
     final completedRow =
         await (database.selectOnly(database.learningSessions)
               ..addColumns([completedCount])
               ..where(
                 database.learningSessions.ownerId.equals(ownerId) &
+                    database.learningSessions.activityType
+                        .equals('assessment')
+                        .not() &
                     database.learningSessions.state.equals('completed'),
               ))
             .getSingle();
@@ -107,7 +130,7 @@ final class DriftProgressQueries {
               ..orderBy([(row) => OrderingTerm.asc(row.unlockedAtUtcMs)]))
             .get();
 
-    final weaknesses = await _loadWeaknesses(ownerId);
+    final weaknesses = await _loadWeaknesses(ownerId, attempts);
     return ProgressSnapshot(
       sampleSize: attempts.length,
       correctCount: correctCount,
@@ -163,29 +186,23 @@ final class DriftProgressQueries {
     );
   }
 
-  Future<List<WeaknessEvidence>> _loadWeaknesses(String ownerId) async {
+  Future<List<WeaknessEvidence>> _loadWeaknesses(
+    String ownerId,
+    List<AnswerAttempt> attempts,
+  ) async {
     final rows = await database
         .customSelect(
           '''
       SELECT
-        a.word_id AS word_id,
+        w.id AS word_id,
         w.spelling AS spelling,
         w.meaning AS meaning,
-        COUNT(*) AS sample_size,
-        SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) AS incorrect_count,
         s.due_at_utc_ms AS due_at_utc_ms
-      FROM answer_attempts a
-      INNER JOIN vocabulary_words w
-        ON w.id = a.word_id AND w.owner_id = a.owner_id
+      FROM vocabulary_words w
       LEFT JOIN srs_states s
-        ON s.word_id = a.word_id AND s.owner_id = a.owner_id
-      WHERE a.owner_id = ? AND w.is_deleted = 0
-      GROUP BY a.word_id, w.spelling, w.meaning, s.due_at_utc_ms
-      HAVING SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) > 0
-      ORDER BY
-        (1.0 * SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) / COUNT(*)) DESC,
-        incorrect_count DESC,
-        w.spelling ASC
+        ON s.word_id = w.id AND s.owner_id = w.owner_id
+      WHERE w.owner_id = ? AND w.is_deleted = 0
+      ORDER BY w.id ASC
       ''',
           variables: [Variable<String>(ownerId)],
           readsFrom: {
@@ -195,10 +212,20 @@ final class DriftProgressQueries {
           },
         )
         .get();
-    return rows
+    final byWord = <String, List<AnswerAttempt>>{};
+    for (final attempt in attempts) {
+      byWord.putIfAbsent(attempt.wordId, () => []).add(attempt);
+    }
+    final result = rows
+        .where(
+          (row) =>
+              byWord[row.read<String>('word_id')]?.any((a) => !a.isCorrect) ??
+              false,
+        )
         .map((row) {
-          final sampleSize = row.read<int>('sample_size');
-          final incorrectCount = row.read<int>('incorrect_count');
+          final evidence = byWord[row.read<String>('word_id')]!;
+          final sampleSize = evidence.length;
+          final incorrectCount = evidence.where((a) => !a.isCorrect).length;
           final dueAt = row.readNullable<int>('due_at_utc_ms');
           return WeaknessEvidence(
             wordId: row.read<String>('word_id'),
@@ -212,7 +239,14 @@ final class DriftProgressQueries {
                 : DateTime.fromMillisecondsSinceEpoch(dueAt, isUtc: true),
           );
         })
-        .toList(growable: false);
+        .toList();
+    result.sort((a, b) {
+      final rate = b.errorRate.compareTo(a.errorRate);
+      if (rate != 0) return rate;
+      final wrong = b.incorrectCount.compareTo(a.incorrectCount);
+      return wrong != 0 ? wrong : a.spelling.compareTo(b.spelling);
+    });
+    return result;
   }
 
   List<SkillEvidence> _skills(List<AnswerAttempt> attempts) {

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../domain/learning_models.dart';
+import '../domain/learning_evidence_contract.dart';
 import '../domain/srs_policy.dart';
 
 final class DriftLearningProjectionRebuilder {
@@ -13,11 +14,11 @@ final class DriftLearningProjectionRebuilder {
   final db.AppDatabase database;
   final SrsPolicy srsPolicy;
 
-  Future<SrsSnapshot> rebuildWord({
+  Future<SrsSnapshot?> rebuildWord({
     required String ownerId,
     required String wordId,
   }) async {
-    final attempts =
+    final stored =
         await (database.select(database.answerAttempts)
               ..where(
                 (row) =>
@@ -28,9 +29,11 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    if (attempts.isEmpty) {
+    if (stored.isEmpty) {
       throw StateError('cannot rebuild SRS without answer evidence');
     }
+    final attempts = await _ordinaryAttempts(ownerId, stored);
+    if (attempts.isEmpty) return null;
 
     SrsSnapshot? state;
     for (final attempt in attempts) {
@@ -96,12 +99,14 @@ final class DriftLearningProjectionRebuilder {
     if (session == null) {
       throw StateError('owner-scoped learning session not found');
     }
-    final attempts =
+    if (session.activityType == 'assessment') return;
+    final stored =
         await (database.select(database.answerAttempts)..where(
               (row) =>
                   row.ownerId.equals(ownerId) & row.sessionId.equals(sessionId),
             ))
             .get();
+    final attempts = await _ordinaryAttempts(ownerId, stored);
     final correct = attempts.where((attempt) => attempt.isCorrect).length;
     final wrong = attempts.length - correct;
     final score = attempts.isEmpty
@@ -122,7 +127,7 @@ final class DriftLearningProjectionRebuilder {
   }
 
   Future<void> rebuildAchievements(String ownerId) async {
-    final attempts =
+    final stored =
         await (database.select(database.answerAttempts)
               ..where((row) => row.ownerId.equals(ownerId))
               ..orderBy([
@@ -130,6 +135,7 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
+    final attempts = await _ordinaryAttempts(ownerId, stored);
     if (attempts.isEmpty) return;
     await _insertAchievement(
       ownerId: ownerId,
@@ -153,6 +159,30 @@ final class DriftLearningProjectionRebuilder {
         source: correct[9],
       );
     }
+  }
+
+  Future<List<db.AnswerAttempt>> _ordinaryAttempts(
+    String ownerId,
+    List<db.AnswerAttempt> attempts,
+  ) async {
+    final assessmentSessions =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.activityType.equals('assessment'),
+            ))
+            .get();
+    final excludedSessions = assessmentSessions.map((row) => row.id).toSet();
+    return attempts
+        .where(
+          (row) =>
+              !excludedSessions.contains(row.sessionId) &&
+              LearningEvidenceContract.validEvidenceMetadata(
+                evidenceClass: row.evidenceClass,
+                evidenceContextJson: row.evidenceContextJson,
+              ),
+        )
+        .toList(growable: false);
   }
 
   Future<ReadingProgressSnapshot> rebuildReading({

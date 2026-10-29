@@ -1,5 +1,6 @@
 import '../../../data/local/app_database.dart' show AppDatabase;
 import '../../../runtime/app_build_info.dart';
+import '../../adventure/domain/adventure_entry.dart';
 import '../../consent/application/research_consent_use_cases.dart';
 import '../../consent/data/drift_research_consent_repository.dart';
 import '../../identity/data/drift_owner_write_coordinator.dart';
@@ -111,6 +112,7 @@ final class StudyView {
   bool get canStart =>
       phase == StudyPhase.ready &&
       opportunity?.presentation != null &&
+      opportunity?.pendingPresentationChange == null &&
       index == null;
 }
 
@@ -142,6 +144,30 @@ abstract interface class StudyRuntime {
     String ownerId,
     String opportunityId, {
     required String entryAttemptId,
+    required bool Function() stillVisible,
+  });
+  Future<StudyView> preparePresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+    required int expectedRevision,
+    required TodayExperiencePresentation target,
+    required bool Function() stillCurrent,
+  });
+  void markPresentationChangeMayRender(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+  });
+  void invalidatePresentationChange(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
+  });
+  Future<StudyView> recordPresentationChanged(
+    String ownerId,
+    String opportunityId, {
+    required String attemptId,
     required bool Function() stillVisible,
   });
   Future<ConfiguredQuizState> startIndex(

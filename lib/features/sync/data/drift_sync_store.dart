@@ -1522,8 +1522,11 @@ final class DriftSyncStore implements SyncStatusSource {
                 ..limit(1))
               .getSingleOrNull();
       if (evidence != null) {
-        await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
-        return;
+        final ordinaryState = await projections.rebuildWord(
+          ownerId: ownerId,
+          wordId: wordId,
+        );
+        if (ordinaryState != null) return;
       }
     }
 

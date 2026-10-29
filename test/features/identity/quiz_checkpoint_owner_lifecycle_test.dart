@@ -72,7 +72,7 @@ void main() {
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       final rows = (document['data'] as Map)['learning_sessions'] as List;
       expect(rows, [stored['a']]);
-      expect(document['schemaVersion'], 16);
+      expect(document['schemaVersion'], 17);
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       final exported = rows.single as Map;
       expect(exported, hasLength(15));

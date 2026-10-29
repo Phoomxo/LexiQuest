@@ -143,6 +143,12 @@ Future<SeededMeasurementOpportunity> insertOwnerMeasurementOpportunity(
     'learning_session_started_at_utc_ms': sessionStart,
     'is_index_session': learningSessionId == null ? 0 : 1,
     'closed_at_utc_ms': closedAt,
+    'last_switch_ordinal': 0,
+    'suppressed_switch_count': 0,
+    'started_effective_presentation': learningSessionId == null
+        ? null
+        : permit.assignedTreatment.name,
+    'pending_presentation_change_json': null,
   };
   final presentedEvent = event;
   await database.transaction(() async {

@@ -176,6 +176,28 @@ class MeasurementOpportunities extends Table {
   BoolColumn get isIndexSession =>
       boolean().withDefault(const Constant(false))();
   IntColumn get closedAtUtcMs => integer().nullable()();
+  IntColumn get lastSwitchOrdinal => integer()
+      .withDefault(const Constant(0))
+      .check(
+        const CustomExpression<bool>('last_switch_ordinal BETWEEN 0 AND 10'),
+      )();
+  IntColumn get suppressedSwitchCount => integer()
+      .withDefault(const Constant(0))
+      .check(
+        const CustomExpression<bool>(
+          'suppressed_switch_count >= 0 AND (suppressed_switch_count = 0 OR last_switch_ordinal = 10)',
+        ),
+      )();
+  TextColumn get startedEffectivePresentation => text().nullable().check(
+    const CustomExpression<bool>(
+      "started_effective_presentation IS NULL OR started_effective_presentation IN ('standard', 'adventure')",
+    ),
+  )();
+  TextColumn get pendingPresentationChangeJson => text().nullable().check(
+    const CustomExpression<bool>(
+      'pending_presentation_change_json IS NULL OR length(CAST(pending_presentation_change_json AS BLOB)) BETWEEN 2 AND 2048',
+    ),
+  )();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

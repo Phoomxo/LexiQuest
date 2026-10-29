@@ -43,6 +43,58 @@ final class DriftMotivationMeasurementTimingReader
     return row == null ? null : _opportunity(row.data);
   }
 
+  /// Integrity only. A pending receipt never becomes collection timing facts.
+  Future<bool> validatePresentationHistory(
+    MeasurementOpportunity opportunity, {
+    DateTime? notAfter,
+  }) async {
+    try {
+      final run = await _one(
+        'SELECT * FROM motivation_measurement_runs WHERE id = ? AND owner_id = ?',
+        [opportunity.measurementRunId, opportunity.ownerId],
+      );
+      if (run == null || opportunity.presentation == null) {
+        return false;
+      }
+      final assignment = await _one(
+        'SELECT * FROM experiment_assignments WHERE id = ? AND owner_id = ?',
+        [_string(run['assignment_id']), opportunity.ownerId],
+      );
+      final permit = await _one(
+        'SELECT * FROM research_participation_permits WHERE id = ? AND owner_id = ?',
+        [opportunity.permitId, opportunity.ownerId],
+      );
+      final presented = await _one(
+        'SELECT * FROM events_v2 WHERE event_id = ? AND owner_id = ?',
+        [opportunity.presentation!.eventId, opportunity.ownerId],
+      );
+      final changed = await database
+          .customSelect(
+            'SELECT * FROM events_v2 WHERE event_type = ? AND (correlation_id = ? OR aggregate_id = ?)',
+            variables: [
+              const Variable<String>(measurementPresentationChangedEventType),
+              Variable<String>(opportunity.id),
+              Variable<String>(opportunity.id),
+            ],
+          )
+          .get();
+      return assignment != null &&
+          permit != null &&
+          presented != null &&
+          _eventMatches(opportunity, presented, run, assignment, permit) &&
+          _changedMatches(
+            opportunity,
+            changed.map((row) => row.data).toList(),
+            run,
+            assignment,
+            permit,
+            notAfter: notAfter,
+          );
+    } on Object {
+      return false;
+    }
+  }
+
   Future<MotivationTimingFacts?> _read(
     String ownerId,
     String runId,
@@ -94,7 +146,8 @@ final class DriftMotivationMeasurementTimingReader
             .where((o) => o.measurementRunId == runId)
             .toList();
         for (final o in opportunities) {
-          if (o.permitId != permitId ||
+          if (o.pendingPresentationChange != null ||
+              o.permitId != permitId ||
               o.assignedTreatment.wireName != run['treatment'] ||
               o.openedAtUtc.millisecondsSinceEpoch <
                   _integer(run['started_at_utc_ms'])) {
@@ -130,6 +183,35 @@ final class DriftMotivationMeasurementTimingReader
           final event = events[presentation.eventId];
           if (event == null ||
               !_eventMatches(o, event, run, assignment, permit)) {
+            return null;
+          }
+        }
+        final changedRows = await database
+            .customSelect(
+              'SELECT * FROM events_v2 WHERE owner_id = ? AND event_type = ?',
+              variables: [
+                Variable<String>(ownerId),
+                const Variable<String>(measurementPresentationChangedEventType),
+              ],
+            )
+            .get();
+        for (final row in changedRows) {
+          final linked = all[row.data['correlation_id']];
+          if (linked == null || row.data['aggregate_id'] != linked.id) {
+            return null;
+          }
+        }
+        for (final o in opportunities) {
+          if (!_changedMatches(
+            o,
+            changedRows
+                .where((row) => row.data['correlation_id'] == o.id)
+                .map((row) => row.data)
+                .toList(),
+            run,
+            assignment,
+            permit,
+          )) {
             return null;
           }
         }
@@ -269,19 +351,28 @@ final class DriftMotivationMeasurementTimingReader
     Map<String, Object?> event,
     Map<String, Object?> run,
     Map<String, Object?> assignment,
-    Map<String, Object?> permit,
-  ) {
-    final at = o.presentation!.occurredAtUtc;
-    final identity = measurementPresentedIdentity(o.id);
-    final payload = <String, Object?>{
-      'assignedTreatment': o.assignedTreatment.wireName,
-      'effectivePresentation': o.effectivePresentation.wireName,
-      'entryAttemptId': o.entryAttemptId,
-      'catalogVersion': run['catalog_version'],
-    };
-    validateMeasurementPresentedPayload(payload);
-    return event['event_id'] == researchEventId(identity, at) &&
-        event['event_type'] == measurementPresentedEventType &&
+    Map<String, Object?> permit, {
+    DateTime? occurrence,
+    String? eventIdentity,
+    String? type,
+    Map<String, Object?>? eventPayload,
+  }) {
+    final at = occurrence ?? o.presentation!.occurredAtUtc;
+    final identity = eventIdentity ?? measurementPresentedIdentity(o.id);
+    final payload =
+        eventPayload ??
+        <String, Object?>{
+          'assignedTreatment': o.assignedTreatment.wireName,
+          'effectivePresentation': o.effectivePresentation.wireName,
+          'entryAttemptId': o.entryAttemptId,
+          'catalogVersion': run['catalog_version'],
+        };
+    if (eventPayload == null) {
+      validateMeasurementPresentedPayload(payload);
+    }
+    return event.length == 22 &&
+        event['event_id'] == researchEventId(identity, at) &&
+        event['event_type'] == (type ?? measurementPresentedEventType) &&
         event['event_version'] == measurementPresentedEventVersion &&
         event['owner_id'] == o.ownerId &&
         event['actor_identity'] == o.ownerId &&
@@ -318,6 +409,78 @@ final class DriftMotivationMeasurementTimingReader
         _integer(assignment['assigned_at_utc_ms']) <=
             at.millisecondsSinceEpoch &&
         _integer(permit['issued_at_utc_ms']) <= at.millisecondsSinceEpoch;
+  }
+
+  static bool _changedMatches(
+    MeasurementOpportunity o,
+    List<Map<String, Object?>> events,
+    Map<String, Object?> run,
+    Map<String, Object?> assignment,
+    Map<String, Object?> permit, {
+    DateTime? notAfter,
+  }) {
+    if (events.length != o.lastSwitchOrdinal ||
+        (o.presentation == null && o.totalSwitches != 0)) {
+      return false;
+    }
+    if (o.presentation == null) {
+      return true;
+    }
+    final byOrdinal = <int, Map<String, Object?>>{};
+    for (final row in events) {
+      final payload =
+          jsonDecode(row['payload_json']! as String) as Map<String, dynamic>;
+      validateMeasurementPresentationChangedPayload(payload);
+      final ordinal = payload['switchOrdinal']! as int;
+      if (byOrdinal.containsKey(ordinal)) {
+        return false;
+      }
+      byOrdinal[ordinal] = row;
+    }
+    var previous = o.presentation!.occurredAtUtc;
+    for (var ordinal = 1; ordinal <= o.lastSwitchOrdinal; ordinal++) {
+      final row = byOrdinal[ordinal];
+      if (row == null) {
+        return false;
+      }
+      final at = researchEventOccurrence(
+        _string(row['event_id']),
+        DateTime.fromMillisecondsSinceEpoch(
+          _integer(row['occurred_at_utc']) * 1000,
+          isUtc: true,
+        ),
+      );
+      final from = ordinal.isOdd
+          ? o.effectivePresentation
+          : oppositePresentation(o.effectivePresentation);
+      final payload = <String, Object?>{
+        'assignedTreatment': o.assignedTreatment.wireName,
+        'effectivePresentation': oppositePresentation(from).wireName,
+        'fromPresentation': from.wireName,
+        'switchOrdinal': ordinal,
+      };
+      if (at.isBefore(previous) ||
+          (notAfter != null && at.isAfter(notAfter)) ||
+          (o.closedAtUtc != null && at.isAfter(o.closedAtUtc!)) ||
+          !_eventMatches(
+            o,
+            row,
+            run,
+            assignment,
+            permit,
+            occurrence: at,
+            eventIdentity: measurementPresentationChangedIdentity(
+              o.id,
+              ordinal,
+            ),
+            type: measurementPresentationChangedEventType,
+            eventPayload: payload,
+          )) {
+        return false;
+      }
+      previous = at;
+    }
+    return true;
   }
 
   static MeasurementOpportunity _opportunity(Map<String, Object?> row) {
@@ -375,6 +538,41 @@ final class DriftMotivationMeasurementTimingReader
         (index == null || closed.isBefore(index.startedAtUtc))) {
       throw const FormatException('Invalid opportunity closure');
     }
+    final ordinal = _integer(row['last_switch_ordinal']);
+    final suppressed = _integer(row['suppressed_switch_count']);
+    validatePresentationCounters(ordinal, suppressed);
+    final startedPresentation = row['started_effective_presentation'] == null
+        ? null
+        : TodayExperiencePresentationCodec.decode(
+            row['started_effective_presentation'],
+          );
+    if ((index == null) != (startedPresentation == null)) {
+      throw const FormatException('Invalid Started presentation snapshot');
+    }
+    final pending = row['pending_presentation_change_json'] == null
+        ? null
+        : PendingPresentationChange.fromJson(
+            _string(row['pending_presentation_change_json']),
+          );
+    final firstPresentation = TodayExperiencePresentationCodec.decode(
+      row['effective_presentation'],
+    );
+    final currentPresentation = (ordinal + suppressed).isEven
+        ? firstPresentation
+        : oppositePresentation(firstPresentation);
+    if (pending != null &&
+        (pending.ownerId != owner ||
+            pending.opportunityId != id ||
+            pending.entryAttemptId != entry ||
+            pending.baseRevision + 1 != revision ||
+            pending.baseOrdinal != ordinal ||
+            pending.baseSuppressed != suppressed ||
+            pending.from != currentPresentation ||
+            presentation == null ||
+            pending.preparedAtUtc.isBefore(presentation.occurredAtUtc) ||
+            closed != null)) {
+      throw const FormatException('Invalid pending presentation binding');
+    }
     return MeasurementOpportunity(
       id: id,
       ownerId: owner,
@@ -392,6 +590,10 @@ final class DriftMotivationMeasurementTimingReader
       presentation: presentation,
       indexLink: index,
       closedAtUtc: closed,
+      lastSwitchOrdinal: ordinal,
+      suppressedSwitchCount: suppressed,
+      startedEffectivePresentation: startedPresentation,
+      pendingPresentationChange: pending,
     );
   }
 

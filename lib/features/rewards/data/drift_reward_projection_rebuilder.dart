@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../domain/reward_ledger.dart';
 
 final class DriftRewardProjectionRebuilder {
@@ -61,11 +62,30 @@ final class DriftRewardProjectionRebuilder {
   Future<Map<String, RewardLedgerEntry>> _materializeCredits(
     String ownerId,
   ) async {
-    final attempts =
-        await (database.select(database.answerAttempts)..where(
-              (r) => r.ownerId.equals(ownerId) & r.isCorrect.equals(true),
+    final stored = await (database.select(
+      database.answerAttempts,
+    )..where((r) => r.ownerId.equals(ownerId))).get();
+    final assessmentSessions =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.activityType.equals('assessment'),
             ))
             .get();
+    final excludedSessions = assessmentSessions.map((row) => row.id).toSet();
+    final excludedSources = {...excludedSessions};
+    final attempts = <db.AnswerAttempt>[];
+    for (final row in stored) {
+      if (excludedSessions.contains(row.sessionId) ||
+          !LearningEvidenceContract.validEvidenceMetadata(
+            evidenceClass: row.evidenceClass,
+            evidenceContextJson: row.evidenceContextJson,
+          )) {
+        excludedSources.add(row.id);
+      } else if (row.isCorrect) {
+        attempts.add(row);
+      }
+    }
     final correct = {for (final a in attempts) a.id: a};
     final evidence = <String, RewardLedgerEntry>{};
     for (final a in attempts) {
@@ -94,6 +114,7 @@ final class DriftRewardProjectionRebuilder {
             .get();
     final covered = <String>{};
     for (final row in legacy) {
+      if (excludedSources.contains(row.sourceEventId)) continue;
       final source = correct[row.sourceEventId];
       if (source != null &&
           row.amount == 1 &&

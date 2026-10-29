@@ -572,7 +572,11 @@ void main() {
         expect(result.localRevision, 1);
         expect(result.presentation, isNull);
         expect(result.indexLink, isNull);
-        expect(row.keys, hasLength(15));
+        expect(row.keys, hasLength(19));
+        expect(row['last_switch_ordinal'], 0);
+        expect(row['suppressed_switch_count'], 0);
+        expect(row['started_effective_presentation'], isNull);
+        expect(row['pending_presentation_change_json'], isNull);
         expect(row['permit_id'], fixture.participation.current.id);
         expect(row['assigned_treatment'], 'standard');
         expect(row['effective_presentation'], 'standard');

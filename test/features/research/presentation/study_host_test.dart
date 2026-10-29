@@ -728,7 +728,7 @@ Future<void> _until(
 }
 
 // UI orchestration uses real signed synthetic repositories; runtime port policy has separate tests.
-final class _UiRuntime implements StudyRuntime {
+final class _UiRuntime extends Fake implements StudyRuntime {
   _UiRuntime(this.fixture) {
     final study = fixture.participation.assignments.binding.study;
     final owners = DriftLocalOwnerRepository(

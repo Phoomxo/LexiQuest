@@ -21895,6 +21895,62 @@ class $MeasurementOpportunitiesTable extends MeasurementOpportunities
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastSwitchOrdinalMeta = const VerificationMeta(
+    'lastSwitchOrdinal',
+  );
+  @override
+  late final GeneratedColumn<int> lastSwitchOrdinal = GeneratedColumn<int>(
+    'last_switch_ordinal',
+    aliasedName,
+    false,
+    check: () =>
+        const CustomExpression<bool>('last_switch_ordinal BETWEEN 0 AND 10'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _suppressedSwitchCountMeta =
+      const VerificationMeta('suppressedSwitchCount');
+  @override
+  late final GeneratedColumn<int> suppressedSwitchCount = GeneratedColumn<int>(
+    'suppressed_switch_count',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>(
+      'suppressed_switch_count >= 0 AND (suppressed_switch_count = 0 OR last_switch_ordinal = 10)',
+    ),
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _startedEffectivePresentationMeta =
+      const VerificationMeta('startedEffectivePresentation');
+  @override
+  late final GeneratedColumn<String>
+  startedEffectivePresentation = GeneratedColumn<String>(
+    'started_effective_presentation',
+    aliasedName,
+    true,
+    check: () => const CustomExpression<bool>(
+      "started_effective_presentation IS NULL OR started_effective_presentation IN ('standard', 'adventure')",
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pendingPresentationChangeJsonMeta =
+      const VerificationMeta('pendingPresentationChangeJson');
+  @override
+  late final GeneratedColumn<String>
+  pendingPresentationChangeJson = GeneratedColumn<String>(
+    'pending_presentation_change_json',
+    aliasedName,
+    true,
+    check: () => const CustomExpression<bool>(
+      'pending_presentation_change_json IS NULL OR length(CAST(pending_presentation_change_json AS BLOB)) BETWEEN 2 AND 2048',
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -21912,6 +21968,10 @@ class $MeasurementOpportunitiesTable extends MeasurementOpportunities
     learningSessionStartedAtUtcMs,
     isIndexSession,
     closedAtUtcMs,
+    lastSwitchOrdinal,
+    suppressedSwitchCount,
+    startedEffectivePresentation,
+    pendingPresentationChangeJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -22064,6 +22124,42 @@ class $MeasurementOpportunitiesTable extends MeasurementOpportunities
         ),
       );
     }
+    if (data.containsKey('last_switch_ordinal')) {
+      context.handle(
+        _lastSwitchOrdinalMeta,
+        lastSwitchOrdinal.isAcceptableOrUnknown(
+          data['last_switch_ordinal']!,
+          _lastSwitchOrdinalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('suppressed_switch_count')) {
+      context.handle(
+        _suppressedSwitchCountMeta,
+        suppressedSwitchCount.isAcceptableOrUnknown(
+          data['suppressed_switch_count']!,
+          _suppressedSwitchCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('started_effective_presentation')) {
+      context.handle(
+        _startedEffectivePresentationMeta,
+        startedEffectivePresentation.isAcceptableOrUnknown(
+          data['started_effective_presentation']!,
+          _startedEffectivePresentationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_presentation_change_json')) {
+      context.handle(
+        _pendingPresentationChangeJsonMeta,
+        pendingPresentationChangeJson.isAcceptableOrUnknown(
+          data['pending_presentation_change_json']!,
+          _pendingPresentationChangeJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -22141,6 +22237,22 @@ class $MeasurementOpportunitiesTable extends MeasurementOpportunities
         DriftSqlType.int,
         data['${effectivePrefix}closed_at_utc_ms'],
       ),
+      lastSwitchOrdinal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_switch_ordinal'],
+      )!,
+      suppressedSwitchCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}suppressed_switch_count'],
+      )!,
+      startedEffectivePresentation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}started_effective_presentation'],
+      ),
+      pendingPresentationChangeJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_presentation_change_json'],
+      ),
     );
   }
 
@@ -22167,6 +22279,10 @@ class MeasurementOpportunityRow extends DataClass
   final int? learningSessionStartedAtUtcMs;
   final bool isIndexSession;
   final int? closedAtUtcMs;
+  final int lastSwitchOrdinal;
+  final int suppressedSwitchCount;
+  final String? startedEffectivePresentation;
+  final String? pendingPresentationChangeJson;
   const MeasurementOpportunityRow({
     required this.id,
     required this.ownerId,
@@ -22183,6 +22299,10 @@ class MeasurementOpportunityRow extends DataClass
     this.learningSessionStartedAtUtcMs,
     required this.isIndexSession,
     this.closedAtUtcMs,
+    required this.lastSwitchOrdinal,
+    required this.suppressedSwitchCount,
+    this.startedEffectivePresentation,
+    this.pendingPresentationChangeJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -22213,6 +22333,18 @@ class MeasurementOpportunityRow extends DataClass
     map['is_index_session'] = Variable<bool>(isIndexSession);
     if (!nullToAbsent || closedAtUtcMs != null) {
       map['closed_at_utc_ms'] = Variable<int>(closedAtUtcMs);
+    }
+    map['last_switch_ordinal'] = Variable<int>(lastSwitchOrdinal);
+    map['suppressed_switch_count'] = Variable<int>(suppressedSwitchCount);
+    if (!nullToAbsent || startedEffectivePresentation != null) {
+      map['started_effective_presentation'] = Variable<String>(
+        startedEffectivePresentation,
+      );
+    }
+    if (!nullToAbsent || pendingPresentationChangeJson != null) {
+      map['pending_presentation_change_json'] = Variable<String>(
+        pendingPresentationChangeJson,
+      );
     }
     return map;
   }
@@ -22245,6 +22377,16 @@ class MeasurementOpportunityRow extends DataClass
       closedAtUtcMs: closedAtUtcMs == null && nullToAbsent
           ? const Value.absent()
           : Value(closedAtUtcMs),
+      lastSwitchOrdinal: Value(lastSwitchOrdinal),
+      suppressedSwitchCount: Value(suppressedSwitchCount),
+      startedEffectivePresentation:
+          startedEffectivePresentation == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startedEffectivePresentation),
+      pendingPresentationChangeJson:
+          pendingPresentationChangeJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingPresentationChangeJson),
     );
   }
 
@@ -22275,6 +22417,16 @@ class MeasurementOpportunityRow extends DataClass
       ),
       isIndexSession: serializer.fromJson<bool>(json['isIndexSession']),
       closedAtUtcMs: serializer.fromJson<int?>(json['closedAtUtcMs']),
+      lastSwitchOrdinal: serializer.fromJson<int>(json['lastSwitchOrdinal']),
+      suppressedSwitchCount: serializer.fromJson<int>(
+        json['suppressedSwitchCount'],
+      ),
+      startedEffectivePresentation: serializer.fromJson<String?>(
+        json['startedEffectivePresentation'],
+      ),
+      pendingPresentationChangeJson: serializer.fromJson<String?>(
+        json['pendingPresentationChangeJson'],
+      ),
     );
   }
   @override
@@ -22298,6 +22450,14 @@ class MeasurementOpportunityRow extends DataClass
       ),
       'isIndexSession': serializer.toJson<bool>(isIndexSession),
       'closedAtUtcMs': serializer.toJson<int?>(closedAtUtcMs),
+      'lastSwitchOrdinal': serializer.toJson<int>(lastSwitchOrdinal),
+      'suppressedSwitchCount': serializer.toJson<int>(suppressedSwitchCount),
+      'startedEffectivePresentation': serializer.toJson<String?>(
+        startedEffectivePresentation,
+      ),
+      'pendingPresentationChangeJson': serializer.toJson<String?>(
+        pendingPresentationChangeJson,
+      ),
     };
   }
 
@@ -22317,6 +22477,10 @@ class MeasurementOpportunityRow extends DataClass
     Value<int?> learningSessionStartedAtUtcMs = const Value.absent(),
     bool? isIndexSession,
     Value<int?> closedAtUtcMs = const Value.absent(),
+    int? lastSwitchOrdinal,
+    int? suppressedSwitchCount,
+    Value<String?> startedEffectivePresentation = const Value.absent(),
+    Value<String?> pendingPresentationChangeJson = const Value.absent(),
   }) => MeasurementOpportunityRow(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -22343,6 +22507,14 @@ class MeasurementOpportunityRow extends DataClass
     closedAtUtcMs: closedAtUtcMs.present
         ? closedAtUtcMs.value
         : this.closedAtUtcMs,
+    lastSwitchOrdinal: lastSwitchOrdinal ?? this.lastSwitchOrdinal,
+    suppressedSwitchCount: suppressedSwitchCount ?? this.suppressedSwitchCount,
+    startedEffectivePresentation: startedEffectivePresentation.present
+        ? startedEffectivePresentation.value
+        : this.startedEffectivePresentation,
+    pendingPresentationChangeJson: pendingPresentationChangeJson.present
+        ? pendingPresentationChangeJson.value
+        : this.pendingPresentationChangeJson,
   );
   MeasurementOpportunityRow copyWithCompanion(
     MeasurementOpportunitiesCompanion data,
@@ -22387,6 +22559,18 @@ class MeasurementOpportunityRow extends DataClass
       closedAtUtcMs: data.closedAtUtcMs.present
           ? data.closedAtUtcMs.value
           : this.closedAtUtcMs,
+      lastSwitchOrdinal: data.lastSwitchOrdinal.present
+          ? data.lastSwitchOrdinal.value
+          : this.lastSwitchOrdinal,
+      suppressedSwitchCount: data.suppressedSwitchCount.present
+          ? data.suppressedSwitchCount.value
+          : this.suppressedSwitchCount,
+      startedEffectivePresentation: data.startedEffectivePresentation.present
+          ? data.startedEffectivePresentation.value
+          : this.startedEffectivePresentation,
+      pendingPresentationChangeJson: data.pendingPresentationChangeJson.present
+          ? data.pendingPresentationChangeJson.value
+          : this.pendingPresentationChangeJson,
     );
   }
 
@@ -22409,7 +22593,15 @@ class MeasurementOpportunityRow extends DataClass
             'learningSessionStartedAtUtcMs: $learningSessionStartedAtUtcMs, ',
           )
           ..write('isIndexSession: $isIndexSession, ')
-          ..write('closedAtUtcMs: $closedAtUtcMs')
+          ..write('closedAtUtcMs: $closedAtUtcMs, ')
+          ..write('lastSwitchOrdinal: $lastSwitchOrdinal, ')
+          ..write('suppressedSwitchCount: $suppressedSwitchCount, ')
+          ..write(
+            'startedEffectivePresentation: $startedEffectivePresentation, ',
+          )
+          ..write(
+            'pendingPresentationChangeJson: $pendingPresentationChangeJson',
+          )
           ..write(')'))
         .toString();
   }
@@ -22431,6 +22623,10 @@ class MeasurementOpportunityRow extends DataClass
     learningSessionStartedAtUtcMs,
     isIndexSession,
     closedAtUtcMs,
+    lastSwitchOrdinal,
+    suppressedSwitchCount,
+    startedEffectivePresentation,
+    pendingPresentationChangeJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -22451,7 +22647,13 @@ class MeasurementOpportunityRow extends DataClass
           other.learningSessionStartedAtUtcMs ==
               this.learningSessionStartedAtUtcMs &&
           other.isIndexSession == this.isIndexSession &&
-          other.closedAtUtcMs == this.closedAtUtcMs);
+          other.closedAtUtcMs == this.closedAtUtcMs &&
+          other.lastSwitchOrdinal == this.lastSwitchOrdinal &&
+          other.suppressedSwitchCount == this.suppressedSwitchCount &&
+          other.startedEffectivePresentation ==
+              this.startedEffectivePresentation &&
+          other.pendingPresentationChangeJson ==
+              this.pendingPresentationChangeJson);
 }
 
 class MeasurementOpportunitiesCompanion
@@ -22471,6 +22673,10 @@ class MeasurementOpportunitiesCompanion
   final Value<int?> learningSessionStartedAtUtcMs;
   final Value<bool> isIndexSession;
   final Value<int?> closedAtUtcMs;
+  final Value<int> lastSwitchOrdinal;
+  final Value<int> suppressedSwitchCount;
+  final Value<String?> startedEffectivePresentation;
+  final Value<String?> pendingPresentationChangeJson;
   final Value<int> rowid;
   const MeasurementOpportunitiesCompanion({
     this.id = const Value.absent(),
@@ -22488,6 +22694,10 @@ class MeasurementOpportunitiesCompanion
     this.learningSessionStartedAtUtcMs = const Value.absent(),
     this.isIndexSession = const Value.absent(),
     this.closedAtUtcMs = const Value.absent(),
+    this.lastSwitchOrdinal = const Value.absent(),
+    this.suppressedSwitchCount = const Value.absent(),
+    this.startedEffectivePresentation = const Value.absent(),
+    this.pendingPresentationChangeJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MeasurementOpportunitiesCompanion.insert({
@@ -22506,6 +22716,10 @@ class MeasurementOpportunitiesCompanion
     this.learningSessionStartedAtUtcMs = const Value.absent(),
     this.isIndexSession = const Value.absent(),
     this.closedAtUtcMs = const Value.absent(),
+    this.lastSwitchOrdinal = const Value.absent(),
+    this.suppressedSwitchCount = const Value.absent(),
+    this.startedEffectivePresentation = const Value.absent(),
+    this.pendingPresentationChangeJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -22531,6 +22745,10 @@ class MeasurementOpportunitiesCompanion
     Expression<int>? learningSessionStartedAtUtcMs,
     Expression<bool>? isIndexSession,
     Expression<int>? closedAtUtcMs,
+    Expression<int>? lastSwitchOrdinal,
+    Expression<int>? suppressedSwitchCount,
+    Expression<String>? startedEffectivePresentation,
+    Expression<String>? pendingPresentationChangeJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -22551,6 +22769,13 @@ class MeasurementOpportunitiesCompanion
         'learning_session_started_at_utc_ms': learningSessionStartedAtUtcMs,
       if (isIndexSession != null) 'is_index_session': isIndexSession,
       if (closedAtUtcMs != null) 'closed_at_utc_ms': closedAtUtcMs,
+      if (lastSwitchOrdinal != null) 'last_switch_ordinal': lastSwitchOrdinal,
+      if (suppressedSwitchCount != null)
+        'suppressed_switch_count': suppressedSwitchCount,
+      if (startedEffectivePresentation != null)
+        'started_effective_presentation': startedEffectivePresentation,
+      if (pendingPresentationChangeJson != null)
+        'pending_presentation_change_json': pendingPresentationChangeJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -22571,6 +22796,10 @@ class MeasurementOpportunitiesCompanion
     Value<int?>? learningSessionStartedAtUtcMs,
     Value<bool>? isIndexSession,
     Value<int?>? closedAtUtcMs,
+    Value<int>? lastSwitchOrdinal,
+    Value<int>? suppressedSwitchCount,
+    Value<String?>? startedEffectivePresentation,
+    Value<String?>? pendingPresentationChangeJson,
     Value<int>? rowid,
   }) {
     return MeasurementOpportunitiesCompanion(
@@ -22591,6 +22820,13 @@ class MeasurementOpportunitiesCompanion
           learningSessionStartedAtUtcMs ?? this.learningSessionStartedAtUtcMs,
       isIndexSession: isIndexSession ?? this.isIndexSession,
       closedAtUtcMs: closedAtUtcMs ?? this.closedAtUtcMs,
+      lastSwitchOrdinal: lastSwitchOrdinal ?? this.lastSwitchOrdinal,
+      suppressedSwitchCount:
+          suppressedSwitchCount ?? this.suppressedSwitchCount,
+      startedEffectivePresentation:
+          startedEffectivePresentation ?? this.startedEffectivePresentation,
+      pendingPresentationChangeJson:
+          pendingPresentationChangeJson ?? this.pendingPresentationChangeJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -22647,6 +22883,24 @@ class MeasurementOpportunitiesCompanion
     if (closedAtUtcMs.present) {
       map['closed_at_utc_ms'] = Variable<int>(closedAtUtcMs.value);
     }
+    if (lastSwitchOrdinal.present) {
+      map['last_switch_ordinal'] = Variable<int>(lastSwitchOrdinal.value);
+    }
+    if (suppressedSwitchCount.present) {
+      map['suppressed_switch_count'] = Variable<int>(
+        suppressedSwitchCount.value,
+      );
+    }
+    if (startedEffectivePresentation.present) {
+      map['started_effective_presentation'] = Variable<String>(
+        startedEffectivePresentation.value,
+      );
+    }
+    if (pendingPresentationChangeJson.present) {
+      map['pending_presentation_change_json'] = Variable<String>(
+        pendingPresentationChangeJson.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -22673,6 +22927,14 @@ class MeasurementOpportunitiesCompanion
           )
           ..write('isIndexSession: $isIndexSession, ')
           ..write('closedAtUtcMs: $closedAtUtcMs, ')
+          ..write('lastSwitchOrdinal: $lastSwitchOrdinal, ')
+          ..write('suppressedSwitchCount: $suppressedSwitchCount, ')
+          ..write(
+            'startedEffectivePresentation: $startedEffectivePresentation, ',
+          )
+          ..write(
+            'pendingPresentationChangeJson: $pendingPresentationChangeJson, ',
+          )
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -42413,6 +42675,10 @@ typedef $$MeasurementOpportunitiesTableCreateCompanionBuilder =
       Value<int?> learningSessionStartedAtUtcMs,
       Value<bool> isIndexSession,
       Value<int?> closedAtUtcMs,
+      Value<int> lastSwitchOrdinal,
+      Value<int> suppressedSwitchCount,
+      Value<String?> startedEffectivePresentation,
+      Value<String?> pendingPresentationChangeJson,
       Value<int> rowid,
     });
 typedef $$MeasurementOpportunitiesTableUpdateCompanionBuilder =
@@ -42432,6 +42698,10 @@ typedef $$MeasurementOpportunitiesTableUpdateCompanionBuilder =
       Value<int?> learningSessionStartedAtUtcMs,
       Value<bool> isIndexSession,
       Value<int?> closedAtUtcMs,
+      Value<int> lastSwitchOrdinal,
+      Value<int> suppressedSwitchCount,
+      Value<String?> startedEffectivePresentation,
+      Value<String?> pendingPresentationChangeJson,
       Value<int> rowid,
     });
 
@@ -42600,6 +42870,26 @@ class $$MeasurementOpportunitiesTableFilterComposer
 
   ColumnFilters<int> get closedAtUtcMs => $composableBuilder(
     column: $table.closedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastSwitchOrdinal => $composableBuilder(
+    column: $table.lastSwitchOrdinal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get suppressedSwitchCount => $composableBuilder(
+    column: $table.suppressedSwitchCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startedEffectivePresentation => $composableBuilder(
+    column: $table.startedEffectivePresentation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingPresentationChangeJson => $composableBuilder(
+    column: $table.pendingPresentationChangeJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -42780,6 +43070,28 @@ class $$MeasurementOpportunitiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get lastSwitchOrdinal => $composableBuilder(
+    column: $table.lastSwitchOrdinal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get suppressedSwitchCount => $composableBuilder(
+    column: $table.suppressedSwitchCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startedEffectivePresentation =>
+      $composableBuilder(
+        column: $table.startedEffectivePresentation,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get pendingPresentationChangeJson =>
+      $composableBuilder(
+        column: $table.pendingPresentationChangeJson,
+        builder: (column) => ColumnOrderings(column),
+      );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -42954,6 +43266,28 @@ class $$MeasurementOpportunitiesTableAnnotationComposer
     column: $table.closedAtUtcMs,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get lastSwitchOrdinal => $composableBuilder(
+    column: $table.lastSwitchOrdinal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get suppressedSwitchCount => $composableBuilder(
+    column: $table.suppressedSwitchCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get startedEffectivePresentation =>
+      $composableBuilder(
+        column: $table.startedEffectivePresentation,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get pendingPresentationChangeJson =>
+      $composableBuilder(
+        column: $table.pendingPresentationChangeJson,
+        builder: (column) => column,
+      );
 
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
@@ -43137,6 +43471,12 @@ class $$MeasurementOpportunitiesTableTableManager
                     const Value.absent(),
                 Value<bool> isIndexSession = const Value.absent(),
                 Value<int?> closedAtUtcMs = const Value.absent(),
+                Value<int> lastSwitchOrdinal = const Value.absent(),
+                Value<int> suppressedSwitchCount = const Value.absent(),
+                Value<String?> startedEffectivePresentation =
+                    const Value.absent(),
+                Value<String?> pendingPresentationChangeJson =
+                    const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MeasurementOpportunitiesCompanion(
                 id: id,
@@ -43154,6 +43494,10 @@ class $$MeasurementOpportunitiesTableTableManager
                 learningSessionStartedAtUtcMs: learningSessionStartedAtUtcMs,
                 isIndexSession: isIndexSession,
                 closedAtUtcMs: closedAtUtcMs,
+                lastSwitchOrdinal: lastSwitchOrdinal,
+                suppressedSwitchCount: suppressedSwitchCount,
+                startedEffectivePresentation: startedEffectivePresentation,
+                pendingPresentationChangeJson: pendingPresentationChangeJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -43174,6 +43518,12 @@ class $$MeasurementOpportunitiesTableTableManager
                     const Value.absent(),
                 Value<bool> isIndexSession = const Value.absent(),
                 Value<int?> closedAtUtcMs = const Value.absent(),
+                Value<int> lastSwitchOrdinal = const Value.absent(),
+                Value<int> suppressedSwitchCount = const Value.absent(),
+                Value<String?> startedEffectivePresentation =
+                    const Value.absent(),
+                Value<String?> pendingPresentationChangeJson =
+                    const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MeasurementOpportunitiesCompanion.insert(
                 id: id,
@@ -43191,6 +43541,10 @@ class $$MeasurementOpportunitiesTableTableManager
                 learningSessionStartedAtUtcMs: learningSessionStartedAtUtcMs,
                 isIndexSession: isIndexSession,
                 closedAtUtcMs: closedAtUtcMs,
+                lastSwitchOrdinal: lastSwitchOrdinal,
+                suppressedSwitchCount: suppressedSwitchCount,
+                startedEffectivePresentation: startedEffectivePresentation,
+                pendingPresentationChangeJson: pendingPresentationChangeJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

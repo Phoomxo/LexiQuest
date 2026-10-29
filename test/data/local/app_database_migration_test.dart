@@ -4,85 +4,88 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version sixteen with product tables', () async {
-    final database = AppDatabase(NativeDatabase.memory());
-    addTearDown(database.close);
+  test(
+    'new databases use schema version seventeen with product tables',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
 
-    expect(database.schemaVersion, 16);
+      expect(database.schemaVersion, 17);
 
-    final categoryColumns = await _columnNames(
-      database,
-      'vocabulary_categories',
-    );
-    final wordColumns = await _columnNames(database, 'vocabulary_words');
-    final outboxColumns = await _columnNames(database, 'outbox_operations');
-    final conflictColumns = await _columnNames(database, 'sync_conflicts');
-    final tables = await database
-        .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
-        .map((row) => row.read<String>('name'))
-        .get();
+      final categoryColumns = await _columnNames(
+        database,
+        'vocabulary_categories',
+      );
+      final wordColumns = await _columnNames(database, 'vocabulary_words');
+      final outboxColumns = await _columnNames(database, 'outbox_operations');
+      final conflictColumns = await _columnNames(database, 'sync_conflicts');
+      final tables = await database
+          .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .map((row) => row.read<String>('name'))
+          .get();
 
-    expect(
-      categoryColumns,
-      containsAll(<String>[
-        'cloud_revision',
-        'last_acknowledged_at_utc_ms',
-        'server_updated_at_utc_ms',
-      ]),
-    );
-    expect(
-      wordColumns,
-      containsAll(<String>[
-        'cloud_revision',
-        'last_acknowledged_at_utc_ms',
-        'server_updated_at_utc_ms',
-      ]),
-    );
-    expect(
-      outboxColumns,
-      containsAll(<String>[
-        'lease_token',
-        'lease_expires_at_utc_ms',
-        'last_attempt_at_utc_ms',
-      ]),
-    );
-    expect(
-      conflictColumns,
-      containsAll(<String>['local_snapshot_json', 'cloud_snapshot_json']),
-    );
-    expect(tables, contains('runtime_flags'));
-    expect(
-      tables,
-      containsAll(<String>[
-        'reward_transactions',
-        'owned_reward_items',
-        'equipped_reward_items',
-      ]),
-    );
-    expect(
-      await _columnNames(database, 'reading_events'),
-      contains('document_revision'),
-    );
-    expect(
-      await _columnNames(database, 'model_downloads'),
-      contains('failure_code'),
-    );
-    final indexes = await database
-        .customSelect(
-          "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_learning_%'",
-        )
-        .map((row) => row.read<String>('name'))
-        .get();
-    expect(
-      indexes,
-      containsAll(<String>[
-        'idx_learning_sessions_owner_started',
-        'idx_learning_attempts_owner_word_time',
-        'idx_learning_srs_owner_due',
-        'idx_learning_reading_owner_document',
-      ]),
-    );
-  });
+      expect(
+        categoryColumns,
+        containsAll(<String>[
+          'cloud_revision',
+          'last_acknowledged_at_utc_ms',
+          'server_updated_at_utc_ms',
+        ]),
+      );
+      expect(
+        wordColumns,
+        containsAll(<String>[
+          'cloud_revision',
+          'last_acknowledged_at_utc_ms',
+          'server_updated_at_utc_ms',
+        ]),
+      );
+      expect(
+        outboxColumns,
+        containsAll(<String>[
+          'lease_token',
+          'lease_expires_at_utc_ms',
+          'last_attempt_at_utc_ms',
+        ]),
+      );
+      expect(
+        conflictColumns,
+        containsAll(<String>['local_snapshot_json', 'cloud_snapshot_json']),
+      );
+      expect(tables, contains('runtime_flags'));
+      expect(
+        tables,
+        containsAll(<String>[
+          'reward_transactions',
+          'owned_reward_items',
+          'equipped_reward_items',
+        ]),
+      );
+      expect(
+        await _columnNames(database, 'reading_events'),
+        contains('document_revision'),
+      );
+      expect(
+        await _columnNames(database, 'model_downloads'),
+        contains('failure_code'),
+      );
+      final indexes = await database
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_learning_%'",
+          )
+          .map((row) => row.read<String>('name'))
+          .get();
+      expect(
+        indexes,
+        containsAll(<String>[
+          'idx_learning_sessions_owner_started',
+          'idx_learning_attempts_owner_word_time',
+          'idx_learning_srs_owner_due',
+          'idx_learning_reading_owner_document',
+        ]),
+      );
+    },
+  );
 
   test(
     'schema one upgrades to a complete schema six without row loss',
@@ -124,7 +127,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 16);
+      expect(version, 17);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -202,7 +205,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        16,
+        17,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +232,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        16,
+        17,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

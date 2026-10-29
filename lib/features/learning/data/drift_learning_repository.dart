@@ -158,6 +158,19 @@ final class DriftLearningRepository
   Future<AnswerRecordResult> _recordAnswer(RecordAnswerCommand command) {
     _validateAnswer(command);
     return database.transaction(() async {
+      final assessmentSession =
+          await (database.select(database.learningSessions)..where(
+                (row) =>
+                    row.id.equals(command.sessionId) &
+                    row.ownerId.equals(command.ownerId) &
+                    row.activityType.equals('assessment'),
+              ))
+              .getSingleOrNull();
+      if (assessmentSession != null) {
+        throw StateError(
+          'Assessment answers require the dedicated Assessment writer',
+        );
+      }
       final existing = await (database.select(
         database.answerAttempts,
       )..where((row) => row.id.equals(command.id))).getSingleOrNull();
@@ -169,6 +182,9 @@ final class DriftLearningRepository
           ownerId: command.ownerId,
           wordId: command.wordId,
         );
+        if (srs == null) {
+          throw StateError('ordinary answer has no ordinary SRS evidence');
+        }
         await projections.rebuildSession(
           ownerId: command.ownerId,
           sessionId: command.sessionId,
@@ -225,6 +241,9 @@ final class DriftLearningRepository
         ownerId: command.ownerId,
         wordId: command.wordId,
       );
+      if (next == null) {
+        throw StateError('ordinary answer has no ordinary SRS evidence');
+      }
       await projections.rebuildSession(
         ownerId: command.ownerId,
         sessionId: command.sessionId,
@@ -288,6 +307,11 @@ final class DriftLearningRepository
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      if (row.activityType == 'assessment') {
+        throw StateError(
+          'Assessment completion requires the dedicated Assessment writer',
+        );
+      }
       if (row.state != 'active' && row.state != 'completed') {
         throw StateError('learning session cannot be completed');
       }

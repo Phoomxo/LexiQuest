@@ -161,7 +161,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      16,
+      17,
     );
     expect(before, hasLength(31));
     expect(database.allTables, hasLength(34));

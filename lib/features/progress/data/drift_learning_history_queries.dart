@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../domain/learning_history_models.dart';
 
 final class DriftLearningHistoryQueries {
@@ -27,30 +28,14 @@ final class DriftLearningHistoryQueries {
       final rows = await database
           .customSelect(
             '''
-WITH page AS (
   SELECT id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms,
          (accepted_plan_id IS NOT NULL AND accepted_plan_json IS NOT NULL
           AND checkpoint_revision >= 1 AND checkpoint_json IS NOT NULL) AS has_accepted_quiz
   FROM learning_sessions
-  WHERE owner_id = ?
+  WHERE owner_id = ? AND activity_type <> 'assessment'
   ${before == null ? '' : 'AND (started_at_utc_ms < ? OR (started_at_utc_ms = ? AND id < ?))'}
   ORDER BY started_at_utc_ms DESC, id DESC
   LIMIT ?
-), answer_counts AS (
-  SELECT a.owner_id, a.session_id, COUNT(*) AS answer_count,
-         SUM(CASE WHEN a.is_correct = 1 THEN 1 ELSE 0 END) AS correct_count
-  FROM answer_attempts a
-  WHERE a.owner_id = ?
-    AND a.session_id IN (SELECT id FROM page)
-  GROUP BY a.owner_id, a.session_id
-)
-SELECT s.id, s.activity_type, s.state, s.started_at_utc_ms, s.ended_at_utc_ms,
-       s.has_accepted_quiz,
-       COALESCE(a.answer_count, 0) AS answer_count,
-       COALESCE(a.correct_count, 0) AS correct_count
-FROM page s
-LEFT JOIN answer_counts a ON a.session_id = s.id AND a.owner_id = s.owner_id
-ORDER BY s.started_at_utc_ms DESC, s.id DESC
 ''',
             variables: [
               Variable.withString(ownerId),
@@ -60,11 +45,33 @@ ORDER BY s.started_at_utc_ms DESC, s.id DESC
                 Variable.withString(before.sessionId),
               ],
               Variable.withInt(pageSize + 1),
-              Variable.withString(ownerId),
             ],
             readsFrom: {database.learningSessions, database.answerAttempts},
           )
           .get();
+      final pageAttempts =
+          await (database.select(database.answerAttempts)..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.sessionId.isIn(
+                      rows.map((row) => row.read<String>('id')),
+                    ),
+              ))
+              .get();
+      final answerCounts = <String, (int, int)>{};
+      for (final attempt in pageAttempts) {
+        if (!LearningEvidenceContract.validEvidenceMetadata(
+          evidenceClass: attempt.evidenceClass,
+          evidenceContextJson: attempt.evidenceContextJson,
+        )) {
+          continue;
+        }
+        final previous = answerCounts[attempt.sessionId] ?? (0, 0);
+        answerCounts[attempt.sessionId] = (
+          previous.$1 + 1,
+          previous.$2 + (attempt.isCorrect ? 1 : 0),
+        );
+      }
       final entries = rows
           .take(pageSize)
           .map(
@@ -82,8 +89,8 @@ ORDER BY s.started_at_utc_ms DESC, s.id DESC
                       row.read<int>('ended_at_utc_ms'),
                       isUtc: true,
                     ),
-              answerCount: row.read<int>('answer_count'),
-              correctCount: row.read<int>('correct_count'),
+              answerCount: answerCounts[row.read<String>('id')]?.$1 ?? 0,
+              correctCount: answerCounts[row.read<String>('id')]?.$2 ?? 0,
               hasAcceptedQuiz: row.read<int>('has_accepted_quiz') == 1,
             ),
           )
@@ -102,11 +109,11 @@ ORDER BY s.started_at_utc_ms DESC, s.id DESC
       final answers = await database
           .customSelect(
             '''
-SELECT a.occurred_at_utc_ms, COUNT(*) AS answer_count
+SELECT a.occurred_at_utc_ms, a.evidence_class, a.evidence_context_json
 FROM answer_attempts a
 INNER JOIN learning_sessions s ON s.id = a.session_id AND s.owner_id = a.owner_id
 WHERE a.owner_id = ? AND a.occurred_at_utc_ms >= ? AND a.occurred_at_utc_ms < ?
-GROUP BY a.occurred_at_utc_ms
+  AND s.activity_type <> 'assessment'
 ''',
             variables: [
               Variable.withString(ownerId),
@@ -118,16 +125,18 @@ GROUP BY a.occurred_at_utc_ms
           .get();
       final counts = <DateTime, int>{};
       for (final answer in answers) {
+        if (!LearningEvidenceContract.validEvidenceMetadata(
+          evidenceClass: answer.read<String>('evidence_class'),
+          evidenceContextJson: answer.read<String>('evidence_context_json'),
+        )) {
+          continue;
+        }
         final local = DateTime.fromMillisecondsSinceEpoch(
           answer.read<int>('occurred_at_utc_ms'),
           isUtc: true,
         ).toLocal();
         final day = DateTime(local.year, local.month, local.day);
-        counts.update(
-          day,
-          (count) => count + answer.read<int>('answer_count'),
-          ifAbsent: () => answer.read<int>('answer_count'),
-        );
+        counts.update(day, (count) => count + 1, ifAbsent: () => 1);
       }
       return LearningHistorySnapshot(
         ownerId: ownerId,

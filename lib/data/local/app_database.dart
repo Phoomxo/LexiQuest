@@ -69,7 +69,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -218,6 +218,27 @@ final class AppDatabase extends _$AppDatabase {
             column,
           );
         }
+      }
+      if (from < 17) {
+        for (final column in <GeneratedColumn<Object>>[
+          measurementOpportunities.lastSwitchOrdinal,
+          measurementOpportunities.suppressedSwitchCount,
+          measurementOpportunities.startedEffectivePresentation,
+          measurementOpportunities.pendingPresentationChangeJson,
+        ]) {
+          await _addColumnIfMissing(
+            migrator,
+            'measurement_opportunities',
+            measurementOpportunities,
+            column,
+          );
+        }
+        await customStatement(
+          'UPDATE measurement_opportunities '
+          'SET started_effective_presentation = effective_presentation '
+          'WHERE learning_session_id IS NOT NULL '
+          'AND started_effective_presentation IS NULL',
+        );
       }
     },
     beforeOpen: (details) async {

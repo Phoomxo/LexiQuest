@@ -12,6 +12,7 @@ import '../../adventure/presentation/study_presentations.dart';
 import '../../learning/domain/learning_models.dart';
 import '../application/study_runtime.dart';
 import '../domain/motivation_instrument.dart';
+import '../domain/measurement_opportunity.dart' show oppositePresentation;
 import '../domain/motivation_measurement.dart';
 import 'motivation_measurement_form.dart';
 
@@ -23,6 +24,15 @@ typedef _PresentationBinding = ({
   String mission,
   String language,
   TodayExperiencePresentation presentation,
+});
+
+typedef _PresentationChange = ({
+  StudyRuntime runtime,
+  String owner,
+  String opportunity,
+  String attempt,
+  int expectedRevision,
+  TodayExperiencePresentation target,
 });
 
 class StudyHost extends StatefulWidget {
@@ -73,6 +83,8 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   Timer? _expiry;
   ({StudyRuntime runtime, String owner, String entry})? _opening;
   bool _openingMayRender = false;
+  _PresentationChange? _change;
+  bool _changeMayRender = false;
 
   bool get _thai => widget.languageCode != 'en';
   String _text(String th, String en) => _thai ? th : en;
@@ -162,6 +174,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
 
   void _invalidate() {
     _invalidateOpening();
+    _invalidateChange();
     _generation++;
     _expiry?.cancel();
     _formCurrent.value = false;
@@ -190,6 +203,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   @override
   void dispose() {
     _invalidateOpening();
+    _invalidateChange();
     _generation++;
     _binding++;
     _expiry?.cancel();
@@ -211,6 +225,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     } on Object {
       if (_current(generation)) {
         if (_openingMayRender) _invalidateOpening(forget: false);
+        if (_changeMayRender) _invalidateChange(forget: false);
         _expiry?.cancel();
         _formCurrent.value = false;
         setState(() {
@@ -230,6 +245,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     Future<StudyView> Function() read,
     int generation, {
     bool alreadyPrepared = false,
+    _PresentationChange? presentationChange,
   }) async {
     final elapsed = Stopwatch()..start();
     var view = await read();
@@ -300,6 +316,22 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       );
       _openingMayRender = true;
     }
+    if (presentationChange != null) {
+      final pending = view.opportunity?.pendingPresentationChange;
+      if (_change != presentationChange ||
+          pending == null ||
+          pending.attemptId != presentationChange.attempt ||
+          pending.opportunityId != presentationChange.opportunity ||
+          pending.ownerId != presentationChange.owner) {
+        throw StateError('target frame has no live prepared change');
+      }
+      presentationChange.runtime.markPresentationChangeMayRender(
+        presentationChange.owner,
+        presentationChange.opportunity,
+        attemptId: presentationChange.attempt,
+      );
+      _changeMayRender = true;
+    }
     setState(() {
       _view = view;
       _rendered = null;
@@ -311,6 +343,8 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
         (view.phase == StudyPhase.baseline || view.phase == StudyPhase.post);
     if (widget._postOnly && view.phase != StudyPhase.post) {
       _closePost(generation);
+    } else if (presentationChange != null) {
+      _afterPresentationFrame(view, generation, change: presentationChange);
     } else if (view.phase == StudyPhase.ready &&
         view.opportunity?.presentation == null) {
       _afterPresentationFrame(view, generation);
@@ -318,6 +352,14 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   }
 
   Future<void> _reload() => _run((generation) {
+    final change = _change;
+    if (change != null && !_changeMayRender) {
+      return _readView(
+        () => _prepareChange(change, generation),
+        generation,
+        presentationChange: change,
+      );
+    }
     final retryPreparation = _opening != null && !_openingMayRender;
     return _readView(
       retryPreparation
@@ -359,6 +401,58 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     }
   }
 
+  void _invalidateChange({bool forget = true}) {
+    final change = _change;
+    if (change != null) {
+      change.runtime.invalidatePresentationChange(
+        change.owner,
+        change.opportunity,
+        attemptId: change.attempt,
+      );
+    }
+    if (forget) {
+      _change = null;
+      _changeMayRender = false;
+    }
+  }
+
+  Future<StudyView> _prepareChange(
+    _PresentationChange change,
+    int generation,
+  ) => change.runtime.preparePresentationChange(
+    change.owner,
+    change.opportunity,
+    attemptId: change.attempt,
+    expectedRevision: change.expectedRevision,
+    target: change.target,
+    stillCurrent: () =>
+        _current(generation) && _change == change && !_changeMayRender,
+  );
+
+  Future<void> _switchPresentation(StudyView view) => _run((generation) async {
+    final opportunity = view.opportunity;
+    if (!identical(view, _view) ||
+        opportunity?.presentation == null ||
+        opportunity!.pendingPresentationChange != null) {
+      throw StateError('study presentation cannot change');
+    }
+    final change = (
+      runtime: widget.runtime,
+      owner: widget.ownerId,
+      opportunity: opportunity.id,
+      attempt: const Uuid().v4(),
+      expectedRevision: opportunity.localRevision,
+      target: oppositePresentation(opportunity.currentPresentation),
+    );
+    _change = change;
+    _changeMayRender = false;
+    await _readView(
+      () => _prepareChange(change, generation),
+      generation,
+      presentationChange: change,
+    );
+  });
+
   Future<void> _begin() => _run(
     (generation) =>
         _readView(() => widget.runtime.begin(widget.ownerId), generation),
@@ -375,7 +469,22 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
                 view.opportunity!.assignedTreatment != decoded))) {
       throw StateError('study presentation is unavailable');
     }
-    return decoded;
+    final opportunity = view.opportunity;
+    final pending = opportunity?.pendingPresentationChange;
+    if (pending != null) {
+      final change = _change;
+      if (change == null ||
+          !identical(change.runtime, widget.runtime) ||
+          change.owner != widget.ownerId ||
+          change.opportunity != opportunity!.id ||
+          change.attempt != pending.attemptId ||
+          change.target != pending.to ||
+          change.expectedRevision != pending.baseRevision) {
+        throw StateError('pending presentation has no original process handle');
+      }
+      return pending.to;
+    }
+    return opportunity?.currentPresentation ?? decoded;
   }
 
   _PresentationBinding _presentationBinding(StudyView view) => (
@@ -404,7 +513,11 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
         actual.presentation == binding.presentation;
   }
 
-  void _afterPresentationFrame(StudyView view, int generation) {
+  void _afterPresentationFrame(
+    StudyView view,
+    int generation, {
+    _PresentationChange? change,
+  }) {
     final binding = _presentationBinding(view);
     if (_scheduled == binding) return;
     _scheduled = binding;
@@ -422,7 +535,31 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
         _run((current) async {
           final opportunity = view.opportunity;
           final opening = _opening;
-          if (opportunity == null || opening == null || !_openingMayRender) {
+          if (change != null) {
+            if (_change != change ||
+                !_changeMayRender ||
+                opportunity?.id != change.opportunity) {
+              throw StateError('target frame has no prepared change');
+            }
+            await _readView(
+              () => change.runtime.recordPresentationChanged(
+                change.owner,
+                change.opportunity,
+                attemptId: change.attempt,
+                stillVisible: () =>
+                    _change == change &&
+                    _changeMayRender &&
+                    _stillPresented(view, binding, current),
+              ),
+              current,
+            );
+            if (_current(current) && _change == change) {
+              _change = null;
+              _changeMayRender = false;
+            }
+          } else if (opportunity == null ||
+              opening == null ||
+              !_openingMayRender) {
             throw StateError('target frame has no prepared opening');
           } else {
             await _readView(
@@ -642,10 +779,17 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
           catalog: view.catalog,
           presentation: presentation,
           index: view.index,
-          canStart: view.canStart || view.phase == StudyPhase.activeIndex,
+          canStart:
+              view.opportunity?.pendingPresentationChange == null &&
+              (view.canStart || view.phase == StudyPhase.activeIndex),
           busy: _busy,
           languageCode: widget.languageCode,
           onStart: () => _launch(view),
+          onSwitch:
+              view.opportunity?.presentation != null &&
+                  view.opportunity?.pendingPresentationChange == null
+              ? () => _switchPresentation(view)
+              : null,
         );
       case StudyPhase.completed:
         return _message(

@@ -75,6 +75,27 @@ abstract final class LearningEvidenceContract {
     }
   }
 
+  /// Checks stored Assessment shape, not run linkage or current authority.
+  static bool strictAssessmentShape({
+    required String persistedEvidenceClass,
+    required EvidenceContext context,
+  }) {
+    try {
+      context.validate();
+      return persistedEvidenceClass == EvidenceClass.assessment.name &&
+          context.evidenceClass == EvidenceClass.assessment &&
+          context.classificationSource ==
+              EvidenceClassificationSource.declared &&
+          context.rolloutMode == EvidencePolicyRolloutMode.enforced &&
+          context.hintLevel == 0 &&
+          !context.engagementAllowed;
+    } on FormatException {
+      return false;
+    } on ArgumentError {
+      return false;
+    }
+  }
+
   static bool validText(String value, {required int maxLength}) {
     final length = value.runes.length;
     return value.trim().isNotEmpty && length <= maxLength;

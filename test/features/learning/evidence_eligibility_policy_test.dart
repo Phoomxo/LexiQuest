@@ -146,9 +146,22 @@ void main() {
                 LearningProjection.xp,
                 LearningProjection.coins,
               }.contains(projection);
+          final hasAssessmentSafetyFloor =
+              evidenceClass == EvidenceClass.assessment &&
+              const <LearningProjection>{
+                LearningProjection.masterySrs,
+                LearningProjection.pronunciation,
+                LearningProjection.quest,
+                LearningProjection.streak,
+                LearningProjection.achievement,
+                LearningProjection.xp,
+                LearningProjection.coins,
+              }.contains(projection);
           final expectedShadow = evidenceClass == EvidenceClass.recreational
               ? _expectedV1[evidenceClass]![projection]
-              : hasSrsSafetyFloor || hasNativeSafetyFloor
+              : hasSrsSafetyFloor ||
+                    hasNativeSafetyFloor ||
+                    hasAssessmentSafetyFloor
               ? ProjectionDisposition.deny
               : _expectedLegacy[projection];
           expect(
@@ -170,24 +183,27 @@ void main() {
       }
     });
 
-    test('Legacy applies compatibility and has no research candidate', () {
-      final context = _declaredContext(
-        evidenceClass: EvidenceClass.assessment,
-        rolloutMode: EvidencePolicyRolloutMode.legacy,
-      );
+    test(
+      'Legacy preserves the Assessment mastery safety floor without a research candidate',
+      () {
+        final context = _declaredContext(
+          evidenceClass: EvidenceClass.assessment,
+          rolloutMode: EvidencePolicyRolloutMode.legacy,
+        );
 
-      final decision = EvidenceProjectionDecision.resolve(
-        context: context,
-        projection: LearningProjection.masterySrs,
-      );
+        final decision = EvidenceProjectionDecision.resolve(
+          context: context,
+          projection: LearningProjection.masterySrs,
+        );
 
-      expect(decision.dispositionToApply, ProjectionDisposition.allow);
-      expect(decision.candidateDispositionToRecord, isNull);
-      expect(decision.contributesToEfficacyOutcomes, isFalse);
-      expect(decision.retainedForProjectionComparison, isFalse);
-      expect(decision.isDivergent, isFalse);
-      expect(decision.isEligible, isTrue);
-    });
+        expect(decision.dispositionToApply, ProjectionDisposition.deny);
+        expect(decision.candidateDispositionToRecord, isNull);
+        expect(decision.contributesToEfficacyOutcomes, isFalse);
+        expect(decision.retainedForProjectionComparison, isFalse);
+        expect(decision.isDivergent, isFalse);
+        expect(decision.isEligible, isFalse);
+      },
+    );
 
     test(
       'legacy-inferred replay applies compatibility and is never research',
@@ -204,24 +220,30 @@ void main() {
       },
     );
 
-    test('Shadow applies compatibility and records the v1 candidate only', () {
-      final context = _declaredContext(
-        evidenceClass: EvidenceClass.assessment,
-        rolloutMode: EvidencePolicyRolloutMode.shadow,
-      );
+    test(
+      'Shadow preserves the Assessment mastery safety floor and records the v1 candidate',
+      () {
+        final context = _declaredContext(
+          evidenceClass: EvidenceClass.assessment,
+          rolloutMode: EvidencePolicyRolloutMode.shadow,
+        );
 
-      final decision = EvidenceProjectionDecision.resolve(
-        context: context,
-        projection: LearningProjection.masterySrs,
-      );
+        final decision = EvidenceProjectionDecision.resolve(
+          context: context,
+          projection: LearningProjection.masterySrs,
+        );
 
-      expect(decision.dispositionToApply, ProjectionDisposition.allow);
-      expect(decision.candidateDispositionToRecord, ProjectionDisposition.deny);
-      expect(decision.contributesToEfficacyOutcomes, isFalse);
-      expect(decision.retainedForProjectionComparison, isTrue);
-      expect(decision.isDivergent, isTrue);
-      expect(decision.isEligible, isTrue);
-    });
+        expect(decision.dispositionToApply, ProjectionDisposition.deny);
+        expect(
+          decision.candidateDispositionToRecord,
+          ProjectionDisposition.deny,
+        );
+        expect(decision.contributesToEfficacyOutcomes, isFalse);
+        expect(decision.retainedForProjectionComparison, isTrue);
+        expect(decision.isDivergent, isFalse);
+        expect(decision.isEligible, isFalse);
+      },
+    );
 
     test(
       'recreational evidence keeps its game-history safety floor in Legacy and Shadow',

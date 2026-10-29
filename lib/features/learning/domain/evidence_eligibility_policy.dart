@@ -170,6 +170,19 @@ ProjectionDisposition effectiveProjectionDisposition({
   required LearningProjection projection,
   required ProjectionDisposition policyDisposition,
 }) {
+  if (context.evidenceClass == EvidenceClass.assessment &&
+      switch (projection) {
+        LearningProjection.masterySrs ||
+        LearningProjection.pronunciation ||
+        LearningProjection.quest ||
+        LearningProjection.streak ||
+        LearningProjection.achievement ||
+        LearningProjection.xp ||
+        LearningProjection.coins => true,
+        _ => false,
+      }) {
+    return ProjectionDisposition.deny;
+  }
   if (context.evidenceClass == EvidenceClass.recreational) {
     return evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
   }

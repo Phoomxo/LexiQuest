@@ -36,6 +36,8 @@ final class DriftMotivationMeasurementRepository
     required String ownerId,
     required String runId,
     required Future<T> Function(MotivationMeasurementRun run) write,
+    // DB-only inspection after authority awaits; this is not another authority.
+    Future<void> Function(T result)? inspectFinal,
     void Function(T result, DateTime finalNowUtc)? validate,
   }) {
     _codes([ownerId, runId]);
@@ -50,6 +52,7 @@ final class DriftMotivationMeasurementRepository
       await _finish(
         run,
         needTiming: false,
+        inspectFinal: inspectFinal == null ? null : () => inspectFinal(result),
         validateFinal: (current, now) {
           if (!_sameRunFacts(run, current)) {
             _deny(ResearchCaptureReason.identityConflict);
@@ -334,9 +337,13 @@ final class DriftMotivationMeasurementRepository
     void Function(MotivationMeasurementRun, MotivationTimingFacts, DateTime)?
     validate,
     void Function(MotivationMeasurementRun, DateTime)? validateFinal,
+    Future<void> Function()? inspectFinal,
   }) async {
     final authority = await _participant(expected.ownerId, expected.permitId);
     final facts = needTiming ? await _timing(expected) : null;
+    // The caller's owner transaction holds the writer; fresh owner/consent/time
+    // checks follow this DB-only inspection without another authority await.
+    await inspectFinal?.call();
     return _owner(expected.ownerId, () async {
       final run = await _requiredRun(
         expected.ownerId,
