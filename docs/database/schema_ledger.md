@@ -135,7 +135,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 ## Phase 0+ (v11+)
 
 The recorded deployed lineage ends at **v10**. The current branch implements
-**v16** with 34 tables, matching `AppDatabase.schemaVersion`. The former
+**v17** with 34 tables, matching `AppDatabase.schemaVersion`. The former
 future-v10 placeholder was superseded by the recorded Associative Learning
 migration and must not be reused.
 The 2026-10-21 reconciliation left v11 unreserved. The following reservation
@@ -186,7 +186,7 @@ claimed.
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
 | v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
-| v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Reserved 2026-10-29; executable schema remains v16 |
+| v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
 | v18+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16 or v17. Reserve the next available version, starting at v18,
@@ -469,9 +469,11 @@ or a separately tested downgrade. This reservation does not enable research.
 **Owner:** Root owns schema/generated source, genuine historical fixture and
 integration; separate workers own opportunity/timing logic and migration tests.
 
-**Status:** RESERVED. Executable schema is still v16/34 at reservation, source
-`61db267d`. Initial-opening correction passes117 focused/1147 integration
-checks; it precedes this unit.
+**Status:** IMPLEMENTED LOCALLY at `853d4c13`, executable schema v17/34.
+Full Flutter3054, analysis0, CLI23/23 and normal debug APK pass. Populated
+migration5 and actual pending export/purge2 pass; independent review accepted.
+At reservation the executable schema was v16/34, source `61db267d`.
+The verified initial-opening correction precedes this unit.
 
 Add four columns on existing `measurement_opportunities`; no table, ordinary
 sync entity, cloud collection or rollout permission is added:
@@ -542,6 +544,7 @@ pre-upgrade backup or a separately tested downgrade; none is implied here.
 | 2026-10-29 | Attested v14 at source 90a81306 and reserved v15 for one local-only exposure/index linkage table with canonical learning savepoints and frozen event precision. Runtime remains v14 until implementation. | Root integration |
 | 2026-10-29 | Reserved v16 for four columns on existing learning sessions, storing the exact accepted quiz and CAS checkpoint with canonical learning transactions. Runtime remains v15 until implementation; table count stays 34. | Root integration |
 | 2026-10-29 | Reserved v17 after the verified initial-opening correction and genuine v16 schema capture for four existing-opportunity columns; original presentation/event proof and owner lifecycle stay intact. Executable schema remains v16 until implementation. | Root integration |
+| 2026-10-30 | Attested current-lineage v17/34 at853d4c13 with full Flutter3054, analysis0, CLI23, backend CPU390 and normal debug APK; all620 Dart hashes unchanged. Assessment storage v18 remains unreserved. | Root integration |
 
 ---
 

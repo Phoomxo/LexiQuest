@@ -1,17 +1,15 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `e0771624` (v16), on
-2026-10-29. Latest full suite/APK: Flutter 2869, analysis 0, CLI 23 and normal
-debug APK pass. The optional Study host connects signed local authority,
-supplied Standard/Adventure renderers and baseline/post Motivation capture to
-one exact canonical quiz. Production factory, enrollment and upload remain
-disabled. See [wave 9 evidence](2026-10-29-remaining-systems-wave9.md).
-A later [Assessment domain component](2026-10-29-assessment-domain.md) passes
-79 scoped/125 frozen-contract checks and analysis0; it activates no writer/UI
-and makes no new full-suite/APK claim. The later [opening-order correction](2026-10-29-study-opening-order.md)
-passes117 focused/1147 expanded integration cases and analysis0, with independent
-review accepted. Five local authority adapters are also verified; the production
-gateway and lifecycle composition remain prerequisites. Research stays default-off.
+Source: `codex/remaining-system-readiness`, through `853d4c13` (v17/34),
+updated2026-10-30. Latest full suite/APK: Flutter3054, analysis0, CLI23/23 and
+normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
+Firebase/OmniVoice E2E skipped. All620 Dart hashes match through checks/build.
+The optional Study host connects signed local authority, both actual supplied
+presentations, durable switching and baseline/post Motivation to one exact
+canonical quiz. Assessment domain/isolation is verified; its writer, compatible
+paired comparison and UI remain separate. The genuine production authority
+gateway/lifecycle and collection/upload integration remain prerequisites.
+Research remains default-off. See [wave 10 evidence](2026-10-30-remaining-systems-wave10.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -70,7 +68,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host now connects supplied baseline/post Motivation forms, both actual presentations, exact first quiz and post before Score. Learning-outcome Assessment remains separate and absent; PresentationChanged, production local authority adapters and collection/upload remain incomplete. No efficacy or instrument-validation claim. |
+| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host connects supplied Motivation forms, exact first quiz, post before Score and both actual presentations with durable switching. Assessment domain and ordinary-projection isolation are verified, but the learning-outcome writer, compatible paired comparison and UI are absent. Five local authority ports exist; genuine production gateway/lifecycle and collection/upload integration remain incomplete. No efficacy or instrument-validation claim. |
 
 ## Motivation
 
