@@ -2,6 +2,9 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' show AppDatabase;
 import '../../adventure/domain/adventure_entry.dart';
+import '../../assessment/application/study_assessment.dart';
+import '../../assessment/data/drift_assessment_repository.dart';
+import '../../assessment/domain/assessment_models.dart';
 import '../../consent/application/research_consent_use_cases.dart';
 import '../../learning/application/learning_use_cases.dart';
 import '../../learning/data/drift_learning_repository.dart';
@@ -66,8 +69,27 @@ final class LocalStudyRuntime implements StudyRuntime {
     required this.context,
     required this.authorities,
     required this.catalog,
+    this.assessment,
   }) {
     final study = authorities.binding.study;
+    final suppliedAssessment = assessment;
+    if (suppliedAssessment != null) {
+      final writer = suppliedAssessment.repository;
+      if (writer is! DriftAssessmentRepository ||
+          !identical(writer.database, context.database) ||
+          !identical(writer.authority.mapping, suppliedAssessment.mapping) ||
+          !identical(writer.authority.cache.ownerWrites, context.ownerWrites) ||
+          !identical(writer.authority.cache, suppliedAssessment.trustedTime) ||
+          !identical(writer.cycleReader, suppliedAssessment.cycleReader) ||
+          !identical(
+            writer.contentAuthority,
+            suppliedAssessment.contentAuthority,
+          )) {
+        throw ArgumentError(
+          'Study Assessment must use its explicit canonical database and authority binding',
+        );
+      }
+    }
     if (!identical(context.database, context.ownerWrites.database) ||
         !identical(context.database, context.consentRepository.database) ||
         catalog.version != study.catalogVersion ||
@@ -87,6 +109,7 @@ final class LocalStudyRuntime implements StudyRuntime {
   }
 
   final StudyRuntimeContext context;
+  final StudyAssessment? assessment;
   final StudyLocalAuthorities authorities;
   @override
   final StudyPresentationCatalog catalog;
@@ -317,6 +340,15 @@ final class LocalStudyRuntime implements StudyRuntime {
     }
     final freshAuthority = await scope.participation
         .inspectParticipantWithReceipt(ownerId: ownerId);
+    final assessmentStatus = assessment != null && run != null
+        ? await assessment!.inspect(
+            cycle: run,
+            opportunity: opportunity,
+            index: index,
+            completionRecorded: completionRecorded,
+            participationPermitRevision: participant.permit.localRevision,
+          )
+        : null;
     final finalTime = await _checkedTime();
     now = DateTime.fromMillisecondsSinceEpoch(
       finalTime.effectiveNowUtc.millisecondsSinceEpoch,
@@ -334,6 +366,9 @@ final class LocalStudyRuntime implements StudyRuntime {
     }
     if (run != null) {
       _runBinding(run, freshAuthority.snapshot);
+    }
+    if (assessmentStatus?.latestFactAtUtc?.isAfter(now) == true) {
+      _deny(ResearchCaptureReason.outsideWindow);
     }
     if (opportunity != null &&
         (opportunity.openedAtUtc.isAfter(now) ||
@@ -361,8 +396,11 @@ final class LocalStudyRuntime implements StudyRuntime {
             response.answeredAtUtc.add(
               const Duration(hours: 24, milliseconds: 1),
             ),
-      if (index?.state == 'completed' && index?.endedAtUtc != null)
-        index!.endedAtUtc!.add(const Duration(minutes: 30, milliseconds: 1)),
+      if (index?.state == 'completed' &&
+          index?.endedAtUtc != null &&
+          run?.score(MotivationTimepoint.post) == null &&
+          !now.isAfter(index!.endedAtUtc!.add(const Duration(minutes: 30))))
+        index.endedAtUtc!.add(const Duration(minutes: 30, milliseconds: 1)),
     ]..sort();
     StudyView timedView(
       String owner,
@@ -380,6 +418,8 @@ final class LocalStudyRuntime implements StudyRuntime {
       index: index,
       evaluatedAtUtc: now,
       promptExpiresAtUtc: deadlines.first,
+      assessmentCommand: assessmentStatus?.pendingCommand,
+      hasCompletedAssessmentPair: assessmentStatus?.hasCompletedPair ?? false,
     );
     if (run == null) {
       return timedView(ownerId, StudyPhase.baseline);
@@ -400,6 +440,24 @@ final class LocalStudyRuntime implements StudyRuntime {
       return timedView(
         ownerId,
         StudyPhase.stopped,
+        run: run,
+        opportunity: opportunity,
+        index: index,
+      );
+    }
+    if (assessmentStatus?.stopped == true) {
+      return timedView(
+        ownerId,
+        StudyPhase.stopped,
+        run: run,
+        opportunity: opportunity,
+        index: index,
+      );
+    }
+    if (assessmentStatus?.pendingCommand?.phase == AssessmentPhase.pre) {
+      return timedView(
+        ownerId,
+        StudyPhase.baseline,
         run: run,
         opportunity: opportunity,
         index: index,
@@ -474,6 +532,15 @@ final class LocalStudyRuntime implements StudyRuntime {
         ownerId,
         StudyPhase.unavailable,
         reason: ResearchCaptureReason.incomplete,
+        run: run,
+        opportunity: opportunity,
+        index: index,
+      );
+    }
+    if (assessmentStatus?.pendingCommand?.phase == AssessmentPhase.post) {
+      return timedView(
+        ownerId,
+        StudyPhase.post,
         run: run,
         opportunity: opportunity,
         index: index,
@@ -948,6 +1015,9 @@ final class LocalStudyRuntime implements StudyRuntime {
     index: change.base.index,
     evaluatedAtUtc: change.base.evaluatedAtUtc,
     promptExpiresAtUtc: change.base.promptExpiresAtUtc,
+    assessment: change.base.assessment,
+    assessmentCommand: change.base.assessmentCommand,
+    hasCompletedAssessmentPair: change.base.hasCompletedAssessmentPair,
   );
 
   @override
@@ -1133,6 +1203,8 @@ final class LocalStudyRuntime implements StudyRuntime {
     ConfiguredQuizState? index,
     DateTime? evaluatedAtUtc,
     DateTime? promptExpiresAtUtc,
+    AssessmentStartCommand? assessmentCommand,
+    bool hasCompletedAssessmentPair = false,
   }) => StudyView(
     ownerId: ownerId,
     catalog: catalog,
@@ -1143,6 +1215,9 @@ final class LocalStudyRuntime implements StudyRuntime {
     index: index,
     evaluatedAtUtc: evaluatedAtUtc,
     promptExpiresAtUtc: promptExpiresAtUtc,
+    assessment: assessment,
+    assessmentCommand: assessmentCommand,
+    hasCompletedAssessmentPair: hasCompletedAssessmentPair,
   );
 
   static Never _deny(ResearchCaptureReason reason) =>

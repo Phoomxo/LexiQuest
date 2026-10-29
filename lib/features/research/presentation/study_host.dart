@@ -7,6 +7,9 @@ import '../../../config/m3_theme.dart';
 import '../../../navigation/app_routes.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../../screens/quiz_screen.dart';
+import '../../../screens/pre_post_assessment_screen.dart';
+import '../../assessment/application/assessment_comparison.dart';
+import '../../assessment/domain/assessment_models.dart';
 import '../../adventure/domain/adventure_entry.dart';
 import '../../adventure/presentation/study_presentations.dart';
 import '../../learning/domain/learning_models.dart';
@@ -85,6 +88,8 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   bool _openingMayRender = false;
   _PresentationChange? _change;
   bool _changeMayRender = false;
+  bool? _chooseAssessment;
+  AssessmentComparisonResult? _comparison;
 
   bool get _thai => widget.languageCode != 'en';
   String _text(String th, String en) => _thai ? th : en;
@@ -183,6 +188,8 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     _failed = false;
     _rendered = null;
     _scheduled = null;
+    _chooseAssessment = null;
+    _comparison = null;
   }
 
   void _updateVisibility() {
@@ -250,7 +257,9 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     final elapsed = Stopwatch()..start();
     var view = await read();
     if (!_current(generation)) return;
-    if (widget._postOnly && view.phase != StudyPhase.post) {
+    if (widget._postOnly &&
+        (view.phase != StudyPhase.post ||
+            !_motivationPending(view, MotivationTimepoint.post))) {
       _closePost(generation);
       return;
     }
@@ -277,7 +286,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       StudyPhase.ready ||
       StudyPhase.activeIndex ||
       StudyPhase.post => true,
-      _ => false,
+      _ => view.hasCompletedAssessmentPair,
     };
     if (collectible) {
       final evaluated = view.evaluatedAtUtc;
@@ -336,12 +345,16 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       _view = view;
       _rendered = null;
       _scheduled = null;
+      _chooseAssessment = null;
+      _comparison = null;
     });
     _formCurrent.value =
         collectible &&
         view.run != null &&
         (view.phase == StudyPhase.baseline || view.phase == StudyPhase.post);
-    if (widget._postOnly && view.phase != StudyPhase.post) {
+    if (widget._postOnly &&
+        (view.phase != StudyPhase.post ||
+            !_motivationPending(view, MotivationTimepoint.post))) {
       _closePost(generation);
     } else if (presentationChange != null) {
       _afterPresentationFrame(view, generation, change: presentationChange);
@@ -635,6 +648,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     if (!currentQuiz() ||
         view.ownerId != widget.ownerId ||
         view.phase != StudyPhase.post ||
+        !_motivationPending(view, MotivationTimepoint.post) ||
         view.index?.sessionId != result.state.sessionId ||
         evaluated == null ||
         expires == null ||
@@ -749,7 +763,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
             begin: true,
           );
         }
-        return _form(run, MotivationTimepoint.baseline);
+        return _pendingForm(view, MotivationTimepoint.baseline);
       case StudyPhase.post:
         final run = view.run;
         return run == null
@@ -759,7 +773,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
                   'The questionnaire is unavailable.',
                 ),
               )
-            : _form(run, MotivationTimepoint.post);
+            : _pendingForm(view, MotivationTimepoint.post);
       case StudyPhase.ready:
       case StudyPhase.activeIndex:
         final presentation = _presentation(view);
@@ -797,6 +811,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
             'บันทึกคำตอบของรอบนี้แล้ว ขอบคุณที่ร่วมตอบ',
             'Your responses for this session have been saved. Thank you.',
           ),
+          extra: _assessmentComparison(view),
         );
       case StudyPhase.stopped:
         return _message(
@@ -804,6 +819,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
             'กิจกรรมเสริมรอบนี้สิ้นสุดแล้ว คุณยังเรียนตามปกติได้',
             'This optional session has ended. Ordinary learning is available.',
           ),
+          extra: _assessmentComparison(view),
         );
     }
   }
@@ -820,39 +836,201 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
         onFinished: (_) => _reload(),
       );
 
-  Widget _message(String text, {bool retry = false, bool begin = false}) =>
-      Center(
+  bool _motivationPending(StudyView view, MotivationTimepoint point) {
+    final run = view.run;
+    if (run == null || run.score(point) != null) return false;
+    if (point == MotivationTimepoint.baseline) return true;
+    final ended = view.index?.endedAtUtc;
+    final evaluated = view.evaluatedAtUtc;
+    return ended != null &&
+        evaluated != null &&
+        !evaluated.isBefore(ended) &&
+        !evaluated.isAfter(ended.add(const Duration(minutes: 30)));
+  }
+
+  Widget _pendingForm(StudyView view, MotivationTimepoint point) {
+    final service = view.assessment;
+    final command = view.assessmentCommand;
+    final assessmentPending =
+        !widget._postOnly &&
+        service != null &&
+        command != null &&
+        command.studyCycleId == view.run?.id &&
+        command.phase ==
+            (point == MotivationTimepoint.baseline
+                ? AssessmentPhase.pre
+                : AssessmentPhase.post);
+    final motivationPending = _motivationPending(view, point);
+    if (assessmentPending && motivationPending && _chooseAssessment == null) {
+      return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Semantics(
-                liveRegion: true,
-                child: Text(text, textAlign: TextAlign.center),
+              Text(
+                _text(
+                  'เลือกทำส่วนใดก่อนก็ได้',
+                  'Choose which part to complete first',
+                ),
               ),
-              if (retry) ...[
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _busy ? null : _reload,
-                  child: Text(_text('ลองอีกครั้ง', 'Try again')),
+              const SizedBox(height: 16),
+              FilledButton(
+                key: const ValueKey('study-choose-motivation'),
+                onPressed: _busy
+                    ? null
+                    : () => setState(() => _chooseAssessment = false),
+                child: Text(
+                  _text('แบบสอบถามความรู้สึก', 'Motivation questionnaire'),
                 ),
-              ],
-              if (begin) ...[
-                const SizedBox(height: 16),
-                FilledButton(
-                  key: const ValueKey('study-begin'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  onPressed: _busy ? null : _begin,
-                  child: Text(
-                    _text('เริ่มตอบแบบสอบถาม', 'Start questionnaire'),
-                  ),
-                ),
-              ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                key: const ValueKey('study-choose-assessment'),
+                onPressed: _busy
+                    ? null
+                    : () => setState(() => _chooseAssessment = true),
+                child: Text(_text('แบบประเมินการเรียน', 'Learning assessment')),
+              ),
             ],
           ),
         ),
       );
+    }
+    if (assessmentPending &&
+        (!motivationPending || _chooseAssessment == true)) {
+      return PrePostAssessmentScreen(
+        key: ValueKey((
+          widget.runtime,
+          widget.ownerId,
+          command.runId,
+          _generation,
+          _binding,
+        )),
+        useCases: service.useCases,
+        command: command,
+        ownerId: widget.ownerId,
+        current: _formCurrent,
+        onFinished: _reload,
+        languageCode: widget.languageCode,
+        onExit: () {
+          _formCurrent.value = false;
+          unawaited(Navigator.maybePop(context));
+        },
+      );
+    }
+    if (motivationPending) return _form(view.run!, point);
+    return _message(
+      _text(
+        'กิจกรรมส่วนนี้ยังไม่พร้อม คุณยังเรียนตามปกติได้',
+        'This part is unavailable. Ordinary learning is available.',
+      ),
+    );
+  }
+
+  Future<void> _compareAssessment(StudyView view) => _run((generation) async {
+    final service = view.assessment;
+    if (service == null ||
+        !view.hasCompletedAssessmentPair ||
+        view.run == null ||
+        !identical(view, _view)) {
+      throw StateError('Assessment pair is unavailable');
+    }
+    final result = await service.comparison.compare(
+      ownerId: widget.ownerId,
+      studyCycleId: view.run!.id,
+      stillVisible: () => _current(generation) && identical(view, _view),
+    );
+    if (_current(generation) && identical(view, _view)) {
+      setState(() => _comparison = result);
+    }
+  });
+
+  Widget? _assessmentComparison(StudyView view) {
+    if (!view.hasCompletedAssessmentPair || view.assessment == null) {
+      return null;
+    }
+    final result = _comparison;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 16),
+        FilledButton(
+          key: const ValueKey('study-assessment-compare'),
+          onPressed: _busy ? null : () => _compareAssessment(view),
+          child: Text(
+            _text('ดูสรุปคำตอบก่อนและหลัง', 'View pre and post answer summary'),
+          ),
+        ),
+        if (result is AssessmentComparisonReady) ...[
+          const SizedBox(height: 12),
+          Text(
+            _text(
+              'ก่อน: ${result.preOutcome.correctCount}/${result.preOutcome.sampleSize} คำตอบถูก',
+              'Pre: ${result.preOutcome.correctCount}/${result.preOutcome.sampleSize} correct answers',
+            ),
+          ),
+          Text(
+            _text(
+              'หลัง: ${result.postOutcome.correctCount}/${result.postOutcome.sampleSize} คำตอบถูก',
+              'Post: ${result.postOutcome.correctCount}/${result.postOutcome.sampleSize} correct answers',
+            ),
+          ),
+          Text(
+            _text(
+              'ผลต่างจำนวนคำตอบถูก: ${result.comparison.correctCountDelta}',
+              'Correct-answer difference: ${result.comparison.correctCountDelta}',
+            ),
+          ),
+        ] else if (result != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _text(
+              'ข้อมูลรอบนี้ยังเปรียบเทียบไม่ได้',
+              'This session cannot be compared.',
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _message(
+    String text, {
+    bool retry = false,
+    bool begin = false,
+    Widget? extra,
+  }) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            liveRegion: true,
+            child: Text(text, textAlign: TextAlign.center),
+          ),
+          if (retry) ...[
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _busy ? null : _reload,
+              child: Text(_text('ลองอีกครั้ง', 'Try again')),
+            ),
+          ],
+          if (begin) ...[
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const ValueKey('study-begin'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: _busy ? null : _begin,
+              child: Text(_text('เริ่มตอบแบบสอบถาม', 'Start questionnaire')),
+            ),
+          ],
+          ?extra,
+        ],
+      ),
+    ),
+  );
 }

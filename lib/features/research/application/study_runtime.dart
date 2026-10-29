@@ -1,5 +1,7 @@
 import '../../../data/local/app_database.dart' show AppDatabase;
 import '../../../runtime/app_build_info.dart';
+import '../../assessment/application/study_assessment.dart';
+import '../../assessment/domain/assessment_models.dart';
 import '../../adventure/domain/adventure_entry.dart';
 import '../../consent/application/research_consent_use_cases.dart';
 import '../../consent/data/drift_research_consent_repository.dart';
@@ -97,6 +99,9 @@ final class StudyView {
     this.index,
     this.evaluatedAtUtc,
     this.promptExpiresAtUtc,
+    this.assessment,
+    this.assessmentCommand,
+    this.hasCompletedAssessmentPair = false,
   });
 
   final String ownerId;
@@ -108,6 +113,9 @@ final class StudyView {
   final ConfiguredQuizState? index;
   final DateTime? evaluatedAtUtc;
   final DateTime? promptExpiresAtUtc;
+  final StudyAssessment? assessment;
+  final AssessmentStartCommand? assessmentCommand;
+  final bool hasCompletedAssessmentPair;
 
   bool get canStart =>
       phase == StudyPhase.ready &&
