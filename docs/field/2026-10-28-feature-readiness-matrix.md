@@ -1,15 +1,15 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `853d4c13` (v17/34),
-updated2026-10-30. Latest full suite/APK: Flutter3054, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `fabc990f` (v18/35),
+updated2026-10-30. Latest full suite/APK: Flutter3266, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All620 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All654 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
-canonical quiz. Assessment domain/isolation is verified; its writer, compatible
-paired comparison and UI remain separate. The genuine production authority
+canonical quiz. Assessment writer, compatible paired comparison and actual
+pre/post Study UI are verified with strict ordinary isolation. Production authority
 gateway/lifecycle and collection/upload integration remain prerequisites.
-Research remains default-off. See [wave 10 evidence](2026-10-30-remaining-systems-wave10.md).
+Research remains default-off. See [wave11 evidence](2026-10-30-remaining-systems-wave11.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -68,7 +68,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host connects supplied Motivation forms, exact first quiz, post before Score and both actual presentations with durable switching. Assessment domain and ordinary-projection isolation are verified, but the learning-outcome writer, compatible paired comparison and UI are absent. Five local authority ports exist; genuine production gateway/lifecycle and collection/upload integration remain incomplete. No efficacy or instrument-validation claim. |
+| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host connects actual controlled Assessment pre/post, compatible descriptive comparison, Motivation forms and the exact first quiz. Either form order works; pre precedes opening and Assessment-only post does not hold Score. v18 writer/retries, ordinary isolation, owner/export/purge, signature races and actual UI are verified atfabc990f. Genuine production gateway/lifecycle and collection/upload integration remain incomplete; Research default-off. No efficacy/instrument-validation claim. |
 
 ## Motivation
 

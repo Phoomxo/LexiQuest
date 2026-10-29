@@ -1,5 +1,8 @@
 # Assessment integration — work in progress
 
+Historical component checkpoint. The completed integration/current artifact is
+attested in [wave11](2026-10-30-remaining-systems-wave11.md).
+
 2026-10-30. Existing `cycle12-release/LexiQuest` worktree, branch
 `codex/remaining-system-readiness`; HEAD at the start of this card is
 `d0caa086`. The last fully verified application remains `853d4c13` and its
