@@ -187,9 +187,10 @@ claimed.
 | v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
 | v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
-| v18+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v18 | Remaining-system integration | One local Assessment run table with37 durable pins; canonical assessment-only sessions/answers remain in existing tables. | Reserved2026-10-30; executable schema remains17/34 |
+| v19+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16 or v17. Reserve the next available version, starting at v18,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17 or v18. Reserve the next available version, starting at v19,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -523,6 +524,66 @@ pre-upgrade backup or a separately tested downgrade; none is implied here.
 
 ---
 
+### v18 — Owner-scoped controlled Assessment runs
+
+**Reserved:** 2026-10-30
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root owns schema/generated source, inventory and migration/lifecycle
+integration. Domain, authority, writer and application workers have disjoint
+write sets in the [Assessment execution plan](../superpowers/plans/2026-10-30-assessment-writer-integration.md).
+
+**Status:** RESERVED. Executable schema remains v17/34 at reservation. The
+latest verified application source is `853d4c13`; attestation is `3810b265`.
+
+Add one local-only `assessment_runs` table; total35. Its37 columns are:
+
+```text
+id owner_id learning_session_id study_cycle_id phase state
+protocol_id protocol_version experiment_id experiment_version
+assignment_id cohort consent_version consent_decided_at_utc_ms
+instrument_id instrument_version form_id form_version
+instrument_checksum_sha256 form_checksum_sha256 app_version build_id
+database_schema_version content_revision evidence_policy_version
+feature_contract_revision feature_contract_hash started_at_utc_ms
+completed_at_utc_ms abandoned_at_utc_ms assignment_revision
+protocol_revision instrument_revision form_content_revision
+participation_permit_id participation_permit_revision
+participation_permit_payload_sha256
+```
+
+Use actual FKs to owner, canonical Assessment session, assignment, signed
+participation permit and the existing R3 cycle. Cycle/session/assignment/permit
+references must not cascade away original evidence. Unique session and unique
+owner/cycle/phase prevent replacement runs. Validate positive revisions,
+canonical hashes, phase/state/cohort, consent-before-start and exclusive
+terminal times. All original pins remain immutable across exact retries.
+
+Assessment reuses existing answer/session tables through a dedicated SQL writer.
+It must not reopen ordinary evidence admission or invoke ordinary SRS, XP,
+reward, achievement, Quest, Streak, lifecycle or outbox hooks. The R3 cycle
+anchors the exact first intervention, not an Assessment instrument or score.
+Pre requires no opportunity; post requires the original completed first index.
+Missing, pending, abandoned or inconsistent evidence denies Research.
+
+Preserve all existing34-table rows, pending switch JSON, accepted quiz bytes,
+ordinary projections and durable deletion intent. A genuine schema17 snapshot
+was captured before the bump through normal open:34 tables, six indexes,
+19 opportunity fields and four exact CHECK expressions. SHA-256:
+`1829afc95e6c6d1217123d3eda4532a96bafa2df613a4a5da6c63167cf167a0c`.
+The new table starts empty; no synthetic enrollment or row backfill occurs.
+
+Add the table to owner inventory and signed-source rehome rejection. Reverse
+purge removes it before its parents; personal export retains exact owner pins.
+Acceptance includes populated-v17/reopen, real FK/uniqueness rejection, both
+owners, signed-source merge denial, persistent deletion proof, zero Assessment
+outbox and continued ordinary sync rejection/isolation. No new cloud collection,
+upload type, rollout authority or efficacy claim is created. Downgrade requires
+a pre-upgrade backup or a separately tested downgrade.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -545,6 +606,7 @@ pre-upgrade backup or a separately tested downgrade; none is implied here.
 | 2026-10-29 | Reserved v16 for four columns on existing learning sessions, storing the exact accepted quiz and CAS checkpoint with canonical learning transactions. Runtime remains v15 until implementation; table count stays 34. | Root integration |
 | 2026-10-29 | Reserved v17 after the verified initial-opening correction and genuine v16 schema capture for four existing-opportunity columns; original presentation/event proof and owner lifecycle stay intact. Executable schema remains v16 until implementation. | Root integration |
 | 2026-10-30 | Attested current-lineage v17/34 at853d4c13 with full Flutter3054, analysis0, CLI23, backend CPU390 and normal debug APK; all620 Dart hashes unchanged. Assessment storage v18 remains unreserved. | Root integration |
+| 2026-10-30 | Reserved v18 for one37-pin Assessment run table after genuine v17 capture; exact R3 intervention FK, dedicated writer and ordinary-projection isolation required. Executable schema remains17/34 until implementation. | Root integration |
 
 ---
 
