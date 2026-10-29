@@ -6,6 +6,10 @@ debug APK pass. The optional Study host connects signed local authority,
 supplied Standard/Adventure renderers and baseline/post Motivation capture to
 one exact canonical quiz. Production factory, enrollment and upload remain
 disabled. See [wave 9 evidence](2026-10-29-remaining-systems-wave9.md).
+A later [Assessment domain component](2026-10-29-assessment-domain.md) passes
+79 scoped/125 frozen-contract checks and analysis0; it activates no writer/UI
+and makes no new full-suite/APK claim. An initial opening crash-ordering gap is
+being corrected separately; Research remains default-off.
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
