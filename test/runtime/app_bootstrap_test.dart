@@ -11,6 +11,11 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/learning_session_lifecycle_observer.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -604,6 +609,7 @@ void main() {
   group('AppBootstrap.initialize', () {
     test('production hides research UI until every rollout gate is ready', () {
       expect(AppBootstrap.production().researchAvailability.isEnabled, isFalse);
+      expect(AppBootstrap.production().studyRuntimeFactory, isNull);
       expect(
         const ResearchRuntimeAvailability(
           ethicsApproved: true,
@@ -635,6 +641,22 @@ void main() {
 
       expect(dependencies.researchAvailability.isEnabled, isFalse);
       expect(dependencies.researchConsent, isNull);
+      expect(dependencies.studyRuntime, isNull);
+      for (final table in [
+        'research_consents',
+        'experiment_assignments',
+        'research_participation_permits',
+        'motivation_measurement_runs',
+        'motivation_responses',
+        'measurement_opportunities',
+        'events_v2',
+        'outbox_operations',
+      ]) {
+        final rows = await dependencies.database!
+            .customSelect('SELECT COUNT(*) AS n FROM $table')
+            .getSingle();
+        expect(rows.read<int>('n'), 0, reason: table);
+      }
     });
 
     test('production defaults research authority to deny-all', () {
@@ -643,6 +665,151 @@ void main() {
         isA<DenyAllResearchOperationAuthorizer>(),
       );
     });
+
+    test('disabled rollout never invokes the optional study factory', () async {
+      var calls = 0;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        studyRuntimeFactory: (_) {
+          calls++;
+          throw StateError('disabled factory must not run');
+        },
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(calls, 0);
+      expect(dependencies.studyRuntime, isNull);
+      expect(await dependencies.learning!.prepareReading(), isEmpty);
+    });
+
+    for (final earlyLearningRead in [false, true]) {
+      test(
+        'optional study factory failure preserves learning ($earlyLearningRead)',
+        () async {
+          var calls = 0;
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+            studyRuntimeFactory: (context) {
+              calls++;
+              if (earlyLearningRead) context.getLearning();
+              throw StateError('synthetic optional factory failure');
+            },
+          ).initialize();
+          addTearDown(dependencies.dispose);
+
+          expect(calls, 1);
+          expect(dependencies.studyRuntime, isNull);
+          expect(await dependencies.learning!.prepareReading(), isEmpty);
+          final rows = await dependencies.database!
+              .customSelect('SELECT COUNT(*) AS n FROM learning_sessions')
+              .getSingle();
+          expect(rows.read<int>('n'), 0);
+        },
+      );
+    }
+
+    for (final brokenObserver in ['throws', 'foreign database']) {
+      test(
+        'a $brokenObserver study observer preserves real learning',
+        () async {
+          final foreign = _testDatabase();
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+            studyRuntimeFactory: (context) => _BootstrapStudyRuntime(
+              context,
+              _BootstrapStudyObserver(foreign),
+              throwObserver: brokenObserver == 'throws',
+            ),
+          ).initialize();
+          addTearDown(dependencies.dispose);
+
+          expect(dependencies.studyRuntime, isNull);
+          await _completeBootstrapQuiz(dependencies);
+          final answers = await dependencies.database!
+              .customSelect('SELECT COUNT(*) AS n FROM answer_attempts')
+              .getSingle();
+          expect(answers.read<int>('n'), 1);
+        },
+      );
+    }
+
+    test(
+      'study composition observes the one canonical learning writer',
+      () async {
+        late StudyRuntimeContext composition;
+        late _BootstrapStudyObserver observer;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          researchAvailability: ResearchRuntimeAvailability.syntheticComplete,
+          studyRuntimeFactory: (context) {
+            composition = context;
+            observer = _BootstrapStudyObserver(context.database);
+            return _BootstrapStudyRuntime(context, observer);
+          },
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        expect(composition.database, same(dependencies.database));
+        expect(composition.owners, same(dependencies.localOwners));
+        expect(composition.ownerWrites.database, same(dependencies.database));
+        expect(
+          composition.consentRepository,
+          same(dependencies.researchConsent!.repository),
+        );
+        expect(composition.getLearning(), same(dependencies.learning));
+        expect(
+          dependencies.studyRuntime!.learning,
+          same(dependencies.learning),
+        );
+        expect(observer.acceptedFacts, isEmpty);
+        expect(observer.completedFacts, isEmpty);
+
+        final sessionId = await _completeBootstrapQuiz(dependencies);
+        expect(observer.acceptedFacts.single.id, sessionId);
+        expect(observer.completedFacts.single.id, sessionId);
+        expect(observer.completedFacts.single.state, 'completed');
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        final restored = await dependencies.learning!.resumeQuiz(
+          sessionId: sessionId,
+          expectedOwnerId: owner.id,
+        );
+        expect(restored.state, 'completed');
+        expect(observer.acceptedFacts, hasLength(1));
+        expect(observer.completedFacts, hasLength(1));
+        for (final table in [
+          'learning_sessions',
+          'answer_attempts',
+          'srs_states',
+        ]) {
+          final row = await dependencies.database!
+              .customSelect('SELECT COUNT(*) AS n FROM $table')
+              .getSingle();
+          expect(row.read<int>('n'), 1, reason: table);
+        }
+        final points = await dependencies.database!
+            .customSelect('SELECT COUNT(*) AS n FROM points_ledger_entries')
+            .getSingle();
+        expect(points.read<int>('n'), greaterThan(0));
+      },
+    );
 
     test('production accepts an explicitly configured research authority', () {
       const authorizer = _AllowResearchOperationAuthorizer();
@@ -1466,6 +1633,86 @@ AccountDeletionComposition _bootstrapDeletionComposition({
     ),
     dispose: () async {},
   );
+}
+
+final class _BootstrapStudyRuntime extends Fake implements StudyRuntime {
+  _BootstrapStudyRuntime(
+    this.context,
+    this.observer, {
+    this.throwObserver = false,
+  });
+
+  final StudyRuntimeContext context;
+  final LearningSessionLifecycleObserver observer;
+  final bool throwObserver;
+
+  @override
+  LearningSessionLifecycleObserver get lifecycleObserver {
+    if (throwObserver) throw StateError('synthetic observer failure');
+    return observer;
+  }
+
+  @override
+  LearningUseCases get learning => context.getLearning();
+}
+
+final class _BootstrapStudyObserver
+    implements LearningSessionLifecycleObserver {
+  _BootstrapStudyObserver(this.database);
+  @override
+  final AppDatabase database;
+  final acceptedFacts = <LearningSessionLifecycleFact>[];
+  final completedFacts = <LearningSessionLifecycleFact>[];
+
+  @override
+  Future<void> accepted(LearningSessionLifecycleFact fact) async {
+    acceptedFacts.add(fact);
+  }
+
+  @override
+  Future<void> completed(LearningSessionLifecycleFact fact) async {
+    completedFacts.add(fact);
+  }
+}
+
+Future<String> _completeBootstrapQuiz(AppDependencies dependencies) async {
+  final category = await dependencies.vocabulary!.createCategory('Synthetic');
+  await dependencies.vocabulary!.createWord(
+    CreateWordCommand(
+      categoryId: category.id,
+      spelling: 'river',
+      meaning: 'แม่น้ำ',
+      partOfSpeech: 'noun',
+    ),
+  );
+  final learning = dependencies.learning!;
+  final session = await learning.startQuiz(categoryId: category.id, limit: 1);
+  final initial = session.configured!;
+  final question = initial.plan.questions.single;
+  final pending = await learning.prepareQuizAnswer(
+    sessionId: session.id,
+    expectedOwnerId: initial.ownerId,
+    expectedRevision: initial.checkpointRevision,
+    selectedOptionOrdinal: question.options.indexOf(question.word.meaning),
+  );
+  final answer = await learning.commitQuizAnswer(
+    sessionId: session.id,
+    expectedOwnerId: initial.ownerId,
+    expectedRevision: pending.checkpointRevision,
+  );
+  final closing = await learning.prepareQuizFinish(
+    sessionId: session.id,
+    expectedOwnerId: initial.ownerId,
+    expectedRevision: answer.state.checkpointRevision,
+  );
+  final finished = await learning.finishConfiguredQuiz(
+    sessionId: session.id,
+    expectedOwnerId: initial.ownerId,
+    expectedRevision: closing.checkpointRevision,
+  );
+  expect(finished.summary.correctCount, 1);
+  expect(finished.summary.state, 'completed');
+  return session.id;
 }
 
 final class _BootstrapDeletionCloud

@@ -32,6 +32,8 @@ import '../features/account_deletion/data/snapshot_full_account_exporter.dart';
 import '../features/account_deletion/domain/account_deletion_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
+import '../features/research/application/study_runtime.dart';
+import '../features/learning/data/learning_session_lifecycle_observer.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/application/model_download_manager.dart';
 import '../features/device_model/data/drift_model_download_repository.dart';
@@ -314,6 +316,7 @@ final class AppBootstrap {
     this.geminiGatewayFactory,
     this.researchAuthorizer = const DenyAllResearchOperationAuthorizer(),
     this.researchAvailability = ResearchRuntimeAvailability.disabled,
+    this.studyRuntimeFactory,
   });
 
   factory AppBootstrap.production({
@@ -321,6 +324,7 @@ final class AppBootstrap {
         const DenyAllResearchOperationAuthorizer(),
     ResearchRuntimeAvailability researchAvailability =
         ResearchRuntimeAvailability.disabled,
+    StudyRuntimeFactory? studyRuntimeFactory,
   }) {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
@@ -354,6 +358,7 @@ final class AppBootstrap {
           FirebaseAuth.instance.userChanges().map(_geminiAuthSession),
       researchAuthorizer: researchAuthorizer,
       researchAvailability: researchAvailability,
+      studyRuntimeFactory: studyRuntimeFactory,
     );
   }
 
@@ -377,6 +382,7 @@ final class AppBootstrap {
   final GeminiGateway Function()? geminiGatewayFactory;
   final ResearchOperationAuthorizer researchAuthorizer;
   final ResearchRuntimeAvailability researchAvailability;
+  final StudyRuntimeFactory? studyRuntimeFactory;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -529,9 +535,53 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
-    final learning = LearningUseCases(
+    final ownerWrites = DriftOwnerWriteCoordinator(
+      database,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    final consentRepository = DriftResearchConsentRepository(database);
+    final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
-      repository: DriftLearningRepository(database),
+      repository: consentRepository,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    late final LearningUseCases learning;
+    StudyRuntime? studyRuntime;
+    LearningSessionLifecycleObserver? studyObserver;
+    final createStudy = studyRuntimeFactory;
+    if (researchAvailability.isEnabled && createStudy != null) {
+      try {
+        final candidate = createStudy(
+          StudyRuntimeContext(
+            database: database,
+            owners: localOwners,
+            ownerWrites: ownerWrites,
+            consentRepository: consentRepository,
+            generateId: idGenerator.v4,
+            nowUtc: () => DateTime.now().toUtc(),
+            buildInfo: const AppBuildInfo.fromEnvironment(),
+            getLearning: () => learning,
+          ),
+        );
+        final observer = candidate.lifecycleObserver;
+        if (!identical(observer.database, database)) {
+          throw ArgumentError(
+            'Study observer must share the learning database',
+          );
+        }
+        studyRuntime = candidate;
+        studyObserver = observer;
+      } on Object {
+        // Optional research composition must not disable ordinary learning.
+      }
+    }
+    learning = LearningUseCases(
+      owners: localOwners,
+      repository: DriftLearningRepository(
+        database,
+        ownerWrites: ownerWrites,
+        lifecycleObserver: studyObserver,
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
@@ -540,11 +590,6 @@ final class AppBootstrap {
     final progress = ProgressUseCases(
       owners: localOwners,
       queries: DriftProgressQueries(database),
-      nowUtc: () => DateTime.now().toUtc(),
-    );
-    final researchConsent = ResearchConsentUseCases(
-      owners: localOwners,
-      repository: DriftResearchConsentRepository(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
     final rewards = RewardUseCases(
@@ -721,6 +766,7 @@ final class AppBootstrap {
       researchConsent: researchAvailability.isEnabled ? researchConsent : null,
       consents: DriftConsentRegistry(researchConsent.repository),
       researchAvailability: researchAvailability,
+      studyRuntime: studyRuntime,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       devicePermissions: const PluginDevicePermissionAccess(),

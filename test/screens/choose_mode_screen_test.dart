@@ -1,13 +1,189 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart' as db;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 void main() {
+  for (final invalidation in [
+    'owner',
+    'owner error',
+    'owner done',
+    'covered',
+    'paused',
+    'hidden',
+    'disposed',
+  ]) {
+    testWidgets('pending study tap is cancelled on $invalidation', (
+      tester,
+    ) async {
+      final database = db.AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final ownerChanges = StreamController<String?>.broadcast(sync: true);
+      addTearDown(() async {
+        if (!ownerChanges.isClosed) await ownerChanges.close();
+      });
+      final visible = ValueNotifier(true);
+      addTearDown(visible.dispose);
+      final navigation = _StudyEntryNavigation();
+      final pending = Completer<StudyView>();
+      var tapped = false;
+      var requestedAfterTap = 0;
+      final runtime = _StudyEntryRuntime((ownerId) {
+        if (tapped && ownerId == 'local:study-entry-owner') {
+          requestedAfterTap++;
+          return pending.future;
+        }
+        return Future.value(
+          _studyView(ownerId, eligible: ownerId == 'local:study-entry-owner'),
+        );
+      });
+      await _pumpStudyEntry(
+        tester,
+        database,
+        runtime,
+        ownerChanges: ownerChanges.stream,
+        visible: visible,
+        navigation: navigation,
+      );
+      ownerChanges.add('local:study-entry-owner');
+      await tester.pumpAndSettle();
+      expect(find.text('Your study activity'), findsOneWidget);
+      tapped = true;
+      await tester.tap(find.text('Your study activity'));
+      await tester.pump();
+      expect(requestedAfterTap, greaterThan(0));
+      var expectedPushes = 1;
+      switch (invalidation) {
+        case 'owner':
+          ownerChanges.add('synthetic-next-study-owner');
+        case 'owner error':
+          ownerChanges.addError(StateError('synthetic owner watch error'));
+        case 'owner done':
+          unawaited(ownerChanges.close());
+        case 'covered':
+          unawaited(
+            Navigator.of(tester.element(find.byType(ChooseModeScreen))).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(body: Text('Other activity')),
+              ),
+            ),
+          );
+          expectedPushes++;
+        case 'paused':
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+        case 'hidden':
+          visible.value = false;
+        case 'disposed':
+          await tester.pumpWidget(const SizedBox.shrink());
+      }
+      await tester.pumpAndSettle();
+      pending.complete(_studyView('local:study-entry-owner', eligible: true));
+      await tester.pumpAndSettle();
+      expect(navigation.pushes, expectedPushes);
+      expect(find.byType(SnackBar), findsNothing);
+      if (invalidation == 'paused') {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(navigation.pushes, expectedPushes);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+  }
+
+  for (final eligible in [false, true]) {
+    testWidgets('eager study entry reads without creating facts ($eligible)', (
+      tester,
+    ) async {
+      final database = db.AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final runtime = _StudyEntryRuntime(
+        (ownerId) async => _studyView(ownerId, eligible: eligible),
+      );
+      await _pumpStudyEntry(tester, database, runtime);
+      expect(runtime.loads, isNotEmpty);
+      expect(
+        find.text('Your study activity'),
+        eligible ? findsOneWidget : findsNothing,
+      );
+      expect(find.text('ฝึกคำศัพท์'), findsOneWidget);
+      for (final table in [
+        'research_consents',
+        'experiment_assignments',
+        'research_participation_permits',
+        'motivation_measurement_runs',
+        'motivation_responses',
+        'measurement_opportunities',
+        'events_v2',
+        'outbox_operations',
+      ]) {
+        final row = await database
+            .customSelect('SELECT COUNT(*) AS n FROM $table')
+            .getSingle();
+        expect(row.read<int>('n'), 0, reason: table);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+  }
+
+  testWidgets('late old-owner eligibility cannot reveal a study entry', (
+    tester,
+  ) async {
+    final database = db.AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final oldRead = Completer<StudyView>();
+    final runtime = _StudyEntryRuntime(
+      (ownerId) => ownerId == 'local:study-entry-owner'
+          ? oldRead.future
+          : Future.value(_studyView(ownerId, eligible: false)),
+    );
+    await _pumpStudyEntry(tester, database, runtime);
+    expect(runtime.loads, contains('local:study-entry-owner'));
+    await database.transaction(() async {
+      await (database.update(database.localOwners)
+            ..where((row) => row.id.equals('local:study-entry-owner')))
+          .write(const db.LocalOwnersCompanion(isActive: Value(false)));
+      await database
+          .into(database.localOwners)
+          .insert(
+            db.LocalOwnersCompanion.insert(
+              id: 'synthetic-next-study-owner',
+              createdAtUtcMs: 1,
+            ),
+          );
+    });
+    await tester.pumpAndSettle();
+    oldRead.complete(_studyView('local:study-entry-owner', eligible: true));
+    await tester.pumpAndSettle();
+    expect(runtime.loads, contains('synthetic-next-study-owner'));
+    expect(find.text('Your study activity'), findsNothing);
+    expect(find.text('Synthetic study mission'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('hub prioritizes due review and displays real queue counts', (
     tester,
   ) async {
@@ -188,6 +364,101 @@ void main() {
 
     expect(find.text('ดูความก้าวหน้าจากคำตอบที่บันทึกไว้'), findsOneWidget);
   });
+}
+
+StudyView _studyView(String ownerId, {required bool eligible}) => StudyView(
+  ownerId: ownerId,
+  catalog: StudyPresentationCatalog(
+    version: 'synthetic-catalog-v1',
+    missionId: 'synthetic-mission',
+    titles: const {'th': 'ภารกิจสังเคราะห์', 'en': 'Synthetic study mission'},
+    descriptions: const {
+      'th': 'สำหรับทดสอบเท่านั้น',
+      'en': 'Test fixture only',
+    },
+    configuration: QuizConfiguration.category(limit: 1),
+  ),
+  phase: eligible ? StudyPhase.baseline : StudyPhase.unavailable,
+);
+
+final class _StudyEntryRuntime extends Fake implements StudyRuntime {
+  _StudyEntryRuntime(this.read);
+  final Future<StudyView> Function(String ownerId) read;
+  final loads = <String>[];
+
+  @override
+  Future<StudyView> load(String ownerId) {
+    loads.add(ownerId);
+    return read(ownerId);
+  }
+}
+
+final class _StudyEntryGuestService extends Fake
+    implements GuestSessionService {}
+
+final class _StudyEntryNavigation extends NavigatorObserver {
+  int pushes = 0;
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushes++;
+    super.didPush(route, previousRoute);
+  }
+}
+
+Future<void> _pumpStudyEntry(
+  WidgetTester tester,
+  db.AppDatabase database,
+  StudyRuntime runtime, {
+  Stream<String?>? ownerChanges,
+  ValueNotifier<bool>? visible,
+  NavigatorObserver? navigation,
+}) async {
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'study-entry-owner',
+    nowUtc: () => DateTime.utc(2026, 10, 29),
+  );
+  await owners.getOrCreateActiveOwner();
+  final dependencies = AppDependencies(
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _StudyEntryGuestService(),
+    database: database,
+    localOwners: owners,
+    progress: ProgressUseCases(
+      owners: owners,
+      queries: DriftProgressQueries(database),
+      nowUtc: () => DateTime.utc(2026, 10, 29),
+    ),
+    studyRuntime: runtime,
+  );
+  final screen = ChooseModeScreen(
+    loader: () async => snapshot(),
+    ownerChanges: ownerChanges,
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        navigatorObservers: [?navigation],
+        home: visible == null
+            ? screen
+            : ValueListenableBuilder<bool>(
+                valueListenable: visible,
+                builder: (_, isVisible, child) =>
+                    Visibility.maintain(visible: isVisible, child: child!),
+                child: screen,
+              ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 ProgressSnapshot snapshot({int due = 0, bool empty = false}) =>

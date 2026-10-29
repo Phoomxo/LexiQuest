@@ -431,8 +431,9 @@ final class LearningUseCases {
   }
 
   Future<ConfiguredQuizState> startConfiguredQuiz(
-    ConfiguredQuizLaunch launch,
-  ) async {
+    ConfiguredQuizLaunch launch, {
+    bool notifyLocalMutation = true,
+  }) async {
     if (launch.session.activityType != launch.configuration.activityType) {
       throw ArgumentError('quiz launch and configuration activity differ');
     }
@@ -475,7 +476,9 @@ final class LearningUseCases {
         saved.checkpoint is AwaitingQuizAnswer) {
       _markFreshQuizQuestion(saved);
     }
-    onLocalMutation?.call();
+    if (notifyLocalMutation && !saved.restored) {
+      onLocalMutation?.call();
+    }
     return saved;
   }
 
@@ -683,13 +686,16 @@ final class LearningUseCases {
     required String sessionId,
     required String expectedOwnerId,
     required int expectedRevision,
+    bool notifyLocalMutation = true,
   }) async {
     final result = await _configured.finishConfiguredQuiz(
       sessionId: sessionId,
       expectedOwnerId: expectedOwnerId,
       expectedRevision: expectedRevision,
     );
-    onLocalMutation?.call();
+    if (notifyLocalMutation) {
+      onLocalMutation?.call();
+    }
     return result;
   }
 

@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/account/application/account_use_case
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/domain/research_consent.dart';
+import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
 import 'package:vocab_learning_app/features/device_model/application/device_model_use_cases.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_download_manager.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
@@ -909,6 +910,43 @@ void main() {
     },
   );
 
+  testWidgets(
+    'settings resolves the composed study consent before generic v1',
+    (tester) async {
+      final legacy = _ConsentRepository(
+        ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 1,
+          accepted: true,
+          decidedAtUtc: DateTime.utc(2026, 10, 20),
+        ),
+      );
+      final study = _ConsentRepository(
+        ResearchConsentStatus(
+          ownerId: 'synthetic-owner',
+          version: 4,
+          accepted: true,
+          decidedAtUtc: DateTime.utc(2026, 10, 20),
+        ),
+      );
+      await _pumpSettings(
+        tester,
+        dependencyConsent: _consent(legacy),
+        studyRuntime: _SettingsStudyRuntime(_consent(study, version: 4)),
+      );
+      expect(find.text('ยินยอมฉบับ 4 และถอนความยินยอมได้'), findsOneWidget);
+      expect(find.text('ยินยอมฉบับ 1 และถอนความยินยอมได้'), findsNothing);
+      await tester.tap(find.byKey(_withdrawKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'ถอนความยินยอม'));
+      await tester.pumpAndSettle();
+      expect(study.lastVersion, 4);
+      expect(study.status.accepted, isFalse);
+      expect(legacy.decideCalls, 0);
+      expect(legacy.status.accepted, isTrue);
+    },
+  );
+
   testWidgets('settings displays and withdraws the loaded study version four', (
     tester,
   ) async {
@@ -1141,6 +1179,8 @@ Future<void> _pumpSettings(
   WidgetTester tester, {
   AccountUseCases? account,
   ResearchConsentUseCases? consent,
+  ResearchConsentUseCases? dependencyConsent,
+  StudyRuntime? studyRuntime,
   SyncTrigger? syncTrigger,
   SyncStatusSource? syncStatus,
   DeviceModelUseCases? deviceModels,
@@ -1162,6 +1202,8 @@ Future<void> _pumpSettings(
     ),
     config: null,
     guestSessionService: const _GuestSessionService(),
+    researchConsent: dependencyConsent,
+    studyRuntime: studyRuntime,
     syncTrigger: syncTrigger,
     syncStatus: syncStatus,
     deviceModels: deviceModels,
@@ -1304,6 +1346,12 @@ ResearchConsentUseCases _consent(
   nowUtc: () => DateTime.utc(2026, 10, 21),
   version: version,
 );
+
+final class _SettingsStudyRuntime extends Fake implements StudyRuntime {
+  _SettingsStudyRuntime(this.consent);
+  @override
+  final ResearchConsentUseCases consent;
+}
 
 final class _ConsentRepository implements ResearchConsentRepository {
   _ConsentRepository(this.status);

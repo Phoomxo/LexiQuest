@@ -142,7 +142,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             constraints.maxHeight >= 480;
         final content = IndexedStack(
           index: _currentIndex,
-          children: [for (final entry in _entries) entry.screen],
+          children: [
+            for (var index = 0; index < _entries.length; index++)
+              Visibility.maintain(
+                visible: index == _currentIndex,
+                child: _entries[index].screen,
+              ),
+          ],
         );
 
         return Scaffold(

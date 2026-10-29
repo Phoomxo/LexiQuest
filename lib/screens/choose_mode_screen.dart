@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/research/application/study_runtime.dart';
+import '../features/research/presentation/study_host.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
@@ -22,19 +26,46 @@ class ChooseModeScreen extends StatefulWidget {
     this.learning,
     this.featureRegistry,
     this.onOpenMenu,
+    this.ownerChanges,
   });
 
   final ProgressLoader? loader;
   final LearningUseCases? learning;
   final FieldFeatureRegistry? featureRegistry;
   final VoidCallback? onOpenMenu;
+  final Stream<String?>? ownerChanges;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
 }
 
-class _ChooseModeScreenState extends State<ChooseModeScreen> {
+class _ChooseModeScreenState extends State<ChooseModeScreen>
+    with WidgetsBindingObserver {
   Future<ProgressSnapshot>? _load;
+  AppDependencies? _studyDependencies;
+  Stream<String?>? _studyOwners;
+  bool _openingStudy = false;
+  String? _studyOwnerId;
+  int _studyEntryGeneration = 0;
+  bool _studyRouteVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _studyEntryGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
+  }
 
   LearningUseCases? get _learning =>
       widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
@@ -48,6 +79,59 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _load ??= _loadProgress();
+    final visible =
+        ModalRoute.isCurrentOf(context) == true && Visibility.of(context);
+    if (_studyRouteVisible && !visible) _studyEntryGeneration++;
+    _studyRouteVisible = visible;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _replaceStudyBinding(dependencies);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChooseModeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.ownerChanges, widget.ownerChanges)) {
+      _replaceStudyBinding(AppDependenciesScope.maybeOf(context), force: true);
+    }
+  }
+
+  void _replaceStudyBinding(
+    AppDependencies? dependencies, {
+    bool force = false,
+  }) {
+    if (!force && identical(dependencies, _studyDependencies)) return;
+    _studyEntryGeneration++;
+    _studyOwnerId = null;
+    _studyDependencies = dependencies;
+    final source =
+        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+    _studyOwners = dependencies?.studyRuntime == null
+        ? null
+        : source?.transform(
+            StreamTransformer<String?, String?>.fromHandlers(
+              handleData: (ownerId, sink) {
+                _bindStudyOwner(dependencies, ownerId);
+                sink.add(ownerId);
+              },
+              handleError: (Object error, StackTrace stack, sink) {
+                _bindStudyOwner(dependencies, null);
+                sink.addError(error, stack);
+              },
+              handleDone: (sink) {
+                _bindStudyOwner(dependencies, null);
+                sink.add(null);
+                sink.close();
+              },
+            ),
+          );
+  }
+
+  void _bindStudyOwner(AppDependencies? dependencies, String? ownerId) {
+    if (identical(_studyDependencies, dependencies) &&
+        _studyOwnerId != ownerId) {
+      _studyOwnerId = ownerId;
+      _studyEntryGeneration++;
+    }
   }
 
   Future<ProgressSnapshot> _loadProgress() {
@@ -108,6 +192,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 12),
+          _studyEntry(),
           FutureBuilder<ProgressSnapshot>(
             future: _load,
             builder: (context, snapshot) {
@@ -266,6 +351,96 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
       );
     }
   }
+
+  Widget _studyEntry() {
+    final runtime = _studyDependencies?.studyRuntime;
+    final owners = _studyOwners;
+    if (runtime == null || owners == null) return const SizedBox.shrink();
+    final language = Localizations.localeOf(context).languageCode;
+    return StreamBuilder<String?>(
+      stream: owners,
+      builder: (context, ownerSnapshot) {
+        final ownerId = ownerSnapshot.data;
+        if (ownerSnapshot.hasError || ownerId == null) {
+          return const SizedBox.shrink();
+        }
+        return FutureBuilder<StudyView>(
+          key: ValueKey((runtime, ownerId)),
+          future: runtime.load(ownerId),
+          builder: (context, snapshot) {
+            final view = snapshot.data;
+            if (snapshot.connectionState != ConnectionState.done ||
+                snapshot.hasError ||
+                view == null ||
+                view.ownerId != ownerId ||
+                view.phase == StudyPhase.unavailable) {
+              return const SizedBox.shrink();
+            }
+            return _LearningTile(
+              icon: Icons.science_outlined,
+              title: language == 'th'
+                  ? 'กิจกรรมวิจัยที่เข้าร่วม'
+                  : 'Your study activity',
+              subtitle: view.catalog.title(language),
+              onTap: () => _openStudy(runtime, ownerId, owners, language),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openStudy(
+    StudyRuntime runtime,
+    String ownerId,
+    Stream<String?> owners,
+    String language,
+  ) async {
+    final generation = _studyEntryGeneration;
+    if (_openingStudy || !_canOpenStudy(runtime, ownerId, generation)) return;
+    _openingStudy = true;
+    try {
+      final view = await runtime.load(ownerId);
+      if (!mounted ||
+          !_canOpenStudy(runtime, ownerId, generation) ||
+          view.ownerId != ownerId ||
+          view.phase == StudyPhase.unavailable) {
+        return;
+      }
+      await _push(
+        context,
+        StudyHost(
+          runtime: runtime,
+          ownerId: ownerId,
+          languageCode: language,
+          ownerChanges: owners,
+        ),
+      );
+    } on Object {
+      if (mounted && _canOpenStudy(runtime, ownerId, generation)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              language == 'th'
+                  ? 'ยังเปิดกิจกรรมวิจัยไม่ได้ กรุณาลองใหม่ภายหลัง'
+                  : 'The study activity is unavailable. Please try again later.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      _openingStudy = false;
+    }
+  }
+
+  bool _canOpenStudy(StudyRuntime runtime, String ownerId, int generation) =>
+      mounted &&
+      generation == _studyEntryGeneration &&
+      ownerId == _studyOwnerId &&
+      identical(_studyDependencies?.studyRuntime, runtime) &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      Visibility.of(context) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
   Future<void> _openReading(BuildContext context) async {
     final dependencies = AppDependenciesScope.maybeOf(context);

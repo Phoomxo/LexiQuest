@@ -403,6 +403,12 @@ final class DriftLearningRepository
     );
   }
 
+  /// Read-only plan/checkpoint proof. Callers must check active owner and fence.
+  Future<ConfiguredQuizState> inspectConfiguredQuiz({
+    required String sessionId,
+    required String expectedOwnerId,
+  }) => _loadQuiz(sessionId, expectedOwnerId);
+
   @override
   Future<ConfiguredQuizState> resumeQuiz({
     required String sessionId,

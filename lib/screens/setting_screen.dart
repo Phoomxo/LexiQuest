@@ -82,7 +82,9 @@ class _SettingScreenState extends State<SettingScreen> {
     _accountDeletion ??=
         widget.accountDeletion ?? dependencies?.accountDeletion;
     final researchConsent =
-        widget.researchConsent ?? dependencies?.researchConsent;
+        widget.researchConsent ??
+        dependencies?.studyRuntime?.consent ??
+        dependencies?.researchConsent;
     _replaceResearchConsent(researchConsent);
     _syncTrigger ??= dependencies?.syncTrigger;
     _replaceSyncStatusSource(dependencies?.syncStatus);
@@ -97,9 +99,11 @@ class _SettingScreenState extends State<SettingScreen> {
   void didUpdateWidget(covariant SettingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.researchConsent, widget.researchConsent)) {
+      final dependencies = AppDependenciesScope.maybeOf(context);
       _replaceResearchConsent(
         widget.researchConsent ??
-            AppDependenciesScope.maybeOf(context)?.researchConsent,
+            dependencies?.studyRuntime?.consent ??
+            dependencies?.researchConsent,
       );
     }
   }

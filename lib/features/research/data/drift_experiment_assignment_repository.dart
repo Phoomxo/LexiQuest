@@ -200,6 +200,86 @@ final class DriftExperimentAssignmentRepository {
     }
   }
 
+  /// Verifies an already admitted assignment without creating or updating rows.
+  Future<AuthorizedExperimentAssignment?> inspectWithReceipt({
+    required String ownerId,
+    required ResearchParticipationPermit participationPermit,
+  }) async {
+    try {
+      final study = binding.study;
+      final id = experimentAssignmentId(
+        ownerId: ownerId,
+        experimentId: study.experimentId,
+        experimentVersion: study.experimentVersion,
+      );
+      if (participationPermit.ownerId != ownerId ||
+          participationPermit.assignmentId != id ||
+          authorizer.requirements.assignmentId != id) {
+        return null;
+      }
+      final proof = await _checkAuthorities(ownerId, id, participationPermit);
+      if (proof == null) {
+        return null;
+      }
+      final localConsent = await consent.load(
+        ownerId: ownerId,
+        version: study.consentVersion,
+      );
+      final rows = await _database
+          .customSelect(
+            'SELECT * FROM experiment_assignments WHERE owner_id = ? '
+            'AND experiment_id = ? AND experiment_version = ?',
+            variables: [
+              Variable<String>(ownerId),
+              Variable<String>(study.experimentId),
+              Variable<int>(study.experimentVersion),
+            ],
+          )
+          .get();
+      if (rows.length != 1) {
+        return null;
+      }
+      final row = rows.single.data;
+      final now = await _trustedNow();
+      if (now == null ||
+          !_proofIsCurrent(proof, participationPermit, ownerId, id, now) ||
+          !_consentIsCurrent(localConsent, ownerId, now)) {
+        return null;
+      }
+      final assignedAt = row['assigned_at_utc_ms'];
+      if (row['id'] != id ||
+          row['owner_id'] != ownerId ||
+          row['experiment_id'] != study.experimentId ||
+          row['experiment_version'] != study.experimentVersion ||
+          row['cohort'] != participationPermit.assignedTreatment.wireName ||
+          row['protocol_version'] != study.protocolVersion ||
+          assignedAt is! int ||
+          assignedAt < 0 ||
+          assignedAt > 8640000000000000 ||
+          assignedAt > now.millisecondsSinceEpoch ||
+          assignedAt < localConsent.decidedAtUtc!.millisecondsSinceEpoch) {
+        return null;
+      }
+      return AuthorizedExperimentAssignment._(
+        assignment: ExperimentAssignment(
+          id: id,
+          ownerId: ownerId,
+          experimentId: study.experimentId,
+          experimentVersion: study.experimentVersion,
+          cohort: participationPermit.assignedTreatment.wireName,
+          protocolVersion: study.protocolVersion,
+          assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            assignedAt,
+            isUtc: true,
+          ),
+        ),
+        operation: proof.operation,
+      );
+    } on Object {
+      return null;
+    }
+  }
+
   Future<_AdmissionProof?> _checkAuthorities(
     String ownerId,
     String assignmentId,

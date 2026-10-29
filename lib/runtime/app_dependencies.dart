@@ -19,6 +19,7 @@ import '../features/progress/application/progress_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/domain/research_runtime_availability.dart';
+import '../features/research/application/study_runtime.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_status.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -66,6 +67,7 @@ final class AppDependencies {
     this.accountDeletion,
     this.researchConsent,
     this.researchAvailability = ResearchRuntimeAvailability.disabled,
+    this.studyRuntime,
     this.exports,
     this.geminiTutor,
     this.objectScanner,
@@ -108,6 +110,7 @@ final class AppDependencies {
   final AccountDeletionUseCases? accountDeletion;
   final ResearchConsentUseCases? researchConsent;
   final ResearchRuntimeAvailability researchAvailability;
+  final StudyRuntime? studyRuntime;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;

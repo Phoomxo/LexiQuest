@@ -163,45 +163,87 @@ final class DriftResearchParticipationRepository
     }
   }
 
+  /// Reads only admitted, current signed state. It never imports or admits.
+  Future<ResearchParticipantSnapshot?> inspectParticipant({
+    required String ownerId,
+  }) async => (await inspectParticipantWithReceipt(ownerId: ownerId))?.snapshot;
+
+  Future<AuthorizedResearchParticipant?> inspectParticipantWithReceipt({
+    required String ownerId,
+  }) async {
+    try {
+      requireResearchCode(ownerId);
+      final now = await _now();
+      final candidates = (await _ownerPermits(
+        ownerId,
+      )).where((permit) => _eligibleAt(permit, now)).toList();
+      if (candidates.length != 1) {
+        return null;
+      }
+      final permit = candidates.single;
+      if (!_matchesScope(ownerId, permit)) {
+        return null;
+      }
+      final admission = await assignments.inspectWithReceipt(
+        ownerId: ownerId,
+        participationPermit: permit,
+      );
+      if (admission == null) {
+        return null;
+      }
+      return AuthorizedResearchParticipant._(
+        await _readSnapshot(permit, admission),
+        admission.operation,
+      );
+    } on Object {
+      return null;
+    }
+  }
+
   Future<ResearchParticipantSnapshot> _snapshot(
     ResearchParticipationPermit permit,
     AuthorizedExperimentAssignment admission,
   ) => assignments.ownerWrites.writeForActiveOwner(
     expectedOwnerId: permit.ownerId,
-    write: () async {
-      await _requireUnchanged(permit, permit.id);
-      await _requireNoOtherEligible(permit);
-      final assignment = await _assignment(permit);
-      final consent = await assignments.consent.load(
-        ownerId: permit.ownerId,
-        version: assignments.binding.study.consentVersion,
-      );
-      final now = await _now();
-      final decision = consent.decidedAtUtc;
-      final operation = admission.operation.permit;
-      if (assignment == null ||
-          assignment != admission.assignment ||
-          operation.ownerId != permit.ownerId ||
-          operation.assignmentId != assignment.id ||
-          operation.operation != ResearchOperation.collect ||
-          now.isBefore(operation.issuedAtUtc) ||
-          !now.isBefore(operation.expiresAtUtc) ||
-          admission.operation.verifiedAtUtc.isAfter(now) ||
-          !_eligibleAt(permit, now) ||
-          !consent.accepted ||
-          consent.ownerId != permit.ownerId ||
-          consent.version != assignments.binding.study.consentVersion ||
-          consent.withdrawnAtUtc != null ||
-          decision == null ||
-          !decision.isUtc ||
-          decision.microsecondsSinceEpoch < 0 ||
-          assignment.assignedAtUtc.isBefore(decision) ||
-          assignment.assignedAtUtc.isAfter(now)) {
-        _deny();
-      }
-      return ResearchParticipantSnapshot(permit, assignment, consent);
-    },
+    write: () => _readSnapshot(permit, admission),
   );
+
+  Future<ResearchParticipantSnapshot> _readSnapshot(
+    ResearchParticipationPermit permit,
+    AuthorizedExperimentAssignment admission,
+  ) async {
+    await _requireUnchanged(permit, permit.id);
+    await _requireNoOtherEligible(permit);
+    final assignment = await _assignment(permit);
+    final consent = await assignments.consent.load(
+      ownerId: permit.ownerId,
+      version: assignments.binding.study.consentVersion,
+    );
+    final now = await _now();
+    final decision = consent.decidedAtUtc;
+    final operation = admission.operation.permit;
+    if (assignment == null ||
+        assignment != admission.assignment ||
+        operation.ownerId != permit.ownerId ||
+        operation.assignmentId != assignment.id ||
+        operation.operation != ResearchOperation.collect ||
+        now.isBefore(operation.issuedAtUtc) ||
+        !now.isBefore(operation.expiresAtUtc) ||
+        admission.operation.verifiedAtUtc.isAfter(now) ||
+        !_eligibleAt(permit, now) ||
+        !consent.accepted ||
+        consent.ownerId != permit.ownerId ||
+        consent.version != assignments.binding.study.consentVersion ||
+        consent.withdrawnAtUtc != null ||
+        decision == null ||
+        !decision.isUtc ||
+        decision.microsecondsSinceEpoch < 0 ||
+        assignment.assignedAtUtc.isBefore(decision) ||
+        assignment.assignedAtUtc.isAfter(now)) {
+      _deny();
+    }
+    return ResearchParticipantSnapshot(permit, assignment, consent);
+  }
 
   Future<void> _requireNarrowingAuthority(
     String ownerId,

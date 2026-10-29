@@ -385,6 +385,69 @@ final class DriftMeasurementOpportunityRepository
     );
   }
 
+  /// Verifies committed index facts without collecting or repairing them.
+  /// False means both completion projections are absent, not permission to
+  /// fabricate a start. Explicit canonical completion retry owns repair.
+  Future<bool> inspectIndexFacts({
+    required MotivationMeasurementRun run,
+    required MeasurementOpportunity opportunity,
+    required ConfiguredQuizState index,
+    required DateTime nowUtc,
+  }) async {
+    _binding(opportunity, run);
+    final facts = await _facts(run);
+    if (facts is! MotivationAfterExposure ||
+        facts.firstExposureEventId != opportunity.presentation?.eventId ||
+        facts.indexSession?.id != index.sessionId ||
+        facts.indexSession?.startedAtUtc != index.startedAtUtc ||
+        index.ownerId != run.ownerId ||
+        index.plan.mode != 'meaning-quiz' ||
+        index.appVersion != run.study.appVersion ||
+        index.buildId != run.study.buildId ||
+        index.startedAtUtc.isAfter(nowUtc)) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+    await _requireMissionFact(
+      opportunity,
+      run,
+      index,
+      measurementMissionStartedEventType,
+      nowUtc,
+    );
+    final completed = await _missionRow(
+      opportunity,
+      index.sessionId,
+      measurementMissionCompletedEventType,
+    );
+    if (index.state != 'completed') {
+      if (opportunity.closedAtUtc != null || completed != null) {
+        _deny(ResearchCaptureReason.identityConflict);
+      }
+      return false;
+    }
+    if (index.checkpoint is! CompletedQuizSession ||
+        index.endedAtUtc == null ||
+        index.endedAtUtc!.isAfter(nowUtc) ||
+        facts.indexSession?.completedAtUtc != index.endedAtUtc) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+    if (opportunity.closedAtUtc == null && completed == null) {
+      return false;
+    }
+    if (opportunity.closedAtUtc != index.endedAtUtc || completed == null) {
+      _deny(ResearchCaptureReason.identityConflict);
+    }
+    await _requireMissionFact(
+      opportunity,
+      run,
+      index,
+      measurementMissionCompletedEventType,
+      nowUtc,
+      row: completed,
+    );
+    return true;
+  }
+
   Future<ConfiguredQuizState> _configuredSession(
     LearningSessionLifecycleFact fact, {
     required bool completed,

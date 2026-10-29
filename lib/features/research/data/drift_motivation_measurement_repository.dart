@@ -305,20 +305,27 @@ final class DriftMotivationMeasurementRepository
   @override
   Future<MotivationMeasurementRun?> load(String ownerId, String runId) {
     _codes([ownerId, runId]);
-    return _owner(ownerId, () async {
-      final run = await _read(ownerId, runId);
-      if (run == null) return null;
-      MotivationTimingFacts? facts;
-      try {
-        facts = await _timing(run);
-        final now = await _now();
-        _factTimes(run, now);
-        _factTiming(run, facts, now);
-      } on Object {
-        facts = null;
-      }
-      return _withTiming(run, facts);
-    });
+    return _owner(ownerId, () => inspect(ownerId, runId));
+  }
+
+  /// Historical read only. Callers still reauthorize every collection command.
+  Future<MotivationMeasurementRun?> inspect(
+    String ownerId,
+    String runId,
+  ) async {
+    _codes([ownerId, runId]);
+    final run = await _read(ownerId, runId);
+    if (run == null) return null;
+    MotivationTimingFacts? facts;
+    try {
+      facts = await _timing(run);
+      final now = await _now();
+      _factTimes(run, now);
+      _factTiming(run, facts, now);
+    } on Object {
+      facts = null;
+    }
+    return _withTiming(run, facts);
   }
 
   Future<MotivationMeasurementRun> _finish(
