@@ -24,6 +24,23 @@ final class DriftOwnerWriteCoordinator implements OwnerWriteCoordinator {
 
   db.AppDatabase get database => _database;
 
+  /// Checks the actual inherited executor before an operation requiring its own
+  /// committed boundary. An unknown executor or unavailable database denies it.
+  Future<bool> hasAmbientTransaction() async {
+    final probe = _OwnerAmbientTransactionProbe();
+    try {
+      await _database.runWithInterceptor(
+        () => _database
+            .customSelect('SELECT 1 AS owner_transaction_probe')
+            .getSingle(),
+        interceptor: probe,
+      );
+      return probe.insideTransaction != false;
+    } on Object {
+      return true;
+    }
+  }
+
   @override
   Future<T> writeForActiveOwner<T>({
     required String expectedOwnerId,
@@ -610,4 +627,18 @@ final class DriftOwnerWriteCoordinator implements OwnerWriteCoordinator {
   static Never _invalidLocal() => throw const AccountDeletionException(
     AccountDeletionFailureCode.invalidLocalReceipt,
   );
+}
+
+final class _OwnerAmbientTransactionProbe extends QueryInterceptor {
+  bool? insideTransaction;
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) {
+    insideTransaction = executor is TransactionExecutor;
+    return executor.runSelect(statement, args);
+  }
 }
