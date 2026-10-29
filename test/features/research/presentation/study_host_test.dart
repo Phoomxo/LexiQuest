@@ -786,6 +786,8 @@ final class _UiRuntime implements StudyRuntime {
   int begins = 0;
   int loads = 0;
   final opens = <String>[];
+  final _potentialOpenings = <String>{};
+  final _invalidOpenings = <String>{};
   int presents = 0;
   int starts = 0;
   int resumes = 0;
@@ -851,7 +853,9 @@ final class _UiRuntime implements StudyRuntime {
   }
 
   @override
-  Future<StudyView> load(String ownerId) async {
+  Future<StudyView> load(String ownerId) => _load(ownerId);
+
+  Future<StudyView> _load(String ownerId, {bool prepared = false}) async {
     loads++;
     final override = loadOverride;
     if (override != null) return override();
@@ -859,7 +863,9 @@ final class _UiRuntime implements StudyRuntime {
     final opportunity = await firstOpportunity();
     final current = await index();
     final StudyPhase phase;
-    if (run == null || run.score(MotivationTimepoint.baseline) == null) {
+    if (opportunity != null && opportunity.presentation == null && !prepared) {
+      phase = StudyPhase.unavailable;
+    } else if (run == null || run.score(MotivationTimepoint.baseline) == null) {
       phase = StudyPhase.baseline;
     } else if (run.state == MotivationMeasurementRunState.completed) {
       phase = StudyPhase.completed;
@@ -899,22 +905,61 @@ final class _UiRuntime implements StudyRuntime {
   Future<StudyView> openPresentation(
     String ownerId, {
     required String entryAttemptId,
+    required bool Function() stillCurrent,
   }) async {
-    opens.add(entryAttemptId);
+    if (_invalidOpenings.contains(entryAttemptId) ||
+        _potentialOpenings.contains(entryAttemptId)) {
+      throw StateError('synthetic opening may already have rendered');
+    }
+    if (!opens.contains(entryAttemptId)) {
+      if (await firstOpportunity() != null) {
+        throw StateError('synthetic unknown opening');
+      }
+      opens.add(entryAttemptId);
+    }
     await fixture.openOpportunity(entryId: entryAttemptId);
+    if (!stillCurrent()) {
+      throw StateError('synthetic opening no longer current');
+    }
     if (failOpenAcknowledgement) {
       failOpenAcknowledgement = false;
       throw StateError('synthetic lost open acknowledgement');
     }
-    return load(ownerId);
+    return _load(ownerId, prepared: true);
+  }
+
+  @override
+  void markPresentationMayRender(
+    String ownerId,
+    String opportunityId, {
+    required String entryAttemptId,
+  }) {
+    if (!opens.contains(entryAttemptId) ||
+        _invalidOpenings.contains(entryAttemptId)) {
+      throw StateError('synthetic opening was not prepared');
+    }
+    _potentialOpenings.add(entryAttemptId);
+  }
+
+  @override
+  void invalidatePresentationOpening(
+    String ownerId, {
+    required String entryAttemptId,
+  }) {
+    if (opens.contains(entryAttemptId)) _invalidOpenings.add(entryAttemptId);
   }
 
   @override
   Future<StudyView> recordPresented(
     String ownerId,
     String opportunityId, {
+    required String entryAttemptId,
     required bool Function() stillVisible,
   }) async {
+    if (!_potentialOpenings.contains(entryAttemptId) ||
+        _invalidOpenings.contains(entryAttemptId)) {
+      throw StateError('synthetic opening cannot backfill');
+    }
     presents++;
     try {
       await fixture.repository.recordPresented(

@@ -71,6 +71,8 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   _PresentationBinding? _rendered;
   _PresentationBinding? _scheduled;
   Timer? _expiry;
+  ({StudyRuntime runtime, String owner, String entry})? _opening;
+  bool _openingMayRender = false;
 
   bool get _thai => widget.languageCode != 'en';
   String _text(String th, String en) => _thai ? th : en;
@@ -159,6 +161,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
   }
 
   void _invalidate() {
+    _invalidateOpening();
     _generation++;
     _expiry?.cancel();
     _formCurrent.value = false;
@@ -186,6 +189,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _invalidateOpening();
     _generation++;
     _binding++;
     _expiry?.cancel();
@@ -206,6 +210,7 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       await action(generation);
     } on Object {
       if (_current(generation)) {
+        if (_openingMayRender) _invalidateOpening(forget: false);
         _expiry?.cancel();
         _formCurrent.value = false;
         setState(() {
@@ -223,10 +228,25 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
 
   Future<void> _readView(
     Future<StudyView> Function() read,
-    int generation,
-  ) async {
+    int generation, {
+    bool alreadyPrepared = false,
+  }) async {
     final elapsed = Stopwatch()..start();
-    final view = await read();
+    var view = await read();
+    if (!_current(generation)) return;
+    if (widget._postOnly && view.phase != StudyPhase.post) {
+      _closePost(generation);
+      return;
+    }
+    final needsOpening =
+        view.phase == StudyPhase.ready &&
+        view.opportunity?.presentation == null;
+    if (needsOpening) {
+      if (_openingMayRender || (view.opportunity != null && _opening == null)) {
+        throw StateError('unresolved study opening is unavailable');
+      }
+      if (!alreadyPrepared) view = await _prepareOpening(generation);
+    }
     elapsed.stop();
     if (!_current(generation)) return;
     if (view.ownerId != widget.ownerId ||
@@ -264,6 +284,22 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
         view.phase == StudyPhase.activeIndex) {
       _presentation(view);
     }
+    if (needsOpening) {
+      final opening = _opening;
+      final opportunity = view.opportunity;
+      if (opening == null ||
+          opportunity == null ||
+          view.phase != StudyPhase.ready ||
+          opportunity.presentation != null) {
+        throw StateError('study opening was not prepared');
+      }
+      opening.runtime.markPresentationMayRender(
+        opening.owner,
+        opportunity.id,
+        entryAttemptId: opening.entry,
+      );
+      _openingMayRender = true;
+    }
     setState(() {
       _view = view;
       _rendered = null;
@@ -281,10 +317,47 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _reload() => _run(
-    (generation) =>
-        _readView(() => widget.runtime.load(widget.ownerId), generation),
-  );
+  Future<void> _reload() => _run((generation) {
+    final retryPreparation = _opening != null && !_openingMayRender;
+    return _readView(
+      retryPreparation
+          ? () => _prepareOpening(generation)
+          : () => widget.runtime.load(widget.ownerId),
+      generation,
+      alreadyPrepared: retryPreparation,
+    );
+  });
+
+  Future<StudyView> _prepareOpening(int generation) {
+    if (_openingMayRender) {
+      throw StateError('study opening may already have rendered');
+    }
+    final opening = _opening ??= (
+      runtime: widget.runtime,
+      owner: widget.ownerId,
+      entry: _entryAttemptId,
+    );
+    return opening.runtime.openPresentation(
+      opening.owner,
+      entryAttemptId: opening.entry,
+      stillCurrent: () =>
+          _current(generation) && _opening == opening && !_openingMayRender,
+    );
+  }
+
+  void _invalidateOpening({bool forget = true}) {
+    final opening = _opening;
+    if (opening != null) {
+      opening.runtime.invalidatePresentationOpening(
+        opening.owner,
+        entryAttemptId: opening.entry,
+      );
+    }
+    if (forget) {
+      _opening = null;
+      _openingMayRender = false;
+    }
+  }
 
   Future<void> _begin() => _run(
     (generation) =>
@@ -348,19 +421,15 @@ class _StudyHostState extends State<StudyHost> with WidgetsBindingObserver {
       unawaited(
         _run((current) async {
           final opportunity = view.opportunity;
-          if (opportunity == null) {
-            await _readView(
-              () => widget.runtime.openPresentation(
-                widget.ownerId,
-                entryAttemptId: _entryAttemptId,
-              ),
-              current,
-            );
+          final opening = _opening;
+          if (opportunity == null || opening == null || !_openingMayRender) {
+            throw StateError('target frame has no prepared opening');
           } else {
             await _readView(
               () => widget.runtime.recordPresented(
                 widget.ownerId,
                 opportunity.id,
+                entryAttemptId: opening.entry,
                 stillVisible: () => _stillPresented(view, binding, current),
               ),
               current,

@@ -97,6 +97,7 @@ final class LocalStudyRuntime implements StudyRuntime {
   late final DriftMotivationMeasurementTimingReader _timing;
   final _owners = <String, _OwnerStudy>{};
   final _launches = <String, Future<ConfiguredQuizLaunch>>{};
+  final _openings = <(String, String), _StudyOpening>{};
 
   @override
   LearningUseCases get learning {
@@ -194,7 +195,7 @@ final class LocalStudyRuntime implements StudyRuntime {
     }
   }
 
-  Future<StudyView> _inspect(String ownerId) async {
+  Future<StudyView> _inspect(String ownerId, {_StudyOpening? opening}) async {
     await _requireOwner(ownerId);
     if (!authorities.availability.isEnabled) {
       _deny(ResearchCaptureReason.noPermit);
@@ -382,6 +383,17 @@ final class LocalStudyRuntime implements StudyRuntime {
     if (run == null) {
       return timedView(ownerId, StudyPhase.baseline);
     }
+    if (opportunity != null &&
+        opportunity.presentation == null &&
+        !_knownUnpresentedOpening(opening, opportunity)) {
+      return timedView(
+        ownerId,
+        StudyPhase.unavailable,
+        reason: ResearchCaptureReason.timingUnavailable,
+        run: run,
+        opportunity: opportunity,
+      );
+    }
     if (run.state != MotivationMeasurementRunState.started &&
         run.state != MotivationMeasurementRunState.completed) {
       return timedView(
@@ -525,62 +537,182 @@ final class LocalStudyRuntime implements StudyRuntime {
   Future<StudyView> openPresentation(
     String ownerId, {
     required String entryAttemptId,
-  }) => _write(ownerId, () async {
+    required bool Function() stillCurrent,
+  }) async {
     requireMeasurementEntryId(entryAttemptId);
-    final before = await _inspect(ownerId);
-    if (before.phase != StudyPhase.ready || before.run == null) {
-      _deny(ResearchCaptureReason.incomplete);
-    }
-    final existing = before.opportunity;
-    if (existing != null) {
-      if (existing.entryAttemptId != entryAttemptId) {
+    _StudyOpening? preparedOpening;
+    final result = await _write(ownerId, () async {
+      final opening = _openings.putIfAbsent((
+        ownerId,
+        entryAttemptId,
+      ), () => _StudyOpening(ownerId, entryAttemptId));
+      preparedOpening = opening;
+      if (!_preframe(opening)) {
+        _deny(ResearchCaptureReason.timingUnavailable);
+      }
+      final before = await _inspect(ownerId, opening: opening);
+      if (before.opportunity != null &&
+          before.opportunity!.entryAttemptId != entryAttemptId) {
         _deny(ResearchCaptureReason.identityConflict);
       }
-      return before;
+      if (before.phase != StudyPhase.ready ||
+          before.run == null ||
+          !_preframe(opening)) {
+        _deny(
+          before.phase == StudyPhase.baseline
+              ? ResearchCaptureReason.incomplete
+              : ResearchCaptureReason.timingUnavailable,
+        );
+      }
+      var opportunity = before.opportunity;
+      if (opportunity == null) {
+        opportunity = await _forOwner(ownerId).opportunities.open(
+          ownerId: ownerId,
+          measurementRunId: before.run!.id,
+          entryAttemptId: entryAttemptId,
+          effectivePresentation: TodayExperiencePresentationCodec.decode(
+            before.run!.treatment,
+          ),
+        );
+        opening.prepared = opportunity;
+      } else if (!_knownUnpresentedOpening(opening, opportunity)) {
+        _deny(ResearchCaptureReason.identityConflict);
+      }
+      final after = await _inspect(ownerId, opening: opening);
+      if (after.phase != StudyPhase.ready ||
+          after.opportunity?.id != opportunity.id ||
+          !_preframe(opening) ||
+          !stillCurrent()) {
+        _deny(ResearchCaptureReason.sessionUnavailable);
+      }
+      return after;
+    });
+    final opening = preparedOpening!;
+    if (!_preframe(opening)) {
+      _deny(ResearchCaptureReason.timingUnavailable);
     }
-    final participant = await _forOwner(
-      ownerId,
-    ).participation.inspectParticipant(ownerId: ownerId);
-    if (participant == null) {
-      _deny(ResearchCaptureReason.invalidPermit);
+    opening.phase = _OpeningPhase.prepared;
+    return result;
+  }
+
+  @override
+  void markPresentationMayRender(
+    String ownerId,
+    String opportunityId, {
+    required String entryAttemptId,
+  }) {
+    final opening = _requireOpening(ownerId, opportunityId, entryAttemptId);
+    if (opening.phase != _OpeningPhase.prepared) {
+      _deny(ResearchCaptureReason.timingUnavailable);
     }
-    await _forOwner(ownerId).opportunities.open(
-      ownerId: ownerId,
-      measurementRunId: before.run!.id,
-      entryAttemptId: entryAttemptId,
-      effectivePresentation: participant.permit.assignedTreatment,
-    );
-    return _inspect(ownerId);
-  });
+    opening.phase = _OpeningPhase.potentialRender;
+  }
+
+  @override
+  void invalidatePresentationOpening(
+    String ownerId, {
+    required String entryAttemptId,
+  }) {
+    final opening = _openings[(ownerId, entryAttemptId)];
+    if (opening != null && opening.phase != _OpeningPhase.committed) {
+      opening.phase = _OpeningPhase.uncertain;
+    }
+  }
 
   @override
   Future<StudyView> recordPresented(
     String ownerId,
     String opportunityId, {
+    required String entryAttemptId,
     required bool Function() stillVisible,
-  }) => _write(ownerId, () async {
-    final before = await _inspect(ownerId);
-    if (before.phase == StudyPhase.unavailable) {
-      _deny(before.reason ?? ResearchCaptureReason.sessionUnavailable);
+  }) async {
+    _StudyOpening? attemptedOpening;
+    try {
+      final result = await _write(ownerId, () async {
+        final opening = _requireOpening(ownerId, opportunityId, entryAttemptId);
+        attemptedOpening = opening;
+        final newCapture = opening.phase == _OpeningPhase.potentialRender;
+        if (!newCapture) {
+          final stored = await _forOwner(
+            ownerId,
+          ).opportunities.load(ownerId, opportunityId);
+          if (stored?.presentation == null) {
+            _deny(ResearchCaptureReason.timingUnavailable);
+          }
+        }
+        opening.phase = _OpeningPhase.capturing;
+        bool currentFrame() =>
+            opening.phase == _OpeningPhase.capturing && stillVisible();
+        final before = await _inspect(
+          ownerId,
+          opening: newCapture ? opening : null,
+        );
+        if (before.phase == StudyPhase.unavailable) {
+          _deny(before.reason ?? ResearchCaptureReason.sessionUnavailable);
+        }
+        if (before.opportunity?.id != opportunityId ||
+            before.run?.state != MotivationMeasurementRunState.started) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+        await _forOwner(ownerId).opportunities.recordPresented(
+          ownerId,
+          opportunityId,
+          stillVisible: currentFrame,
+        );
+        final after = await _inspect(ownerId);
+        if (after.phase == StudyPhase.unavailable) {
+          _deny(after.reason ?? ResearchCaptureReason.sessionUnavailable);
+        }
+        if (!currentFrame()) {
+          _deny(ResearchCaptureReason.sessionUnavailable);
+        }
+        return after;
+      });
+      attemptedOpening!.phase = _OpeningPhase.committed;
+      return result;
+    } on Object {
+      attemptedOpening?.phase = _OpeningPhase.uncertain;
+      rethrow;
     }
-    if (before.opportunity?.id != opportunityId ||
-        before.run?.state != MotivationMeasurementRunState.started) {
-      _deny(ResearchCaptureReason.identityConflict);
+  }
+
+  _StudyOpening _requireOpening(
+    String ownerId,
+    String opportunityId,
+    String entryAttemptId,
+  ) {
+    final opening = _openings[(ownerId, entryAttemptId)];
+    if (opening == null || opening.prepared?.id != opportunityId) {
+      _deny(ResearchCaptureReason.timingUnavailable);
     }
-    await _forOwner(ownerId).opportunities.recordPresented(
-      ownerId,
-      opportunityId,
-      stillVisible: stillVisible,
-    );
-    final after = await _inspect(ownerId);
-    if (after.phase == StudyPhase.unavailable) {
-      _deny(after.reason ?? ResearchCaptureReason.sessionUnavailable);
-    }
-    if (!stillVisible()) {
-      _deny(ResearchCaptureReason.sessionUnavailable);
-    }
-    return after;
-  });
+    return opening;
+  }
+
+  static bool _preframe(_StudyOpening opening) =>
+      opening.phase == _OpeningPhase.preparing ||
+      opening.phase == _OpeningPhase.prepared;
+
+  static bool _knownUnpresentedOpening(
+    _StudyOpening? opening,
+    MeasurementOpportunity current,
+  ) {
+    final prepared = opening?.prepared;
+    return opening != null &&
+        prepared != null &&
+        (_preframe(opening) || opening.phase == _OpeningPhase.capturing) &&
+        current.presentation == null &&
+        current.indexLink == null &&
+        current.closedAtUtc == null &&
+        current.id == prepared.id &&
+        current.ownerId == opening.ownerId &&
+        current.entryAttemptId == opening.entryAttemptId &&
+        current.measurementRunId == prepared.measurementRunId &&
+        current.permitId == prepared.permitId &&
+        current.assignedTreatment == prepared.assignedTreatment &&
+        current.effectivePresentation == prepared.effectivePresentation &&
+        current.openedAtUtc == prepared.openedAtUtc &&
+        current.localRevision == prepared.localRevision;
+  }
 
   @override
   Future<ConfiguredQuizState> startIndex(
@@ -665,9 +797,15 @@ final class LocalStudyRuntime implements StudyRuntime {
         return resumed;
       });
 
-  Future<T> _write<T>(String ownerId, Future<T> Function() action) => context
-      .ownerWrites
-      .writeForActiveOwner(expectedOwnerId: ownerId, write: action);
+  Future<T> _write<T>(String ownerId, Future<T> Function() action) async {
+    if (await context.ownerWrites.hasAmbientTransaction()) {
+      _deny(ResearchCaptureReason.sessionUnavailable);
+    }
+    return context.ownerWrites.writeForActiveOwner(
+      expectedOwnerId: ownerId,
+      write: action,
+    );
+  }
 
   Future<ConfiguredQuizLaunch> _launchFor(
     String ownerId,
@@ -773,6 +911,23 @@ final class LocalStudyRuntime implements StudyRuntime {
 
   static Never _deny(ResearchCaptureReason reason) =>
       throw ResearchCaptureDenied(reason);
+}
+
+enum _OpeningPhase {
+  preparing,
+  prepared,
+  potentialRender,
+  capturing,
+  committed,
+  uncertain,
+}
+
+final class _StudyOpening {
+  _StudyOpening(this.ownerId, this.entryAttemptId);
+  final String ownerId;
+  final String entryAttemptId;
+  MeasurementOpportunity? prepared;
+  _OpeningPhase phase = _OpeningPhase.preparing;
 }
 
 final class _OwnerStudy {

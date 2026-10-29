@@ -211,10 +211,17 @@ final class StudyRuntimeFixture {
     final opened = await runtime.openPresentation(
       ownerId,
       entryAttemptId: studyEntryId,
+      stillCurrent: () => true,
+    );
+    runtime.markPresentationMayRender(
+      ownerId,
+      opened.opportunity!.id,
+      entryAttemptId: studyEntryId,
     );
     return runtime.recordPresented(
       ownerId,
       opened.opportunity!.id,
+      entryAttemptId: studyEntryId,
       stillVisible: () => true,
     );
   }
@@ -296,6 +303,7 @@ final class StudyRuntimeFixture {
 
 final class StudyReadQueries extends drift.QueryInterceptor {
   bool rejectWrites = false;
+  Future<void> Function()? afterOpportunityInsert;
   void Function(drift.QueryExecutor executor, String statement)? afterSelect;
 
   @override
@@ -314,9 +322,15 @@ final class StudyReadQueries extends drift.QueryInterceptor {
     drift.QueryExecutor executor,
     String statement,
     List<Object?> args,
-  ) {
+  ) async {
     _check(statement);
-    return executor.runCustom(statement, args);
+    await executor.runCustom(statement, args);
+    if (RegExp(
+      r'^\s*INSERT INTO measurement_opportunities\b',
+      caseSensitive: false,
+    ).hasMatch(statement)) {
+      await afterOpportunityInsert?.call();
+    }
   }
 
   @override

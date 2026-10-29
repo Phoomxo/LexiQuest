@@ -127,10 +127,21 @@ abstract interface class StudyRuntime {
   Future<StudyView> openPresentation(
     String ownerId, {
     required String entryAttemptId,
+    required bool Function() stillCurrent,
+  });
+  void markPresentationMayRender(
+    String ownerId,
+    String opportunityId, {
+    required String entryAttemptId,
+  });
+  void invalidatePresentationOpening(
+    String ownerId, {
+    required String entryAttemptId,
   });
   Future<StudyView> recordPresented(
     String ownerId,
     String opportunityId, {
+    required String entryAttemptId,
     required bool Function() stillVisible,
   });
   Future<ConfiguredQuizState> startIndex(

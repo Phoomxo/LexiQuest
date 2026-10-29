@@ -77,6 +77,292 @@ void main() {
   });
 
   test(
+    'inherited parent transaction cannot prepare an opening or grant render permission',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      final baseline = await fixture.baseline();
+      final expectedId = measurementOpportunityId(
+        ownerId: fixture.ownerId,
+        measurementRunId: baseline.run!.id,
+        permitId: fixture.participation.current.id,
+        entryAttemptId: studyEntryId,
+      );
+      final before = await fixture.researchRows();
+      await fixture.database.transaction(() async {
+        await expectLater(
+          fixture.runtime.openPresentation(
+            fixture.ownerId,
+            entryAttemptId: studyEntryId,
+            stillCurrent: () => true,
+          ),
+          studyDenied(ResearchCaptureReason.sessionUnavailable),
+        );
+        expect(
+          () => fixture.runtime.markPresentationMayRender(
+            fixture.ownerId,
+            expectedId,
+            entryAttemptId: studyEntryId,
+          ),
+          throwsA(isA<ResearchCaptureDenied>()),
+        );
+        expect(await fixture.rows('measurement_opportunities'), isEmpty);
+      });
+      expect(await fixture.researchRows(), before);
+      final prepared = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      expect(prepared.opportunity!.id, expectedId);
+      expect(await fixture.rows('measurement_opportunities'), hasLength(1));
+    },
+  );
+
+  test(
+    'inherited parent transaction cannot start Study learning or notify sync',
+    () async {
+      final queries = StudyReadQueries();
+      fixture = await StudyRuntimeFixture.open(
+        database: AppDatabase(NativeDatabase.memory().interceptWith(queries)),
+      );
+      final ready = await fixture.ready();
+      final before = await fixture.researchRows();
+      final probe = _MutationProbe(fixture, queries);
+      await fixture.database.transaction(() async {
+        await expectLater(
+          fixture.runtime.startIndex(
+            fixture.ownerId,
+            ready.opportunity!.id,
+            stillVisible: () => true,
+          ),
+          studyDenied(ResearchCaptureReason.sessionUnavailable),
+        );
+        expect(await fixture.rows('learning_sessions'), isEmpty);
+      });
+      await probe.drain();
+      expect(probe.calls, 0);
+      expect(probe.transactionQueries, isEmpty);
+      expect(probe.errors, isEmpty);
+      expect(await fixture.researchRows(), before);
+    },
+  );
+
+  test(
+    'prepare final current-binding denial rolls back opening before any render permission',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final before = await fixture.researchRows();
+      var current = true;
+      fixture.participation.states.onRead = (_) async {
+        if ((await fixture.rows('measurement_opportunities')).isNotEmpty) {
+          current = false;
+        }
+      };
+      await expectLater(
+        fixture.runtime.openPresentation(
+          fixture.ownerId,
+          entryAttemptId: studyEntryId,
+          stillCurrent: () => current,
+        ),
+        studyDenied(),
+      );
+      expect(await fixture.researchRows(), before);
+      expect(
+        (await fixture.runtime.load(fixture.ownerId)).phase,
+        StudyPhase.ready,
+      );
+    },
+  );
+
+  test(
+    'entry identity without potential-render phase cannot create Presented',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final opened = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      final before = await fixture.researchRows();
+      await expectLater(
+        fixture.runtime.recordPresented(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+          stillVisible: () => true,
+        ),
+        studyDenied(ResearchCaptureReason.timingUnavailable),
+      );
+      expect(await fixture.researchRows(), before);
+      expect(
+        (await fixture.runtime.load(fixture.ownerId)).phase,
+        StudyPhase.unavailable,
+      );
+    },
+  );
+
+  test(
+    'potential-render invalidation cannot reopen or backfill the original entry',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final opened = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      fixture.runtime.markPresentationMayRender(
+        fixture.ownerId,
+        opened.opportunity!.id,
+        entryAttemptId: studyEntryId,
+      );
+      final before = await fixture.researchRows();
+      fixture.runtime.invalidatePresentationOpening(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+      );
+      await expectLater(
+        fixture.runtime.recordPresented(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+          stillVisible: () => true,
+        ),
+        studyDenied(ResearchCaptureReason.timingUnavailable),
+      );
+      await expectLater(
+        fixture.runtime.openPresentation(
+          fixture.ownerId,
+          entryAttemptId: studyEntryId,
+          stillCurrent: () => true,
+        ),
+        studyDenied(ResearchCaptureReason.timingUnavailable),
+      );
+      expect(
+        (await fixture.runtime.load(fixture.ownerId)).phase,
+        StudyPhase.unavailable,
+      );
+      expect(await fixture.researchRows(), before);
+    },
+  );
+
+  test(
+    'failed visible capture cannot become a later fresh Presented after authority recovers',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final opened = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      fixture.runtime.markPresentationMayRender(
+        fixture.ownerId,
+        opened.opportunity!.id,
+        entryAttemptId: studyEntryId,
+      );
+      final before = await fixture.researchRows();
+      fixture.participation.states.revoked = true;
+      await expectLater(
+        fixture.runtime.recordPresented(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+          stillVisible: () => true,
+        ),
+        studyDenied(),
+      );
+      fixture.participation.states.revoked = false;
+      fixture.participation.clock.now = participationStart.add(
+        const Duration(minutes: 2),
+      );
+      await expectLater(
+        fixture.runtime.recordPresented(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+          stillVisible: () => true,
+        ),
+        studyDenied(ResearchCaptureReason.timingUnavailable),
+      );
+      expect(await fixture.researchRows(), before);
+    },
+  );
+
+  test(
+    'raw original entry cannot regain process proof after restart',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final opened = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      final before = await fixture.researchRows();
+      fixture.restartRuntime();
+      expect(
+        () => fixture.runtime.markPresentationMayRender(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+        ),
+        throwsA(isA<ResearchCaptureDenied>()),
+      );
+      await expectLater(
+        fixture.runtime.recordPresented(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+          stillVisible: () => true,
+        ),
+        studyDenied(),
+      );
+      expect(await fixture.researchRows(), before);
+    },
+  );
+
+  test(
+    'ordinary configured learning survives an unresolved potentially rendered opening',
+    () async {
+      fixture = await StudyRuntimeFixture.open();
+      await fixture.baseline();
+      final opened = await fixture.runtime.openPresentation(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
+      );
+      fixture.runtime.markPresentationMayRender(
+        fixture.ownerId,
+        opened.opportunity!.id,
+        entryAttemptId: studyEntryId,
+      );
+      fixture.runtime.invalidatePresentationOpening(
+        fixture.ownerId,
+        entryAttemptId: studyEntryId,
+      );
+      final launch = await fixture.learning.prepareConfiguredQuiz(
+        configuration: fixture.catalog.configuration,
+        expectedOwnerId: fixture.ownerId,
+      );
+      final ordinary = await fixture.learning.startConfiguredQuiz(launch);
+      await fixture.finish(ordinary);
+      expect(await fixture.rows('learning_sessions'), hasLength(1));
+      expect(await fixture.rows('answer_attempts'), hasLength(1));
+      expect(await fixture.rows('srs_states'), hasLength(1));
+      expect(await fixture.rows('outbox_operations'), hasLength(3));
+      expect(await fixture.rows('events_v2'), isEmpty);
+      expect(await fixture.rows('measurement_opportunities'), hasLength(1));
+      expect(
+        (await fixture.runtime.load(fixture.ownerId)).phase,
+        StudyPhase.unavailable,
+      );
+    },
+  );
+
+  test(
     'Study start notifies only committed rows outside the inherited transaction',
     () async {
       final queries = StudyReadQueries();
@@ -207,9 +493,15 @@ void main() {
         final opened = await fixture.runtime.openPresentation(
           fixture.ownerId,
           entryAttemptId: studyEntryId,
+          stillCurrent: () => true,
         );
         final before = await fixture.researchRows();
         var repositoryValidated = false;
+        fixture.runtime.markPresentationMayRender(
+          fixture.ownerId,
+          opened.opportunity!.id,
+          entryAttemptId: studyEntryId,
+        );
         var changed = false;
         fixture.participation.states.onRead = (_) async {
           if (repositoryValidated && !changed) {
@@ -226,6 +518,7 @@ void main() {
           fixture.runtime.recordPresented(
             fixture.ownerId,
             opened.opportunity!.id,
+            entryAttemptId: studyEntryId,
             stillVisible: () {
               repositoryValidated = true;
               return true;
@@ -257,6 +550,7 @@ void main() {
         fixture.runtime.recordPresented(
           fixture.ownerId,
           unavailable.opportunity!.id,
+          entryAttemptId: studyEntryId,
           stillVisible: () => true,
         ),
         studyDenied(ResearchCaptureReason.incomplete),
@@ -416,6 +710,7 @@ void main() {
         fixture.runtime.openPresentation(
           fixture.ownerId,
           entryAttemptId: studyEntryId,
+          stillCurrent: () => true,
         ),
         studyDenied(ResearchCaptureReason.incomplete),
       );
@@ -496,25 +791,40 @@ void main() {
   );
 
   test(
-    'one unpresented opening resumes only its exact entry identity',
+    'known preframe retry retains exact entry; restart cannot resurrect it',
     () async {
       fixture = await StudyRuntimeFixture.open();
       await fixture.baseline();
       final first = await fixture.runtime.openPresentation(
         fixture.ownerId,
         entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
       );
-      fixture.restartRuntime();
       final replay = await fixture.runtime.openPresentation(
         fixture.ownerId,
         entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
       );
       expect(replay.opportunity!.id, first.opportunity!.id);
       expect(replay.opportunity!.openedAtUtc, first.opportunity!.openedAtUtc);
+      expect(
+        (await fixture.runtime.load(fixture.ownerId)).phase,
+        StudyPhase.unavailable,
+      );
+      fixture.restartRuntime();
+      await expectLater(
+        fixture.runtime.openPresentation(
+          fixture.ownerId,
+          entryAttemptId: studyEntryId,
+          stillCurrent: () => true,
+        ),
+        studyDenied(ResearchCaptureReason.timingUnavailable),
+      );
       await expectLater(
         fixture.runtime.openPresentation(
           fixture.ownerId,
           entryAttemptId: otherStudyEntryId,
+          stillCurrent: () => true,
         ),
         studyDenied(ResearchCaptureReason.identityConflict),
       );
@@ -531,6 +841,7 @@ void main() {
       final first = await fixture.runtime.openPresentation(
         fixture.ownerId,
         entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
       );
       final measurements =
           fixture.runtime.measurementsFor(fixture.ownerId)
@@ -565,6 +876,7 @@ void main() {
       final replay = await fixture.runtime.recordPresented(
         fixture.ownerId,
         first.opportunity!.id,
+        entryAttemptId: studyEntryId,
         stillVisible: () => true,
       );
       expect(
@@ -583,12 +895,18 @@ void main() {
       final opened = await fixture.runtime.openPresentation(
         fixture.ownerId,
         entryAttemptId: studyEntryId,
+        stillCurrent: () => true,
       );
       final before = await fixture.researchRows();
       final reached = Completer<void>();
       final release = Completer<void>();
       var paused = false;
       var visible = true;
+      fixture.runtime.markPresentationMayRender(
+        fixture.ownerId,
+        opened.opportunity!.id,
+        entryAttemptId: studyEntryId,
+      );
       fixture.participation.states.onRead = (_) async {
         if (!paused && (await fixture.rows('events_v2')).isNotEmpty) {
           paused = true;
@@ -599,6 +917,7 @@ void main() {
       final pending = fixture.runtime.recordPresented(
         fixture.ownerId,
         opened.opportunity!.id,
+        entryAttemptId: studyEntryId,
         stillVisible: () => visible,
       );
       final rejected = expectLater(

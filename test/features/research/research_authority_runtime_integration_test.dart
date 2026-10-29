@@ -21,10 +21,17 @@ void main() {
     final opened = await fixture.study.runtime.openPresentation(
       fixture.study.ownerId,
       entryAttemptId: '00000000-0000-4000-8000-000000000081',
+      stillCurrent: () => true,
+    );
+    fixture.study.runtime.markPresentationMayRender(
+      fixture.study.ownerId,
+      opened.opportunity!.id,
+      entryAttemptId: '00000000-0000-4000-8000-000000000081',
     );
     await fixture.study.runtime.recordPresented(
       fixture.study.ownerId,
       opened.opportunity!.id,
+      entryAttemptId: '00000000-0000-4000-8000-000000000081',
       stillVisible: () => true,
     );
     fixture.advance(const Duration(minutes: 1));
