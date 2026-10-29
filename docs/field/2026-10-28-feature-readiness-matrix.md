@@ -1,11 +1,11 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `2c94d4a3` (v16), on
-2026-10-29. Latest full suite/APK: `4a4cbdd8`, Flutter 2728, analysis 0 and
-CLI 23. The later study-consent component passes 133 focused and 700 integration
-checks with analysis 0; it has no new full-suite/APK claim. The later Mission
-capture component passes 65 scoped and 1380 integration cases with analysis 0;
-its production visible caller remains uncomposed.
+Source: `codex/remaining-system-readiness`, through `e0771624` (v16), on
+2026-10-29. Latest full suite/APK: Flutter 2869, analysis 0, CLI 23 and normal
+debug APK pass. The optional Study host connects signed local authority,
+supplied Standard/Adventure renderers and baseline/post Motivation capture to
+one exact canonical quiz. Production factory, enrollment and upload remain
+disabled. See [wave 9 evidence](2026-10-29-remaining-systems-wave9.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
 and its original 8-domain/44-capability identity.
 
@@ -64,7 +64,7 @@ capability still needs the applicable acceptance and release checks.
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
 | f27 | Opt-in Study Reminder | Missing | `SpacedReviewReminderService` only evaluates due state. Scheduling, permission, default-off UI and cancellation are absent. |
-| f28 | Learning Assessment & Progress Comparison | Partial | Supplied instruments, signed participation, structured baseline/post storage, exact quiz recovery, final visibility guard and canonical Mission Started/Completed are verified locally. The visible study host, both presentations, PresentationChanged, learning-outcome assessment and collection/upload authority remain incomplete. |
+| f28 | Learning Assessment & Progress Comparison | Partial | The optional signed Study host now connects supplied baseline/post Motivation forms, both actual presentations, exact first quiz and post before Score. Learning-outcome Assessment remains separate and absent; PresentationChanged, production local authority adapters and collection/upload remain incomplete. No efficacy or instrument-validation claim. |
 
 ## Motivation
 
@@ -99,7 +99,7 @@ capability still needs the applicable acceptance and release checks.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f42 | Today Hub | Partial | Choose Mode is a Learn landing with due/weakness recommendations. Assigned/resume/quest aggregation is incomplete. |
+| f42 | Today Hub | Partial | Choose Mode has due/weakness recommendations and an optional eligible Study entry with exact first-index resume. General assigned/resume/quest aggregation remains incomplete; eager page rendering creates no Research facts. |
 | f43 | Learning History | Connected | Mastery opens owner-scoped pages of 50 sessions and seven local-date answer counts. Active stored meaning quizzes have an exact owner/session resume action; refresh, pagination and owner-change hiding remain. |
 
 ## Current engineering boundaries
