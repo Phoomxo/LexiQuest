@@ -14,6 +14,7 @@ import '../domain/assessment_instrument_catalog.dart';
 import '../domain/assessment_models.dart';
 import '../domain/assessment_repository.dart';
 import 'drift_assessment_authority.dart';
+import 'drift_assessment_cycle_reader.dart';
 import 'assessment_run_codec.dart';
 
 /// Owns a durable outer transaction. No ordinary learning or reward writer runs.
@@ -27,7 +28,8 @@ final class DriftAssessmentRepository implements AssessmentRepository {
     required this.buildInfo,
     required this.participationPermitId,
   }) {
-    if (!identical(database, authority.cache.ownerWrites.database)) {
+    if (!identical(database, authority.cache.ownerWrites.database) ||
+        !identical(database, cycleReader.database)) {
       throw ArgumentError(
         'Assessment and authority must share the actual database.',
       );
@@ -39,7 +41,7 @@ final class DriftAssessmentRepository implements AssessmentRepository {
   }
   final AppDatabase database;
   final DriftAssessmentAuthority authority;
-  final AssessmentCycleReader cycleReader;
+  final DriftAssessmentCycleReader cycleReader;
   final AssessmentInstrumentCatalog catalog;
   final AssessmentFormContentAuthority contentAuthority;
   final AppBuildInfo buildInfo;
