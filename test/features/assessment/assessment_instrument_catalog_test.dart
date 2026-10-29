@@ -2,10 +2,82 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/assessment/domain/assessment_authority.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_instrument_catalog.dart';
+import 'package:vocab_learning_app/features/research/domain/research_authority_snapshot.dart';
+import 'package:vocab_learning_app/features/research/domain/research_operation_authorizer.dart';
 
 // Synthetic bytes and approval labels exercise integrity, never study approval.
 void main() {
+  test('explicit mapping binds numeric revisions without parsing versions', () {
+    final definition = _definition();
+    final mapping = _mapping(definition);
+    mapping.requireMatches(scope: _scope(), definition: definition);
+    expect(mapping.instrumentRevision, 41);
+    expect(mapping.instrumentVersion, '1');
+    expect(mapping.formContentRevision, 1);
+    for (final changes in [
+      {'protocolId': 'other-protocol'},
+      {'protocolVersion': 'other-version'},
+      {'protocolRevision': 31},
+      {'instrumentId': 'other-instrument'},
+      {'instrumentRevision': 42},
+    ]) {
+      expect(
+        () => mapping.requireMatches(
+          scope: _scope(changes),
+          definition: definition,
+        ),
+        throwsStateError,
+      );
+    }
+  });
+  test('explicit mapping rejects rotated catalog metadata and byte pins', () {
+    final definition = _definition();
+    final mapping = _mapping(definition);
+    for (final changed in [
+      _definition(formVersion: 'rotated'),
+      _definition(formContentRevision: 2),
+      _definition(experimentVersion: 2),
+      _definition(instrumentBytes: utf8.encode('rotated instrument bytes')),
+      _definition(items: [_item(scoringRuleVersion: 'rotated-score')]),
+    ]) {
+      expect(
+        () => mapping.requireMatches(scope: _scope(), definition: changed),
+        throwsStateError,
+      );
+    }
+  });
+  test('explicit mapping validates every supplied canonical pin', () {
+    final definition = _definition();
+    for (final key in [
+      'protocolId',
+      'protocolVersion',
+      'instrumentId',
+      'instrumentVersion',
+      'formId',
+      'formVersion',
+      'experimentId',
+      'contentRevision',
+    ]) {
+      for (final value in ['', ' supplied ', 'x' * 257]) {
+        expect(() => _mapping(definition, {key: value}), throwsArgumentError);
+      }
+    }
+    for (final key in [
+      'protocolRevision',
+      'instrumentRevision',
+      'formContentRevision',
+      'experimentVersion',
+    ]) {
+      expect(() => _mapping(definition, {key: 0}), throwsArgumentError);
+      expect(() => _mapping(definition, {key: -1}), throwsArgumentError);
+    }
+    for (final key in ['instrumentChecksumSha256', 'formChecksumSha256']) {
+      expect(() => _mapping(definition, {key: 'A' * 64}), throwsArgumentError);
+      expect(() => _mapping(definition, {key: 'a' * 63}), throwsArgumentError);
+    }
+  });
   test(
     'catalog returns one pinned synthetic definition with controlled scoring',
     () {
@@ -499,3 +571,67 @@ final class _ContentAuthority implements AssessmentFormContentAuthority {
     return read(identity);
   }
 }
+
+AssessmentAuthorityMapping _mapping(
+  AssessmentInstrumentDefinition definition, [
+  Map<String, Object> changes = const {},
+]) {
+  final pins = <String, Object>{
+    'protocolId': definition.protocolId,
+    'protocolVersion': 'supplied-version-one',
+    'protocolRevision': 30,
+    'instrumentId': definition.instrumentId,
+    'instrumentRevision': 41,
+    'instrumentVersion': definition.instrumentVersion,
+    'formId': definition.formId,
+    'formVersion': definition.formVersion,
+    'formContentRevision': definition.formContentRevision,
+    'instrumentChecksumSha256': definition.instrumentChecksumSha256,
+    'formChecksumSha256': definition.formChecksumSha256,
+    'experimentId': definition.experimentId,
+    'experimentVersion': definition.experimentVersion,
+    'contentRevision': definition.contentRevision,
+    ...changes,
+  };
+  return AssessmentAuthorityMapping(
+    protocolId: pins['protocolId']! as String,
+    protocolVersion: pins['protocolVersion']! as String,
+    protocolRevision: pins['protocolRevision']! as int,
+    instrumentId: pins['instrumentId']! as String,
+    instrumentRevision: pins['instrumentRevision']! as int,
+    instrumentVersion: pins['instrumentVersion']! as String,
+    formId: pins['formId']! as String,
+    formVersion: pins['formVersion']! as String,
+    formContentRevision: pins['formContentRevision']! as int,
+    instrumentChecksumSha256: pins['instrumentChecksumSha256']! as String,
+    formChecksumSha256: pins['formChecksumSha256']! as String,
+    experimentId: pins['experimentId']! as String,
+    experimentVersion: pins['experimentVersion']! as int,
+    contentRevision: pins['contentRevision']! as String,
+  );
+}
+
+ResearchAuthorityScope _scope([Map<String, Object> changes = const {}]) =>
+    ResearchAuthorityScope(
+      binding: ResearchAuthorityBinding(
+        ownerId: 'synthetic-owner',
+        authSubjectId: 'synthetic-subject',
+        generation: 1,
+      ),
+      requirements: ResearchPermitRequirements(
+        supportedFormatVersion: 1,
+        trustedIssuerId: 'synthetic-issuer',
+        trustedIssuerKeyId: 'synthetic-key',
+        signatureAlgorithm: 'ed25519',
+        assignmentId: 'synthetic-assignment',
+        assignmentRevision: 1,
+        protocolId: changes['protocolId'] as String? ?? 'synthetic-protocol',
+        protocolRevision: changes['protocolRevision'] as int? ?? 30,
+        instrumentId:
+            changes['instrumentId'] as String? ?? 'synthetic-instrument',
+        instrumentRevision: changes['instrumentRevision'] as int? ?? 41,
+      ),
+      protocolVersion:
+          changes['protocolVersion'] as String? ?? 'supplied-version-one',
+      consentVersion: 4,
+    );

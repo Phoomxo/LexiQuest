@@ -86,11 +86,19 @@ final class AssessmentPresentationItem {
 final class AssessmentPresentation {
   factory AssessmentPresentation({
     required AssessmentRun run,
+    required DateTime verifiedAtUtc,
+    required DateTime validUntilUtc,
     required List<AssessmentPresentationItem> items,
     required Set<String> answeredItemIds,
   }) {
     if (run.state != AssessmentRunState.active) {
       throw ArgumentError.value(run.state, 'run.state', 'must be active');
+    }
+    if (!verifiedAtUtc.isUtc ||
+        !validUntilUtc.isUtc ||
+        verifiedAtUtc.isBefore(run.startedAtUtc) ||
+        !validUntilUtc.isAfter(verifiedAtUtc)) {
+      throw ArgumentError('Invalid Assessment presentation read lease.');
     }
     if (items.isEmpty) {
       throw ArgumentError.value(items, 'items', 'must not be empty');
@@ -106,6 +114,8 @@ final class AssessmentPresentation {
     }
     return AssessmentPresentation._(
       run: run,
+      verifiedAtUtc: verifiedAtUtc,
+      validUntilUtc: validUntilUtc,
       items: List<AssessmentPresentationItem>.unmodifiable(items),
       answeredItemIds: Set<String>.unmodifiable(answeredItemIds),
     );
@@ -113,11 +123,15 @@ final class AssessmentPresentation {
 
   const AssessmentPresentation._({
     required this.run,
+    required this.verifiedAtUtc,
+    required this.validUntilUtc,
     required this.items,
     required this.answeredItemIds,
   });
 
   final AssessmentRun run;
+  final DateTime verifiedAtUtc;
+  final DateTime validUntilUtc;
   final List<AssessmentPresentationItem> items;
   final Set<String> answeredItemIds;
 }
@@ -143,16 +157,23 @@ final class AssessmentRun {
     required AssessmentRunState state,
     required String protocolId,
     required String protocolVersion,
+    required int protocolRevision,
     required String experimentId,
     required int experimentVersion,
     required String assignmentId,
+    required int assignmentRevision,
     required String cohort,
     required int consentVersion,
     required DateTime consentDecidedAtUtc,
     required String instrumentId,
     required String instrumentVersion,
+    required int instrumentRevision,
     required String formId,
     required String formVersion,
+    required int formContentRevision,
+    required String participationPermitId,
+    required int participationPermitRevision,
+    required String participationPermitPayloadSha256,
     required String instrumentChecksumSha256,
     required String formChecksumSha256,
     required String appVersion,
@@ -175,16 +196,23 @@ final class AssessmentRun {
       state: state,
       protocolId: protocolId,
       protocolVersion: protocolVersion,
+      protocolRevision: protocolRevision,
       experimentId: experimentId,
       experimentVersion: experimentVersion,
       assignmentId: assignmentId,
+      assignmentRevision: assignmentRevision,
       cohort: cohort,
       consentVersion: consentVersion,
       consentDecidedAtUtc: consentDecidedAtUtc,
       instrumentId: instrumentId,
       instrumentVersion: instrumentVersion,
+      instrumentRevision: instrumentRevision,
       formId: formId,
       formVersion: formVersion,
+      formContentRevision: formContentRevision,
+      participationPermitId: participationPermitId,
+      participationPermitRevision: participationPermitRevision,
+      participationPermitPayloadSha256: participationPermitPayloadSha256,
       instrumentChecksumSha256: instrumentChecksumSha256,
       formChecksumSha256: formChecksumSha256,
       appVersion: appVersion,
@@ -211,16 +239,23 @@ final class AssessmentRun {
     required this.state,
     required this.protocolId,
     required this.protocolVersion,
+    required this.protocolRevision,
     required this.experimentId,
     required this.experimentVersion,
     required this.assignmentId,
+    required this.assignmentRevision,
     required this.cohort,
     required this.consentVersion,
     required this.consentDecidedAtUtc,
     required this.instrumentId,
     required this.instrumentVersion,
+    required this.instrumentRevision,
     required this.formId,
     required this.formVersion,
+    required this.formContentRevision,
+    required this.participationPermitId,
+    required this.participationPermitRevision,
+    required this.participationPermitPayloadSha256,
     required this.instrumentChecksumSha256,
     required this.formChecksumSha256,
     required this.appVersion,
@@ -247,16 +282,23 @@ final class AssessmentRun {
   final AssessmentRunState state;
   final String protocolId;
   final String protocolVersion;
+  final int protocolRevision;
   final String experimentId;
   final int experimentVersion;
   final String assignmentId;
+  final int assignmentRevision;
   final String cohort;
   final int consentVersion;
   final DateTime consentDecidedAtUtc;
   final String instrumentId;
   final String instrumentVersion;
+  final int instrumentRevision;
   final String formId;
   final String formVersion;
+  final int formContentRevision;
+  final String participationPermitId;
+  final int participationPermitRevision;
+  final String participationPermitPayloadSha256;
   final String instrumentChecksumSha256;
   final String formChecksumSha256;
   final String appVersion;
@@ -282,7 +324,9 @@ final class AssessmentRun {
       final previous = this.state == AssessmentRunState.completed
           ? completedAtUtc
           : abandonedAtUtc;
-      if (this.state == state && previous == terminalAtUtc) return this;
+      if (this.state == state && previous == terminalAtUtc) {
+        return this;
+      }
       throw StateError('A terminal assessment run cannot change.');
     }
     return AssessmentRun(
@@ -294,16 +338,23 @@ final class AssessmentRun {
       state: state,
       protocolId: protocolId,
       protocolVersion: protocolVersion,
+      protocolRevision: protocolRevision,
       experimentId: experimentId,
       experimentVersion: experimentVersion,
       assignmentId: assignmentId,
+      assignmentRevision: assignmentRevision,
       cohort: cohort,
       consentVersion: consentVersion,
       consentDecidedAtUtc: consentDecidedAtUtc,
       instrumentId: instrumentId,
       instrumentVersion: instrumentVersion,
+      instrumentRevision: instrumentRevision,
       formId: formId,
       formVersion: formVersion,
+      formContentRevision: formContentRevision,
+      participationPermitId: participationPermitId,
+      participationPermitRevision: participationPermitRevision,
+      participationPermitPayloadSha256: participationPermitPayloadSha256,
       instrumentChecksumSha256: instrumentChecksumSha256,
       formChecksumSha256: formChecksumSha256,
       appVersion: appVersion,
@@ -333,6 +384,7 @@ final class AssessmentRun {
       'protocolVersion': protocolVersion,
       'experimentId': experimentId,
       'assignmentId': assignmentId,
+      'participationPermitId': participationPermitId,
       'cohort': cohort,
       'instrumentId': instrumentId,
       'instrumentVersion': instrumentVersion,
@@ -348,11 +400,23 @@ final class AssessmentRun {
       validateCanonicalText(entry.value, entry.key);
     }
     _validatePositive(experimentVersion, 'experimentVersion');
+    _validatePositive(protocolRevision, 'protocolRevision');
+    _validatePositive(assignmentRevision, 'assignmentRevision');
+    _validatePositive(instrumentRevision, 'instrumentRevision');
+    _validatePositive(formContentRevision, 'formContentRevision');
+    _validatePositive(
+      participationPermitRevision,
+      'participationPermitRevision',
+    );
     _validatePositive(consentVersion, 'consentVersion');
     _validatePositive(databaseSchemaVersion, 'databaseSchemaVersion');
     _validateSha256(instrumentChecksumSha256, 'instrumentChecksumSha256');
     _validateSha256(formChecksumSha256, 'formChecksumSha256');
     _validateSha256(featureContractHash, 'featureContractHash');
+    _validateSha256(
+      participationPermitPayloadSha256,
+      'participationPermitPayloadSha256',
+    );
     validateUtcTimestamp(consentDecidedAtUtc, 'consentDecidedAtUtc');
     validateUtcTimestamp(startedAtUtc, 'startedAtUtc');
     if (consentDecidedAtUtc.isAfter(startedAtUtc)) {
@@ -468,16 +532,24 @@ final class AssessmentRun {
             other.state == state &&
             other.protocolId == protocolId &&
             other.protocolVersion == protocolVersion &&
+            other.protocolRevision == protocolRevision &&
             other.experimentId == experimentId &&
             other.experimentVersion == experimentVersion &&
             other.assignmentId == assignmentId &&
+            other.assignmentRevision == assignmentRevision &&
             other.cohort == cohort &&
             other.consentVersion == consentVersion &&
             other.consentDecidedAtUtc == consentDecidedAtUtc &&
             other.instrumentId == instrumentId &&
             other.instrumentVersion == instrumentVersion &&
+            other.instrumentRevision == instrumentRevision &&
             other.formId == formId &&
             other.formVersion == formVersion &&
+            other.formContentRevision == formContentRevision &&
+            other.participationPermitId == participationPermitId &&
+            other.participationPermitRevision == participationPermitRevision &&
+            other.participationPermitPayloadSha256 ==
+                participationPermitPayloadSha256 &&
             other.instrumentChecksumSha256 == instrumentChecksumSha256 &&
             other.formChecksumSha256 == formChecksumSha256 &&
             other.appVersion == appVersion &&
@@ -502,16 +574,23 @@ final class AssessmentRun {
     state,
     protocolId,
     protocolVersion,
+    protocolRevision,
     experimentId,
     experimentVersion,
     assignmentId,
+    assignmentRevision,
     cohort,
     consentVersion,
     consentDecidedAtUtc,
     instrumentId,
     instrumentVersion,
+    instrumentRevision,
     formId,
     formVersion,
+    formContentRevision,
+    participationPermitId,
+    participationPermitRevision,
+    participationPermitPayloadSha256,
     instrumentChecksumSha256,
     formChecksumSha256,
     appVersion,

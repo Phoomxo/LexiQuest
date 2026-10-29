@@ -60,6 +60,7 @@ final _productionNativeOptions = DriftNativeOptions(
     AssociationRecords,
     AssociativeMemoryStates,
     MeasurementOpportunities,
+    AssessmentRuns,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -69,7 +70,7 @@ final class AppDatabase extends _$AppDatabase {
     : super(driftDatabase(name: 'lexiquest', native: _productionNativeOptions));
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -240,6 +241,9 @@ final class AppDatabase extends _$AppDatabase {
           'AND started_effective_presentation IS NULL',
         );
       }
+      if (from < 18) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -404,6 +408,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('measurement_opportunities')) {
       await migrator.createTable(measurementOpportunities);
+    }
+    if (!await _tableExists('assessment_runs')) {
+      await migrator.createTable(assessmentRuns);
     }
   }
 

@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' show AppDatabase;
 import '../../adventure/domain/adventure_entry.dart';
+import '../../assessment/data/assessment_run_codec.dart';
+import '../../assessment/domain/assessment_models.dart';
 import '../../learning/data/learning_session_lifecycle_observer.dart';
 import '../domain/measurement_opportunity.dart';
 import '../domain/motivation_measurement.dart';
@@ -13,6 +15,132 @@ final class DriftMotivationMeasurementTimingReader
     implements MotivationMeasurementTimingReader {
   const DriftMotivationMeasurementTimingReader(this.database);
   final AppDatabase database;
+
+  Future<List<Map<String, Object?>>> indexCandidates({
+    required String ownerId,
+    required String runId,
+    required DateTime firstExposureAtUtc,
+    DateTime? notAfterUtc,
+  }) async {
+    final rows = await database
+        .customSelect(
+          'SELECT * FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
+          "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence') "
+          'AND (? IS NULL OR started_at_utc_ms <= ?)',
+          variables: [
+            Variable<String>(ownerId),
+            Variable<int>(firstExposureAtUtc.millisecondsSinceEpoch),
+            Variable<int>(notAfterUtc?.millisecondsSinceEpoch),
+            Variable<int>(notAfterUtc?.millisecondsSinceEpoch),
+          ],
+        )
+        .get();
+    final candidates = <Map<String, Object?>>[];
+    for (final row in rows) {
+      if (!await _isAssessmentContainer(row.data, runId, firstExposureAtUtc)) {
+        candidates.add(row.data);
+      }
+    }
+    return candidates;
+  }
+
+  Future<bool> _isAssessmentContainer(
+    Map<String, Object?> session,
+    String runId,
+    DateTime firstExposureAtUtc,
+  ) async {
+    if (session['activity_type'] != 'assessment') return false;
+    try {
+      final rows = await database
+          .customSelect(
+            'SELECT a.* FROM assessment_runs a '
+            'JOIN motivation_measurement_runs m ON a.study_cycle_id = m.id AND a.owner_id = m.owner_id '
+            'JOIN experiment_assignments x ON a.assignment_id = x.id AND a.owner_id = x.owner_id '
+            'JOIN research_participation_permits p ON a.participation_permit_id = p.id AND a.owner_id = p.owner_id '
+            'WHERE a.learning_session_id = ? AND a.owner_id = ? AND a.study_cycle_id = ? '
+            'AND a.assignment_id = m.assignment_id AND a.assignment_revision = m.assignment_revision '
+            'AND a.protocol_id = m.protocol_id AND a.protocol_version = m.protocol_version AND a.protocol_revision = m.protocol_revision '
+            'AND a.experiment_id = x.experiment_id AND a.experiment_version = x.experiment_version '
+            'AND a.cohort = m.treatment AND a.cohort = x.cohort AND a.protocol_version = x.protocol_version '
+            'AND a.consent_version = m.consent_version AND a.consent_decided_at_utc_ms = m.consent_decided_at_utc_ms '
+            'AND a.participation_permit_id = m.permit_id AND a.participation_permit_payload_sha256 = m.permit_payload_sha256 '
+            'AND a.participation_permit_revision = p.local_revision AND a.participation_permit_payload_sha256 = p.payload_sha256 '
+            "AND p.is_deleted = 0 AND m.state IN ('started', 'completed') AND a.started_at_utc_ms >= m.started_at_utc_ms",
+            variables: [
+              Variable<String>(session['id']! as String),
+              Variable<String>(session['owner_id']! as String),
+              Variable<String>(runId),
+            ],
+          )
+          .get();
+      if (rows.length != 1) return false;
+      final assessment = decodeAssessmentRunRow(rows.single.data);
+      if (session['state'] != assessment.state.name ||
+          session['started_at_utc_ms'] !=
+              assessment.startedAtUtc.millisecondsSinceEpoch ||
+          session['ended_at_utc_ms'] !=
+              (assessment.completedAtUtc ?? assessment.abandonedAtUtc)
+                  ?.millisecondsSinceEpoch ||
+          session['app_version'] != assessment.appVersion ||
+          session['build_id'] != assessment.buildId ||
+          session['correct_count'] != 0 ||
+          session['wrong_count'] != 0 ||
+          session['score'] != null ||
+          session['accepted_plan_id'] != null ||
+          session['accepted_plan_json'] != null ||
+          session['checkpoint_json'] != null ||
+          session['checkpoint_revision'] != 0) {
+        return false;
+      }
+      final openings = await database
+          .customSelect(
+            'SELECT * FROM measurement_opportunities WHERE owner_id = ? AND measurement_run_id = ?',
+            variables: [
+              Variable<String>(assessment.ownerId),
+              Variable<String>(runId),
+            ],
+          )
+          .get();
+      if (openings.length != 1) return false;
+      final opening = openings.single.data;
+      if (opening['permit_id'] != assessment.participationPermitId ||
+          opening['presented_event_id'] == null ||
+          opening['presented_at_utc_ms'] !=
+              firstExposureAtUtc.millisecondsSinceEpoch) {
+        return false;
+      }
+      if (assessment.phase == AssessmentPhase.pre) {
+        return assessment.state == AssessmentRunState.completed &&
+            !assessment.completedAtUtc!.isAfter(
+              _date(opening['opened_at_utc_ms']),
+            );
+      }
+      if (opening['pending_presentation_change_json'] != null ||
+          opening['is_index_session'] != 1 ||
+          opening['learning_session_id'] == null) {
+        return false;
+      }
+      final index = await _one(
+        'SELECT * FROM learning_sessions WHERE id = ? AND owner_id = ?',
+        [opening['learning_session_id']! as String, assessment.ownerId],
+      );
+      return index != null &&
+          index['state'] == 'completed' &&
+          index['activity_type'] != 'assessment' &&
+          index['started_at_utc_ms'] ==
+              opening['learning_session_started_at_utc_ms'] &&
+          index['accepted_plan_id'] != null &&
+          index['accepted_plan_json'] != null &&
+          index['ended_at_utc_ms'] == opening['closed_at_utc_ms'] &&
+          !_date(
+            index['ended_at_utc_ms'],
+          ).isBefore(_date(index['started_at_utc_ms'])) &&
+          !assessment.startedAtUtc.isBefore(_date(index['ended_at_utc_ms']));
+    } on Object {
+      // Unproven storage remains a candidate, so the original gap check rejects it.
+      return false;
+    }
+  }
 
   @override
   Future<MotivationTimingFacts?> read({
@@ -301,21 +429,15 @@ final class DriftMotivationMeasurementTimingReader
             completedAtUtc: end,
           );
         }
-        final candidates = await database
-            .customSelect(
-              'SELECT * FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
-              "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence')",
-              variables: [
-                Variable<String>(ownerId),
-                Variable<int>(exposure.occurredAtUtc.millisecondsSinceEpoch),
-              ],
-            )
-            .get();
+        final candidates = await indexCandidates(
+          ownerId: ownerId,
+          runId: runId,
+          firstExposureAtUtc: exposure.occurredAtUtc,
+        );
         final cutoff =
             index?.startedAtUtc.millisecondsSinceEpoch ??
             accepted?.startedAtUtcMs;
-        for (final row in candidates) {
-          final candidate = row.data;
+        for (final candidate in candidates) {
           if (candidate['id'] == index?.id || candidate['id'] == accepted?.id) {
             continue;
           }

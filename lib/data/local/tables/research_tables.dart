@@ -120,6 +120,77 @@ class MotivationMeasurementRuns extends Table {
   ];
 }
 
+@DataClassName('AssessmentRunRow')
+class AssessmentRuns extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 128)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get learningSessionId =>
+      text().references(LearningSessions, #id)();
+  TextColumn get studyCycleId =>
+      text().references(MotivationMeasurementRuns, #id)();
+  TextColumn get phase => text()();
+  TextColumn get state => text()();
+  TextColumn get protocolId => text().withLength(min: 1, max: 128)();
+  TextColumn get protocolVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get experimentId => text().withLength(min: 1, max: 128)();
+  IntColumn get experimentVersion => integer()();
+  TextColumn get assignmentId =>
+      text().references(ExperimentAssignments, #id)();
+  TextColumn get cohort => text()();
+  IntColumn get consentVersion => integer()();
+  IntColumn get consentDecidedAtUtcMs => integer()();
+  TextColumn get instrumentId => text().withLength(min: 1, max: 128)();
+  TextColumn get instrumentVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get formId => text().withLength(min: 1, max: 128)();
+  TextColumn get formVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get instrumentChecksumSha256 =>
+      text().withLength(min: 64, max: 64)();
+  TextColumn get formChecksumSha256 => text().withLength(min: 64, max: 64)();
+  TextColumn get appVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get buildId => text().withLength(min: 1, max: 128)();
+  IntColumn get databaseSchemaVersion => integer()();
+  TextColumn get contentRevision => text().withLength(min: 1, max: 128)();
+  TextColumn get evidencePolicyVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get featureContractRevision =>
+      text().withLength(min: 1, max: 128)();
+  TextColumn get featureContractHash => text().withLength(min: 64, max: 64)();
+  IntColumn get startedAtUtcMs => integer()();
+  IntColumn get completedAtUtcMs => integer().nullable()();
+  IntColumn get abandonedAtUtcMs => integer().nullable()();
+  IntColumn get assignmentRevision => integer()();
+  IntColumn get protocolRevision => integer()();
+  IntColumn get instrumentRevision => integer()();
+  IntColumn get formContentRevision => integer()();
+  TextColumn get participationPermitId =>
+      text().references(ResearchParticipationPermits, #id)();
+  IntColumn get participationPermitRevision => integer()();
+  TextColumn get participationPermitPayloadSha256 =>
+      text().withLength(min: 64, max: 64)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {learningSessionId},
+    {ownerId, studyCycleId, phase},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (phase IN ('pre', 'post'))",
+    "CHECK (state IN ('active', 'completed', 'abandoned'))",
+    "CHECK (cohort IN ('standard', 'adventure'))",
+    'CHECK (experiment_version > 0 AND consent_version > 0 AND database_schema_version > 0 AND assignment_revision > 0 AND protocol_revision > 0 AND instrument_revision > 0 AND form_content_revision > 0 AND participation_permit_revision > 0)',
+    'CHECK (consent_decided_at_utc_ms >= 0 AND started_at_utc_ms >= consent_decided_at_utc_ms)',
+    "CHECK ((state = 'active' AND completed_at_utc_ms IS NULL AND abandoned_at_utc_ms IS NULL) OR (state = 'completed' AND completed_at_utc_ms IS NOT NULL AND completed_at_utc_ms >= started_at_utc_ms AND abandoned_at_utc_ms IS NULL) OR (state = 'abandoned' AND abandoned_at_utc_ms IS NOT NULL AND abandoned_at_utc_ms >= started_at_utc_ms AND completed_at_utc_ms IS NULL))",
+    "CHECK (length(instrument_checksum_sha256) = 64 AND instrument_checksum_sha256 NOT GLOB '*[^0-9a-f]*')",
+    "CHECK (length(form_checksum_sha256) = 64 AND form_checksum_sha256 NOT GLOB '*[^0-9a-f]*')",
+    "CHECK (length(feature_contract_hash) = 64 AND feature_contract_hash NOT GLOB '*[^0-9a-f]*')",
+    "CHECK (length(participation_permit_payload_sha256) = 64 AND participation_permit_payload_sha256 NOT GLOB '*[^0-9a-f]*')",
+  ];
+}
+
 @DataClassName('MotivationResponseRow')
 class MotivationResponses extends Table {
   TextColumn get id => text().withLength(min: 1, max: 128)();

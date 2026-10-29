@@ -166,8 +166,10 @@ void main() {
       );
       expect(
         await _ownerCount(database, table, 'account-owner'),
-        greaterThanOrEqualTo(1),
-        reason: '$table did not reach the account owner',
+        table == 'assessment_runs' ? 0 : greaterThanOrEqualTo(1),
+        reason: table == 'assessment_runs'
+            ? 'The existing graph has no Assessment facts to move or invent'
+            : '$table did not reach the account owner',
       );
     }
     expect(

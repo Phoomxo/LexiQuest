@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../domain/owner_upgrade.dart';
@@ -564,6 +565,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       'motivation_measurement_runs',
       'motivation_responses',
       'measurement_opportunities',
+      'assessment_runs',
     ]) {
       final signed = await _database
           .customSelect(
@@ -688,7 +690,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           table == 'research_participation_permits' ||
           table == 'motivation_measurement_runs' ||
           table == 'motivation_responses' ||
-          table == 'measurement_opportunities') {
+          table == 'measurement_opportunities' ||
+          table == 'assessment_runs') {
         continue;
       }
       await _updateOwner(table, sourceId, targetId);
@@ -754,13 +757,22 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       final rows = await _database
           .customSelect(
             'SELECT id${specification.hasSoftDelete ? ', is_deleted' : ''} '
+            '${specification.entityType == 'attempt' ? ', evidence_class, evidence_context_json ' : ''}'
             'FROM ${specification.table} WHERE owner_id = ? '
+            '${specification.entityType == 'attempt' ? "AND EXISTS (SELECT 1 FROM learning_sessions s WHERE s.id = answer_attempts.session_id AND s.owner_id = answer_attempts.owner_id AND s.activity_type <> 'assessment') " : ''}'
             '${specification.entityType == 'rewardTransaction' ? "AND transaction_type IN ('purchase', 'equip') " : ''}'
             'ORDER BY id',
             variables: [Variable<String>(ownerId)],
           )
           .get();
       for (final row in rows) {
+        if (specification.entityType == 'attempt' &&
+            !LearningEvidenceContract.validEvidenceMetadata(
+              evidenceClass: row.read<String>('evidence_class'),
+              evidenceContextJson: row.read<String>('evidence_context_json'),
+            )) {
+          continue;
+        }
         final entityId = row.read<String>('id');
         final changed = await _database.customUpdate(
           "UPDATE outbox_operations SET base_revision = 0, state = 'pending', "

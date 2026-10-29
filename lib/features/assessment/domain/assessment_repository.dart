@@ -1,11 +1,24 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import 'assessment_models.dart';
 
-typedef AssessmentActiveResponseWork<T> =
-    Future<T> Function(AssessmentRun activeRun);
-typedef AssessmentCompletionAuthorityGuard =
-    Future<void> Function(AssessmentRun activeRun);
+/// A display read's finite freshness snapshot, never a later write grant.
+typedef AssessmentPresentationRead = ({
+  AssessmentRun run,
+  DateTime verifiedAtUtc,
+  DateTime validUntilUtc,
+});
+
+String assessmentResponseIdentity(String runId, String itemId) {
+  AssessmentRun.validateRunId(runId);
+  AssessmentRun.validateCanonicalText(itemId, 'itemId');
+  return 'assessment-response:'
+      '${sha256.convert(utf8.encode(jsonEncode([runId, itemId])))}';
+}
 
 final class AssessmentOutcomeEvidence {
   factory AssessmentOutcomeEvidence({
@@ -80,30 +93,49 @@ final class AssessmentOutcomeEvidence {
 }
 
 abstract interface class AssessmentRepository {
-  Future<AssessmentRun> start(AssessmentRun run);
+  /// The sole writer derives original pins and trusted time, then rechecks local
+  /// authority and [stillVisible] inside its owner-scoped transaction.
+  Future<AssessmentRun> start(
+    AssessmentStartCommand command, {
+    required String ownerId,
+    required bool Function() stillVisible,
+  });
 
-  Future<AssessmentRun> getRun(String runId);
+  Future<AssessmentRun> getRun({
+    required String ownerId,
+    required String runId,
+  });
+
+  /// Final display boundary: fresh authority, exact active container and phase,
+  /// then local time/owner/binding/visibility checks. Creates no capture facts.
+  Future<AssessmentPresentationRead> requireActivePresentation({
+    required String ownerId,
+    required String runId,
+    required bool Function() stillVisible,
+  });
+
+  /// Resolves [option] through the verified pinned catalog. Never accepts caller
+  /// correctness, context, raw free text, or a generic SQL work callback.
+  /// Exact retries return the original facts and preserve their trusted time.
+  Future<AssessmentResponseResult> recordResponse({
+    required String ownerId,
+    required String runId,
+    required String itemId,
+    required String option,
+    required int responseTimeMs,
+    required bool Function() stillVisible,
+  });
 
   Future<AssessmentRun> complete({
+    required String ownerId,
     required String runId,
-    required DateTime completedAtUtc,
-    AssessmentCompletionAuthorityGuard? authorityGuard,
+    required bool Function() stillVisible,
   });
 
   Future<AssessmentRun> abandon({
+    required String ownerId,
     required String runId,
-    required DateTime abandonedAtUtc,
-  });
-
-  Future<AssessmentRun> requireActiveForResponse({
-    required String runId,
-    required DateTime occurredAtUtc,
-  });
-
-  Future<T> serializeActiveResponse<T>({
-    required String runId,
-    required DateTime occurredAtUtc,
-    required AssessmentActiveResponseWork<T> work,
+    required bool Function() stillVisible,
   });
 
   Future<List<AssessmentRun>> listRunsForStudyCycle({

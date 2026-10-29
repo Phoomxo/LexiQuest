@@ -42,7 +42,8 @@ void main() {
       final data = document['data'] as Map<String, dynamic>;
       final attempt =
           (data['answer_attempts'] as List).single as Map<String, dynamic>;
-      expect(document['schemaVersion'], 17);
+      expect(document['schemaVersion'], 18);
+      expect(data['assessment_runs'], isEmpty);
       expect(attempt['evidence_class'], 'recognition');
       expect(
         jsonDecode(attempt['evidence_context_json'] as String),

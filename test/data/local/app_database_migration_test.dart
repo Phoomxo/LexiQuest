@@ -5,12 +5,17 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
   test(
-    'new databases use schema version seventeen with product tables',
+    'new databases use current schema version eighteen with product tables',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
 
-      expect(database.schemaVersion, 17);
+      expect(database.schemaVersion, 18);
+      expect(database.allTables, hasLength(35));
+      expect(
+        await database.customSelect('SELECT * FROM assessment_runs').get(),
+        isEmpty,
+      );
 
       final categoryColumns = await _columnNames(
         database,
@@ -88,7 +93,7 @@ void main() {
   );
 
   test(
-    'schema one upgrades to a complete schema six without row loss',
+    'schema one upgrades to complete current schema eighteen without row loss',
     () async {
       final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
       final database = AppDatabase(executor);
@@ -127,7 +132,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 17);
+      expect(version, 18);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -205,7 +210,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        17,
+        18,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -232,7 +237,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        17,
+        18,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');
@@ -246,6 +251,7 @@ const _expectedTables = <String>{
   'research_consents',
   'experiment_assignments',
   'research_participation_permits',
+  'assessment_runs',
   'vocabulary_categories',
   'vocabulary_words',
   'vocabulary_imports',

@@ -65,4 +65,5 @@ const Set<String> ownerUpgradeInventory = <String>{
   'association_records',
   'associative_memory_states',
   'measurement_opportunities',
+  'assessment_runs',
 };

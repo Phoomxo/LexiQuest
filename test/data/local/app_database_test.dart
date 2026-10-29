@@ -21,7 +21,7 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 17);
+    expect(database.schemaVersion, 18);
     expect(
       tableNames,
       containsAll(<String>[
@@ -29,6 +29,7 @@ void main() {
         'research_consents',
         'experiment_assignments',
         'research_participation_permits',
+        'assessment_runs',
         'vocabulary_categories',
         'vocabulary_words',
         'vocabulary_imports',

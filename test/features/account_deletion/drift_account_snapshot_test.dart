@@ -106,10 +106,11 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 17);
+      expect(json['schemaVersion'], 18);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
+      expect(data['assessment_runs'], isEmpty);
       expect((data['vocabulary_categories'] as List).single['id'], 'cat-a');
       final assignment = (data['experiment_assignments'] as List).single as Map;
       expect(assignment['owner_id'], 'owner-a');

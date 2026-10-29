@@ -64,6 +64,19 @@ final class LocalResearchAuthorityCache
   bool _foreground;
   bool _disposed = false;
 
+  int get readGeneration => _refreshGeneration;
+
+  ResearchAuthorityReceipt? inspectReceipt({
+    required String ownerId,
+    required String receiptId,
+    required ResearchReceiptKind kind,
+  }) {
+    final current = _current();
+    return current?.packet.scope.binding.ownerId == ownerId
+        ? current?.receipts[(receiptId, kind)]
+        : null;
+  }
+
   void invalidate() {
     _epoch++;
     _refreshGeneration++;

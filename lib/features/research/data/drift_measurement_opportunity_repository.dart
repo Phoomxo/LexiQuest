@@ -238,18 +238,11 @@ final class DriftMeasurementOpportunityRepository
       }
       return;
     }
-    final candidates = await database
-        .customSelect(
-          'SELECT id FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
-          "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence') LIMIT 1",
-          variables: [
-            Variable<String>(current.ownerId),
-            Variable<int>(
-              current.presentation!.occurredAtUtc.millisecondsSinceEpoch,
-            ),
-          ],
-        )
-        .get();
+    final candidates = await timing.indexCandidates(
+      ownerId: current.ownerId,
+      runId: current.measurementRunId,
+      firstExposureAtUtc: current.presentation!.occurredAtUtc,
+    );
     if (candidates.isNotEmpty) {
       _deny(ResearchCaptureReason.sessionUnavailable);
     }
@@ -286,22 +279,13 @@ final class DriftMeasurementOpportunityRepository
       _deny(ResearchCaptureReason.identityConflict);
     }
     final link = current.indexLink;
-    final candidates = await database
-        .customSelect(
-          'SELECT id FROM learning_sessions WHERE owner_id = ? AND started_at_utc_ms >= ? '
-          "AND NOT (activity_type = 'syncedEvidence' AND state = 'syncedEvidence') "
-          'AND (? IS NULL OR started_at_utc_ms <= ?)',
-          variables: [
-            Variable<String>(current.ownerId),
-            Variable<int>(
-              current.presentation!.occurredAtUtc.millisecondsSinceEpoch,
-            ),
-            Variable<int>(link?.startedAtUtc.millisecondsSinceEpoch),
-            Variable<int>(link?.startedAtUtc.millisecondsSinceEpoch),
-          ],
-        )
-        .get();
-    if (candidates.any((row) => row.read<String>('id') != link?.sessionId)) {
+    final candidates = await timing.indexCandidates(
+      ownerId: current.ownerId,
+      runId: run.id,
+      firstExposureAtUtc: current.presentation!.occurredAtUtc,
+      notAfterUtc: link?.startedAtUtc,
+    );
+    if (candidates.any((row) => row['id'] != link?.sessionId)) {
       _deny(ResearchCaptureReason.sessionUnavailable);
     }
     if (link != null) {

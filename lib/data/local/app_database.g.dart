@@ -22941,6 +22941,2228 @@ class MeasurementOpportunitiesCompanion
   }
 }
 
+class $AssessmentRunsTable extends AssessmentRuns
+    with TableInfo<$AssessmentRunsTable, AssessmentRunRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AssessmentRunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _learningSessionIdMeta = const VerificationMeta(
+    'learningSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> learningSessionId =
+      GeneratedColumn<String>(
+        'learning_session_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES learning_sessions (id)',
+        ),
+      );
+  static const VerificationMeta _studyCycleIdMeta = const VerificationMeta(
+    'studyCycleId',
+  );
+  @override
+  late final GeneratedColumn<String> studyCycleId = GeneratedColumn<String>(
+    'study_cycle_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES motivation_measurement_runs (id)',
+    ),
+  );
+  static const VerificationMeta _phaseMeta = const VerificationMeta('phase');
+  @override
+  late final GeneratedColumn<String> phase = GeneratedColumn<String>(
+    'phase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protocolIdMeta = const VerificationMeta(
+    'protocolId',
+  );
+  @override
+  late final GeneratedColumn<String> protocolId = GeneratedColumn<String>(
+    'protocol_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
+    'protocolVersion',
+  );
+  @override
+  late final GeneratedColumn<String> protocolVersion = GeneratedColumn<String>(
+    'protocol_version',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _experimentIdMeta = const VerificationMeta(
+    'experimentId',
+  );
+  @override
+  late final GeneratedColumn<String> experimentId = GeneratedColumn<String>(
+    'experiment_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _experimentVersionMeta = const VerificationMeta(
+    'experimentVersion',
+  );
+  @override
+  late final GeneratedColumn<int> experimentVersion = GeneratedColumn<int>(
+    'experiment_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignmentIdMeta = const VerificationMeta(
+    'assignmentId',
+  );
+  @override
+  late final GeneratedColumn<String> assignmentId = GeneratedColumn<String>(
+    'assignment_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES experiment_assignments (id)',
+    ),
+  );
+  static const VerificationMeta _cohortMeta = const VerificationMeta('cohort');
+  @override
+  late final GeneratedColumn<String> cohort = GeneratedColumn<String>(
+    'cohort',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _consentVersionMeta = const VerificationMeta(
+    'consentVersion',
+  );
+  @override
+  late final GeneratedColumn<int> consentVersion = GeneratedColumn<int>(
+    'consent_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _consentDecidedAtUtcMsMeta =
+      const VerificationMeta('consentDecidedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> consentDecidedAtUtcMs = GeneratedColumn<int>(
+    'consent_decided_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instrumentIdMeta = const VerificationMeta(
+    'instrumentId',
+  );
+  @override
+  late final GeneratedColumn<String> instrumentId = GeneratedColumn<String>(
+    'instrument_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instrumentVersionMeta = const VerificationMeta(
+    'instrumentVersion',
+  );
+  @override
+  late final GeneratedColumn<String> instrumentVersion =
+      GeneratedColumn<String>(
+        'instrument_version',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _formIdMeta = const VerificationMeta('formId');
+  @override
+  late final GeneratedColumn<String> formId = GeneratedColumn<String>(
+    'form_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formVersionMeta = const VerificationMeta(
+    'formVersion',
+  );
+  @override
+  late final GeneratedColumn<String> formVersion = GeneratedColumn<String>(
+    'form_version',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instrumentChecksumSha256Meta =
+      const VerificationMeta('instrumentChecksumSha256');
+  @override
+  late final GeneratedColumn<String> instrumentChecksumSha256 =
+      GeneratedColumn<String>(
+        'instrument_checksum_sha256',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 64,
+          maxTextLength: 64,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _formChecksumSha256Meta =
+      const VerificationMeta('formChecksumSha256');
+  @override
+  late final GeneratedColumn<String> formChecksumSha256 =
+      GeneratedColumn<String>(
+        'form_checksum_sha256',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 64,
+          maxTextLength: 64,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _appVersionMeta = const VerificationMeta(
+    'appVersion',
+  );
+  @override
+  late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
+    'app_version',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _buildIdMeta = const VerificationMeta(
+    'buildId',
+  );
+  @override
+  late final GeneratedColumn<String> buildId = GeneratedColumn<String>(
+    'build_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _databaseSchemaVersionMeta =
+      const VerificationMeta('databaseSchemaVersion');
+  @override
+  late final GeneratedColumn<int> databaseSchemaVersion = GeneratedColumn<int>(
+    'database_schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<String> contentRevision = GeneratedColumn<String>(
+    'content_revision',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _evidencePolicyVersionMeta =
+      const VerificationMeta('evidencePolicyVersion');
+  @override
+  late final GeneratedColumn<String> evidencePolicyVersion =
+      GeneratedColumn<String>(
+        'evidence_policy_version',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _featureContractRevisionMeta =
+      const VerificationMeta('featureContractRevision');
+  @override
+  late final GeneratedColumn<String> featureContractRevision =
+      GeneratedColumn<String>(
+        'feature_contract_revision',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _featureContractHashMeta =
+      const VerificationMeta('featureContractHash');
+  @override
+  late final GeneratedColumn<String> featureContractHash =
+      GeneratedColumn<String>(
+        'feature_contract_hash',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 64,
+          maxTextLength: 64,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _startedAtUtcMsMeta = const VerificationMeta(
+    'startedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtUtcMs = GeneratedColumn<int>(
+    'started_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtUtcMsMeta = const VerificationMeta(
+    'completedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> completedAtUtcMs = GeneratedColumn<int>(
+    'completed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _abandonedAtUtcMsMeta = const VerificationMeta(
+    'abandonedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> abandonedAtUtcMs = GeneratedColumn<int>(
+    'abandoned_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _assignmentRevisionMeta =
+      const VerificationMeta('assignmentRevision');
+  @override
+  late final GeneratedColumn<int> assignmentRevision = GeneratedColumn<int>(
+    'assignment_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protocolRevisionMeta = const VerificationMeta(
+    'protocolRevision',
+  );
+  @override
+  late final GeneratedColumn<int> protocolRevision = GeneratedColumn<int>(
+    'protocol_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instrumentRevisionMeta =
+      const VerificationMeta('instrumentRevision');
+  @override
+  late final GeneratedColumn<int> instrumentRevision = GeneratedColumn<int>(
+    'instrument_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formContentRevisionMeta =
+      const VerificationMeta('formContentRevision');
+  @override
+  late final GeneratedColumn<int> formContentRevision = GeneratedColumn<int>(
+    'form_content_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _participationPermitIdMeta =
+      const VerificationMeta('participationPermitId');
+  @override
+  late final GeneratedColumn<String> participationPermitId =
+      GeneratedColumn<String>(
+        'participation_permit_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES research_participation_permits (id)',
+        ),
+      );
+  static const VerificationMeta _participationPermitRevisionMeta =
+      const VerificationMeta('participationPermitRevision');
+  @override
+  late final GeneratedColumn<int> participationPermitRevision =
+      GeneratedColumn<int>(
+        'participation_permit_revision',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _participationPermitPayloadSha256Meta =
+      const VerificationMeta('participationPermitPayloadSha256');
+  @override
+  late final GeneratedColumn<String> participationPermitPayloadSha256 =
+      GeneratedColumn<String>(
+        'participation_permit_payload_sha256',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 64,
+          maxTextLength: 64,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    learningSessionId,
+    studyCycleId,
+    phase,
+    state,
+    protocolId,
+    protocolVersion,
+    experimentId,
+    experimentVersion,
+    assignmentId,
+    cohort,
+    consentVersion,
+    consentDecidedAtUtcMs,
+    instrumentId,
+    instrumentVersion,
+    formId,
+    formVersion,
+    instrumentChecksumSha256,
+    formChecksumSha256,
+    appVersion,
+    buildId,
+    databaseSchemaVersion,
+    contentRevision,
+    evidencePolicyVersion,
+    featureContractRevision,
+    featureContractHash,
+    startedAtUtcMs,
+    completedAtUtcMs,
+    abandonedAtUtcMs,
+    assignmentRevision,
+    protocolRevision,
+    instrumentRevision,
+    formContentRevision,
+    participationPermitId,
+    participationPermitRevision,
+    participationPermitPayloadSha256,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'assessment_runs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AssessmentRunRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('learning_session_id')) {
+      context.handle(
+        _learningSessionIdMeta,
+        learningSessionId.isAcceptableOrUnknown(
+          data['learning_session_id']!,
+          _learningSessionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningSessionIdMeta);
+    }
+    if (data.containsKey('study_cycle_id')) {
+      context.handle(
+        _studyCycleIdMeta,
+        studyCycleId.isAcceptableOrUnknown(
+          data['study_cycle_id']!,
+          _studyCycleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_studyCycleIdMeta);
+    }
+    if (data.containsKey('phase')) {
+      context.handle(
+        _phaseMeta,
+        phase.isAcceptableOrUnknown(data['phase']!, _phaseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_phaseMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    if (data.containsKey('protocol_id')) {
+      context.handle(
+        _protocolIdMeta,
+        protocolId.isAcceptableOrUnknown(data['protocol_id']!, _protocolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolIdMeta);
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+        _protocolVersionMeta,
+        protocolVersion.isAcceptableOrUnknown(
+          data['protocol_version']!,
+          _protocolVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolVersionMeta);
+    }
+    if (data.containsKey('experiment_id')) {
+      context.handle(
+        _experimentIdMeta,
+        experimentId.isAcceptableOrUnknown(
+          data['experiment_id']!,
+          _experimentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_experimentIdMeta);
+    }
+    if (data.containsKey('experiment_version')) {
+      context.handle(
+        _experimentVersionMeta,
+        experimentVersion.isAcceptableOrUnknown(
+          data['experiment_version']!,
+          _experimentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_experimentVersionMeta);
+    }
+    if (data.containsKey('assignment_id')) {
+      context.handle(
+        _assignmentIdMeta,
+        assignmentId.isAcceptableOrUnknown(
+          data['assignment_id']!,
+          _assignmentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignmentIdMeta);
+    }
+    if (data.containsKey('cohort')) {
+      context.handle(
+        _cohortMeta,
+        cohort.isAcceptableOrUnknown(data['cohort']!, _cohortMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cohortMeta);
+    }
+    if (data.containsKey('consent_version')) {
+      context.handle(
+        _consentVersionMeta,
+        consentVersion.isAcceptableOrUnknown(
+          data['consent_version']!,
+          _consentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_consentVersionMeta);
+    }
+    if (data.containsKey('consent_decided_at_utc_ms')) {
+      context.handle(
+        _consentDecidedAtUtcMsMeta,
+        consentDecidedAtUtcMs.isAcceptableOrUnknown(
+          data['consent_decided_at_utc_ms']!,
+          _consentDecidedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_consentDecidedAtUtcMsMeta);
+    }
+    if (data.containsKey('instrument_id')) {
+      context.handle(
+        _instrumentIdMeta,
+        instrumentId.isAcceptableOrUnknown(
+          data['instrument_id']!,
+          _instrumentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_instrumentIdMeta);
+    }
+    if (data.containsKey('instrument_version')) {
+      context.handle(
+        _instrumentVersionMeta,
+        instrumentVersion.isAcceptableOrUnknown(
+          data['instrument_version']!,
+          _instrumentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_instrumentVersionMeta);
+    }
+    if (data.containsKey('form_id')) {
+      context.handle(
+        _formIdMeta,
+        formId.isAcceptableOrUnknown(data['form_id']!, _formIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_formIdMeta);
+    }
+    if (data.containsKey('form_version')) {
+      context.handle(
+        _formVersionMeta,
+        formVersion.isAcceptableOrUnknown(
+          data['form_version']!,
+          _formVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_formVersionMeta);
+    }
+    if (data.containsKey('instrument_checksum_sha256')) {
+      context.handle(
+        _instrumentChecksumSha256Meta,
+        instrumentChecksumSha256.isAcceptableOrUnknown(
+          data['instrument_checksum_sha256']!,
+          _instrumentChecksumSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_instrumentChecksumSha256Meta);
+    }
+    if (data.containsKey('form_checksum_sha256')) {
+      context.handle(
+        _formChecksumSha256Meta,
+        formChecksumSha256.isAcceptableOrUnknown(
+          data['form_checksum_sha256']!,
+          _formChecksumSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_formChecksumSha256Meta);
+    }
+    if (data.containsKey('app_version')) {
+      context.handle(
+        _appVersionMeta,
+        appVersion.isAcceptableOrUnknown(data['app_version']!, _appVersionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_appVersionMeta);
+    }
+    if (data.containsKey('build_id')) {
+      context.handle(
+        _buildIdMeta,
+        buildId.isAcceptableOrUnknown(data['build_id']!, _buildIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_buildIdMeta);
+    }
+    if (data.containsKey('database_schema_version')) {
+      context.handle(
+        _databaseSchemaVersionMeta,
+        databaseSchemaVersion.isAcceptableOrUnknown(
+          data['database_schema_version']!,
+          _databaseSchemaVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_databaseSchemaVersionMeta);
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentRevisionMeta);
+    }
+    if (data.containsKey('evidence_policy_version')) {
+      context.handle(
+        _evidencePolicyVersionMeta,
+        evidencePolicyVersion.isAcceptableOrUnknown(
+          data['evidence_policy_version']!,
+          _evidencePolicyVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_evidencePolicyVersionMeta);
+    }
+    if (data.containsKey('feature_contract_revision')) {
+      context.handle(
+        _featureContractRevisionMeta,
+        featureContractRevision.isAcceptableOrUnknown(
+          data['feature_contract_revision']!,
+          _featureContractRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_featureContractRevisionMeta);
+    }
+    if (data.containsKey('feature_contract_hash')) {
+      context.handle(
+        _featureContractHashMeta,
+        featureContractHash.isAcceptableOrUnknown(
+          data['feature_contract_hash']!,
+          _featureContractHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_featureContractHashMeta);
+    }
+    if (data.containsKey('started_at_utc_ms')) {
+      context.handle(
+        _startedAtUtcMsMeta,
+        startedAtUtcMs.isAcceptableOrUnknown(
+          data['started_at_utc_ms']!,
+          _startedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMsMeta);
+    }
+    if (data.containsKey('completed_at_utc_ms')) {
+      context.handle(
+        _completedAtUtcMsMeta,
+        completedAtUtcMs.isAcceptableOrUnknown(
+          data['completed_at_utc_ms']!,
+          _completedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('abandoned_at_utc_ms')) {
+      context.handle(
+        _abandonedAtUtcMsMeta,
+        abandonedAtUtcMs.isAcceptableOrUnknown(
+          data['abandoned_at_utc_ms']!,
+          _abandonedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assignment_revision')) {
+      context.handle(
+        _assignmentRevisionMeta,
+        assignmentRevision.isAcceptableOrUnknown(
+          data['assignment_revision']!,
+          _assignmentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignmentRevisionMeta);
+    }
+    if (data.containsKey('protocol_revision')) {
+      context.handle(
+        _protocolRevisionMeta,
+        protocolRevision.isAcceptableOrUnknown(
+          data['protocol_revision']!,
+          _protocolRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolRevisionMeta);
+    }
+    if (data.containsKey('instrument_revision')) {
+      context.handle(
+        _instrumentRevisionMeta,
+        instrumentRevision.isAcceptableOrUnknown(
+          data['instrument_revision']!,
+          _instrumentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_instrumentRevisionMeta);
+    }
+    if (data.containsKey('form_content_revision')) {
+      context.handle(
+        _formContentRevisionMeta,
+        formContentRevision.isAcceptableOrUnknown(
+          data['form_content_revision']!,
+          _formContentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_formContentRevisionMeta);
+    }
+    if (data.containsKey('participation_permit_id')) {
+      context.handle(
+        _participationPermitIdMeta,
+        participationPermitId.isAcceptableOrUnknown(
+          data['participation_permit_id']!,
+          _participationPermitIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_participationPermitIdMeta);
+    }
+    if (data.containsKey('participation_permit_revision')) {
+      context.handle(
+        _participationPermitRevisionMeta,
+        participationPermitRevision.isAcceptableOrUnknown(
+          data['participation_permit_revision']!,
+          _participationPermitRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_participationPermitRevisionMeta);
+    }
+    if (data.containsKey('participation_permit_payload_sha256')) {
+      context.handle(
+        _participationPermitPayloadSha256Meta,
+        participationPermitPayloadSha256.isAcceptableOrUnknown(
+          data['participation_permit_payload_sha256']!,
+          _participationPermitPayloadSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_participationPermitPayloadSha256Meta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {learningSessionId},
+    {ownerId, studyCycleId, phase},
+  ];
+  @override
+  AssessmentRunRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AssessmentRunRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      learningSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_session_id'],
+      )!,
+      studyCycleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}study_cycle_id'],
+      )!,
+      phase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phase'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      protocolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protocol_id'],
+      )!,
+      protocolVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protocol_version'],
+      )!,
+      experimentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}experiment_id'],
+      )!,
+      experimentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}experiment_version'],
+      )!,
+      assignmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assignment_id'],
+      )!,
+      cohort: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cohort'],
+      )!,
+      consentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}consent_version'],
+      )!,
+      consentDecidedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}consent_decided_at_utc_ms'],
+      )!,
+      instrumentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instrument_id'],
+      )!,
+      instrumentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instrument_version'],
+      )!,
+      formId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}form_id'],
+      )!,
+      formVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}form_version'],
+      )!,
+      instrumentChecksumSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instrument_checksum_sha256'],
+      )!,
+      formChecksumSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}form_checksum_sha256'],
+      )!,
+      appVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_version'],
+      )!,
+      buildId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}build_id'],
+      )!,
+      databaseSchemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}database_schema_version'],
+      )!,
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_revision'],
+      )!,
+      evidencePolicyVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_policy_version'],
+      )!,
+      featureContractRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}feature_contract_revision'],
+      )!,
+      featureContractHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}feature_contract_hash'],
+      )!,
+      startedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_utc_ms'],
+      )!,
+      completedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at_utc_ms'],
+      ),
+      abandonedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}abandoned_at_utc_ms'],
+      ),
+      assignmentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}assignment_revision'],
+      )!,
+      protocolRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}protocol_revision'],
+      )!,
+      instrumentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}instrument_revision'],
+      )!,
+      formContentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}form_content_revision'],
+      )!,
+      participationPermitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}participation_permit_id'],
+      )!,
+      participationPermitRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}participation_permit_revision'],
+      )!,
+      participationPermitPayloadSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}participation_permit_payload_sha256'],
+      )!,
+    );
+  }
+
+  @override
+  $AssessmentRunsTable createAlias(String alias) {
+    return $AssessmentRunsTable(attachedDatabase, alias);
+  }
+}
+
+class AssessmentRunRow extends DataClass
+    implements Insertable<AssessmentRunRow> {
+  final String id;
+  final String ownerId;
+  final String learningSessionId;
+  final String studyCycleId;
+  final String phase;
+  final String state;
+  final String protocolId;
+  final String protocolVersion;
+  final String experimentId;
+  final int experimentVersion;
+  final String assignmentId;
+  final String cohort;
+  final int consentVersion;
+  final int consentDecidedAtUtcMs;
+  final String instrumentId;
+  final String instrumentVersion;
+  final String formId;
+  final String formVersion;
+  final String instrumentChecksumSha256;
+  final String formChecksumSha256;
+  final String appVersion;
+  final String buildId;
+  final int databaseSchemaVersion;
+  final String contentRevision;
+  final String evidencePolicyVersion;
+  final String featureContractRevision;
+  final String featureContractHash;
+  final int startedAtUtcMs;
+  final int? completedAtUtcMs;
+  final int? abandonedAtUtcMs;
+  final int assignmentRevision;
+  final int protocolRevision;
+  final int instrumentRevision;
+  final int formContentRevision;
+  final String participationPermitId;
+  final int participationPermitRevision;
+  final String participationPermitPayloadSha256;
+  const AssessmentRunRow({
+    required this.id,
+    required this.ownerId,
+    required this.learningSessionId,
+    required this.studyCycleId,
+    required this.phase,
+    required this.state,
+    required this.protocolId,
+    required this.protocolVersion,
+    required this.experimentId,
+    required this.experimentVersion,
+    required this.assignmentId,
+    required this.cohort,
+    required this.consentVersion,
+    required this.consentDecidedAtUtcMs,
+    required this.instrumentId,
+    required this.instrumentVersion,
+    required this.formId,
+    required this.formVersion,
+    required this.instrumentChecksumSha256,
+    required this.formChecksumSha256,
+    required this.appVersion,
+    required this.buildId,
+    required this.databaseSchemaVersion,
+    required this.contentRevision,
+    required this.evidencePolicyVersion,
+    required this.featureContractRevision,
+    required this.featureContractHash,
+    required this.startedAtUtcMs,
+    this.completedAtUtcMs,
+    this.abandonedAtUtcMs,
+    required this.assignmentRevision,
+    required this.protocolRevision,
+    required this.instrumentRevision,
+    required this.formContentRevision,
+    required this.participationPermitId,
+    required this.participationPermitRevision,
+    required this.participationPermitPayloadSha256,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['learning_session_id'] = Variable<String>(learningSessionId);
+    map['study_cycle_id'] = Variable<String>(studyCycleId);
+    map['phase'] = Variable<String>(phase);
+    map['state'] = Variable<String>(state);
+    map['protocol_id'] = Variable<String>(protocolId);
+    map['protocol_version'] = Variable<String>(protocolVersion);
+    map['experiment_id'] = Variable<String>(experimentId);
+    map['experiment_version'] = Variable<int>(experimentVersion);
+    map['assignment_id'] = Variable<String>(assignmentId);
+    map['cohort'] = Variable<String>(cohort);
+    map['consent_version'] = Variable<int>(consentVersion);
+    map['consent_decided_at_utc_ms'] = Variable<int>(consentDecidedAtUtcMs);
+    map['instrument_id'] = Variable<String>(instrumentId);
+    map['instrument_version'] = Variable<String>(instrumentVersion);
+    map['form_id'] = Variable<String>(formId);
+    map['form_version'] = Variable<String>(formVersion);
+    map['instrument_checksum_sha256'] = Variable<String>(
+      instrumentChecksumSha256,
+    );
+    map['form_checksum_sha256'] = Variable<String>(formChecksumSha256);
+    map['app_version'] = Variable<String>(appVersion);
+    map['build_id'] = Variable<String>(buildId);
+    map['database_schema_version'] = Variable<int>(databaseSchemaVersion);
+    map['content_revision'] = Variable<String>(contentRevision);
+    map['evidence_policy_version'] = Variable<String>(evidencePolicyVersion);
+    map['feature_contract_revision'] = Variable<String>(
+      featureContractRevision,
+    );
+    map['feature_contract_hash'] = Variable<String>(featureContractHash);
+    map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs);
+    if (!nullToAbsent || completedAtUtcMs != null) {
+      map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs);
+    }
+    if (!nullToAbsent || abandonedAtUtcMs != null) {
+      map['abandoned_at_utc_ms'] = Variable<int>(abandonedAtUtcMs);
+    }
+    map['assignment_revision'] = Variable<int>(assignmentRevision);
+    map['protocol_revision'] = Variable<int>(protocolRevision);
+    map['instrument_revision'] = Variable<int>(instrumentRevision);
+    map['form_content_revision'] = Variable<int>(formContentRevision);
+    map['participation_permit_id'] = Variable<String>(participationPermitId);
+    map['participation_permit_revision'] = Variable<int>(
+      participationPermitRevision,
+    );
+    map['participation_permit_payload_sha256'] = Variable<String>(
+      participationPermitPayloadSha256,
+    );
+    return map;
+  }
+
+  AssessmentRunsCompanion toCompanion(bool nullToAbsent) {
+    return AssessmentRunsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      learningSessionId: Value(learningSessionId),
+      studyCycleId: Value(studyCycleId),
+      phase: Value(phase),
+      state: Value(state),
+      protocolId: Value(protocolId),
+      protocolVersion: Value(protocolVersion),
+      experimentId: Value(experimentId),
+      experimentVersion: Value(experimentVersion),
+      assignmentId: Value(assignmentId),
+      cohort: Value(cohort),
+      consentVersion: Value(consentVersion),
+      consentDecidedAtUtcMs: Value(consentDecidedAtUtcMs),
+      instrumentId: Value(instrumentId),
+      instrumentVersion: Value(instrumentVersion),
+      formId: Value(formId),
+      formVersion: Value(formVersion),
+      instrumentChecksumSha256: Value(instrumentChecksumSha256),
+      formChecksumSha256: Value(formChecksumSha256),
+      appVersion: Value(appVersion),
+      buildId: Value(buildId),
+      databaseSchemaVersion: Value(databaseSchemaVersion),
+      contentRevision: Value(contentRevision),
+      evidencePolicyVersion: Value(evidencePolicyVersion),
+      featureContractRevision: Value(featureContractRevision),
+      featureContractHash: Value(featureContractHash),
+      startedAtUtcMs: Value(startedAtUtcMs),
+      completedAtUtcMs: completedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAtUtcMs),
+      abandonedAtUtcMs: abandonedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(abandonedAtUtcMs),
+      assignmentRevision: Value(assignmentRevision),
+      protocolRevision: Value(protocolRevision),
+      instrumentRevision: Value(instrumentRevision),
+      formContentRevision: Value(formContentRevision),
+      participationPermitId: Value(participationPermitId),
+      participationPermitRevision: Value(participationPermitRevision),
+      participationPermitPayloadSha256: Value(participationPermitPayloadSha256),
+    );
+  }
+
+  factory AssessmentRunRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AssessmentRunRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      learningSessionId: serializer.fromJson<String>(json['learningSessionId']),
+      studyCycleId: serializer.fromJson<String>(json['studyCycleId']),
+      phase: serializer.fromJson<String>(json['phase']),
+      state: serializer.fromJson<String>(json['state']),
+      protocolId: serializer.fromJson<String>(json['protocolId']),
+      protocolVersion: serializer.fromJson<String>(json['protocolVersion']),
+      experimentId: serializer.fromJson<String>(json['experimentId']),
+      experimentVersion: serializer.fromJson<int>(json['experimentVersion']),
+      assignmentId: serializer.fromJson<String>(json['assignmentId']),
+      cohort: serializer.fromJson<String>(json['cohort']),
+      consentVersion: serializer.fromJson<int>(json['consentVersion']),
+      consentDecidedAtUtcMs: serializer.fromJson<int>(
+        json['consentDecidedAtUtcMs'],
+      ),
+      instrumentId: serializer.fromJson<String>(json['instrumentId']),
+      instrumentVersion: serializer.fromJson<String>(json['instrumentVersion']),
+      formId: serializer.fromJson<String>(json['formId']),
+      formVersion: serializer.fromJson<String>(json['formVersion']),
+      instrumentChecksumSha256: serializer.fromJson<String>(
+        json['instrumentChecksumSha256'],
+      ),
+      formChecksumSha256: serializer.fromJson<String>(
+        json['formChecksumSha256'],
+      ),
+      appVersion: serializer.fromJson<String>(json['appVersion']),
+      buildId: serializer.fromJson<String>(json['buildId']),
+      databaseSchemaVersion: serializer.fromJson<int>(
+        json['databaseSchemaVersion'],
+      ),
+      contentRevision: serializer.fromJson<String>(json['contentRevision']),
+      evidencePolicyVersion: serializer.fromJson<String>(
+        json['evidencePolicyVersion'],
+      ),
+      featureContractRevision: serializer.fromJson<String>(
+        json['featureContractRevision'],
+      ),
+      featureContractHash: serializer.fromJson<String>(
+        json['featureContractHash'],
+      ),
+      startedAtUtcMs: serializer.fromJson<int>(json['startedAtUtcMs']),
+      completedAtUtcMs: serializer.fromJson<int?>(json['completedAtUtcMs']),
+      abandonedAtUtcMs: serializer.fromJson<int?>(json['abandonedAtUtcMs']),
+      assignmentRevision: serializer.fromJson<int>(json['assignmentRevision']),
+      protocolRevision: serializer.fromJson<int>(json['protocolRevision']),
+      instrumentRevision: serializer.fromJson<int>(json['instrumentRevision']),
+      formContentRevision: serializer.fromJson<int>(
+        json['formContentRevision'],
+      ),
+      participationPermitId: serializer.fromJson<String>(
+        json['participationPermitId'],
+      ),
+      participationPermitRevision: serializer.fromJson<int>(
+        json['participationPermitRevision'],
+      ),
+      participationPermitPayloadSha256: serializer.fromJson<String>(
+        json['participationPermitPayloadSha256'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'learningSessionId': serializer.toJson<String>(learningSessionId),
+      'studyCycleId': serializer.toJson<String>(studyCycleId),
+      'phase': serializer.toJson<String>(phase),
+      'state': serializer.toJson<String>(state),
+      'protocolId': serializer.toJson<String>(protocolId),
+      'protocolVersion': serializer.toJson<String>(protocolVersion),
+      'experimentId': serializer.toJson<String>(experimentId),
+      'experimentVersion': serializer.toJson<int>(experimentVersion),
+      'assignmentId': serializer.toJson<String>(assignmentId),
+      'cohort': serializer.toJson<String>(cohort),
+      'consentVersion': serializer.toJson<int>(consentVersion),
+      'consentDecidedAtUtcMs': serializer.toJson<int>(consentDecidedAtUtcMs),
+      'instrumentId': serializer.toJson<String>(instrumentId),
+      'instrumentVersion': serializer.toJson<String>(instrumentVersion),
+      'formId': serializer.toJson<String>(formId),
+      'formVersion': serializer.toJson<String>(formVersion),
+      'instrumentChecksumSha256': serializer.toJson<String>(
+        instrumentChecksumSha256,
+      ),
+      'formChecksumSha256': serializer.toJson<String>(formChecksumSha256),
+      'appVersion': serializer.toJson<String>(appVersion),
+      'buildId': serializer.toJson<String>(buildId),
+      'databaseSchemaVersion': serializer.toJson<int>(databaseSchemaVersion),
+      'contentRevision': serializer.toJson<String>(contentRevision),
+      'evidencePolicyVersion': serializer.toJson<String>(evidencePolicyVersion),
+      'featureContractRevision': serializer.toJson<String>(
+        featureContractRevision,
+      ),
+      'featureContractHash': serializer.toJson<String>(featureContractHash),
+      'startedAtUtcMs': serializer.toJson<int>(startedAtUtcMs),
+      'completedAtUtcMs': serializer.toJson<int?>(completedAtUtcMs),
+      'abandonedAtUtcMs': serializer.toJson<int?>(abandonedAtUtcMs),
+      'assignmentRevision': serializer.toJson<int>(assignmentRevision),
+      'protocolRevision': serializer.toJson<int>(protocolRevision),
+      'instrumentRevision': serializer.toJson<int>(instrumentRevision),
+      'formContentRevision': serializer.toJson<int>(formContentRevision),
+      'participationPermitId': serializer.toJson<String>(participationPermitId),
+      'participationPermitRevision': serializer.toJson<int>(
+        participationPermitRevision,
+      ),
+      'participationPermitPayloadSha256': serializer.toJson<String>(
+        participationPermitPayloadSha256,
+      ),
+    };
+  }
+
+  AssessmentRunRow copyWith({
+    String? id,
+    String? ownerId,
+    String? learningSessionId,
+    String? studyCycleId,
+    String? phase,
+    String? state,
+    String? protocolId,
+    String? protocolVersion,
+    String? experimentId,
+    int? experimentVersion,
+    String? assignmentId,
+    String? cohort,
+    int? consentVersion,
+    int? consentDecidedAtUtcMs,
+    String? instrumentId,
+    String? instrumentVersion,
+    String? formId,
+    String? formVersion,
+    String? instrumentChecksumSha256,
+    String? formChecksumSha256,
+    String? appVersion,
+    String? buildId,
+    int? databaseSchemaVersion,
+    String? contentRevision,
+    String? evidencePolicyVersion,
+    String? featureContractRevision,
+    String? featureContractHash,
+    int? startedAtUtcMs,
+    Value<int?> completedAtUtcMs = const Value.absent(),
+    Value<int?> abandonedAtUtcMs = const Value.absent(),
+    int? assignmentRevision,
+    int? protocolRevision,
+    int? instrumentRevision,
+    int? formContentRevision,
+    String? participationPermitId,
+    int? participationPermitRevision,
+    String? participationPermitPayloadSha256,
+  }) => AssessmentRunRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    learningSessionId: learningSessionId ?? this.learningSessionId,
+    studyCycleId: studyCycleId ?? this.studyCycleId,
+    phase: phase ?? this.phase,
+    state: state ?? this.state,
+    protocolId: protocolId ?? this.protocolId,
+    protocolVersion: protocolVersion ?? this.protocolVersion,
+    experimentId: experimentId ?? this.experimentId,
+    experimentVersion: experimentVersion ?? this.experimentVersion,
+    assignmentId: assignmentId ?? this.assignmentId,
+    cohort: cohort ?? this.cohort,
+    consentVersion: consentVersion ?? this.consentVersion,
+    consentDecidedAtUtcMs: consentDecidedAtUtcMs ?? this.consentDecidedAtUtcMs,
+    instrumentId: instrumentId ?? this.instrumentId,
+    instrumentVersion: instrumentVersion ?? this.instrumentVersion,
+    formId: formId ?? this.formId,
+    formVersion: formVersion ?? this.formVersion,
+    instrumentChecksumSha256:
+        instrumentChecksumSha256 ?? this.instrumentChecksumSha256,
+    formChecksumSha256: formChecksumSha256 ?? this.formChecksumSha256,
+    appVersion: appVersion ?? this.appVersion,
+    buildId: buildId ?? this.buildId,
+    databaseSchemaVersion: databaseSchemaVersion ?? this.databaseSchemaVersion,
+    contentRevision: contentRevision ?? this.contentRevision,
+    evidencePolicyVersion: evidencePolicyVersion ?? this.evidencePolicyVersion,
+    featureContractRevision:
+        featureContractRevision ?? this.featureContractRevision,
+    featureContractHash: featureContractHash ?? this.featureContractHash,
+    startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+    completedAtUtcMs: completedAtUtcMs.present
+        ? completedAtUtcMs.value
+        : this.completedAtUtcMs,
+    abandonedAtUtcMs: abandonedAtUtcMs.present
+        ? abandonedAtUtcMs.value
+        : this.abandonedAtUtcMs,
+    assignmentRevision: assignmentRevision ?? this.assignmentRevision,
+    protocolRevision: protocolRevision ?? this.protocolRevision,
+    instrumentRevision: instrumentRevision ?? this.instrumentRevision,
+    formContentRevision: formContentRevision ?? this.formContentRevision,
+    participationPermitId: participationPermitId ?? this.participationPermitId,
+    participationPermitRevision:
+        participationPermitRevision ?? this.participationPermitRevision,
+    participationPermitPayloadSha256:
+        participationPermitPayloadSha256 ??
+        this.participationPermitPayloadSha256,
+  );
+  AssessmentRunRow copyWithCompanion(AssessmentRunsCompanion data) {
+    return AssessmentRunRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      learningSessionId: data.learningSessionId.present
+          ? data.learningSessionId.value
+          : this.learningSessionId,
+      studyCycleId: data.studyCycleId.present
+          ? data.studyCycleId.value
+          : this.studyCycleId,
+      phase: data.phase.present ? data.phase.value : this.phase,
+      state: data.state.present ? data.state.value : this.state,
+      protocolId: data.protocolId.present
+          ? data.protocolId.value
+          : this.protocolId,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      experimentId: data.experimentId.present
+          ? data.experimentId.value
+          : this.experimentId,
+      experimentVersion: data.experimentVersion.present
+          ? data.experimentVersion.value
+          : this.experimentVersion,
+      assignmentId: data.assignmentId.present
+          ? data.assignmentId.value
+          : this.assignmentId,
+      cohort: data.cohort.present ? data.cohort.value : this.cohort,
+      consentVersion: data.consentVersion.present
+          ? data.consentVersion.value
+          : this.consentVersion,
+      consentDecidedAtUtcMs: data.consentDecidedAtUtcMs.present
+          ? data.consentDecidedAtUtcMs.value
+          : this.consentDecidedAtUtcMs,
+      instrumentId: data.instrumentId.present
+          ? data.instrumentId.value
+          : this.instrumentId,
+      instrumentVersion: data.instrumentVersion.present
+          ? data.instrumentVersion.value
+          : this.instrumentVersion,
+      formId: data.formId.present ? data.formId.value : this.formId,
+      formVersion: data.formVersion.present
+          ? data.formVersion.value
+          : this.formVersion,
+      instrumentChecksumSha256: data.instrumentChecksumSha256.present
+          ? data.instrumentChecksumSha256.value
+          : this.instrumentChecksumSha256,
+      formChecksumSha256: data.formChecksumSha256.present
+          ? data.formChecksumSha256.value
+          : this.formChecksumSha256,
+      appVersion: data.appVersion.present
+          ? data.appVersion.value
+          : this.appVersion,
+      buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      databaseSchemaVersion: data.databaseSchemaVersion.present
+          ? data.databaseSchemaVersion.value
+          : this.databaseSchemaVersion,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      evidencePolicyVersion: data.evidencePolicyVersion.present
+          ? data.evidencePolicyVersion.value
+          : this.evidencePolicyVersion,
+      featureContractRevision: data.featureContractRevision.present
+          ? data.featureContractRevision.value
+          : this.featureContractRevision,
+      featureContractHash: data.featureContractHash.present
+          ? data.featureContractHash.value
+          : this.featureContractHash,
+      startedAtUtcMs: data.startedAtUtcMs.present
+          ? data.startedAtUtcMs.value
+          : this.startedAtUtcMs,
+      completedAtUtcMs: data.completedAtUtcMs.present
+          ? data.completedAtUtcMs.value
+          : this.completedAtUtcMs,
+      abandonedAtUtcMs: data.abandonedAtUtcMs.present
+          ? data.abandonedAtUtcMs.value
+          : this.abandonedAtUtcMs,
+      assignmentRevision: data.assignmentRevision.present
+          ? data.assignmentRevision.value
+          : this.assignmentRevision,
+      protocolRevision: data.protocolRevision.present
+          ? data.protocolRevision.value
+          : this.protocolRevision,
+      instrumentRevision: data.instrumentRevision.present
+          ? data.instrumentRevision.value
+          : this.instrumentRevision,
+      formContentRevision: data.formContentRevision.present
+          ? data.formContentRevision.value
+          : this.formContentRevision,
+      participationPermitId: data.participationPermitId.present
+          ? data.participationPermitId.value
+          : this.participationPermitId,
+      participationPermitRevision: data.participationPermitRevision.present
+          ? data.participationPermitRevision.value
+          : this.participationPermitRevision,
+      participationPermitPayloadSha256:
+          data.participationPermitPayloadSha256.present
+          ? data.participationPermitPayloadSha256.value
+          : this.participationPermitPayloadSha256,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssessmentRunRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write('studyCycleId: $studyCycleId, ')
+          ..write('phase: $phase, ')
+          ..write('state: $state, ')
+          ..write('protocolId: $protocolId, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('experimentId: $experimentId, ')
+          ..write('experimentVersion: $experimentVersion, ')
+          ..write('assignmentId: $assignmentId, ')
+          ..write('cohort: $cohort, ')
+          ..write('consentVersion: $consentVersion, ')
+          ..write('consentDecidedAtUtcMs: $consentDecidedAtUtcMs, ')
+          ..write('instrumentId: $instrumentId, ')
+          ..write('instrumentVersion: $instrumentVersion, ')
+          ..write('formId: $formId, ')
+          ..write('formVersion: $formVersion, ')
+          ..write('instrumentChecksumSha256: $instrumentChecksumSha256, ')
+          ..write('formChecksumSha256: $formChecksumSha256, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write('databaseSchemaVersion: $databaseSchemaVersion, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('evidencePolicyVersion: $evidencePolicyVersion, ')
+          ..write('featureContractRevision: $featureContractRevision, ')
+          ..write('featureContractHash: $featureContractHash, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('abandonedAtUtcMs: $abandonedAtUtcMs, ')
+          ..write('assignmentRevision: $assignmentRevision, ')
+          ..write('protocolRevision: $protocolRevision, ')
+          ..write('instrumentRevision: $instrumentRevision, ')
+          ..write('formContentRevision: $formContentRevision, ')
+          ..write('participationPermitId: $participationPermitId, ')
+          ..write('participationPermitRevision: $participationPermitRevision, ')
+          ..write(
+            'participationPermitPayloadSha256: $participationPermitPayloadSha256',
+          )
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    ownerId,
+    learningSessionId,
+    studyCycleId,
+    phase,
+    state,
+    protocolId,
+    protocolVersion,
+    experimentId,
+    experimentVersion,
+    assignmentId,
+    cohort,
+    consentVersion,
+    consentDecidedAtUtcMs,
+    instrumentId,
+    instrumentVersion,
+    formId,
+    formVersion,
+    instrumentChecksumSha256,
+    formChecksumSha256,
+    appVersion,
+    buildId,
+    databaseSchemaVersion,
+    contentRevision,
+    evidencePolicyVersion,
+    featureContractRevision,
+    featureContractHash,
+    startedAtUtcMs,
+    completedAtUtcMs,
+    abandonedAtUtcMs,
+    assignmentRevision,
+    protocolRevision,
+    instrumentRevision,
+    formContentRevision,
+    participationPermitId,
+    participationPermitRevision,
+    participationPermitPayloadSha256,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AssessmentRunRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.learningSessionId == this.learningSessionId &&
+          other.studyCycleId == this.studyCycleId &&
+          other.phase == this.phase &&
+          other.state == this.state &&
+          other.protocolId == this.protocolId &&
+          other.protocolVersion == this.protocolVersion &&
+          other.experimentId == this.experimentId &&
+          other.experimentVersion == this.experimentVersion &&
+          other.assignmentId == this.assignmentId &&
+          other.cohort == this.cohort &&
+          other.consentVersion == this.consentVersion &&
+          other.consentDecidedAtUtcMs == this.consentDecidedAtUtcMs &&
+          other.instrumentId == this.instrumentId &&
+          other.instrumentVersion == this.instrumentVersion &&
+          other.formId == this.formId &&
+          other.formVersion == this.formVersion &&
+          other.instrumentChecksumSha256 == this.instrumentChecksumSha256 &&
+          other.formChecksumSha256 == this.formChecksumSha256 &&
+          other.appVersion == this.appVersion &&
+          other.buildId == this.buildId &&
+          other.databaseSchemaVersion == this.databaseSchemaVersion &&
+          other.contentRevision == this.contentRevision &&
+          other.evidencePolicyVersion == this.evidencePolicyVersion &&
+          other.featureContractRevision == this.featureContractRevision &&
+          other.featureContractHash == this.featureContractHash &&
+          other.startedAtUtcMs == this.startedAtUtcMs &&
+          other.completedAtUtcMs == this.completedAtUtcMs &&
+          other.abandonedAtUtcMs == this.abandonedAtUtcMs &&
+          other.assignmentRevision == this.assignmentRevision &&
+          other.protocolRevision == this.protocolRevision &&
+          other.instrumentRevision == this.instrumentRevision &&
+          other.formContentRevision == this.formContentRevision &&
+          other.participationPermitId == this.participationPermitId &&
+          other.participationPermitRevision ==
+              this.participationPermitRevision &&
+          other.participationPermitPayloadSha256 ==
+              this.participationPermitPayloadSha256);
+}
+
+class AssessmentRunsCompanion extends UpdateCompanion<AssessmentRunRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> learningSessionId;
+  final Value<String> studyCycleId;
+  final Value<String> phase;
+  final Value<String> state;
+  final Value<String> protocolId;
+  final Value<String> protocolVersion;
+  final Value<String> experimentId;
+  final Value<int> experimentVersion;
+  final Value<String> assignmentId;
+  final Value<String> cohort;
+  final Value<int> consentVersion;
+  final Value<int> consentDecidedAtUtcMs;
+  final Value<String> instrumentId;
+  final Value<String> instrumentVersion;
+  final Value<String> formId;
+  final Value<String> formVersion;
+  final Value<String> instrumentChecksumSha256;
+  final Value<String> formChecksumSha256;
+  final Value<String> appVersion;
+  final Value<String> buildId;
+  final Value<int> databaseSchemaVersion;
+  final Value<String> contentRevision;
+  final Value<String> evidencePolicyVersion;
+  final Value<String> featureContractRevision;
+  final Value<String> featureContractHash;
+  final Value<int> startedAtUtcMs;
+  final Value<int?> completedAtUtcMs;
+  final Value<int?> abandonedAtUtcMs;
+  final Value<int> assignmentRevision;
+  final Value<int> protocolRevision;
+  final Value<int> instrumentRevision;
+  final Value<int> formContentRevision;
+  final Value<String> participationPermitId;
+  final Value<int> participationPermitRevision;
+  final Value<String> participationPermitPayloadSha256;
+  final Value<int> rowid;
+  const AssessmentRunsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.learningSessionId = const Value.absent(),
+    this.studyCycleId = const Value.absent(),
+    this.phase = const Value.absent(),
+    this.state = const Value.absent(),
+    this.protocolId = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.experimentId = const Value.absent(),
+    this.experimentVersion = const Value.absent(),
+    this.assignmentId = const Value.absent(),
+    this.cohort = const Value.absent(),
+    this.consentVersion = const Value.absent(),
+    this.consentDecidedAtUtcMs = const Value.absent(),
+    this.instrumentId = const Value.absent(),
+    this.instrumentVersion = const Value.absent(),
+    this.formId = const Value.absent(),
+    this.formVersion = const Value.absent(),
+    this.instrumentChecksumSha256 = const Value.absent(),
+    this.formChecksumSha256 = const Value.absent(),
+    this.appVersion = const Value.absent(),
+    this.buildId = const Value.absent(),
+    this.databaseSchemaVersion = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.evidencePolicyVersion = const Value.absent(),
+    this.featureContractRevision = const Value.absent(),
+    this.featureContractHash = const Value.absent(),
+    this.startedAtUtcMs = const Value.absent(),
+    this.completedAtUtcMs = const Value.absent(),
+    this.abandonedAtUtcMs = const Value.absent(),
+    this.assignmentRevision = const Value.absent(),
+    this.protocolRevision = const Value.absent(),
+    this.instrumentRevision = const Value.absent(),
+    this.formContentRevision = const Value.absent(),
+    this.participationPermitId = const Value.absent(),
+    this.participationPermitRevision = const Value.absent(),
+    this.participationPermitPayloadSha256 = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AssessmentRunsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String learningSessionId,
+    required String studyCycleId,
+    required String phase,
+    required String state,
+    required String protocolId,
+    required String protocolVersion,
+    required String experimentId,
+    required int experimentVersion,
+    required String assignmentId,
+    required String cohort,
+    required int consentVersion,
+    required int consentDecidedAtUtcMs,
+    required String instrumentId,
+    required String instrumentVersion,
+    required String formId,
+    required String formVersion,
+    required String instrumentChecksumSha256,
+    required String formChecksumSha256,
+    required String appVersion,
+    required String buildId,
+    required int databaseSchemaVersion,
+    required String contentRevision,
+    required String evidencePolicyVersion,
+    required String featureContractRevision,
+    required String featureContractHash,
+    required int startedAtUtcMs,
+    this.completedAtUtcMs = const Value.absent(),
+    this.abandonedAtUtcMs = const Value.absent(),
+    required int assignmentRevision,
+    required int protocolRevision,
+    required int instrumentRevision,
+    required int formContentRevision,
+    required String participationPermitId,
+    required int participationPermitRevision,
+    required String participationPermitPayloadSha256,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       learningSessionId = Value(learningSessionId),
+       studyCycleId = Value(studyCycleId),
+       phase = Value(phase),
+       state = Value(state),
+       protocolId = Value(protocolId),
+       protocolVersion = Value(protocolVersion),
+       experimentId = Value(experimentId),
+       experimentVersion = Value(experimentVersion),
+       assignmentId = Value(assignmentId),
+       cohort = Value(cohort),
+       consentVersion = Value(consentVersion),
+       consentDecidedAtUtcMs = Value(consentDecidedAtUtcMs),
+       instrumentId = Value(instrumentId),
+       instrumentVersion = Value(instrumentVersion),
+       formId = Value(formId),
+       formVersion = Value(formVersion),
+       instrumentChecksumSha256 = Value(instrumentChecksumSha256),
+       formChecksumSha256 = Value(formChecksumSha256),
+       appVersion = Value(appVersion),
+       buildId = Value(buildId),
+       databaseSchemaVersion = Value(databaseSchemaVersion),
+       contentRevision = Value(contentRevision),
+       evidencePolicyVersion = Value(evidencePolicyVersion),
+       featureContractRevision = Value(featureContractRevision),
+       featureContractHash = Value(featureContractHash),
+       startedAtUtcMs = Value(startedAtUtcMs),
+       assignmentRevision = Value(assignmentRevision),
+       protocolRevision = Value(protocolRevision),
+       instrumentRevision = Value(instrumentRevision),
+       formContentRevision = Value(formContentRevision),
+       participationPermitId = Value(participationPermitId),
+       participationPermitRevision = Value(participationPermitRevision),
+       participationPermitPayloadSha256 = Value(
+         participationPermitPayloadSha256,
+       );
+  static Insertable<AssessmentRunRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? learningSessionId,
+    Expression<String>? studyCycleId,
+    Expression<String>? phase,
+    Expression<String>? state,
+    Expression<String>? protocolId,
+    Expression<String>? protocolVersion,
+    Expression<String>? experimentId,
+    Expression<int>? experimentVersion,
+    Expression<String>? assignmentId,
+    Expression<String>? cohort,
+    Expression<int>? consentVersion,
+    Expression<int>? consentDecidedAtUtcMs,
+    Expression<String>? instrumentId,
+    Expression<String>? instrumentVersion,
+    Expression<String>? formId,
+    Expression<String>? formVersion,
+    Expression<String>? instrumentChecksumSha256,
+    Expression<String>? formChecksumSha256,
+    Expression<String>? appVersion,
+    Expression<String>? buildId,
+    Expression<int>? databaseSchemaVersion,
+    Expression<String>? contentRevision,
+    Expression<String>? evidencePolicyVersion,
+    Expression<String>? featureContractRevision,
+    Expression<String>? featureContractHash,
+    Expression<int>? startedAtUtcMs,
+    Expression<int>? completedAtUtcMs,
+    Expression<int>? abandonedAtUtcMs,
+    Expression<int>? assignmentRevision,
+    Expression<int>? protocolRevision,
+    Expression<int>? instrumentRevision,
+    Expression<int>? formContentRevision,
+    Expression<String>? participationPermitId,
+    Expression<int>? participationPermitRevision,
+    Expression<String>? participationPermitPayloadSha256,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (learningSessionId != null) 'learning_session_id': learningSessionId,
+      if (studyCycleId != null) 'study_cycle_id': studyCycleId,
+      if (phase != null) 'phase': phase,
+      if (state != null) 'state': state,
+      if (protocolId != null) 'protocol_id': protocolId,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (experimentId != null) 'experiment_id': experimentId,
+      if (experimentVersion != null) 'experiment_version': experimentVersion,
+      if (assignmentId != null) 'assignment_id': assignmentId,
+      if (cohort != null) 'cohort': cohort,
+      if (consentVersion != null) 'consent_version': consentVersion,
+      if (consentDecidedAtUtcMs != null)
+        'consent_decided_at_utc_ms': consentDecidedAtUtcMs,
+      if (instrumentId != null) 'instrument_id': instrumentId,
+      if (instrumentVersion != null) 'instrument_version': instrumentVersion,
+      if (formId != null) 'form_id': formId,
+      if (formVersion != null) 'form_version': formVersion,
+      if (instrumentChecksumSha256 != null)
+        'instrument_checksum_sha256': instrumentChecksumSha256,
+      if (formChecksumSha256 != null)
+        'form_checksum_sha256': formChecksumSha256,
+      if (appVersion != null) 'app_version': appVersion,
+      if (buildId != null) 'build_id': buildId,
+      if (databaseSchemaVersion != null)
+        'database_schema_version': databaseSchemaVersion,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (evidencePolicyVersion != null)
+        'evidence_policy_version': evidencePolicyVersion,
+      if (featureContractRevision != null)
+        'feature_contract_revision': featureContractRevision,
+      if (featureContractHash != null)
+        'feature_contract_hash': featureContractHash,
+      if (startedAtUtcMs != null) 'started_at_utc_ms': startedAtUtcMs,
+      if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
+      if (abandonedAtUtcMs != null) 'abandoned_at_utc_ms': abandonedAtUtcMs,
+      if (assignmentRevision != null) 'assignment_revision': assignmentRevision,
+      if (protocolRevision != null) 'protocol_revision': protocolRevision,
+      if (instrumentRevision != null) 'instrument_revision': instrumentRevision,
+      if (formContentRevision != null)
+        'form_content_revision': formContentRevision,
+      if (participationPermitId != null)
+        'participation_permit_id': participationPermitId,
+      if (participationPermitRevision != null)
+        'participation_permit_revision': participationPermitRevision,
+      if (participationPermitPayloadSha256 != null)
+        'participation_permit_payload_sha256': participationPermitPayloadSha256,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AssessmentRunsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? learningSessionId,
+    Value<String>? studyCycleId,
+    Value<String>? phase,
+    Value<String>? state,
+    Value<String>? protocolId,
+    Value<String>? protocolVersion,
+    Value<String>? experimentId,
+    Value<int>? experimentVersion,
+    Value<String>? assignmentId,
+    Value<String>? cohort,
+    Value<int>? consentVersion,
+    Value<int>? consentDecidedAtUtcMs,
+    Value<String>? instrumentId,
+    Value<String>? instrumentVersion,
+    Value<String>? formId,
+    Value<String>? formVersion,
+    Value<String>? instrumentChecksumSha256,
+    Value<String>? formChecksumSha256,
+    Value<String>? appVersion,
+    Value<String>? buildId,
+    Value<int>? databaseSchemaVersion,
+    Value<String>? contentRevision,
+    Value<String>? evidencePolicyVersion,
+    Value<String>? featureContractRevision,
+    Value<String>? featureContractHash,
+    Value<int>? startedAtUtcMs,
+    Value<int?>? completedAtUtcMs,
+    Value<int?>? abandonedAtUtcMs,
+    Value<int>? assignmentRevision,
+    Value<int>? protocolRevision,
+    Value<int>? instrumentRevision,
+    Value<int>? formContentRevision,
+    Value<String>? participationPermitId,
+    Value<int>? participationPermitRevision,
+    Value<String>? participationPermitPayloadSha256,
+    Value<int>? rowid,
+  }) {
+    return AssessmentRunsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      learningSessionId: learningSessionId ?? this.learningSessionId,
+      studyCycleId: studyCycleId ?? this.studyCycleId,
+      phase: phase ?? this.phase,
+      state: state ?? this.state,
+      protocolId: protocolId ?? this.protocolId,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      experimentId: experimentId ?? this.experimentId,
+      experimentVersion: experimentVersion ?? this.experimentVersion,
+      assignmentId: assignmentId ?? this.assignmentId,
+      cohort: cohort ?? this.cohort,
+      consentVersion: consentVersion ?? this.consentVersion,
+      consentDecidedAtUtcMs:
+          consentDecidedAtUtcMs ?? this.consentDecidedAtUtcMs,
+      instrumentId: instrumentId ?? this.instrumentId,
+      instrumentVersion: instrumentVersion ?? this.instrumentVersion,
+      formId: formId ?? this.formId,
+      formVersion: formVersion ?? this.formVersion,
+      instrumentChecksumSha256:
+          instrumentChecksumSha256 ?? this.instrumentChecksumSha256,
+      formChecksumSha256: formChecksumSha256 ?? this.formChecksumSha256,
+      appVersion: appVersion ?? this.appVersion,
+      buildId: buildId ?? this.buildId,
+      databaseSchemaVersion:
+          databaseSchemaVersion ?? this.databaseSchemaVersion,
+      contentRevision: contentRevision ?? this.contentRevision,
+      evidencePolicyVersion:
+          evidencePolicyVersion ?? this.evidencePolicyVersion,
+      featureContractRevision:
+          featureContractRevision ?? this.featureContractRevision,
+      featureContractHash: featureContractHash ?? this.featureContractHash,
+      startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+      completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
+      abandonedAtUtcMs: abandonedAtUtcMs ?? this.abandonedAtUtcMs,
+      assignmentRevision: assignmentRevision ?? this.assignmentRevision,
+      protocolRevision: protocolRevision ?? this.protocolRevision,
+      instrumentRevision: instrumentRevision ?? this.instrumentRevision,
+      formContentRevision: formContentRevision ?? this.formContentRevision,
+      participationPermitId:
+          participationPermitId ?? this.participationPermitId,
+      participationPermitRevision:
+          participationPermitRevision ?? this.participationPermitRevision,
+      participationPermitPayloadSha256:
+          participationPermitPayloadSha256 ??
+          this.participationPermitPayloadSha256,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (learningSessionId.present) {
+      map['learning_session_id'] = Variable<String>(learningSessionId.value);
+    }
+    if (studyCycleId.present) {
+      map['study_cycle_id'] = Variable<String>(studyCycleId.value);
+    }
+    if (phase.present) {
+      map['phase'] = Variable<String>(phase.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (protocolId.present) {
+      map['protocol_id'] = Variable<String>(protocolId.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<String>(protocolVersion.value);
+    }
+    if (experimentId.present) {
+      map['experiment_id'] = Variable<String>(experimentId.value);
+    }
+    if (experimentVersion.present) {
+      map['experiment_version'] = Variable<int>(experimentVersion.value);
+    }
+    if (assignmentId.present) {
+      map['assignment_id'] = Variable<String>(assignmentId.value);
+    }
+    if (cohort.present) {
+      map['cohort'] = Variable<String>(cohort.value);
+    }
+    if (consentVersion.present) {
+      map['consent_version'] = Variable<int>(consentVersion.value);
+    }
+    if (consentDecidedAtUtcMs.present) {
+      map['consent_decided_at_utc_ms'] = Variable<int>(
+        consentDecidedAtUtcMs.value,
+      );
+    }
+    if (instrumentId.present) {
+      map['instrument_id'] = Variable<String>(instrumentId.value);
+    }
+    if (instrumentVersion.present) {
+      map['instrument_version'] = Variable<String>(instrumentVersion.value);
+    }
+    if (formId.present) {
+      map['form_id'] = Variable<String>(formId.value);
+    }
+    if (formVersion.present) {
+      map['form_version'] = Variable<String>(formVersion.value);
+    }
+    if (instrumentChecksumSha256.present) {
+      map['instrument_checksum_sha256'] = Variable<String>(
+        instrumentChecksumSha256.value,
+      );
+    }
+    if (formChecksumSha256.present) {
+      map['form_checksum_sha256'] = Variable<String>(formChecksumSha256.value);
+    }
+    if (appVersion.present) {
+      map['app_version'] = Variable<String>(appVersion.value);
+    }
+    if (buildId.present) {
+      map['build_id'] = Variable<String>(buildId.value);
+    }
+    if (databaseSchemaVersion.present) {
+      map['database_schema_version'] = Variable<int>(
+        databaseSchemaVersion.value,
+      );
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<String>(contentRevision.value);
+    }
+    if (evidencePolicyVersion.present) {
+      map['evidence_policy_version'] = Variable<String>(
+        evidencePolicyVersion.value,
+      );
+    }
+    if (featureContractRevision.present) {
+      map['feature_contract_revision'] = Variable<String>(
+        featureContractRevision.value,
+      );
+    }
+    if (featureContractHash.present) {
+      map['feature_contract_hash'] = Variable<String>(
+        featureContractHash.value,
+      );
+    }
+    if (startedAtUtcMs.present) {
+      map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs.value);
+    }
+    if (completedAtUtcMs.present) {
+      map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs.value);
+    }
+    if (abandonedAtUtcMs.present) {
+      map['abandoned_at_utc_ms'] = Variable<int>(abandonedAtUtcMs.value);
+    }
+    if (assignmentRevision.present) {
+      map['assignment_revision'] = Variable<int>(assignmentRevision.value);
+    }
+    if (protocolRevision.present) {
+      map['protocol_revision'] = Variable<int>(protocolRevision.value);
+    }
+    if (instrumentRevision.present) {
+      map['instrument_revision'] = Variable<int>(instrumentRevision.value);
+    }
+    if (formContentRevision.present) {
+      map['form_content_revision'] = Variable<int>(formContentRevision.value);
+    }
+    if (participationPermitId.present) {
+      map['participation_permit_id'] = Variable<String>(
+        participationPermitId.value,
+      );
+    }
+    if (participationPermitRevision.present) {
+      map['participation_permit_revision'] = Variable<int>(
+        participationPermitRevision.value,
+      );
+    }
+    if (participationPermitPayloadSha256.present) {
+      map['participation_permit_payload_sha256'] = Variable<String>(
+        participationPermitPayloadSha256.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssessmentRunsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write('studyCycleId: $studyCycleId, ')
+          ..write('phase: $phase, ')
+          ..write('state: $state, ')
+          ..write('protocolId: $protocolId, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('experimentId: $experimentId, ')
+          ..write('experimentVersion: $experimentVersion, ')
+          ..write('assignmentId: $assignmentId, ')
+          ..write('cohort: $cohort, ')
+          ..write('consentVersion: $consentVersion, ')
+          ..write('consentDecidedAtUtcMs: $consentDecidedAtUtcMs, ')
+          ..write('instrumentId: $instrumentId, ')
+          ..write('instrumentVersion: $instrumentVersion, ')
+          ..write('formId: $formId, ')
+          ..write('formVersion: $formVersion, ')
+          ..write('instrumentChecksumSha256: $instrumentChecksumSha256, ')
+          ..write('formChecksumSha256: $formChecksumSha256, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write('databaseSchemaVersion: $databaseSchemaVersion, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('evidencePolicyVersion: $evidencePolicyVersion, ')
+          ..write('featureContractRevision: $featureContractRevision, ')
+          ..write('featureContractHash: $featureContractHash, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('abandonedAtUtcMs: $abandonedAtUtcMs, ')
+          ..write('assignmentRevision: $assignmentRevision, ')
+          ..write('protocolRevision: $protocolRevision, ')
+          ..write('instrumentRevision: $instrumentRevision, ')
+          ..write('formContentRevision: $formContentRevision, ')
+          ..write('participationPermitId: $participationPermitId, ')
+          ..write('participationPermitRevision: $participationPermitRevision, ')
+          ..write(
+            'participationPermitPayloadSha256: $participationPermitPayloadSha256, ',
+          )
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -23008,6 +25230,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AssociativeMemoryStatesTable(this);
   late final $MeasurementOpportunitiesTable measurementOpportunities =
       $MeasurementOpportunitiesTable(this);
+  late final $AssessmentRunsTable assessmentRuns = $AssessmentRunsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -23047,6 +25270,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     associationRecords,
     associativeMemoryStates,
     measurementOpportunities,
+    assessmentRuns,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -23704,6 +25928,24 @@ final class $$LocalOwnersTableReferences
     final cache = $_typedResult.readTableOrNull(
       _measurementOpportunitiesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AssessmentRunsTable, List<AssessmentRunRow>>
+  _assessmentRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.assessmentRuns,
+    aliasName: 'local_owners__id__assessment_runs__owner_id',
+  );
+
+  $$AssessmentRunsTableProcessedTableManager get assessmentRunsRefs {
+    final manager = $$AssessmentRunsTableTableManager(
+      $_db,
+      $_db.assessmentRuns,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -24457,6 +26699,31 @@ class $$LocalOwnersTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> assessmentRunsRefs(
+    Expression<bool> Function($$AssessmentRunsTableFilterComposer f) f,
+  ) {
+    final $$AssessmentRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -25255,6 +27522,31 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> assessmentRunsRefs<T extends Object>(
+    Expression<T> Function($$AssessmentRunsTableAnnotationComposer a) f,
+  ) {
+    final $$AssessmentRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -25299,6 +27591,7 @@ class $$LocalOwnersTableTableManager
             bool associationRecordsRefs,
             bool associativeMemoryStatesRefs,
             bool measurementOpportunitiesRefs,
+            bool assessmentRunsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -25386,6 +27679,7 @@ class $$LocalOwnersTableTableManager
                 associationRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
                 measurementOpportunitiesRefs = false,
+                assessmentRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -25421,6 +27715,7 @@ class $$LocalOwnersTableTableManager
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (assessmentRunsRefs) db.assessmentRuns,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -26013,6 +28308,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (assessmentRunsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          AssessmentRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._assessmentRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).assessmentRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -26062,6 +28378,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool associationRecordsRefs,
         bool associativeMemoryStatesRefs,
         bool measurementOpportunitiesRefs,
+        bool assessmentRunsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -26523,6 +28840,24 @@ final class $$ExperimentAssignmentsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$AssessmentRunsTable, List<AssessmentRunRow>>
+  _assessmentRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.assessmentRuns,
+    aliasName: 'experiment_assignments__id__assessment_runs__assignment_id',
+  );
+
+  $$AssessmentRunsTableProcessedTableManager get assessmentRunsRefs {
+    final manager = $$AssessmentRunsTableTableManager(
+      $_db,
+      $_db.assessmentRuns,
+    ).filter((f) => f.assignmentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ExperimentAssignmentsTableFilterComposer
@@ -26640,6 +28975,31 @@ class $$ExperimentAssignmentsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> assessmentRunsRefs(
+    Expression<bool> Function($$AssessmentRunsTableFilterComposer f) f,
+  ) {
+    final $$AssessmentRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.assignmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -26820,6 +29180,31 @@ class $$ExperimentAssignmentsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> assessmentRunsRefs<T extends Object>(
+    Expression<T> Function($$AssessmentRunsTableAnnotationComposer a) f,
+  ) {
+    final $$AssessmentRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.assignmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ExperimentAssignmentsTableTableManager
@@ -26839,6 +29224,7 @@ class $$ExperimentAssignmentsTableTableManager
             bool ownerId,
             bool researchParticipationPermitsRefs,
             bool motivationMeasurementRunsRefs,
+            bool assessmentRunsRefs,
           })
         > {
   $$ExperimentAssignmentsTableTableManager(
@@ -26916,6 +29302,7 @@ class $$ExperimentAssignmentsTableTableManager
                 ownerId = false,
                 researchParticipationPermitsRefs = false,
                 motivationMeasurementRunsRefs = false,
+                assessmentRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -26924,6 +29311,7 @@ class $$ExperimentAssignmentsTableTableManager
                       db.researchParticipationPermits,
                     if (motivationMeasurementRunsRefs)
                       db.motivationMeasurementRuns,
+                    if (assessmentRunsRefs) db.assessmentRuns,
                   ],
                   addJoins:
                       <
@@ -27005,6 +29393,28 @@ class $$ExperimentAssignmentsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (assessmentRunsRefs)
+                        await $_getPrefetchedData<
+                          ExperimentAssignment,
+                          $ExperimentAssignmentsTable,
+                          AssessmentRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ExperimentAssignmentsTableReferences
+                                  ._assessmentRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ExperimentAssignmentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).assessmentRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.assignmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -27029,6 +29439,7 @@ typedef $$ExperimentAssignmentsTableProcessedTableManager =
         bool ownerId,
         bool researchParticipationPermitsRefs,
         bool motivationMeasurementRunsRefs,
+        bool assessmentRunsRefs,
       })
     >;
 typedef $$ResearchParticipationPermitsTableCreateCompanionBuilder =
@@ -27181,6 +29592,26 @@ final class $$ResearchParticipationPermitsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _measurementOpportunitiesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AssessmentRunsTable, List<AssessmentRunRow>>
+  _assessmentRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.assessmentRuns,
+    aliasName:
+        'research_participation_permits__id__assessment_runs__participation_permit_id',
+  );
+
+  $$AssessmentRunsTableProcessedTableManager get assessmentRunsRefs {
+    final manager = $$AssessmentRunsTableTableManager($_db, $_db.assessmentRuns)
+        .filter(
+          (f) =>
+              f.participationPermitId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -27384,6 +29815,31 @@ class $$ResearchParticipationPermitsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> assessmentRunsRefs(
+    Expression<bool> Function($$AssessmentRunsTableFilterComposer f) f,
+  ) {
+    final $$AssessmentRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.participationPermitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -27730,6 +30186,31 @@ class $$ResearchParticipationPermitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> assessmentRunsRefs<T extends Object>(
+    Expression<T> Function($$AssessmentRunsTableAnnotationComposer a) f,
+  ) {
+    final $$AssessmentRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.participationPermitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ResearchParticipationPermitsTableTableManager
@@ -27753,6 +30234,7 @@ class $$ResearchParticipationPermitsTableTableManager
             bool assignmentId,
             bool motivationMeasurementRunsRefs,
             bool measurementOpportunitiesRefs,
+            bool assessmentRunsRefs,
           })
         > {
   $$ResearchParticipationPermitsTableTableManager(
@@ -27885,6 +30367,7 @@ class $$ResearchParticipationPermitsTableTableManager
                 assignmentId = false,
                 motivationMeasurementRunsRefs = false,
                 measurementOpportunitiesRefs = false,
+                assessmentRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -27893,6 +30376,7 @@ class $$ResearchParticipationPermitsTableTableManager
                       db.motivationMeasurementRuns,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (assessmentRunsRefs) db.assessmentRuns,
                   ],
                   addJoins:
                       <
@@ -27989,6 +30473,28 @@ class $$ResearchParticipationPermitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (assessmentRunsRefs)
+                        await $_getPrefetchedData<
+                          ResearchParticipationPermitRow,
+                          $ResearchParticipationPermitsTable,
+                          AssessmentRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ResearchParticipationPermitsTableReferences
+                                  ._assessmentRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ResearchParticipationPermitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).assessmentRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.participationPermitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -28017,6 +30523,7 @@ typedef $$ResearchParticipationPermitsTableProcessedTableManager =
         bool assignmentId,
         bool motivationMeasurementRunsRefs,
         bool measurementOpportunitiesRefs,
+        bool assessmentRunsRefs,
       })
     >;
 typedef $$MotivationMeasurementRunsTableCreateCompanionBuilder =
@@ -28208,6 +30715,25 @@ final class $$MotivationMeasurementRunsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _measurementOpportunitiesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AssessmentRunsTable, List<AssessmentRunRow>>
+  _assessmentRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.assessmentRuns,
+    aliasName:
+        'motivation_measurement_runs__id__assessment_runs__study_cycle_id',
+  );
+
+  $$AssessmentRunsTableProcessedTableManager get assessmentRunsRefs {
+    final manager = $$AssessmentRunsTableTableManager(
+      $_db,
+      $_db.assessmentRuns,
+    ).filter((f) => f.studyCycleId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -28478,6 +31004,31 @@ class $$MotivationMeasurementRunsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> assessmentRunsRefs(
+    Expression<bool> Function($$AssessmentRunsTableFilterComposer f) f,
+  ) {
+    final $$AssessmentRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.studyCycleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -28955,6 +31506,31 @@ class $$MotivationMeasurementRunsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> assessmentRunsRefs<T extends Object>(
+    Expression<T> Function($$AssessmentRunsTableAnnotationComposer a) f,
+  ) {
+    final $$AssessmentRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.studyCycleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$MotivationMeasurementRunsTableTableManager
@@ -28979,6 +31555,7 @@ class $$MotivationMeasurementRunsTableTableManager
             bool assignmentId,
             bool motivationResponsesRefs,
             bool measurementOpportunitiesRefs,
+            bool assessmentRunsRefs,
           })
         > {
   $$MotivationMeasurementRunsTableTableManager(
@@ -29150,6 +31727,7 @@ class $$MotivationMeasurementRunsTableTableManager
                 assignmentId = false,
                 motivationResponsesRefs = false,
                 measurementOpportunitiesRefs = false,
+                assessmentRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -29157,6 +31735,7 @@ class $$MotivationMeasurementRunsTableTableManager
                     if (motivationResponsesRefs) db.motivationResponses,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (assessmentRunsRefs) db.assessmentRuns,
                   ],
                   addJoins:
                       <
@@ -29268,6 +31847,28 @@ class $$MotivationMeasurementRunsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (assessmentRunsRefs)
+                        await $_getPrefetchedData<
+                          MotivationMeasurementRunRow,
+                          $MotivationMeasurementRunsTable,
+                          AssessmentRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$MotivationMeasurementRunsTableReferences
+                                  ._assessmentRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MotivationMeasurementRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).assessmentRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.studyCycleId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -29294,6 +31895,7 @@ typedef $$MotivationMeasurementRunsTableProcessedTableManager =
         bool assignmentId,
         bool motivationResponsesRefs,
         bool measurementOpportunitiesRefs,
+        bool assessmentRunsRefs,
       })
     >;
 typedef $$MotivationResponsesTableCreateCompanionBuilder =
@@ -32554,6 +35156,24 @@ final class $$LearningSessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$AssessmentRunsTable, List<AssessmentRunRow>>
+  _assessmentRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.assessmentRuns,
+    aliasName: 'learning_sessions__id__assessment_runs__learning_session_id',
+  );
+
+  $$AssessmentRunsTableProcessedTableManager get assessmentRunsRefs {
+    final manager = $$AssessmentRunsTableTableManager($_db, $_db.assessmentRuns)
+        .filter(
+          (f) => f.learningSessionId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_assessmentRunsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LearningSessionsTableFilterComposer
@@ -32707,6 +35327,31 @@ class $$LearningSessionsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> assessmentRunsRefs(
+    Expression<bool> Function($$AssessmentRunsTableFilterComposer f) f,
+  ) {
+    final $$AssessmentRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.learningSessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -32959,6 +35604,31 @@ class $$LearningSessionsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> assessmentRunsRefs<T extends Object>(
+    Expression<T> Function($$AssessmentRunsTableAnnotationComposer a) f,
+  ) {
+    final $$AssessmentRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.assessmentRuns,
+      getReferencedColumn: (t) => t.learningSessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssessmentRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.assessmentRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LearningSessionsTableTableManager
@@ -32978,6 +35648,7 @@ class $$LearningSessionsTableTableManager
             bool ownerId,
             bool answerAttemptsRefs,
             bool measurementOpportunitiesRefs,
+            bool assessmentRunsRefs,
           })
         > {
   $$LearningSessionsTableTableManager(
@@ -33078,6 +35749,7 @@ class $$LearningSessionsTableTableManager
                 ownerId = false,
                 answerAttemptsRefs = false,
                 measurementOpportunitiesRefs = false,
+                assessmentRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -33085,6 +35757,7 @@ class $$LearningSessionsTableTableManager
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (assessmentRunsRefs) db.assessmentRuns,
                   ],
                   addJoins:
                       <
@@ -33164,6 +35837,27 @@ class $$LearningSessionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (assessmentRunsRefs)
+                        await $_getPrefetchedData<
+                          LearningSession,
+                          $LearningSessionsTable,
+                          AssessmentRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningSessionsTableReferences
+                              ._assessmentRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).assessmentRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.learningSessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -33188,6 +35882,7 @@ typedef $$LearningSessionsTableProcessedTableManager =
         bool ownerId,
         bool answerAttemptsRefs,
         bool measurementOpportunitiesRefs,
+        bool assessmentRunsRefs,
       })
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
@@ -43689,6 +46384,1392 @@ typedef $$MeasurementOpportunitiesTableProcessedTableManager =
         bool learningSessionId,
       })
     >;
+typedef $$AssessmentRunsTableCreateCompanionBuilder =
+    AssessmentRunsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String learningSessionId,
+      required String studyCycleId,
+      required String phase,
+      required String state,
+      required String protocolId,
+      required String protocolVersion,
+      required String experimentId,
+      required int experimentVersion,
+      required String assignmentId,
+      required String cohort,
+      required int consentVersion,
+      required int consentDecidedAtUtcMs,
+      required String instrumentId,
+      required String instrumentVersion,
+      required String formId,
+      required String formVersion,
+      required String instrumentChecksumSha256,
+      required String formChecksumSha256,
+      required String appVersion,
+      required String buildId,
+      required int databaseSchemaVersion,
+      required String contentRevision,
+      required String evidencePolicyVersion,
+      required String featureContractRevision,
+      required String featureContractHash,
+      required int startedAtUtcMs,
+      Value<int?> completedAtUtcMs,
+      Value<int?> abandonedAtUtcMs,
+      required int assignmentRevision,
+      required int protocolRevision,
+      required int instrumentRevision,
+      required int formContentRevision,
+      required String participationPermitId,
+      required int participationPermitRevision,
+      required String participationPermitPayloadSha256,
+      Value<int> rowid,
+    });
+typedef $$AssessmentRunsTableUpdateCompanionBuilder =
+    AssessmentRunsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> learningSessionId,
+      Value<String> studyCycleId,
+      Value<String> phase,
+      Value<String> state,
+      Value<String> protocolId,
+      Value<String> protocolVersion,
+      Value<String> experimentId,
+      Value<int> experimentVersion,
+      Value<String> assignmentId,
+      Value<String> cohort,
+      Value<int> consentVersion,
+      Value<int> consentDecidedAtUtcMs,
+      Value<String> instrumentId,
+      Value<String> instrumentVersion,
+      Value<String> formId,
+      Value<String> formVersion,
+      Value<String> instrumentChecksumSha256,
+      Value<String> formChecksumSha256,
+      Value<String> appVersion,
+      Value<String> buildId,
+      Value<int> databaseSchemaVersion,
+      Value<String> contentRevision,
+      Value<String> evidencePolicyVersion,
+      Value<String> featureContractRevision,
+      Value<String> featureContractHash,
+      Value<int> startedAtUtcMs,
+      Value<int?> completedAtUtcMs,
+      Value<int?> abandonedAtUtcMs,
+      Value<int> assignmentRevision,
+      Value<int> protocolRevision,
+      Value<int> instrumentRevision,
+      Value<int> formContentRevision,
+      Value<String> participationPermitId,
+      Value<int> participationPermitRevision,
+      Value<String> participationPermitPayloadSha256,
+      Value<int> rowid,
+    });
+
+final class $$AssessmentRunsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $AssessmentRunsTable, AssessmentRunRow> {
+  $$AssessmentRunsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('assessment_runs__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningSessionsTable _learningSessionIdTable(_$AppDatabase db) =>
+      db.learningSessions.createAlias(
+        'assessment_runs__learning_session_id__learning_sessions__id',
+      );
+
+  $$LearningSessionsTableProcessedTableManager get learningSessionId {
+    final $_column = $_itemColumn<String>('learning_session_id')!;
+
+    final manager = $$LearningSessionsTableTableManager(
+      $_db,
+      $_db.learningSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_learningSessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MotivationMeasurementRunsTable _studyCycleIdTable(_$AppDatabase db) =>
+      db.motivationMeasurementRuns.createAlias(
+        'assessment_runs__study_cycle_id__motivation_measurement_runs__id',
+      );
+
+  $$MotivationMeasurementRunsTableProcessedTableManager get studyCycleId {
+    final $_column = $_itemColumn<String>('study_cycle_id')!;
+
+    final manager = $$MotivationMeasurementRunsTableTableManager(
+      $_db,
+      $_db.motivationMeasurementRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_studyCycleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ExperimentAssignmentsTable _assignmentIdTable(_$AppDatabase db) =>
+      db.experimentAssignments.createAlias(
+        'assessment_runs__assignment_id__experiment_assignments__id',
+      );
+
+  $$ExperimentAssignmentsTableProcessedTableManager get assignmentId {
+    final $_column = $_itemColumn<String>('assignment_id')!;
+
+    final manager = $$ExperimentAssignmentsTableTableManager(
+      $_db,
+      $_db.experimentAssignments,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_assignmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ResearchParticipationPermitsTable _participationPermitIdTable(
+    _$AppDatabase db,
+  ) => db.researchParticipationPermits.createAlias(
+    'assessment_runs__participation_permit_id__research_participation_permits__id',
+  );
+
+  $$ResearchParticipationPermitsTableProcessedTableManager
+  get participationPermitId {
+    final $_column = $_itemColumn<String>('participation_permit_id')!;
+
+    final manager = $$ResearchParticipationPermitsTableTableManager(
+      $_db,
+      $_db.researchParticipationPermits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _participationPermitIdTable($_db),
+    );
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AssessmentRunsTableFilterComposer
+    extends Composer<_$AppDatabase, $AssessmentRunsTable> {
+  $$AssessmentRunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cohort => $composableBuilder(
+    column: $table.cohort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get consentVersion => $composableBuilder(
+    column: $table.consentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get consentDecidedAtUtcMs => $composableBuilder(
+    column: $table.consentDecidedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instrumentId => $composableBuilder(
+    column: $table.instrumentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instrumentVersion => $composableBuilder(
+    column: $table.instrumentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formId => $composableBuilder(
+    column: $table.formId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formVersion => $composableBuilder(
+    column: $table.formVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get instrumentChecksumSha256 => $composableBuilder(
+    column: $table.instrumentChecksumSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formChecksumSha256 => $composableBuilder(
+    column: $table.formChecksumSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get databaseSchemaVersion => $composableBuilder(
+    column: $table.databaseSchemaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidencePolicyVersion => $composableBuilder(
+    column: $table.evidencePolicyVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get featureContractRevision => $composableBuilder(
+    column: $table.featureContractRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get featureContractHash => $composableBuilder(
+    column: $table.featureContractHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get abandonedAtUtcMs => $composableBuilder(
+    column: $table.abandonedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get assignmentRevision => $composableBuilder(
+    column: $table.assignmentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get protocolRevision => $composableBuilder(
+    column: $table.protocolRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get instrumentRevision => $composableBuilder(
+    column: $table.instrumentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get formContentRevision => $composableBuilder(
+    column: $table.formContentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get participationPermitRevision => $composableBuilder(
+    column: $table.participationPermitRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get participationPermitPayloadSha256 =>
+      $composableBuilder(
+        column: $table.participationPermitPayloadSha256,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableFilterComposer get learningSessionId {
+    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableFilterComposer get studyCycleId {
+    final $$MotivationMeasurementRunsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.studyCycleId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableFilterComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableFilterComposer get assignmentId {
+    final $$ExperimentAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableFilterComposer get participationPermitId {
+    final $$ResearchParticipationPermitsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.participationPermitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$AssessmentRunsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AssessmentRunsTable> {
+  $$AssessmentRunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cohort => $composableBuilder(
+    column: $table.cohort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get consentVersion => $composableBuilder(
+    column: $table.consentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get consentDecidedAtUtcMs => $composableBuilder(
+    column: $table.consentDecidedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instrumentId => $composableBuilder(
+    column: $table.instrumentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instrumentVersion => $composableBuilder(
+    column: $table.instrumentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formId => $composableBuilder(
+    column: $table.formId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formVersion => $composableBuilder(
+    column: $table.formVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get instrumentChecksumSha256 => $composableBuilder(
+    column: $table.instrumentChecksumSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formChecksumSha256 => $composableBuilder(
+    column: $table.formChecksumSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get databaseSchemaVersion => $composableBuilder(
+    column: $table.databaseSchemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evidencePolicyVersion => $composableBuilder(
+    column: $table.evidencePolicyVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get featureContractRevision => $composableBuilder(
+    column: $table.featureContractRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get featureContractHash => $composableBuilder(
+    column: $table.featureContractHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get abandonedAtUtcMs => $composableBuilder(
+    column: $table.abandonedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get assignmentRevision => $composableBuilder(
+    column: $table.assignmentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get protocolRevision => $composableBuilder(
+    column: $table.protocolRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get instrumentRevision => $composableBuilder(
+    column: $table.instrumentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get formContentRevision => $composableBuilder(
+    column: $table.formContentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get participationPermitRevision => $composableBuilder(
+    column: $table.participationPermitRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get participationPermitPayloadSha256 =>
+      $composableBuilder(
+        column: $table.participationPermitPayloadSha256,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableOrderingComposer get learningSessionId {
+    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableOrderingComposer get studyCycleId {
+    final $$MotivationMeasurementRunsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.studyCycleId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableOrderingComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableOrderingComposer get assignmentId {
+    final $$ExperimentAssignmentsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableOrderingComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableOrderingComposer
+  get participationPermitId {
+    final $$ResearchParticipationPermitsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.participationPermitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableOrderingComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$AssessmentRunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AssessmentRunsTable> {
+  $$AssessmentRunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get phase =>
+      $composableBuilder(column: $table.phase, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<String> get protocolId => $composableBuilder(
+    column: $table.protocolId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cohort =>
+      $composableBuilder(column: $table.cohort, builder: (column) => column);
+
+  GeneratedColumn<int> get consentVersion => $composableBuilder(
+    column: $table.consentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get consentDecidedAtUtcMs => $composableBuilder(
+    column: $table.consentDecidedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get instrumentId => $composableBuilder(
+    column: $table.instrumentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get instrumentVersion => $composableBuilder(
+    column: $table.instrumentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get formId =>
+      $composableBuilder(column: $table.formId, builder: (column) => column);
+
+  GeneratedColumn<String> get formVersion => $composableBuilder(
+    column: $table.formVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get instrumentChecksumSha256 => $composableBuilder(
+    column: $table.instrumentChecksumSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get formChecksumSha256 => $composableBuilder(
+    column: $table.formChecksumSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get buildId =>
+      $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<int> get databaseSchemaVersion => $composableBuilder(
+    column: $table.databaseSchemaVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evidencePolicyVersion => $composableBuilder(
+    column: $table.evidencePolicyVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get featureContractRevision => $composableBuilder(
+    column: $table.featureContractRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get featureContractHash => $composableBuilder(
+    column: $table.featureContractHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get abandonedAtUtcMs => $composableBuilder(
+    column: $table.abandonedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get assignmentRevision => $composableBuilder(
+    column: $table.assignmentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get protocolRevision => $composableBuilder(
+    column: $table.protocolRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get instrumentRevision => $composableBuilder(
+    column: $table.instrumentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get formContentRevision => $composableBuilder(
+    column: $table.formContentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get participationPermitRevision => $composableBuilder(
+    column: $table.participationPermitRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get participationPermitPayloadSha256 =>
+      $composableBuilder(
+        column: $table.participationPermitPayloadSha256,
+        builder: (column) => column,
+      );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableAnnotationComposer get learningSessionId {
+    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningSessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableAnnotationComposer get studyCycleId {
+    final $$MotivationMeasurementRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.studyCycleId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ExperimentAssignmentsTableAnnotationComposer get assignmentId {
+    final $$ExperimentAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.assignmentId,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableAnnotationComposer
+  get participationPermitId {
+    final $$ResearchParticipationPermitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.participationPermitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$AssessmentRunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AssessmentRunsTable,
+          AssessmentRunRow,
+          $$AssessmentRunsTableFilterComposer,
+          $$AssessmentRunsTableOrderingComposer,
+          $$AssessmentRunsTableAnnotationComposer,
+          $$AssessmentRunsTableCreateCompanionBuilder,
+          $$AssessmentRunsTableUpdateCompanionBuilder,
+          (AssessmentRunRow, $$AssessmentRunsTableReferences),
+          AssessmentRunRow,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool learningSessionId,
+            bool studyCycleId,
+            bool assignmentId,
+            bool participationPermitId,
+          })
+        > {
+  $$AssessmentRunsTableTableManager(
+    _$AppDatabase db,
+    $AssessmentRunsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AssessmentRunsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AssessmentRunsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AssessmentRunsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> learningSessionId = const Value.absent(),
+                Value<String> studyCycleId = const Value.absent(),
+                Value<String> phase = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<String> protocolId = const Value.absent(),
+                Value<String> protocolVersion = const Value.absent(),
+                Value<String> experimentId = const Value.absent(),
+                Value<int> experimentVersion = const Value.absent(),
+                Value<String> assignmentId = const Value.absent(),
+                Value<String> cohort = const Value.absent(),
+                Value<int> consentVersion = const Value.absent(),
+                Value<int> consentDecidedAtUtcMs = const Value.absent(),
+                Value<String> instrumentId = const Value.absent(),
+                Value<String> instrumentVersion = const Value.absent(),
+                Value<String> formId = const Value.absent(),
+                Value<String> formVersion = const Value.absent(),
+                Value<String> instrumentChecksumSha256 = const Value.absent(),
+                Value<String> formChecksumSha256 = const Value.absent(),
+                Value<String> appVersion = const Value.absent(),
+                Value<String> buildId = const Value.absent(),
+                Value<int> databaseSchemaVersion = const Value.absent(),
+                Value<String> contentRevision = const Value.absent(),
+                Value<String> evidencePolicyVersion = const Value.absent(),
+                Value<String> featureContractRevision = const Value.absent(),
+                Value<String> featureContractHash = const Value.absent(),
+                Value<int> startedAtUtcMs = const Value.absent(),
+                Value<int?> completedAtUtcMs = const Value.absent(),
+                Value<int?> abandonedAtUtcMs = const Value.absent(),
+                Value<int> assignmentRevision = const Value.absent(),
+                Value<int> protocolRevision = const Value.absent(),
+                Value<int> instrumentRevision = const Value.absent(),
+                Value<int> formContentRevision = const Value.absent(),
+                Value<String> participationPermitId = const Value.absent(),
+                Value<int> participationPermitRevision = const Value.absent(),
+                Value<String> participationPermitPayloadSha256 =
+                    const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AssessmentRunsCompanion(
+                id: id,
+                ownerId: ownerId,
+                learningSessionId: learningSessionId,
+                studyCycleId: studyCycleId,
+                phase: phase,
+                state: state,
+                protocolId: protocolId,
+                protocolVersion: protocolVersion,
+                experimentId: experimentId,
+                experimentVersion: experimentVersion,
+                assignmentId: assignmentId,
+                cohort: cohort,
+                consentVersion: consentVersion,
+                consentDecidedAtUtcMs: consentDecidedAtUtcMs,
+                instrumentId: instrumentId,
+                instrumentVersion: instrumentVersion,
+                formId: formId,
+                formVersion: formVersion,
+                instrumentChecksumSha256: instrumentChecksumSha256,
+                formChecksumSha256: formChecksumSha256,
+                appVersion: appVersion,
+                buildId: buildId,
+                databaseSchemaVersion: databaseSchemaVersion,
+                contentRevision: contentRevision,
+                evidencePolicyVersion: evidencePolicyVersion,
+                featureContractRevision: featureContractRevision,
+                featureContractHash: featureContractHash,
+                startedAtUtcMs: startedAtUtcMs,
+                completedAtUtcMs: completedAtUtcMs,
+                abandonedAtUtcMs: abandonedAtUtcMs,
+                assignmentRevision: assignmentRevision,
+                protocolRevision: protocolRevision,
+                instrumentRevision: instrumentRevision,
+                formContentRevision: formContentRevision,
+                participationPermitId: participationPermitId,
+                participationPermitRevision: participationPermitRevision,
+                participationPermitPayloadSha256:
+                    participationPermitPayloadSha256,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String learningSessionId,
+                required String studyCycleId,
+                required String phase,
+                required String state,
+                required String protocolId,
+                required String protocolVersion,
+                required String experimentId,
+                required int experimentVersion,
+                required String assignmentId,
+                required String cohort,
+                required int consentVersion,
+                required int consentDecidedAtUtcMs,
+                required String instrumentId,
+                required String instrumentVersion,
+                required String formId,
+                required String formVersion,
+                required String instrumentChecksumSha256,
+                required String formChecksumSha256,
+                required String appVersion,
+                required String buildId,
+                required int databaseSchemaVersion,
+                required String contentRevision,
+                required String evidencePolicyVersion,
+                required String featureContractRevision,
+                required String featureContractHash,
+                required int startedAtUtcMs,
+                Value<int?> completedAtUtcMs = const Value.absent(),
+                Value<int?> abandonedAtUtcMs = const Value.absent(),
+                required int assignmentRevision,
+                required int protocolRevision,
+                required int instrumentRevision,
+                required int formContentRevision,
+                required String participationPermitId,
+                required int participationPermitRevision,
+                required String participationPermitPayloadSha256,
+                Value<int> rowid = const Value.absent(),
+              }) => AssessmentRunsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                learningSessionId: learningSessionId,
+                studyCycleId: studyCycleId,
+                phase: phase,
+                state: state,
+                protocolId: protocolId,
+                protocolVersion: protocolVersion,
+                experimentId: experimentId,
+                experimentVersion: experimentVersion,
+                assignmentId: assignmentId,
+                cohort: cohort,
+                consentVersion: consentVersion,
+                consentDecidedAtUtcMs: consentDecidedAtUtcMs,
+                instrumentId: instrumentId,
+                instrumentVersion: instrumentVersion,
+                formId: formId,
+                formVersion: formVersion,
+                instrumentChecksumSha256: instrumentChecksumSha256,
+                formChecksumSha256: formChecksumSha256,
+                appVersion: appVersion,
+                buildId: buildId,
+                databaseSchemaVersion: databaseSchemaVersion,
+                contentRevision: contentRevision,
+                evidencePolicyVersion: evidencePolicyVersion,
+                featureContractRevision: featureContractRevision,
+                featureContractHash: featureContractHash,
+                startedAtUtcMs: startedAtUtcMs,
+                completedAtUtcMs: completedAtUtcMs,
+                abandonedAtUtcMs: abandonedAtUtcMs,
+                assignmentRevision: assignmentRevision,
+                protocolRevision: protocolRevision,
+                instrumentRevision: instrumentRevision,
+                formContentRevision: formContentRevision,
+                participationPermitId: participationPermitId,
+                participationPermitRevision: participationPermitRevision,
+                participationPermitPayloadSha256:
+                    participationPermitPayloadSha256,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AssessmentRunsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                ownerId = false,
+                learningSessionId = false,
+                studyCycleId = false,
+                assignmentId = false,
+                participationPermitId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$AssessmentRunsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$AssessmentRunsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (learningSessionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.learningSessionId,
+                                    referencedTable:
+                                        $$AssessmentRunsTableReferences
+                                            ._learningSessionIdTable(db),
+                                    referencedColumn:
+                                        $$AssessmentRunsTableReferences
+                                            ._learningSessionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (studyCycleId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.studyCycleId,
+                                    referencedTable:
+                                        $$AssessmentRunsTableReferences
+                                            ._studyCycleIdTable(db),
+                                    referencedColumn:
+                                        $$AssessmentRunsTableReferences
+                                            ._studyCycleIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (assignmentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.assignmentId,
+                                    referencedTable:
+                                        $$AssessmentRunsTableReferences
+                                            ._assignmentIdTable(db),
+                                    referencedColumn:
+                                        $$AssessmentRunsTableReferences
+                                            ._assignmentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (participationPermitId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.participationPermitId,
+                                    referencedTable:
+                                        $$AssessmentRunsTableReferences
+                                            ._participationPermitIdTable(db),
+                                    referencedColumn:
+                                        $$AssessmentRunsTableReferences
+                                            ._participationPermitIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$AssessmentRunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AssessmentRunsTable,
+      AssessmentRunRow,
+      $$AssessmentRunsTableFilterComposer,
+      $$AssessmentRunsTableOrderingComposer,
+      $$AssessmentRunsTableAnnotationComposer,
+      $$AssessmentRunsTableCreateCompanionBuilder,
+      $$AssessmentRunsTableUpdateCompanionBuilder,
+      (AssessmentRunRow, $$AssessmentRunsTableReferences),
+      AssessmentRunRow,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool learningSessionId,
+        bool studyCycleId,
+        bool assignmentId,
+        bool participationPermitId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -43780,4 +47861,6 @@ class $AppDatabaseManager {
         _db,
         _db.measurementOpportunities,
       );
+  $$AssessmentRunsTableTableManager get assessmentRuns =>
+      $$AssessmentRunsTableTableManager(_db, _db.assessmentRuns);
 }

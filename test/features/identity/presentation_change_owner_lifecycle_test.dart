@@ -46,7 +46,8 @@ void main() {
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       expect(decoded['ownerId'], _owner);
-      expect(decoded['schemaVersion'], 17);
+      expect(decoded['schemaVersion'], 18);
+      expect(data['assessment_runs'], isEmpty);
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
       final opportunity = (data['measurement_opportunities']! as List).single;
       expect(opportunity, hasLength(19));

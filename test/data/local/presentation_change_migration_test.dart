@@ -22,15 +22,15 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
   test(
-    'fresh v17 retains34 tables and exposes four bounded opportunity fields',
+    'fresh v18 has35 tables and retains the four bounded v17 opportunity fields',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 17);
+      expect(database.schemaVersion, 18);
       final columns = await database
           .customSelect('PRAGMA table_info(measurement_opportunities)')
           .get();
-      expect(database.allTables, hasLength(34));
+      expect(database.allTables, hasLength(35));
       expect(columns, hasLength(19));
       final byName = {for (final row in columns) row.read<String>('name'): row};
       for (final name in ['last_switch_ordinal', 'suppressed_switch_count']) {
@@ -137,6 +137,8 @@ void main() {
           );
           await source.participation.ownerWrites.markPending(token);
           oldRows = await _allRows(source.database);
+          expect(oldRows.remove('assessment_runs'), isEmpty);
+          expect(oldRows, hasLength(34));
         } finally {
           await source.database.close();
         }
@@ -209,11 +211,12 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          17,
+          18,
         );
         expect(before, hasLength(34));
-        expect(database.allTables, hasLength(34));
+        expect(database.allTables, hasLength(35));
         final after = await _allRows(database);
+        expect(after['assessment_runs'], isEmpty);
         for (final table in before.entries) {
           final retained = after[table.key]!.map((row) {
             final old = Map<String, Object?>.from(row);
