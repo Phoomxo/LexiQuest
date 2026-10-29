@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports current schema version 17', () async {
+    test('fresh database reports current schema version 18', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,9 +68,14 @@ void main() {
           .getSingle();
       expect(
         version,
-        17,
+        18,
         reason:
             'current schema retains quest and evidence tables with assignments',
+      );
+      expect(db.allTables, hasLength(35));
+      expect(
+        await db.customSelect('SELECT * FROM assessment_runs').get(),
+        isEmpty,
       );
     });
 

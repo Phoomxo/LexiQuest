@@ -35,13 +35,18 @@ void main() {
       expect(tables, hasLength(1));
     });
 
-    test('fresh database reports current schema version 17', () async {
+    test('fresh database reports current schema version 18', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 17);
+      expect(version, 18);
+      expect(db.allTables, hasLength(35));
+      expect(
+        await db.customSelect('SELECT * FROM assessment_runs').get(),
+        isEmpty,
+      );
     });
 
     test('can insert and retrieve streak_states row', () async {
