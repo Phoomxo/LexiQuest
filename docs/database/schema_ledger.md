@@ -186,9 +186,10 @@ claimed.
 | v14 | Remaining-system integration | Structured motivation measurement runs and coded responses; two local-only tables. | Implemented locally; integration 794 passed |
 | v15 | Remaining-system integration | Local exposure opportunities and immutable first canonical-session linkage; one table. | Implemented locally; integration 1152 passed |
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
-| v17+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
+| v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Reserved 2026-10-29; executable schema remains v16 |
+| v18+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
-> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15 or v16. Reserve the next available version, starting at v17,
+> **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16 or v17. Reserve the next available version, starting at v18,
 > through a separate approved entry before writing migration code.
 
 ### v12 — Authorized local experiment assignments
@@ -459,6 +460,67 @@ or a separately tested downgrade. This reservation does not enable research.
 
 ---
 
+### v17 — Durable presentation changes
+
+**Reserved:** 2026-10-29
+
+**Branch:** codex/remaining-system-readiness
+
+**Owner:** Root owns schema/generated source, genuine historical fixture and
+integration; separate workers own opportunity/timing logic and migration tests.
+
+**Status:** RESERVED. Executable schema is still v16/34 at reservation, source
+`61db267d`. Initial-opening correction passes117 focused/1147 integration
+checks; it precedes this unit.
+
+Add four columns on existing `measurement_opportunities`; no table, ordinary
+sync entity, cloud collection or rollout permission is added:
+
+```text
+last_switch_ordinal                 INTEGER NOT NULL DEFAULT 0
+suppressed_switch_count             INTEGER NOT NULL DEFAULT 0
+started_effective_presentation      TEXT NULL
+pending_presentation_change_json    TEXT NULL
+```
+
+Ordinal is0..10; suppression is nonnegative and only valid after ordinal10.
+Started presentation is null or the existing standard/adventure code. Pending
+intent is bounded canonical versioned JSON, parsed strictly at its boundary.
+Current presentation derives from immutable first `effective_presentation`
+and committed transition parity. The initial Presented fact remains unchanged.
+
+Migration preserves every old column/row across all34 tables, accepted quiz
+plan/checkpoint bytes and pending owner-deletion intent. Counters start at0 and
+pending is null. Backfill Started presentation from `effective_presentation`
+exactly where `learning_session_id IS NOT NULL`; unlinked stays null. This is
+metadata only: missing/tampered Started events remain invalid and no event is
+minted. A genuine pre-bump v16 snapshot was captured through normal database
+open, checking34 tables, six explicit indexes,15 opportunity columns and the
+four accepted-quiz fields. Its SHA-256 is
+`52e331cff2584e21e634f9c3804861dfae006fcf5204f390f5093664d945c9ac`.
+
+Prepare commits one exact receipt before a target frame. Capture after the
+actual frame requires fresh authority, final visibility and CAS of the exact
+prepared receipt/revision. Never hold SQLite across a frame. Unknown/restarted
+pending exposure denies Research; no timeout, automatic abort, replacement
+index or backfill. Retry requires the original in-process prepared handle.
+Twelve actual committed transitions produce ten frozen Changed events plus
+suppression2. Same choice, stale request and retries create no new transition.
+
+Freeze the derived presentation once at canonical Started. Canonical completed
+sessions deny prepare and commit even if completion sidecar/ACK is missing.
+Pending intent denies ordinary Research timing/capture while canonical learning
+and its single SRS/reward/sync authorities continue. Validate all original
+Presented/Started/Completed and Changed envelopes, identity and pin contracts.
+
+Acceptance includes fresh/default constraints, genuine populated-v16 migration,
+linked/unlinked backfill, invalid Started rejection, reopen, prepare/render/ACK
+crash windows, exact counters and event cardinality, owner/consent/authority
+races, unchanged learning effects, personal export and purge. Downgrade needs a
+pre-upgrade backup or a separately tested downgrade; none is implied here.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -479,6 +541,7 @@ or a separately tested downgrade. This reservation does not enable research.
 | 2026-10-29 | Attested v13 and reserved v14 for two local-only supplied-instrument measurement tables with immutable responses and fresh receipts; canonical session linkage remains a separate prerequisite for UI composition. | Root integration |
 | 2026-10-29 | Attested v14 at source 90a81306 and reserved v15 for one local-only exposure/index linkage table with canonical learning savepoints and frozen event precision. Runtime remains v14 until implementation. | Root integration |
 | 2026-10-29 | Reserved v16 for four columns on existing learning sessions, storing the exact accepted quiz and CAS checkpoint with canonical learning transactions. Runtime remains v15 until implementation; table count stays 34. | Root integration |
+| 2026-10-29 | Reserved v17 after the verified initial-opening correction and genuine v16 schema capture for four existing-opportunity columns; original presentation/event proof and owner lifecycle stay intact. Executable schema remains v16 until implementation. | Root integration |
 
 ---
 
