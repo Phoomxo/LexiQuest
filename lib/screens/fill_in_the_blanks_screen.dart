@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/handwriting_scratchpad.dart';
 
 class FillInTheBlanksScreen extends StatefulWidget {
   const FillInTheBlanksScreen({
@@ -45,6 +47,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
   bool _invalidated = false;
   bool _routeVisible = false;
   bool _startRequested = false;
+  bool _redrawScheduled = false;
   String? _ownerId;
   String? _selected;
   int _epoch = 0;
@@ -66,6 +69,27 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _redraw() {
+    if (!mounted) return;
+    void update() {
+      if (!mounted) return;
+      if (_invalidated) _response.clear();
+      setState(() {});
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      if (_redrawScheduled) return;
+      _redrawScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _redrawScheduled = false;
+        update();
+      });
+    } else {
+      update();
+    }
   }
 
   @override
@@ -106,8 +130,9 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
           _invalidate();
           return;
         }
-        setState(() => _ownerId = ownerId);
-        _tryStart();
+        _ownerId = ownerId;
+        _redraw();
+        WidgetsBinding.instance.addPostFrameCallback((_) => _tryStart());
       },
       onError: (Object _, StackTrace _) => _invalidate(),
       onDone: _invalidate,
@@ -147,13 +172,11 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
     if (!mounted || _invalidated) {
       return;
     }
+    _invalidated = true;
     _epoch++;
+    _selected = null;
     _latency.stop();
-    _response.clear();
-    setState(() {
-      _selected = null;
-      _invalidated = true;
-    });
+    _redraw();
   }
 
   void _tryStart() {
@@ -405,9 +428,19 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                           labelText: _copy('คำที่ขาดหายไป', 'Missing word'),
                           border: const OutlineInputBorder(),
                         ),
-                        onChanged: (_) => setState(() {}),
+                        onChanged: (_) {
+                          if (_canAnswer) _redraw();
+                        },
                         onSubmitted: (_) => _save(),
                       ),
+                    if (widget.session is TypedClozeSession) ...[
+                      const SizedBox(height: 12),
+                      HandwritingScratchpad(
+                        key: ObjectKey(widget.session),
+                        canEdit: () => _canAnswer && _pendingAnswer == null,
+                        languageCode: widget.languageCode,
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     if (!saved)
                       FilledButton(
@@ -458,6 +491,13 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen>
                   ],
                   if (saved) ...[
                     const SizedBox(height: 16),
+                    if (widget.session is TypedClozeSession)
+                      Text(
+                        _copy(
+                          'ผลนี้ตรวจเฉพาะคำที่พิมพ์ เปรียบเทียบลายมือกับคำตอบได้ด้วยตนเอง',
+                          'This result checks typed text only. Compare your handwriting with the answer yourself.',
+                        ),
+                      ),
                     Semantics(
                       liveRegion: true,
                       child: Text(

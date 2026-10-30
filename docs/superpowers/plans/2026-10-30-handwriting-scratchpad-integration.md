@@ -138,3 +138,30 @@ the sole C writer and serialized Flutter executor.
 No blocking product decision is needed for this aid+typed-ACK slice. Standalone
 ink scoring, OCR, pre-answer reveal, retained/exported ink or broader writing-mode
 calibration is outside it. No Pair Matching or claim that all f13/f05 work is done.
+
+## Review and execution board
+
+- Root promoted test-first drafts after the Wave18 checkpoint was committed/pushed.
+  The old P35 frame regression first needed three compile-only fixture corrections;
+  actual RED then proved TextEditingController.clear/markNeedsBuild during a sibling
+  build and an old enabled input after null-to-same owner delivery. The bounded P35
+  sticky invalidation/deferred redraw and owner-start-after-frame fix passes the
+  same case without suppressing exceptions. Other native writers remain unchanged.
+- Widget API RED1 preceded source promotion. In-memory raster awaits moved into a
+  bounded real async zone; pixel assertions still crop only the actual canvas.
+  Measured pan RED captured outer offset84 becoming124 while drawing. Canvas-only
+  EagerGestureRecognizer passes the unchanged physical gesture with relative
+  baseline equality and an outside-scroll control; read-only canvas has no eager
+  recognizer. Limits64/4096 and live editing guards remain unchanged.
+- The clean four-module run passes80 tests, including18 generic widget cases,
+  17 actual Typed Cloze cases and existing Cloze/chooser tests, with no warnings.
+  Legacy scroll helpers now select the real outer P35 list, flush layout and use
+  list padding; the held-ACK test uses bounded frame pumping while its progress
+  indicator intentionally animates. Assertions and choice-Cloze behavior remain.
+- Final analysis reports0 issues after six test-only style/import corrections.
+  Production review and clean validation follow-up ACCEPT; source hashes for
+  widget/parent are EBB1AFD7B8F1F85AAAD1D2EB65D97A98189DC4E23D092215033BF6176D390C2F
+  and EBD98CFDF1F326FEB3C8ACF194989C3BAC481424840E0BE2A0D43C074848FFF0.
+  Full current-source regression/backend/CLI/build attestation is next; f12
+  classification changes only after that evidence. Schema20/37 and v21 remain
+  unchanged/unreserved, with no production Research or physical-UAT claim.

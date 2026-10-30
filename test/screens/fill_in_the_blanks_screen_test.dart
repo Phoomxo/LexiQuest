@@ -529,6 +529,38 @@ Future<void> _mount(
   }
 }
 
+Future<void> _reveal(WidgetTester tester, Finder target) async {
+  await tester.pump();
+  final scrollable = find
+      .descendant(
+        of: find.byType(FillInTheBlanksScreen),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
+      )
+      .first;
+  if (target.evaluate().isEmpty) {
+    final position = tester.state<ScrollableState>(scrollable).position;
+    position.jumpTo(position.minScrollExtent);
+    await tester.pump();
+    for (var index = 0; index < 200 && target.evaluate().isEmpty; index++) {
+      final bounds = tester.getRect(scrollable);
+      await tester.dragFrom(
+        Offset(bounds.left + 8, bounds.center.dy),
+        const Offset(0, -120),
+      );
+      position.jumpTo(position.pixels);
+      await tester.pump();
+    }
+  }
+  expect(target, findsOneWidget);
+  await Scrollable.ensureVisible(tester.element(target), alignment: .35);
+  await tester.pump();
+  expect(target.hitTestable(), findsOneWidget);
+}
+
 Future<void> _ready(WidgetTester tester, _Fixture f) async {
   await _until(
     tester,
@@ -536,14 +568,13 @@ Future<void> _ready(WidgetTester tester, _Fixture f) async {
         find.byType(FillInTheBlanksScreen).evaluate().isNotEmpty &&
         find.byType(Scrollable).evaluate().isNotEmpty,
   );
+  await _until(tester, () => f.repository.starts.isNotEmpty);
+  await tester.runAsync(f.repository.settle);
+  await tester.pump();
   final answer = f.session is TypedClozeSession
       ? find.byKey(const ValueKey('cloze-response'))
       : find.byKey(ValueKey('cloze-option-${f.session.word.id}'));
-  await tester.scrollUntilVisible(
-    answer,
-    120,
-    scrollable: find.byType(Scrollable).last,
-  );
+  await _reveal(tester, answer);
   await _until(
     tester,
     () => f.session is TypedClozeSession
@@ -570,11 +601,7 @@ Future<void> _answer(
     await tester.tap(find.byKey(ValueKey('cloze-option-${option.id}')));
   }
   await tester.pump();
-  await tester.scrollUntilVisible(
-    find.byKey(const ValueKey('cloze-save')),
-    120,
-    scrollable: find.byType(Scrollable).last,
-  );
+  await _reveal(tester, find.byKey(const ValueKey('cloze-save')));
   await tester.tap(find.byKey(const ValueKey('cloze-save')));
   await tester.pump();
 }
@@ -583,11 +610,7 @@ Future<void> _finishReady(WidgetTester tester, _Fixture f) async {
   await _until(tester, () => f.repository.answers.isNotEmpty);
   await tester.runAsync(f.repository.settle);
   await tester.pump();
-  await tester.scrollUntilVisible(
-    find.byKey(const ValueKey('cloze-finish')),
-    120,
-    scrollable: find.byType(Scrollable).last,
-  );
+  await _reveal(tester, find.byKey(const ValueKey('cloze-finish')));
   await _until(
     tester,
     () =>
