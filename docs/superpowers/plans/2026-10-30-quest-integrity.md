@@ -26,9 +26,11 @@ by event/state/SQL; validation clocks retain their full precision.
 
 Current integration138 checks and wider learning/projection1121 checks pass;
 analysis reports0 issues on the current integrated source.
-Independent reviews accept adapter/core/storage after those corrections. Final
-whole-app regression/build attestation remains pending. The retained APK is
-still the verified Cloze55f9c407 build. No Quest activation or grant is enabled.
+Independent reviews accept adapter/core/storage after those corrections.
+Source2702e008 now passes full Flutter3700, analysis0, CLI23, backend390/one
+existing opt-in skip and a normal debug APK; all683 Dart plus54 CLI and92 backend
+inputs remain unchanged. See [wave14](../../field/2026-10-30-remaining-systems-wave14.md).
+No Quest activation or grant is enabled. Next is owned Word Scramble.
 Evidence is under the existing remaining-systems D root: quest-domain-red.log,
 quest-catalog-aliasing-red.log, quest-canonical-adapter-behavior-red.log,
 quest-canonical-adapter-domain-final-green.log, quest-canonical-atomic-api-red.log,

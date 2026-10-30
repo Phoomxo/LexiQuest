@@ -1,9 +1,9 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `55f9c407` (v18/35),
-updated2026-10-30. Latest full suite/APK: Flutter3633, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `2702e008` (v18/35),
+updated2026-10-30. Latest full suite/APK: Flutter3700, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All679 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All683 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
@@ -13,8 +13,11 @@ Research remains default-off. Owned one-word Dictation now connects category,
 voice, immutable save/finish and its declared projection floor, with old evidence
 and remote SRS preserved. Typed/choice Cloze now connects owned category/content,
 immutable answer/finish and history, without new mastery or engagement eligibility.
-Real owner-update invalidation closes coalesced ABA continuations. See
-[wave13 evidence](2026-10-30-remaining-systems-wave13.md),
+Real owner-update invalidation closes coalesced ABA continuations. Quest now
+validates actual canonical attempts and commits progress/completion atomically;
+the product's runtime activation, recurrence and grants remain separate. See
+[wave14 evidence](2026-10-30-remaining-systems-wave14.md),
+[Cloze evidence](2026-10-30-remaining-systems-wave13.md),
 [Dictation evidence](2026-10-30-remaining-systems-wave12.md)
 and the earlier [Assessment evidence](2026-10-30-remaining-systems-wave11.md).
 The [frozen catalog](../design/feature-catalog-1.3.0.json) retains revision 1.3.0
@@ -81,7 +84,7 @@ capability still needs the applicable acceptance and release checks.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f29 | Evidence-Based Quest | Partial | Quest use cases/repository exist. Learning hooks, replay, recurring periods and freeze prerequisites remain. |
+| f29 | Evidence-Based Quest | Partial | Source2702e008 verifies persisted attempt IDs in actual optional hooks, per-objective dedup, canonical-chain/catalog/window/owner validation and atomic progress/completion. Terminal CAS and immutable authored inputs are protected. Runtime activation, delivery recovery, recurring periods, grants/freeze and actual Quest/Today UI remain incomplete. |
 | f30 | Gentle Streak | Partial | Mastery/Profile show the existing progress-derived streak. V2 streak/freezes are not composed into one authority. |
 | f31 | Achievement & Milestone | Connected | Mastery opens achievements backed by persisted unlock facts and dates. |
 | f32 | Avatar Level-Up & Cosmetic Unlock | Partial | XP, level and Shop preview/purchase/owned/equip use the current reward authority. Combined avatar level-up/unlock presentation is incomplete. |

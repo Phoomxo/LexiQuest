@@ -13,12 +13,12 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Cloze source `55f9c407` ผ่าน Flutter3633, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave13)
-รวม shared native lifecycle และ owner-watch ABA repair; Quest/schema ในบอร์ดนี้ยังไม่เปลี่ยน
+Current attestation: Quest integrity source `2702e008` ผ่าน Flutter3700, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave14)
+รวม canonical identity/atomic Quest boundary; schema ยัง18/35 และ Quest runtime/grants ยังไม่เปิด
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `55f9c407`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
+  `2702e008`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
   certification แม้ Dictation verified แล้ว f13 ยังไม่ครบทุก native mode
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
@@ -34,8 +34,8 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   f13/f05 ก็ยังไม่ครบทุก mode/shell
 
 การ์ดถัดไปที่พร้อมดำเนินการคือ
-[canonical Quest integrity](2026-10-30-quest-integrity.md) บน source55f9c407;
-ร่าง D ของ domain/adapter/storage ยังไม่อยู่ใน APK ที่ตรวจแล้ว
+[owned Word Scramble](2026-10-30-word-scramble-integration.md) บน source2702e008;
+ร่าง D ของ core/floor/UI ยังไม่อยู่ใน APK ที่ตรวจแล้ว ตามด้วย Bookmark/saved review
 
 ## สามหน่วยถัดไปที่เสนอ
 
