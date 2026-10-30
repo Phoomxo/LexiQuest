@@ -18,7 +18,7 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
 Ephemeral ink/Undo/Clear/typed fallback, privacy/frame/gesture fixes และ canonical ACK ผ่าน;
 schema20/37 ไม่เปลี่ยน. f12 เชื่อม locally แล้ว; f03/f05/f11/f13 ยัง Partial.
 Saved Words/reports/Sentence Scramble คงหลักฐาน wave16/17/18; Quest runtime/grants ยังไม่เปิด.
-หน่วยถัดไปคือ owner-bound SRS safety ก่อน Review Center: คง self-rated SRS authority,
+หน่วยถัดไปคือ [owner-bound SRS safety](2026-10-30-srs-review-safety-integration.md) ก่อน Review Center: คง self-rated SRS authority,
 รวมคิว due/incorrect/saved/local-report พร้อมเหตุผล และไม่ฝึกจาก report snapshot.
 SRS API ต้องมี owner/current/fence ที่ commit boundary; แผน bounded อ่านจาก source ก่อนเริ่ม.
 สามหน่วยเสนอเดิมด้านล่างเป็น grounding เดิม; ใช้แผนแม่และ checkpoint ล่าสุดเป็นบอร์ดปัจจุบัน.

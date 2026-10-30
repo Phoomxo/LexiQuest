@@ -78,7 +78,7 @@ The rigor is high for research privacy, migrations and owner boundaries. Read-on
 Run the smallest relevant Flutter tests first, then touched subsystem tests. At the integration checkpoint pause writers and run `flutter analyze --no-pub`, the full Flutter suite, backend CPU suites and relevant policy/CLI contracts. Keep model downloads/GPU inference and live authority access out of CPU tests. Review the final diff and record current source hashes. New owner-scoped storage requires migration, merge, deletion, export and applicable sync/policy coverage.
 
 Saved Words, local owned-word reports, Sentence Scramble and local Typed Cloze scratchpad
-are attested. Next is owner-bound SRS safety before the real Review Center in the
+are attested. Next is [owner-bound SRS safety](2026-10-30-srs-review-safety-integration.md) before the real Review Center in the
 [remaining-feature sequence](2026-10-30-remaining-feature-sequence.md); no new table or v21 reservation.
 
 The decision trail is [the remaining-system decision log](../../field/2026-10-28-remaining-system-decisions.tsv). Logs for this wave are in `D:\LexiQuest-Storage\maintenance\2026-10-28\remaining-systems`. Earlier LM CPU logs are in the parent maintenance directory. Results on this board describe individual units until the integration suite attests the combined source.
