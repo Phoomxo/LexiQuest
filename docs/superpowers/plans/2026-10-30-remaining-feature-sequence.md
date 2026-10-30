@@ -13,13 +13,17 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: local word reports source `158d2115` ผ่าน Flutter4029, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave17)
-รวม review/immutable queue/restart/history และ owner lifecycle; schema20/37 และ Quest runtime/grants ยังไม่เปิด
+Current attestation: Sentence Scramble source `29038b4a` ผ่าน Flutter4262, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave18).
+Owned category/provider/native ACK/guarded P23/history ผ่าน; schema20/37 ไม่เปลี่ยน.
+Saved Words และ local reports ยังคงหลักฐาน wave16/17; Quest runtime/grants ยังไม่เปิด.
+หน่วยถัดไปคือ [f12 scratchpad บน P35 Typed Cloze](2026-10-30-handwriting-scratchpad-integration.md),
+local ephemeral aid/Undo/Clear/typed fallback ตาม frozen purpose โดยไม่มี OCR หรือ writer ใหม่.
+สามหน่วยเสนอเดิมด้านล่างเป็น grounding เดิม; ใช้แผนแม่และ checkpoint ล่าสุดเป็นบอร์ดปัจจุบัน.
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `158d2115`: 12 connected / 19 partial / 13 missing ไม่ใช่ production/UAT
-  certification แม้ Dictation/Cloze/Word Scramble verified แล้ว f13 ยังไม่ครบทุก native mode
+  `29038b4a`: 12 connected / 19 partial / 13 missing ไม่ใช่ production/UAT
+  certification แม้ Dictation/Cloze/Word+Sentence Scramble verified แล้ว f13 ยังขาด durable resume/shared shell
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ

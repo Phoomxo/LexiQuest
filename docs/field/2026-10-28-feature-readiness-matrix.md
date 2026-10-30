@@ -1,9 +1,9 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `158d2115` (v20/37),
-updated2026-10-30. Latest full suite/APK: Flutter4029, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `29038b4a` (v20/37),
+updated2026-10-30. Latest full suite/APK: Flutter4262, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All731 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All745 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
@@ -19,11 +19,14 @@ the product's runtime activation, recurrence and grants remain separate.
 Owned Word Scramble connects category, immutable grapheme order, accessible
 answer/save/finish and history under a recreational floor. Scramble/Cloze page
 the bounded owned word read without changing accepted content or choice order.
+Sentence Scramble connects one actual provider sentence, immutable indexed/typed answer,
+canonical save/finish, owner-safe P23 and history without new mastery/reward eligibility.
 Saved Words connects owned save/unsave, offline restart/list and targeted practice,
 with exact retries, owner merge/export/purge and unchanged learning projections.
 Owned-word reports now connect editable review, immutable local queue and restart/history,
 preserving original content/version through owner merge and target deletion. Other report
 targets and production transport remain separate. See
+[wave18 evidence](2026-10-30-remaining-systems-wave18.md),
 [wave17 evidence](2026-10-30-remaining-systems-wave17.md),
 [wave16 evidence](2026-10-30-remaining-systems-wave16.md),
 [wave15 evidence](2026-10-30-remaining-systems-wave15.md),
@@ -64,7 +67,7 @@ capability still needs the applicable acceptance and release checks.
 | f10 | Matching Mode | Missing | No current route. Follow the approved Research completion sequence before this unit. |
 | f11 | Typed Recall / Writing | Partial | Associative reading, Ghost, owned Dictation and typed Cloze save canonical answers with immutable retries/IME guards. Cloze is explicitly assisted and does not claim independent mastery. Shared typed lesson/draft/IME contract remains incomplete. |
 | f12 | Handwriting Scratchpad | Missing | No scratchpad with undo, clear and text fallback. |
-| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech, owned Dictation, typed/choice Cloze and one-word Scramble have persisted paths. Dictation/Cloze/Scramble share one sealed native lifecycle with exact retries, owner/deletion pins, scoped projections and actual accessible UI checks throughd995ffc2. Sentence Scramble, durable native restart/resume and shared results remain incomplete. |
+| f13 | LexiQuest Native Modes Integration | Partial | Reading, Ghost, Shadowing, Source/speech, owned Dictation, typed/choice Cloze and Word/Sentence Scramble have persisted paths. Four accepted native modes share canonical lifecycle, exact retries, owner/deletion pins and scoped projections. Sentence Scramble adds actual guarded P23 results and accessible UI at29038b4a. Durable native restart/resume and a shared shell/results for every mode remain incomplete. |
 
 ## Feedback
 
