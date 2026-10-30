@@ -230,12 +230,16 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      18,
+      19,
     );
     expect(before, hasLength(33));
-    expect(database.allTables, hasLength(35));
+    expect(database.allTables, hasLength(36));
     expect(
       await database.customSelect('SELECT * FROM assessment_runs').get(),
+      isEmpty,
+    );
+    expect(
+      await database.customSelect('SELECT * FROM saved_words').get(),
       isEmpty,
     );
     expect(

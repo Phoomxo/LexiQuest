@@ -11,11 +11,13 @@ import '../../support/experiment_assignment_fixture.dart';
 import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
+import '../../support/saved_word_owner_fixture.dart';
 
 void main() {
   late AppDatabase database;
   late SeededMotivationMeasurement measurementA;
   late SeededMeasurementOpportunity opportunityA;
+  late Map<String, Object?> savedA;
   final now = DateTime.utc(2026, 10, 24, 12);
 
   setUp(() async {
@@ -90,6 +92,19 @@ void main() {
       "('outbox-research-b', 'owner-b', 'event_v2', "
       "'event-research-b', 'upsert', 2)",
     );
+    savedA = await insertOwnerSavedWord(
+      database,
+      'owner-a',
+      wordId: 'saved-word-a',
+      categoryId: 'cat-a',
+    );
+    await insertOwnerSavedWord(
+      database,
+      'owner-b',
+      wordId: 'saved-word-b',
+      categoryId: 'cat-b',
+      isSaved: false,
+    );
   });
 
   tearDown(() => database.close());
@@ -106,11 +121,14 @@ void main() {
       expect(snapshot.sha256, sha256.convert(snapshot.bytes).toString());
       final json =
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
-      expect(json['schemaVersion'], 18);
+      expect(json['schemaVersion'], 19);
       expect(json['ownerId'], 'owner-a');
       final data = json['data'] as Map<String, dynamic>;
       expect(data.keys.toSet(), requiredFullAccountExportScopes);
       expect(data['assessment_runs'], isEmpty);
+      final saved = (data['saved_words'] as List).single as Map;
+      expect(saved, hasLength(7));
+      expect(saved, savedA);
       expect((data['vocabulary_categories'] as List).single['id'], 'cat-a');
       final assignment = (data['experiment_assignments'] as List).single as Map;
       expect(assignment['owner_id'], 'owner-a');

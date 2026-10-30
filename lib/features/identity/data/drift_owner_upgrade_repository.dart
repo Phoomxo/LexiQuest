@@ -8,6 +8,7 @@ import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../vocabulary/domain/saved_words.dart';
 import '../domain/owner_upgrade.dart';
 import 'drift_owner_write_coordinator.dart';
 
@@ -76,9 +77,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
         await _requireActiveOwnersUnfenced();
         await _requireTransferableResearchOwner(source.id);
+        await _validateSavedWordRelations(source.id);
+        await _validateSavedWordRelations(target.id);
         var conflicts = 0;
         conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
         conflicts += await _mergeWords(source.id, target.id, upgradedAt);
+        await _moveSavedWords(source.id, target.id, upgradedAt);
         await _makeImportKeysUnique(source.id, target.id);
         conflicts += await _makeRewardKeysUnique(
           source.id,
@@ -93,6 +97,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         await _mergeExperimentAssignments(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
         await _moveOwnerRows(source.id, target.id);
+        await _validateSavedWordRelations(target.id);
+        if ((await _savedWordsFor(source.id)).isNotEmpty) {
+          throw StateError('Saved words retained source ownership');
+        }
         await _rebuildLearningProjections(target.id);
         await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
 
@@ -291,6 +299,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     for (final collision in collisions) {
       final guestId = collision.read<String>('guest_id');
       final targetWordId = collision.read<String>('target_id');
+      await _mergeSavedWord(
+        sourceId,
+        targetId,
+        guestId,
+        targetWordId,
+        resolvedAt,
+      );
       await _database.customUpdate(
         'UPDATE answer_attempts SET word_id = ? WHERE word_id = ?',
         variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
@@ -330,6 +345,156 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     }
     return collisions.length;
   }
+
+  Future<List<StoredSavedWordState>> _savedWordsFor(String ownerId) async =>
+      (await _database
+              .customSelect(
+                'SELECT * FROM saved_words WHERE owner_id = ? ORDER BY word_id',
+                variables: [Variable<String>(ownerId)],
+              )
+              .get())
+          .map((row) => StoredSavedWordState.fromStorage(row.data))
+          .toList();
+
+  Future<StoredSavedWordState?> _savedWord(
+    String ownerId,
+    String wordId,
+  ) async {
+    final row = await _database
+        .customSelect(
+          'SELECT * FROM saved_words WHERE owner_id = ? AND word_id = ?',
+          variables: [Variable<String>(ownerId), Variable<String>(wordId)],
+        )
+        .getSingleOrNull();
+    return row == null ? null : StoredSavedWordState.fromStorage(row.data);
+  }
+
+  Future<void> _validateSavedWordRelations(String ownerId) async {
+    await _savedWordsFor(ownerId);
+    final invalid = await _database
+        .customSelect(
+          'SELECT 1 FROM saved_words s '
+          'LEFT JOIN vocabulary_words w ON w.id = s.word_id AND w.owner_id = s.owner_id '
+          'LEFT JOIN vocabulary_categories c ON c.id = w.category_id AND c.owner_id = s.owner_id '
+          'WHERE s.owner_id = ? AND (w.id IS NULL OR c.id IS NULL) LIMIT 1',
+          variables: [Variable<String>(ownerId)],
+        )
+        .getSingleOrNull();
+    if (invalid != null) {
+      throw StateError('Saved-word owner relationships are invalid');
+    }
+  }
+
+  Future<void> _moveSavedWords(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    for (final saved in await _savedWordsFor(sourceId)) {
+      await _mergeSavedWord(
+        sourceId,
+        targetId,
+        saved.wordId,
+        saved.wordId,
+        resolvedAt,
+      );
+    }
+  }
+
+  Future<void> _mergeSavedWord(
+    String sourceId,
+    String targetId,
+    String sourceWordId,
+    String targetWordId,
+    int resolvedAt,
+  ) async {
+    final source = await _savedWord(sourceId, sourceWordId);
+    if (source == null) {
+      return;
+    }
+    final target = await _savedWord(targetId, targetWordId);
+    final previousRevision =
+        target == null || source.localRevision > target.localRevision
+        ? source.localRevision
+        : target.localRevision;
+    if (previousRevision >= savedWordsMaxRevision) {
+      throw StateError('Saved-word merge revision is exhausted');
+    }
+    final generated = _requiredId(generateConflictId(), 'savedWordMergeId');
+    final mutationId = 'saved-merge:$generated';
+    if (mutationId == source.lastMutationId ||
+        mutationId == target?.lastMutationId) {
+      throw StateError('Saved-word merge receipt was reused');
+    }
+    final merged = StoredSavedWordState(
+      ownerId: targetId,
+      wordId: targetWordId,
+      isSaved: source.isSaved || (target?.isSaved ?? false),
+      localRevision: previousRevision + 1,
+      firstSavedAtUtc:
+          target != null &&
+              target.firstSavedAtUtc.isBefore(source.firstSavedAtUtc)
+          ? target.firstSavedAtUtc
+          : source.firstSavedAtUtc,
+      updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        resolvedAt,
+        isUtc: true,
+      ),
+      lastMutationId: mutationId,
+    );
+    final values = <Variable<Object>>[
+      Variable<int>(merged.isSaved ? 1 : 0),
+      Variable<int>(merged.localRevision),
+      Variable<int>(merged.firstSavedAtUtc.millisecondsSinceEpoch),
+      Variable<int>(merged.updatedAtUtc.millisecondsSinceEpoch),
+      Variable<String>(merged.lastMutationId),
+    ];
+    final changed = target == null
+        ? await _database.customUpdate(
+            'INSERT INTO saved_words '
+            '(is_saved, local_revision, first_saved_at_utc_ms, updated_at_utc_ms, last_mutation_id, owner_id, word_id) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(owner_id, word_id) DO NOTHING',
+            variables: [
+              ...values,
+              Variable<String>(targetId),
+              Variable<String>(targetWordId),
+            ],
+            updates: {_database.savedWords},
+          )
+        : await _database.customUpdate(
+            'UPDATE saved_words SET is_saved = ?, local_revision = ?, '
+            'first_saved_at_utc_ms = ?, updated_at_utc_ms = ?, last_mutation_id = ? '
+            'WHERE $_savedWordPredicate',
+            variables: [...values, ..._savedWordVariables(target)],
+            updates: {_database.savedWords},
+          );
+    if (changed != 1) {
+      throw StateError('Saved-word target changed during owner merge');
+    }
+    final removed = await _database.customUpdate(
+      'DELETE FROM saved_words WHERE $_savedWordPredicate',
+      variables: _savedWordVariables(source),
+      updates: {_database.savedWords},
+    );
+    final readback = await _savedWord(targetId, targetWordId);
+    if (removed != 1 || readback == null || !merged.sameFacts(readback)) {
+      throw StateError('Saved-word merge could not be verified');
+    }
+  }
+
+  static const _savedWordPredicate =
+      'owner_id = ? AND word_id = ? AND is_saved = ? AND local_revision = ? '
+      'AND first_saved_at_utc_ms = ? AND updated_at_utc_ms = ? AND last_mutation_id = ?';
+
+  List<Variable<Object>> _savedWordVariables(StoredSavedWordState state) => [
+    Variable<String>(state.ownerId),
+    Variable<String>(state.wordId),
+    Variable<int>(state.isSaved ? 1 : 0),
+    Variable<int>(state.localRevision),
+    Variable<int>(state.firstSavedAtUtc.millisecondsSinceEpoch),
+    Variable<int>(state.updatedAtUtc.millisecondsSinceEpoch),
+    Variable<String>(state.lastMutationId),
+  ];
 
   Future<void> _makeImportKeysUnique(String sourceId, String targetId) async {
     final collisions = await _database
@@ -686,7 +851,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
-      if (table == 'experiment_assignments' ||
+      if (table == 'saved_words' ||
+          table == 'experiment_assignments' ||
           table == 'research_participation_permits' ||
           table == 'motivation_measurement_runs' ||
           table == 'motivation_responses' ||

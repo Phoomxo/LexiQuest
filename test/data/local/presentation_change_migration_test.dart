@@ -26,11 +26,11 @@ void main() {
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      expect(database.schemaVersion, 18);
+      expect(database.schemaVersion, 19);
       final columns = await database
           .customSelect('PRAGMA table_info(measurement_opportunities)')
           .get();
-      expect(database.allTables, hasLength(35));
+      expect(database.allTables, hasLength(36));
       expect(columns, hasLength(19));
       final byName = {for (final row in columns) row.read<String>('name'): row};
       for (final name in ['last_switch_ordinal', 'suppressed_switch_count']) {
@@ -138,6 +138,7 @@ void main() {
           await source.participation.ownerWrites.markPending(token);
           oldRows = await _allRows(source.database);
           expect(oldRows.remove('assessment_runs'), isEmpty);
+          expect(oldRows.remove('saved_words'), isEmpty);
           expect(oldRows, hasLength(34));
         } finally {
           await source.database.close();
@@ -211,12 +212,13 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          18,
+          19,
         );
         expect(before, hasLength(34));
-        expect(database.allTables, hasLength(35));
+        expect(database.allTables, hasLength(36));
         final after = await _allRows(database);
         expect(after['assessment_runs'], isEmpty);
+        expect(after['saved_words'], isEmpty);
         for (final table in before.entries) {
           final retained = after[table.key]!.map((row) {
             final old = Map<String, Object?>.from(row);

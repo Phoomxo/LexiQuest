@@ -72,7 +72,8 @@ void main() {
           jsonDecode(utf8.decode(snapshot.bytes)) as Map<String, dynamic>;
       final rows = (document['data'] as Map)['learning_sessions'] as List;
       expect(rows, [stored['a']]);
-      expect(document['schemaVersion'], 18);
+      expect(document['schemaVersion'], 19);
+      expect((document['data'] as Map)['saved_words'], isEmpty);
       expect((document['data'] as Map)['assessment_runs'], isEmpty);
       expect(snapshot.coveredScopes, requiredFullAccountExportScopes);
       final exported = rows.single as Map;

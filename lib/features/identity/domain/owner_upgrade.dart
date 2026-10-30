@@ -39,6 +39,7 @@ const Set<String> ownerUpgradeInventory = <String>{
   'motivation_responses',
   'vocabulary_categories',
   'vocabulary_words',
+  'saved_words',
   'vocabulary_imports',
   'learning_sessions',
   'answer_attempts',

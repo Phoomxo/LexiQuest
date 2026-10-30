@@ -14,6 +14,8 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_re
 import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 
+import '../../support/saved_word_owner_fixture.dart';
+
 final _now = DateTime.utc(2026, 10, 29, 12);
 const _key = 'delete:00000000-0000-4000-8000-000000000001';
 
@@ -437,6 +439,12 @@ Future<void> _seed(AppDatabase database) async {
       '(operation_id, owner_id, entity_type, entity_id, operation_kind, created_at_utc_ms) '
       "VALUES (?, ?, 'category', ?, 'upsert', 1)",
       ['operation-$owner', owner, 'category-$owner'],
+    );
+    await insertOwnerSavedWord(
+      database,
+      owner,
+      categoryId: 'category-$owner',
+      isSaved: owner != 'guest-source',
     );
   }
 }

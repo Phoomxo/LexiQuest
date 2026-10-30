@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -16,6 +17,7 @@ import 'package:vocab_learning_app/features/research/application/study_runtime.d
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/learning_session_lifecycle_observer.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_saved_words_repository.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -58,6 +60,90 @@ AppDatabase _testDatabase() {
 }
 
 void main() {
+  test(
+    'saved words compose on the real local database without backend or sync work',
+    () async {
+      final database = _testDatabase();
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async =>
+            throw StateError('synthetic offline Firebase'),
+        initializeSupabase: () async =>
+            throw StateError('synthetic offline Supabase'),
+        loadConfig: () =>
+            throw const AppConfigException('synthetic unavailable config'),
+        guestSessionService: _StubGuestSessionService(),
+        cloudSyncEnabled: false,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(dependencies.savedWords, isNotNull);
+      expect(
+        dependencies.savedWords!.repository,
+        isA<DriftSavedWordsRepository>(),
+      );
+      expect(
+        (dependencies.savedWords!.repository as DriftSavedWordsRepository)
+            .database,
+        same(database),
+      );
+      final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+      final category = await dependencies.vocabulary!.createCategory(
+        'Synthetic saved category',
+      );
+      final word = await dependencies.vocabulary!.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'station',
+          meaning: 'synthetic station',
+          partOfSpeech: 'noun',
+        ),
+      );
+      Future<Map<String, List<String>>> effects() async => {
+        for (final table in [
+          'learning_sessions',
+          'answer_attempts',
+          'srs_states',
+          'points_ledger_entries',
+          'reward_transactions',
+          'achievement_unlocks',
+          'quest_instances',
+          'quest_objective_progress',
+          'streak_states',
+          'research_consents',
+          'experiment_assignments',
+          'research_participation_permits',
+          'motivation_measurement_runs',
+          'motivation_responses',
+          'measurement_opportunities',
+          'assessment_runs',
+          'events_v2',
+          'outbox_operations',
+        ])
+          table: [
+            for (final row
+                in await database
+                    .customSelect('SELECT * FROM $table ORDER BY 1')
+                    .get())
+              jsonEncode(row.data),
+          ],
+      };
+      final before = await effects();
+      final snapshot = await dependencies.savedWords!
+          .watchOwner(owner.id)
+          .first;
+      final command = dependencies.savedWords!.prepareSet(
+        state: snapshot.stateFor(word.id),
+        desiredIsSaved: true,
+      );
+      final result = await dependencies.savedWords!.apply(command);
+      expect(result.state.isSaved, isTrue);
+      expect(result.state.localRevision, 1);
+      expect(await effects(), before);
+      final saved = await dependencies.savedWords!.watchOwner(owner.id).first;
+      expect(saved.savedItems.single.word!.spelling, 'station');
+    },
+  );
+
   test(
     'composes account deletion only behind its explicit production flag',
     () async {

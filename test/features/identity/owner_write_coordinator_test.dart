@@ -15,6 +15,7 @@ import '../../support/experiment_assignment_fixture.dart';
 import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
+import '../../support/saved_word_owner_fixture.dart';
 
 final _now = DateTime.utc(2026, 10, 28, 12);
 const _owner = 'synthetic-private-owner-a';
@@ -344,6 +345,7 @@ void main() {
       'motivation_measurement_runs',
       'motivation_responses',
       'measurement_opportunities',
+      'saved_words',
     ]) {
       test('purge proof rejects a residual $table fact', () async {
         await _insertResearchArtifacts(database);
@@ -987,6 +989,7 @@ Future<void> _insertResearchArtifacts(AppDatabase database) async {
     "VALUES ('synthetic-operation', ?, 'synthetic-research', 'synthetic-event', 'upsert', 1)",
     [_owner],
   );
+  await insertOwnerSavedWord(database, _owner, isSaved: false);
 }
 
 Future<void> _expectResearchCounts(AppDatabase database, int count) async {
@@ -1009,6 +1012,11 @@ Future<void> _expectResearchCounts(AppDatabase database, int count) async {
       reason: table,
     );
   }
+  expect(
+    (await savedWordOwnerRows(database)).length,
+    count,
+    reason: 'saved state and unsaved tombstones follow the full local purge',
+  );
 }
 
 Future<void> _ordinaryWrite(AppDatabase database) async {

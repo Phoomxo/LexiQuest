@@ -6869,6 +6869,502 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
   }
 }
 
+class $SavedWordsTable extends SavedWords
+    with TableInfo<$SavedWordsTable, SavedWord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SavedWordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _wordIdMeta = const VerificationMeta('wordId');
+  @override
+  late final GeneratedColumn<String> wordId = GeneratedColumn<String>(
+    'word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES vocabulary_words (id) ON DELETE RESTRICT',
+    ),
+  );
+  static const VerificationMeta _isSavedMeta = const VerificationMeta(
+    'isSaved',
+  );
+  @override
+  late final GeneratedColumn<bool> isSaved = GeneratedColumn<bool>(
+    'is_saved',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_saved" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firstSavedAtUtcMsMeta = const VerificationMeta(
+    'firstSavedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> firstSavedAtUtcMs = GeneratedColumn<int>(
+    'first_saved_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastMutationIdMeta = const VerificationMeta(
+    'lastMutationId',
+  );
+  @override
+  late final GeneratedColumn<String> lastMutationId = GeneratedColumn<String>(
+    'last_mutation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    wordId,
+    isSaved,
+    localRevision,
+    firstSavedAtUtcMs,
+    updatedAtUtcMs,
+    lastMutationId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'saved_words';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SavedWord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('word_id')) {
+      context.handle(
+        _wordIdMeta,
+        wordId.isAcceptableOrUnknown(data['word_id']!, _wordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordIdMeta);
+    }
+    if (data.containsKey('is_saved')) {
+      context.handle(
+        _isSavedMeta,
+        isSaved.isAcceptableOrUnknown(data['is_saved']!, _isSavedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isSavedMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_localRevisionMeta);
+    }
+    if (data.containsKey('first_saved_at_utc_ms')) {
+      context.handle(
+        _firstSavedAtUtcMsMeta,
+        firstSavedAtUtcMs.isAcceptableOrUnknown(
+          data['first_saved_at_utc_ms']!,
+          _firstSavedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_firstSavedAtUtcMsMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('last_mutation_id')) {
+      context.handle(
+        _lastMutationIdMeta,
+        lastMutationId.isAcceptableOrUnknown(
+          data['last_mutation_id']!,
+          _lastMutationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastMutationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, wordId};
+  @override
+  SavedWord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SavedWord(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      wordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_id'],
+      )!,
+      isSaved: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_saved'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      firstSavedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}first_saved_at_utc_ms'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      lastMutationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_mutation_id'],
+      )!,
+    );
+  }
+
+  @override
+  $SavedWordsTable createAlias(String alias) {
+    return $SavedWordsTable(attachedDatabase, alias);
+  }
+}
+
+class SavedWord extends DataClass implements Insertable<SavedWord> {
+  final String ownerId;
+  final String wordId;
+  final bool isSaved;
+  final int localRevision;
+  final int firstSavedAtUtcMs;
+  final int updatedAtUtcMs;
+  final String lastMutationId;
+  const SavedWord({
+    required this.ownerId,
+    required this.wordId,
+    required this.isSaved,
+    required this.localRevision,
+    required this.firstSavedAtUtcMs,
+    required this.updatedAtUtcMs,
+    required this.lastMutationId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['word_id'] = Variable<String>(wordId);
+    map['is_saved'] = Variable<bool>(isSaved);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['first_saved_at_utc_ms'] = Variable<int>(firstSavedAtUtcMs);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['last_mutation_id'] = Variable<String>(lastMutationId);
+    return map;
+  }
+
+  SavedWordsCompanion toCompanion(bool nullToAbsent) {
+    return SavedWordsCompanion(
+      ownerId: Value(ownerId),
+      wordId: Value(wordId),
+      isSaved: Value(isSaved),
+      localRevision: Value(localRevision),
+      firstSavedAtUtcMs: Value(firstSavedAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      lastMutationId: Value(lastMutationId),
+    );
+  }
+
+  factory SavedWord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SavedWord(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      wordId: serializer.fromJson<String>(json['wordId']),
+      isSaved: serializer.fromJson<bool>(json['isSaved']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      firstSavedAtUtcMs: serializer.fromJson<int>(json['firstSavedAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      lastMutationId: serializer.fromJson<String>(json['lastMutationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'wordId': serializer.toJson<String>(wordId),
+      'isSaved': serializer.toJson<bool>(isSaved),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'firstSavedAtUtcMs': serializer.toJson<int>(firstSavedAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'lastMutationId': serializer.toJson<String>(lastMutationId),
+    };
+  }
+
+  SavedWord copyWith({
+    String? ownerId,
+    String? wordId,
+    bool? isSaved,
+    int? localRevision,
+    int? firstSavedAtUtcMs,
+    int? updatedAtUtcMs,
+    String? lastMutationId,
+  }) => SavedWord(
+    ownerId: ownerId ?? this.ownerId,
+    wordId: wordId ?? this.wordId,
+    isSaved: isSaved ?? this.isSaved,
+    localRevision: localRevision ?? this.localRevision,
+    firstSavedAtUtcMs: firstSavedAtUtcMs ?? this.firstSavedAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    lastMutationId: lastMutationId ?? this.lastMutationId,
+  );
+  SavedWord copyWithCompanion(SavedWordsCompanion data) {
+    return SavedWord(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      wordId: data.wordId.present ? data.wordId.value : this.wordId,
+      isSaved: data.isSaved.present ? data.isSaved.value : this.isSaved,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      firstSavedAtUtcMs: data.firstSavedAtUtcMs.present
+          ? data.firstSavedAtUtcMs.value
+          : this.firstSavedAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      lastMutationId: data.lastMutationId.present
+          ? data.lastMutationId.value
+          : this.lastMutationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedWord(')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordId: $wordId, ')
+          ..write('isSaved: $isSaved, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('firstSavedAtUtcMs: $firstSavedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('lastMutationId: $lastMutationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    wordId,
+    isSaved,
+    localRevision,
+    firstSavedAtUtcMs,
+    updatedAtUtcMs,
+    lastMutationId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SavedWord &&
+          other.ownerId == this.ownerId &&
+          other.wordId == this.wordId &&
+          other.isSaved == this.isSaved &&
+          other.localRevision == this.localRevision &&
+          other.firstSavedAtUtcMs == this.firstSavedAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.lastMutationId == this.lastMutationId);
+}
+
+class SavedWordsCompanion extends UpdateCompanion<SavedWord> {
+  final Value<String> ownerId;
+  final Value<String> wordId;
+  final Value<bool> isSaved;
+  final Value<int> localRevision;
+  final Value<int> firstSavedAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<String> lastMutationId;
+  final Value<int> rowid;
+  const SavedWordsCompanion({
+    this.ownerId = const Value.absent(),
+    this.wordId = const Value.absent(),
+    this.isSaved = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.firstSavedAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.lastMutationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SavedWordsCompanion.insert({
+    required String ownerId,
+    required String wordId,
+    required bool isSaved,
+    required int localRevision,
+    required int firstSavedAtUtcMs,
+    required int updatedAtUtcMs,
+    required String lastMutationId,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       wordId = Value(wordId),
+       isSaved = Value(isSaved),
+       localRevision = Value(localRevision),
+       firstSavedAtUtcMs = Value(firstSavedAtUtcMs),
+       updatedAtUtcMs = Value(updatedAtUtcMs),
+       lastMutationId = Value(lastMutationId);
+  static Insertable<SavedWord> custom({
+    Expression<String>? ownerId,
+    Expression<String>? wordId,
+    Expression<bool>? isSaved,
+    Expression<int>? localRevision,
+    Expression<int>? firstSavedAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<String>? lastMutationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (wordId != null) 'word_id': wordId,
+      if (isSaved != null) 'is_saved': isSaved,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (firstSavedAtUtcMs != null) 'first_saved_at_utc_ms': firstSavedAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (lastMutationId != null) 'last_mutation_id': lastMutationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SavedWordsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? wordId,
+    Value<bool>? isSaved,
+    Value<int>? localRevision,
+    Value<int>? firstSavedAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<String>? lastMutationId,
+    Value<int>? rowid,
+  }) {
+    return SavedWordsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      wordId: wordId ?? this.wordId,
+      isSaved: isSaved ?? this.isSaved,
+      localRevision: localRevision ?? this.localRevision,
+      firstSavedAtUtcMs: firstSavedAtUtcMs ?? this.firstSavedAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      lastMutationId: lastMutationId ?? this.lastMutationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (wordId.present) {
+      map['word_id'] = Variable<String>(wordId.value);
+    }
+    if (isSaved.present) {
+      map['is_saved'] = Variable<bool>(isSaved.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (firstSavedAtUtcMs.present) {
+      map['first_saved_at_utc_ms'] = Variable<int>(firstSavedAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (lastMutationId.present) {
+      map['last_mutation_id'] = Variable<String>(lastMutationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedWordsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordId: $wordId, ')
+          ..write('isSaved: $isSaved, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('firstSavedAtUtcMs: $firstSavedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('lastMutationId: $lastMutationId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VocabularyImportsTable extends VocabularyImports
     with TableInfo<$VocabularyImportsTable, VocabularyImport> {
   @override
@@ -25183,6 +25679,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $VocabularyWordsTable vocabularyWords = $VocabularyWordsTable(
     this,
   );
+  late final $SavedWordsTable savedWords = $SavedWordsTable(this);
   late final $VocabularyImportsTable vocabularyImports =
       $VocabularyImportsTable(this);
   late final $VocabularyImportRowsTable vocabularyImportRows =
@@ -25244,6 +25741,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     motivationResponses,
     vocabularyCategories,
     vocabularyWords,
+    savedWords,
     vocabularyImports,
     vocabularyImportRows,
     learningSessions,
@@ -25500,6 +25998,24 @@ final class $$LocalOwnersTableReferences
     final cache = $_typedResult.readTableOrNull(
       _vocabularyWordsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SavedWordsTable, List<SavedWord>>
+  _savedWordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.savedWords,
+    aliasName: 'local_owners__id__saved_words__owner_id',
+  );
+
+  $$SavedWordsTableProcessedTableManager get savedWordsRefs {
+    final manager = $$SavedWordsTableTableManager(
+      $_db,
+      $_db.savedWords,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_savedWordsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -26164,6 +26680,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$VocabularyWordsTableFilterComposer(
             $db: $db,
             $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> savedWordsRefs(
+    Expression<bool> Function($$SavedWordsTableFilterComposer f) f,
+  ) {
+    final $$SavedWordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.savedWords,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedWordsTableFilterComposer(
+            $db: $db,
+            $table: $db.savedWords,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -26987,6 +27528,31 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> savedWordsRefs<T extends Object>(
+    Expression<T> Function($$SavedWordsTableAnnotationComposer a) f,
+  ) {
+    final $$SavedWordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.savedWords,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedWordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.savedWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> vocabularyImportsRefs<T extends Object>(
     Expression<T> Function($$VocabularyImportsTableAnnotationComposer a) f,
   ) {
@@ -27570,6 +28136,7 @@ class $$LocalOwnersTableTableManager
             bool motivationResponsesRefs,
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
+            bool savedWordsRefs,
             bool vocabularyImportsRefs,
             bool learningSessionsRefs,
             bool answerAttemptsRefs,
@@ -27658,6 +28225,7 @@ class $$LocalOwnersTableTableManager
                 motivationResponsesRefs = false,
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
+                savedWordsRefs = false,
                 vocabularyImportsRefs = false,
                 learningSessionsRefs = false,
                 answerAttemptsRefs = false,
@@ -27693,6 +28261,7 @@ class $$LocalOwnersTableTableManager
                     if (motivationResponsesRefs) db.motivationResponses,
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
+                    if (savedWordsRefs) db.savedWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
                     if (learningSessionsRefs) db.learningSessions,
                     if (answerAttemptsRefs) db.answerAttempts,
@@ -27861,6 +28430,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).vocabularyWordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (savedWordsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          SavedWord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._savedWordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).savedWordsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -28357,6 +28947,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool motivationResponsesRefs,
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
+        bool savedWordsRefs,
         bool vocabularyImportsRefs,
         bool learningSessionsRefs,
         bool answerAttemptsRefs,
@@ -33186,6 +33777,24 @@ final class $$VocabularyWordsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$SavedWordsTable, List<SavedWord>>
+  _savedWordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.savedWords,
+    aliasName: 'vocabulary_words__id__saved_words__word_id',
+  );
+
+  $$SavedWordsTableProcessedTableManager get savedWordsRefs {
+    final manager = $$SavedWordsTableTableManager(
+      $_db,
+      $_db.savedWords,
+    ).filter((f) => f.wordId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_savedWordsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$AnswerAttemptsTable, List<AnswerAttempt>>
   _answerAttemptsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.answerAttempts,
@@ -33356,6 +33965,31 @@ class $$VocabularyWordsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> savedWordsRefs(
+    Expression<bool> Function($$SavedWordsTableFilterComposer f) f,
+  ) {
+    final $$SavedWordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.savedWords,
+      getReferencedColumn: (t) => t.wordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedWordsTableFilterComposer(
+            $db: $db,
+            $table: $db.savedWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> answerAttemptsRefs(
@@ -33668,6 +34302,31 @@ class $$VocabularyWordsTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> savedWordsRefs<T extends Object>(
+    Expression<T> Function($$SavedWordsTableAnnotationComposer a) f,
+  ) {
+    final $$SavedWordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.savedWords,
+      getReferencedColumn: (t) => t.wordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedWordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.savedWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> answerAttemptsRefs<T extends Object>(
     Expression<T> Function($$AnswerAttemptsTableAnnotationComposer a) f,
   ) {
@@ -33735,6 +34394,7 @@ class $$VocabularyWordsTableTableManager
           PrefetchHooks Function({
             bool ownerId,
             bool categoryId,
+            bool savedWordsRefs,
             bool answerAttemptsRefs,
             bool srsStatesRefs,
           })
@@ -33848,12 +34508,14 @@ class $$VocabularyWordsTableTableManager
               ({
                 ownerId = false,
                 categoryId = false,
+                savedWordsRefs = false,
                 answerAttemptsRefs = false,
                 srsStatesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (savedWordsRefs) db.savedWords,
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (srsStatesRefs) db.srsStates,
                   ],
@@ -33908,6 +34570,27 @@ class $$VocabularyWordsTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (savedWordsRefs)
+                        await $_getPrefetchedData<
+                          VocabularyWord,
+                          $VocabularyWordsTable,
+                          SavedWord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VocabularyWordsTableReferences
+                              ._savedWordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VocabularyWordsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).savedWordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.wordId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (answerAttemptsRefs)
                         await $_getPrefetchedData<
                           VocabularyWord,
@@ -33973,9 +34656,460 @@ typedef $$VocabularyWordsTableProcessedTableManager =
       PrefetchHooks Function({
         bool ownerId,
         bool categoryId,
+        bool savedWordsRefs,
         bool answerAttemptsRefs,
         bool srsStatesRefs,
       })
+    >;
+typedef $$SavedWordsTableCreateCompanionBuilder =
+    SavedWordsCompanion Function({
+      required String ownerId,
+      required String wordId,
+      required bool isSaved,
+      required int localRevision,
+      required int firstSavedAtUtcMs,
+      required int updatedAtUtcMs,
+      required String lastMutationId,
+      Value<int> rowid,
+    });
+typedef $$SavedWordsTableUpdateCompanionBuilder =
+    SavedWordsCompanion Function({
+      Value<String> ownerId,
+      Value<String> wordId,
+      Value<bool> isSaved,
+      Value<int> localRevision,
+      Value<int> firstSavedAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<String> lastMutationId,
+      Value<int> rowid,
+    });
+
+final class $$SavedWordsTableReferences
+    extends BaseReferences<_$AppDatabase, $SavedWordsTable, SavedWord> {
+  $$SavedWordsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('saved_words__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VocabularyWordsTable _wordIdTable(_$AppDatabase db) => db
+      .vocabularyWords
+      .createAlias('saved_words__word_id__vocabulary_words__id');
+
+  $$VocabularyWordsTableProcessedTableManager get wordId {
+    final $_column = $_itemColumn<String>('word_id')!;
+
+    final manager = $$VocabularyWordsTableTableManager(
+      $_db,
+      $_db.vocabularyWords,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_wordIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SavedWordsTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedWordsTable> {
+  $$SavedWordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<bool> get isSaved => $composableBuilder(
+    column: $table.isSaved,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firstSavedAtUtcMs => $composableBuilder(
+    column: $table.firstSavedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableFilterComposer get wordId {
+    final $$VocabularyWordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableFilterComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedWordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedWordsTable> {
+  $$SavedWordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<bool> get isSaved => $composableBuilder(
+    column: $table.isSaved,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firstSavedAtUtcMs => $composableBuilder(
+    column: $table.firstSavedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableOrderingComposer get wordId {
+    final $$VocabularyWordsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableOrderingComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedWordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedWordsTable> {
+  $$SavedWordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<bool> get isSaved =>
+      $composableBuilder(column: $table.isSaved, builder: (column) => column);
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get firstSavedAtUtcMs => $composableBuilder(
+    column: $table.firstSavedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastMutationId => $composableBuilder(
+    column: $table.lastMutationId,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableAnnotationComposer get wordId {
+    final $$VocabularyWordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedWordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SavedWordsTable,
+          SavedWord,
+          $$SavedWordsTableFilterComposer,
+          $$SavedWordsTableOrderingComposer,
+          $$SavedWordsTableAnnotationComposer,
+          $$SavedWordsTableCreateCompanionBuilder,
+          $$SavedWordsTableUpdateCompanionBuilder,
+          (SavedWord, $$SavedWordsTableReferences),
+          SavedWord,
+          PrefetchHooks Function({bool ownerId, bool wordId})
+        > {
+  $$SavedWordsTableTableManager(_$AppDatabase db, $SavedWordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SavedWordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedWordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedWordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> wordId = const Value.absent(),
+                Value<bool> isSaved = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> firstSavedAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<String> lastMutationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SavedWordsCompanion(
+                ownerId: ownerId,
+                wordId: wordId,
+                isSaved: isSaved,
+                localRevision: localRevision,
+                firstSavedAtUtcMs: firstSavedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                lastMutationId: lastMutationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String wordId,
+                required bool isSaved,
+                required int localRevision,
+                required int firstSavedAtUtcMs,
+                required int updatedAtUtcMs,
+                required String lastMutationId,
+                Value<int> rowid = const Value.absent(),
+              }) => SavedWordsCompanion.insert(
+                ownerId: ownerId,
+                wordId: wordId,
+                isSaved: isSaved,
+                localRevision: localRevision,
+                firstSavedAtUtcMs: firstSavedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                lastMutationId: lastMutationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SavedWordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, wordId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$SavedWordsTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$SavedWordsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (wordId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.wordId,
+                                referencedTable: $$SavedWordsTableReferences
+                                    ._wordIdTable(db),
+                                referencedColumn: $$SavedWordsTableReferences
+                                    ._wordIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SavedWordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SavedWordsTable,
+      SavedWord,
+      $$SavedWordsTableFilterComposer,
+      $$SavedWordsTableOrderingComposer,
+      $$SavedWordsTableAnnotationComposer,
+      $$SavedWordsTableCreateCompanionBuilder,
+      $$SavedWordsTableUpdateCompanionBuilder,
+      (SavedWord, $$SavedWordsTableReferences),
+      SavedWord,
+      PrefetchHooks Function({bool ownerId, bool wordId})
     >;
 typedef $$VocabularyImportsTableCreateCompanionBuilder =
     VocabularyImportsCompanion Function({
@@ -47797,6 +48931,8 @@ class $AppDatabaseManager {
       $$VocabularyCategoriesTableTableManager(_db, _db.vocabularyCategories);
   $$VocabularyWordsTableTableManager get vocabularyWords =>
       $$VocabularyWordsTableTableManager(_db, _db.vocabularyWords);
+  $$SavedWordsTableTableManager get savedWords =>
+      $$SavedWordsTableTableManager(_db, _db.savedWords);
   $$VocabularyImportsTableTableManager get vocabularyImports =>
       $$VocabularyImportsTableTableManager(_db, _db.vocabularyImports);
   $$VocabularyImportRowsTableTableManager get vocabularyImportRows =>

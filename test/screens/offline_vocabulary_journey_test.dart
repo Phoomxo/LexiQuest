@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,11 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_write_coordinator.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/saved_words_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_saved_words_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/import_vocabulary.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -24,7 +30,13 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/saved_words_screen.dart';
+import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+
+import '../support/saved_words_data_harness.dart' as saved_data;
 
 class _GuestSessionService implements GuestSessionService {
   @override
@@ -132,6 +144,22 @@ void main() {
       guestSessionService: _GuestSessionService(),
       database: database,
       localOwners: owners,
+      progress: ProgressUseCases(
+        owners: owners,
+        queries: DriftProgressQueries(database),
+        nowUtc: () => nowUtc,
+      ),
+      savedWords: SavedWordsUseCases(
+        repository: DriftSavedWordsRepository(
+          database,
+          ownerWrites: DriftOwnerWriteCoordinator(
+            database,
+            nowUtc: () => nowUtc,
+          ),
+        ),
+        generateId: () => 'saved-${++idCounter}',
+        nowUtc: () => nowUtc,
+      ),
       vocabulary: vocabulary,
       vocabularyImporter: ImportVocabulary(
         owners: owners,
@@ -151,6 +179,7 @@ void main() {
   });
 
   Future<void> pumpCategories(WidgetTester tester) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     return tester.pumpWidget(
       AppDependenciesScope(
         dependencies: dependencies,
@@ -441,7 +470,16 @@ void main() {
       await pumpUntilFound(tester, find.byKey(const ValueKey('add-word')));
       await finishRouteTransition(tester);
 
-      await tester.tap(find.byKey(const ValueKey('add-word')).last);
+      final enabledAdd = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is FloatingActionButton &&
+                widget.key == const ValueKey('add-word') &&
+                widget.onPressed != null,
+          )
+          .hitTestable();
+      await pumpUntilFound(tester, enabledAdd);
+      await tester.tap(enabledAdd);
       await pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
       await finishRouteTransition(tester);
       await tester.enterText(
@@ -465,7 +503,24 @@ void main() {
       expect(find.textContaining('สถานี'), findsOneWidget);
       expect(find.byTooltip('ลบคำศัพท์ station'), findsOneWidget);
 
+      final word = await tester.runAsync(
+        () => database.select(database.vocabularyWords).getSingle(),
+      );
+      await tester.tap(find.byKey(ValueKey('vocab-save:${word!.id}')));
+      await tester.pump();
+      final saved = await tester.runAsync(
+        () => dependencies.savedWords!.watchOwner(word.ownerId).first,
+      );
+      expect(saved!.savedItems.single.wordId, word.id);
+      expect(
+        await tester.runAsync(
+          () => database.select(database.learningSessions).get(),
+        ),
+        isEmpty,
+      );
+
       await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
       await pumpCategories(tester);
       await pumpUntilFound(tester, find.text('Travel'));
 
@@ -473,10 +528,212 @@ void main() {
       await tester.tap(find.text('Travel'));
       await pumpUntilFound(tester, find.text('station'));
 
+      await tester.tap(find.byKey(const ValueKey('saved-words')));
+      await pumpUntilFound(tester, find.byType(SavedWordsScreen));
+      await finishRouteTransition(tester);
+      await pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.byKey(const ValueKey('saved-practice')));
+      await pumpUntilFound(tester, find.byType(QuizScreen));
+      final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(quiz.selectionMode, QuizWordSelectionMode.sourcePractice);
+      expect(quiz.wordIds, [word.id]);
+      expect(quiz.expectedOwnerId, word.ownerId);
+      await pumpUntilFound(tester, find.text('เลือกคำแปลที่ตรงกับคำศัพท์'));
+      final option = find.widgetWithText(FilledButton, 'สถานี');
+      await tester.ensureVisible(option);
+      await tester.tap(option);
+      await pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      await tester.ensureVisible(find.text('ดูผลการเรียน'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ดูผลการเรียน').hitTestable());
+      await pumpUntilFound(tester, find.byType(ScoreScreen));
+      final sessions = await tester.runAsync(
+        () => database.select(database.learningSessions).get(),
+      );
+      expect(sessions!.single.activityType, 'sourcePractice');
+      expect(sessions.single.state, 'completed');
+      expect(
+        (await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ))!,
+        hasLength(1),
+      );
+
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
       await tester.runAsync(database.close);
       await tester.pump(const Duration(milliseconds: 1));
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'offline saved UI survives actual database restart and finishes canonical practice',
+    (tester) async {
+      final tempRoot = (await tester.runAsync(
+        Directory.systemTemp.resolveSymbolicLinks,
+      ))!;
+      final directory = (await tester.runAsync(
+        () => Directory(tempRoot).createTemp('lexiquest-saved-ui-'),
+      ))!;
+      final file = File(
+        '${directory.path}${Platform.pathSeparator}saved.sqlite',
+      );
+      var saved = (await tester.runAsync(
+        () => saved_data.SavedWordsDataHarness.open(file: file),
+      ))!;
+      var ids = 0;
+      AppDependencies compose(saved_data.SavedWordsDataHarness h) {
+        final owners = h.storage.owners;
+        return AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _GuestSessionService(),
+          database: h.database,
+          localOwners: owners,
+          savedWords: h.useCases,
+          progress: ProgressUseCases(
+            owners: owners,
+            queries: DriftProgressQueries(h.database),
+            nowUtc: () => h.now,
+          ),
+          vocabulary: VocabularyUseCases(
+            owners: owners,
+            vocabulary: DriftVocabularyRepository(h.database),
+            generateId: () => 'synthetic-restart-word-${++ids}',
+            nowUtc: () => h.now,
+          ),
+          learning: LearningUseCases(
+            owners: owners,
+            repository: DriftLearningRepository(
+              h.database,
+              ownerWrites: h.storage.ownerWrites,
+            ),
+            generateId: () => 'synthetic-restart-learning-${++ids}',
+            nowUtc: () => h.now,
+            buildInfo: const AppBuildInfo(
+              version: 'synthetic',
+              buildId: 'saved-restart-ui',
+            ),
+          ),
+        );
+      }
+
+      Widget app(AppDependencies deps, Widget home) => AppDependenciesScope(
+        dependencies: deps,
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: home,
+        ),
+      );
+      try {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        final before = (await tester.runAsync(saved.storage.snapshot))!
+          ..remove('saved_words');
+        final first = compose(saved);
+        await tester.pumpWidget(
+          app(
+            first,
+            const VocabListScreen(
+              categoryId: saved_data.configuredCategoryId,
+              categoryName: 'Synthetic category',
+            ),
+          ),
+        );
+        await pumpUntilFound(tester, find.text('station'));
+        await tester.tap(
+          find.byKey(
+            ValueKey('vocab-save:${saved_data.configuredWordIds.first}'),
+          ),
+        );
+        final committed = await tester.runAsync(
+          () => saved.useCases
+              .watchOwner(saved_data.configuredOwnerId)
+              .firstWhere((value) => value.savedItems.isNotEmpty)
+              .timeout(const Duration(seconds: 3)),
+        );
+        expect(
+          committed!.savedItems.single.wordId,
+          saved_data.configuredWordIds.first,
+        );
+        final afterSave = (await tester.runAsync(saved.storage.snapshot))!
+          ..remove('saved_words');
+        expect(afterSave, before);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(saved.close);
+
+        saved = (await tester.runAsync(
+          () => saved_data.SavedWordsDataHarness.open(file: file, seed: false),
+        ))!;
+        final restarted = compose(saved);
+        await tester.pumpWidget(
+          app(
+            restarted,
+            const SavedWordsScreen(
+              expectedOwnerId: saved_data.configuredOwnerId,
+            ),
+          ),
+        );
+        await pumpUntilFound(tester, find.text('station'));
+        expect(
+          (await tester.runAsync(saved.snapshot))!.savedItems,
+          hasLength(1),
+        );
+        expect(
+          await tester.runAsync(() => saved.storage.count('learning_sessions')),
+          0,
+        );
+        await tester.tap(find.byKey(const ValueKey('saved-practice')));
+        await pumpUntilFound(tester, find.byType(QuizScreen));
+        final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
+        expect(quiz.wordIds, [saved_data.configuredWordIds.first]);
+        expect(quiz.selectionMode, QuizWordSelectionMode.sourcePractice);
+        expect(quiz.expectedOwnerId, saved_data.configuredOwnerId);
+        expect(quiz.learning, same(restarted.learning));
+        await pumpUntilFound(tester, find.text('เลือกคำแปลที่ตรงกับคำศัพท์'));
+        final option = find.widgetWithText(FilledButton, 'สถานี');
+        await tester.ensureVisible(option);
+        await tester.tap(option);
+        await pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+        await tester.ensureVisible(find.text('ดูผลการเรียน'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ดูผลการเรียน').hitTestable());
+        await pumpUntilFound(tester, find.byType(ScoreScreen));
+        final sessions = (await tester.runAsync(
+          () => saved.database.select(saved.database.learningSessions).get(),
+        ))!;
+        expect(sessions.single.activityType, 'sourcePractice');
+        expect(sessions.single.ownerId, saved_data.configuredOwnerId);
+        expect(sessions.single.state, 'completed');
+        expect(
+          await tester.runAsync(() => saved.storage.count('answer_attempts')),
+          1,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(saved.close);
+        await tester.runAsync(() async {
+          final resolved = await directory.resolveSymbolicLinks();
+          expect(
+            resolved,
+            startsWith('$tempRoot${Platform.pathSeparator}lexiquest-saved-ui-'),
+          );
+          expect(resolved, directory.absolute.path);
+          await Directory(resolved).delete(recursive: true);
+        });
+      }
     },
     timeout: const Timeout(Duration(seconds: 30)),
   );

@@ -5,15 +5,19 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
   test(
-    'new databases use current schema version eighteen with product tables',
+    'new databases use current schema version nineteen with product tables',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
 
-      expect(database.schemaVersion, 18);
-      expect(database.allTables, hasLength(35));
+      expect(database.schemaVersion, 19);
+      expect(database.allTables, hasLength(36));
       expect(
         await database.customSelect('SELECT * FROM assessment_runs').get(),
+        isEmpty,
+      );
+      expect(
+        await database.customSelect('SELECT * FROM saved_words').get(),
         isEmpty,
       );
 
@@ -93,7 +97,7 @@ void main() {
   );
 
   test(
-    'schema one upgrades to complete current schema eighteen without row loss',
+    'schema one upgrades to complete current schema nineteen without row loss',
     () async {
       final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
       final database = AppDatabase(executor);
@@ -132,7 +136,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 18);
+      expect(version, 19);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -210,7 +214,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        18,
+        19,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -237,7 +241,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        18,
+        19,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

@@ -20,6 +20,7 @@ import '../../support/experiment_assignment_fixture.dart';
 import '../../support/measurement_opportunity_fixture.dart';
 import '../../support/motivation_measurement_fixture.dart';
 import '../../support/research_participation_fixture.dart';
+import '../../support/saved_word_owner_fixture.dart';
 
 void main() {
   late AppDatabase database;
@@ -42,11 +43,16 @@ void main() {
         'motivation_responses',
         'measurement_opportunities',
         'events_v2',
+        'saved_words',
       ]) {
         retained[table] =
             (await database
                     .customSelect(
-                      'SELECT * FROM $table WHERE owner_id = ? ORDER BY ${table == 'events_v2' ? 'event_id' : 'id'}',
+                      'SELECT * FROM $table WHERE owner_id = ? ORDER BY ${table == 'events_v2'
+                          ? 'event_id'
+                          : table == 'saved_words'
+                          ? 'word_id'
+                          : 'id'}',
                       variables: const [Variable<String>('owner-b')],
                     )
                     .get())
@@ -106,6 +112,7 @@ void main() {
         'motivation_responses',
         'measurement_opportunities',
         'events_v2',
+        'saved_words',
         'outbox_operations',
       ]) {
         expect(
@@ -117,7 +124,11 @@ void main() {
       for (final entry in retained.entries) {
         final after = await database
             .customSelect(
-              'SELECT * FROM ${entry.key} WHERE owner_id = ? ORDER BY ${entry.key == 'events_v2' ? 'event_id' : 'id'}',
+              'SELECT * FROM ${entry.key} WHERE owner_id = ? ORDER BY ${entry.key == 'events_v2'
+                  ? 'event_id'
+                  : entry.key == 'saved_words'
+                  ? 'word_id'
+                  : 'id'}',
               variables: const [Variable<String>('owner-b')],
             )
             .get();
@@ -571,5 +582,18 @@ Future<void> _seed(AppDatabase database) async {
     "'event-research-a', 'upsert', $now), "
     "('outbox-research-b', 'owner-b', 'event_v2', "
     "'event-research-b', 'upsert', $now)",
+  );
+  await insertOwnerSavedWord(
+    database,
+    'owner-a',
+    wordId: 'word-a',
+    categoryId: 'category-a',
+    isSaved: false,
+  );
+  await insertOwnerSavedWord(
+    database,
+    'owner-b',
+    wordId: 'saved-word-b',
+    categoryId: 'category-b',
   );
 }

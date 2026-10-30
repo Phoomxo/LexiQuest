@@ -77,11 +77,13 @@ import '../features/sync/data/drift_sync_store.dart';
 import '../features/sync/data/firestore_sync_gateway.dart';
 import '../features/sync/domain/sync_gateway.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/saved_words_use_cases.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/file_selector_vocabulary_import_file_picker.dart';
 import '../features/vocabulary/data/file_selector_source_practice_file_picker.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
+import '../features/vocabulary/data/drift_saved_words_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -545,6 +547,11 @@ final class AppBootstrap {
       database,
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final savedWords = SavedWordsUseCases(
+      repository: DriftSavedWordsRepository(database, ownerWrites: ownerWrites),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
     final consentRepository = DriftResearchConsentRepository(database);
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
@@ -779,6 +786,7 @@ final class AppBootstrap {
         rewards: rewards,
         exports: exports,
         vocabulary: vocabulary,
+        savedWords: savedWords,
         vocabularyImporter: vocabularyImporter,
         vocabularyImportFilePicker:
             FileSelectorVocabularyImportFilePicker().pick,

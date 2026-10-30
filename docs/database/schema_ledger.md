@@ -188,7 +188,7 @@ claimed.
 | v16 | Remaining-system integration | Immutable accepted meaning-quiz plan and durable presentation checkpoint; four columns on existing sessions. | Implemented locally; full Flutter 2728 passed |
 | v17 | Remaining-system integration | Durable presentation-change intent, capped ordinal/suppression and immutable Started presentation; four columns on existing opportunities. | Implemented locally at853d4c13; full Flutter3054 passed |
 | v18 | Remaining-system integration | One local Assessment run table with37 durable pins; canonical assessment-only sessions/answers remain in existing tables. | Implemented locally atfabc990f; full Flutter3266, analysis0 and normal debug APK pass |
-| v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Reserved2026-10-30 after genuine v18 capture; executable schema still18/35 |
+| v19 | Local Saved Words | One seven-column owner/word saved-state relation with CAS/latest receipt and retained unsaved tombstones; no learning, sync or research authority. | Storage implemented locally19/36 after reservation69f9f176;109 combined core checks pass; full feature attestation pending |
 | v20+ | Future work | Exact purpose, owner, and migration coverage must be recorded before implementation. | Unreserved |
 
 > **Rule:** Do not reuse v10, v11, v12, v13, v14, v15, v16, v17, v18 or v19. Reserve the next available version, starting at v20,
@@ -589,7 +589,7 @@ a pre-upgrade backup or a separately tested downgrade.
 ### v19 — Owner-scoped local Saved Words
 
 **Reserved:** 2026-10-30, root integration, branch `codex/remaining-system-readiness`.
-**Status:** RESERVED before migration code. Executable schema remains18/35 at reservation.
+**Status:** Storage implemented locally19/36 after reservation69f9f176. Executable schema was18/35 when reserved. Three new storage checks and109 combined storage/data/new-owner checks pass; UI and whole-feature attestation remain pending.
 **Baseline:** application `d995ffc2040ba2019a09542be4db549ad92094eb`, attestation
 `0461d695a950328ed4e90295d8b703ece204b1a8`; Flutter3820, analysis0, CLI23,
 offline backend390/one opt-in skip and compiled normal APK verified.
