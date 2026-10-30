@@ -502,51 +502,56 @@ void main() {
     'dependency replacement uses current progress and reads without writes',
     (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
-      addTearDown(db.close);
-      await _seedProgress(db);
-      final ownersA = _Owners('a');
-      final ownersB = _Owners('b');
-      AppDependencies dependencies(_Owners owners) => AppDependencies(
-        runtimeStatus: const AppRuntimeStatus(
-          localData: RuntimeAvailability.ready,
-          firebase: RuntimeAvailability.unavailable,
-          supabase: RuntimeAvailability.unavailable,
-          backends: RuntimeAvailability.unavailable,
-        ),
-        config: null,
-        guestSessionService: _NoGuest(),
-        progress: ProgressUseCases(
-          owners: owners,
-          queries: DriftProgressQueries(db),
-          nowUtc: () => DateTime.utc(2026, 10, 23),
-        ),
-      );
-      Widget app(AppDependencies deps) => AppDependenciesScope(
-        dependencies: deps,
-        child: const MaterialApp(home: MasteryDashboardScreen()),
-      );
-      final before = await _databaseSnapshot(db);
-      await tester.pumpWidget(app(dependencies(ownersA)));
-      await _waitFor(
-        tester,
-        () =>
-            ownersA.reads == 1 &&
-            find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
-      );
-      await _openWeakness(tester);
-      expect(ownersA.reads, 2);
-      await tester.pumpWidget(app(dependencies(ownersB)));
-      await _waitFor(tester, () => ownersB.reads >= 1);
-      await _popWeakness(tester);
-      await _waitFor(
-        tester,
-        () => find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
-      );
-      expect(ownersA.reads, 2);
-      expect(ownersB.reads, 2);
-      _expectMetric('คะแนนประสบการณ์', '1');
-      expect(await _databaseSnapshot(db), before);
-      expect(tester.takeException(), isNull);
+      try {
+        await _seedProgress(db);
+        final ownersA = _Owners('a');
+        final ownersB = _Owners('b');
+        AppDependencies dependencies(_Owners owners) => AppDependencies(
+          runtimeStatus: const AppRuntimeStatus(
+            localData: RuntimeAvailability.ready,
+            firebase: RuntimeAvailability.unavailable,
+            supabase: RuntimeAvailability.unavailable,
+            backends: RuntimeAvailability.unavailable,
+          ),
+          config: null,
+          guestSessionService: _NoGuest(),
+          progress: ProgressUseCases(
+            owners: owners,
+            queries: DriftProgressQueries(db),
+            nowUtc: () => DateTime.utc(2026, 10, 23),
+          ),
+        );
+        Widget app(AppDependencies deps) => AppDependenciesScope(
+          dependencies: deps,
+          child: const MaterialApp(home: MasteryDashboardScreen()),
+        );
+        final before = await _databaseSnapshot(db);
+        await tester.pumpWidget(app(dependencies(ownersA)));
+        await _waitFor(
+          tester,
+          () =>
+              ownersA.reads == 1 &&
+              find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
+        );
+        await _openWeakness(tester);
+        expect(ownersA.reads, 2);
+        await tester.pumpWidget(app(dependencies(ownersB)));
+        await _waitFor(tester, () => ownersB.reads >= 1);
+        await _popWeakness(tester);
+        await _waitFor(
+          tester,
+          () => find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
+        );
+        expect(ownersA.reads, 2);
+        expect(ownersB.reads, 2);
+        _expectMetric('คะแนนประสบการณ์', '1');
+        expect(await _databaseSnapshot(db), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(db.close);
+      }
     },
   );
 

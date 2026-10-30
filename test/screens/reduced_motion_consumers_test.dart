@@ -14,6 +14,7 @@ void main() {
   testWidgets('reduced-motion SRS reveals the answer in one frame', (
     tester,
   ) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(
       _app(
         reducedMotion: true,
@@ -25,13 +26,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await _previewReady(tester);
     await tester.tap(find.text('ดูคำแปล'));
     await tester.pump();
     expect(find.text('synthetic answer').hitTestable(), findsOneWidget);
   });
 
   testWidgets('normal SRS keeps its existing animated reveal', (tester) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(
       _app(
         reducedMotion: false,
@@ -43,7 +45,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await _previewReady(tester);
     await tester.tap(find.text('ดูคำแปล'));
     await tester.pump();
     expect(find.text('synthetic answer'), findsNothing);
@@ -136,4 +138,28 @@ final class _Voice implements VoiceProvider {
 
   @override
   Future<void> stop() async {}
+}
+
+Future<void> _previewReady(WidgetTester tester) async {
+  final card = find.byKey(const ValueKey('srs-card'));
+  final flip = find.byKey(const ValueKey('srs-flip'));
+  for (var i = 0; i < 100; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+    if (card.evaluate().isNotEmpty &&
+        flip.evaluate().isNotEmpty &&
+        tester.widget<TextButton>(flip).onPressed != null) {
+      final route = ModalRoute.of(tester.element(card));
+      if (route?.isCurrent == true &&
+          (route?.animation?.status == AnimationStatus.completed ||
+              route?.animation == null)) {
+        await tester.ensureVisible(flip);
+        await tester.pump();
+        return;
+      }
+    }
+  }
+  fail('The actual SRS preview card did not become ready');
 }

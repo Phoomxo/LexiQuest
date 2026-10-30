@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +8,8 @@ import 'package:vocab_learning_app/features/progress/domain/progress_models.dart
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
+
+import '../support/srs_review_harness.dart';
 
 void main() {
   setUpAll(() async {
@@ -21,11 +25,13 @@ void main() {
     WidgetTester tester,
     Widget screen, {
     double scale = 1.8,
+    StreamController<String?>? owners,
   }) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(useMaterial3: true, fontFamily: 'NotoSansThai'),
@@ -38,6 +44,7 @@ void main() {
         home: screen,
       ),
     );
+    owners?.add(configuredOwnerId);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   }
@@ -45,7 +52,16 @@ void main() {
   testWidgets('learning hub fits compact screens with large Thai text', (
     tester,
   ) async {
-    await render(tester, ChooseModeScreen(loader: () async => _progress));
+    final (h, owners) = await _ownedLayout(tester);
+    await render(
+      tester,
+      ChooseModeScreen(
+        loader: () async => _progress,
+        learning: h.learning,
+        ownerChanges: owners.stream,
+      ),
+      owners: owners,
+    );
     expect(find.text('ทบทวน 3 คำ').hitTestable(), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
@@ -58,7 +74,16 @@ void main() {
   testWidgets('weakness actions fit compact screens with large Thai text', (
     tester,
   ) async {
-    await render(tester, WeaknessClinicScreen(loader: () async => _progress));
+    final (h, owners) = await _ownedLayout(tester);
+    await render(
+      tester,
+      WeaknessClinicScreen(
+        loader: () async => _progress,
+        learning: h.learning,
+        ownerChanges: owners.stream,
+      ),
+      owners: owners,
+    );
     expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
@@ -111,10 +136,16 @@ void main() {
     expect(find.text('ตอบผิด'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('ฝึกคำที่ผิด (1)'), 150);
     expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
+    final (h, owners) = await _ownedLayout(tester);
     await render(
       tester,
-      WeaknessClinicScreen(loader: () async => _progress),
+      WeaknessClinicScreen(
+        loader: () async => _progress,
+        learning: h.learning,
+        ownerChanges: owners.stream,
+      ),
       scale: 2,
+      owners: owners,
     );
     expect(find.textContaining('ตอบผิด 2/3'), findsOneWidget);
     expect(find.text('ฝึกคำที่ผิด (1)').hitTestable(), findsOneWidget);
@@ -155,3 +186,17 @@ const _progress = ProgressSnapshot(
     ),
   ],
 );
+
+Future<(SrsReviewHarness, StreamController<String?>)> _ownedLayout(
+  WidgetTester tester,
+) async {
+  final h = (await tester.runAsync(() => SrsReviewHarness.open(wordCount: 3)))!;
+  final owners = StreamController<String?>.broadcast(sync: true);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.runAsync(owners.close);
+    await tester.runAsync(h.close);
+  });
+  return (h, owners);
+}
