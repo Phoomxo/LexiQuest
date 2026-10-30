@@ -9,6 +9,11 @@ abstract final class LearningEvidenceContract {
   static const int maxProviderProvenanceLength = 120;
   static const int maxResponseTimeMs = 2147483647;
   static const int maxAttemptNumber = 1000000;
+  static const Set<String> nativeProjectionPromptModes = {
+    'dictation',
+    'clozeTyped',
+    'clozeChoice',
+  };
 
   // Frozen archived v13 sentinel is reused by the current-lineage v11 migration.
   static const String frozenV13LegacyEvidenceContextJson =
@@ -76,8 +81,8 @@ abstract final class LearningEvidenceContract {
     }
   }
 
-  /// Applies the approved projection decision only to the introduced native
-  /// declaration. Other admitted ordinary evidence keeps compatibility behavior.
+  /// Applies the approved projection decision only to introduced native
+  /// declarations. Other admitted ordinary evidence keeps compatibility behavior.
   static bool allowsOrdinaryProjection({
     required String promptMode,
     required String evidenceClass,
@@ -90,7 +95,7 @@ abstract final class LearningEvidenceContract {
     )) {
       return false;
     }
-    if (promptMode != 'dictation') {
+    if (!nativeProjectionPromptModes.contains(promptMode)) {
       return true;
     }
     final context = EvidenceContext.fromJson(

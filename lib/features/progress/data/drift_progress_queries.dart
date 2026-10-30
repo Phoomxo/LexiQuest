@@ -42,7 +42,9 @@ final class DriftProgressQueries {
             evidenceContextJson: row.evidenceContextJson,
           )) {
         excludedSources.add(row.id);
-        if (row.promptMode == 'dictation') {
+        if (LearningEvidenceContract.nativeProjectionPromptModes.contains(
+          row.promptMode,
+        )) {
           nativeXpIneligibleSessions.add(row.sessionId);
         }
       } else {

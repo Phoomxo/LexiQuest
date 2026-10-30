@@ -6,9 +6,15 @@ EvidenceContext captureCurrentActivityEvidence({
   String? contentRevision,
   int hintLevel = 0,
 }) {
-  if (promptMode == 'dictation' &&
+  if (LearningEvidenceContract.nativeProjectionPromptModes.contains(
+        promptMode,
+      ) &&
       (contentRevision == null || contentRevision.trim().isEmpty)) {
-    throw ArgumentError('Dictation requires its actual content revision');
+    throw ArgumentError(
+      promptMode == 'dictation'
+          ? 'Dictation requires its actual content revision'
+          : 'Cloze requires its actual content revision',
+    );
   }
   final declaration = switch (promptMode) {
     'dictation' => (
@@ -17,6 +23,8 @@ EvidenceContext captureCurrentActivityEvidence({
           : EvidenceClass.guidedPractice,
       'dictation-spelling',
     ),
+    'clozeTyped' => (EvidenceClass.guidedPractice, 'cloze-context'),
+    'clozeChoice' => (EvidenceClass.recognition, 'cloze-context'),
     'meaningChoice' => (
       hintLevel == 0 ? EvidenceClass.recognition : EvidenceClass.guidedPractice,
       'meaning-recall',
@@ -40,7 +48,11 @@ EvidenceContext captureCurrentActivityEvidence({
   return EvidenceContext.forNewEvidence(
     evidenceClass: declaration.$1,
     skillId: declaration.$2,
-    hintLevel: hintLevel,
+    hintLevel: switch (promptMode) {
+      'clozeTyped' => 1,
+      'clozeChoice' => 0,
+      _ => hintLevel,
+    },
     contentRevision: contentRevision,
     rolloutMode: EvidencePolicyRolloutMode.legacy,
   );

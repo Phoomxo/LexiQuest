@@ -85,7 +85,9 @@ final class DriftRewardProjectionRebuilder {
             evidenceContextJson: row.evidenceContextJson,
           )) {
         excludedSources.add(row.id);
-        if (row.promptMode == 'dictation') {
+        if (LearningEvidenceContract.nativeProjectionPromptModes.contains(
+          row.promptMode,
+        )) {
           nativeIneligibleSessions.add(row.sessionId);
         }
       } else if (!LearningEvidenceContract.allowsOrdinaryProjection(

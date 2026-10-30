@@ -18,6 +18,14 @@ provider has been introduced; parser/projection/core and UI remain queued.
 Evidence: cloze-native-lifecycle-api-red.log,
 cloze-native-lifecycle-parity-green.log, cloze-native-lifecycle-analysis.log.
 
+The pure content boundary now passes102 checks and analysis0. Actual backend
+metadata compatibility failures preceded the opaque-version and234-character
+identity fixes; over-limit fixtures now assert the finite256 boundary. The
+projection unit reproduced20 real RED cases, then its28 cases pass alongside
+Dictation controls. These components add no Cloze route or provider lifecycle.
+The separate category-eligibility regression is intentionally RED pending the
+core writer/read-query integration; its valid legacy control passes.
+
 ## Outcome and boundaries
 
 Add one quiz-gated ChooseMode entry: owned category → one accepted generated
@@ -46,7 +54,9 @@ one case-insensitive whole-token occurrence and another lexical context token.
 ASCII-only folding preserves offsets. Conservative explicit delimiters reject
 subwords beside Latin accents, Greek, digits or lexical connectors, while
 allowing quoted targets. Bound the original sentence to 1024 runes/2048 UTF-8
-bytes and modelVersion to 120 runes/256 bytes. Reject empty data, markup,
+bytes and modelVersion to 256 runes/256 bytes, covering the backend's valid
+234-character repo/revision identity. Model metadata permits opaque ID punctuation;
+its compact provenance retains the existing 120-rune limit. Reject empty data, sentence markup,
 controls/bidi/invisible formatting and invalid surrogate scalars with a fixed
 safe FormatException. Trim outer spaces; preserve inner text and exact gap case.
 Preserve actual CEFR, including unknown, and cached status. None of these checks
