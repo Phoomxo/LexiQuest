@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../domain/learning_models.dart';
 import '../domain/learning_evidence_contract.dart';
+import '../domain/evidence_eligibility_policy.dart';
 import '../domain/srs_policy.dart';
 
 final class DriftLearningProjectionRebuilder {
@@ -33,16 +34,8 @@ final class DriftLearningProjectionRebuilder {
       throw StateError('cannot rebuild SRS without answer evidence');
     }
     final attempts = await _ordinaryAttempts(ownerId, stored);
-    if (attempts.isEmpty) return null;
-
-    SrsSnapshot? state;
     for (final attempt in attempts) {
-      state = srsPolicy.review(
-        previous: state,
-        isCorrect: attempt.isCorrect,
-        nowUtc: _utc(attempt.occurredAtUtcMs),
-      );
-      if (attempt.isCorrect) {
+      if (attempt.isCorrect && _eligible(attempt, LearningProjection.xp)) {
         await database
             .into(database.pointsLedgerEntries)
             .insert(
@@ -58,6 +51,19 @@ final class DriftLearningProjectionRebuilder {
               mode: InsertMode.insertOrIgnore,
             );
       }
+    }
+
+    final mastery = attempts
+        .where((attempt) => _eligible(attempt, LearningProjection.masterySrs))
+        .toList(growable: false);
+    if (mastery.isEmpty) return null;
+    SrsSnapshot? state;
+    for (final attempt in mastery) {
+      state = srsPolicy.review(
+        previous: state,
+        isCorrect: attempt.isCorrect,
+        nowUtc: _utc(attempt.occurredAtUtcMs),
+      );
     }
 
     final next = state!;
@@ -106,7 +112,11 @@ final class DriftLearningProjectionRebuilder {
                   row.ownerId.equals(ownerId) & row.sessionId.equals(sessionId),
             ))
             .get();
-    final attempts = await _ordinaryAttempts(ownerId, stored);
+    final attempts = (await _ordinaryAttempts(ownerId, stored))
+        .where(
+          (attempt) => _eligible(attempt, LearningProjection.sessionOutcome),
+        )
+        .toList(growable: false);
     final correct = attempts.where((attempt) => attempt.isCorrect).length;
     final wrong = attempts.length - correct;
     final score = attempts.isEmpty
@@ -135,7 +145,9 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    final attempts = await _ordinaryAttempts(ownerId, stored);
+    final attempts = (await _ordinaryAttempts(ownerId, stored))
+        .where((attempt) => _eligible(attempt, LearningProjection.achievement))
+        .toList(growable: false);
     if (attempts.isEmpty) return;
     await _insertAchievement(
       ownerId: ownerId,
@@ -160,6 +172,16 @@ final class DriftLearningProjectionRebuilder {
       );
     }
   }
+
+  static bool _eligible(
+    db.AnswerAttempt attempt,
+    LearningProjection projection,
+  ) => LearningEvidenceContract.allowsOrdinaryProjection(
+    promptMode: attempt.promptMode,
+    evidenceClass: attempt.evidenceClass,
+    evidenceContextJson: attempt.evidenceContextJson,
+    projection: projection,
+  );
 
   Future<List<db.AnswerAttempt>> _ordinaryAttempts(
     String ownerId,

@@ -3,12 +3,443 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account_deletion/domain/account_deletion_contracts.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
+import '../../support/dictation_session_harness.dart';
+
 void main() {
+  group('Dictation capability boundaries', () {
+    late DictationSessionHarness h;
+    setUp(() async => h = await DictationSessionHarness.open());
+    tearDown(() => h.close());
+
+    test(
+      'a bare session cannot be finished without its exact saved response',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session);
+        final intent = h.learning.prepareDictationFinish(session, command);
+        await expectLater(
+          h.learning.finishDictation(intent, stillCurrent: () => true),
+          throwsStateError,
+        );
+        final stored = await h.database
+            .select(h.database.learningSessions)
+            .getSingle();
+        expect(stored.state, 'active');
+        expect(stored.endedAtUtcMs, isNull);
+        expect(
+          await h.database.select(h.database.achievementUnlocks).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test('target edits before start create no session', () async {
+      final session = (await h.learning.prepareDictation(
+        categoryId: configuredCategoryId,
+        stillCurrent: () => true,
+      ))!;
+      await h.database.customStatement(
+        'UPDATE vocabulary_words SET spelling = ?,local_revision = local_revision + 1 WHERE id = ?',
+        ['changed', session.word.id],
+      );
+      await expectLater(
+        h.learning.startDictation(session, stillCurrent: () => true),
+        throwsStateError,
+      );
+      expect(
+        await h.database.select(h.database.learningSessions).get(),
+        isEmpty,
+      );
+    });
+
+    for (final mutation in ['revision', 'spelling', 'delete']) {
+      test(
+        '$mutation after start rejects save without any attempt/outbox',
+        () async {
+          final session = await h.ready();
+          final command = h.answer(session);
+          final sql = switch (mutation) {
+            'revision' => 'local_revision = local_revision + 1',
+            'spelling' => "spelling = 'changed-with-same-revision'",
+            _ => 'is_deleted = 1',
+          };
+          await h.database.customStatement(
+            'UPDATE vocabulary_words SET $sql WHERE id = ?',
+            [session.word.id],
+          );
+          await expectLater(
+            h.learning.commitDictationAnswer(
+              session,
+              command,
+              stillCurrent: () => true,
+            ),
+            throwsStateError,
+          );
+          expect(
+            await h.database.select(h.database.answerAttempts).get(),
+            isEmpty,
+          );
+          expect(
+            await h.database.select(h.database.outboxOperations).get(),
+            isEmpty,
+          );
+        },
+      );
+    }
+
+    test(
+      'owner change and epoch ABA invalidation cannot save old owner data',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session);
+        await h.storage.switchOwner(configuredOtherOwnerId);
+        await expectLater(
+          h.learning.commitDictationAnswer(
+            session,
+            command,
+            stillCurrent: () => true,
+          ),
+          throwsA(
+            isA<AccountDeletionException>().having(
+              (error) => error.code,
+              'code',
+              AccountDeletionFailureCode.ownerChanged,
+            ),
+          ),
+        );
+        await h.storage.switchOwner(configuredOwnerId);
+        h.current = false;
+        await expectLater(
+          h.learning.commitDictationAnswer(
+            session,
+            command,
+            stillCurrent: () => h.current,
+          ),
+          throwsStateError,
+        );
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          isEmpty,
+        );
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test('actual deletion fence denies original save', () async {
+      final session = await h.ready();
+      final command = h.answer(session);
+      await h.storage.ownerWrites.beginDeletion(
+        ownerId: configuredOwnerId,
+        firebaseUid: 'synthetic-configured-uid-a',
+        idempotencyKey: 'synthetic-dictation-deletion',
+      );
+      await expectLater(
+        h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => true,
+        ),
+        throwsA(
+          isA<AccountDeletionException>().having(
+            (error) => error.code,
+            'code',
+            AccountDeletionFailureCode.unavailable,
+          ),
+        ),
+      );
+      expect(await h.database.select(h.database.answerAttempts).get(), isEmpty);
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+    });
+
+    test(
+      'a restarted repository cannot adopt the original bare session',
+      () async {
+        final session = await h.ready();
+        final restarted = DriftLearningRepository(
+          h.database,
+          ownerWrites: h.storage.ownerWrites,
+        );
+        final command = h.answer(session);
+        await expectLater(
+          restarted.startDictation(session, stillCurrent: () => true),
+          throwsStateError,
+        );
+        await expectLater(
+          restarted.commitDictationAnswer(
+            session,
+            command,
+            stillCurrent: () => true,
+          ),
+          throwsStateError,
+        );
+        await expectLater(
+          restarted.finishDictation(
+            h.learning.prepareDictationFinish(session, command),
+            stillCurrent: () => true,
+          ),
+          throwsStateError,
+        );
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    for (final stage in ['learning_sessions', 'answer_attempts']) {
+      test(
+        'final target reread rolls back $stage after actual SQL write',
+        () async {
+          final session = (await h.learning.prepareDictation(
+            categoryId: configuredCategoryId,
+            stillCurrent: () => true,
+          ))!;
+          if (stage == 'answer_attempts') {
+            await h.learning.startDictation(session, stillCurrent: () => true);
+          }
+          final command = h.answer(session);
+          final interference = DictationWriteInterference(stage, (
+            executor,
+          ) async {
+            await executor.runCustom(
+              'UPDATE vocabulary_words SET local_revision = local_revision + 1 WHERE id = ?',
+              [session.word.id],
+            );
+          });
+          await expectLater(
+            h.database.runWithInterceptor(
+              () => stage == 'learning_sessions'
+                  ? h.learning.startDictation(session, stillCurrent: () => true)
+                  : h.learning.commitDictationAnswer(
+                      session,
+                      command,
+                      stillCurrent: () => true,
+                    ),
+              interceptor: interference,
+            ),
+            throwsStateError,
+          );
+          expect(interference.fired, isTrue);
+          expect(
+            await h.database.select(h.database.answerAttempts).get(),
+            isEmpty,
+          );
+          expect(
+            await h.database.select(h.database.outboxOperations).get(),
+            isEmpty,
+          );
+          expect(
+            await h.database.select(h.database.learningSessions).get(),
+            stage == 'learning_sessions' ? isEmpty : hasLength(1),
+          );
+        },
+      );
+    }
+
+    test(
+      'final synchronous current guard rolls back an inserted answer',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session);
+        final interference = DictationWriteInterference('answer_attempts', (
+          _,
+        ) async {
+          h.current = false;
+        });
+        await expectLater(
+          h.database.runWithInterceptor(
+            () => h.learning.commitDictationAnswer(
+              session,
+              command,
+              stillCurrent: () => h.current,
+            ),
+            interceptor: interference,
+          ),
+          throwsStateError,
+        );
+        expect(interference.fired, isTrue);
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          isEmpty,
+        );
+        expect(await h.database.select(h.database.srsStates).get(), isEmpty);
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          isEmpty,
+        );
+        expect(h.notifications, 0);
+      },
+    );
+
+    test(
+      'final target check rolls back close and retries its original end time',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session, assisted: true);
+        await h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => true,
+        );
+        final close = h.learning.prepareDictationFinish(session, command);
+        final interference = DictationWriteInterference('learning_sessions', (
+          executor,
+        ) async {
+          await executor.runCustom(
+            'UPDATE vocabulary_words SET local_revision = local_revision + 1 WHERE id = ?',
+            [session.word.id],
+          );
+        }, onUpdate: true);
+        await expectLater(
+          h.database.runWithInterceptor(
+            () => h.learning.finishDictation(close, stillCurrent: () => true),
+            interceptor: interference,
+          ),
+          throwsStateError,
+        );
+        expect(interference.fired, isTrue);
+        final unfinished = await h.database
+            .select(h.database.learningSessions)
+            .getSingle();
+        expect(unfinished.state, 'active');
+        expect(unfinished.endedAtUtcMs, isNull);
+        h.now = h.now.add(const Duration(hours: 1));
+        final summary = await h.learning.finishDictation(
+          close,
+          stillCurrent: () => true,
+        );
+        expect(summary.correctCount, 1);
+        final completed = await h.database
+            .select(h.database.learningSessions)
+            .getSingle();
+        expect(completed.endedAtUtcMs, close.endedAtUtc.millisecondsSinceEpoch);
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          hasLength(1),
+        );
+        expect(
+          await h.database.select(h.database.achievementUnlocks).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'first immutable answer and close identities cannot be replaced',
+      () async {
+        final session = await h.ready();
+        final original = h.answer(session);
+        await h.learning.commitDictationAnswer(
+          session,
+          original,
+          stillCurrent: () => true,
+        );
+        final different = h.answer(session, correct: false);
+        await expectLater(
+          h.learning.commitDictationAnswer(
+            session,
+            different,
+            stillCurrent: () => true,
+          ),
+          throwsStateError,
+        );
+        final close = h.learning.prepareDictationFinish(session, original);
+        await h.learning.finishDictation(close, stillCurrent: () => true);
+        h.now = h.now.add(const Duration(seconds: 5));
+        await expectLater(
+          h.learning.finishDictation(
+            h.learning.prepareDictationFinish(session, original),
+            stillCurrent: () => true,
+          ),
+          throwsStateError,
+        );
+        final attempt = await h.database
+            .select(h.database.answerAttempts)
+            .getSingle();
+        expect(attempt.id, original.id);
+        expect(
+          attempt.occurredAtUtcMs,
+          original.occurredAtUtc.millisecondsSinceEpoch,
+        );
+        final stored = await h.database
+            .select(h.database.learningSessions)
+            .getSingle();
+        expect(stored.endedAtUtcMs, close.endedAtUtc.millisecondsSinceEpoch);
+      },
+    );
+
+    test(
+      'all three capability ACKs require their own committed transaction',
+      () async {
+        final prepared = (await h.learning.prepareDictation(
+          categoryId: configuredCategoryId,
+          stillCurrent: () => true,
+        ))!;
+        await expectLater(
+          h.database.transaction(
+            () => h.learning.startDictation(prepared, stillCurrent: () => true),
+          ),
+          throwsStateError,
+        );
+        expect(
+          await h.database.select(h.database.learningSessions).get(),
+          isEmpty,
+        );
+        final session = await h.learning.startDictation(
+          prepared,
+          stillCurrent: () => true,
+        );
+        final command = h.answer(session);
+        await expectLater(
+          h.database.transaction(
+            () => h.learning.commitDictationAnswer(
+              session,
+              command,
+              stillCurrent: () => true,
+            ),
+          ),
+          throwsStateError,
+        );
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          isEmpty,
+        );
+        await h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => true,
+        );
+        final close = h.learning.prepareDictationFinish(session, command);
+        await expectLater(
+          h.database.transaction(
+            () => h.learning.finishDictation(close, stillCurrent: () => true),
+          ),
+          throwsStateError,
+        );
+        final stored = await h.database
+            .select(h.database.learningSessions)
+            .getSingle();
+        expect(stored.state, 'active');
+      },
+    );
+  });
+
   late AppDatabase database;
   late DriftLearningRepository repository;
 
@@ -147,7 +578,7 @@ void main() {
 
     expect(first.inserted, isTrue);
     expect(replay.inserted, isFalse);
-    expect(replay.srs.intervalDays, 1);
+    expect(replay.srs!.intervalDays, 1);
     expect(await database.select(database.answerAttempts).get(), hasLength(1));
     expect(
       await database.select(database.pointsLedgerEntries).get(),
@@ -249,9 +680,9 @@ void main() {
         ),
       );
 
-      expect(result.srs.lastReviewAtUtc, later);
-      expect(result.srs.repetitions, 1);
-      expect(result.srs.lapses, 1);
+      expect(result.srs!.lastReviewAtUtc, later);
+      expect(result.srs!.repetitions, 1);
+      expect(result.srs!.lapses, 1);
       final firstAnswer = await (database.select(
         database.achievementUnlocks,
       )..where((row) => row.achievementId.equals('first_answer'))).getSingle();
@@ -366,7 +797,7 @@ void main() {
       1,
     );
     expect(
-      replay.srs.intervalDays,
+      replay.srs!.intervalDays,
       1,
       reason:
           'This migration records metadata without activating projection policy.',

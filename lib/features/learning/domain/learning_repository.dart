@@ -36,6 +36,24 @@ abstract interface class LearningRepository {
   );
 }
 
+abstract interface class DictationRepository {
+  Future<DictationSession> startDictation(
+    DictationSession session, {
+    required bool Function() stillCurrent,
+  });
+
+  Future<AnswerRecordResult> commitDictationAnswer(
+    DictationSession session,
+    RecordAnswerCommand command, {
+    required bool Function() stillCurrent,
+  });
+
+  Future<LearningSessionSummary> finishDictation(
+    DictationFinishIntent intent, {
+    required bool Function() stillCurrent,
+  });
+}
+
 abstract interface class ConfiguredQuizRepository {
   Future<ConfiguredQuizState?> findConfiguredQuizStart(
     ConfiguredQuizLaunch launch,

@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/reward_models.dart';
@@ -1242,7 +1243,17 @@ final class DriftSyncStore implements SyncStatusSource {
         entity: entity,
         localPayload: _attemptPayload(existing),
       );
-      await projections.rebuildWord(ownerId: ownerId, wordId: existing.wordId);
+      if (LearningEvidenceContract.allowsOrdinaryProjection(
+        promptMode: existing.promptMode,
+        evidenceClass: existing.evidenceClass,
+        evidenceContextJson: existing.evidenceContextJson,
+        projection: LearningProjection.masterySrs,
+      )) {
+        await projections.rebuildWord(
+          ownerId: ownerId,
+          wordId: existing.wordId,
+        );
+      }
       await projections.rebuildSession(
         ownerId: ownerId,
         sessionId: existing.sessionId,
@@ -1325,7 +1336,14 @@ final class DriftSyncStore implements SyncStatusSource {
             evidenceContextJson: Value(jsonEncode(evidenceContext.toJson())),
           ),
         );
-    await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+    if (LearningEvidenceContract.allowsOrdinaryProjection(
+      promptMode: promptMode,
+      evidenceClass: evidenceContext.evidenceClass.name,
+      evidenceContextJson: jsonEncode(evidenceContext.toJson()),
+      projection: LearningProjection.masterySrs,
+    )) {
+      await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+    }
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
     await projections.rebuildAchievements(ownerId);
     await _rebuildOptionalRewards(ownerId);

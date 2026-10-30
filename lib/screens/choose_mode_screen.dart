@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/presentation/study_host.dart';
@@ -13,6 +14,7 @@ import '../services/ai_reading_content_adapter.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'dictation_quiz_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
@@ -48,6 +50,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   String? _studyOwnerId;
   int _studyEntryGeneration = 0;
   bool _studyRouteVisible = false;
+  AppDependencies? _dictationDependencies;
+  StreamSubscription<String?>? _dictationOwners;
+  String? _dictationOwnerId;
+  int _dictationGeneration = 0;
+  bool _dictationBound = false;
+  bool _dictationRouteVisible = false;
+  bool _openingDictation = false;
+  bool _choosingDictationCategory = false;
 
   @override
   void initState() {
@@ -58,6 +68,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   @override
   void dispose() {
     _studyEntryGeneration++;
+    _dictationGeneration++;
+    _dictationOwners?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -65,6 +77,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
+    if (state != AppLifecycleState.resumed) {
+      _dictationGeneration++;
+    }
   }
 
   LearningUseCases? get _learning =>
@@ -85,6 +100,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     _studyRouteVisible = visible;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _replaceStudyBinding(dependencies);
+    if (_dictationRouteVisible && !visible && !_choosingDictationCategory) {
+      _dictationGeneration++;
+    }
+    _dictationRouteVisible = visible;
+    _replaceDictationBinding(dependencies);
   }
 
   @override
@@ -93,6 +113,45 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     if (!identical(oldWidget.ownerChanges, widget.ownerChanges)) {
       _replaceStudyBinding(AppDependenciesScope.maybeOf(context), force: true);
     }
+    if (!identical(oldWidget.learning, widget.learning) ||
+        !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
+      _dictationGeneration++;
+    }
+  }
+
+  void _replaceDictationBinding(AppDependencies? dependencies) {
+    if (_dictationBound && identical(_dictationDependencies, dependencies)) {
+      return;
+    }
+    _dictationBound = true;
+    _dictationGeneration++;
+    _dictationOwnerId = null;
+    _dictationDependencies = dependencies;
+    _dictationOwners?.cancel();
+    final source = dependencies?.progress?.watchActiveOwnerId();
+    _dictationOwners = source?.listen(
+      (ownerId) {
+        if (!mounted || !identical(_dictationDependencies, dependencies)) {
+          return;
+        }
+        if (_dictationOwnerId != ownerId) {
+          _dictationGeneration++;
+          _dictationOwnerId = ownerId;
+        }
+      },
+      onError: (Object _, StackTrace __) {
+        if (mounted && identical(_dictationDependencies, dependencies)) {
+          _dictationGeneration++;
+          _dictationOwnerId = null;
+        }
+      },
+      onDone: () {
+        if (mounted && identical(_dictationDependencies, dependencies)) {
+          _dictationGeneration++;
+          _dictationOwnerId = null;
+        }
+      },
+    );
   }
 
   void _replaceStudyBinding(
@@ -277,6 +336,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           const SizedBox(height: 8),
           if (canQuiz) ...[
             _LearningTile(
+              key: const ValueKey('dictation-entry'),
+              icon: Icons.hearing_outlined,
+              title: Localizations.localeOf(context).languageCode == 'th'
+                  ? 'ฟังแล้วพิมพ์คำศัพท์'
+                  : 'Listen and spell',
+              subtitle: Localizations.localeOf(context).languageCode == 'th'
+                  ? 'เลือกหมวดหมู่ แล้วฝึกสะกดจากเสียงทีละคำ'
+                  : 'Choose a category and spell one spoken word',
+              onTap: _openDictation,
+            ),
+            _LearningTile(
               icon: Icons.quiz_outlined,
               title: 'ฝึกคำศัพท์',
               subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
@@ -334,6 +404,119 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         ],
       ),
     );
+  }
+
+  bool _canOpenDictation(
+    int generation,
+    String ownerId,
+    LearningUseCases learning,
+    AppDependencies dependencies,
+  ) =>
+      mounted &&
+      generation == _dictationGeneration &&
+      ownerId == _dictationOwnerId &&
+      identical(_dictationDependencies, dependencies) &&
+      identical(_learning, learning) &&
+      _features.isVisible(FieldFeature.quiz) &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      Visibility.of(context) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  Future<void> _openDictation() async {
+    if (_openingDictation ||
+        !mounted ||
+        ModalRoute.of(context)?.isCurrent != true ||
+        WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed ||
+        !Visibility.of(context) ||
+        !_features.isVisible(FieldFeature.quiz)) {
+      return;
+    }
+    final dependencies = _dictationDependencies;
+    final learning = _learning;
+    final ownerId = _dictationOwnerId;
+    final thai = Localizations.localeOf(context).languageCode == 'th';
+    void unavailable({bool empty = false}) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            thai
+                ? empty
+                      ? 'หมวดหมู่นี้ยังไม่มีคำที่พร้อมฝึก'
+                      : 'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง'
+                : empty
+                ? 'This category has no available words.'
+                : 'Listen and spell is unavailable. Please try again later.',
+          ),
+        ),
+      );
+    }
+
+    if (dependencies == null ||
+        learning == null ||
+        ownerId == null ||
+        dependencies.progress == null ||
+        dependencies.vocabulary == null) {
+      unavailable();
+      return;
+    }
+    final generation = _dictationGeneration;
+    _openingDictation = true;
+    _choosingDictationCategory = true;
+    try {
+      final categoryId = await AppNavigator.pushPage<String>(
+        context,
+        AppPage<String>(
+          name: 'learning/dictation-category',
+          builder: (_) =>
+              SelectCategoryForQuiz(vocabulary: dependencies.vocabulary),
+        ),
+      );
+      _choosingDictationCategory = false;
+      if (!_canOpenDictation(generation, ownerId, learning, dependencies) ||
+          categoryId == null) {
+        return;
+      }
+      _dictationRouteVisible = true;
+      final session = await learning.prepareDictation(
+        categoryId: categoryId,
+        stillCurrent: () =>
+            _canOpenDictation(generation, ownerId, learning, dependencies),
+      );
+      if (!_canOpenDictation(generation, ownerId, learning, dependencies)) {
+        return;
+      }
+      if (session == null) {
+        unavailable(empty: true);
+        return;
+      }
+      if (session.ownerId != ownerId) {
+        return;
+      }
+      final screenOwners = dependencies.progress!.watchActiveOwnerId();
+      await AppNavigator.pushPage<LearningSessionSummary>(
+        context,
+        AppPage<LearningSessionSummary>(
+          name: 'learning/dictation',
+          builder: (_) => DictationQuizScreen(
+            session: session,
+            learning: learning,
+            voice: dependencies.voice,
+            ownerChanges: screenOwners,
+            languageCode: thai ? 'th' : 'en',
+          ),
+        ),
+      );
+      if (mounted) {
+        _refresh();
+      }
+    } on Object {
+      if (_canOpenDictation(generation, ownerId, learning, dependencies)) {
+        unavailable();
+      }
+    } finally {
+      _choosingDictationCategory = false;
+      _openingDictation = false;
+    }
   }
 
   Future<void> _openCategoryQuiz(BuildContext context) async {
@@ -504,6 +687,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
 
 class _LearningTile extends StatelessWidget {
   const _LearningTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,

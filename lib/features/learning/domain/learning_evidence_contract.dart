@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'evidence_context.dart';
+import 'evidence_eligibility_policy.dart';
 
 abstract final class LearningEvidenceContract {
   static const int maxIdentifierLength = 256;
@@ -73,6 +74,36 @@ abstract final class LearningEvidenceContract {
     } on ArgumentError {
       return false;
     }
+  }
+
+  /// Applies the approved projection decision only to the introduced native
+  /// declaration. Other admitted ordinary evidence keeps compatibility behavior.
+  static bool allowsOrdinaryProjection({
+    required String promptMode,
+    required String evidenceClass,
+    required String evidenceContextJson,
+    required LearningProjection projection,
+  }) {
+    if (!validEvidenceMetadata(
+      evidenceClass: evidenceClass,
+      evidenceContextJson: evidenceContextJson,
+    )) {
+      return false;
+    }
+    if (promptMode != 'dictation') {
+      return true;
+    }
+    final context = EvidenceContext.fromJson(
+      jsonDecode(evidenceContextJson) as Map<String, dynamic>,
+    );
+    if (context.classificationSource != EvidenceClassificationSource.declared ||
+        context.policyVersion != EvidenceContext.currentPolicyVersion) {
+      return true;
+    }
+    return EvidenceProjectionDecision.resolve(
+      context: context,
+      projection: projection,
+    ).isEligible;
   }
 
   /// Checks stored Assessment shape, not run linkage or current authority.

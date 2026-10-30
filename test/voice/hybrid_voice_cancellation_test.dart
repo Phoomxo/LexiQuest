@@ -305,6 +305,48 @@ void main() {
     expect(failure.category, VoiceFailureCategory.cancelled);
     expect(player.playCalls, isEmpty);
   });
+  test(
+    'an obsolete audio stop cannot tail-cancel newer native speech',
+    () async {
+      final events = <String>[];
+      final nativeStarted = Completer<void>();
+      final nativeResult = Completer<VoicePlaybackResult>();
+      final native = _RecordingNativeProvider(
+        events,
+        started: nativeStarted,
+        result: nativeResult,
+      );
+      final omni = _QueuedOmniVoiceSynthesizer(events, expectedCalls: 0);
+      final player = _RecordingAudioPlayer(events)
+        ..holdNextStop = true
+        ..stopReached = Completer<void>()
+        ..stopGate = Completer<void>();
+      final service = _buildService(native, omni, player);
+      final oldStop = service.stop();
+      await player.stopReached!.future;
+      final newSpeak = service.speak(
+        _researchRequest(assignedEngine: VoiceEngine.nativeTts),
+      );
+      await nativeStarted.future;
+      final stopsBeforeOldTail = native.stopCount;
+      player.stopGate!.complete();
+      await oldStop;
+      try {
+        expect(native.stopCount, stopsBeforeOldTail);
+      } finally {
+        nativeResult.complete(
+          const VoicePlaybackResult(
+            requestedEngine: VoiceEngine.nativeTts,
+            actualEngine: VoiceEngine.nativeTts,
+            usedFallback: false,
+            cacheHit: false,
+          ),
+        );
+        await newSpeak;
+      }
+      expect((await newSpeak).actualEngine, VoiceEngine.nativeTts);
+    },
+  );
 }
 
 class _QueuedOmniVoiceSynthesizer implements OmniVoiceSynthesizer {
@@ -354,6 +396,9 @@ class _RecordingAudioPlayer implements VoiceAudioPlayer {
   final List<Uint8List> playCalls = <Uint8List>[];
   int stopCount = 0;
   int disposeCount = 0;
+  bool holdNextStop = false;
+  Completer<void>? stopReached;
+  Completer<void>? stopGate;
 
   @override
   Future<void> play(Uint8List bytes) async {
@@ -365,6 +410,11 @@ class _RecordingAudioPlayer implements VoiceAudioPlayer {
   Future<void> stop() async {
     stopCount++;
     events.add('player.stop');
+    if (holdNextStop) {
+      holdNextStop = false;
+      stopReached!.complete();
+      await stopGate!.future;
+    }
   }
 
   @override

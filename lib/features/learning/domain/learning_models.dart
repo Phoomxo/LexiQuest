@@ -132,7 +132,45 @@ final class AnswerRecordResult {
   const AnswerRecordResult({required this.inserted, required this.srs});
 
   final bool inserted;
-  final SrsSnapshot srs;
+  final SrsSnapshot? srs;
+}
+
+final class DictationSession {
+  static const idPrefix = 'session:dictation-v1:';
+
+  DictationSession({required this.session, required this.word}) {
+    if (!session.id.startsWith(idPrefix) ||
+        session.id.length == idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        session.activityType != 'dictation' ||
+        session.startedAtUtc?.isUtc != true ||
+        word.contentRevision == null ||
+        word.contentRevision!.trim().isEmpty) {
+      throw ArgumentError(
+        'Dictation requires a native session ID, original UTC start and content pin',
+      );
+    }
+  }
+
+  final LearningSessionDraft session;
+  final QuizWord word;
+
+  String get id => session.id;
+  String get ownerId => session.ownerId;
+  DateTime get startedAtUtc => session.startedAtUtc!;
+  String get contentRevision => word.contentRevision!;
+}
+
+final class DictationFinishIntent {
+  const DictationFinishIntent({
+    required this.session,
+    required this.answer,
+    required this.endedAtUtc,
+  });
+
+  final DictationSession session;
+  final RecordAnswerCommand answer;
+  final DateTime endedAtUtc;
 }
 
 final class LearningSessionSummary {

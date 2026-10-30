@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
@@ -5,8 +7,11 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/accepted_quiz_plan.dart';
 import '../domain/evidence_context.dart';
+import '../domain/evidence_eligibility_policy.dart';
+import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import 'current_activity_evidence.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -46,6 +51,7 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final LearningMutationNotifier? onLocalMutation;
+  final Expando<bool> _finishedDictationNotifications = Expando<bool>();
 
   /// Shadow mode — when non-null, every recorded answer is also run through
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
@@ -78,6 +84,128 @@ final class LearningUseCases {
 
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
+
+  DictationRepository get _dictation => switch (repository) {
+    final DictationRepository capability => capability,
+    _ => throw StateError('Dictation persistence is unavailable'),
+  };
+
+  Future<DictationSession?> prepareDictation({
+    String? categoryId,
+    required bool Function() stillCurrent,
+  }) async {
+    _requireCurrentDictation(stillCurrent);
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireCurrentDictation(stillCurrent);
+    final words = await repository.listQuizWords(
+      ownerId: owner.id,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      limit: 1,
+    );
+    _requireCurrentDictation(stillCurrent);
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) {
+      throw StateError('Dictation owner changed');
+    }
+    _requireCurrentDictation(stillCurrent);
+    if (words.isEmpty) return null;
+    return DictationSession(
+      session: LearningSessionDraft(
+        id: '${DictationSession.idPrefix}${_nextId()}',
+        ownerId: owner.id,
+        activityType: 'dictation',
+        startedAtUtc: _now(),
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+      word: words.single,
+    );
+  }
+
+  Future<DictationSession> startDictation(
+    DictationSession session, {
+    required bool Function() stillCurrent,
+  }) => _dictation.startDictation(session, stillCurrent: stillCurrent);
+
+  RecordAnswerCommand prepareDictationAnswer(
+    DictationSession session, {
+    required String response,
+    required bool assisted,
+    required Duration responseTime,
+  }) {
+    final occurredAt = _now();
+    if (occurredAt.isBefore(session.startedAtUtc)) {
+      throw StateError('Dictation clock precedes its original start');
+    }
+    return RecordAnswerCommand(
+      id: 'attempt:${_nextId()}',
+      ownerId: session.ownerId,
+      sessionId: session.id,
+      wordId: session.word.id,
+      promptMode: 'dictation',
+      isCorrect:
+          response.trim().toLowerCase() ==
+          session.word.spelling.trim().toLowerCase(),
+      responseTimeMs: responseTime.inMilliseconds
+          .clamp(0, LearningEvidenceContract.maxResponseTimeMs)
+          .toInt(),
+      attemptNumber: 1,
+      occurredAtUtc: occurredAt,
+      evidenceContext: captureCurrentActivityEvidence(
+        promptMode: 'dictation',
+        contentRevision: session.contentRevision,
+        hintLevel: assisted ? 1 : 0,
+      ),
+    );
+  }
+
+  Future<AnswerRecordResult> commitDictationAnswer(
+    DictationSession session,
+    RecordAnswerCommand command, {
+    required bool Function() stillCurrent,
+  }) async {
+    final result = await _dictation.commitDictationAnswer(
+      session,
+      command,
+      stillCurrent: stillCurrent,
+    );
+    await _afterRecordedAnswer(command, result);
+    return result;
+  }
+
+  DictationFinishIntent prepareDictationFinish(
+    DictationSession session,
+    RecordAnswerCommand answer,
+  ) {
+    final endedAt = _now();
+    if (endedAt.isBefore(answer.occurredAtUtc)) {
+      throw StateError('Dictation clock precedes its saved answer');
+    }
+    return DictationFinishIntent(
+      session: session,
+      answer: answer,
+      endedAtUtc: endedAt,
+    );
+  }
+
+  Future<LearningSessionSummary> finishDictation(
+    DictationFinishIntent intent, {
+    required bool Function() stillCurrent,
+  }) async {
+    final result = await _dictation.finishDictation(
+      intent,
+      stillCurrent: stillCurrent,
+    );
+    if (_finishedDictationNotifications[intent.session] != true) {
+      _finishedDictationNotifications[intent.session] = true;
+      onLocalMutation?.call();
+    }
+    return result;
+  }
+
+  void _requireCurrentDictation(bool Function() stillCurrent) {
+    if (!stillCurrent()) throw StateError('Dictation is no longer current');
+  }
 
   Future<QuizSession> startShadowing({int limit = 1}) =>
       _startVocabularySession(null, limit, 'shadowing');
@@ -294,7 +422,10 @@ final class LearningUseCases {
     // Errors are swallowed: shadow mode must never break production.
     final shadow = shadowOrchestrator;
     final adapter = eventAdapter;
-    if (shadow != null && adapter != null) {
+    if (shadow != null &&
+        adapter != null &&
+        _allowsProjection(command, LearningProjection.xp) &&
+        _allowsProjection(command, LearningProjection.coins)) {
       try {
         final v2Event = adapter.adaptFromCommand(
           ownerId: command.ownerId,
@@ -319,7 +450,8 @@ final class LearningUseCases {
     // Uses the same V2 event produced for shadow mode when available;
     // builds a fresh event otherwise.  Errors are swallowed.
     final questSink = questEventSink;
-    if (questSink != null) {
+    if (questSink != null &&
+        _allowsProjection(command, LearningProjection.quest)) {
       try {
         final questEvent = adapter?.adaptFromCommand(
           ownerId: command.ownerId,
@@ -345,9 +477,21 @@ final class LearningUseCases {
     // Streak hook — notify StreakUseCases that a learning event occurred.
     // Errors are swallowed — streak tracking must never break production.
     try {
-      await streakEventSink?.call();
+      if (_allowsProjection(command, LearningProjection.streak)) {
+        await streakEventSink?.call();
+      }
     } catch (_) {}
   }
+
+  bool _allowsProjection(
+    RecordAnswerCommand command,
+    LearningProjection projection,
+  ) => LearningEvidenceContract.allowsOrdinaryProjection(
+    promptMode: command.promptMode,
+    evidenceClass: command.evidenceContext.evidenceClass.name,
+    evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
+    projection: projection,
+  );
 
   Future<LearningSessionSummary> finishSession(String sessionId) async {
     final owner = await owners.getOrCreateActiveOwner();

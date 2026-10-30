@@ -6,7 +6,17 @@ EvidenceContext captureCurrentActivityEvidence({
   String? contentRevision,
   int hintLevel = 0,
 }) {
+  if (promptMode == 'dictation' &&
+      (contentRevision == null || contentRevision.trim().isEmpty)) {
+    throw ArgumentError('Dictation requires its actual content revision');
+  }
   final declaration = switch (promptMode) {
+    'dictation' => (
+      hintLevel == 0
+          ? EvidenceClass.independentRecall
+          : EvidenceClass.guidedPractice,
+      'dictation-spelling',
+    ),
     'meaningChoice' => (
       hintLevel == 0 ? EvidenceClass.recognition : EvidenceClass.guidedPractice,
       'meaning-recall',

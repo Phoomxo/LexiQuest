@@ -10,17 +10,146 @@ import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.d
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/features/research/application/study_runtime.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+import '../support/dictation_session_harness.dart';
 
 void main() {
+  testWidgets('dictation entry uses the existing quiz feature gate', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          loader: () async => snapshot(),
+          featureRegistry: const BuildFieldFeatureRegistry({
+            FieldFeature.quiz: FieldFeatureState.hidden,
+          }),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('dictation-entry')), findsNothing);
+  });
+
+  testWidgets('dictation entry without real owner dependencies fails closed', (
+    tester,
+  ) async {
+    final h = (await tester.runAsync(DictationSessionHarness.open))!;
+    try {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChooseModeScreen(
+            loader: () async => snapshot(),
+            learning: h.learning,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('dictation-entry')));
+      await tester.tap(find.byKey(const ValueKey('dictation-entry')));
+      await tester.pump();
+      expect(find.byType(DictationQuizScreen), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(
+        await tester.runAsync(() => h.storage.count('learning_sessions')),
+        0,
+      );
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(h.close);
+    }
+  });
+
+  for (final empty in [false, true]) {
+    testWidgets(
+      'dictation selects one actual owned category target (empty=$empty)',
+      (tester) async {
+        final h = (await tester.runAsync(DictationSessionHarness.open))!;
+        try {
+          if (empty) {
+            await tester.runAsync(
+              () =>
+                  (h.database.update(h.database.vocabularyWords)..where(
+                        (word) => word.ownerId.equals(configuredOwnerId),
+                      ))
+                      .write(
+                        const db.VocabularyWordsCompanion(
+                          isDeleted: Value(true),
+                        ),
+                      ),
+            );
+          }
+          final voice = _DictationEntryVoice();
+          await _pumpDictationEntry(tester, h, voice);
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('dictation-entry')),
+          );
+          await tester.tap(find.byKey(const ValueKey('dictation-entry')));
+          await _dictationEntryUntil(
+            tester,
+            () => find.text('Synthetic travel').evaluate().isNotEmpty,
+          );
+          expect(find.text('Synthetic unrelated'), findsNothing);
+          expect(
+            await tester.runAsync(() => h.storage.count('learning_sessions')),
+            0,
+          );
+          await tester.tap(find.text('Synthetic travel'));
+          if (empty) {
+            await _dictationEntryUntil(
+              tester,
+              () => find.byType(SnackBar).evaluate().isNotEmpty,
+            );
+            expect(find.byType(DictationQuizScreen), findsNothing);
+            expect(
+              await tester.runAsync(() => h.storage.count('learning_sessions')),
+              0,
+            );
+            expect(voice.requests, isEmpty);
+          } else {
+            await _dictationEntryUntil(tester, () => voice.requests.isNotEmpty);
+            await tester.pumpAndSettle();
+            expect(find.byType(DictationQuizScreen), findsOneWidget);
+            expect(
+              await tester.runAsync(() => h.storage.count('learning_sessions')),
+              1,
+            );
+            final screen = tester.widget<DictationQuizScreen>(
+              find.byType(DictationQuizScreen),
+            );
+            expect(screen.session.ownerId, configuredOwnerId);
+            expect(
+              screen.session.contentRevision,
+              startsWith('local-vocabulary-v1:'),
+            );
+            expect(voice.requests.single.text, screen.session.word.spelling);
+          }
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          await tester.runAsync(h.close);
+        }
+      },
+    );
+  }
+
   for (final invalidation in [
     'owner',
     'owner error',
@@ -490,3 +619,83 @@ ProgressSnapshot snapshot({int due = 0, bool empty = false}) =>
             ],
       recommendations: [],
     );
+
+final class _DictationEntryVoice implements VoiceProvider {
+  final requests = <VoiceRequest>[];
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    requests.add(request);
+    return const VoicePlaybackResult(
+      requestedEngine: VoiceEngine.nativeTts,
+      actualEngine: VoiceEngine.nativeTts,
+      usedFallback: false,
+      cacheHit: false,
+    );
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
+Future<void> _pumpDictationEntry(
+  WidgetTester tester,
+  DictationSessionHarness h,
+  _DictationEntryVoice voice,
+) async {
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  final dependencies = AppDependencies(
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _StudyEntryGuestService(),
+    database: h.database,
+    localOwners: h.storage.owners,
+    learning: h.learning,
+    progress: ProgressUseCases(
+      owners: h.storage.owners,
+      queries: DriftProgressQueries(h.database),
+      nowUtc: () => h.now,
+    ),
+    vocabulary: VocabularyUseCases(
+      owners: h.storage.owners,
+      vocabulary: DriftVocabularyRepository(h.database),
+      generateId: () => 'synthetic-entry-id',
+      nowUtc: () => h.now,
+    ),
+    voice: VoiceUseCases(voice),
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        home: ChooseModeScreen(loader: () async => snapshot()),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 30)),
+  );
+  await tester.pump();
+}
+
+Future<void> _dictationEntryUntil(
+  WidgetTester tester,
+  bool Function() ready,
+) async {
+  for (var i = 0; i < 150 && !ready(); i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+  }
+  expect(
+    ready(),
+    isTrue,
+    reason: 'Dictation entry did not reach expected UI state',
+  );
+}

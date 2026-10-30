@@ -247,8 +247,11 @@ final class HybridVoiceService implements VoiceProvider {
 
   @override
   Future<void> stop() async {
-    _generation++;
+    final generation = ++_generation;
     await _audioPlayer.stop();
+    if (generation != _generation) {
+      return;
+    }
     await _nativeProvider.stop();
   }
 

@@ -4,6 +4,51 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 
 void main() {
+  test('Dictation declares pinned independent spelling recall', () {
+    final context = captureCurrentActivityEvidence(
+      promptMode: 'dictation',
+      contentRevision: 'local-vocabulary-v1:7',
+    );
+    expect(context.evidenceClass, EvidenceClass.independentRecall);
+    expect(context.skillId, 'dictation-spelling');
+    expect(context.hintLevel, 0);
+    expect(context.engagementAllowed, isFalse);
+    expect(context.contentRevision, 'local-vocabulary-v1:7');
+    expect(context.classificationSource, EvidenceClassificationSource.declared);
+    expect(context.rolloutMode, EvidencePolicyRolloutMode.legacy);
+    expect(LearningEvidenceContract.isOrdinaryEvidence(context), isTrue);
+  });
+
+  test('slow Dictation declares guided spelling practice', () {
+    final context = captureCurrentActivityEvidence(
+      promptMode: 'dictation',
+      contentRevision: 'local-vocabulary-v1:7',
+      hintLevel: 1,
+    );
+    expect(context.evidenceClass, EvidenceClass.guidedPractice);
+    expect(context.skillId, 'dictation-spelling');
+    expect(context.hintLevel, 1);
+    expect(context.engagementAllowed, isFalse);
+    expect(context.contentRevision, 'local-vocabulary-v1:7');
+  });
+
+  test(
+    'new Dictation cannot fall back when the actual content pin is missing',
+    () {
+      expect(
+        () => captureCurrentActivityEvidence(promptMode: 'dictation'),
+        throwsArgumentError,
+      );
+      expect(
+        () => captureCurrentActivityEvidence(
+          promptMode: 'dictation',
+          contentRevision: '',
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
   for (final (mode, evidenceClass, skill) in const [
     ('meaningChoice', EvidenceClass.recognition, 'meaning-recall'),
     ('srsRecall', EvidenceClass.independentRecall, 'srs-recall'),

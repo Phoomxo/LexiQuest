@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../domain/reward_ledger.dart';
 
 final class DriftRewardProjectionRebuilder {
@@ -74,6 +75,8 @@ final class DriftRewardProjectionRebuilder {
             .get();
     final excludedSessions = assessmentSessions.map((row) => row.id).toSet();
     final excludedSources = {...excludedSessions};
+    final nativeIneligibleSessions = <String>{};
+    final eligibleSessions = <String>{};
     final attempts = <db.AnswerAttempt>[];
     for (final row in stored) {
       if (excludedSessions.contains(row.sessionId) ||
@@ -82,10 +85,27 @@ final class DriftRewardProjectionRebuilder {
             evidenceContextJson: row.evidenceContextJson,
           )) {
         excludedSources.add(row.id);
-      } else if (row.isCorrect) {
-        attempts.add(row);
+        if (row.promptMode == 'dictation') {
+          nativeIneligibleSessions.add(row.sessionId);
+        }
+      } else if (!LearningEvidenceContract.allowsOrdinaryProjection(
+        promptMode: row.promptMode,
+        evidenceClass: row.evidenceClass,
+        evidenceContextJson: row.evidenceContextJson,
+        projection: LearningProjection.coins,
+      )) {
+        excludedSources.add(row.id);
+        nativeIneligibleSessions.add(row.sessionId);
+      } else {
+        eligibleSessions.add(row.sessionId);
+        if (row.isCorrect) {
+          attempts.add(row);
+        }
       }
     }
+    excludedSources.addAll(
+      nativeIneligibleSessions.difference(eligibleSessions),
+    );
     final correct = {for (final a in attempts) a.id: a};
     final evidence = <String, RewardLedgerEntry>{};
     for (final a in attempts) {

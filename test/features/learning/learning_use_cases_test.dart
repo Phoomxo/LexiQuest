@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -10,7 +11,220 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
+import '../../support/dictation_session_harness.dart';
+
 void main() {
+  group('owned Dictation', () {
+    late DictationSessionHarness h;
+    setUp(() async => h = await DictationSessionHarness.open());
+    tearDown(() => h.close());
+
+    test(
+      'prepares one actual category word without creating a session',
+      () async {
+        final session = await h.learning.prepareDictation(
+          categoryId: configuredCategoryId,
+          stillCurrent: () => h.current,
+        );
+        expect(session, isNotNull);
+        expect(session!.ownerId, configuredOwnerId);
+        expect(session.word.categoryId, configuredCategoryId);
+        expect(session.contentRevision, 'local-vocabulary-v1:1');
+        expect(session.session.activityType, 'dictation');
+        expect(
+          await h.database.select(h.database.learningSessions).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'empty category and invalidated preparation create no session',
+      () async {
+        expect(
+          await h.learning.prepareDictation(
+            categoryId: 'missing-category',
+            stillCurrent: () => true,
+          ),
+          isNull,
+        );
+        await expectLater(
+          h.learning.prepareDictation(
+            categoryId: configuredCategoryId,
+            stillCurrent: () => false,
+          ),
+          throwsStateError,
+        );
+        expect(
+          await h.database.select(h.database.learningSessions).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'pending answer freezes normalized correctness, pins, ID and time',
+      () async {
+        final session = await h.ready();
+        final capturedAt = h.now;
+        final command = h.answer(session, assisted: true);
+        h.now = h.now.add(const Duration(hours: 1));
+        expect(command.ownerId, session.ownerId);
+        expect(command.sessionId, session.id);
+        expect(command.wordId, session.word.id);
+        expect(command.isCorrect, isTrue);
+        expect(command.occurredAtUtc, capturedAt);
+        expect(command.responseTimeMs, 1234);
+        expect(command.attemptNumber, 1);
+        expect(
+          command.evidenceContext.contentRevision,
+          session.contentRevision,
+        );
+        expect(command.evidenceContext.hintLevel, 1);
+        expect(command.providerProvenance, isNull);
+      },
+    );
+
+    test(
+      'normal Dictation gets SRS but no motivation hooks or session awards',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session);
+        final saved = await h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => h.current,
+        );
+        expect(saved.inserted, isTrue);
+        expect(saved.srs, isNotNull);
+        final finish = h.learning.prepareDictationFinish(session, command);
+        final summary = await h.learning.finishDictation(
+          finish,
+          stillCurrent: () => h.current,
+        );
+        expect(summary.correctCount, 1);
+        expect(summary.score, 100);
+        expect(h.questEvents, 0);
+        expect(h.streakEvents, 0);
+        expect(
+          await h.database.select(h.database.pointsLedgerEntries).get(),
+          isEmpty,
+        );
+        expect(
+          await h.database.select(h.database.achievementUnlocks).get(),
+          isEmpty,
+        );
+        final operations = await h.database
+            .select(h.database.outboxOperations)
+            .get();
+        expect(
+          operations.map((op) => (op.entityType, op.payloadVersion)),
+          unorderedEquals([('attempt', 2), ('srsState', 1)]),
+        );
+      },
+    );
+
+    for (final correct in [true, false]) {
+      test(
+        'assisted $correct retains one outcome without SRS or rewards',
+        () async {
+          final session = await h.ready();
+          final command = h.answer(session, assisted: true, correct: correct);
+          final saved = await h.learning.commitDictationAnswer(
+            session,
+            command,
+            stillCurrent: () => h.current,
+          );
+          expect(saved.inserted, isTrue);
+          expect(saved.srs, isNull);
+          final finish = h.learning.prepareDictationFinish(session, command);
+          final summary = await h.learning.finishDictation(
+            finish,
+            stillCurrent: () => h.current,
+          );
+          expect(summary.correctCount, correct ? 1 : 0);
+          expect(summary.wrongCount, correct ? 0 : 1);
+          expect(
+            await h.database.select(h.database.answerAttempts).get(),
+            hasLength(1),
+          );
+          expect(await h.database.select(h.database.srsStates).get(), isEmpty);
+          expect(
+            await h.database.select(h.database.pointsLedgerEntries).get(),
+            isEmpty,
+          );
+          expect(
+            await h.database.select(h.database.achievementUnlocks).get(),
+            isEmpty,
+          );
+          expect(h.questEvents, 0);
+          expect(h.streakEvents, 0);
+          final operations = await h.database
+              .select(h.database.outboxOperations)
+              .get();
+          expect(
+            operations.map(
+              (op) => (op.entityType, op.entityId, op.payloadVersion),
+            ),
+            [('attempt', command.id, 2)],
+          );
+        },
+      );
+    }
+
+    test(
+      'same start, answer and close intents replay original immutable facts',
+      () async {
+        final session = await h.ready();
+        final command = h.answer(session, assisted: true);
+        await h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => true,
+        );
+        final closing = h.learning.prepareDictationFinish(session, command);
+        await h.learning.finishDictation(closing, stillCurrent: () => true);
+        final before = await h.database
+            .customSelect(
+              'SELECT started_at_utc_ms,ended_at_utc_ms,correct_count,wrong_count,score '
+              'FROM learning_sessions WHERE id = ?',
+              variables: [Variable(session.id)],
+            )
+            .getSingle();
+        final hooks = (h.notifications, h.questEvents, h.streakEvents);
+        h.now = h.now.add(const Duration(days: 1));
+        expect(
+          await h.learning.startDictation(session, stillCurrent: () => true),
+          same(session),
+        );
+        final replay = await h.learning.commitDictationAnswer(
+          session,
+          command,
+          stillCurrent: () => true,
+        );
+        expect(replay.inserted, isFalse);
+        await h.learning.finishDictation(closing, stillCurrent: () => true);
+        final after = await h.database
+            .customSelect(
+              'SELECT started_at_utc_ms,ended_at_utc_ms,correct_count,wrong_count,score '
+              'FROM learning_sessions WHERE id = ?',
+              variables: [Variable(session.id)],
+            )
+            .getSingle();
+        expect(after.data, before.data);
+        expect((h.notifications, h.questEvents, h.streakEvents), hooks);
+        expect(
+          await h.database.select(h.database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          hasLength(1),
+        );
+      },
+    );
+  });
+
   late AppDatabase database;
   late LearningUseCases useCases;
   late DateTime now;

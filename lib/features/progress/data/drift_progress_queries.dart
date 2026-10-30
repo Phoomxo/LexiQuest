@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -30,7 +31,10 @@ final class DriftProgressQueries {
             .get();
     final excludedSessions = assessmentSessions.map((row) => row.id).toSet();
     final excludedSources = {...excludedSessions};
+    final nativeXpIneligibleSessions = <String>{};
+    final xpEligibleSessions = <String>{};
     final attempts = <AnswerAttempt>[];
+    final streakAttempts = <AnswerAttempt>[];
     for (final row in stored) {
       if (excludedSessions.contains(row.sessionId) ||
           !LearningEvidenceContract.validEvidenceMetadata(
@@ -38,10 +42,27 @@ final class DriftProgressQueries {
             evidenceContextJson: row.evidenceContextJson,
           )) {
         excludedSources.add(row.id);
+        if (row.promptMode == 'dictation') {
+          nativeXpIneligibleSessions.add(row.sessionId);
+        }
       } else {
-        attempts.add(row);
+        if (_eligible(row, LearningProjection.masterySrs)) {
+          attempts.add(row);
+        }
+        if (_eligible(row, LearningProjection.streak)) {
+          streakAttempts.add(row);
+        }
+        if (_eligible(row, LearningProjection.xp)) {
+          xpEligibleSessions.add(row.sessionId);
+        } else {
+          excludedSources.add(row.id);
+          nativeXpIneligibleSessions.add(row.sessionId);
+        }
       }
     }
+    excludedSources.addAll(
+      nativeXpIneligibleSessions.difference(xpEligibleSessions),
+    );
     final correctCount = attempts.where((row) => row.isCorrect).length;
     final wrongCount = attempts.length - correctCount;
     final responseTimes = attempts
@@ -139,7 +160,7 @@ final class DriftProgressQueries {
       totalXp: totalXp,
       completedSessions: completedRow.read(completedCount) ?? 0,
       streakDays: _streakDays(
-        attempts.map((row) => row.occurredAtUtcMs),
+        streakAttempts.map((row) => row.occurredAtUtcMs),
         nowUtc,
       ),
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
@@ -248,6 +269,14 @@ final class DriftProgressQueries {
     });
     return result;
   }
+
+  static bool _eligible(AnswerAttempt attempt, LearningProjection projection) =>
+      LearningEvidenceContract.allowsOrdinaryProjection(
+        promptMode: attempt.promptMode,
+        evidenceClass: attempt.evidenceClass,
+        evidenceContextJson: attempt.evidenceContextJson,
+        projection: projection,
+      );
 
   List<SkillEvidence> _skills(List<AnswerAttempt> attempts) {
     const definitions = <(String, String, Set<String>)>[
