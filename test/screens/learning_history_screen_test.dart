@@ -9,6 +9,11 @@ import 'package:vocab_learning_app/features/progress/domain/progress_models.dart
 import 'package:vocab_learning_app/screens/learning_history_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+
+import '../support/review_center_harness.dart';
 
 void main() {
   for (final (activity, title) in [
@@ -315,17 +320,97 @@ void main() {
   testWidgets('dashboard opens the history screen through one action', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      _app(MasteryDashboardScreen(loader: () async => _emptyProgress)),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('ประวัติการเรียน'), findsOneWidget);
-    await tester.tap(find.text('ประวัติการเรียน'));
-    await tester.pumpAndSettle();
-    expect(find.byType(LearningHistoryScreen), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    expect(find.byType(MasteryDashboardScreen), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    late final Zone ioZone;
+    final h = (await tester.runAsync(() {
+      ioZone = Zone.current;
+      return ReviewCenterHarness.open();
+    }))!;
+    try {
+      final before = await tester.runAsync(h.snapshotAllTables);
+      expect(before, hasLength(37));
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: AppDependencies(
+            runtimeStatus: const AppRuntimeStatus(
+              localData: RuntimeAvailability.ready,
+              firebase: RuntimeAvailability.unavailable,
+              supabase: RuntimeAvailability.unavailable,
+              backends: RuntimeAvailability.unavailable,
+            ),
+            config: null,
+            guestSessionService: _HistoryGuest(),
+            database: h.database,
+            localOwners: h.owners,
+            progress: h.progress,
+            reviewCenter: h.reviewCenter,
+            learning: h.learning,
+            savedWords: h.savedWords,
+            wordReports: h.wordReports,
+          ),
+          child: _app(
+            MasteryDashboardScreen(
+              loader: () async => _emptyProgress,
+              ownerChanges: h.ownerChanges,
+            ),
+          ),
+        ),
+      );
+      final action = find.widgetWithText(OutlinedButton, 'ประวัติการเรียน');
+      await _historyReadUntil(
+        tester,
+        () =>
+            action.evaluate().isNotEmpty &&
+            tester.widget<OutlinedButton>(action).onPressed != null,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ประวัติการเรียน'), findsOneWidget);
+      await tester.ensureVisible(action);
+      await tester.tap(find.text('ประวัติการเรียน'));
+      await _historyReadUntil(tester, () {
+        final history = find.byType(LearningHistoryScreen);
+        return history.evaluate().isNotEmpty &&
+            ModalRoute.of(tester.element(history))?.animation?.status ==
+                AnimationStatus.completed &&
+            find
+                .descendant(
+                  of: history,
+                  matching: find.byType(CircularProgressIndicator),
+                )
+                .evaluate()
+                .isEmpty;
+      });
+      await tester.pumpAndSettle();
+      expect(find.byType(LearningHistoryScreen), findsOneWidget);
+      final history = tester.widget<LearningHistoryScreen>(
+        find.byType(LearningHistoryScreen),
+      );
+      expect(history.ownerChanges, same(h.ownerChanges));
+      expect(history.loader, isNotNull);
+      expect(await tester.runAsync(h.snapshotAllTables), before);
+      await tester.pageBack();
+      await _historyReadUntil(
+        tester,
+        () =>
+            find.byType(LearningHistoryScreen).evaluate().isEmpty &&
+            find.byType(MasteryDashboardScreen).evaluate().isNotEmpty &&
+            find
+                .descendant(
+                  of: find.byType(MasteryDashboardScreen),
+                  matching: find.byType(CircularProgressIndicator),
+                )
+                .evaluate()
+                .isEmpty,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MasteryDashboardScreen), findsOneWidget);
+      expect(await tester.runAsync(h.snapshotAllTables), before);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => ioZone.run(h.close));
+    }
   });
 
   testWidgets(
@@ -368,6 +453,26 @@ void main() {
       expect(find.text('เล่นต่อ'), findsOneWidget);
     },
   );
+}
+
+Future<void> _historyReadUntil(
+  WidgetTester tester,
+  bool Function() ready,
+) async {
+  for (var frame = 0; frame < 150; frame++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+    if (ready()) return;
+  }
+  fail('Owner-bound History entry did not reach its actual ready state');
+}
+
+final class _HistoryGuest implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() =>
+      throw StateError('History reads cannot create a guest');
 }
 
 Widget _app(Widget home) => MaterialApp(theme: M3Theme.lightTheme, home: home);

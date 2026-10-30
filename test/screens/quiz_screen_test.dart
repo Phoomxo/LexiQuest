@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 
 void main() {
   setUpAll(() async {
@@ -29,11 +30,13 @@ void main() {
           ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
         .load();
   });
+  late Zone ioZone;
   late AppDatabase database;
   late LearningUseCases learning;
   var id = 0;
 
   setUp(() async {
+    ioZone = Zone.current;
     database = AppDatabase(NativeDatabase.memory());
     id = 0;
     final owners = DriftLocalOwnerRepository(
@@ -266,6 +269,146 @@ void main() {
     expect(session.state, 'completed');
   });
 
+  testWidgets(
+    'owned score reports its exact route and never pops a foreign cover',
+    (tester) async {
+      final events = <(Route<dynamic>?, bool)>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => QuizScreen(
+                      categoryId: 'category-1',
+                      learning: learning,
+                      onScoreRouteChanged: (route, current) =>
+                          events.add((route, current)),
+                    ),
+                  ),
+                ),
+                child: const Text('open synthetic quiz'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open synthetic quiz'));
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('\u0e2a\u0e16\u0e32\u0e19\u0e35'));
+      await _pumpUntilFound(
+        tester,
+        find.text(
+          '\u0e14\u0e39\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e23\u0e35\u0e22\u0e19',
+        ),
+      );
+      await tester.tap(
+        find.text(
+          '\u0e14\u0e39\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e23\u0e35\u0e22\u0e19',
+        ),
+      );
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+      final scoreContext = tester.element(find.byType(ScoreScreen));
+      final score = ModalRoute.of(scoreContext)!;
+      expect(
+        events.any((event) => identical(event.$1, score) && event.$2),
+        isTrue,
+      );
+      final navigator = Navigator.of(scoreContext);
+      final foreign = MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('synthetic foreign cover')),
+      );
+      unawaited(navigator.push(foreign));
+      await tester.pumpAndSettle();
+      expect(
+        events.any((event) => identical(event.$1, score) && !event.$2),
+        isTrue,
+      );
+      navigator.removeRoute(score);
+      await tester.pumpAndSettle();
+      expect(foreign.isCurrent, isTrue);
+      expect(find.text('synthetic foreign cover'), findsOneWidget);
+      expect(events.last.$1, isNull);
+      final sessions = await tester.runAsync(
+        () => database.select(database.learningSessions).get(),
+      );
+      final answers = await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      );
+      expect(sessions!.single.state, 'completed');
+      expect(answers, hasLength(1));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'return from removed mistake practice cannot pop a foreign route',
+    (tester) async {
+      final owners = _actualProgressOwners(database, learning, ioZone);
+      final owner = (await tester.runAsync(
+        () => database.select(database.localOwners).getSingle(),
+      ))!;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            expectedOwnerId: owner.id,
+            ownerChanges: owners,
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('เฉลยคำตอบ'));
+      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      await tester.tap(find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+      await tester.pumpAndSettle();
+      final scoreContext = tester.element(find.byType(ScoreScreen));
+      final scoreRoute = ModalRoute.of(scoreContext)!;
+      await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.pumpAndSettle();
+      final practiceContext = tester.element(find.byType(QuizScreen));
+      final practice = ModalRoute.of(practiceContext)!;
+      final navigator = Navigator.of(practiceContext);
+      expect(practice.settings.name, 'learning/mistake-practice');
+      final foreign = MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(
+          body: Text('synthetic foreign mistake-practice cover'),
+        ),
+      );
+      unawaited(navigator.push(foreign));
+      await tester.pumpAndSettle();
+      expect(scoreContext.mounted, isTrue);
+      expect(scoreRoute.isCurrent, isFalse);
+      navigator.removeRoute(practice);
+      await tester.pumpAndSettle();
+      expect(foreign.isCurrent, isTrue);
+      expect(
+        find.text('synthetic foreign mistake-practice cover'),
+        findsOneWidget,
+      );
+      final sessions = await tester.runAsync(
+        () => database.select(database.learningSessions).get(),
+      );
+      final answers = await tester.runAsync(
+        () => database.select(database.answerAttempts).get(),
+      );
+      expect(sessions, hasLength(2));
+      expect(sessions!.map((row) => row.activityType), [
+        'quiz',
+        'weaknessPractice',
+      ]);
+      expect(answers, hasLength(1));
+      expect(answers!.single.isCorrect, isFalse);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('source-selected quiz uses source semantics and title', (
     tester,
   ) async {
@@ -356,6 +499,8 @@ void main() {
   testWidgets('clinic starts a real targeted session even with no due words', (
     tester,
   ) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    final ownerChanges = _actualProgressOwners(database, learning, ioZone);
     final progress = (await tester.runAsync(() async {
       final session = await learning.startQuiz(limit: 1);
       var quiz = session.configured!;
@@ -390,13 +535,22 @@ void main() {
       MaterialApp(
         home: WeaknessClinicScreen(
           learning: learning,
+          ownerChanges: ownerChanges,
           loader: () async => progress,
         ),
       ),
     );
+    await _pumpUntilFound(tester, find.text('ฝึกคำที่ผิด (1)'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
     await _pumpUntilFound(tester, find.text('คำถาม 1 จาก 1'));
+    final quizScreen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+    final actualOwner = await tester.runAsync(
+      () => database.select(database.localOwners).getSingle(),
+    );
+    expect(quizScreen.expectedOwnerId, actualOwner!.id);
+    expect(quizScreen.ownerChanges, same(ownerChanges));
+    expect(quizScreen.learning, same(learning));
     await tester.pumpAndSettle();
     expect(find.text('station'), findsOneWidget);
     final sessions = await database.select(database.learningSessions).get();
@@ -809,6 +963,8 @@ void main() {
   testWidgets(
     'wrong answer is explained then practiced from the score screen',
     (tester) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      final ownerChanges = _actualProgressOwners(database, learning, ioZone);
       final owner = await database.select(database.localOwners).getSingle();
       await database
           .into(database.vocabularyWords)
@@ -831,6 +987,7 @@ void main() {
         MaterialApp(
           home: ChooseModeScreen(
             learning: learning,
+            ownerChanges: ownerChanges,
             loader: () {
               hubLoads++;
               return DriftProgressQueries(
@@ -843,6 +1000,10 @@ void main() {
       await _pumpUntilFound(tester, find.text('เริ่มฝึกคำศัพท์'));
       await tester.tap(find.text('เริ่มฝึกคำศัพท์'));
       await _pumpUntilFound(tester, find.text('station'));
+      final quizScreen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(quizScreen.expectedOwnerId, owner.id);
+      expect(quizScreen.ownerChanges, same(ownerChanges));
+      expect(quizScreen.learning, same(learning));
       await tester.tap(find.text('ตั๋ว'));
       await _pumpUntilFound(tester, find.text('คำถามถัดไป'));
       expect(find.text('ยังไม่ถูก ลองดูคำแปลอีกครั้ง'), findsOneWidget);
@@ -1208,6 +1369,28 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
     if (finder.evaluate().isNotEmpty) return;
   }
   fail('Timed out waiting for $finder');
+}
+
+Stream<String?> _actualProgressOwners(
+  AppDatabase database,
+  LearningUseCases learning,
+  Zone ioZone,
+) {
+  final progress = ProgressUseCases(
+    owners: learning.owners,
+    queries: DriftProgressQueries(database),
+    nowUtc: learning.nowUtc,
+  );
+  return Stream<String?>.multi((events) {
+    final subscription = ioZone.run(
+      () => progress.watchActiveOwnerId().listen(
+        events.add,
+        onError: events.addError,
+        onDone: events.close,
+      ),
+    );
+    events.onCancel = () => ioZone.run(subscription.cancel);
+  }, isBroadcast: true);
 }
 
 class _FailOnceRepository

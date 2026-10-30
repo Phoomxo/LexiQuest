@@ -78,6 +78,17 @@ void main() {
         cloudSyncEnabled: false,
       ).initialize();
       addTearDown(dependencies.dispose);
+      expect(dependencies.reviewCenter, isNotNull);
+      expect(dependencies.reviewCenter!.queries.database, same(database));
+      expect(dependencies.reviewCenter!.progress, same(dependencies.progress));
+      expect(
+        dependencies.reviewCenter!.savedWords,
+        same(dependencies.savedWords),
+      );
+      expect(
+        dependencies.reviewCenter!.wordReports,
+        same(dependencies.wordReports),
+      );
       expect(dependencies.savedWords, isNotNull);
       expect(
         dependencies.savedWords!.repository,

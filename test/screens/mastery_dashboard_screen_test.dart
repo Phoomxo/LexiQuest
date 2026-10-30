@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -26,7 +27,64 @@ import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/progress_owner_fixture.dart';
+
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets(
+    'owner ABA clears private host data before its fresh read completes',
+    (tester) async {
+      final owners = StreamController<String?>.broadcast(sync: true);
+      final pending = Completer<ProgressSnapshot>();
+      var reads = 0;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MasteryDashboardScreen(
+              ownerChanges: owners.stream,
+              loader: () => reads++ == 0
+                  ? Future.value(_hostReadSnapshot(91))
+                  : pending.future,
+            ),
+          ),
+        );
+        owners.add('synthetic-host-owner-a');
+        await _hostReadUntil(
+          tester,
+          () => find.text('91').evaluate().isNotEmpty,
+        );
+        owners
+          ..add(null)
+          ..add('synthetic-host-owner-a');
+        await tester.pump();
+        expect(
+          find.text('91'),
+          findsNothing,
+          reason:
+              'A/null/A must synchronously discard the original private rows',
+        );
+        await _hostReadUntil(tester, () => reads >= 2);
+        pending.complete(_hostReadSnapshot(7));
+        await _hostReadUntil(
+          tester,
+          () => find.text('7').evaluate().isNotEmpty,
+        );
+        expect(find.text('91'), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (!pending.isCompleted) pending.complete(_hostReadSnapshot(7));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(owners.close);
+      }
+    },
+  );
+
   setUpAll(() async {
     await (FontLoader('NotoSansThai')
           ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
@@ -37,7 +95,12 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: MasteryDashboardScreen(loader: () async => _snapshot)),
+      MaterialApp(
+        home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _snapshot,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -74,7 +137,10 @@ void main() {
   testWidgets('empty evidence shows sample size zero', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: MasteryDashboardScreen(loader: () async => _emptySnapshot),
+        home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _emptySnapshot,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -86,7 +152,12 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: MasteryDashboardScreen(loader: () async => _snapshot)),
+      MaterialApp(
+        home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _snapshot,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -119,6 +190,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MasteryDashboardScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () async {
               loads++;
               return current;
@@ -153,7 +225,12 @@ void main() {
         }
 
         await tester.pumpWidget(
-          MaterialApp(home: MasteryDashboardScreen(loader: loader)),
+          MaterialApp(
+            home: MasteryDashboardScreen(
+              ownerChanges: _displayProgressOwners,
+              loader: loader,
+            ),
+          ),
         );
         await tester.pumpAndSettle();
         await _openWeakness(tester);
@@ -178,6 +255,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MasteryDashboardScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () {
               throw StateError('synthetic-private-detail');
             },
@@ -200,6 +278,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () {
             loads++;
             return loads == 1
@@ -231,6 +310,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MasteryDashboardScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () {
               return switch (++loads) {
                 1 => Future.error(StateError('synthetic-initial-error')),
@@ -268,6 +348,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async {
             loads++;
             return _snapshot;
@@ -277,9 +358,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     await _openWeakness(tester);
-    await tester.pumpWidget(const MaterialApp(home: MasteryDashboardScreen()));
+    final capturedChild = ModalRoute.of(
+      tester.element(find.byType(WeaknessClinicScreen)),
+    )!;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MasteryDashboardScreen(ownerChanges: _displayProgressOwners),
+      ),
+    );
     await tester.pump();
-    await _popWeakness(tester);
+    expect(find.byType(WeaknessClinicScreen), findsNothing);
+    await _popCapturedChild(tester, capturedChild);
     await tester.pumpAndSettle();
     expect(loads, 2);
     expect(
@@ -297,6 +386,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: MasteryDashboardScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () async {
               return ++loads <= 2 ? _snapshot : _emptySnapshot;
             },
@@ -328,18 +418,31 @@ void main() {
         return ++newLoads == 1 ? obsolete.future : Future.value(_xpSnapshot);
       }
 
-      Widget app(ProgressLoader loader) =>
-          MaterialApp(home: MasteryDashboardScreen(loader: loader));
+      Widget app(ProgressLoader loader) => MaterialApp(
+        home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: loader,
+        ),
+      );
       await tester.pumpWidget(app(oldLoader));
       await tester.pumpAndSettle();
       final parent = tester.state(find.byType(MasteryDashboardScreen));
       await _openWeakness(tester);
+      final capturedChild = ModalRoute.of(
+        tester.element(find.byType(WeaknessClinicScreen)),
+      )!;
       await tester.pumpWidget(app(newLoader));
       await tester.pump();
+      expect(newLoads, 0); // Covered hosts do not start a replacement read.
+      expect(find.byType(WeaknessClinicScreen), findsNothing);
+      await _popCapturedChild(tester, capturedChild);
       expect(newLoads, 1);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await _openWeakness(tester);
+      expect(newLoads, 2);
       await _popWeakness(tester);
       await tester.pumpAndSettle();
-      expect(newLoads, 2);
+      expect(newLoads, 3);
       expect(oldLoads, 2);
       expect(tester.state(find.byType(MasteryDashboardScreen)), same(parent));
       _expectMetric('คะแนนประสบการณ์', '208');
@@ -359,6 +462,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () {
             return switch (++loads) {
               1 => initial.future,
@@ -384,7 +488,7 @@ void main() {
   });
 
   testWidgets(
-    'ordinary rebuild resize and non-Weakness returns do not reload',
+    'ordinary rebuild and resize retain a read, while every visible return reloads',
     (tester) async {
       var loads = 0;
       Future<ProgressSnapshot> loader() async {
@@ -394,7 +498,10 @@ void main() {
 
       Widget app(Brightness brightness) => MaterialApp(
         theme: ThemeData(brightness: brightness),
-        home: MasteryDashboardScreen(loader: loader),
+        home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: loader,
+        ),
       );
       await tester.pumpWidget(app(Brightness.light));
       await tester.pumpAndSettle();
@@ -407,15 +514,15 @@ void main() {
       expect(loads, 1);
       await tester.tap(find.text('ความสำเร็จ'));
       await tester.pumpAndSettle();
-      expect(loads, 2); // Achievements reads once, not a Dashboard refresh.
+      expect(loads, 2); // The covered Dashboard has cleared its read.
       Navigator.of(tester.element(find.byType(AchievementsScreen))).pop();
       await tester.pumpAndSettle();
-      expect(loads, 2);
+      expect(loads, 3);
       await tester.tap(find.text('ร้านค้ารางวัล'));
       await tester.pumpAndSettle();
       Navigator.of(tester.element(find.byType(ShopPage))).pop();
       await tester.pumpAndSettle();
-      expect(loads, 2);
+      expect(loads, 4);
     },
   );
 
@@ -424,6 +531,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async {
             loads++;
             return _snapshot;
@@ -453,6 +561,7 @@ void main() {
               rebuild = setState;
               return show
                   ? MasteryDashboardScreen(
+                      ownerChanges: _displayProgressOwners,
                       loader: () async {
                         loads++;
                         return _snapshot;
@@ -481,6 +590,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MasteryDashboardScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () {
             return ++loads <= 2 ? Future.value(_snapshot) : refresh.future;
           },
@@ -501,9 +611,12 @@ void main() {
   testWidgets(
     'dependency replacement uses current progress and reads without writes',
     (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = (await tester.runAsync(
+        () async => AppDatabase(NativeDatabase.memory()),
+      ))!;
       try {
-        await _seedProgress(db);
+        await tester.runAsync(() => _seedProgress(db));
+        final io = (await tester.runAsync(() async => Zone.current))!;
         final ownersA = _Owners('a');
         final ownersB = _Owners('b');
         AppDependencies dependencies(_Owners owners) => AppDependencies(
@@ -521,31 +634,66 @@ void main() {
             nowUtc: () => DateTime.utc(2026, 10, 23),
           ),
         );
-        Widget app(AppDependencies deps) => AppDependenciesScope(
-          dependencies: deps,
-          child: const MaterialApp(home: MasteryDashboardScreen()),
-        );
-        final before = await _databaseSnapshot(db);
-        await tester.pumpWidget(app(dependencies(ownersA)));
+        final depsA = dependencies(ownersA);
+        final depsB = dependencies(ownersB);
+        Stream<String?> observed(AppDependencies deps) =>
+            Stream<String?>.multi((events) {
+              final source = io.run(
+                () => deps.progress!.watchActiveOwnerId().listen(
+                  events.add,
+                  onError: events.addError,
+                  onDone: events.close,
+                ),
+              );
+              events.onCancel = () => io.run(source.cancel);
+            }, isBroadcast: true);
+        final streamA = observed(depsA);
+        final streamB = observed(depsB);
+        Widget app(AppDependencies deps, Stream<String?> owners) =>
+            AppDependenciesScope(
+              dependencies: deps,
+              child: MaterialApp(
+                home: MasteryDashboardScreen(ownerChanges: owners),
+              ),
+            );
+        final beforeA = (await tester.runAsync(() => _databaseSnapshot(db)))!;
+        expect(beforeA, hasLength(37));
+        await tester.pumpWidget(app(depsA, streamA));
         await _waitFor(
           tester,
-          () =>
-              ownersA.reads == 1 &&
-              find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
+          () => find.textContaining('คำนวณจาก 0 คำตอบ').evaluate().isNotEmpty,
         );
         await _openWeakness(tester);
-        expect(ownersA.reads, 2);
-        await tester.pumpWidget(app(dependencies(ownersB)));
-        await _waitFor(tester, () => ownersB.reads >= 1);
-        await _popWeakness(tester);
+        final capturedChild = ModalRoute.of(
+          tester.element(find.byType(WeaknessClinicScreen)),
+        )!;
+        expect(ownersA.reads, 0);
+        expect(await tester.runAsync(() => _databaseSnapshot(db)), beforeA);
+        await tester.pumpWidget(app(depsB, streamB));
+        await tester.pump();
+        expect(find.text('คะแนนประสบการณ์'), findsNothing);
+        await tester.runAsync(
+          () => db.transaction(() async {
+            await db
+                .update(db.localOwners)
+                .write(const LocalOwnersCompanion(isActive: Value(false)));
+            await (db.update(db.localOwners)
+                  ..where((row) => row.id.equals('b')))
+                .write(const LocalOwnersCompanion(isActive: Value(true)));
+          }),
+        );
+        final beforeB = (await tester.runAsync(() => _databaseSnapshot(db)))!;
+        expect(beforeB, hasLength(37));
+        expect(find.byType(WeaknessClinicScreen), findsNothing);
+        await _popCapturedChild(tester, capturedChild);
         await _waitFor(
           tester,
           () => find.text('คะแนนประสบการณ์').evaluate().isNotEmpty,
         );
-        expect(ownersA.reads, 2);
-        expect(ownersB.reads, 2);
+        expect(ownersA.reads, 0);
+        expect(ownersB.reads, 0);
         _expectMetric('คะแนนประสบการณ์', '1');
-        expect(await _databaseSnapshot(db), before);
+        expect(await tester.runAsync(() => _databaseSnapshot(db)), beforeB);
         expect(tester.takeException(), isNull);
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -581,6 +729,7 @@ void main() {
                 child: child!,
               ),
               home: MasteryDashboardScreen(
+                ownerChanges: _displayProgressOwners,
                 loader: () {
                   loads++;
                   if (loads == 3) return refresh.future;
@@ -745,7 +894,12 @@ final _xpSnapshot = ProgressSnapshot(
 );
 
 Future<void> _openWeakness(WidgetTester tester) async {
-  await tester.tap(find.text('คำที่ควรฝึกเพิ่ม'));
+  final target = find.text('คำที่ควรฝึกเพิ่ม').hitTestable();
+  for (var frame = 0; frame < 60 && target.evaluate().isEmpty; frame++) {
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  expect(target, findsOneWidget);
+  await tester.tap(target);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
   await _waitFor(
@@ -764,6 +918,16 @@ Future<void> _openWeakness(WidgetTester tester) async {
 
 Future<void> _popWeakness(WidgetTester tester) async {
   Navigator.of(tester.element(find.byType(WeaknessClinicScreen))).pop();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+Future<void> _popCapturedChild(
+  WidgetTester tester,
+  Route<dynamic> route,
+) async {
+  expect(route.isCurrent, isTrue);
+  route.navigator!.pop();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
 }
@@ -803,7 +967,13 @@ Future<void> _seedProgress(AppDatabase db) async {
   for (final owner in ['a', 'b']) {
     await db
         .into(db.localOwners)
-        .insert(LocalOwnersCompanion.insert(id: owner, createdAtUtcMs: 1));
+        .insert(
+          LocalOwnersCompanion.insert(
+            id: owner,
+            isActive: Value(owner == 'a'),
+            createdAtUtcMs: 1,
+          ),
+        );
   }
   await db
       .into(db.vocabularyCategories)
@@ -870,3 +1040,47 @@ Future<Map<String, List<String>>> _databaseSnapshot(AppDatabase db) async => {
             .toList()
           ..sort(),
 };
+
+ProgressSnapshot _hostReadSnapshot(int marker) => ProgressSnapshot(
+  sampleSize: 3,
+  correctCount: 1,
+  wrongCount: 2,
+  accuracy: 1 / 3,
+  totalXp: marker,
+  completedSessions: 1,
+  streakDays: 1,
+  dueReviewCount: marker,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 1,
+  skills: const [],
+  weaknesses: [
+    WeaknessEvidence(
+      wordId: 'synthetic-owner-private-word',
+      spelling: 'synthetic-owner-private-$marker',
+      meaning: 'synthetic private meaning',
+      sampleSize: 3,
+      incorrectCount: 2,
+      errorRate: 2 / 3,
+      dueAtUtc: null,
+    ),
+  ],
+  recommendations: const [],
+);
+
+Future<void> _hostReadUntil(
+  WidgetTester tester,
+  bool Function() condition,
+) async {
+  for (var i = 0; i < 100 && !condition(); i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+  }
+  expect(condition(), isTrue, reason: 'Owner-bound host read did not settle');
+}
+
+final _displayProgressOwners = persistentProgressOwnerFixture(
+  'synthetic-mastery-dashboard-display-owner',
+);

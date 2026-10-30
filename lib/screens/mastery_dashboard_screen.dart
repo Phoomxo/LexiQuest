@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/progress/presentation/progress_host_binding.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/field_feature.dart';
@@ -9,10 +12,12 @@ import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
 import 'achievements_screen.dart';
 import 'learning_history_screen.dart';
+import 'review_center_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 
-typedef ProgressLoader = Future<ProgressSnapshot> Function();
+export '../features/progress/presentation/progress_host_binding.dart'
+    show ProgressLoader;
 
 class MasteryDashboardScreen extends StatefulWidget {
   const MasteryDashboardScreen({
@@ -20,65 +25,237 @@ class MasteryDashboardScreen extends StatefulWidget {
     this.loader,
     this.featureRegistry,
     this.onOpenMenu,
+    this.ownerChanges,
   });
 
   final ProgressLoader? loader;
   final FieldFeatureRegistry? featureRegistry;
   final VoidCallback? onOpenMenu;
+  final Stream<String?>? ownerChanges;
 
   @override
   State<MasteryDashboardScreen> createState() => _MasteryDashboardScreenState();
 }
 
-class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
-  Future<ProgressSnapshot>? _load;
+class _MasteryDashboardScreenState extends State<MasteryDashboardScreen>
+    with WidgetsBindingObserver {
+  AppDependencies? _dependencies;
   ProgressLoader? _loader;
+  Stream<String?>? _ownerSource;
+  Stream<String?>? _owners;
+  ProgressHostBinding? _binding;
+  ModalRoute<dynamic>? _route;
+  Object? _childToken;
+  ProgressHostBinding? _childBinding;
+  String? _childOwner;
+  int? _childGeneration;
+  bool _childCovered = false;
+  bool _bound = false;
+  bool _paneVisible = false;
+  bool _foreground = false;
 
-  ProgressLoader? get _currentLoader =>
-      widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+  bool get _visible =>
+      mounted && _foreground && _paneVisible && _route?.isCurrent == true;
+
+  FieldFeatureRegistry get _features =>
+      widget.featureRegistry ??
+      _dependencies?.fieldFeatures ??
+      const BuildFieldFeatureRegistry.allEnabled();
+
+  bool get _ownsCover {
+    final binding = _childBinding;
+    final owner = _childOwner;
+    final generation = _childGeneration;
+    return _childToken != null &&
+        !_childCovered &&
+        _foreground &&
+        _paneVisible &&
+        binding != null &&
+        identical(binding, _binding) &&
+        owner != null &&
+        generation != null &&
+        binding.isLaunchCurrent(generation, owner);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _foreground =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _changed() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _bind() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (_bound &&
+        identical(_dependencies, dependencies) &&
+        identical(_loader, widget.loader) &&
+        identical(_ownerSource, widget.ownerChanges)) {
+      return;
+    }
+    _bound = true;
+    _childCovered = true;
+    final old = _binding;
+    old?.removeListener(_changed);
+    old?.dispose();
+    _dependencies = dependencies;
+    _loader = widget.loader;
+    _ownerSource = widget.ownerChanges;
+    _owners =
+        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+    _binding = ProgressHostBinding(
+      progress: dependencies?.progress,
+      loader: widget.loader,
+      ownerChanges: _owners,
+      visible: () => _visible,
+    )..addListener(_changed);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_load == null || _currentLoader != _loader) {
-      _load = _loadProgress();
+    final route = ModalRoute.of(context);
+    if (_route != null && !identical(_route, route)) {
+      _binding?.invalidateLaunch();
     }
+    _route = route;
+    ModalRoute.isCurrentOf(context);
+    _paneVisible = Visibility.of(context);
+    _bind();
+    _binding?.syncVisibility(ownedCover: _ownsCover);
   }
 
   @override
-  void didUpdateWidget(MasteryDashboardScreen oldWidget) {
+  void didUpdateWidget(covariant MasteryDashboardScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loader != widget.loader) {
-      _load = _loadProgress();
+    _bind();
+    if (!identical(oldWidget.featureRegistry, widget.featureRegistry)) {
+      _binding?.invalidateLaunch();
     }
+    _binding?.syncVisibility(ownedCover: _ownsCover);
   }
 
-  Future<ProgressSnapshot> _loadProgress() {
-    final loader = _loader = _currentLoader;
-    final next = loader == null
-        ? Future<ProgressSnapshot>.error(
-            StateError('progress dependency unavailable'),
-          )
-        : Future<ProgressSnapshot>.sync(loader);
-    // Route teardown can delay FutureBuilder's subscription until the next frame.
-    next.ignore();
-    return next;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (!_foreground) {
+      _childCovered = true;
+      _binding?.invalidateLaunch();
+    }
+    _binding?.syncVisibility(ownedCover: _ownsCover);
   }
 
-  void _refresh() {
-    if (!mounted) return;
-    final next = _loadProgress();
-    setState(() {
-      _load = next;
-    });
+  void _coveredChild(Object token, ProgressHostBinding binding) {
+    if (!mounted ||
+        !identical(_childToken, token) ||
+        !identical(binding, _binding) ||
+        _childCovered ||
+        _route?.isCurrent == true) {
+      return;
+    }
+    _childCovered = true;
+    binding.invalidateLaunch();
+  }
+
+  VoidCallback? _action(
+    String routeName,
+    Widget Function(
+      String owner,
+      Stream<String?> owners,
+      bool Function() current,
+    )
+    destination, {
+    FieldFeature? feature,
+  }) {
+    final binding = _binding;
+    final owner = binding?.ownerId;
+    final owners = _owners;
+    if (binding == null || owner == null || owners == null) {
+      return null;
+    }
+    final epoch = binding.readEpoch;
+    final dependencies = _dependencies;
+    return () async {
+      if (_childToken != null ||
+          !identical(binding, _binding) ||
+          !identical(dependencies, _dependencies) ||
+          !binding.isReadCurrent(epoch) ||
+          (feature != null && !_features.isVisible(feature))) {
+        return;
+      }
+      final generation = binding.beginLaunch(epoch, requireSnapshot: false);
+      if (generation == null) {
+        return;
+      }
+      bool current() =>
+          mounted &&
+          identical(binding, _binding) &&
+          identical(dependencies, _dependencies) &&
+          binding.isLaunchCurrent(generation, owner) &&
+          _foreground &&
+          _paneVisible;
+      final token = Object();
+      _childToken = token;
+      _childBinding = binding;
+      _childOwner = owner;
+      _childGeneration = generation;
+      _childCovered = false;
+      try {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: routeName,
+            builder: (_) {
+              if (!mounted ||
+                  !identical(binding, _binding) ||
+                  !identical(dependencies, _dependencies) ||
+                  !binding.isLaunchCurrent(generation, owner) ||
+                  !_foreground ||
+                  !_paneVisible) {
+                return const Scaffold(
+                  body: _DashboardMessage('กิจกรรมไม่พร้อมใช้งาน'),
+                );
+              }
+              return _MasteryChildVisibility(
+                onCovered: () => _coveredChild(token, binding),
+                child: destination(owner, owners, current),
+              );
+            },
+          ),
+        );
+      } finally {
+        if (mounted && identical(_childToken, token)) {
+          _childToken = null;
+          _childBinding = null;
+          _childOwner = null;
+          _childGeneration = null;
+          if (identical(binding, _binding)) {
+            binding.syncVisibility(ownedCover: false);
+          }
+        }
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    final binding = _binding;
+    _binding = null;
+    binding?.removeListener(_changed);
+    binding?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final features =
-        widget.featureRegistry ??
-        AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
-        const BuildFieldFeatureRegistry.allEnabled();
+    final features = _features;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: M3Theme.appBarToolbarHeight(context),
@@ -97,128 +274,158 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
       body: AdaptiveContentPane(
         child: Column(
           children: [
-            _ProgressActions(
-              loader: widget.loader,
-              features: features,
-              onWeaknessReturn: _refresh,
-            ),
-            Expanded(
-              child: FutureBuilder<ProgressSnapshot>(
-                future: _load,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'กำลังอ่านประวัติการเรียน',
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    key: const ValueKey('review-center-entry'),
+                    onPressed: _action(
+                      'learning/review-center',
+                      (owner, owners, _) => ReviewCenterScreen(
+                        expectedOwnerId: owner,
+                        ownerChanges: owners,
+                        reviewCenter: _dependencies?.reviewCenter,
+                        learning: _dependencies?.learning,
+                        savedWords: _dependencies?.savedWords,
+                        wordReports: _dependencies?.wordReports,
+                        voice: _dependencies?.voice,
+                        featureRegistry: features,
+                        languageCode: Localizations.localeOf(
+                          context,
+                        ).languageCode,
                       ),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return _DashboardMessage(
-                      'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
-                      onRetry: _refresh,
-                    );
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'กำลังอ่านประวัติการเรียน',
+                    ),
+                    icon: const Icon(Icons.fact_check_outlined),
+                    label: const Text('ศูนย์ทบทวน'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _action(
+                      'progress/history',
+                      (owner, owners, current) => LearningHistoryScreen(
+                        ownerChanges: owners,
+                        loader: ({before}) {
+                          final progress = _dependencies?.progress;
+                          if (progress == null) {
+                            throw StateError('history dependency unavailable');
+                          }
+                          return progress.loadHistoryForOwner(
+                            expectedOwnerId: owner,
+                            stillCurrent: current,
+                            before: before,
+                          );
+                        },
                       ),
-                    );
-                  }
-                  final progress = snapshot.data!;
-                  if (progress.sampleSize == 0) {
-                    return const _DashboardMessage(
-                      'ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ',
-                    );
-                  }
-                  return _DashboardBody(progress);
-                },
+                    ),
+                    icon: const Icon(Icons.history),
+                    label: const Text('ประวัติการเรียน'),
+                  ),
+                  if (features.isVisible(FieldFeature.weakness))
+                    OutlinedButton.icon(
+                      onPressed: _action(
+                        'progress/weakness',
+                        (_, owners, _) => WeaknessClinicScreen(
+                          loader: widget.loader,
+                          learning: _dependencies?.learning,
+                          ownerChanges: owners,
+                          featureRegistry: features,
+                        ),
+                        feature: FieldFeature.weakness,
+                      ),
+                      icon: const Icon(Icons.healing_outlined),
+                      label: const Text('คำที่ควรฝึกเพิ่ม'),
+                    ),
+                  if (features.isVisible(FieldFeature.achievements))
+                    OutlinedButton.icon(
+                      onPressed: _action(
+                        'progress/achievements',
+                        (_, _, _) => AchievementsScreen(loader: widget.loader),
+                        feature: FieldFeature.achievements,
+                      ),
+                      icon: const Icon(Icons.emoji_events_outlined),
+                      label: const Text('ความสำเร็จ'),
+                    ),
+                  if (features.isVisible(FieldFeature.shop))
+                    OutlinedButton.icon(
+                      onPressed: _action(
+                        'progress/theme-store',
+                        (_, _, _) => const ShopPage(),
+                        feature: FieldFeature.shop,
+                      ),
+                      icon: const Icon(Icons.palette_outlined),
+                      label: const Text('ร้านค้ารางวัล'),
+                    ),
+                ],
               ),
             ),
+            Expanded(child: _body()),
           ],
         ),
       ),
     );
   }
+
+  Widget _body() {
+    final binding = _binding;
+    if (binding == null ||
+        !_visible ||
+        binding.ownerChanges == null ||
+        (binding.ownerObserved && binding.ownerId == null)) {
+      return const _DashboardMessage('บัญชีไม่พร้อมใช้งานสำหรับอ่านประวัติ');
+    }
+    if (binding.readFailed) {
+      final epoch = binding.readEpoch;
+      return _DashboardMessage(
+        'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
+        onRetry: () {
+          if (identical(binding, _binding) && binding.isReadCurrent(epoch)) {
+            binding.refresh();
+          }
+        },
+      );
+    }
+    final progress = binding.snapshot;
+    if (progress == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          semanticsLabel: 'กำลังอ่านประวัติการเรียน',
+        ),
+      );
+    }
+    if (progress.sampleSize == 0) {
+      return const _DashboardMessage(
+        'ยังไม่มีคำตอบที่บันทึกไว้\nคำนวณจาก 0 คำตอบ',
+      );
+    }
+    return _DashboardBody(progress);
+  }
 }
 
-class _ProgressActions extends StatelessWidget {
-  const _ProgressActions({
-    required this.loader,
-    required this.features,
-    required this.onWeaknessReturn,
-  });
+class _MasteryChildVisibility extends StatefulWidget {
+  const _MasteryChildVisibility({required this.onCovered, required this.child});
 
-  final ProgressLoader? loader;
-  final FieldFeatureRegistry features;
-  final VoidCallback onWeaknessReturn;
+  final VoidCallback onCovered;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          OutlinedButton.icon(
-            onPressed: () => _push(
-              context,
-              'progress/history',
-              const LearningHistoryScreen(),
-            ),
-            icon: const Icon(Icons.history),
-            label: const Text('ประวัติการเรียน'),
-          ),
-          if (features.isVisible(FieldFeature.weakness))
-            OutlinedButton.icon(
-              onPressed: () async {
-                await _push(
-                  context,
-                  'progress/weakness',
-                  WeaknessClinicScreen(
-                    loader: loader,
-                    featureRegistry: features,
-                  ),
-                );
-                onWeaknessReturn();
-              },
-              icon: const Icon(Icons.healing_outlined),
-              label: const Text('คำที่ควรฝึกเพิ่ม'),
-            ),
-          if (features.isVisible(FieldFeature.achievements))
-            OutlinedButton.icon(
-              onPressed: () => _push(
-                context,
-                'progress/achievements',
-                AchievementsScreen(loader: loader),
-              ),
-              icon: const Icon(Icons.emoji_events_outlined),
-              label: const Text('ความสำเร็จ'),
-            ),
-          if (features.isVisible(FieldFeature.shop))
-            OutlinedButton.icon(
-              onPressed: () =>
-                  _push(context, 'progress/theme-store', const ShopPage()),
-              icon: const Icon(Icons.palette_outlined),
-              label: const Text('ร้านค้ารางวัล'),
-            ),
-        ],
-      ),
-    );
+  State<_MasteryChildVisibility> createState() =>
+      _MasteryChildVisibilityState();
+}
+
+class _MasteryChildVisibilityState extends State<_MasteryChildVisibility> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = ModalRoute.isCurrentOf(context);
+    if (current == false && ModalRoute.of(context)?.isActive == true) {
+      widget.onCovered();
+    }
   }
 
-  Future<void> _push(
-    BuildContext context,
-    String name,
-    Widget destination,
-  ) async {
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(name: name, builder: (_) => destination),
-    );
-  }
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _DashboardBody extends StatelessWidget {

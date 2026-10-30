@@ -16,6 +16,7 @@ import '../features/media_practice/application/device_permission_access.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/progress/application/review_center_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/domain/research_runtime_availability.dart';
@@ -59,6 +60,7 @@ final class AppDependencies {
     this.syncStatus,
     this.learning,
     this.progress,
+    this.reviewCenter,
     this.rewards,
     this.vocabulary,
     this.savedWords,
@@ -102,6 +104,7 @@ final class AppDependencies {
   final SyncStatusSource? syncStatus;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
+  final ReviewCenterUseCases? reviewCenter;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final SavedWordsUseCases? savedWords;

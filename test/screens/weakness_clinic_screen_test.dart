@@ -9,13 +9,76 @@ import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 
+import '../support/progress_owner_fixture.dart';
+import '../support/review_center_harness.dart';
+
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets(
+    'owner ABA clears private host data before its fresh read completes',
+    (tester) async {
+      final owners = StreamController<String?>.broadcast(sync: true);
+      final pending = Completer<ProgressSnapshot>();
+      var reads = 0;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: WeaknessClinicScreen(
+              ownerChanges: owners.stream,
+              loader: () => reads++ == 0
+                  ? Future.value(_hostReadSnapshot(91))
+                  : pending.future,
+            ),
+          ),
+        );
+        owners.add('synthetic-host-owner-a');
+        await _hostReadUntil(
+          tester,
+          () => find.text('synthetic-owner-private-91').evaluate().isNotEmpty,
+        );
+        owners
+          ..add(null)
+          ..add('synthetic-host-owner-a');
+        await tester.pump();
+        expect(
+          find.text('synthetic-owner-private-91'),
+          findsNothing,
+          reason:
+              'A/null/A must synchronously discard the original private rows',
+        );
+        await _hostReadUntil(tester, () => reads >= 2);
+        pending.complete(_hostReadSnapshot(7));
+        await _hostReadUntil(
+          tester,
+          () => find.text('synthetic-owner-private-7').evaluate().isNotEmpty,
+        );
+        expect(find.text('synthetic-owner-private-91'), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (!pending.isCompleted) pending.complete(_hostReadSnapshot(7));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(owners.close);
+      }
+    },
+  );
+
   testWidgets('loading analysis has a contextual accessible label', (
     tester,
   ) async {
     final pending = Completer<ProgressSnapshot>();
     await tester.pumpWidget(
-      MaterialApp(home: WeaknessClinicScreen(loader: () => pending.future)),
+      MaterialApp(
+        home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () => pending.future,
+        ),
+      ),
     );
 
     expect(
@@ -31,6 +94,8 @@ void main() {
   });
 
   testWidgets('practice batch keeps the top 20 weakness ranks', (tester) async {
+    final h = (await tester.runAsync(ReviewCenterHarness.open))!;
+    final owners = h.ownerChanges;
     final ranked = List.generate(
       21,
       (i) => WeaknessEvidence(
@@ -43,70 +108,135 @@ void main() {
         dueAtUtc: null,
       ),
     );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: WeaknessClinicScreen(
-          loader: () async => ProgressSnapshot(
-            sampleSize: 100,
-            correctCount: 1,
-            wrongCount: 99,
-            accuracy: 0.01,
-            totalXp: 0,
-            completedSessions: 1,
-            streakDays: 0,
-            dueReviewCount: 0,
-            masteredWordCount: 0,
-            achievementCount: 0,
-            gameLevel: 1,
-            skills: [],
-            weaknesses: ranked,
-            recommendations: [],
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('ฝึกคำที่ผิด (20)'), findsOneWidget);
-    await tester.tap(find.text('ฝึกคำที่ผิด (20)'));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<QuizScreen>(find.byType(QuizScreen)).wordIds,
-      ranked.take(20).map((item) => item.wordId).toList(),
-    );
-  });
-
-  testWidgets(
-    'weakness practice stays available before the next SRS due date',
-    (tester) async {
+    try {
+      await tester.runAsync(() async {
+        for (final item in ranked) {
+          await h.addWord(
+            id: item.wordId,
+            spelling: item.spelling,
+            meaning: item.meaning,
+          );
+        }
+      });
+      final before = await tester.runAsync(h.snapshotAllTables);
       await tester.pumpWidget(
         MaterialApp(
           home: WeaknessClinicScreen(
+            ownerChanges: owners,
+            learning: h.learning,
             loader: () async => ProgressSnapshot(
-              sampleSize: 3,
+              sampleSize: 100,
               correctCount: 1,
-              wrongCount: 2,
-              accuracy: 1 / 3,
-              totalXp: 1,
+              wrongCount: 99,
+              accuracy: 0.01,
+              totalXp: 0,
               completedSessions: 1,
-              streakDays: 1,
+              streakDays: 0,
               dueReviewCount: 0,
               masteredWordCount: 0,
               achievementCount: 0,
               gameLevel: 1,
               skills: [],
-              weaknesses: _snapshot.weaknesses,
+              weaknesses: ranked,
               recommendations: [],
             ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
-      expect(find.text('ฝึกคำที่ผิด (1)'), findsOneWidget);
-      final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'ฝึกคำที่ผิด (1)'),
+      await _hostReadUntil(
+        tester,
+        () => find.text('ฝึกคำที่ผิด (20)').evaluate().isNotEmpty,
       );
-      expect(button.onPressed, isNotNull);
-      expect(find.text('ยังไม่มีคำที่ถึงกำหนดทบทวน'), findsOneWidget);
+      expect(find.text('ฝึกคำที่ผิด (20)'), findsOneWidget);
+      expect(await tester.runAsync(() => _clinicSessionCount(h)), 0);
+      expect(await tester.runAsync(h.snapshotAllTables), before);
+      await tester.tap(find.text('ฝึกคำที่ผิด (20)'));
+      await _clinicCanonicalStart(tester, h);
+      expect(
+        tester.widget<QuizScreen>(find.byType(QuizScreen)).wordIds,
+        ranked.take(20).map((item) => item.wordId).toList(),
+      );
+      final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(quiz.expectedOwnerId, configuredOwnerId);
+      expect(identical(quiz.ownerChanges, owners), isTrue);
+      expect(identical(quiz.learning, h.learning), isTrue);
+      expect(quiz.selectionMode, QuizWordSelectionMode.weakness);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(h.close);
+    }
+  });
+
+  testWidgets(
+    'weakness practice stays available before the next SRS due date',
+    (tester) async {
+      final h = (await tester.runAsync(ReviewCenterHarness.open))!;
+      final owners = h.ownerChanges;
+      try {
+        await tester.runAsync(() async {
+          for (final item in _snapshot.weaknesses) {
+            await h.addWord(
+              id: item.wordId,
+              spelling: item.spelling,
+              meaning: item.meaning,
+            );
+          }
+        });
+        final before = await tester.runAsync(h.snapshotAllTables);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: WeaknessClinicScreen(
+              ownerChanges: owners,
+              learning: h.learning,
+              loader: () async => ProgressSnapshot(
+                sampleSize: 3,
+                correctCount: 1,
+                wrongCount: 2,
+                accuracy: 1 / 3,
+                totalXp: 1,
+                completedSessions: 1,
+                streakDays: 1,
+                dueReviewCount: 0,
+                masteredWordCount: 0,
+                achievementCount: 0,
+                gameLevel: 1,
+                skills: [],
+                weaknesses: _snapshot.weaknesses,
+                recommendations: [],
+              ),
+            ),
+          ),
+        );
+        await _hostReadUntil(
+          tester,
+          () => find.text('ฝึกคำที่ผิด (1)').evaluate().isNotEmpty,
+        );
+        expect(find.text('ฝึกคำที่ผิด (1)'), findsOneWidget);
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'ฝึกคำที่ผิด (1)'),
+        );
+        expect(button.onPressed, isNotNull);
+        expect(find.text('ยังไม่มีคำที่ถึงกำหนดทบทวน'), findsOneWidget);
+        expect(await tester.runAsync(() => _clinicSessionCount(h)), 0);
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        await tester.tap(find.text('ฝึกคำที่ผิด (1)'));
+        await _clinicCanonicalStart(tester, h);
+        final quiz = tester.widget<QuizScreen>(find.byType(QuizScreen));
+        expect(quiz.expectedOwnerId, configuredOwnerId);
+        expect(identical(quiz.ownerChanges, owners), isTrue);
+        expect(identical(quiz.learning, h.learning), isTrue);
+        expect(
+          quiz.wordIds,
+          _snapshot.weaknesses.map((item) => item.wordId).toList(),
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
     },
   );
 
@@ -114,7 +244,12 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: WeaknessClinicScreen(loader: () async => _snapshot)),
+      MaterialApp(
+        home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _snapshot,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -135,6 +270,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async => _snapshot,
           featureRegistry: const BuildFieldFeatureRegistry({
             FieldFeature.weakness: FieldFeatureState.enabled,
@@ -154,7 +290,10 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: WeaknessClinicScreen(loader: () async => _emptySnapshot),
+        home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _emptySnapshot,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -168,6 +307,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async {
             if (calls++ == 0) throw StateError('synthetic failure');
             return _snapshot;
@@ -213,7 +353,10 @@ void main() {
           ).copyWith(textScaler: const TextScaler.linear(2)),
           child: child!,
         ),
-        home: WeaknessClinicScreen(loader: () async => _snapshot),
+        home: WeaknessClinicScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => _snapshot,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -276,3 +419,84 @@ const _emptySnapshot = ProgressSnapshot(
   weaknesses: [],
   recommendations: [],
 );
+
+ProgressSnapshot _hostReadSnapshot(int marker) => ProgressSnapshot(
+  sampleSize: 3,
+  correctCount: 1,
+  wrongCount: 2,
+  accuracy: 1 / 3,
+  totalXp: marker,
+  completedSessions: 1,
+  streakDays: 1,
+  dueReviewCount: marker,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 1,
+  skills: const [],
+  weaknesses: [
+    WeaknessEvidence(
+      wordId: 'synthetic-owner-private-word',
+      spelling: 'synthetic-owner-private-$marker',
+      meaning: 'synthetic private meaning',
+      sampleSize: 3,
+      incorrectCount: 2,
+      errorRate: 2 / 3,
+      dueAtUtc: null,
+    ),
+  ],
+  recommendations: const [],
+);
+
+Future<void> _hostReadUntil(
+  WidgetTester tester,
+  bool Function() condition,
+) async {
+  for (var i = 0; i < 100 && !condition(); i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+  }
+  expect(condition(), isTrue, reason: 'Owner-bound host read did not settle');
+}
+
+final _displayProgressOwners = persistentProgressOwnerFixture(
+  'synthetic-weakness-clinic-display-owner',
+);
+
+Future<int> _clinicSessionCount(ReviewCenterHarness h) async =>
+    (await h.database.select(h.database.learningSessions).get()).length;
+
+Future<void> _clinicCanonicalStart(
+  WidgetTester tester,
+  ReviewCenterHarness h,
+) async {
+  var count = 0;
+  for (var i = 0; i < 100; i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+    count = (await tester.runAsync(() => _clinicSessionCount(h)))!;
+    if (count == 1) {
+      break;
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+  }
+  expect(
+    count,
+    1,
+    reason: 'The owned Quiz must acknowledge one canonical start',
+  );
+  final session = (await tester.runAsync(
+    () => h.database.select(h.database.learningSessions).getSingle(),
+  ))!;
+  expect(session.ownerId, configuredOwnerId);
+  expect(session.activityType, 'weaknessPractice');
+  expect(session.state, 'active');
+  expect(
+    await tester.runAsync(
+      () => h.database.select(h.database.answerAttempts).get(),
+    ),
+    isEmpty,
+  );
+}

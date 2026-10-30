@@ -371,7 +371,12 @@ Future<void> _pumpEntry(
       child: MaterialApp(home: screen),
     ),
   );
-  await tester.pumpAndSettle();
+  if (owners == null) {
+    await tester.pumpAndSettle();
+  } else {
+    // The supplied owner stream is deliberately silent until its caller emits.
+    await tester.pump();
+  }
   if (owners == null &&
       ['tile', 'recommendation', 'weakness'].contains(entry)) {
     await _until(tester, () => _entryEnabled(tester, entry));

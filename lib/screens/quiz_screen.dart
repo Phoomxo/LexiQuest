@@ -27,6 +27,7 @@ class QuizScreen extends StatefulWidget {
     this.expectedOwnerId,
     this.ownerChanges,
     this.onCanonicalFinished,
+    this.onScoreRouteChanged,
   });
 
   final String? categoryId;
@@ -38,6 +39,7 @@ class QuizScreen extends StatefulWidget {
   final Stream<String?>? ownerChanges;
   final Future<void> Function(ConfiguredQuizFinishResult result)?
   onCanonicalFinished;
+  final void Function(Route<dynamic>? route, bool current)? onScoreRouteChanged;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -828,33 +830,45 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
         context,
         AppPage<void>(
           name: 'learning/score',
-          builder: (scoreContext) => ValueListenableBuilder<String?>(
-            valueListenable: _ownerToken,
-            builder: (context, owner, _) => owner == result.state.ownerId
-                ? ScoreScreen(
-                    correctAnswers: result.summary.correctCount,
-                    wrongAnswers: result.summary.wrongCount,
-                    score: result.summary.score,
-                    mistakes: mistakes,
-                    onPracticeMistakes: mistakes.isEmpty
-                        ? null
-                        : () => _practiceMistakes(scoreContext, mistakes),
-                  )
-                : Scaffold(
-                    body: _QuizMessage(
-                      icon: Icons.account_circle_outlined,
-                      message: 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม',
-                      actionLabel: 'กลับไปเลือกกิจกรรม',
-                      onAction: () => Navigator.maybePop(scoreContext),
+          builder: (scoreContext) {
+            widget.onScoreRouteChanged?.call(
+              ModalRoute.of(scoreContext),
+              ModalRoute.isCurrentOf(scoreContext) == true,
+            );
+            return ValueListenableBuilder<String?>(
+              valueListenable: _ownerToken,
+              builder: (context, owner, _) => owner == result.state.ownerId
+                  ? ScoreScreen(
+                      correctAnswers: result.summary.correctCount,
+                      wrongAnswers: result.summary.wrongCount,
+                      score: result.summary.score,
+                      mistakes: mistakes,
+                      onPracticeMistakes: mistakes.isEmpty
+                          ? null
+                          : () => _practiceMistakes(scoreContext, mistakes),
+                    )
+                  : Scaffold(
+                      body: _QuizMessage(
+                        icon: Icons.account_circle_outlined,
+                        message: 'บัญชีเปลี่ยนแล้ว กรุณากลับไปเลือกกิจกรรม',
+                        actionLabel: 'กลับไปเลือกกิจกรรม',
+                        onAction: () => Navigator.maybePop(scoreContext),
+                      ),
                     ),
-                  ),
-          ),
+            );
+          },
         ),
+        onRouteCreated: (route) =>
+            widget.onScoreRouteChanged?.call(route, true),
       );
-      if (mounted && binding == _binding && _ownerCurrent) {
+      if (mounted &&
+          binding == _binding &&
+          _ownerCurrent &&
+          _route?.isCurrent == true) {
         Navigator.of(context).pop();
       }
     } finally {
+      widget.onScoreRouteChanged?.call(null, false);
       if (mounted && binding == _binding) setState(() => _scoreOpen = false);
     }
   }
@@ -864,6 +878,7 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
     List<QuizWord> mistakes,
   ) async {
     if (_practicingMistakes || !_ownerCurrent) return;
+    final scoreRoute = ModalRoute.of(scoreContext);
     _practicingMistakes = true;
     try {
       await AppNavigator.pushPage<void>(
@@ -878,7 +893,9 @@ class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
           ),
         ),
       );
-      if (scoreContext.mounted) Navigator.of(scoreContext).pop();
+      if (scoreContext.mounted && scoreRoute?.isCurrent == true) {
+        Navigator.of(scoreContext).pop();
+      }
     } finally {
       _practicingMistakes = false;
     }

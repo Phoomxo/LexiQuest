@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../config/m3_theme.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
-import '../features/progress/domain/progress_models.dart';
+import '../features/progress/presentation/progress_host_binding.dart';
 import '../features/research/application/study_runtime.dart';
 import '../features/research/presentation/study_host.dart';
 import '../runtime/app_dependencies.dart';
@@ -14,6 +14,7 @@ import '../services/ai_reading_content_adapter.dart';
 
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'review_center_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'word_scramble_screen.dart';
@@ -49,7 +50,11 @@ enum _NativeMode { dictation, cloze, wordScramble, sentenceScramble }
 
 class _ChooseModeScreenState extends State<ChooseModeScreen>
     with WidgetsBindingObserver {
-  Future<ProgressSnapshot>? _load;
+  ProgressHostBinding? _progress;
+  AppDependencies? _progressDependencies;
+  Stream<String?>? _nativeOwnerSource;
+  bool _openingProgressChild = false;
+  bool _foreignProgressCover = false;
   AppDependencies? _studyDependencies;
   Stream<String?>? _studyOwners;
   bool _openingStudy = false;
@@ -79,6 +84,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   void dispose() {
     _studyEntryGeneration++;
     _nativeGeneration++;
+    _progress?.dispose();
     _nativeChanges.dispose();
     _nativeOwners?.cancel();
     WidgetsBinding.instance.removeObserver(this);
@@ -90,7 +96,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
     if (state != AppLifecycleState.resumed) {
       _invalidateNative();
+      _progress?.invalidateLaunch();
     }
+    _syncProgress();
   }
 
   LearningUseCases? get _learning =>
@@ -104,7 +112,6 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _load ??= _loadProgress();
     final visible =
         ModalRoute.isCurrentOf(context) == true && Visibility.of(context);
     if (_studyRouteVisible && !visible) _studyEntryGeneration++;
@@ -119,6 +126,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
     _nativeRouteVisible = visible;
     _replaceNativeBinding(dependencies);
+    _bindProgress(dependencies);
+    _syncProgress();
   }
 
   @override
@@ -132,6 +141,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
       _invalidateNative();
     }
+    if (!identical(oldWidget.loader, widget.loader) ||
+        !identical(oldWidget.learning, widget.learning) ||
+        !identical(oldWidget.featureRegistry, widget.featureRegistry) ||
+        !identical(oldWidget.ownerChanges, widget.ownerChanges)) {
+      _bindProgress(AppDependenciesScope.maybeOf(context), force: true);
+    }
+    _syncProgress();
   }
 
   void _replaceNativeBinding(
@@ -151,6 +167,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     final binding = ++_nativeOwnerBinding;
     final source =
         widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+    _nativeOwnerSource = source;
     _nativeOwners = source?.listen(
       (ownerId) {
         if (!mounted ||
@@ -221,21 +238,128 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
   }
 
-  Future<ProgressSnapshot> _loadProgress() {
-    final loader =
-        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
-    return loader == null
-        ? Future.error(StateError('progress dependency unavailable'))
-        : Future<ProgressSnapshot>.sync(loader);
+  bool get _progressVisible =>
+      mounted &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      Visibility.of(context) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  void _bindProgress(AppDependencies? dependencies, {bool force = false}) {
+    if (!force &&
+        _progress != null &&
+        identical(_progressDependencies, dependencies) &&
+        identical(_progress!.ownerChanges, _nativeOwnerSource)) {
+      return;
+    }
+    _progress?.dispose();
+    _progressDependencies = dependencies;
+    _progress = ProgressHostBinding(
+      progress: dependencies?.progress,
+      loader: widget.loader,
+      ownerChanges: _nativeOwnerSource,
+      visible: () => _progressVisible,
+    )..addListener(_progressChanged);
   }
 
-  void _refresh() {
-    if (mounted) {
-      final next = _loadProgress();
-      setState(() {
-        _load = next;
-      });
+  void _progressChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _syncProgress() {
+    _progress?.syncVisibility(
+      ownedCover:
+          Visibility.of(context) &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+          ((_openingSrs || _openingProgressChild) && !_foreignProgressCover ||
+              _choosingNativeOverlay ||
+              _openingNative),
+    );
+  }
+
+  void _refresh() => _progress?.refresh();
+
+  VoidCallback? _readAction(VoidCallback action) {
+    final binding = _progress;
+    if (binding?.ownerId == null) return null;
+    final epoch = binding!.readEpoch;
+    return () {
+      if (identical(binding, _progress) && binding.isReadCurrent(epoch)) {
+        action();
+      }
+    };
+  }
+
+  Widget _trackProgressChild(Widget child, ProgressHostBinding binding) =>
+      Builder(
+        builder: (childContext) {
+          final current = ModalRoute.isCurrentOf(childContext) == true;
+          if (ModalRoute.of(childContext)?.isActive == true &&
+              !current &&
+              ModalRoute.of(context)?.isCurrent != true &&
+              !_foreignProgressCover) {
+            _foreignProgressCover = true;
+            binding.invalidateLaunch();
+            _invalidateNative();
+          }
+          return child;
+        },
+      );
+
+  VoidCallback? _reviewCenterAction() {
+    final binding = _progress;
+    final owner = binding?.ownerId;
+    final dependencies = _progressDependencies;
+    final review = dependencies?.reviewCenter;
+    final learning = _learning;
+    final owners = _nativeOwnerSource;
+    if (binding == null || owner == null || review == null || owners == null) {
+      return null;
     }
+    final epoch = binding.readEpoch;
+    return () async {
+      if (_openingProgressChild || !binding.isReadCurrent(epoch)) return;
+      final launch = binding.beginLaunch(epoch, requireSnapshot: false);
+      if (launch == null) return;
+      bool current() =>
+          mounted &&
+          identical(binding, _progress) &&
+          binding.isLaunchCurrent(launch, owner) &&
+          identical(dependencies, _progressDependencies) &&
+          identical(learning, _learning) &&
+          Visibility.of(context) &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      _openingProgressChild = true;
+      _foreignProgressCover = false;
+      try {
+        await AppNavigator.pushPage<void>(
+          context,
+          AppPage<void>(
+            name: 'learning/review-center',
+            builder: (_) => _trackProgressChild(
+              current()
+                  ? ReviewCenterScreen(
+                      expectedOwnerId: owner,
+                      reviewCenter: review,
+                      ownerChanges: owners,
+                      learning: learning,
+                      savedWords: dependencies?.savedWords,
+                      wordReports: dependencies?.wordReports,
+                      voice: dependencies?.voice,
+                      featureRegistry: _features,
+                      languageCode: Localizations.localeOf(
+                        context,
+                      ).languageCode,
+                    )
+                  : const Scaffold(body: SizedBox.shrink()),
+              binding,
+            ),
+          ),
+        );
+      } finally {
+        _openingProgressChild = false;
+        if (current() && _progressVisible) _syncProgress();
+      }
+    };
   }
 
   @override
@@ -280,10 +404,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
           ),
           const SizedBox(height: 12),
           _studyEntry(),
-          FutureBuilder<ProgressSnapshot>(
-            future: _load,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
+          Builder(
+            builder: (context) {
+              final binding = _progress;
+              if (binding?.ownerId == null) return const SizedBox.shrink();
+              if (binding!.loading) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: LinearProgressIndicator(
@@ -291,7 +416,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                   ),
                 );
               }
-              if (snapshot.hasError) {
+              if (binding.readFailed || binding.snapshot == null) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -300,14 +425,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                       child: const Text('โหลดคำแนะนำการฝึกไม่สำเร็จ'),
                     ),
                     TextButton.icon(
-                      onPressed: _refresh,
+                      onPressed: _readAction(_refresh),
                       icon: const Icon(Icons.refresh),
                       label: const Text('ลองใหม่'),
                     ),
                   ],
                 );
               }
-              final progress = snapshot.requireData;
+              final progress = binding.snapshot!;
               final hasDue = canReview && progress.dueReviewCount > 0;
               final hasWeakness = canWeakness && progress.weaknesses.isNotEmpty;
               final hasRecommendation = hasDue || hasWeakness || canQuiz;
@@ -326,15 +451,22 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                     FilledButton.icon(
                       onPressed: hasDue
                           ? _dueReviewAction()
-                          : () => _push(
-                              context,
-                              hasWeakness
-                                  ? WeaknessClinicScreen(
-                                      loader: widget.loader,
-                                      learning: _learning,
-                                      featureRegistry: _features,
-                                    )
-                                  : QuizScreen(learning: _learning),
+                          : _readAction(
+                              () => _push(
+                                context,
+                                hasWeakness
+                                    ? WeaknessClinicScreen(
+                                        loader: widget.loader,
+                                        learning: _learning,
+                                        featureRegistry: _features,
+                                        ownerChanges: _nativeOwnerSource,
+                                      )
+                                    : QuizScreen(
+                                        learning: _learning,
+                                        expectedOwnerId: _progress?.ownerId,
+                                        ownerChanges: _nativeOwnerSource,
+                                      ),
+                              ),
                             ),
                       icon: Icon(
                         hasDue
@@ -359,6 +491,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               );
             },
           ),
+          const SizedBox(height: 16),
+          _LearningTile(
+            key: const ValueKey('review-center-entry'),
+            icon: Icons.collections_bookmark_outlined,
+            title: 'ศูนย์ทบทวน',
+            subtitle: 'คำถึงกำหนด คำที่ผิด คำที่บันทึก และรายงานในเครื่อง',
+            onTap: _reviewCenterAction(),
+          ),
           const SizedBox(height: 24),
           Text('เลือกกิจกรรม', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
@@ -367,7 +507,16 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               icon: Icons.quiz_outlined,
               title: 'ฝึกคำศัพท์',
               subtitle: 'ฝึกคำแปล แล้วดูคำที่ควรทบทวน',
-              onTap: () => _push(context, QuizScreen(learning: _learning)),
+              onTap: _readAction(
+                () => _push(
+                  context,
+                  QuizScreen(
+                    learning: _learning,
+                    expectedOwnerId: _progress?.ownerId,
+                    ownerChanges: _nativeOwnerSource,
+                  ),
+                ),
+              ),
             ),
             _LearningTile(
               icon: Icons.category_outlined,
@@ -428,11 +577,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               icon: Icons.analytics_outlined,
               title: 'ภาพรวมการเรียน',
               subtitle: 'ดูความก้าวหน้าจากคำตอบที่บันทึกไว้',
-              onTap: () => _push(
-                context,
-                MasteryDashboardScreen(
-                  loader: widget.loader,
-                  featureRegistry: _features,
+              onTap: _readAction(
+                () => _push(
+                  context,
+                  MasteryDashboardScreen(
+                    loader: widget.loader,
+                    featureRegistry: _features,
+                    ownerChanges: _nativeOwnerSource,
+                  ),
                 ),
               ),
             ),
@@ -441,12 +593,15 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               icon: Icons.healing_outlined,
               title: 'ฝึกจุดอ่อน',
               subtitle: 'ฝึกคำที่เคยตอบผิดได้โดยไม่ต้องรอวันทบทวน',
-              onTap: () => _push(
-                context,
-                WeaknessClinicScreen(
-                  loader: widget.loader,
-                  learning: _learning,
-                  featureRegistry: _features,
+              onTap: _readAction(
+                () => _push(
+                  context,
+                  WeaknessClinicScreen(
+                    loader: widget.loader,
+                    learning: _learning,
+                    featureRegistry: _features,
+                    ownerChanges: _nativeOwnerSource,
+                  ),
                 ),
               ),
             ),
@@ -474,9 +629,15 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     final ownerId = _nativeOwnerId;
     final learning = _learning;
     final dependencies = _nativeDependencies;
-    if (ownerId == null || learning == null) return null;
+    final binding = _progress;
+    if (ownerId == null || learning == null || binding?.snapshot == null) {
+      return null;
+    }
+    final epoch = binding!.readEpoch;
+    int? launch;
     bool current() =>
         mounted &&
+        (launch == null || binding.isLaunchCurrent(launch!, ownerId)) &&
         generation == _nativeGeneration &&
         ownerId == _nativeOwnerId &&
         identical(learning, _learning) &&
@@ -486,34 +647,40 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     return () async {
       if (_openingSrs ||
+          !binding.isReadCurrent(epoch) ||
           !current() ||
           ModalRoute.of(context)?.isCurrent != true) {
         return;
       }
-      final owners =
-          widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+      final owners = _nativeOwnerSource;
       if (owners == null) return;
+      launch = binding.beginLaunch(epoch);
+      if (launch == null) return;
+      _foreignProgressCover = false;
       _openingSrs = true;
       try {
         await AppNavigator.pushPage<void>(
           context,
           AppPage<void>(
             name: 'learning/due-srs',
-            builder: (_) => current()
-                ? SrsFlashcardsScreen(
-                    expectedOwnerId: ownerId,
-                    ownerChanges: owners,
-                    learning: learning,
-                    voice: dependencies?.voice,
-                  )
-                : const Scaffold(
-                    body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
-                  ),
+            builder: (_) => _trackProgressChild(
+              current()
+                  ? SrsFlashcardsScreen(
+                      expectedOwnerId: ownerId,
+                      ownerChanges: owners,
+                      learning: learning,
+                      voice: dependencies?.voice,
+                    )
+                  : const Scaffold(
+                      body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
+                    ),
+              binding,
+            ),
           ),
         );
       } finally {
         _openingSrs = false;
-        _refresh();
+        if (current() && _progressVisible) _syncProgress();
       }
     };
   }
@@ -762,7 +929,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         );
       }
       if (mounted) {
-        _refresh();
+        _syncProgress();
       }
     } on Object {
       if (_canOpenNative(generation, ownerId, learning, dependencies)) {
@@ -994,7 +1161,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       context,
       AppPage<void>(name: 'learning/activity', builder: (_) => screen),
     );
-    _refresh();
+    _syncProgress();
   }
 }
 

@@ -63,6 +63,8 @@ import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/progress/application/review_center_use_cases.dart';
+import '../features/progress/data/drift_review_center_queries.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/research/domain/research_operation_authorizer.dart';
 import '../features/research/domain/research_runtime_availability.dart';
@@ -631,6 +633,13 @@ final class AppBootstrap {
         queries: DriftProgressQueries(database),
         nowUtc: () => DateTime.now().toUtc(),
       );
+      final reviewCenter = ReviewCenterUseCases(
+        queries: DriftReviewCenterQueries(database),
+        progress: progress,
+        savedWords: savedWords,
+        wordReports: wordReports,
+        nowUtc: () => DateTime.now().toUtc(),
+      );
       final rewards = RewardUseCases(
         owners: localOwners,
         repository: DriftRewardRepository(database),
@@ -793,6 +802,7 @@ final class AppBootstrap {
         learning: learning,
         associativeLearning: DriftAssociativeLearningAdapter(database),
         progress: progress,
+        reviewCenter: reviewCenter,
         rewards: rewards,
         exports: exports,
         vocabulary: vocabulary,

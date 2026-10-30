@@ -304,12 +304,16 @@ Future<AppDependencies> _pumpEntry(
 }
 
 Future<void> _openCategory(WidgetTester tester) async {
-  final entry = find.byKey(const ValueKey('sentence-scramble-entry'));
+  final entry = find
+      .byKey(const ValueKey('sentence-scramble-entry'))
+      .hitTestable();
   await tester.scrollUntilVisible(
     entry,
     160,
     scrollable: find.byType(Scrollable).last,
   );
+  expect(entry, findsOneWidget);
+  expect(ModalRoute.of(tester.element(entry))?.isCurrent, isTrue);
   await tester.tap(entry);
   await _until(
     tester,

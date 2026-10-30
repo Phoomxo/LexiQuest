@@ -1,15 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../config/m3_theme.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../features/progress/presentation/progress_host_binding.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import '../widgets/adaptive_content_pane.dart';
-import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'srs_flashcards_screen.dart';
 import '../navigation/app_routes.dart';
@@ -34,16 +32,19 @@ class WeaknessClinicScreen extends StatefulWidget {
 
 class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
     with WidgetsBindingObserver {
-  Future<ProgressSnapshot>? _load;
+  ProgressHostBinding? _binding;
   AppDependencies? _dependencies;
-  StreamSubscription<String?>? _owners;
-  String? _ownerId;
-  int _generation = 0;
-  int _ownerBinding = 0;
-  bool _bound = false;
-  bool _redrawScheduled = false;
-  bool _openingReview = false;
-  bool _visible = false;
+  Stream<String?>? _ownerChanges;
+  bool _opening = false;
+  bool _foreignCover = false;
+  Route<dynamic>? _scoreRoute;
+  Route<dynamic>? _quizRoute;
+
+  bool get _visible =>
+      mounted &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      Visibility.of(context) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
   @override
   void initState() {
@@ -53,94 +54,76 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
 
   @override
   void dispose() {
-    _generation++;
-    unawaited(_owners?.cancel());
+    _binding?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) _generation++;
+    if (state != AppLifecycleState.resumed) _binding?.invalidateLaunch();
+    _syncVisibility();
   }
 
-  void _bindOwners({bool force = false}) {
+  void _bind({bool force = false}) {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    if (!force && _bound && identical(_dependencies, dependencies)) return;
-    _bound = true;
-    _generation++;
-    _ownerId = null;
-    _dependencies = dependencies;
-    unawaited(_owners?.cancel());
-    final binding = ++_ownerBinding;
-    final source =
-        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
-    void changed(String? owner) {
-      if (!mounted ||
-          !identical(_dependencies, dependencies) ||
-          binding != _ownerBinding) {
-        return;
-      }
-      _generation++;
-      _ownerId = owner;
-      if (_redrawScheduled) return;
-      _redrawScheduled = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _redrawScheduled = false;
-        if (mounted) setState(() {});
-      });
-      WidgetsBinding.instance.ensureVisualUpdate();
+    if (!force && _binding != null && identical(_dependencies, dependencies)) {
+      return;
     }
-
-    _owners = source?.listen(
-      changed,
-      onError: (Object _, StackTrace _) => changed(null),
-      onDone: () => changed(null),
-    );
+    _binding?.dispose();
+    _dependencies = dependencies;
+    _ownerChanges =
+        widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
+    _binding = ProgressHostBinding(
+      progress: dependencies?.progress,
+      loader: widget.loader,
+      ownerChanges: _ownerChanges,
+      visible: () => _visible,
+    )..addListener(_changed);
   }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  void _syncVisibility() => _binding?.syncVisibility(
+    ownedCover:
+        _opening &&
+        !_foreignCover &&
+        Visibility.of(context) &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+  );
 
   @override
   void didUpdateWidget(covariant WeaknessClinicScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.ownerChanges, widget.ownerChanges)) {
-      _bindOwners(force: true);
-    }
-    if (!identical(oldWidget.learning, widget.learning) ||
+    if (!identical(oldWidget.ownerChanges, widget.ownerChanges) ||
+        !identical(oldWidget.loader, widget.loader) ||
+        !identical(oldWidget.learning, widget.learning) ||
         !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
-      _generation++;
+      _bind(force: true);
     }
+    _syncVisibility();
   }
 
-  ProgressLoader? get _loader =>
-      widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
-
-  Future<ProgressSnapshot> _loadProgress() {
-    final loader = _loader;
-    return loader == null
-        ? Future<ProgressSnapshot>.error(
-            StateError('progress dependency unavailable'),
-          )
-        : Future<ProgressSnapshot>.sync(loader);
-  }
-
-  void _retry() {
-    if (!mounted) return;
-    final next = _loadProgress();
-    setState(() {
-      _load = next;
-    });
+  VoidCallback? _retryAction() {
+    final binding = _binding;
+    if (binding?.ownerId == null) return null;
+    final epoch = binding!.readEpoch;
+    return () {
+      if (identical(binding, _binding) && binding.isReadCurrent(epoch)) {
+        binding.refresh();
+      }
+    };
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final visible =
-        ModalRoute.isCurrentOf(context) == true && Visibility.of(context);
-    if (_visible && !visible && !_openingReview) _generation++;
-    _visible = visible;
-    _bindOwners();
-    if (_load != null) return;
-    _load = _loadProgress();
+    ModalRoute.isCurrentOf(context);
+    Visibility.of(context);
+    _bind();
+    _syncVisibility();
   }
 
   @override
@@ -155,24 +138,29 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
         title: M3Theme.appBarTitle(context, 'ฝึกจุดอ่อน'),
       ),
       body: AdaptiveContentPane(
-        child: FutureBuilder<ProgressSnapshot>(
-          future: _load,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
+        child: Builder(
+          builder: (context) {
+            final binding = _binding;
+            if (binding == null ||
+                binding.readFailed ||
+                binding.ownerChanges == null ||
+                (binding.ownerObserved && binding.ownerId == null)) {
               return _WeaknessMessage(
                 'อ่านข้อมูลจุดอ่อนไม่สำเร็จ',
                 liveRegion: true,
-                onRetry: _retry,
+                onRetry: _retryAction(),
               );
             }
-            if (!snapshot.hasData) {
+            if (!binding.ownerObserved ||
+                binding.loading ||
+                binding.snapshot == null) {
               return const Center(
                 child: CircularProgressIndicator(
                   semanticsLabel: 'กำลังวิเคราะห์คำที่ควรฝึก',
                 ),
               );
             }
-            final progress = snapshot.data!;
+            final progress = binding.snapshot!;
             if (progress.sampleSize == 0) {
               return const _WeaknessMessage(
                 'ยังไม่มีคำตอบสำหรับวิเคราะห์\nคำนวณจาก 0 คำตอบ',
@@ -185,14 +173,10 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
             }
             return _WeaknessBody(
               progress,
-              learning: widget.learning,
               canQuiz: features.isVisible(FieldFeature.quiz),
               canReview: features.isVisible(FieldFeature.srs),
-              onReview: _reviewAction(features),
-              onReturn: () {
-                if (!mounted) return;
-                _retry();
-              },
+              onReview: _practiceAction(progress, features, review: true),
+              onPractice: _practiceAction(progress, features, review: false),
             );
           },
         ),
@@ -200,51 +184,105 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
     );
   }
 
-  VoidCallback? _reviewAction(FieldFeatureRegistry features) {
-    final generation = _generation;
-    final ownerId = _ownerId;
+  VoidCallback? _practiceAction(
+    ProgressSnapshot progress,
+    FieldFeatureRegistry features, {
+    required bool review,
+  }) {
+    final binding = _binding;
+    final owner = binding?.ownerId;
     final dependencies = _dependencies;
     final learning = widget.learning ?? dependencies?.learning;
-    if (ownerId == null || learning == null) return null;
-    bool current() =>
-        mounted &&
-        generation == _generation &&
-        ownerId == _ownerId &&
-        identical(dependencies, _dependencies) &&
-        identical(learning, widget.learning ?? _dependencies?.learning) &&
-        features.isVisible(FieldFeature.srs) &&
-        Visibility.of(context) &&
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    final owners = _ownerChanges;
+    if (binding == null ||
+        owner == null ||
+        learning == null ||
+        owners == null ||
+        (review && !features.isVisible(FieldFeature.srs)) ||
+        (!review && !features.isVisible(FieldFeature.quiz))) {
+      return null;
+    }
+    final epoch = binding.readEpoch;
+    final ids = List<String>.unmodifiable(
+      progress.weaknesses.take(20).map((item) => item.wordId),
+    );
     return () async {
-      if (_openingReview ||
-          !current() ||
-          ModalRoute.of(context)?.isCurrent != true) {
-        return;
+      if (_opening || !binding.isReadCurrent(epoch)) return;
+      final launch = binding.beginLaunch(epoch);
+      if (launch == null) return;
+      bool current() =>
+          mounted &&
+          identical(binding, _binding) &&
+          binding.isLaunchCurrent(launch, owner) &&
+          identical(dependencies, _dependencies) &&
+          identical(learning, widget.learning ?? _dependencies?.learning) &&
+          Visibility.of(context) &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      void foreignCover() {
+        if (_foreignCover) return;
+        _foreignCover = true;
+        binding.invalidateLaunch();
       }
-      final owners =
-          widget.ownerChanges ?? dependencies?.progress?.watchActiveOwnerId();
-      if (owners == null) return;
-      _openingReview = true;
+
+      void scoreChanged(Route<dynamic>? route, bool current) {
+        _scoreRoute = route;
+        if (route != null &&
+            route.isActive &&
+            !current &&
+            _quizRoute?.isCurrent != true) {
+          foreignCover();
+        }
+      }
+
+      _opening = true;
+      _foreignCover = false;
+      _scoreRoute = null;
+      _quizRoute = null;
       try {
         await AppNavigator.pushPage<void>(
           context,
           AppPage<void>(
-            name: 'learning/weakness-srs',
-            builder: (_) => current()
-                ? SrsFlashcardsScreen(
-                    expectedOwnerId: ownerId,
-                    ownerChanges: owners,
-                    learning: learning,
-                    voice: dependencies?.voice,
-                  )
-                : const Scaffold(
-                    body: Center(child: Text('การทบทวนไม่พร้อมใช้งาน')),
-                  ),
+            name: review
+                ? 'learning/weakness-srs'
+                : 'learning/weakness-practice',
+            builder: (_) => Builder(
+              builder: (childContext) {
+                final childCurrent =
+                    ModalRoute.isCurrentOf(childContext) == true;
+                if (ModalRoute.of(childContext)?.isActive == true &&
+                    !childCurrent &&
+                    _scoreRoute?.isCurrent != true &&
+                    ModalRoute.of(context)?.isCurrent != true) {
+                  foreignCover();
+                }
+                if (!current()) {
+                  return const Scaffold(body: SizedBox.shrink());
+                }
+                return review
+                    ? SrsFlashcardsScreen(
+                        expectedOwnerId: owner,
+                        ownerChanges: owners,
+                        learning: learning,
+                        voice: dependencies?.voice,
+                      )
+                    : QuizScreen(
+                        wordIds: ids,
+                        selectionMode: QuizWordSelectionMode.weakness,
+                        expectedOwnerId: owner,
+                        ownerChanges: owners,
+                        learning: learning,
+                        onScoreRouteChanged: scoreChanged,
+                      );
+              },
+            ),
           ),
+          onRouteCreated: (route) => _quizRoute = route,
         );
       } finally {
-        _openingReview = false;
-        if (mounted) _retry();
+        _opening = false;
+        _scoreRoute = null;
+        _quizRoute = null;
+        if (current() && _visible) _syncVisibility();
       }
     };
   }
@@ -253,18 +291,16 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen>
 class _WeaknessBody extends StatelessWidget {
   const _WeaknessBody(
     this.progress, {
-    this.learning,
     required this.canQuiz,
     required this.canReview,
-    required this.onReturn,
+    required this.onPractice,
     required this.onReview,
   });
 
   final ProgressSnapshot progress;
-  final LearningUseCases? learning;
   final bool canQuiz;
   final bool canReview;
-  final VoidCallback onReturn;
+  final VoidCallback? onPractice;
   final VoidCallback? onReview;
 
   @override
@@ -307,21 +343,7 @@ class _WeaknessBody extends StatelessWidget {
             children: [
               if (canQuiz)
                 FilledButton.icon(
-                  onPressed: () async {
-                    await AppNavigator.pushPage<void>(
-                      context,
-                      AppPage<void>(
-                        name: 'learning/weakness-practice',
-                        builder: (_) => QuizScreen(
-                          wordIds: practiceWords
-                              .map((item) => item.wordId)
-                              .toList(),
-                          learning: learning,
-                        ),
-                      ),
-                    );
-                    onReturn();
-                  },
+                  onPressed: onPractice,
                   icon: const Icon(Icons.healing_outlined),
                   label: Text('ฝึกคำที่ผิด (${practiceWords.length})'),
                 ),

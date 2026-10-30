@@ -110,6 +110,17 @@ final class DriftProgressQueries {
                       database.vocabularyWords.isDeleted.equals(false),
                   useColumns: false,
                 ),
+                innerJoin(
+                  database.vocabularyCategories,
+                  database.vocabularyCategories.id.equalsExp(
+                        database.vocabularyWords.categoryId,
+                      ) &
+                      database.vocabularyCategories.ownerId.equalsExp(
+                        database.srsStates.ownerId,
+                      ) &
+                      database.vocabularyCategories.isDeleted.equals(false),
+                  useColumns: false,
+                ),
               ])
               ..where(
                 database.srsStates.ownerId.equals(ownerId) &
@@ -222,6 +233,8 @@ final class DriftProgressQueries {
         w.meaning AS meaning,
         s.due_at_utc_ms AS due_at_utc_ms
       FROM vocabulary_words w
+      JOIN vocabulary_categories c
+        ON c.id = w.category_id AND c.owner_id = w.owner_id AND c.is_deleted = 0
       LEFT JOIN srs_states s
         ON s.word_id = w.id AND s.owner_id = w.owner_id
       WHERE w.owner_id = ? AND w.is_deleted = 0
@@ -231,6 +244,7 @@ final class DriftProgressQueries {
           readsFrom: {
             database.answerAttempts,
             database.vocabularyWords,
+            database.vocabularyCategories,
             database.srsStates,
           },
         )

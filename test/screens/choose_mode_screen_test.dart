@@ -33,7 +33,64 @@ import 'package:vocab_learning_app/voice/voice_provider.dart';
 import '../support/dictation_session_harness.dart';
 import '../support/cloze_session_harness.dart' as cloze;
 
+import '../support/progress_owner_fixture.dart';
+
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets(
+    'owner ABA clears private host data before its fresh read completes',
+    (tester) async {
+      final owners = StreamController<String?>.broadcast(sync: true);
+      final pending = Completer<ProgressSnapshot>();
+      var reads = 0;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ChooseModeScreen(
+              ownerChanges: owners.stream,
+              loader: () => reads++ == 0
+                  ? Future.value(_hostReadSnapshot(91))
+                  : pending.future,
+            ),
+          ),
+        );
+        owners.add('synthetic-host-owner-a');
+        await _hostReadUntil(
+          tester,
+          () => find.textContaining('ถึงกำหนด 91 คำ').evaluate().isNotEmpty,
+        );
+        owners
+          ..add(null)
+          ..add('synthetic-host-owner-a');
+        await tester.pump();
+        expect(
+          find.textContaining('ถึงกำหนด 91 คำ'),
+          findsNothing,
+          reason:
+              'A/null/A must synchronously discard the original private rows',
+        );
+        await _hostReadUntil(tester, () => reads >= 2);
+        pending.complete(_hostReadSnapshot(7));
+        await _hostReadUntil(
+          tester,
+          () => find.textContaining('ถึงกำหนด 7 คำ').evaluate().isNotEmpty,
+        );
+        expect(find.textContaining('ถึงกำหนด 91 คำ'), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (!pending.isCompleted) pending.complete(_hostReadSnapshot(7));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(owners.close);
+      }
+    },
+  );
+
   testWidgets(
     'Scramble category selection accepts one real round only after owned category confirmation',
     (tester) async {
@@ -515,7 +572,7 @@ void main() {
         final voice = _DictationEntryVoice();
         await _pumpDictationEntry(tester, h, voice, textScale: 2);
         await tester.scrollUntilVisible(
-          find.byKey(const ValueKey('dictation-entry')),
+          find.text('ฟังแล้วพิมพ์คำศัพท์').hitTestable(),
           200,
           scrollable: find.byType(Scrollable).last,
         );
@@ -720,7 +777,12 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: ChooseModeScreen(loader: () async => snapshot(due: 3))),
+      MaterialApp(
+        home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => snapshot(due: 3),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.text('ทบทวน 3 คำ'), findsOneWidget);
@@ -738,6 +800,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: ChooseModeScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () async {
               calls++;
               return snapshot(due: due);
@@ -765,6 +828,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: ChooseModeScreen(
+            ownerChanges: _displayProgressOwners,
             loader: () async {
               if (calls++ == 0) throw StateError('synthetic read failure');
               return snapshot(due: 2);
@@ -797,7 +861,10 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: ChooseModeScreen(loader: () async => snapshot(empty: true)),
+        home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
+          loader: () async => snapshot(empty: true),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -818,6 +885,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async => snapshot(),
           featureRegistry: const BuildFieldFeatureRegistry.allEnabled(),
         ),
@@ -837,6 +905,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async => snapshot(due: 3),
           featureRegistry: const BuildFieldFeatureRegistry({
             FieldFeature.reading: FieldFeatureState.enabled,
@@ -862,6 +931,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async => snapshot(due: 3),
           featureRegistry: const BuildFieldFeatureRegistry({
             FieldFeature.mastery: FieldFeatureState.enabled,
@@ -885,6 +955,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ChooseModeScreen(
+          ownerChanges: _displayProgressOwners,
           loader: () async => snapshot(),
           featureRegistry: const BuildFieldFeatureRegistry({
             FieldFeature.mastery: FieldFeatureState.enabled,
@@ -1091,6 +1162,50 @@ Future<void> _pumpDictationEntry(
     () => Future<void>.delayed(const Duration(milliseconds: 30)),
   );
   await tester.pump();
+}
+
+final _displayProgressOwners = persistentProgressOwnerFixture(
+  'synthetic-choose-mode-display-owner',
+);
+
+ProgressSnapshot _hostReadSnapshot(int marker) => ProgressSnapshot(
+  sampleSize: 3,
+  correctCount: 1,
+  wrongCount: 2,
+  accuracy: 1 / 3,
+  totalXp: marker,
+  completedSessions: 1,
+  streakDays: 1,
+  dueReviewCount: marker,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 1,
+  skills: const [],
+  weaknesses: [
+    WeaknessEvidence(
+      wordId: 'synthetic-owner-private-word',
+      spelling: 'synthetic-owner-private-$marker',
+      meaning: 'synthetic private meaning',
+      sampleSize: 3,
+      incorrectCount: 2,
+      errorRate: 2 / 3,
+      dueAtUtc: null,
+    ),
+  ],
+  recommendations: const [],
+);
+
+Future<void> _hostReadUntil(
+  WidgetTester tester,
+  bool Function() condition,
+) async {
+  for (var i = 0; i < 100 && !condition(); i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
+  }
+  expect(condition(), isTrue, reason: 'Owner-bound host read did not settle');
 }
 
 Future<void> _dictationEntryUntil(

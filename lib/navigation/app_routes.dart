@@ -53,11 +53,13 @@ abstract final class AppNavigator {
     BuildContext context,
     AppPage<T> page, {
     bool replace = false,
+    ValueChanged<Route<T>>? onRouteCreated,
   }) {
     final route = MaterialPageRoute<T>(
       settings: RouteSettings(name: page.name),
       builder: page.builder,
     );
+    onRouteCreated?.call(route);
     return replace
         ? Navigator.of(context).pushReplacement<T, T>(route)
         : Navigator.of(context).push<T>(route);
