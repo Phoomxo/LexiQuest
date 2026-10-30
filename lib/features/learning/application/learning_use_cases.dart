@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import '../../../ai/ai_models.dart';
+import '../../../ai/content_provider.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/accepted_quiz_plan.dart';
+import '../domain/cloze_content.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
@@ -43,6 +46,7 @@ final class LearningUseCases {
     this.eventAdapter,
     this.questEventSink,
     this.streakEventSink,
+    this.contentProvider,
   });
 
   final LocalOwnerRepository owners;
@@ -50,6 +54,7 @@ final class LearningUseCases {
   final LearningIdGenerator generateId;
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
+  final ContentProvider? contentProvider;
   final LearningMutationNotifier? onLocalMutation;
   final Expando<bool> _finishedNativeNotifications = Expando<bool>();
 
@@ -122,6 +127,120 @@ final class LearningUseCases {
     );
   }
 
+  Future<ClozeSession?> prepareCloze({
+    String? categoryId,
+    required ClozeVariant variant,
+    required bool Function() stillCurrent,
+  }) async {
+    _requireCurrentNativeExercise(stillCurrent);
+    final provider = contentProvider;
+    if (provider == null) return null;
+    if (await _nativeExercises.hasAmbientTransaction()) {
+      throw StateError(
+        'Cloze generation requires an independent read boundary',
+      );
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireCurrentNativeExercise(stillCurrent);
+    final words = await repository.listQuizWords(
+      ownerId: owner.id,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      limit: 100,
+    );
+    _requireCurrentNativeExercise(stillCurrent);
+    final supported = words
+        .where((word) => ClozeContent.supportsTarget(word.spelling))
+        .toList(growable: false);
+    if (supported.isEmpty) return null;
+    QuizWord? target;
+    var choices = <QuizWord>[];
+    if (variant == ClozeVariant.typed) {
+      target = supported.first;
+    } else {
+      for (final candidate in supported) {
+        final ids = <String>{};
+        final spellings = <String>{};
+        final sameCategory = <QuizWord>[];
+        for (final option in supported.where(
+          (word) => word.categoryId == candidate.categoryId,
+        )) {
+          if (ids.add(option.id) &&
+              spellings.add(option.spelling.trim().toLowerCase())) {
+            sameCategory.add(option);
+          }
+          if (sameCategory.length == 3) break;
+        }
+        if (sameCategory.length == 3) {
+          target = sameCategory.first;
+          final offset =
+              target.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+              sameCategory.length;
+          choices = [
+            ...sameCategory.skip(offset),
+            ...sameCategory.take(offset),
+          ];
+          break;
+        }
+      }
+    }
+    if (target == null) return null;
+    if (await _nativeExercises.hasAmbientTransaction()) {
+      throw StateError(
+        'Cloze generation requires an independent read boundary',
+      );
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final beforeGenerationOwner = await owners.getOrCreateActiveOwner();
+    if (beforeGenerationOwner.id != owner.id) {
+      throw StateError('Cloze owner changed');
+    }
+    _requireCurrentNativeExercise(stillCurrent);
+    final response = await provider.generate(
+      ContentRequest.create(
+        text: target.spelling,
+        kind: ContentKind.sentence,
+        cefr: CefrLevel.a2,
+        language: 'en',
+      ),
+    );
+    _requireCurrentNativeExercise(stillCurrent);
+    final currentOwner = await owners.getOrCreateActiveOwner();
+    if (currentOwner.id != owner.id) throw StateError('Cloze owner changed');
+    _requireCurrentNativeExercise(stillCurrent);
+    final ClozeContent content;
+    try {
+      content = ClozeContent.parse(
+        targetSpelling: target.spelling,
+        response: response,
+      );
+    } on FormatException {
+      return null;
+    }
+    final draft = LearningSessionDraft(
+      id: '${ClozeSession.idPrefix}${_nextId()}',
+      ownerId: owner.id,
+      activityType: 'cloze',
+      startedAtUtc: _now(),
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
+    _requireCurrentNativeExercise(stillCurrent);
+    return switch (variant) {
+      ClozeVariant.typed => TypedClozeSession(
+        session: draft,
+        word: target,
+        content: content,
+      ),
+      ClozeVariant.choice => ChoiceClozeSession(
+        session: draft,
+        word: target,
+        content: content,
+        choices: choices,
+      ),
+    };
+  }
+
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
     T exercise, {
     required bool Function() stillCurrent,
@@ -144,6 +263,17 @@ final class LearningUseCases {
               exercise.word.spelling.trim().toLowerCase(),
           assisted ? 1 : 0,
         ),
+      TypedClozeAnswerInput(:final exercise, :final response) => (
+        'clozeTyped',
+        response.trim().toLowerCase() == exercise.word.spelling.toLowerCase(),
+        1,
+      ),
+      ChoiceClozeAnswerInput(:final exercise, :final optionId)
+          when exercise.choices.any((option) => option.id == optionId) =>
+        ('clozeChoice', optionId == exercise.word.id, 0),
+      ChoiceClozeAnswerInput() => throw ArgumentError(
+        'Cloze response is not one of its original choices',
+      ),
     };
     return RecordAnswerCommand(
       id: 'attempt:${_nextId()}',
@@ -157,6 +287,10 @@ final class LearningUseCases {
           .toInt(),
       attemptNumber: 1,
       occurredAtUtc: occurredAt,
+      providerProvenance: switch (exercise) {
+        DictationSession() => null,
+        ClozeSession() => exercise.providerProvenance,
+      },
       evidenceContext: captureCurrentActivityEvidence(
         promptMode: promptMode,
         contentRevision: exercise.evidenceContentRevision,

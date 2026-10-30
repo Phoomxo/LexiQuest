@@ -67,19 +67,30 @@ final class DriftLearningRepository
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
     }
-    final query = database.select(database.vocabularyWords)
-      ..where(
-        (row) =>
-            row.ownerId.equals(ownerId) &
-            row.isDeleted.equals(false) &
-            (categoryId == null
-                ? const Constant(true)
-                : row.categoryId.equals(categoryId)) &
-            (wordIds == null ? const Constant(true) : row.id.isIn(wordIds)),
-      )
-      ..orderBy([(row) => OrderingTerm.asc(row.id)])
-      ..limit(limit);
-    final rows = await query.get();
+    final words = database.vocabularyWords;
+    final categories = database.vocabularyCategories;
+    final query =
+        database.select(words).join([
+            innerJoin(
+              categories,
+              categories.id.equalsExp(words.categoryId) &
+                  categories.ownerId.equalsExp(words.ownerId) &
+                  categories.isDeleted.equals(false),
+            ),
+          ])
+          ..where(
+            words.ownerId.equals(ownerId) &
+                words.isDeleted.equals(false) &
+                (categoryId == null
+                    ? const Constant(true)
+                    : words.categoryId.equals(categoryId)) &
+                (wordIds == null
+                    ? const Constant(true)
+                    : words.id.isIn(wordIds)),
+          )
+          ..orderBy([OrderingTerm.asc(words.id)])
+          ..limit(limit);
+    final rows = (await query.get()).map((row) => row.readTable(words));
     return rows
         .map(
           (row) => QuizWord(
@@ -96,7 +107,8 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
-    if (session.id.startsWith(DictationSession.idPrefix)) {
+    if (session.id.startsWith(DictationSession.idPrefix) ||
+        session.id.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
         'Native Dictation requires its original launch capability',
       );
@@ -159,7 +171,8 @@ final class DriftLearningRepository
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
       database.transaction(() async {
-        if (command.sessionId.startsWith(DictationSession.idPrefix)) {
+        if (command.sessionId.startsWith(DictationSession.idPrefix) ||
+            command.sessionId.startsWith(ClozeSession.idPrefix)) {
           throw StateError(
             'Native Dictation answers require their original capability',
           );
@@ -306,7 +319,8 @@ final class DriftLearningRepository
     required String sessionId,
     required DateTime endedAtUtc,
   }) => database.transaction(() async {
-    if (sessionId.startsWith(DictationSession.idPrefix)) {
+    if (sessionId.startsWith(DictationSession.idPrefix) ||
+        sessionId.startsWith(ClozeSession.idPrefix)) {
       throw StateError(
         'Native Dictation completion requires its original close intent',
       );
@@ -419,12 +433,16 @@ final class DriftLearningRepository
   }
 
   @override
+  Future<bool> hasAmbientTransaction() => _ownerWrites.hasAmbientTransaction();
+
+  @override
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
     T session, {
     required bool Function() stillCurrent,
   }) async {
     final prefix = switch (session) {
       DictationSession() => DictationSession.idPrefix,
+      ClozeSession() => ClozeSession.idPrefix,
     };
     if (!session.id.startsWith(prefix)) {
       throw ArgumentError('Dictation requires its native session ID');
@@ -616,6 +634,7 @@ final class DriftLearningRepository
     final original = session.session;
     final activity = switch (session) {
       DictationSession() => 'dictation',
+      ClozeSession() => 'cloze',
     };
     if (row.ownerId != session.ownerId ||
         row.activityType != activity ||
@@ -634,11 +653,15 @@ final class DriftLearningRepository
   Future<void> _requireNativeTargets(AcceptedNativeExercise session) async {
     final pins = switch (session) {
       DictationSession() => [(session.word, session.wordContentRevision)],
+      TypedClozeSession() => [(session.word, session.wordContentRevision)],
+      ChoiceClozeSession() => [
+        for (final choice in session.choices) (choice, choice.contentRevision!),
+      ],
     };
     for (final (target, revision) in pins) {
       final word = await database
           .customSelect(
-            'SELECT w.category_id,w.spelling,w.local_revision '
+            'SELECT w.category_id,w.spelling,w.meaning,w.part_of_speech,w.local_revision '
             'FROM vocabulary_words w JOIN vocabulary_categories c '
             'ON c.id = w.category_id AND c.owner_id = w.owner_id '
             'WHERE w.id = ? AND w.owner_id = ? AND w.is_deleted = 0 AND c.is_deleted = 0',
@@ -648,6 +671,10 @@ final class DriftLearningRepository
       if (word == null ||
           word.read<String>('category_id') != target.categoryId ||
           word.read<String>('spelling') != target.spelling ||
+          (session is ClozeSession &&
+              (word.read<String>('meaning') != target.meaning ||
+                  word.read<String>('part_of_speech') !=
+                      target.partOfSpeech)) ||
           'local-vocabulary-v1:${word.read<int>('local_revision')}' !=
               revision) {
         throw StateError('Dictation target changed');
@@ -696,6 +723,18 @@ final class DriftLearningRepository
                     context.evidenceClass == EvidenceClass.independentRecall) ||
                 (context.hintLevel == 1 &&
                     context.evidenceClass == EvidenceClass.guidedPractice)),
+      TypedClozeSession() =>
+        command.promptMode == 'clozeTyped' &&
+            command.providerProvenance == session.providerProvenance &&
+            context.skillId == 'cloze-context' &&
+            context.hintLevel == 1 &&
+            context.evidenceClass == EvidenceClass.guidedPractice,
+      ChoiceClozeSession() =>
+        command.promptMode == 'clozeChoice' &&
+            command.providerProvenance == session.providerProvenance &&
+            context.skillId == 'cloze-context' &&
+            context.hintLevel == 0 &&
+            context.evidenceClass == EvidenceClass.recognition,
     };
     if (command.ownerId != session.ownerId ||
         command.sessionId != session.id ||

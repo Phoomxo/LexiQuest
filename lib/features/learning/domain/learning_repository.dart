@@ -37,6 +37,8 @@ abstract interface class LearningRepository {
 }
 
 abstract interface class NativeExerciseRepository {
+  Future<bool> hasAmbientTransaction();
+
   Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
     T exercise, {
     required bool Function() stillCurrent,

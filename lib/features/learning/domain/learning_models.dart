@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import 'accepted_quiz_plan.dart';
+import 'cloze_content.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 
@@ -181,6 +186,172 @@ sealed class NativeAnswerInput {
 
   AcceptedNativeExercise get exercise;
   Duration get responseTime;
+}
+
+enum ClozeVariant { typed, choice }
+
+sealed class ClozeSession extends AcceptedNativeExercise {
+  ClozeSession._({
+    required this.session,
+    required this.word,
+    required this.content,
+  }) : providerProvenance =
+           'cloze-model-v1:${sha256.convert(utf8.encode(content.modelVersion))}' {
+    if (!session.id.startsWith(idPrefix) ||
+        session.id.length == idPrefix.length ||
+        !LearningEvidenceContract.validIdentifier(session.id) ||
+        !LearningEvidenceContract.validIdentifier(session.ownerId) ||
+        session.activityType != 'cloze' ||
+        session.startedAtUtc?.isUtc != true ||
+        !_validClozeWord(word) ||
+        content.gapText.toLowerCase() != word.spelling.toLowerCase()) {
+      throw ArgumentError(
+        'Cloze requires its original session, target and admitted gap',
+      );
+    }
+  }
+
+  static const idPrefix = 'session:cloze-v1:';
+
+  @override
+  final LearningSessionDraft session;
+  @override
+  final QuizWord word;
+  final ClozeContent content;
+  final String providerProvenance;
+  ClozeVariant get variant;
+
+  @override
+  String get wordContentRevision => word.contentRevision!;
+}
+
+final class TypedClozeSession extends ClozeSession {
+  TypedClozeSession({
+    required super.session,
+    required super.word,
+    required super.content,
+  }) : evidenceContentRevision = _clozeContentRevision(
+         ClozeVariant.typed,
+         word,
+         content,
+         const [],
+       ),
+       super._();
+
+  @override
+  final String evidenceContentRevision;
+  @override
+  ClozeVariant get variant => ClozeVariant.typed;
+}
+
+final class ChoiceClozeSession extends ClozeSession {
+  factory ChoiceClozeSession({
+    required LearningSessionDraft session,
+    required QuizWord word,
+    required ClozeContent content,
+    required Iterable<QuizWord> choices,
+  }) {
+    final frozen = List<QuizWord>.unmodifiable(choices);
+    if (frozen.length != 3 ||
+        frozen.map((option) => option.id).toSet().length != 3 ||
+        frozen
+                .map((option) => option.spelling.trim().toLowerCase())
+                .toSet()
+                .length !=
+            3 ||
+        frozen.any(
+          (option) =>
+              !_validClozeWord(option) || option.categoryId != word.categoryId,
+        ) ||
+        !frozen.any(
+          (option) =>
+              jsonEncode(_clozeWordSnapshot(option)) ==
+              jsonEncode(_clozeWordSnapshot(word)),
+        )) {
+      throw ArgumentError(
+        'Cloze choices require the exact original target and two distinct same-category snapshots',
+      );
+    }
+    return ChoiceClozeSession._(session, word, content, frozen);
+  }
+
+  ChoiceClozeSession._(
+    LearningSessionDraft session,
+    QuizWord word,
+    ClozeContent content,
+    this.choices,
+  ) : evidenceContentRevision = _clozeContentRevision(
+        ClozeVariant.choice,
+        word,
+        content,
+        choices,
+      ),
+      super._(session: session, word: word, content: content);
+
+  final List<QuizWord> choices;
+  @override
+  final String evidenceContentRevision;
+  @override
+  ClozeVariant get variant => ClozeVariant.choice;
+}
+
+bool _validClozeWord(QuizWord word) =>
+    LearningEvidenceContract.validIdentifier(word.id) &&
+    LearningEvidenceContract.validIdentifier(word.categoryId) &&
+    ClozeContent.supportsTarget(word.spelling) &&
+    word.contentRevision != null &&
+    RegExp(
+          r'local-vocabulary-v1:[1-9][0-9]*',
+        ).stringMatch(word.contentRevision!) ==
+        word.contentRevision;
+
+List<Object?> _clozeWordSnapshot(QuizWord word) => [
+  word.id,
+  word.categoryId,
+  word.spelling,
+  word.meaning,
+  word.partOfSpeech,
+  word.contentRevision,
+];
+
+String _clozeContentRevision(
+  ClozeVariant variant,
+  QuizWord word,
+  ClozeContent content,
+  List<QuizWord> choices,
+) =>
+    'cloze-v1:${sha256.convert(utf8.encode(jsonEncode([
+      'cloze-v1',
+      variant.name,
+      _clozeWordSnapshot(word),
+      [content.sentence, content.gapStart, content.gapEnd, content.kind.wire, content.cefr.wire, content.language, content.modelVersion, content.cached],
+      [for (final option in choices) _clozeWordSnapshot(option)],
+    ])))}';
+
+final class TypedClozeAnswerInput extends NativeAnswerInput {
+  const TypedClozeAnswerInput({
+    required this.exercise,
+    required this.response,
+    required this.responseTime,
+  });
+  @override
+  final TypedClozeSession exercise;
+  final String response;
+  @override
+  final Duration responseTime;
+}
+
+final class ChoiceClozeAnswerInput extends NativeAnswerInput {
+  const ChoiceClozeAnswerInput({
+    required this.exercise,
+    required this.optionId,
+    required this.responseTime,
+  });
+  @override
+  final ChoiceClozeSession exercise;
+  final String optionId;
+  @override
+  final Duration responseTime;
 }
 
 final class DictationAnswerInput extends NativeAnswerInput {

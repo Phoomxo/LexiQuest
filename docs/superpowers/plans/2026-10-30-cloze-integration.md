@@ -23,8 +23,13 @@ metadata compatibility failures preceded the opaque-version and234-character
 identity fixes; over-limit fixtures now assert the finite256 boundary. The
 projection unit reproduced20 real RED cases, then its28 cases pass alongside
 Dictation controls. These components add no Cloze route or provider lifecycle.
-The separate category-eligibility regression is intentionally RED pending the
-core writer/read-query integration; its valid legacy control passes.
+The core writer/read-query integration is now verified:118 focused cases and
+analysis0, with727 broader ordinary/native checks before the final owner-read
+ordering fix and37 targeted cases after it. The deleted/foreign category REDs
+are corrected while valid legacy order/limits remain. A separate real SQL-owner
+race proved the final ambient probe could precede an old-owner request; final
+owner validation now follows that await before provider entry. Bootstrap and
+actual Cloze UI remain unintegrated; this is not a feature-readiness claim.
 
 ## Outcome and boundaries
 
