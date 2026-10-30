@@ -43,13 +43,27 @@ awaiting widget-started disposal; no product-disposal bypass was added.
 SentenceService/Model have no remaining callers and were removed only after
 their exact unchanged blobs were verified in pushed1821e741.
 
-Review remains open on an actual production owner-watch A→B→A coalescing probe.
-The injected-stream ABA checks do not prove that database-watch case. Do not
-mark Cloze ready or start the final frozen full suite until that disposition is
-recorded. Current normal APK remains the wave12 Dictation build, not this WIP.
+The production owner-watch probe now proves a real coalesced A→B→A defect:
+actual B/A commits with watch SQL deferred until A returns admitted the old
+generated exercise under the original snapshot-only watcher. The shared watcher
+now merges immediate declared-owner-update invalidation with raw owner reads,
+then applies distinct. Its broadcast/per-listener initial state remains; both
+upstream cancellations start before either is awaited. Native coordinator
+no-op writer acquisition emits no declared update, preserving ordinary writes.
+The natural regression has no synthetic transition notification. It reproduced
+the original RED, then14 actual owner/shared-stream/history cases pass. The same
+production source passed1675 wider learning/sync/reward/Assessment/Research/UI
+checks and41 hub/history cases. The initial serial cancellation attempt exposed
+a widget teardown wait; parallel cancellation fixes it without skipping cases.
+Final frozen full-suite/build attestation remains pending; the retained normal
+APK is still the wave12 Dictation build. No whole-catalog readiness claim.
 Evidence: cloze-ui-api-red.log; cloze-hub-routes-green.log;
 cloze-runtime-api-red.log; cloze-runtime-lifecycle-green.log;
 cloze-composition-ui-green.log; cloze-ui-runtime-final-analysis.log.
+Owner evidence: cloze-production-owner-natural-red.log;
+cloze-production-owner-natural-shared-green.log;
+cloze-owner-broadcast-cancellation-green.log;
+cloze-shared-owner-system-regression.log; wave13-final-analysis.log.
 
 ## Outcome and boundaries
 

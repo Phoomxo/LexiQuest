@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' show TableUpdateQuery;
+
 import '../../identity/domain/local_owner_repository.dart';
 import '../data/drift_learning_history_queries.dart';
 import '../data/drift_progress_queries.dart';
@@ -43,11 +45,24 @@ final class ProgressUseCases {
     return result;
   }
 
-  Stream<String?> watchActiveOwnerId() =>
-      (queries.database.select(queries.database.localOwners)
-            ..where((owner) => owner.isActive.equals(true))
-            ..limit(1))
-          .watchSingleOrNull()
-          .map((owner) => owner?.id)
-          .distinct();
+  Stream<String?> watchActiveOwnerId() => Stream<String?>.multi((events) {
+    final database = queries.database;
+    // Owner snapshots can coalesce A→B→A; invalidate before reading the new owner.
+    final changes = database
+        .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
+        .listen((_) => events.add(null), onError: events.addError);
+    final owners =
+        (database.select(database.localOwners)
+              ..where((owner) => owner.isActive.equals(true))
+              ..limit(1))
+            .watchSingleOrNull()
+            .listen(
+              (owner) => events.add(owner?.id),
+              onError: events.addError,
+              onDone: events.close,
+            );
+    events.onCancel = () async {
+      await Future.wait([changes.cancel(), owners.cancel()]);
+    };
+  }, isBroadcast: true).distinct();
 }

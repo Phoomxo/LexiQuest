@@ -429,7 +429,7 @@ void main() {
             .write(const LocalOwnersCompanion(isActive: Value(true)));
       });
       await pumpEventQueue();
-      expect(events, ['a', 'b']);
+      expect(events, ['a', null, 'b']);
       await first.cancel();
     },
   );
