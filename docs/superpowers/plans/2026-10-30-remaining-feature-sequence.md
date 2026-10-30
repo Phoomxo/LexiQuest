@@ -13,12 +13,17 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: source `dd45f862` passes Flutter4372 in11m06s,
+Historical attestation (Wave20): source `dd45f862` passes Flutter4372 in11m06s,
 analysis0, CLI23 and offline backend390 with the same one opt-in skip.
 All751 Dart,54CLI and92backend hashes remain unchanged. The normal APK native
 build exits0 in122.8s; the original wrapper exits1 at its absent-to-empty
 environment postcheck. Its false restore flag and separate recovery are retained.
 See the [Wave20 checkpoint](../../field/2026-10-30-remaining-systems-wave20.md).
+
+Wave21 completed local attestation, updated2026-10-31. Source a54ac2e2: Flutter4461/11m32s, analysis0/18.3s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK129.2s/exit0. All763 Dart,54CLI and92backend inputs match before/after. Independent source, fixture-bridge and artifact reviews accept the local unit.
+First c650 full ended4460PASS/1FAIL/11m22s; its Ghost fixture correction24PASS is preserved separately. Current source a54 has its own completed gates. See [Wave21](../../field/2026-10-31-remaining-systems-wave21.md). Local f22Connected gives14Connected/18Partial/12Missing; f21Partial and f23/f24Missing remain.
+
+A P3 Ghost fixture cleanup follow-up remains. CTA finally and package tearDown both close GeneratedDatabase, which undercounts Drift debug warnings. The executor prevents a second SQLite close; no assertion or production behavior was weakened. Root will promote the ready memoized-close draft as the immediate next source unit and verify it before Focus Timer checks.
 
 Wave19 historical attestation: local Typed Cloze scratchpad source `f3301403` ผ่าน Flutter4297, analysis0,
 CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave19).
@@ -26,17 +31,17 @@ Ephemeral ink/Undo/Clear/typed fallback, privacy/frame/gesture fixes และ c
 schema20/37 ไม่เปลี่ยน. f12 เชื่อม locally แล้ว; f03/f05/f11/f13 ยัง Partial.
 Saved Words/reports/Sentence Scramble คงหลักฐาน wave16/17/18; Quest runtime/grants ยังไม่เปิด.
 
-Owned SRS safety is now verified through the same canonical writer, original
-deck/rating/finish intents and actual six launch sites. Preview remains unsaved
-presentation data. The immediate next card is the combined Review Center with
-reason-preserving due/incorrect/saved/local-report queues. It must also fix cached
-owner reads in ChooseMode, Clinic and Mastery and the Clinic Quiz handoff.
-Use the approved [Review Center/read-scope plan](2026-10-30-review-center-integration.md)
-for this active card. Do not train from report snapshots or create an owner on view reads.
-The three proposed units below remain historical grounding, not the current queue.
+Owned SRS safety retains its verified original deck/rating/finish writer and six
+launch sites. The combined reason-preserving due/incorrect/saved/local-report Hub
+and owner-bound ChooseMode/Clinic/Mastery reads, including Clinic Quiz, are now
+verified at a54ac2e2 with the completed full-source and artifact gates above.
+Use the approved [Review Center/read-scope plan](2026-10-30-review-center-integration.md).
+No report snapshot becomes a practice target; view reads create no owner.
+
+Root approved D-only drafting of the corrected six-file f23 Focus Timer plan after independent shape review. D focus-timer-integration-plan-draft.md SHAe60c9811cd75c0886c949adde14905f95a3b70de1bb3b71389e06cef863001f1 and focus-timer-independent-plan-review.md SHA307bda16c4b5fb487c5a1765c0a4bc1c32130c9df069936a963738ef195da96b bind that proposal. No next C plan or timer implementation exists yet. f23 and f24 remain Missing; the typed f23-to-f24 dependency and single active-time authority remain unchanged. The three proposed units below remain historical grounding, not the current queue.
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `dd45f862`: 13 connected / 19 partial / 12 missing ไม่ใช่ production/UAT
+  `a54ac2e2`: 14 connected / 18 partial / 12 missing ไม่ใช่ production/UAT
   certification แม้ Dictation/Cloze/Word+Sentence Scramble verified แล้ว f13 ยังขาด durable resume/shared shell
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`

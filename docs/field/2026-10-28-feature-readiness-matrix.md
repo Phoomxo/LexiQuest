@@ -1,6 +1,8 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `dd45f862` (v20/37),
+Current local attestation updated2026-10-31 is sourcea54ac2e2 at schema20/37. Source a54ac2e2: Flutter4461/11m32s, analysis0/18.3s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK129.2s/exit0. All763 Dart,54CLI and92backend inputs match before/after. Independent source, fixture-bridge and artifact reviews accept the local unit. Coverage is14 connected/18 partial/12 missing. The P3 Ghost cleanup counter follow-up is queued for the immediate next source unit; it does not change production behavior.
+
+Historical Wave20 attestation: `codex/remaining-system-readiness`, through `dd45f862` (v20/37),
 updated2026-10-30. Latest full suite: Flutter4372 in11m06s, analysis0 and CLI23/23.
 Offline backend CPU390 passes with the same one opt-in real Firebase/OmniVoice
 E2E skipped. All751 Dart,54CLI and92backend hashes match through checks/build.
@@ -35,9 +37,10 @@ targets and production transport remain separate.
 Owned SRS now retains one original1-20-card deck and original rating/end intents
 through the existing canonical writer. Cards/audio and Next wait for canonical
 ACKs; raw previews create no learning facts. This hardens the already-connected
-f06. The combined Review Center is still absent. Cached owner reads in ChooseMode,
-Clinic and Mastery and the Clinic Quiz handoff remain required next-card work;
-the SRS write checks do not certify all Progress reads. See
+f06. Wave21 now implements the combined four-reason Review Center and pure
+owner-bound reads in ChooseMode, Clinic and Mastery, including Clinic Quiz.
+The a54 full4461, analysis0, CLI23, offline backend390/one existing skip and normal APK/source proofs are accepted. Local f22 is now Connected; SRS write tests are not substituted for the new host-read tests.
+See [Wave21 evidence](2026-10-31-remaining-systems-wave21.md),
 [wave20 evidence](2026-10-30-remaining-systems-wave20.md),
 [wave19 evidence](2026-10-30-remaining-systems-wave19.md),
 [wave18 evidence](2026-10-30-remaining-systems-wave18.md),
@@ -56,9 +59,11 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 13 connected runtime capabilities, 19 partial capabilities and 12
+There are 14 connected runtime capabilities, 18 partial capabilities and 12
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
+
+Wave21 changes only f22 from Partial to Connected after actual current-source gates and independent artifact acceptance. f21 stays Partial and f23/f24 stay Missing. The P3 fixture cleanup follow-up, physical/UAT and Research rollout remain explicit separate work.
 
 ## Content
 
@@ -74,7 +79,7 @@ capability still needs the applicable acceptance and release checks.
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f05 | Unified Lesson Shell | Partial | Meaning Quiz has a durable accepted plan/checkpoint and canonical finish. Other modes still use their separate screens; a common lesson shell is absent. |
-| f06 | Flashcard Mode | Connected | Learn, Weakness and Source open owner-bound SrsFlashcardsScreen through the same canonical writer. Original1-20-card deck/rating/end intents, start/save/finish ACKs, owner/fence/current checks and guarded autoplay are verified at`dd45f862`. Raw previews are labelled unsaved and create no learning facts. Durable SRS restart/resume and host Progress read corrections remain separate. |
+| f06 | Flashcard Mode | Connected | Learn, Weakness and Source open owner-bound SrsFlashcardsScreen through the same canonical writer. Original1-20-card deck/rating/end intents, start/save/finish ACKs, owner/fence/current checks and guarded autoplay are verified at`dd45f862`. Raw previews are labelled unsaved and create no learning facts. Durable SRS restart/resume and host Progress read corrections remain separate. Wave21 host-read correction is now verified at a54ac2e2 with its separate pure-read checks. |
 | f07 | Meaning Quiz | Connected | `QuizScreen` persists exact questions/options, sticky assistance, pending answer and original finish. History resumes the same owner/session without duplicate answers or rewards; drift/legacy data has an explicit unavailable path. |
 | f08 | Definition Quiz | Missing | No definition-mode runtime route. The legacy diagnostic is not this mode. |
 | f09 | Cloze Test | Connected | Owned category and explicit typed/three-choice variant use the configured existing ContentProvider, immutable accepted gap/choices and canonical answer/finish/history. Guided/recognition facts gain no SRS/mastery or engagement. Invalid/unavailable content creates no session. Both actual UI flows and owner/lifecycle/retry isolation pass at55f9c407. A2/content efficacy and real service availability are not certified. |
@@ -100,7 +105,7 @@ capability still needs the applicable acceptance and release checks.
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f22 | Review Center | Partial | Separate Weakness/SRS, Saved Words and local report history exist. The combined reason-preserving due/incorrect/saved/local-report hub is still missing. The next card must also fix cached owner reads in ChooseMode, Clinic and Mastery and the Clinic Quiz handoff. W20 hardens f06 without implementing or promoting this hub; broader reported targets remain incomplete. |
+| f22 | Review Center | Connected | Actual four-reason local Hub, full filtered lists, unavailable reasons and immutable not-sent receipts; captured-owner pure reads across ChooseMode/Clinic/Mastery and same canonical practice/History callers. Sourcea54ac2e2 passes full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source and independent artifact acceptance. No all37-table changes from reads. f21 broader report targets/transport and the P3 test cleanup counter follow-up remain separate. |
 | f23 | Focus Timer | Missing | No connected timer configuration, pause and resume. |
 | f24 | Automatic Learning-Time Capture | Missing | Timestamps and answer response times exist. Foreground active-time capture is absent. Session elapsed time is not treated as learning time. |
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |

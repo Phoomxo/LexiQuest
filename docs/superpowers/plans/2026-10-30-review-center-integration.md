@@ -1,6 +1,6 @@
 # Review Center and owner-bound progress reads
 
-Status: Implementation integrated after [Wave20](../../field/2026-10-30-remaining-systems-wave20.md), with focused evidence and independent source ACCEPT. Full regression, current-source analysis, CLI/backend and normal APK verification remain pending. Root is the sole C writer. No readiness upgrade, deployment or Research authorization is claimed at this checkpoint.
+Status: Local engineering attested on sourcea54ac2e2 after [Wave20](../../field/2026-10-30-remaining-systems-wave20.md). Source a54ac2e2: Flutter4461/11m32s, analysis0/18.3s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK129.2s/exit0. All763 Dart,54CLI and92backend inputs match before/after. Independent source, fixture-bridge and artifact reviews accept the local unit. f22 is locally Connected at14Connected/18Partial/12Missing. Root is the sole C writer. P3 fixture cleanup remains disclosed; deployment, physical UAT and Research authority are separate.
 
 Baseline: cycle12-release, branch codex/remaining-system-readiness. Pushed attestation 8dd721ab28aff7dbdf8631d8f59010cf4b518dbc binds application dd45f8626add6d08c8e442fd3b54752023e30323: Flutter4372/analysis0/CLI23/backend390+one existing opt-in skip/normal APK and independent reviews. Schema20/37, frozen8/44 and all current contracts remain unchanged. Metadata HEAD has the identical verified lib/test/android trees. D grounding58ac2cf3, reviewed plan83ed926e and API sketchb0dbbe52 are design inputs, not implementation evidence.
 
@@ -20,9 +20,24 @@ The independently reviewed source disposition is ACCEPT with no unresolved must-
 
 Three incomplete entry-fixture runs are retained. A phase-only probe completed every UI/data assertion and database close but exposed a Flutter test-zone completion wait. Moving only the real owner-observer cancellation into the captured I/O zone through `tester.runAsync` made the same P06 scenario pass; the clean P06/P08 plus Mastery module then passed25/25. Production loaders were unchanged. Only verified task-owned synthetic tester processes were stopped; no emulator or denied cleanup target was retried.
 
-f22 remains Partial and matrix counts remain13Connected/19Partial/12Missing until the later full-source attestation. Physical-device/UAT, broader report targets/transport, Research authority and other remaining capabilities are separate work.
+Historical pre-full status was f22Partial and13Connected/19Partial/12Missing. The completed current-source attestation below supersedes that temporary hold. Physical-device/UAT, broader report targets/transport, Research authority and other remaining capabilities stay separate.
 
 The first full run on committed c650a4f197646cae852c9bdd313aa1f89baa07dc completed naturally with4460PASS/1FAIL in11m22s, with all763 raw Dart hashes unchanged before/after (log SHA9556bc8473d9a4dbf3856a23c88eff6f8e8936b2a0d7c0eeda008c3c80faaae5; result SHA0a4633a5f95ca3429272470353c93060bf036dd58268f0b4c24c94298e173e0b). Only the Ghost historical-Clinic fixture failed: its standalone MaterialApp omitted the runtime Progress dependency and its synthetic setup left two owners active. The bounded fixture correction supplies the actual same-database runtime scope with one active owner and retains the existing Ghost loader, feature-gate and one-answer assertions. The entire Ghost module now passes24/24 in8s. No production source changed in this correction. Preserve the first freeze/run and the five unexecuted c650-bound drivers; a new test-source commit, freeze and verification prefix must attest the corrected source.
+
+## Wave21b current-source attestation
+
+Updated2026-10-31. Source a54ac2e2: Flutter4461/11m32s, analysis0/18.3s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK129.2s/exit0. All763 Dart,54CLI and92backend inputs match before/after. Independent source, fixture-bridge and artifact reviews accept the local unit.
+The763-Dart freeze SHA is b1b40ccd9d3e8c60c359a22407cea1405661930c9bfb7a5df41da9729037d636.
+Lib tree2d20b0fbdb61d7804c5e5a55fc3d7e86dc55ef3f and test tree6b92dd5fa4d86f27e81e95709a2583bfa913a77d remain bound to that source.
+The actual APK is252354486 bytes, SHA479126e744752e5dff698ce3cef38011340a1ca2ff1adfeaa5facfec0635a263, with752 CRC-valid entries and compiled kernel Build IDa54ac2e2. Native/provider exits0 and environment restoration is true.
+
+Root actual-log review SHA80184dc86a3de9628abcc4500e92307eb06f55db8faf50209d71f0c60097b58f, source proof SHAfcc6faaab3626d4a97728fb3b50737f11579b827d7b7b0de250ba187d9110764, and independent peer ACCEPT SHAf9ac36a8ea836d60a9193804788d3fddf1dec75c8e121afa58ec58efdae5b15a bind the actual full/build/artifact results. The immutable CLI field allLogsInspected=false is retained; separate receipts verify all23 actual logs. The first failed c650 full, unchanged production tree and Ghost24 fixture recovery remain preserved above. See the [Wave21 checkpoint](../../field/2026-10-31-remaining-systems-wave21.md) for full hashes.
+
+Local f22 is now Connected and the matrix is14Connected/18Partial/12Missing. f21 broader targets/transport remain Partial; physical/UAT and Research readiness are not implied.
+
+A P3 Ghost fixture cleanup follow-up remains. CTA finally and package tearDown both close GeneratedDatabase, which undercounts Drift debug warnings. The executor prevents a second SQLite close; no assertion or production behavior was weakened. Root will promote the ready memoized-close draft as the immediate next source unit and verify it before Focus Timer checks.
+
+Root approved D-only drafting of the corrected six-file f23 Focus Timer plan after independent shape review. D focus-timer-integration-plan-draft.md SHAe60c9811cd75c0886c949adde14905f95a3b70de1bb3b71389e06cef863001f1 and focus-timer-independent-plan-review.md SHA307bda16c4b5fb487c5a1765c0a4bc1c32130c9df069936a963738ef195da96b bind that proposal. No next C plan or timer implementation exists yet. f23 and f24 remain Missing; the typed f23-to-f24 dependency and single active-time authority remain unchanged.
 
 ## Current facts that determine the design
 
@@ -94,7 +109,7 @@ Serialize focused queries/usecases, then hub/host UI and touched History/Saved/R
 
 ## Root execution board
 
-Root reviewed actual sources and both D proposals and accepts this card. f22 remains Partial and the matrix remains13Connected/19Partial/12Missing until later evidence changes it. This fixes the confirmed three-host stale-owner read gap and adds the missing combined runtime; it does not certify production, Research or hardware/UAT.
+At the historical card-approval checkpoint Root reviewed actual sources and both D proposals and accepted this card while holding f22Partial and13Connected/19Partial/12Missing until verification. The later Wave21b attestation above changes only local f22 to Connected. This fixes the confirmed three-host stale-owner read gap and adds the missing combined runtime; it does not certify production, Research or hardware/UAT.
 
 The core D worker owns new progress models/query/composer, existing ProgressUseCases/DriftProgressQueries and new unit fixtures. The UI D worker owns only the new ReviewCenterScreen and its new screen tests after the model/API freeze. Root owns AppDependencies/bootstrap, the three host screens and existing fixture migrations. Root promotes all C edits and serializes Flutter/pub/codegen/analysis/full/build. One writer per file.
 
