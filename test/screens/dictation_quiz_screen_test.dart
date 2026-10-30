@@ -637,12 +637,12 @@ final class _Fixture {
 }
 
 final class _AckRepository extends Fake
-    implements LearningRepository, DictationRepository {
+    implements LearningRepository, NativeExerciseRepository {
   _AckRepository(this.delegate);
-  final DictationRepository delegate;
-  final starts = <DictationSession>[];
+  final NativeExerciseRepository delegate;
+  final starts = <AcceptedNativeExercise>[];
   final answers = <RecordAnswerCommand>[];
-  final finishes = <DictationFinishIntent>[];
+  final finishes = <NativeFinishIntent>[];
   bool loseStart = false;
   bool loseAnswer = false;
   bool loseFinish = false;
@@ -678,12 +678,12 @@ final class _AckRepository extends Fake
   );
 
   @override
-  Future<DictationSession> startDictation(
-    DictationSession session, {
+  Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
+    T session, {
     required bool Function() stillCurrent,
   }) => _track(() async {
     starts.add(session);
-    final result = await delegate.startDictation(
+    final result = await delegate.startNativeExercise(
       session,
       stillCurrent: stillCurrent,
     );
@@ -695,14 +695,14 @@ final class _AckRepository extends Fake
   });
 
   @override
-  Future<AnswerRecordResult> commitDictationAnswer(
-    DictationSession session,
+  Future<AnswerRecordResult> commitNativeAnswer(
+    AcceptedNativeExercise session,
     RecordAnswerCommand command, {
     required bool Function() stillCurrent,
   }) => _track(() async {
     answers.add(command);
     await answerGate?.future;
-    final result = await delegate.commitDictationAnswer(
+    final result = await delegate.commitNativeAnswer(
       session,
       command,
       stillCurrent: stillCurrent,
@@ -715,12 +715,12 @@ final class _AckRepository extends Fake
   });
 
   @override
-  Future<LearningSessionSummary> finishDictation(
-    DictationFinishIntent intent, {
+  Future<LearningSessionSummary> finishNativeExercise(
+    NativeFinishIntent intent, {
     required bool Function() stillCurrent,
   }) => _track(() async {
     finishes.add(intent);
-    final result = await delegate.finishDictation(
+    final result = await delegate.finishNativeExercise(
       intent,
       stillCurrent: stillCurrent,
     );

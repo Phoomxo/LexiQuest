@@ -22,9 +22,9 @@ void main() {
       () async {
         final session = await h.ready();
         final command = h.answer(session);
-        final intent = h.learning.prepareDictationFinish(session, command);
+        final intent = h.learning.prepareNativeFinish(session, command);
         await expectLater(
-          h.learning.finishDictation(intent, stillCurrent: () => true),
+          h.learning.finishNativeExercise(intent, stillCurrent: () => true),
           throwsStateError,
         );
         final stored = await h.database
@@ -49,7 +49,7 @@ void main() {
         ['changed', session.word.id],
       );
       await expectLater(
-        h.learning.startDictation(session, stillCurrent: () => true),
+        h.learning.startNativeExercise(session, stillCurrent: () => true),
         throwsStateError,
       );
       expect(
@@ -74,7 +74,7 @@ void main() {
             [session.word.id],
           );
           await expectLater(
-            h.learning.commitDictationAnswer(
+            h.learning.commitNativeAnswer(
               session,
               command,
               stillCurrent: () => true,
@@ -100,7 +100,7 @@ void main() {
         final command = h.answer(session);
         await h.storage.switchOwner(configuredOtherOwnerId);
         await expectLater(
-          h.learning.commitDictationAnswer(
+          h.learning.commitNativeAnswer(
             session,
             command,
             stillCurrent: () => true,
@@ -116,7 +116,7 @@ void main() {
         await h.storage.switchOwner(configuredOwnerId);
         h.current = false;
         await expectLater(
-          h.learning.commitDictationAnswer(
+          h.learning.commitNativeAnswer(
             session,
             command,
             stillCurrent: () => h.current,
@@ -143,7 +143,7 @@ void main() {
         idempotencyKey: 'synthetic-dictation-deletion',
       );
       await expectLater(
-        h.learning.commitDictationAnswer(
+        h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,
@@ -173,11 +173,11 @@ void main() {
         );
         final command = h.answer(session);
         await expectLater(
-          restarted.startDictation(session, stillCurrent: () => true),
+          restarted.startNativeExercise(session, stillCurrent: () => true),
           throwsStateError,
         );
         await expectLater(
-          restarted.commitDictationAnswer(
+          restarted.commitNativeAnswer(
             session,
             command,
             stillCurrent: () => true,
@@ -185,8 +185,8 @@ void main() {
           throwsStateError,
         );
         await expectLater(
-          restarted.finishDictation(
-            h.learning.prepareDictationFinish(session, command),
+          restarted.finishNativeExercise(
+            h.learning.prepareNativeFinish(session, command),
             stillCurrent: () => true,
           ),
           throwsStateError,
@@ -207,7 +207,10 @@ void main() {
             stillCurrent: () => true,
           ))!;
           if (stage == 'answer_attempts') {
-            await h.learning.startDictation(session, stillCurrent: () => true);
+            await h.learning.startNativeExercise(
+              session,
+              stillCurrent: () => true,
+            );
           }
           final command = h.answer(session);
           final interference = DictationWriteInterference(stage, (
@@ -221,8 +224,11 @@ void main() {
           await expectLater(
             h.database.runWithInterceptor(
               () => stage == 'learning_sessions'
-                  ? h.learning.startDictation(session, stillCurrent: () => true)
-                  : h.learning.commitDictationAnswer(
+                  ? h.learning.startNativeExercise(
+                      session,
+                      stillCurrent: () => true,
+                    )
+                  : h.learning.commitNativeAnswer(
                       session,
                       command,
                       stillCurrent: () => true,
@@ -260,7 +266,7 @@ void main() {
         });
         await expectLater(
           h.database.runWithInterceptor(
-            () => h.learning.commitDictationAnswer(
+            () => h.learning.commitNativeAnswer(
               session,
               command,
               stillCurrent: () => h.current,
@@ -288,12 +294,12 @@ void main() {
       () async {
         final session = await h.ready();
         final command = h.answer(session, assisted: true);
-        await h.learning.commitDictationAnswer(
+        await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,
         );
-        final close = h.learning.prepareDictationFinish(session, command);
+        final close = h.learning.prepareNativeFinish(session, command);
         final interference = DictationWriteInterference('learning_sessions', (
           executor,
         ) async {
@@ -304,7 +310,10 @@ void main() {
         }, onUpdate: true);
         await expectLater(
           h.database.runWithInterceptor(
-            () => h.learning.finishDictation(close, stillCurrent: () => true),
+            () => h.learning.finishNativeExercise(
+              close,
+              stillCurrent: () => true,
+            ),
             interceptor: interference,
           ),
           throwsStateError,
@@ -316,7 +325,7 @@ void main() {
         expect(unfinished.state, 'active');
         expect(unfinished.endedAtUtcMs, isNull);
         h.now = h.now.add(const Duration(hours: 1));
-        final summary = await h.learning.finishDictation(
+        final summary = await h.learning.finishNativeExercise(
           close,
           stillCurrent: () => true,
         );
@@ -345,26 +354,26 @@ void main() {
       () async {
         final session = await h.ready();
         final original = h.answer(session);
-        await h.learning.commitDictationAnswer(
+        await h.learning.commitNativeAnswer(
           session,
           original,
           stillCurrent: () => true,
         );
         final different = h.answer(session, correct: false);
         await expectLater(
-          h.learning.commitDictationAnswer(
+          h.learning.commitNativeAnswer(
             session,
             different,
             stillCurrent: () => true,
           ),
           throwsStateError,
         );
-        final close = h.learning.prepareDictationFinish(session, original);
-        await h.learning.finishDictation(close, stillCurrent: () => true);
+        final close = h.learning.prepareNativeFinish(session, original);
+        await h.learning.finishNativeExercise(close, stillCurrent: () => true);
         h.now = h.now.add(const Duration(seconds: 5));
         await expectLater(
-          h.learning.finishDictation(
-            h.learning.prepareDictationFinish(session, original),
+          h.learning.finishNativeExercise(
+            h.learning.prepareNativeFinish(session, original),
             stillCurrent: () => true,
           ),
           throwsStateError,
@@ -393,7 +402,10 @@ void main() {
         ))!;
         await expectLater(
           h.database.transaction(
-            () => h.learning.startDictation(prepared, stillCurrent: () => true),
+            () => h.learning.startNativeExercise(
+              prepared,
+              stillCurrent: () => true,
+            ),
           ),
           throwsStateError,
         );
@@ -401,14 +413,14 @@ void main() {
           await h.database.select(h.database.learningSessions).get(),
           isEmpty,
         );
-        final session = await h.learning.startDictation(
+        final session = await h.learning.startNativeExercise(
           prepared,
           stillCurrent: () => true,
         );
         final command = h.answer(session);
         await expectLater(
           h.database.transaction(
-            () => h.learning.commitDictationAnswer(
+            () => h.learning.commitNativeAnswer(
               session,
               command,
               stillCurrent: () => true,
@@ -420,15 +432,18 @@ void main() {
           await h.database.select(h.database.answerAttempts).get(),
           isEmpty,
         );
-        await h.learning.commitDictationAnswer(
+        await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,
         );
-        final close = h.learning.prepareDictationFinish(session, command);
+        final close = h.learning.prepareNativeFinish(session, command);
         await expectLater(
           h.database.transaction(
-            () => h.learning.finishDictation(close, stillCurrent: () => true),
+            () => h.learning.finishNativeExercise(
+              close,
+              stillCurrent: () => true,
+            ),
           ),
           throwsStateError,
         );

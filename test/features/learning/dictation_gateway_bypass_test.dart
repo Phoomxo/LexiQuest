@@ -85,16 +85,13 @@ void main() {
           final session = await h.ready();
           final answer = h.answer(session);
           if (saved) {
-            await h.learning.commitDictationAnswer(
+            await h.learning.commitNativeAnswer(
               session,
               answer,
               stillCurrent: () => true,
             );
           }
-          final originalClose = h.learning.prepareDictationFinish(
-            session,
-            answer,
-          );
+          final originalClose = h.learning.prepareNativeFinish(session, answer);
           h.now = h.now.add(const Duration(minutes: 5));
           Object? rejected;
           try {
@@ -129,7 +126,7 @@ void main() {
             isEmpty,
           );
           if (saved) {
-            final summary = await h.learning.finishDictation(
+            final summary = await h.learning.finishNativeExercise(
               originalClose,
               stillCurrent: () => true,
             );

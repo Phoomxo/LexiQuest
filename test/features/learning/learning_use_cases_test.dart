@@ -29,7 +29,7 @@ void main() {
         expect(session, isNotNull);
         expect(session!.ownerId, configuredOwnerId);
         expect(session.word.categoryId, configuredCategoryId);
-        expect(session.contentRevision, 'local-vocabulary-v1:1');
+        expect(session.evidenceContentRevision, 'local-vocabulary-v1:1');
         expect(session.session.activityType, 'dictation');
         expect(
           await h.database.select(h.database.learningSessions).get(),
@@ -78,7 +78,7 @@ void main() {
         expect(command.attemptNumber, 1);
         expect(
           command.evidenceContext.contentRevision,
-          session.contentRevision,
+          session.evidenceContentRevision,
         );
         expect(command.evidenceContext.hintLevel, 1);
         expect(command.providerProvenance, isNull);
@@ -90,15 +90,15 @@ void main() {
       () async {
         final session = await h.ready();
         final command = h.answer(session);
-        final saved = await h.learning.commitDictationAnswer(
+        final saved = await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => h.current,
         );
         expect(saved.inserted, isTrue);
         expect(saved.srs, isNotNull);
-        final finish = h.learning.prepareDictationFinish(session, command);
-        final summary = await h.learning.finishDictation(
+        final finish = h.learning.prepareNativeFinish(session, command);
+        final summary = await h.learning.finishNativeExercise(
           finish,
           stillCurrent: () => h.current,
         );
@@ -130,15 +130,15 @@ void main() {
         () async {
           final session = await h.ready();
           final command = h.answer(session, assisted: true, correct: correct);
-          final saved = await h.learning.commitDictationAnswer(
+          final saved = await h.learning.commitNativeAnswer(
             session,
             command,
             stillCurrent: () => h.current,
           );
           expect(saved.inserted, isTrue);
           expect(saved.srs, isNull);
-          final finish = h.learning.prepareDictationFinish(session, command);
-          final summary = await h.learning.finishDictation(
+          final finish = h.learning.prepareNativeFinish(session, command);
+          final summary = await h.learning.finishNativeExercise(
             finish,
             stillCurrent: () => h.current,
           );
@@ -177,13 +177,16 @@ void main() {
       () async {
         final session = await h.ready();
         final command = h.answer(session, assisted: true);
-        await h.learning.commitDictationAnswer(
+        await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,
         );
-        final closing = h.learning.prepareDictationFinish(session, command);
-        await h.learning.finishDictation(closing, stillCurrent: () => true);
+        final closing = h.learning.prepareNativeFinish(session, command);
+        await h.learning.finishNativeExercise(
+          closing,
+          stillCurrent: () => true,
+        );
         final before = await h.database
             .customSelect(
               'SELECT started_at_utc_ms,ended_at_utc_ms,correct_count,wrong_count,score '
@@ -194,16 +197,22 @@ void main() {
         final hooks = (h.notifications, h.questEvents, h.streakEvents);
         h.now = h.now.add(const Duration(days: 1));
         expect(
-          await h.learning.startDictation(session, stillCurrent: () => true),
+          await h.learning.startNativeExercise(
+            session,
+            stillCurrent: () => true,
+          ),
           same(session),
         );
-        final replay = await h.learning.commitDictationAnswer(
+        final replay = await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,
         );
         expect(replay.inserted, isFalse);
-        await h.learning.finishDictation(closing, stillCurrent: () => true);
+        await h.learning.finishNativeExercise(
+          closing,
+          stillCurrent: () => true,
+        );
         final after = await h.database
             .customSelect(
               'SELECT started_at_utc_ms,ended_at_utc_ms,correct_count,wrong_count,score '

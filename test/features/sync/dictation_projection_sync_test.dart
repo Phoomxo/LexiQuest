@@ -188,7 +188,7 @@ void main() {
       try {
         final session = await h.ready();
         final command = h.answer(session, assisted: true);
-        await h.learning.commitDictationAnswer(
+        await h.learning.commitNativeAnswer(
           session,
           command,
           stillCurrent: () => true,

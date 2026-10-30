@@ -19,7 +19,7 @@ final class DriftLearningRepository
     implements
         LearningRepository,
         ConfiguredQuizRepository,
-        DictationRepository {
+        NativeExerciseRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -55,8 +55,7 @@ final class DriftLearningRepository
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   // shortcut: Dictation retry handles are in-process; restart resume needs a canonical versioned checkpoint.
-  final Expando<_DictationBinding> _dictationBindings =
-      Expando<_DictationBinding>();
+  final Expando<_NativeBinding> _nativeBindings = Expando<_NativeBinding>();
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -420,15 +419,18 @@ final class DriftLearningRepository
   }
 
   @override
-  Future<DictationSession> startDictation(
-    DictationSession session, {
+  Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
+    T session, {
     required bool Function() stillCurrent,
   }) async {
-    if (!session.id.startsWith(DictationSession.idPrefix)) {
+    final prefix = switch (session) {
+      DictationSession() => DictationSession.idPrefix,
+    };
+    if (!session.id.startsWith(prefix)) {
       throw ArgumentError('Dictation requires its native session ID');
     }
-    final binding = _dictationBindings[session] ??= _DictationBinding();
-    await _writeDictation<void>(
+    final binding = _nativeBindings[session] ??= _NativeBinding();
+    await _writeNativeExercise<void>(
       session,
       stillCurrent,
       write: () async {
@@ -439,16 +441,16 @@ final class DriftLearningRepository
           );
         }
         if (existing == null) {
-          await _requireDictationTarget(session);
+          await _requireNativeTargets(session);
           binding.startAttempted = true;
           await _startSession(session.session);
         } else {
-          _sameDictationSession(existing, session);
+          _sameNativeSession(existing, session);
         }
       },
       verify: (_) async {
-        await _requireDictationSession(session);
-        if (!binding.started) await _requireDictationTarget(session);
+        await _requireNativeSession(session);
+        if (!binding.started) await _requireNativeTargets(session);
       },
     );
     binding.started = true;
@@ -456,29 +458,29 @@ final class DriftLearningRepository
   }
 
   @override
-  Future<AnswerRecordResult> commitDictationAnswer(
-    DictationSession session,
+  Future<AnswerRecordResult> commitNativeAnswer(
+    AcceptedNativeExercise session,
     RecordAnswerCommand command, {
     required bool Function() stillCurrent,
   }) async {
-    final binding = _requireDictationBinding(session);
-    _validateDictationAnswer(session, command);
+    final binding = _requireNativeBinding(session);
+    _validateNativeAnswer(session, command);
     if (binding.answer case final original?) {
-      if (!_sameDictationCommand(original, command)) {
+      if (!_sameNativeCommand(original, command)) {
         throw StateError('Dictation pending answer identity changed');
       }
     } else {
       binding.answer = command;
     }
-    return _writeDictation<AnswerRecordResult>(
+    return _writeNativeExercise<AnswerRecordResult>(
       session,
       stillCurrent,
       write: () async {
-        final row = await _requireDictationSession(session);
-        final attempts = await _dictationAttempts(session);
+        final row = await _requireNativeSession(session);
+        final attempts = await _nativeAttempts(session);
         if (attempts.isNotEmpty) {
-          _sameDictationAnswer(attempts, command);
-          _sameDictationOutcome(row, command);
+          _sameNativeAnswer(attempts, command);
+          _sameNativeOutcome(row, command);
           final srs = await _readSavedSrs(session.ownerId, session.word.id);
           if (srs == null &&
               _allowsAnswerProjection(command, LearningProjection.masterySrs)) {
@@ -489,28 +491,28 @@ final class DriftLearningRepository
         if (row.state != 'active') {
           throw StateError('Dictation is already completed');
         }
-        await _requireDictationTarget(session);
+        await _requireNativeTargets(session);
         return _recordAnswer(command);
       },
       verify: (result) async {
-        final row = await _requireDictationSession(session);
-        _sameDictationAnswer(await _dictationAttempts(session), command);
-        _sameDictationOutcome(row, command);
-        if (result.inserted) await _requireDictationTarget(session);
+        final row = await _requireNativeSession(session);
+        _sameNativeAnswer(await _nativeAttempts(session), command);
+        _sameNativeOutcome(row, command);
+        if (result.inserted) await _requireNativeTargets(session);
       },
     );
   }
 
   @override
-  Future<LearningSessionSummary> finishDictation(
-    DictationFinishIntent intent, {
+  Future<LearningSessionSummary> finishNativeExercise(
+    NativeFinishIntent intent, {
     required bool Function() stillCurrent,
   }) async {
-    final session = intent.session;
-    final binding = _requireDictationBinding(session);
-    _validateDictationAnswer(session, intent.answer);
+    final session = intent.exercise;
+    final binding = _requireNativeBinding(session);
+    _validateNativeAnswer(session, intent.answer);
     if (binding.answer == null ||
-        !_sameDictationCommand(binding.answer!, intent.answer)) {
+        !_sameNativeCommand(binding.answer!, intent.answer)) {
       throw StateError(
         'Dictation completion requires its original pending answer',
       );
@@ -521,20 +523,20 @@ final class DriftLearningRepository
     }
     if (binding.closing case final original?) {
       if (original.endedAtUtc != intent.endedAtUtc ||
-          !_sameDictationCommand(original.answer, intent.answer)) {
+          !_sameNativeCommand(original.answer, intent.answer)) {
         throw StateError('Dictation close identity changed');
       }
     } else {
       binding.closing = intent;
     }
     var historical = false;
-    return _writeDictation<LearningSessionSummary>(
+    return _writeNativeExercise<LearningSessionSummary>(
       session,
       stillCurrent,
       write: () async {
-        final row = await _requireDictationSession(session);
-        _sameDictationAnswer(await _dictationAttempts(session), intent.answer);
-        _sameDictationOutcome(row, intent.answer);
+        final row = await _requireNativeSession(session);
+        _sameNativeAnswer(await _nativeAttempts(session), intent.answer);
+        _sameNativeOutcome(row, intent.answer);
         if (row.state == 'completed') {
           if (!binding.finishAttempted ||
               row.endedAtUtcMs != intent.endedAtUtc.millisecondsSinceEpoch) {
@@ -543,9 +545,9 @@ final class DriftLearningRepository
             );
           }
           historical = true;
-          return _dictationSummary(row);
+          return _nativeSummary(row);
         }
-        await _requireDictationTarget(session);
+        await _requireNativeTargets(session);
         binding.finishAttempted = true;
         return _finishSession(
           ownerId: session.ownerId,
@@ -554,20 +556,20 @@ final class DriftLearningRepository
         );
       },
       verify: (_) async {
-        final row = await _requireDictationSession(session);
-        _sameDictationAnswer(await _dictationAttempts(session), intent.answer);
-        _sameDictationOutcome(row, intent.answer);
+        final row = await _requireNativeSession(session);
+        _sameNativeAnswer(await _nativeAttempts(session), intent.answer);
+        _sameNativeOutcome(row, intent.answer);
         if (row.state != 'completed' ||
             row.endedAtUtcMs != intent.endedAtUtc.millisecondsSinceEpoch) {
           throw StateError('Dictation completion changed');
         }
-        if (!historical) await _requireDictationTarget(session);
+        if (!historical) await _requireNativeTargets(session);
       },
     );
   }
 
-  Future<T> _writeDictation<T>(
-    DictationSession session,
+  Future<T> _writeNativeExercise<T>(
+    AcceptedNativeExercise session,
     bool Function() stillCurrent, {
     required Future<T> Function() write,
     required Future<void> Function(T result) verify,
@@ -590,27 +592,33 @@ final class DriftLearningRepository
     );
   }
 
-  _DictationBinding _requireDictationBinding(DictationSession session) {
-    final binding = _dictationBindings[session];
+  _NativeBinding _requireNativeBinding(AcceptedNativeExercise session) {
+    final binding = _nativeBindings[session];
     if (binding == null || !binding.started) {
       throw StateError('Dictation requires its original acknowledged launch');
     }
     return binding;
   }
 
-  Future<db.LearningSession> _requireDictationSession(
-    DictationSession session,
+  Future<db.LearningSession> _requireNativeSession(
+    AcceptedNativeExercise session,
   ) async {
     final row = await _session(session.id);
     if (row == null) throw StateError('Dictation session is missing');
-    _sameDictationSession(row, session);
+    _sameNativeSession(row, session);
     return row;
   }
 
-  void _sameDictationSession(db.LearningSession row, DictationSession session) {
+  void _sameNativeSession(
+    db.LearningSession row,
+    AcceptedNativeExercise session,
+  ) {
     final original = session.session;
+    final activity = switch (session) {
+      DictationSession() => 'dictation',
+    };
     if (row.ownerId != session.ownerId ||
-        row.activityType != 'dictation' ||
+        row.activityType != activity ||
         row.startedAtUtcMs != session.startedAtUtc.millisecondsSinceEpoch ||
         row.appVersion != original.appVersion ||
         row.buildId != original.buildId ||
@@ -623,31 +631,37 @@ final class DriftLearningRepository
     }
   }
 
-  Future<void> _requireDictationTarget(DictationSession session) async {
-    final word = await database
-        .customSelect(
-          'SELECT w.category_id,w.spelling,w.local_revision '
-          'FROM vocabulary_words w JOIN vocabulary_categories c '
-          'ON c.id = w.category_id AND c.owner_id = w.owner_id '
-          'WHERE w.id = ? AND w.owner_id = ? AND w.is_deleted = 0 AND c.is_deleted = 0',
-          variables: [Variable(session.word.id), Variable(session.ownerId)],
-        )
-        .getSingleOrNull();
-    if (word == null ||
-        word.read<String>('category_id') != session.word.categoryId ||
-        word.read<String>('spelling') != session.word.spelling ||
-        'local-vocabulary-v1:${word.read<int>('local_revision')}' !=
-            session.contentRevision) {
-      throw StateError('Dictation target changed');
+  Future<void> _requireNativeTargets(AcceptedNativeExercise session) async {
+    final pins = switch (session) {
+      DictationSession() => [(session.word, session.wordContentRevision)],
+    };
+    for (final (target, revision) in pins) {
+      final word = await database
+          .customSelect(
+            'SELECT w.category_id,w.spelling,w.local_revision '
+            'FROM vocabulary_words w JOIN vocabulary_categories c '
+            'ON c.id = w.category_id AND c.owner_id = w.owner_id '
+            'WHERE w.id = ? AND w.owner_id = ? AND w.is_deleted = 0 AND c.is_deleted = 0',
+            variables: [Variable(target.id), Variable(session.ownerId)],
+          )
+          .getSingleOrNull();
+      if (word == null ||
+          word.read<String>('category_id') != target.categoryId ||
+          word.read<String>('spelling') != target.spelling ||
+          'local-vocabulary-v1:${word.read<int>('local_revision')}' !=
+              revision) {
+        throw StateError('Dictation target changed');
+      }
     }
   }
 
-  Future<List<db.AnswerAttempt>> _dictationAttempts(DictationSession session) =>
-      (database.select(
-        database.answerAttempts,
-      )..where((attempt) => attempt.sessionId.equals(session.id))).get();
+  Future<List<db.AnswerAttempt>> _nativeAttempts(
+    AcceptedNativeExercise session,
+  ) => (database.select(
+    database.answerAttempts,
+  )..where((attempt) => attempt.sessionId.equals(session.id))).get();
 
-  void _sameDictationAnswer(
+  void _sameNativeAnswer(
     List<db.AnswerAttempt> attempts,
     RecordAnswerCommand command,
   ) {
@@ -658,10 +672,7 @@ final class DriftLearningRepository
     }
   }
 
-  void _sameDictationOutcome(
-    db.LearningSession row,
-    RecordAnswerCommand command,
-  ) {
+  void _sameNativeOutcome(db.LearningSession row, RecordAnswerCommand command) {
     if (row.correctCount != (command.isCorrect ? 1 : 0) ||
         row.wrongCount != (command.isCorrect ? 0 : 1) ||
         (row.state == 'completed' &&
@@ -670,35 +681,39 @@ final class DriftLearningRepository
     }
   }
 
-  void _validateDictationAnswer(
-    DictationSession session,
+  void _validateNativeAnswer(
+    AcceptedNativeExercise session,
     RecordAnswerCommand command,
   ) {
     _validateAnswer(command);
     final context = command.evidenceContext;
+    final matchesExercise = switch (session) {
+      DictationSession() =>
+        command.promptMode == 'dictation' &&
+            command.providerProvenance == null &&
+            context.skillId == 'dictation-spelling' &&
+            ((context.hintLevel == 0 &&
+                    context.evidenceClass == EvidenceClass.independentRecall) ||
+                (context.hintLevel == 1 &&
+                    context.evidenceClass == EvidenceClass.guidedPractice)),
+    };
     if (command.ownerId != session.ownerId ||
         command.sessionId != session.id ||
         command.wordId != session.word.id ||
-        command.promptMode != 'dictation' ||
         command.attemptNumber != 1 ||
-        command.providerProvenance != null ||
         command.occurredAtUtc.isBefore(session.startedAtUtc) ||
-        context.contentRevision != session.contentRevision ||
+        context.contentRevision != session.evidenceContentRevision ||
         context.classificationSource != EvidenceClassificationSource.declared ||
         context.policyVersion != EvidenceContext.currentPolicyVersion ||
-        context.skillId != 'dictation-spelling' ||
         context.engagementAllowed ||
-        !((context.hintLevel == 0 &&
-                context.evidenceClass == EvidenceClass.independentRecall) ||
-            (context.hintLevel == 1 &&
-                context.evidenceClass == EvidenceClass.guidedPractice))) {
+        !matchesExercise) {
       throw ArgumentError(
         'Dictation answer does not match its captured target',
       );
     }
   }
 
-  bool _sameDictationCommand(RecordAnswerCommand a, RecordAnswerCommand b) =>
+  bool _sameNativeCommand(RecordAnswerCommand a, RecordAnswerCommand b) =>
       (
         a.id,
         a.ownerId,
@@ -726,7 +741,7 @@ final class DriftLearningRepository
         jsonEncode(b.evidenceContext.toJson()),
       );
 
-  LearningSessionSummary _dictationSummary(db.LearningSession row) =>
+  LearningSessionSummary _nativeSummary(db.LearningSession row) =>
       LearningSessionSummary(
         id: row.id,
         state: row.state,
@@ -1672,10 +1687,10 @@ final class DriftLearningRepository
       : DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
 }
 
-final class _DictationBinding {
+final class _NativeBinding {
   bool startAttempted = false;
   bool started = false;
   bool finishAttempted = false;
   RecordAnswerCommand? answer;
-  DictationFinishIntent? closing;
+  NativeFinishIntent? closing;
 }

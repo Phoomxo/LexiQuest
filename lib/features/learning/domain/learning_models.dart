@@ -135,7 +135,20 @@ final class AnswerRecordResult {
   final SrsSnapshot? srs;
 }
 
-final class DictationSession {
+sealed class AcceptedNativeExercise {
+  const AcceptedNativeExercise();
+
+  LearningSessionDraft get session;
+  QuizWord get word;
+  String get wordContentRevision;
+  String get evidenceContentRevision;
+
+  String get id => session.id;
+  String get ownerId => session.ownerId;
+  DateTime get startedAtUtc => session.startedAtUtc!;
+}
+
+final class DictationSession extends AcceptedNativeExercise {
   static const idPrefix = 'session:dictation-v1:';
 
   DictationSession({required this.session, required this.word}) {
@@ -152,23 +165,48 @@ final class DictationSession {
     }
   }
 
+  @override
   final LearningSessionDraft session;
+  @override
   final QuizWord word;
 
-  String get id => session.id;
-  String get ownerId => session.ownerId;
-  DateTime get startedAtUtc => session.startedAtUtc!;
-  String get contentRevision => word.contentRevision!;
+  @override
+  String get wordContentRevision => word.contentRevision!;
+  @override
+  String get evidenceContentRevision => wordContentRevision;
 }
 
-final class DictationFinishIntent {
-  const DictationFinishIntent({
-    required this.session,
+sealed class NativeAnswerInput {
+  const NativeAnswerInput();
+
+  AcceptedNativeExercise get exercise;
+  Duration get responseTime;
+}
+
+final class DictationAnswerInput extends NativeAnswerInput {
+  const DictationAnswerInput({
+    required this.exercise,
+    required this.response,
+    required this.assisted,
+    required this.responseTime,
+  });
+
+  @override
+  final DictationSession exercise;
+  final String response;
+  final bool assisted;
+  @override
+  final Duration responseTime;
+}
+
+final class NativeFinishIntent {
+  const NativeFinishIntent({
+    required this.exercise,
     required this.answer,
     required this.endedAtUtc,
   });
 
-  final DictationSession session;
+  final AcceptedNativeExercise exercise;
   final RecordAnswerCommand answer;
   final DateTime endedAtUtc;
 }

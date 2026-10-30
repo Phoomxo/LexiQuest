@@ -7,6 +7,17 @@ debug APK. This is the single executable Cloze plan; earlier design sketches
 are historical. Isolated D prototypes may progress while C is frozen. Promote
 source only after root completes Native attestation and pushes that checkpoint.
 
+## Execution board
+
+Unit1 is integrated after the pushed wave12 attestation. Migrated caller tests
+first failed on missing APIs, then the shared Dictation-only lifecycle passed417
+learning/sync/UI checks and analysis found no issues. Independent source review
+accepted it. The mechanical proof preserves465 test assertions/string literals
+and six canonical DTO declarations. No Cloze behavior, new schema or content
+provider has been introduced; parser/projection/core and UI remain queued.
+Evidence: cloze-native-lifecycle-api-red.log,
+cloze-native-lifecycle-parity-green.log, cloze-native-lifecycle-analysis.log.
+
 ## Outcome and boundaries
 
 Add one quiz-gated ChooseMode entry: owned category → one accepted generated

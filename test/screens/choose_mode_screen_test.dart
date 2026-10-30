@@ -148,7 +148,7 @@ void main() {
             expect(screen.languageCode, 'th');
             expect(screen.session.ownerId, configuredOwnerId);
             expect(
-              screen.session.contentRevision,
+              screen.session.evidenceContentRevision,
               startsWith('local-vocabulary-v1:'),
             );
             expect(voice.requests.single.text, screen.session.word.spelling);
@@ -195,7 +195,7 @@ void main() {
         expect(screen.languageCode, 'th');
         expect(screen.session.ownerId, configuredOwnerId);
         expect(
-          screen.session.contentRevision,
+          screen.session.evidenceContentRevision,
           startsWith('local-vocabulary-v1:'),
         );
         expect(voice.requests.single.text, screen.session.word.spelling);

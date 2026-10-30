@@ -60,18 +60,20 @@ final class DictationSessionHarness {
     if (prepared == null) {
       throw StateError('synthetic Dictation target missing');
     }
-    return learning.startDictation(prepared, stillCurrent: () => current);
+    return learning.startNativeExercise(prepared, stillCurrent: () => current);
   }
 
   RecordAnswerCommand answer(
     DictationSession session, {
     bool assisted = false,
     bool correct = true,
-  }) => learning.prepareDictationAnswer(
-    session,
-    response: correct ? ' ${session.word.spelling.toUpperCase()} ' : 'wrong',
-    assisted: assisted,
-    responseTime: const Duration(milliseconds: 1234),
+  }) => learning.prepareNativeAnswer(
+    DictationAnswerInput(
+      exercise: session,
+      response: correct ? ' ${session.word.spelling.toUpperCase()} ' : 'wrong',
+      assisted: assisted,
+      responseTime: const Duration(milliseconds: 1234),
+    ),
   );
 
   Future<void> close() => storage.close();

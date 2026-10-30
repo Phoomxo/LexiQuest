@@ -36,20 +36,20 @@ abstract interface class LearningRepository {
   );
 }
 
-abstract interface class DictationRepository {
-  Future<DictationSession> startDictation(
-    DictationSession session, {
+abstract interface class NativeExerciseRepository {
+  Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
+    T exercise, {
     required bool Function() stillCurrent,
   });
 
-  Future<AnswerRecordResult> commitDictationAnswer(
-    DictationSession session,
+  Future<AnswerRecordResult> commitNativeAnswer(
+    AcceptedNativeExercise exercise,
     RecordAnswerCommand command, {
     required bool Function() stillCurrent,
   });
 
-  Future<LearningSessionSummary> finishDictation(
-    DictationFinishIntent intent, {
+  Future<LearningSessionSummary> finishNativeExercise(
+    NativeFinishIntent intent, {
     required bool Function() stillCurrent,
   });
 }

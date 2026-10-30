@@ -264,7 +264,7 @@ void main() {
       final baseline = await srsRows();
       final session = await h.ready();
       final command = h.answer(session);
-      final result = await h.learning.commitDictationAnswer(
+      final result = await h.learning.commitNativeAnswer(
         session,
         command,
         stillCurrent: () => true,
@@ -317,7 +317,7 @@ void main() {
       expect(session.word.id, wordId);
       expect(await srsRows(), baseline);
       final assisted = h.answer(session, assisted: true);
-      final result = await h.learning.commitDictationAnswer(
+      final result = await h.learning.commitNativeAnswer(
         session,
         assisted,
         stillCurrent: () => true,
@@ -329,7 +329,7 @@ void main() {
         reason:
             'an ineligible fact must not rebuild older eligible facts over an independent newer baseline',
       );
-      await h.learning.commitDictationAnswer(
+      await h.learning.commitNativeAnswer(
         session,
         assisted,
         stillCurrent: () => true,

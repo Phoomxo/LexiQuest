@@ -51,7 +51,7 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final LearningMutationNotifier? onLocalMutation;
-  final Expando<bool> _finishedDictationNotifications = Expando<bool>();
+  final Expando<bool> _finishedNativeNotifications = Expando<bool>();
 
   /// Shadow mode — when non-null, every recorded answer is also run through
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
@@ -85,8 +85,8 @@ final class LearningUseCases {
   Future<QuizSession> startReading({int limit = 2}) =>
       _startVocabularySession(null, limit, 'associativeReading');
 
-  DictationRepository get _dictation => switch (repository) {
-    final DictationRepository capability => capability,
+  NativeExerciseRepository get _nativeExercises => switch (repository) {
+    final NativeExerciseRepository capability => capability,
     _ => throw StateError('Dictation persistence is unavailable'),
   };
 
@@ -94,20 +94,20 @@ final class LearningUseCases {
     String? categoryId,
     required bool Function() stillCurrent,
   }) async {
-    _requireCurrentDictation(stillCurrent);
+    _requireCurrentNativeExercise(stillCurrent);
     final owner = await owners.getOrCreateActiveOwner();
-    _requireCurrentDictation(stillCurrent);
+    _requireCurrentNativeExercise(stillCurrent);
     final words = await repository.listQuizWords(
       ownerId: owner.id,
       categoryId: _optionalId(categoryId, 'categoryId'),
       limit: 1,
     );
-    _requireCurrentDictation(stillCurrent);
+    _requireCurrentNativeExercise(stillCurrent);
     final currentOwner = await owners.getOrCreateActiveOwner();
     if (currentOwner.id != owner.id) {
       throw StateError('Dictation owner changed');
     }
-    _requireCurrentDictation(stillCurrent);
+    _requireCurrentNativeExercise(stillCurrent);
     if (words.isEmpty) return null;
     return DictationSession(
       session: LearningSessionDraft(
@@ -122,50 +122,56 @@ final class LearningUseCases {
     );
   }
 
-  Future<DictationSession> startDictation(
-    DictationSession session, {
+  Future<T> startNativeExercise<T extends AcceptedNativeExercise>(
+    T exercise, {
     required bool Function() stillCurrent,
-  }) => _dictation.startDictation(session, stillCurrent: stillCurrent);
+  }) => _nativeExercises.startNativeExercise(
+    exercise,
+    stillCurrent: stillCurrent,
+  );
 
-  RecordAnswerCommand prepareDictationAnswer(
-    DictationSession session, {
-    required String response,
-    required bool assisted,
-    required Duration responseTime,
-  }) {
+  RecordAnswerCommand prepareNativeAnswer(NativeAnswerInput input) {
+    final exercise = input.exercise;
     final occurredAt = _now();
-    if (occurredAt.isBefore(session.startedAtUtc)) {
+    if (occurredAt.isBefore(exercise.startedAtUtc)) {
       throw StateError('Dictation clock precedes its original start');
     }
+    final (promptMode, isCorrect, hintLevel) = switch (input) {
+      DictationAnswerInput(:final exercise, :final response, :final assisted) =>
+        (
+          'dictation',
+          response.trim().toLowerCase() ==
+              exercise.word.spelling.trim().toLowerCase(),
+          assisted ? 1 : 0,
+        ),
+    };
     return RecordAnswerCommand(
       id: 'attempt:${_nextId()}',
-      ownerId: session.ownerId,
-      sessionId: session.id,
-      wordId: session.word.id,
-      promptMode: 'dictation',
-      isCorrect:
-          response.trim().toLowerCase() ==
-          session.word.spelling.trim().toLowerCase(),
-      responseTimeMs: responseTime.inMilliseconds
+      ownerId: exercise.ownerId,
+      sessionId: exercise.id,
+      wordId: exercise.word.id,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: input.responseTime.inMilliseconds
           .clamp(0, LearningEvidenceContract.maxResponseTimeMs)
           .toInt(),
       attemptNumber: 1,
       occurredAtUtc: occurredAt,
       evidenceContext: captureCurrentActivityEvidence(
-        promptMode: 'dictation',
-        contentRevision: session.contentRevision,
-        hintLevel: assisted ? 1 : 0,
+        promptMode: promptMode,
+        contentRevision: exercise.evidenceContentRevision,
+        hintLevel: hintLevel,
       ),
     );
   }
 
-  Future<AnswerRecordResult> commitDictationAnswer(
-    DictationSession session,
+  Future<AnswerRecordResult> commitNativeAnswer(
+    AcceptedNativeExercise exercise,
     RecordAnswerCommand command, {
     required bool Function() stillCurrent,
   }) async {
-    final result = await _dictation.commitDictationAnswer(
-      session,
+    final result = await _nativeExercises.commitNativeAnswer(
+      exercise,
       command,
       stillCurrent: stillCurrent,
     );
@@ -173,37 +179,37 @@ final class LearningUseCases {
     return result;
   }
 
-  DictationFinishIntent prepareDictationFinish(
-    DictationSession session,
+  NativeFinishIntent prepareNativeFinish(
+    AcceptedNativeExercise exercise,
     RecordAnswerCommand answer,
   ) {
     final endedAt = _now();
     if (endedAt.isBefore(answer.occurredAtUtc)) {
       throw StateError('Dictation clock precedes its saved answer');
     }
-    return DictationFinishIntent(
-      session: session,
+    return NativeFinishIntent(
+      exercise: exercise,
       answer: answer,
       endedAtUtc: endedAt,
     );
   }
 
-  Future<LearningSessionSummary> finishDictation(
-    DictationFinishIntent intent, {
+  Future<LearningSessionSummary> finishNativeExercise(
+    NativeFinishIntent intent, {
     required bool Function() stillCurrent,
   }) async {
-    final result = await _dictation.finishDictation(
+    final result = await _nativeExercises.finishNativeExercise(
       intent,
       stillCurrent: stillCurrent,
     );
-    if (_finishedDictationNotifications[intent.session] != true) {
-      _finishedDictationNotifications[intent.session] = true;
+    if (_finishedNativeNotifications[intent.exercise] != true) {
+      _finishedNativeNotifications[intent.exercise] = true;
       onLocalMutation?.call();
     }
     return result;
   }
 
-  void _requireCurrentDictation(bool Function() stillCurrent) {
+  void _requireCurrentNativeExercise(bool Function() stillCurrent) {
     if (!stillCurrent()) throw StateError('Dictation is no longer current');
   }
 

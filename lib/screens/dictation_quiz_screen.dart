@@ -63,7 +63,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   int _epoch = 0;
   _Step _step = _Step.starting;
   RecordAnswerCommand? _pendingAnswer;
-  DictationFinishIntent? _pendingFinish;
+  NativeFinishIntent? _pendingFinish;
 
   bool get _thai => widget.languageCode == 'th';
   String _copy(String th, String en) => _thai ? th : en;
@@ -190,7 +190,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     }
     setState(() => _step = _Step.starting);
     try {
-      await widget.learning.startDictation(
+      await widget.learning.startNativeExercise(
         widget.session,
         stillCurrent: () => _current(epoch),
       );
@@ -227,7 +227,9 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       }
       final word = widget.session.word;
       final contentPin = sha256.convert(
-        utf8.encode(jsonEncode([word.id, widget.session.contentRevision])),
+        utf8.encode(
+          jsonEncode([word.id, widget.session.evidenceContentRevision]),
+        ),
       );
       await _voice!.speak(
         VoiceRequest.create(
@@ -272,11 +274,13 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       return;
     }
     try {
-      _pendingAnswer ??= widget.learning.prepareDictationAnswer(
-        widget.session,
-        response: _response.text,
-        assisted: _assisted,
-        responseTime: _latency.elapsed,
+      _pendingAnswer ??= widget.learning.prepareNativeAnswer(
+        DictationAnswerInput(
+          exercise: widget.session,
+          response: _response.text,
+          assisted: _assisted,
+          responseTime: _latency.elapsed,
+        ),
       );
     } on Object {
       setState(() => _step = _Step.saveFailed);
@@ -289,7 +293,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       if (!_current(epoch)) {
         return;
       }
-      await widget.learning.commitDictationAnswer(
+      await widget.learning.commitNativeAnswer(
         widget.session,
         _pendingAnswer!,
         stillCurrent: () => _current(epoch),
@@ -312,7 +316,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       return;
     }
     try {
-      _pendingFinish ??= widget.learning.prepareDictationFinish(
+      _pendingFinish ??= widget.learning.prepareNativeFinish(
         widget.session,
         _pendingAnswer!,
       );
@@ -326,7 +330,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       if (!_current(epoch)) {
         return;
       }
-      final summary = await widget.learning.finishDictation(
+      final summary = await widget.learning.finishNativeExercise(
         _pendingFinish!,
         stillCurrent: () => _current(epoch),
       );
