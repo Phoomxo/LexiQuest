@@ -1,9 +1,9 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
-Source: `codex/remaining-system-readiness`, through `d995ffc2` (v18/35),
-updated2026-10-30. Latest full suite/APK: Flutter3820, analysis0, CLI23/23 and
+Source: `codex/remaining-system-readiness`, through `597187e5` (v19/36),
+updated2026-10-30. Latest full suite/APK: Flutter3922, analysis0, CLI23/23 and
 normal debug APK pass. Backend CPU390 passes, with one existing opt-in real
-Firebase/OmniVoice E2E skipped. All695 Dart hashes match through checks/build.
+Firebase/OmniVoice E2E skipped. All712 Dart hashes match through checks/build.
 The optional Study host connects signed local authority, both actual supplied
 presentations, durable switching and baseline/post Motivation to one exact
 canonical quiz. Assessment writer, compatible paired comparison and actual
@@ -18,7 +18,10 @@ validates actual canonical attempts and commits progress/completion atomically;
 the product's runtime activation, recurrence and grants remain separate.
 Owned Word Scramble connects category, immutable grapheme order, accessible
 answer/save/finish and history under a recreational floor. Scramble/Cloze page
-the bounded owned word read without changing accepted content or choice order. See
+the bounded owned word read without changing accepted content or choice order.
+Saved Words connects owned save/unsave, offline restart/list and targeted practice,
+with exact retries, owner merge/export/purge and unchanged learning projections. See
+[wave16 evidence](2026-10-30-remaining-systems-wave16.md),
 [wave15 evidence](2026-10-30-remaining-systems-wave15.md),
 [wave14 evidence](2026-10-30-remaining-systems-wave14.md),
 [Cloze evidence](2026-10-30-remaining-systems-wave13.md),
@@ -32,7 +35,7 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 11 connected runtime capabilities, 18 partial capabilities and 15
+There are 12 connected runtime capabilities, 18 partial capabilities and 14
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
@@ -69,14 +72,14 @@ capability still needs the applicable acceptance and release checks.
 | f17 | Immediate Answer Feedback | Connected | Quiz waits for save acknowledgement, supports retry and shows selected/correct answers; SRS acknowledges saves. |
 | f18 | Contrastive Distractor Explanation | Missing | Selected/correct answers appear, but no explanation distinguishes a distractor. |
 | f19 | Hint, Strategy & Context | Partial | Quiz hints/reveals, reading associations and AI context exist. No shared hint/strategy contract. |
-| f20 | Bookmark / Save | Missing | Adding vocabulary is not bookmarking. Saved/unsaved/offline bookmark workflow is absent. |
+| f20 | Bookmark / Save | Connected | Actual owned-word save/unsave, immutable retry, local restart, saved list and canonical targeted practice are verified at597187e5. Missing/deleted parents remain unavailable/removable; owner merge/export/purge and tombstones are covered. No cloud bookmark sync is claimed. |
 | f21 | Flag / Report Content | Missing | No revision-bound report sheet and durable report queue. |
 
 ## Review and assessment
 
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
-| f22 | Review Center | Partial | Weakness Clinic and SRS use actual due/mistake facts. Saved/reported content is not integrated. |
+| f22 | Review Center | Partial | Weakness Clinic and SRS use actual due/mistake facts. Saved Words now has an offline list and targeted practice; reported content and a combined Review Center remain incomplete. |
 | f23 | Focus Timer | Missing | No connected timer configuration, pause and resume. |
 | f24 | Automatic Learning-Time Capture | Missing | Timestamps and answer response times exist. Foreground active-time capture is absent. Session elapsed time is not treated as learning time. |
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |

@@ -13,18 +13,18 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Word Scramble source `d995ffc2` ผ่าน Flutter3820, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave15)
-รวม owned native lifecycle/Unicode cue/bounded pagination; schema ยัง18/35 และ Quest runtime/grants ยังไม่เปิด
+Current attestation: Saved Words source `597187e5` ผ่าน Flutter3922, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave16)
+รวม offline bookmark/list/targeted practice และ owner lifecycle; schema19/36 และ Quest runtime/grants ยังไม่เปิด
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `d995ffc2`: 11 connected / 18 partial / 15 missing ไม่ใช่ production/UAT
+  `597187e5`: 12 connected / 18 partial / 14 missing ไม่ใช่ production/UAT
   certification แม้ Dictation/Cloze/Word Scramble verified แล้ว f13 ยังไม่ครบทุก native mode
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`
   ห้ามเพิ่มรหัสเพื่อให้งานใหม่ดูครบ
-- `docs/database/schema_ledger.md` และ executable database อยู่ v18/35 tables;
-  v19+ ยังไม่ถูกจอง จำนวน 44 capabilities ไม่ใช่จำนวนตาราง
+- `docs/database/schema_ledger.md` และ executable database อยู่ v19/36 tables;
+  v20+ ยังไม่ถูกจอง จำนวน 44 capabilities ไม่ใช่จำนวนตาราง
 - แผนแม่ `docs/superpowers/plans/2026-10-28-unfinished-system-integration.md`
   ยัง queue Motivation integration และ remaining catalog integration ไว้
   งานที่ปิดได้ต้องมี caller จริง ไม่ใช่เพียง class หรือ catalog entry
@@ -33,9 +33,10 @@ CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล�
   ไม่ใช่หลักฐานว่า API นั้นอยู่ใน C แล้ว และแม้ Dictation/Cloze ผ่านทั้งคู่
   f13/f05 ก็ยังไม่ครบทุก mode/shell
 
-การ์ดถัดไปที่พร้อมดำเนินการคือ
-[Saved Words](2026-10-30-saved-words-integration.md) ต่อจาก source d995ffc2
-ที่รวม Word Scramble ใน APK และตรวจแล้ว; ต้องเก็บ genuine v18 ก่อนจอง/เพิ่ม v19
+การ์ด [Saved Words](2026-10-30-saved-words-integration.md) ปิดด้วย wave16 แล้ว
+ถัดไปคือรายงานคำศัพท์ของผู้ใช้: form→review/edit→immutable local queue→restart/list
+แบบที่ผ่าน boundary review บน D แล้ว ต้องเก็บ genuine v19 ก่อนจอง/เพิ่ม v20
+ไม่อ้างว่าส่งรายงานออกหรือ moderation พร้อม และยังไม่รวม AI/chat/document targets
 
 ## สามหน่วยถัดไปที่เสนอ
 

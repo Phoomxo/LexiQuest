@@ -589,12 +589,12 @@ a pre-upgrade backup or a separately tested downgrade.
 ### v19 — Owner-scoped local Saved Words
 
 **Reserved:** 2026-10-30, root integration, branch `codex/remaining-system-readiness`.
-**Status:** Storage implemented locally19/36 after reservation69f9f176. Executable schema was18/35 when reserved. Three new storage checks and109 combined storage/data/new-owner checks pass; UI and whole-feature attestation remain pending.
+**Status:** Attested locally19/36 at597187e5 after reservation69f9f176. Populated migration/reopen,109 storage/data/new-owner checks,538 expanded checks and actual UI/restart/practice pass. Full Flutter3922, analysis0, CLI23, offline backend390/one existing opt-in skip and normal debug APK verified; all712 Dart hashes match. Executable schema was18/35 when reserved. v20+ remains unreserved.
 **Baseline:** application `d995ffc2040ba2019a09542be4db549ad92094eb`, attestation
 `0461d695a950328ed4e90295d8b703ece204b1a8`; Flutter3820, analysis0, CLI23,
 offline backend390/one opt-in skip and compiled normal APK verified.
 
-One new local-only table `saved_words` (`SavedWords`), planned total36:
+One new local-only table `saved_words` (`SavedWords`), actual total36:
 `owner_id`, `word_id`, `is_saved`, `local_revision`, `first_saved_at_utc_ms`,
 `updated_at_utc_ms`, `last_mutation_id`. Composite primary key owner/word;
 restrictive foreign keys to existing owners/words. Revisions are positive integers,
