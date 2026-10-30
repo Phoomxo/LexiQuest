@@ -29,7 +29,27 @@ ordering fix and37 targeted cases after it. The deleted/foreign category REDs
 are corrected while valid legacy order/limits remain. A separate real SQL-owner
 race proved the final ambient probe could precede an old-owner request; final
 owner validation now follows that await before provider entry. Bootstrap and
-actual Cloze UI remain unintegrated; this is not a feature-readiness claim.
+actual Cloze UI were still queued at that core checkpoint.
+
+UI and bootstrap are now integrated locally:134 focused composition/UI checks,
+then57 runtime/legacy-bootstrap checks after strengthening observed MyApp
+disposal, and analysis0. Typed/choice launch, actual owned category/content,
+canonical save/finish, history, unavailable-provider behavior, lifecycle/route
+invalidation and320px/200% keyboard controls are exercised. Seven initial hub
+failures were off-screen tile-center taps; remaining fixture failures used
+nonexistent back buttons or asserted during a route transition. The runtime
+replacement fixture additionally needed its fake widget clock advanced while
+awaiting widget-started disposal; no product-disposal bypass was added.
+SentenceService/Model have no remaining callers and were removed only after
+their exact unchanged blobs were verified in pushed1821e741.
+
+Review remains open on an actual production owner-watch A→B→A coalescing probe.
+The injected-stream ABA checks do not prove that database-watch case. Do not
+mark Cloze ready or start the final frozen full suite until that disposition is
+recorded. Current normal APK remains the wave12 Dictation build, not this WIP.
+Evidence: cloze-ui-api-red.log; cloze-hub-routes-green.log;
+cloze-runtime-api-red.log; cloze-runtime-lifecycle-green.log;
+cloze-composition-ui-green.log; cloze-ui-runtime-final-analysis.log.
 
 ## Outcome and boundaries
 

@@ -15,6 +15,7 @@ import '../services/ai_reading_content_adapter.dart';
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'dictation_quiz_screen.dart';
+import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import '../navigation/app_routes.dart';
@@ -50,14 +51,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   String? _studyOwnerId;
   int _studyEntryGeneration = 0;
   bool _studyRouteVisible = false;
-  AppDependencies? _dictationDependencies;
-  StreamSubscription<String?>? _dictationOwners;
-  String? _dictationOwnerId;
-  int _dictationGeneration = 0;
-  bool _dictationBound = false;
-  bool _dictationRouteVisible = false;
-  bool _openingDictation = false;
-  bool _choosingDictationCategory = false;
+  AppDependencies? _nativeDependencies;
+  StreamSubscription<String?>? _nativeOwners;
+  String? _nativeOwnerId;
+  int _nativeGeneration = 0;
+  bool _nativeBound = false;
+  bool _nativeRouteVisible = false;
+  bool _openingNative = false;
+  bool _choosingNativeOverlay = false;
 
   @override
   void initState() {
@@ -68,8 +69,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   @override
   void dispose() {
     _studyEntryGeneration++;
-    _dictationGeneration++;
-    _dictationOwners?.cancel();
+    _nativeGeneration++;
+    _nativeOwners?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -78,7 +79,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) _studyEntryGeneration++;
     if (state != AppLifecycleState.resumed) {
-      _dictationGeneration++;
+      _nativeGeneration++;
     }
   }
 
@@ -100,11 +101,11 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     _studyRouteVisible = visible;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _replaceStudyBinding(dependencies);
-    if (_dictationRouteVisible && !visible && !_choosingDictationCategory) {
-      _dictationGeneration++;
+    if (_nativeRouteVisible && !visible && !_choosingNativeOverlay) {
+      _nativeGeneration++;
     }
-    _dictationRouteVisible = visible;
-    _replaceDictationBinding(dependencies);
+    _nativeRouteVisible = visible;
+    _replaceNativeBinding(dependencies);
   }
 
   @override
@@ -115,40 +116,40 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     }
     if (!identical(oldWidget.learning, widget.learning) ||
         !identical(oldWidget.featureRegistry, widget.featureRegistry)) {
-      _dictationGeneration++;
+      _nativeGeneration++;
     }
   }
 
-  void _replaceDictationBinding(AppDependencies? dependencies) {
-    if (_dictationBound && identical(_dictationDependencies, dependencies)) {
+  void _replaceNativeBinding(AppDependencies? dependencies) {
+    if (_nativeBound && identical(_nativeDependencies, dependencies)) {
       return;
     }
-    _dictationBound = true;
-    _dictationGeneration++;
-    _dictationOwnerId = null;
-    _dictationDependencies = dependencies;
-    _dictationOwners?.cancel();
+    _nativeBound = true;
+    _nativeGeneration++;
+    _nativeOwnerId = null;
+    _nativeDependencies = dependencies;
+    _nativeOwners?.cancel();
     final source = dependencies?.progress?.watchActiveOwnerId();
-    _dictationOwners = source?.listen(
+    _nativeOwners = source?.listen(
       (ownerId) {
-        if (!mounted || !identical(_dictationDependencies, dependencies)) {
+        if (!mounted || !identical(_nativeDependencies, dependencies)) {
           return;
         }
-        if (_dictationOwnerId != ownerId) {
-          _dictationGeneration++;
-          _dictationOwnerId = ownerId;
+        if (_nativeOwnerId != ownerId) {
+          _nativeGeneration++;
+          _nativeOwnerId = ownerId;
         }
       },
       onError: (Object _, StackTrace _) {
-        if (mounted && identical(_dictationDependencies, dependencies)) {
-          _dictationGeneration++;
-          _dictationOwnerId = null;
+        if (mounted && identical(_nativeDependencies, dependencies)) {
+          _nativeGeneration++;
+          _nativeOwnerId = null;
         }
       },
       onDone: () {
-        if (mounted && identical(_dictationDependencies, dependencies)) {
-          _dictationGeneration++;
-          _dictationOwnerId = null;
+        if (mounted && identical(_nativeDependencies, dependencies)) {
+          _nativeGeneration++;
+          _nativeOwnerId = null;
         }
       },
     );
@@ -364,6 +365,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
               subtitle: 'เลือกหมวดหมู่ แล้วฝึกสะกดจากเสียงทีละคำ',
               onTap: _openDictation,
             ),
+          if (canQuiz)
+            _LearningTile(
+              key: const ValueKey('cloze-entry'),
+              icon: Icons.short_text_outlined,
+              title: 'เติมคำในบริบท',
+              subtitle: 'เลือกพิมพ์หรือเลือกคำจากประโยคที่สร้างด้วย AI',
+              onTap: _openCloze,
+            ),
           if (canReading)
             _LearningTile(
               icon: Icons.menu_book_outlined,
@@ -403,24 +412,38 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
     );
   }
 
-  bool _canOpenDictation(
+  bool _canOpenNative(
     int generation,
     String ownerId,
     LearningUseCases learning,
     AppDependencies dependencies,
   ) =>
       mounted &&
-      generation == _dictationGeneration &&
-      ownerId == _dictationOwnerId &&
-      identical(_dictationDependencies, dependencies) &&
+      generation == _nativeGeneration &&
+      ownerId == _nativeOwnerId &&
+      identical(_nativeDependencies, dependencies) &&
       identical(_learning, learning) &&
       _features.isVisible(FieldFeature.quiz) &&
       ModalRoute.of(context)?.isCurrent == true &&
       Visibility.of(context) &&
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
-  Future<void> _openDictation() async {
-    if (_openingDictation ||
+  Future<void> _openDictation() => _openNative();
+
+  Future<void> _openCloze() => _openNative(cloze: true);
+
+  Widget _nativeOverlay(Widget child) => Builder(
+    builder: (overlayContext) {
+      final current = ModalRoute.isCurrentOf(overlayContext);
+      if (ModalRoute.of(overlayContext)?.isActive == true && current != true) {
+        _nativeGeneration++;
+      }
+      return child;
+    },
+  );
+
+  Future<void> _openNative({bool cloze = false}) async {
+    if (_openingNative ||
         !mounted ||
         ModalRoute.of(context)?.isCurrent != true ||
         WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed ||
@@ -428,14 +451,16 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
         !_features.isVisible(FieldFeature.quiz)) {
       return;
     }
-    final dependencies = _dictationDependencies;
+    final dependencies = _nativeDependencies;
     final learning = _learning;
-    final ownerId = _dictationOwnerId;
+    final ownerId = _nativeOwnerId;
     void unavailable({bool empty = false}) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            empty
+            cloze
+                ? 'ยังเปิดกิจกรรมเติมคำไม่ได้ กรุณาลองใหม่ภายหลัง'
+                : empty
                 ? 'หมวดหมู่นี้ยังไม่มีคำที่พร้อมฝึก'
                 : 'ยังเปิดกิจกรรมฟังแล้วพิมพ์ไม่ได้ กรุณาลองใหม่ภายหลัง',
           ),
@@ -451,34 +476,88 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       unavailable();
       return;
     }
-    final generation = _dictationGeneration;
-    _openingDictation = true;
-    _choosingDictationCategory = true;
+    final generation = _nativeGeneration;
+    _openingNative = true;
+    _choosingNativeOverlay = true;
     try {
+      ClozeVariant? variant;
+      if (cloze) {
+        variant = await showDialog<ClozeVariant>(
+          context: context,
+          builder: (dialogContext) => _nativeOverlay(
+            AlertDialog(
+              scrollable: true,
+              title: const Text('เลือกรูปแบบเติมคำ'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  OutlinedButton(
+                    key: const ValueKey('cloze-variant-typed'),
+                    onPressed: () =>
+                        Navigator.of(dialogContext).pop(ClozeVariant.typed),
+                    child: const Text('พิมพ์คำที่ขาดหายไป'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    key: const ValueKey('cloze-variant-choice'),
+                    onPressed: () =>
+                        Navigator.of(dialogContext).pop(ClozeVariant.choice),
+                    child: const Text('เลือกจาก 3 คำ'),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('ยกเลิก'),
+                ),
+              ],
+            ),
+          ),
+        );
+        if (!_canOpenNative(generation, ownerId, learning, dependencies) ||
+            variant == null) {
+          return;
+        }
+      }
+      if (!mounted) {
+        return;
+      }
       final categoryId = await AppNavigator.pushPage<String>(
         context,
         AppPage<String>(
-          name: 'learning/dictation-category',
-          builder: (_) =>
-              SelectCategoryForQuiz(vocabulary: dependencies.vocabulary),
+          name: cloze
+              ? 'learning/cloze-category'
+              : 'learning/dictation-category',
+          builder: (_) => _nativeOverlay(
+            SelectCategoryForQuiz(vocabulary: dependencies.vocabulary),
+          ),
         ),
       );
-      _choosingDictationCategory = false;
-      if (!_canOpenDictation(generation, ownerId, learning, dependencies) ||
+      _choosingNativeOverlay = false;
+      if (!_canOpenNative(generation, ownerId, learning, dependencies) ||
           categoryId == null) {
         return;
       }
-      _dictationRouteVisible = true;
-      final session = await learning.prepareDictation(
-        categoryId: categoryId,
-        stillCurrent: () =>
-            _canOpenDictation(generation, ownerId, learning, dependencies),
-      );
-      if (!_canOpenDictation(generation, ownerId, learning, dependencies)) {
+      _nativeRouteVisible = true;
+      final session = cloze
+          ? await learning.prepareCloze(
+              categoryId: categoryId,
+              variant: variant!,
+              stillCurrent: () =>
+                  _canOpenNative(generation, ownerId, learning, dependencies),
+            )
+          : await learning.prepareDictation(
+              categoryId: categoryId,
+              stillCurrent: () =>
+                  _canOpenNative(generation, ownerId, learning, dependencies),
+            );
+      if (!_canOpenNative(generation, ownerId, learning, dependencies)) {
         return;
       }
       if (session == null) {
-        unavailable(empty: true);
+        unavailable(empty: !cloze);
         return;
       }
       if (!mounted || session.ownerId != ownerId) {
@@ -488,25 +567,32 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       await AppNavigator.pushPage<LearningSessionSummary>(
         context,
         AppPage<LearningSessionSummary>(
-          name: 'learning/dictation',
-          builder: (_) => DictationQuizScreen(
-            session: session,
-            learning: learning,
-            voice: dependencies.voice,
-            ownerChanges: screenOwners,
-          ),
+          name: cloze ? 'learning/cloze' : 'learning/dictation',
+          builder: (_) => switch (session) {
+            final DictationSession exercise => DictationQuizScreen(
+              session: exercise,
+              learning: learning,
+              voice: dependencies.voice,
+              ownerChanges: screenOwners,
+            ),
+            final ClozeSession exercise => FillInTheBlanksScreen(
+              session: exercise,
+              learning: learning,
+              ownerChanges: screenOwners,
+            ),
+          },
         ),
       );
       if (mounted) {
         _refresh();
       }
     } on Object {
-      if (_canOpenDictation(generation, ownerId, learning, dependencies)) {
+      if (_canOpenNative(generation, ownerId, learning, dependencies)) {
         unavailable();
       }
     } finally {
-      _choosingDictationCategory = false;
-      _openingDictation = false;
+      _choosingNativeOverlay = false;
+      _openingNative = false;
     }
   }
 

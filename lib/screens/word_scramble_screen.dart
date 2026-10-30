@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'fill_in_the_blanks_screen.dart';
-import '../navigation/app_routes.dart';
-
 List<String> createStableScramble(String word) {
   final letters = word.characters.toList();
   if (letters.length < 2) return letters;
@@ -51,19 +48,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
     if (userAnswer.join() == widget.word) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('ถูกต้อง กำลังไปหน้าถัดไป')));
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          AppNavigator.pushPage<void>(
-            context,
-            AppPage<void>(
-              name: 'learning/fill-blanks',
-              builder: (context) => FillInTheBlanksScreen(word: widget.word),
-            ),
-            replace: true,
-          );
-        }
-      });
+      ).showSnackBar(const SnackBar(content: Text('ถูกต้อง')));
     } else {
       ScaffoldMessenger.of(
         context,

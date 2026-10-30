@@ -11,6 +11,31 @@ import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 
 void main() {
+  testWidgets('history labels saved Cloze rounds without inventing resume', (
+    tester,
+  ) async {
+    final entry = LearningHistoryEntry(
+      sessionId: 'synthetic-cloze-history',
+      activityType: 'cloze',
+      state: 'completed',
+      startedAtUtc: DateTime.utc(2026, 10, 30),
+      endedAtUtc: DateTime.utc(2026, 10, 30, 0, 1),
+      answerCount: 1,
+      correctCount: 1,
+    );
+    await tester.pumpWidget(
+      _app(
+        LearningHistoryScreen(
+          loader: ({before}) async => _history(entries: [entry]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('เติมคำในบริบท'), findsOneWidget);
+    expect(find.text('ฝึกต่อรอบนี้'), findsNothing);
+    expect(find.text('ถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+  });
+
   setUpAll(() async {
     await (FontLoader('NotoSansThai')
           ..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))

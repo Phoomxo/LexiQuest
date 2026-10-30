@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/accepted_quiz_plan.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
@@ -20,6 +21,8 @@ import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -27,8 +30,247 @@ import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import '../support/dictation_session_harness.dart';
+import '../support/cloze_session_harness.dart' as cloze;
 
 void main() {
+  for (final variant in ClozeVariant.values) {
+    testWidgets('Cloze selects explicit $variant before any generation', (
+      tester,
+    ) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      try {
+        await _pumpClozeEntry(tester, h);
+        expect(h.provider.requests, isEmpty);
+        await tester.scrollUntilVisible(
+          find.text('เติมคำในบริบท').hitTestable(),
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text('เติมคำในบริบท').hitTestable());
+        await _dictationEntryUntil(
+          tester,
+          () => find
+              .byKey(ValueKey('cloze-variant-${variant.name}'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        expect(h.provider.requests, isEmpty);
+        await tester.tap(find.byKey(ValueKey('cloze-variant-${variant.name}')));
+        await _dictationEntryUntil(
+          tester,
+          () => find.text('Synthetic travel').evaluate().isNotEmpty,
+        );
+        expect(h.provider.requests, isEmpty);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+        await tester.tap(find.text('Synthetic travel'));
+        await _dictationEntryUntil(
+          tester,
+          () =>
+              find.byKey(const ValueKey('cloze-context')).evaluate().isNotEmpty,
+        );
+        await tester.pumpAndSettle();
+        final screen = tester.widget<FillInTheBlanksScreen>(
+          find.byType(FillInTheBlanksScreen),
+        );
+        expect(screen.session.variant, variant);
+        expect(screen.languageCode, 'th');
+        expect(screen.session.ownerId, configuredOwnerId);
+        expect(h.provider.requests, hasLength(1));
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          1,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    });
+  }
+
+  testWidgets(
+    'Cloze null with actual owned words is unavailable rather than empty',
+    (tester) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      try {
+        final words = await tester.runAsync(
+          () => h.repository.listQuizWords(
+            ownerId: configuredOwnerId,
+            categoryId: configuredCategoryId,
+            limit: 100,
+          ),
+        );
+        expect(words, isNotEmpty);
+        await _pumpClozeEntry(
+          tester,
+          h,
+          learning: h.useCases(withProvider: false),
+        );
+        expect(h.provider.requests, isEmpty);
+        await tester.scrollUntilVisible(
+          find.text('เติมคำในบริบท').hitTestable(),
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text('เติมคำในบริบท').hitTestable());
+        await _dictationEntryUntil(
+          tester,
+          () => find
+              .byKey(const ValueKey('cloze-variant-typed'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        await tester.tap(find.byKey(const ValueKey('cloze-variant-typed')));
+        await _dictationEntryUntil(
+          tester,
+          () => find.text('Synthetic travel').evaluate().isNotEmpty,
+        );
+        expect(h.provider.requests, isEmpty);
+        await tester.tap(find.text('Synthetic travel'));
+        await _dictationEntryUntil(
+          tester,
+          () => find.byType(SnackBar).evaluate().isNotEmpty,
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('ยังเปิดกิจกรรมเติมคำไม่ได้ กรุณาลองใหม่ภายหลัง'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('ยังไม่มีประโยคหรือคำที่พร้อมสำหรับรูปแบบนี้'),
+          findsNothing,
+        );
+        expect(find.byType(FillInTheBlanksScreen), findsNothing);
+        expect(h.provider.requests, isEmpty);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    },
+  );
+
+  testWidgets(
+    'cancelled Cloze variant selection creates no generation or session',
+    (tester) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      try {
+        await _pumpClozeEntry(tester, h);
+        await tester.scrollUntilVisible(
+          find.text('เติมคำในบริบท').hitTestable(),
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text('เติมคำในบริบท').hitTestable());
+        await _dictationEntryUntil(
+          tester,
+          () => find
+              .byKey(const ValueKey('cloze-variant-typed'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        await tester.tap(find.text('ยกเลิก'));
+        await tester.pumpAndSettle();
+        expect(h.provider.requests, isEmpty);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    },
+  );
+
+  for (final phase in ['variant', 'category', 'generation']) {
+    testWidgets('external cover burns Cloze launch during $phase', (
+      tester,
+    ) async {
+      final h = (await tester.runAsync(cloze.ClozeSessionHarness.open))!;
+      final responseGate = Completer<void>();
+      if (phase == 'generation') {
+        h.provider.beforeResponse = (_) => responseGate.future;
+      }
+      try {
+        await _pumpClozeEntry(tester, h);
+        await tester.scrollUntilVisible(
+          find.text('เติมคำในบริบท').hitTestable(),
+          160,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text('เติมคำในบริบท').hitTestable());
+        await _dictationEntryUntil(
+          tester,
+          () => find
+              .byKey(const ValueKey('cloze-variant-typed'))
+              .evaluate()
+              .isNotEmpty,
+        );
+        if (phase != 'variant') {
+          await tester.tap(find.byKey(const ValueKey('cloze-variant-typed')));
+          await _dictationEntryUntil(
+            tester,
+            () => find.text('Synthetic travel').evaluate().isNotEmpty,
+          );
+        }
+        if (phase == 'generation') {
+          await tester.tap(find.text('Synthetic travel'));
+          await _dictationEntryUntil(
+            tester,
+            () => h.provider.requests.isNotEmpty,
+          );
+        }
+        final context = phase == 'variant'
+            ? tester.element(find.byType(AlertDialog))
+            : phase == 'category'
+            ? tester.element(find.text('Synthetic travel'))
+            : tester.element(find.byType(ChooseModeScreen));
+        unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('External route')),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        if (phase == 'variant') {
+          await tester.tap(find.byKey(const ValueKey('cloze-variant-typed')));
+        }
+        if (phase == 'category') {
+          await tester.tap(find.text('Synthetic travel'));
+        }
+        if (!responseGate.isCompleted) {
+          responseGate.complete();
+        }
+        await tester.pumpAndSettle();
+        expect(find.byType(FillInTheBlanksScreen), findsNothing);
+        expect(
+          await tester.runAsync(() => h.storage.count('learning_sessions')),
+          0,
+        );
+        expect(h.provider.requests.length, phase == 'generation' ? 1 : 0);
+      } finally {
+        if (!responseGate.isCompleted) {
+          responseGate.complete();
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(h.close);
+      }
+    });
+  }
+
   testWidgets('dictation entry uses the existing quiz feature gate', (
     tester,
   ) async {
@@ -44,6 +286,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('dictation-entry')), findsNothing);
+    expect(find.byKey(const ValueKey('cloze-entry')), findsNothing);
   });
 
   testWidgets('dictation entry without real owner dependencies fails closed', (
@@ -767,4 +1010,49 @@ Future<void> _dictationEntryUntil(
     isTrue,
     reason: 'Dictation entry did not reach expected UI state',
   );
+}
+
+Future<void> _pumpClozeEntry(
+  WidgetTester tester,
+  cloze.ClozeSessionHarness h, {
+  LearningUseCases? learning,
+}) async {
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  final dependencies = AppDependencies(
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _StudyEntryGuestService(),
+    database: h.database,
+    localOwners: h.storage.owners,
+    learning: learning ?? h.learning,
+    progress: ProgressUseCases(
+      owners: h.storage.owners,
+      queries: DriftProgressQueries(h.database),
+      nowUtc: () => h.now,
+    ),
+    vocabulary: VocabularyUseCases(
+      owners: h.storage.owners,
+      vocabulary: DriftVocabularyRepository(h.database),
+      generateId: () => 'synthetic-cloze-entry',
+      nowUtc: () => h.now,
+    ),
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        home: ChooseModeScreen(loader: () async => snapshot()),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.runAsync(
+    () => dependencies.localOwners!.getOrCreateActiveOwner(),
+  );
+  await tester.pump();
 }

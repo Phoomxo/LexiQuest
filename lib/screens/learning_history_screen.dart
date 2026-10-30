@@ -412,6 +412,7 @@ String _mode(String value) => switch (value) {
   'srsReview' => 'ทบทวนคำศัพท์',
   'listening' => 'ฝึกฟัง',
   'dictation' => 'เขียนตามเสียง',
+  'cloze' => 'เติมคำในบริบท',
   'pronunciation' || 'pronunciationTranscript' => 'ฝึกออกเสียง',
   'shadowing' => 'ฝึกพูดตาม',
   'ghostSpelling' => 'ฝึกสะกดคำ',

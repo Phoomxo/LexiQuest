@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:uuid/uuid.dart';
 
+import '../ai/ai_service_factory.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../data/local/shared_preferences_account_deletion_journal.dart';
@@ -91,6 +92,7 @@ import 'supabase_client_config.dart';
 typedef RuntimeInitializer = Future<void> Function();
 typedef FirebaseAppCheckTokenLoader = Future<String?> Function();
 typedef AppConfigLoader = AppConfig Function();
+typedef ContentServiceFactory = ManagedAiService Function(AppConfig config);
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
@@ -301,6 +303,7 @@ final class AppBootstrap {
     required this.loadConfig,
     required this.guestSessionService,
     required this.createDatabase,
+    this.contentServiceFactory,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
     this.accountGatewayFactory,
@@ -332,6 +335,8 @@ final class AppBootstrap {
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
+      contentServiceFactory: (config) =>
+          AiServiceFactory.create(config: config),
       bindGuestOwnership: true,
       syncGatewayFactory: () => FirestoreSyncGateway(
         firestore: FirebaseFirestore.instance,
@@ -367,6 +372,7 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
+  final ContentServiceFactory? contentServiceFactory;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
@@ -575,216 +581,247 @@ final class AppBootstrap {
         // Optional research composition must not disable ordinary learning.
       }
     }
-    learning = LearningUseCases(
-      owners: localOwners,
-      repository: DriftLearningRepository(
-        database,
-        ownerWrites: ownerWrites,
-        lifecycleObserver: studyObserver,
-      ),
-      generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
-      buildInfo: const AppBuildInfo.fromEnvironment(),
-      onLocalMutation: notifyLocalMutation,
-    );
-    final progress = ProgressUseCases(
-      owners: localOwners,
-      queries: DriftProgressQueries(database),
-      nowUtc: () => DateTime.now().toUtc(),
-    );
-    final rewards = RewardUseCases(
-      owners: localOwners,
-      repository: DriftRewardRepository(database),
-      generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
-      onLocalMutation: notifyLocalMutation,
-    );
-    final exports = ExportUseCases(
-      owners: localOwners,
-      reader: DriftExportReader(database),
-      store: const FileSelectorExportStore(),
-      nowUtc: () => DateTime.now().toUtc(),
-      loadThaiFont: () =>
-          rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
-      researchConsent: researchConsent,
-      researchAuthorizer: researchAuthorizer,
-    );
-    final modelRepository = DriftModelDownloadRepository(database);
-    final modelByteSource = HttpModelByteSource(http.Client());
-    final modelDownloadManager = ModelDownloadManager(
-      repository: modelRepository,
-      source: modelByteSource,
-      verifier: const LiteRtModelFileVerifier(),
-      modelDirectory: () async {
-        final support = await getApplicationSupportDirectory();
-        return Directory('${support.path}${Platform.pathSeparator}models');
-      },
-      nowUtc: () => DateTime.now().toUtc(),
-    );
-    final deviceModels = DeviceModelUseCases(
-      manifest: ModelManifest.fieldImageClassifier,
-      repository: modelRepository,
-      downloadManager: modelDownloadManager,
-      openRuntime: ({required path, required manifest, required delegate}) =>
-          LiteRtImageClassifier.open(
-            path: path,
-            manifest: manifest,
-            delegate: delegate,
-          ),
-    );
-    final objectScanner = ObjectScannerUseCases(
-      camera: PluginCameraGateway(),
-      deviceModels: deviceModels,
-      vocabulary: vocabulary,
-      preprocessor: const DartImagePreprocessor(),
-    );
-    final speechPractice = SpeechPracticeUseCases(
-      PluginSpeechRecognitionGateway(),
-    );
-    final geminiHttpClient = http.Client();
-    final geminiOwnerQuery = database.select(database.localOwners)
-      ..where((row) => row.isActive.equals(true));
-    LocalOwner? geminiOwner = await geminiOwnerQuery.getSingleOrNull();
-    final readSession = readGeminiSession ?? () => account?.currentSession;
-    var geminiAuthTrusted = true;
-    GeminiScope? scopeFor(LocalOwner? owner) {
-      if (owner == null ||
-          !geminiAuthTrusted ||
-          firebase != RuntimeAvailability.ready) {
-        return null;
-      }
+    ManagedAiService? contentService;
+    var backends = config == null
+        ? RuntimeAvailability.unavailable
+        : RuntimeAvailability.ready;
+    final createContent = contentServiceFactory;
+    if (config != null &&
+        firebase == RuntimeAvailability.ready &&
+        createContent != null) {
       try {
-        final session = readSession();
-        if (owner.firebaseUid != session?.uid) return null;
-        return GeminiScope(
-          ownerId: owner.id,
-          firebaseUid: session?.uid,
-          isAnonymous: session?.isAnonymous ?? true,
-        );
+        contentService = createContent(config);
       } on Object {
-        return null;
+        backends = RuntimeAvailability.unavailable;
       }
     }
+    try {
+      learning = LearningUseCases(
+        owners: localOwners,
+        repository: DriftLearningRepository(
+          database,
+          ownerWrites: ownerWrites,
+          lifecycleObserver: studyObserver,
+        ),
+        generateId: idGenerator.v4,
+        nowUtc: () => DateTime.now().toUtc(),
+        buildInfo: const AppBuildInfo.fromEnvironment(),
+        onLocalMutation: notifyLocalMutation,
+        contentProvider: contentService,
+      );
+      final progress = ProgressUseCases(
+        owners: localOwners,
+        queries: DriftProgressQueries(database),
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      final rewards = RewardUseCases(
+        owners: localOwners,
+        repository: DriftRewardRepository(database),
+        generateId: idGenerator.v4,
+        nowUtc: () => DateTime.now().toUtc(),
+        onLocalMutation: notifyLocalMutation,
+      );
+      final exports = ExportUseCases(
+        owners: localOwners,
+        reader: DriftExportReader(database),
+        store: const FileSelectorExportStore(),
+        nowUtc: () => DateTime.now().toUtc(),
+        loadThaiFont: () =>
+            rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+        researchConsent: researchConsent,
+        researchAuthorizer: researchAuthorizer,
+      );
+      final modelRepository = DriftModelDownloadRepository(database);
+      final modelByteSource = HttpModelByteSource(http.Client());
+      final modelDownloadManager = ModelDownloadManager(
+        repository: modelRepository,
+        source: modelByteSource,
+        verifier: const LiteRtModelFileVerifier(),
+        modelDirectory: () async {
+          final support = await getApplicationSupportDirectory();
+          return Directory('${support.path}${Platform.pathSeparator}models');
+        },
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      final deviceModels = DeviceModelUseCases(
+        manifest: ModelManifest.fieldImageClassifier,
+        repository: modelRepository,
+        downloadManager: modelDownloadManager,
+        openRuntime: ({required path, required manifest, required delegate}) =>
+            LiteRtImageClassifier.open(
+              path: path,
+              manifest: manifest,
+              delegate: delegate,
+            ),
+      );
+      final objectScanner = ObjectScannerUseCases(
+        camera: PluginCameraGateway(),
+        deviceModels: deviceModels,
+        vocabulary: vocabulary,
+        preprocessor: const DartImagePreprocessor(),
+      );
+      final speechPractice = SpeechPracticeUseCases(
+        PluginSpeechRecognitionGateway(),
+      );
+      final geminiHttpClient = http.Client();
+      final geminiOwnerQuery = database.select(database.localOwners)
+        ..where((row) => row.isActive.equals(true));
+      LocalOwner? geminiOwner = await geminiOwnerQuery.getSingleOrNull();
+      final readSession = readGeminiSession ?? () => account?.currentSession;
+      var geminiAuthTrusted = true;
+      GeminiScope? scopeFor(LocalOwner? owner) {
+        if (owner == null ||
+            !geminiAuthTrusted ||
+            firebase != RuntimeAvailability.ready) {
+          return null;
+        }
+        try {
+          final session = readSession();
+          if (owner.firebaseUid != session?.uid) return null;
+          return GeminiScope(
+            ownerId: owner.id,
+            firebaseUid: session?.uid,
+            isAnonymous: session?.isAnonymous ?? true,
+          );
+        } on Object {
+          return null;
+        }
+      }
 
-    final geminiTutor = GeminiTutorUseCases(
-      store:
-          geminiSettingsStoreFactory?.call() ??
-          SecureGeminiSettingsStore.production(),
-      gateway:
-          geminiGatewayFactory?.call() ??
-          GeminiRestGateway(client: geminiHttpClient),
-      loadProgress: progress.load,
-      nowUtc: () => DateTime.now().toUtc(),
-      readScope: () => scopeFor(geminiOwner),
-      verifyScope: () async =>
-          scopeFor(await geminiOwnerQuery.getSingleOrNull()),
-    );
-    final geminiOwnerSubscription = geminiOwnerQuery.watchSingleOrNull().listen(
-      (owner) {
-        final changed =
-            owner?.id != geminiOwner?.id ||
-            owner?.firebaseUid != geminiOwner?.firebaseUid;
-        geminiOwner = owner;
-        if (changed) geminiTutor.invalidateScope();
-      },
-      onError: (Object _) {
-        geminiOwner = null;
-        geminiTutor.invalidateScope();
-      },
-    );
-    // Query snapshots can coalesce ABA transitions; every owner-table commit fences AI.
-    final geminiOwnerUpdatesSubscription = database
-        .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
-        .listen(
-          (_) => geminiTutor.invalidateScope(),
-          onError: (Object _) {
-            geminiOwner = null;
-            geminiTutor.invalidateScope();
-          },
-        );
-    StreamSubscription<AccountSession?>? geminiAuthSubscription;
-    final watchSessions = watchGeminiSessions;
-    if (firebase == RuntimeAvailability.ready && watchSessions != null) {
-      AccountSession? observedSession;
-      try {
-        observedSession = readSession();
-      } on Object {
-        geminiAuthTrusted = false;
+      final geminiTutor = GeminiTutorUseCases(
+        store:
+            geminiSettingsStoreFactory?.call() ??
+            SecureGeminiSettingsStore.production(),
+        gateway:
+            geminiGatewayFactory?.call() ??
+            GeminiRestGateway(client: geminiHttpClient),
+        loadProgress: progress.load,
+        nowUtc: () => DateTime.now().toUtc(),
+        readScope: () => scopeFor(geminiOwner),
+        verifyScope: () async =>
+            scopeFor(await geminiOwnerQuery.getSingleOrNull()),
+      );
+      final geminiOwnerSubscription = geminiOwnerQuery
+          .watchSingleOrNull()
+          .listen(
+            (owner) {
+              final changed =
+                  owner?.id != geminiOwner?.id ||
+                  owner?.firebaseUid != geminiOwner?.firebaseUid;
+              geminiOwner = owner;
+              if (changed) geminiTutor.invalidateScope();
+            },
+            onError: (Object _) {
+              geminiOwner = null;
+              geminiTutor.invalidateScope();
+            },
+          );
+      // Query snapshots can coalesce ABA transitions; every owner-table commit fences AI.
+      final geminiOwnerUpdatesSubscription = database
+          .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
+          .listen(
+            (_) => geminiTutor.invalidateScope(),
+            onError: (Object _) {
+              geminiOwner = null;
+              geminiTutor.invalidateScope();
+            },
+          );
+      StreamSubscription<AccountSession?>? geminiAuthSubscription;
+      final watchSessions = watchGeminiSessions;
+      if (firebase == RuntimeAvailability.ready && watchSessions != null) {
+        AccountSession? observedSession;
+        try {
+          observedSession = readSession();
+        } on Object {
+          geminiAuthTrusted = false;
+        }
+        try {
+          geminiAuthSubscription = watchSessions().listen(
+            (session) {
+              final changed =
+                  !geminiAuthTrusted ||
+                  session?.uid != observedSession?.uid ||
+                  session?.isAnonymous != observedSession?.isAnonymous;
+              geminiAuthTrusted = true;
+              observedSession = session;
+              if (changed) geminiTutor.invalidateScope();
+            },
+            onError: (Object _) {
+              geminiAuthTrusted = false;
+              geminiTutor.invalidateScope();
+            },
+          );
+        } on Object {
+          geminiAuthTrusted = false;
+          geminiTutor.invalidateScope();
+        }
       }
+
+      return AppDependencies(
+        runtimeStatus: AppRuntimeStatus(
+          localData: RuntimeAvailability.ready,
+          firebase: firebase,
+          supabase: supabase,
+          backends: backends,
+        ),
+        config: config,
+        guestSessionService: exposedGuestSession,
+        buildInfo: const AppBuildInfo.fromEnvironment(),
+        database: database,
+        localOwners: localOwners,
+        upgradeGuestOwner: upgradeGuestOwner,
+        syncEngine: syncEngine,
+        syncTrigger: syncTrigger,
+        syncStatus: syncStore,
+        learning: learning,
+        associativeLearning: DriftAssociativeLearningAdapter(database),
+        progress: progress,
+        rewards: rewards,
+        exports: exports,
+        vocabulary: vocabulary,
+        vocabularyImporter: vocabularyImporter,
+        vocabularyImportFilePicker:
+            FileSelectorVocabularyImportFilePicker().pick,
+        sourcePracticeFilePicker: FileSelectorSourcePracticeFilePicker().pick,
+        deviceModels: deviceModels,
+        account: account,
+        accountDeletion: accountDeletionComposition?.useCases,
+        researchConsent: researchAvailability.isEnabled
+            ? researchConsent
+            : null,
+        consents: DriftConsentRegistry(researchConsent.repository),
+        researchAvailability: researchAvailability,
+        studyRuntime: studyRuntime,
+        geminiTutor: geminiTutor,
+        objectScanner: objectScanner,
+        devicePermissions: const PluginDevicePermissionAccess(),
+        speechPractice: speechPractice,
+        disposeResources: () async {
+          try {
+            await contentService?.dispose();
+          } finally {
+            await accountDeletionComposition?.dispose();
+            await geminiAuthSubscription?.cancel();
+            await geminiOwnerUpdatesSubscription.cancel();
+            await geminiOwnerSubscription.cancel();
+            await geminiTutor.dispose();
+            geminiHttpClient.close();
+            await objectScanner.dispose();
+            await speechPractice.dispose();
+            await deviceModels.dispose();
+            modelByteSource.close();
+            await database.close();
+          }
+        },
+      );
+    } on Object {
       try {
-        geminiAuthSubscription = watchSessions().listen(
-          (session) {
-            final changed =
-                !geminiAuthTrusted ||
-                session?.uid != observedSession?.uid ||
-                session?.isAnonymous != observedSession?.isAnonymous;
-            geminiAuthTrusted = true;
-            observedSession = session;
-            if (changed) geminiTutor.invalidateScope();
-          },
-          onError: (Object _) {
-            geminiAuthTrusted = false;
-            geminiTutor.invalidateScope();
-          },
-        );
+        await contentService?.dispose();
       } on Object {
-        geminiAuthTrusted = false;
-        geminiTutor.invalidateScope();
+        // Preserve the original bootstrap failure after best-effort cleanup.
       }
+      rethrow;
     }
-
-    return AppDependencies(
-      runtimeStatus: AppRuntimeStatus(
-        localData: RuntimeAvailability.ready,
-        firebase: firebase,
-        supabase: supabase,
-        backends: config == null
-            ? RuntimeAvailability.unavailable
-            : RuntimeAvailability.ready,
-      ),
-      config: config,
-      guestSessionService: exposedGuestSession,
-      buildInfo: const AppBuildInfo.fromEnvironment(),
-      database: database,
-      localOwners: localOwners,
-      upgradeGuestOwner: upgradeGuestOwner,
-      syncEngine: syncEngine,
-      syncTrigger: syncTrigger,
-      syncStatus: syncStore,
-      learning: learning,
-      associativeLearning: DriftAssociativeLearningAdapter(database),
-      progress: progress,
-      rewards: rewards,
-      exports: exports,
-      vocabulary: vocabulary,
-      vocabularyImporter: vocabularyImporter,
-      vocabularyImportFilePicker: FileSelectorVocabularyImportFilePicker().pick,
-      sourcePracticeFilePicker: FileSelectorSourcePracticeFilePicker().pick,
-      deviceModels: deviceModels,
-      account: account,
-      accountDeletion: accountDeletionComposition?.useCases,
-      researchConsent: researchAvailability.isEnabled ? researchConsent : null,
-      consents: DriftConsentRegistry(researchConsent.repository),
-      researchAvailability: researchAvailability,
-      studyRuntime: studyRuntime,
-      geminiTutor: geminiTutor,
-      objectScanner: objectScanner,
-      devicePermissions: const PluginDevicePermissionAccess(),
-      speechPractice: speechPractice,
-      disposeResources: () async {
-        await accountDeletionComposition?.dispose();
-        await geminiAuthSubscription?.cancel();
-        await geminiOwnerUpdatesSubscription.cancel();
-        await geminiOwnerSubscription.cancel();
-        await geminiTutor.dispose();
-        geminiHttpClient.close();
-        await objectScanner.dispose();
-        await speechPractice.dispose();
-        await deviceModels.dispose();
-        modelByteSource.close();
-        await database.close();
-      },
-    );
   }
 
   Future<RuntimeAvailability> _availability(
