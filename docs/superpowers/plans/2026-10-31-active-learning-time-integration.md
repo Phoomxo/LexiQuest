@@ -44,6 +44,8 @@ Before any schema bump/reservation, capture the genuine current AppDatabase20 DD
 
 ## Canonical and UI admission contract
 
+Capture predecessor completed before any runtime schema edit: the actual AppDatabase20 generated all37 tables/indexes and64 synthetic rows. Exact replay/reopen, FK/integrity and all63 prior rows/pins pass; a second invocation reconciled identical files. Schema SHA25644b96f263f86fe9e32df8533a793fd14a3449a079bb889c3b0946e2c736581e7; populated SHA256fcb804bb185f2b3c2d43c41fce185ed99597ce18ae06c9a108507afa2cfdbcb4. D f24-schema-capture/schema_v20-capture-ca41b05b0efd2477.json SHA256ca41b05b0efd24778bb0e61106984e14899dc61ccb575aa341d8ff68b7c102ee pins21 actual capture inputs, current HEAD1b56fa03 and unrelated Export edits honestly. Logs wave23-v20-capture-first.log and wave23-v20-capture-reconcile.log each record one passing test. Runtime remains20/37 at capture; this is migration evidence, not f24 readiness.
+
 New time types use a closed source union: configured Quiz state, original owned SRS handle, original accepted eligible native handle, actual Reading snapshot or actual scoped Tutor task. A public session ID/activity string cannot prove an owned prepared SRS/native exercise. Add a separate read-only canonical admission capability to the existing learning repository/use cases; preserve their private original-handle checks. Do not add a new learning writer or repurpose the best-effort single Study lifecycle observer.
 
 Configured/owned source proof is admitted only after canonical start/resume ACK. It pins the same owner/database, accepted source and normalized eligibility context. Closed writes may survive a valid checkpoint advance or canonical finish; they must not require the old prompt to remain live.
