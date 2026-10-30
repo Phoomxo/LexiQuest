@@ -1,6 +1,6 @@
 # Focus Timer integration plan
 
-Status: Root-approved execution card under the user's continuing remaining-systems request. Root reviewed the concrete six-file API/write set and independent plan corrections. No additional user approval gate is needed.
+Status: Completed local transient timer/P06 engineering slice at71a230a42ac767c956c0192eed6af01ee2521a59 under the user's continuing request. Actual current-source/full/build and independent artifact/source/log gates are accepted. f23 is Partial because typed dependency f24 remains Missing. No additional user approval gate is needed.
 
 Predecessor: Wave21 sourcea54ac2e2 passed Flutter4461/analysis0/CLI23/offline390+one optional skip/normalAPK and independent source/artifact reviews; metadata863b6f4b is pushed. The immediate P3 Ghost fixture cleanup is committed as6cb74422741ff341fd67ce2856c572f2cc5e16fd and passes all24 cases in8s. Its log SHA is 6ace23126f3688107d3d59d435e931c6130769f960a4c648a7df11c04a026dea. Current Focus inputs below remain unchanged; Ghost only replaces duplicate closes with one memoized Future. Root starts Focus on this exact worktree and preserves existing untracked critiques/feedback images.
 
@@ -219,9 +219,21 @@ Preserve the proven real-I/O subscription lifecycle: create and cancel actual da
 5. Independent connected review checks the same-owner paused child versus burned parent intent, all-table no-write proof and stale callbacks on the current hashes. Freeze writers before integration analysis/full regression/build as required by the parent release plan.
 6. Attest actual outcomes and remaining f24 dependency. The f23 UI slice can be engineering-complete while f23 remains Partial. No deployment, physical UAT, learning efficacy or Research authority follows from unit/widget success.
 
-Publication approves this bounded Focus card, with no Focus runtime or readiness outcome claimed. Root will capture the old missing P06 entry behavioral failure and the new API compile failure before promoting implementation.
+The bounded six-file implementation is locally attested at71a230a4. Missing-entry/API failures, corrected boundary/IME failures and the validation-wrap RED remain preserved. Actual full4552/11m45s, exact analysis0/18.1s, CLI23, offline390/one existing skip, normal main/debug APK121.2s and independent artifact/source/log ACCEPT7a8171ae close this slice. This changes only f23 to Partial; it does not implement f24 or establish production/UAT/research efficacy.
 
 Model the Domain shaped the explicit five-state snapshot and transition table. Prove It Works shaped the proposed fake-clock arithmetic, exact route behavior and all37-table readback. Test Behavior, Not Implementation shaped control/readback assertions rather than scheduler tick expectations.
+
+## Wave22 completed local implementation checkpoint
+
+The optional transient Focus Timer/P06 slice is locally verified at application71a230a42ac767c956c0192eed6af01ee2521a59: full4552PASS/11:45, exact analysis0/18.1s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK121.2s/native-provider0 with environment restored. All767Dart/54CLI/92backend exact inputs match before/after; independent actual-APK/source/log readback ACCEPT7a8171ae. Only f23 changes from Missing to Partial, giving14Connected/19Partial/11Missing; f24Missing, f22Connected and f21Partial remain. Timer elapsed creates no learning credit or Research/reward fact. See [Wave22](../../field/2026-10-31-remaining-systems-wave22.md).
+
+Controller39/UI44/Choose41/existing Review Center entries2 give actual126 focused cases. The pre-wrap final126/22s, later actual English RenderParagraph clipping RED, errorMaxLines4 with assertions in all six existing layout cases, and post-wrap126/21s remain distinct. A later no-comments review accepted only one Choose narration deletion; there was no application-logic change before the final commit.
+
+Source freeze wave22-frozen-dart-source-final.json SHAf709d645b3ee5a5dc20e11565f305bdda662c13536dac261c180d0f66f974db7 binds767 tracked Dart paths. lib tree1ad82b870d49f69c0e7588f9a1695ad7b62f4f19 and test tree41e5f702016bfd5ee40bf77dd1b8b3239d1e8fbe are actual. Root's actual-log/source review SHAd24b32801a8c0fe83f010262a9471bd869649e54e8e00ff670808f1b3fe2682c and independent readback SHA7a8171ae243db5d847abc441df1d932495cdbc7bc939ed4277fb410691562c96 preserve the raw CLI allLogsInspected=false field while separately recording all23 logs and3 backend logs/JUnits actually read.
+
+The normal APK is252381649bytes, SHA58e6f96782a18aac0fade0ee54d4bb2793a386ec71f9992e6bee1065bae53637. All752 entry names are unique and CRC-valid. Its103094016-byte kernel SHA5501de6f0a96134b2f8fbff9cc8145d42081c125829726dc6b871dd6e62b5b42 contains actual71a230a4 at offset85878348. File time is inside the actual build window. Source inputs match before/after. No install or publication occurred.
+
+Schema remains20/37 with v21+ unreserved, frozen8/44 unchanged. f24 automatic active-learning time and its authority/policy are separate next work. Grounding hashes below are retained historical API baselines, not the final freeze.
 
 ## Grounding input hashes
 

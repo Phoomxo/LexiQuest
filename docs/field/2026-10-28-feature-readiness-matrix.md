@@ -1,6 +1,12 @@
 # LexiQuest: runtime coverage of the 44 capabilities
 
+Current Wave22 local attestation updated2026-10-31 is application71a230a4 at schema20/37. Full4552/11m45s, analysis0/18.1s, CLI23/23, offline390PASS/one existing opt-in skip and normal main/debug APK121.2s/native-provider0/restoredtrue are verified. Exact767Dart/54CLI/92backend inputs and independent actual-APK/source/log acceptance bind this source. Coverage is14 connected/19 partial/11 missing. Only f23 changes Missing-to-Partial; f24Missing, f22Connected and f21Partial remain. See [Wave22](2026-10-31-remaining-systems-wave22.md).
+
+Historical Wave21 summary retained verbatim:
+
 Current local attestation updated2026-10-31 is sourcea54ac2e2 at schema20/37. Source a54ac2e2: Flutter4461/11m32s, analysis0/18.3s, CLI23/23, offline backend390PASS/one existing opt-in skip and normal main/debug APK129.2s/exit0. All763 Dart,54CLI and92backend inputs match before/after. Independent source, fixture-bridge and artifact reviews accept the local unit. Coverage is14 connected/18 partial/12 missing. The P3 Ghost cleanup counter follow-up is queued for the immediate next source unit; it does not change production behavior.
+
+The Ghost P3 memoized-close follow-up is completed at6cb74422 with24PASS/8s. Earlier queued notes below are historical. The new timer remains transient, optional and unrecorded; no timer elapsed is active-learning evidence. Physical/UAT and Research rollout are separate.
 
 Historical Wave20 attestation: `codex/remaining-system-readiness`, through `dd45f862` (v20/37),
 updated2026-10-30. Latest full suite: Flutter4372 in11m06s, analysis0 and CLI23/23.
@@ -59,7 +65,7 @@ missing implementation. It does not certify production readiness, research
 validity, physical-device UAT or external service operation. The catalog's own
 `unverified` rollout fields are not evidence of readiness.
 
-There are 14 connected runtime capabilities, 18 partial capabilities and 12
+There are 14 connected runtime capabilities, 19 partial capabilities and 11
 missing runtime capabilities under this source-based classification. Every
 capability still needs the applicable acceptance and release checks.
 
@@ -106,7 +112,7 @@ Wave21 changes only f22 from Partial to Connected after actual current-source ga
 | ID | Capability | Runtime state | Evidence and remaining work |
 | --- | --- | --- | --- |
 | f22 | Review Center | Connected | Actual four-reason local Hub, full filtered lists, unavailable reasons and immutable not-sent receipts; captured-owner pure reads across ChooseMode/Clinic/Mastery and same canonical practice/History callers. Sourcea54ac2e2 passes full4461, analysis0, CLI23, offline backend390/one existing skip and normal main/debug APK with exact-source and independent artifact acceptance. No all37-table changes from reads. f21 broader report targets/transport and the P3 test cleanup counter follow-up remain separate. |
-| f23 | Focus Timer | Missing | No connected timer configuration, pause and resume. |
+| f23 | Focus Timer | Partial | Actual optional P06 tool at71a230a4 supports1-180/default25 minutes, configured/running/paused/stopped/finished states, same-owner explicit Resume, safe exits/IME and fresh-open reset. Current full4552, analysis0, CLI23, offline390/one existing skip and normal APK with exact-source/independent acceptance pass. All37-table snapshots show no timer learning/reward/Research writes. Active-time capture f24 remains absent, so this UI slice does not make f23 Connected; no stored presets, cold-restart recovery or background service. See [Wave22](2026-10-31-remaining-systems-wave22.md). |
 | f24 | Automatic Learning-Time Capture | Missing | Timestamps and answer response times exist. Foreground active-time capture is absent. Session elapsed time is not treated as learning time. |
 | f25 | Learning Calendar & Weekly Analytics | Partial | New history shows seven local dates with answer counts. Calendar, active-time and outcome analytics remain incomplete. |
 | f26 | Goal / Test Countdown | Missing | No editable target date/countdown. |
