@@ -2,6 +2,8 @@
 
 Updated 2026-10-31. This index identifies the audit fixes and continuing system integration. It does not declare a production rollout.
 
+Active execution: [automatic learning-time integration](../superpowers/plans/2026-10-31-active-learning-time-integration.md), grounded on the attested Wave22 source. Root selected source-pinned scopes, immutable confirmed-interaction segments and a per-owner default-off capture choice. Genuine populated v20 capture precedes any v21/40 reservation. Implementation and integration checks are pending; capability states remain 14 Connected / 19 Partial / 11 Missing.
+
 | Item | Location | Disposition |
 | --- | --- | --- |
 | Active development | `C:\Users\Phet\.codex\worktrees\cycle12-release\LexiQuest`, branch `codex/remaining-system-readiness` | Includes the 20 audit fixes and continuing integration through owned SRS review and the attested local Review Center/read-scope unit at a54ac2e2. History, LM serving, research export, motion controls, owner coordination, signed measurements, exact quiz recovery, controlled Assessment, owned native modes, local Saved Words/reports and ephemeral Typed Cloze ink retain their recorded boundaries. |
