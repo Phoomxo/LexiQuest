@@ -15,6 +15,7 @@ import '../services/ai_reading_content_adapter.dart';
 import 'associative_reading_session_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'review_center_screen.dart';
+import 'focus_timer_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'word_scramble_screen.dart';
@@ -306,58 +307,157 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
       );
 
   VoidCallback? _reviewCenterAction() {
-    final binding = _progress;
-    final owner = binding?.ownerId;
     final dependencies = _progressDependencies;
     final review = dependencies?.reviewCenter;
     final learning = _learning;
+    final features = _features;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    return _independentToolAction(
+      routeName: 'learning/review-center',
+      available: review != null,
+      destination: (owner, owners) => ReviewCenterScreen(
+        expectedOwnerId: owner,
+        reviewCenter: review,
+        ownerChanges: owners,
+        learning: learning,
+        savedWords: dependencies?.savedWords,
+        wordReports: dependencies?.wordReports,
+        voice: dependencies?.voice,
+        featureRegistry: features,
+        languageCode: languageCode,
+      ),
+    );
+  }
+
+  VoidCallback? _focusTimerAction() {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    return _independentToolAction(
+      routeName: 'learning/focus-timer',
+      available: true,
+      destination: (owner, owners) => FocusTimerScreen(
+        expectedOwnerId: owner,
+        ownerChanges: owners,
+        languageCode: languageCode,
+      ),
+    );
+  }
+
+  VoidCallback? _independentToolAction({
+    required String routeName,
+    required bool available,
+    required Widget Function(String owner, Stream<String?> owners) destination,
+  }) {
+    final binding = _progress;
+    final owner = binding?.ownerId;
+    final dependencies = _progressDependencies;
+    final learning = _learning;
+    final features = _features;
     final owners = _nativeOwnerSource;
-    if (binding == null || owner == null || review == null || owners == null) {
+    if (!available || binding == null || owner == null || owners == null) {
       return null;
     }
     final epoch = binding.readEpoch;
     return () async {
-      if (_openingProgressChild || !binding.isReadCurrent(epoch)) return;
-      final launch = binding.beginLaunch(epoch, requireSnapshot: false);
-      if (launch == null) return;
-      bool current() =>
+      if (!mounted ||
+          _openingProgressChild ||
+          !identical(binding, _progress) ||
+          !binding.isReadCurrent(epoch)) {
+        return;
+      }
+      final parentRoute = ModalRoute.of(context);
+      if (parentRoute?.isCurrent != true) return;
+      StreamSubscription<String?>? ownerLease;
+      var childLeaseCurrent = true;
+      var opening = false;
+      int? launchGeneration;
+      Widget? mountedDestination;
+
+      bool childContextCurrent() =>
           mounted &&
+          childLeaseCurrent &&
           identical(binding, _progress) &&
-          binding.isLaunchCurrent(launch, owner) &&
           identical(dependencies, _progressDependencies) &&
+          identical(owners, _nativeOwnerSource) &&
           identical(learning, _learning) &&
+          identical(features, _features);
+
+      bool returnCurrent() =>
+          childContextCurrent() &&
+          launchGeneration != null &&
+          binding.isLaunchCurrent(launchGeneration, owner) &&
           Visibility.of(context) &&
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-      _openingProgressChild = true;
-      _foreignProgressCover = false;
+
+      void invalidateChildLease() {
+        if (!childLeaseCurrent) return;
+        childLeaseCurrent = false;
+        if (mounted) _invalidateNative();
+      }
+
       try {
+        try {
+          ownerLease = owners.listen(
+            (activeOwner) {
+              if (activeOwner != owner) invalidateChildLease();
+            },
+            onError: (Object _, StackTrace _) => invalidateChildLease(),
+            onDone: invalidateChildLease,
+          );
+        } on Object {
+          invalidateChildLease();
+          return;
+        }
+        if (!childContextCurrent() || !binding.isReadCurrent(epoch)) return;
+        final generation = binding.beginLaunch(epoch, requireSnapshot: false);
+        if (generation == null) return;
+        launchGeneration = generation;
+        opening = true;
+        _openingProgressChild = true;
+        _foreignProgressCover = false;
         await AppNavigator.pushPage<void>(
           context,
           AppPage<void>(
-            name: 'learning/review-center',
-            builder: (_) => _trackProgressChild(
-              current()
-                  ? ReviewCenterScreen(
-                      expectedOwnerId: owner,
-                      reviewCenter: review,
-                      ownerChanges: owners,
-                      learning: learning,
-                      savedWords: dependencies?.savedWords,
-                      wordReports: dependencies?.wordReports,
-                      voice: dependencies?.voice,
-                      featureRegistry: _features,
-                      languageCode: Localizations.localeOf(
-                        context,
-                      ).languageCode,
-                    )
-                  : const Scaffold(body: SizedBox.shrink()),
-              binding,
+            name: routeName,
+            builder: (_) => ValueListenableBuilder<int>(
+              valueListenable: _nativeChanges,
+              builder: (childContext, _, _) {
+                if (!childContextCurrent() ||
+                    (mountedDestination == null &&
+                        !binding.isLaunchCurrent(generation, owner))) {
+                  final route = ModalRoute.of(childContext);
+                  return Scaffold(
+                    appBar: AppBar(
+                      leading: BackButton(
+                        onPressed: () {
+                          if (route?.isCurrent == true) {
+                            route?.navigator?.pop();
+                          }
+                        },
+                      ),
+                    ),
+                    body: const Center(child: Text('กิจกรรมไม่พร้อมใช้งาน')),
+                  );
+                }
+                return _trackProgressChild(
+                  mountedDestination ??= destination(owner, owners),
+                  binding,
+                );
+              },
             ),
           ),
         );
       } finally {
-        _openingProgressChild = false;
-        if (current() && _progressVisible) _syncProgress();
+        if (opening) {
+          _openingProgressChild = false;
+          if (mounted &&
+              returnCurrent() &&
+              identical(parentRoute, ModalRoute.of(context)) &&
+              parentRoute?.isCurrent == true &&
+              _progressVisible) {
+            _syncProgress();
+          }
+        }
+        await ownerLease?.cancel();
       }
     };
   }
@@ -605,6 +705,17 @@ class _ChooseModeScreenState extends State<ChooseModeScreen>
                 ),
               ),
             ),
+          _LearningTile(
+            key: const ValueKey('focus-timer-entry'),
+            icon: Icons.timer_outlined,
+            title: Localizations.localeOf(context).languageCode == 'en'
+                ? 'Focus Timer'
+                : 'จับเวลาโฟกัส',
+            subtitle: Localizations.localeOf(context).languageCode == 'en'
+                ? 'An optional local interval. It does not record learning time.'
+                : 'ช่วงเวลาในเครื่อง เลือกใช้ได้ ไม่ใช่เวลาเรียนที่บันทึก',
+            onTap: _focusTimerAction(),
+          ),
         ],
       ),
     );

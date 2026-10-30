@@ -20,6 +20,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/focus_timer_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
@@ -34,12 +35,385 @@ import '../support/dictation_session_harness.dart';
 import '../support/cloze_session_harness.dart' as cloze;
 
 import '../support/progress_owner_fixture.dart';
+import '../support/review_center_harness.dart' as focus;
 
 void main() {
   setUp(() {
     TestWidgetsFlutterBinding.ensureInitialized()
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   });
+
+  testWidgets(
+    'Focus Timer has a real P06 entry without learning or review dependencies',
+    (tester) async {
+      late final Zone ioZone;
+      final h = (await tester.runAsync(() {
+        ioZone = Zone.current;
+        return focus.ReviewCenterHarness.open();
+      }))!;
+      final navigation = _FocusEntryNavigation();
+      try {
+        final before = (await tester.runAsync(h.snapshotAllTables))!;
+        expect(before, hasLength(37));
+        await _pumpFocusEntry(tester, h, navigation: navigation);
+        await _scrollFocusEntry(tester);
+        await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
+        await _scrollFocusEntry(tester);
+        expect(_focusEntryAction(tester), isNotNull);
+        await tester.tap(
+          find.byKey(const ValueKey('focus-timer-entry')).hitTestable(),
+        );
+        await _focusReady(tester);
+        final screen = tester.widget<FocusTimerScreen>(
+          find.byType(FocusTimerScreen),
+        );
+        expect(screen.expectedOwnerId, focus.configuredOwnerId);
+        expect(screen.ownerChanges, same(h.ownerChanges));
+        expect(screen.languageCode, 'en');
+        expect(
+          navigation.names.where((name) => name == 'learning/focus-timer'),
+          hasLength(1),
+        );
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _closeFocusEntry(tester, h, ioZone);
+      }
+    },
+  );
+
+  testWidgets(
+    'Focus Timer entry stays disabled before any owner and after owner null',
+    (tester) async {
+      final owners = StreamController<String?>.broadcast(sync: true);
+      final ownerStream = owners.stream;
+      var reads = 0;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ChooseModeScreen(
+              ownerChanges: ownerStream,
+              loader: () async {
+                reads++;
+                return snapshot();
+              },
+            ),
+          ),
+        );
+        await _scrollFocusEntry(tester);
+        expect(_focusEntryAction(tester), isNull);
+        expect(reads, 0);
+        owners.add(null);
+        await tester.pump();
+        expect(_focusEntryAction(tester), isNull);
+        expect(reads, 0);
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(owners.close);
+      }
+    },
+  );
+
+  for (final failed in [true, false]) {
+    testWidgets(
+      'Focus Timer opens with ${failed ? "failed" : "pending"} unrelated Progress and no learning or review dependency',
+      (tester) async {
+        late final Zone ioZone;
+        final h = (await tester.runAsync(() {
+          ioZone = Zone.current;
+          return focus.ReviewCenterHarness.open();
+        }))!;
+        final pending = Completer<ProgressSnapshot>();
+        final navigation = _FocusEntryNavigation();
+        try {
+          final before = (await tester.runAsync(h.snapshotAllTables))!;
+          await _pumpFocusEntry(
+            tester,
+            h,
+            navigation: navigation,
+            loader: failed
+                ? () async => throw StateError('synthetic projection failure')
+                : () => pending.future,
+          );
+          await _scrollFocusEntry(tester);
+          await _focusEntryUntil(
+            tester,
+            () => _focusEntryAction(tester) != null,
+          );
+          await _scrollFocusEntry(tester);
+          await tester.tap(
+            find.byKey(const ValueKey('focus-timer-entry')).hitTestable(),
+          );
+          await _focusReady(tester);
+          final screen = tester.widget<FocusTimerScreen>(
+            find.byType(FocusTimerScreen),
+          );
+          expect(screen.expectedOwnerId, focus.configuredOwnerId);
+          expect(screen.ownerChanges, same(h.ownerChanges));
+          expect(screen.languageCode, 'en');
+          expect(
+            navigation.names.where((name) => name == 'learning/focus-timer'),
+            hasLength(1),
+          );
+          expect(await tester.runAsync(h.snapshotAllTables), before);
+          expect(tester.takeException(), isNull);
+        } finally {
+          if (!pending.isCompleted) pending.complete(snapshot());
+          await _closeFocusEntry(tester, h, ioZone);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'Focus Timer needs only an actual observed owner stream without any runtime dependencies',
+    (tester) async {
+      late final Zone ioZone;
+      final h = (await tester.runAsync(() {
+        ioZone = Zone.current;
+        return focus.ReviewCenterHarness.open();
+      }))!;
+      try {
+        final before = (await tester.runAsync(h.snapshotAllTables))!;
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: const Locale('en'),
+            home: ChooseModeScreen(ownerChanges: h.ownerChanges),
+          ),
+        );
+        await _scrollFocusEntry(tester);
+        await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
+        await _scrollFocusEntry(tester);
+        await tester.tap(
+          find.byKey(const ValueKey('focus-timer-entry')).hitTestable(),
+        );
+        await _focusReady(tester);
+        final screen = tester.widget<FocusTimerScreen>(
+          find.byType(FocusTimerScreen),
+        );
+        expect(screen.expectedOwnerId, focus.configuredOwnerId);
+        expect(screen.ownerChanges, same(h.ownerChanges));
+        expect(screen.languageCode, 'en');
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _closeFocusEntry(tester, h, ioZone);
+      }
+    },
+  );
+
+  testWidgets(
+    'Focus Timer rejects real owner ABA and old returned entry while rapid taps open one real child',
+    (tester) async {
+      late final Zone ioZone;
+      final h = (await tester.runAsync(() {
+        ioZone = Zone.current;
+        return focus.ReviewCenterHarness.open();
+      }))!;
+      final navigation = _FocusEntryNavigation();
+      final observed = <String?>[];
+      StreamSubscription<String?>? observation;
+      try {
+        await tester.runAsync(() async {
+          observation = ioZone.run(() => h.ownerChanges.listen(observed.add));
+        });
+        final before = (await tester.runAsync(h.snapshotAllTables))!;
+        await _pumpFocusEntry(tester, h, navigation: navigation);
+        await _scrollFocusEntry(tester);
+        await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
+        final stale = _focusEntryAction(tester)!;
+        observed.clear();
+        await tester.runAsync(
+          () => h.database.transaction(() async {
+            await h.switchOwner(focus.configuredOtherOwnerId);
+            await h.switchOwner(focus.configuredOwnerId);
+          }),
+        );
+        await _focusEntryUntil(
+          tester,
+          () =>
+              observed.contains(null) &&
+              observed.last == focus.configuredOwnerId &&
+              _focusEntryAction(tester) != null,
+        );
+        stale();
+        await tester.pumpAndSettle();
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        expect(
+          navigation.names.where((name) => name == 'learning/focus-timer'),
+          isEmpty,
+        );
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+
+        final current = _focusEntryAction(tester)!;
+        current();
+        current();
+        await _focusReady(tester);
+        expect(
+          navigation.names.where((name) => name == 'learning/focus-timer'),
+          hasLength(1),
+        );
+        await _tapFocusControl(tester, 'focus-untimed');
+        await _focusEntryUntil(
+          tester,
+          () => find.byType(FocusTimerScreen).evaluate().isEmpty,
+        );
+        await _scrollFocusEntry(tester);
+        current();
+        await tester.pumpAndSettle();
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        expect(
+          navigation.names.where((name) => name == 'learning/focus-timer'),
+          hasLength(1),
+        );
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _closeFocusEntry(tester, h, ioZone, observation: observation);
+      }
+    },
+  );
+
+  testWidgets(
+    'Focus Timer launch lease rejects real owner ABA before its first child mount',
+    (tester) async {
+      late final Zone ioZone;
+      final h = (await tester.runAsync(() {
+        ioZone = Zone.current;
+        return focus.ReviewCenterHarness.open();
+      }))!;
+      final navigator = GlobalKey<NavigatorState>();
+      final observed = <String?>[];
+      final gapObserved = ioZone.run(() => Completer<void>());
+      StreamSubscription<String?>? observation;
+      var armed = false;
+      try {
+        await tester.runAsync(() async {
+          observation = ioZone.run(
+            () => h.ownerChanges.listen((owner) {
+              observed.add(owner);
+              if (armed &&
+                  observed.contains(null) &&
+                  owner == focus.configuredOwnerId &&
+                  !gapObserved.isCompleted) {
+                gapObserved.complete();
+              }
+            }),
+          );
+        });
+        final before = (await tester.runAsync(h.snapshotAllTables))!;
+        await _pumpFocusEntry(tester, h, navigator: navigator);
+        await _scrollFocusEntry(tester);
+        await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
+        _focusEntryAction(tester)!();
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        observed.clear();
+        armed = true;
+        await tester.runAsync(() async {
+          await h.database.transaction(() async {
+            await h.switchOwner(focus.configuredOtherOwnerId);
+            await h.switchOwner(focus.configuredOwnerId);
+          });
+          await gapObserved.future.timeout(const Duration(seconds: 3));
+        });
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('focus-start')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('focus-remaining'), skipOffstage: false),
+          findsNothing,
+        );
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _closeFocusEntry(tester, h, ioZone, observation: observation);
+      }
+    },
+  );
+
+  testWidgets(
+    'Focus Timer stays mounted and paused across a foreign cover and background while its parent is already covered',
+    (tester) async {
+      late final Zone ioZone;
+      final h = (await tester.runAsync(() {
+        ioZone = Zone.current;
+        return focus.ReviewCenterHarness.open();
+      }))!;
+      final navigator = GlobalKey<NavigatorState>();
+      try {
+        final before = (await tester.runAsync(h.snapshotAllTables))!;
+        await _pumpFocusEntry(tester, h, navigator: navigator);
+        await _scrollFocusEntry(tester);
+        await _focusEntryUntil(tester, () => _focusEntryAction(tester) != null);
+        final oldEntry = _focusEntryAction(tester)!;
+        oldEntry();
+        await _focusReady(tester);
+        final originalElement = tester.element(find.byType(FocusTimerScreen));
+        await _tapFocusControl(tester, 'focus-start');
+        expect(_focusStatus(tester), 'Running');
+        unawaited(
+          navigator.currentState!.push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  const Scaffold(body: Text('Synthetic focus cover')),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Synthetic focus cover'), findsOneWidget);
+        expect(
+          tester.element(find.byType(FocusTimerScreen, skipOffstage: false)),
+          same(originalElement),
+        );
+        expect(
+          find.byKey(const ValueKey('focus-remaining'), skipOffstage: false),
+          findsNothing,
+        );
+        await _backgroundFocusEntry(tester);
+        await _resumeFocusEntry(tester);
+        expect(find.text('Synthetic focus cover'), findsOneWidget);
+        navigator.currentState!.pop();
+        await tester.pumpAndSettle();
+        expect(
+          tester.element(find.byType(FocusTimerScreen)),
+          same(originalElement),
+        );
+        expect(_focusStatus(tester), 'Paused. Resume when ready.');
+        final pausedRemaining = _focusRemaining(tester);
+        await _backgroundFocusEntry(tester);
+        expect(
+          find.byKey(const ValueKey('focus-remaining'), skipOffstage: false),
+          findsNothing,
+        );
+        await _resumeFocusEntry(tester);
+        expect(_focusRemaining(tester), pausedRemaining);
+        expect(_focusStatus(tester), 'Paused. Resume when ready.');
+        await _tapFocusControl(tester, 'focus-resume');
+        expect(_focusStatus(tester), 'Running');
+        expect(
+          tester.element(find.byType(FocusTimerScreen)),
+          same(originalElement),
+        );
+        await _tapFocusControl(tester, 'focus-pause');
+        await _tapFocusControl(tester, 'focus-untimed');
+        await _focusEntryUntil(
+          tester,
+          () => find.byType(FocusTimerScreen).evaluate().isEmpty,
+        );
+        await _scrollFocusEntry(tester);
+        oldEntry();
+        await tester.pumpAndSettle();
+        expect(find.byType(FocusTimerScreen), findsNothing);
+        expect(await tester.runAsync(h.snapshotAllTables), before);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _closeFocusEntry(tester, h, ioZone);
+      }
+    },
+  );
 
   testWidgets(
     'owner ABA clears private host data before its fresh read completes',
@@ -994,6 +1368,176 @@ final class _StudyEntryRuntime extends Fake implements StudyRuntime {
     loads.add(ownerId);
     return read(ownerId);
   }
+}
+
+final class _FocusEntryNavigation extends NavigatorObserver {
+  final names = <String?>[];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    names.add(route.settings.name);
+    super.didPush(route, previousRoute);
+  }
+}
+
+final class _FocusEntryGuestService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() =>
+      throw StateError('Focus Timer entry must not create a guest');
+}
+
+Future<void> _pumpFocusEntry(
+  WidgetTester tester,
+  focus.ReviewCenterHarness h, {
+  ProgressLoader? loader,
+  NavigatorObserver? navigation,
+  GlobalKey<NavigatorState>? navigator,
+}) async {
+  final dependencies = AppDependencies(
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _FocusEntryGuestService(),
+    database: h.database,
+    localOwners: h.owners,
+    progress: h.progress,
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        navigatorKey: navigator,
+        navigatorObservers: [?navigation],
+        locale: const Locale('en'),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
+        home: ChooseModeScreen(ownerChanges: h.ownerChanges, loader: loader),
+      ),
+    ),
+  );
+  await _focusEntryUntil(
+    tester,
+    () => find.byType(Scrollable).evaluate().isNotEmpty,
+  );
+}
+
+Future<void> _scrollFocusEntry(WidgetTester tester) async {
+  await _focusEntryUntil(
+    tester,
+    () => find.byType(Scrollable).evaluate().isNotEmpty,
+  );
+  final scrollable = find.byType(Scrollable).last;
+  for (var i = 0; i < 50; i++) {
+    final position = tester.state<ScrollableState>(scrollable).position;
+    if (position.hasContentDimensions && position.extentAfter == 0) break;
+    await tester.drag(scrollable, const Offset(0, -240));
+    await tester.pump();
+  }
+  expect(tester.state<ScrollableState>(scrollable).position.extentAfter, 0);
+  expect(find.byKey(const ValueKey('focus-timer-entry')), findsOneWidget);
+  final entry = find.byKey(const ValueKey('focus-timer-entry')).hitTestable();
+  await tester.scrollUntilVisible(entry, 160, scrollable: scrollable);
+  expect(entry, findsOneWidget);
+}
+
+VoidCallback? _focusEntryAction(WidgetTester tester) {
+  final entry = find.byKey(const ValueKey('focus-timer-entry'));
+  if (entry.evaluate().isEmpty) return null;
+  return tester
+      .widget<ListTile>(
+        find.descendant(of: entry, matching: find.byType(ListTile)),
+      )
+      .onTap;
+}
+
+Future<void> _focusReady(WidgetTester tester) => _focusEntryUntil(
+  tester,
+  () =>
+      find.byType(FocusTimerScreen).evaluate().isNotEmpty &&
+      find.byKey(const ValueKey('focus-start')).evaluate().isNotEmpty &&
+      tester
+              .widget<FilledButton>(find.byKey(const ValueKey('focus-start')))
+              .onPressed !=
+          null,
+);
+
+String? _focusStatus(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(const ValueKey('focus-status'))).data;
+
+String? _focusRemaining(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(const ValueKey('focus-remaining'))).data;
+
+Future<void> _tapFocusControl(WidgetTester tester, String key) async {
+  final target = find.byKey(ValueKey(key));
+  await tester.scrollUntilVisible(
+    target.hitTestable(),
+    160,
+    scrollable: find
+        .descendant(
+          of: find.byType(FocusTimerScreen),
+          matching: find.byType(Scrollable),
+        )
+        .last,
+  );
+  final button = tester.widget<ButtonStyleButton>(target);
+  expect(button.onPressed, isNotNull);
+  await tester.tap(target.hitTestable());
+  await tester.pump();
+}
+
+Future<void> _focusEntryUntil(
+  WidgetTester tester,
+  bool Function() ready,
+) async {
+  for (var i = 0; i < 150; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+    if (ready()) return;
+  }
+  fail('Focus Timer entry did not reach its expected state');
+}
+
+Future<void> _backgroundFocusEntry(WidgetTester tester) async {
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+  await tester.pump();
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+}
+
+Future<void> _resumeFocusEntry(WidgetTester tester) async {
+  if (tester.binding.lifecycleState == AppLifecycleState.paused) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+  }
+  if (tester.binding.lifecycleState == AppLifecycleState.hidden) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+  }
+  if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  }
+  await tester.pumpAndSettle();
+}
+
+Future<void> _closeFocusEntry(
+  WidgetTester tester,
+  focus.ReviewCenterHarness h,
+  Zone ioZone, {
+  StreamSubscription<String?>? observation,
+}) async {
+  await _resumeFocusEntry(tester);
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pumpAndSettle();
+  await tester.runAsync(
+    () => ioZone.run(() => observation?.cancel() ?? Future<void>.value()),
+  );
+  await tester.runAsync(() => ioZone.run(h.close));
 }
 
 final class _StudyEntryGuestService extends Fake
