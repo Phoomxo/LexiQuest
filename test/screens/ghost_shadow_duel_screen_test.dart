@@ -57,7 +57,7 @@ void main() {
       ]) {
         if (gate != null && !gate.isCompleted) gate.complete();
       }
-      await fixture.db.close();
+      await fixture.close();
     });
 
     for (final afterCommit in [false, true]) {
@@ -564,7 +564,7 @@ void main() {
         } finally {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();
-          await tester.runAsync(fixture.db.close);
+          await tester.runAsync(fixture.close);
         }
       });
     }
@@ -710,6 +710,8 @@ final class _Owners implements LocalOwnerRepository {
 
 final class _Fixture {
   final db = AppDatabase(NativeDatabase.memory());
+  Future<void>? _closeFuture;
+  Future<void> close() => _closeFuture ??= db.close();
   final owners = _Owners();
   late final repository = _Repository(DriftLearningRepository(db));
   int sequence = 0;
