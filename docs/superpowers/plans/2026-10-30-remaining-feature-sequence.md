@@ -13,16 +13,18 @@ schema ledger, matrix และ frozen catalog ที่ใช้วิเคร
 
 ## สถานะที่ใช้จัดคิว
 
-Current attestation: Sentence Scramble source `29038b4a` ผ่าน Flutter4262, analysis0,
-CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave18).
-Owned category/provider/native ACK/guarded P23/history ผ่าน; schema20/37 ไม่เปลี่ยน.
-Saved Words และ local reports ยังคงหลักฐาน wave16/17; Quest runtime/grants ยังไม่เปิด.
-หน่วยถัดไปคือ [f12 scratchpad บน P35 Typed Cloze](2026-10-30-handwriting-scratchpad-integration.md),
-local ephemeral aid/Undo/Clear/typed fallback ตาม frozen purpose โดยไม่มี OCR หรือ writer ใหม่.
+Current attestation: local Typed Cloze scratchpad source `f3301403` ผ่าน Flutter4297, analysis0,
+CLI23, backend390/หนึ่ง opt-in skip และ normal debug APK แล้ว (wave19).
+Ephemeral ink/Undo/Clear/typed fallback, privacy/frame/gesture fixes และ canonical ACK ผ่าน;
+schema20/37 ไม่เปลี่ยน. f12 เชื่อม locally แล้ว; f03/f05/f11/f13 ยัง Partial.
+Saved Words/reports/Sentence Scramble คงหลักฐาน wave16/17/18; Quest runtime/grants ยังไม่เปิด.
+หน่วยถัดไปคือ owner-bound SRS safety ก่อน Review Center: คง self-rated SRS authority,
+รวมคิว due/incorrect/saved/local-report พร้อมเหตุผล และไม่ฝึกจาก report snapshot.
+SRS API ต้องมี owner/current/fence ที่ commit boundary; แผน bounded อ่านจาก source ก่อนเริ่ม.
 สามหน่วยเสนอเดิมด้านล่างเป็น grounding เดิม; ใช้แผนแม่และ checkpoint ล่าสุดเป็นบอร์ดปัจจุบัน.
 
 - `docs/field/2026-10-28-feature-readiness-matrix.md` เป็น snapshot ถึง
-  `29038b4a`: 12 connected / 19 partial / 13 missing ไม่ใช่ production/UAT
+  `f3301403`: 13 connected / 19 partial / 12 missing ไม่ใช่ production/UAT
   certification แม้ Dictation/Cloze/Word+Sentence Scramble verified แล้ว f13 ยังขาด durable resume/shared shell
 - `docs/design/feature-catalog-1.3.0.json` คง 8 หมวด/44 รหัส revision 1.3.0,
   contract hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`

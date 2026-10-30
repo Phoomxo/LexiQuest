@@ -165,3 +165,4 @@ calibration is outside it. No Pair Matching or claim that all f13/f05 work is do
   Full current-source regression/backend/CLI/build attestation is next; f12
   classification changes only after that evidence. Schema20/37 and v21 remain
   unchanged/unreserved, with no production Research or physical-UAT claim.
+- Attested applicationf3301403: full4297/10m59s, analysis0, CLI23, offline backend390/one existing opt-in skip and normal main debug APK120.3s pass;748 Dart/54CLI/92backend bytes match. Source/focused/artifact reviews ACCEPT. See [Wave19](../../field/2026-10-30-remaining-systems-wave19.md). f12 is Connected for local Typed Cloze;13/19/12, with f03/f05/f11/f13 still Partial. No physical-UAT/production Research claim.
