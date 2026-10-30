@@ -666,6 +666,23 @@ historical replay after target edit/delete; owner-only move/export/reverse purge
 residual proof; real form→editable review→local queue→restart/history UI. Preserve
 ordinary learning, SavedWords and default-off Research; no production send claim.
 
+### v21 — Local confirmed interaction time and owner capture choice
+
+**Reserved:** 2026-10-31, Root integration, branch codex/remaining-system-readiness.
+**Status:** RESERVED. Executable baseline remains20/37 at reservation. Expected current inventory40 after three additive relations; v22+ remains unreserved.
+**Predecessor:** genuine v20 capture211407bf, based on the individually pinned database inputs from application71a230a4 and actual capture HEAD1b56fa03.
+**Plan:** [automatic learning-time integration](../superpowers/plans/2026-10-31-active-learning-time-integration.md).
+
+- learning_time_preferences: owner_id primary key/restrictive owner FK; enabled bool, positive revision, updated_at_utc_ms. Absent means off. Original expected revision/state/timestamp defines exact replay. Existing target choice wins owner merge; absent target stays off.
+- learning_time_scopes: opaque time-scope: id, owner FK, closed source_kind, strict versioned source_binding_json, created_at_utc_ms, nullable linked_session_id FK/cascade and paired session_link_binding_json. Source identity immutable; one verified optional actual-session link. No fake LearningSession.
+- learning_time_segments: opaque time-segment: id, scope FK/cascade, nonnegative ordinal unique within scope, strict eligibility_context_json, UTC start/end observations, positive active_duration_us bounded at120000000 and exact confirmed-interaction-v1 policy. Duration uses monotonic confirmed windows; UTC observations may reverse.
+
+Before reservation, actual AppDatabase20 captured37 tables/indexes and64 synthetic rows to schema_v20.sql SHA25644b96f263f86fe9e32df8533a793fd14a3449a079bb889c3b0946e2c736581e7 and populated_schema_v20.json SHA256fcb804bb185f2b3c2d43c41fce185ed99597ce18ae06c9a108507afa2cfdbcb4. Actual replay/reopen, FK/integrity, all63 prior rows/pins and repeated identical-output reconciliation pass. D f24-schema-capture/schema_v20-capture-ca41b05b0efd2477.json SHA256ca41b05b0efd24778bb0e61106984e14899dc61ccb575aa341d8ff68b7c102ee records21 exact inputs and unrelated dirty Export files honestly.
+
+No old row/column is rewritten or time backfilled. Capture is per-owner default-off, local-only. Scope/segment admission excludes all Research-controlled/Assessment and recreational contexts; creates no outbox/reward/learning/Research fact. No raw drafts, answers, transcripts, chat or secrets are persisted by time. No new SyncCollection/cloud policy or Research export field.
+
+Acceptance: genuine populated20→21 migration/reopen retains every old row and DDL; strict SQL/domain constraints, exact closed-intent replay/readback/link collisions and owner/gate/fence/ambient-transaction races; closed A commit after B live handoff; every actual eligible caller's ready/input/wait guards; owner preference merge, personal/full export, reverse purge/cascade and sync exclusion. No feature-readiness or rollout claim follows from reservation or partial tests.
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
